@@ -3,6 +3,7 @@ import json
 import asyncio
 import threading
 import traceback
+import time
 import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from auth import capturar_cookies_hoyolab
@@ -10,6 +11,37 @@ from extractor import MultiGameExtractor
 from scraper_prydwen import PrydwenScraper
 from scraper_zzz import PrydwenZZZScraper
 from scraper_meta import PrydwenMetaScraper
+
+def bundle_guides(src_dir: str, dest_file: str, game_title: str) -> str:
+    """
+    Consolida múltiplos arquivos Markdown em um único arquivo de saída.
+    """
+    if not os.path.exists(src_dir) or not os.path.isdir(src_dir):
+        return None
+    md_files = [f for f in os.listdir(src_dir) if f.endswith(".md")]
+    if not md_files:
+        return None
+        
+    lines = []
+    lines.append(f"# Compilado Completo de Guias - {game_title}")
+    lines.append(f"Gerado em: {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    lines.append("")
+    
+    for f_name in sorted(md_files):
+        f_path = os.path.join(src_dir, f_name)
+        try:
+            with open(f_path, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                lines.append(content)
+                lines.append("\n\n---\n\n")
+        except Exception as e:
+            print(f"Erro ao ler {f_path} na consolidação: {e}")
+            
+    os.makedirs(os.path.dirname(dest_file) or ".", exist_ok=True)
+    with open(dest_file, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+        
+    return dest_file
 
 # Configurações de Aparência do CustomTkinter
 ctk.set_appearance_mode("dark")
@@ -20,7 +52,7 @@ class App(ctk.CTk):
         super().__init__()
         
         # Configuração da janela principal
-        self.title("HoYoverse Multi-Game RAG Hub")
+        self.title("HoYo AI Assistant (Gemini RAG Local)")
         self.geometry("1050x700")
         self.resizable(True, True)
         self.center_window(1050, 700)
@@ -29,6 +61,11 @@ class App(ctk.CTk):
         self.cookies = {}
         self.cookie_file = "cookies.json"
         self.config_file = "config.json"
+        self.chat_history = []
+        
+        # Inicializa o assistente Gemini RAG
+        from gemini_rag import GeminiRAG
+        self.gemini_rag = GeminiRAG()
         
         # --- ESTRUTURA DO LAYOUT ---
         # 1. Sidebar à esquerda (largura ~240px)
@@ -41,7 +78,7 @@ class App(ctk.CTk):
         self.main_container = ctk.CTkFrame(self, corner_radius=0, fg_color="#121214")
         self.main_container.pack(side="right", fill="both", expand=True)
         
-        # Inicializa ScrollableFrames correspondentes aos botões de navegação
+        # Inicializa Frames correspondentes aos botões de navegação
         self.setup_frames()
         
         # Seleciona ZZZ por padrão
@@ -50,7 +87,7 @@ class App(ctk.CTk):
         # Carrega dados salvos
         self.carregar_cookies_salvos()
         self.carregar_configuracao()
-        self.log("Hub Multi-Jogo inicializado com sucesso. Pronto.", "SUCCESS")
+        self.log("HoYo AI Assistant inicializado com sucesso. Pronto.", "SUCCESS")
         
     def center_window(self, width: int, height: int):
         """Centraliza a janela na tela do usuário."""
@@ -151,15 +188,15 @@ class App(ctk.CTk):
         # Título do App estilizado
         app_logo = ctk.CTkLabel(
             self.sidebar,
-            text="⚡ HoYoverse Hub",
-            font=ctk.CTkFont(family="Segoe UI", size=20, weight="bold"),
+            text="🤖 HoYo Assistant",
+            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
             text_color="#F4F4F5"
         )
         app_logo.pack(padx=20, pady=(25, 5), anchor="w")
         
         app_sub = ctk.CTkLabel(
             self.sidebar,
-            text="Hub Pessoal RAG v2.1",
+            text="AI Gemini RAG Hub v3.0",
             font=ctk.CTkFont(family="Segoe UI", size=11),
             text_color="#71717A"
         )
@@ -168,6 +205,7 @@ class App(ctk.CTk):
         icon_zzz = self.load_sidebar_icon("assets/zzz_icon.png")
         icon_genshin = self.load_sidebar_icon("assets/genshin_icon.png")
         icon_hsr = self.load_sidebar_icon("assets/hsr_icon.png")
+        icon_chat = self.load_sidebar_icon("assets/chat_icon.png")
         icon_config = self.load_sidebar_icon("assets/config_icon.png")
         
         # Botões de Navegação
@@ -218,6 +256,23 @@ class App(ctk.CTk):
             command=lambda: self.select_frame("hsr")
         )
         self.btn_hsr.pack(padx=15, pady=4, fill="x")
+        
+        # Botão do Chat IA RAG
+        self.btn_chat = ctk.CTkButton(
+            self.sidebar,
+            text=" Chat IA Meta" if icon_chat else "🤖 Chat IA Meta",
+            image=icon_chat,
+            compound="left",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            height=40,
+            corner_radius=8,
+            fg_color="transparent",
+            text_color="#D4D4D8",
+            hover_color="#2E2E35",
+            anchor="w",
+            command=lambda: self.select_frame("chat")
+        )
+        self.btn_chat.pack(padx=15, pady=4, fill="x")
         
         self.btn_config = ctk.CTkButton(
             self.sidebar,
@@ -338,18 +393,24 @@ class App(ctk.CTk):
         self.frame_config = ctk.CTkScrollableFrame(self.main_container, corner_radius=0, fg_color="transparent")
         self.build_config_screen(self.frame_config)
 
+        # 5. Frame do Chat IA Assistant
+        self.frame_chat = ctk.CTkFrame(self.main_container, corner_radius=0, fg_color="transparent")
+        self.setup_chat_frame(self.frame_chat)
+
     def select_frame(self, name: str):
         # Oculta todos os frames principais
         self.frame_zzz.pack_forget()
         self.frame_genshin.pack_forget()
         self.frame_hsr.pack_forget()
         self.frame_config.pack_forget()
+        self.frame_chat.pack_forget()
         
         # Reseta cores de fundo dos botões da sidebar para transparente
         self.btn_zzz.configure(fg_color="transparent", text_color="#D4D4D8")
         self.btn_genshin.configure(fg_color="transparent", text_color="#D4D4D8")
         self.btn_hsr.configure(fg_color="transparent", text_color="#D4D4D8")
         self.btn_config.configure(fg_color="transparent", text_color="#D4D4D8")
+        self.btn_chat.configure(fg_color="transparent", text_color="#D4D4D8")
         
         # Destaca o botão ativo com a cor do tema de cada aba
         if name == "zzz":
@@ -364,6 +425,9 @@ class App(ctk.CTk):
         elif name == "config":
             self.btn_config.configure(fg_color="#4B5563", text_color="#FFFFFF")
             self.frame_config.pack(fill="both", expand=True, padx=5, pady=5)
+        elif name == "chat":
+            self.btn_chat.configure(fg_color="#2563EB", text_color="#FFFFFF")
+            self.frame_chat.pack(fill="both", expand=True, padx=5, pady=5)
 
     # ==========================================
     # DESIGN SYSTEM: LAYOUT DE ABAS DE JOGOS
@@ -491,16 +555,13 @@ class App(ctk.CTk):
             meta.deselect()
 
     # ==========================================
-    # DESIGN SYSTEM: LAYOUT DA TELA CONFIG
-    # ==========================================
-    
     def build_config_screen(self, container):
         # Cabeçalho da Configuração com Pillow Degradê
         banner_img = self.create_game_banner(
             banner_path="assets/config_banner.png",
             theme_color_hex="#3F3F46",
             title="Configurações Globais",
-            subtitle="Autenticação HoYoLAB e gerenciamento de sincronizações no Google NotebookLM"
+            subtitle="Autenticação HoYoLAB e configuração de chaves do assistente RAG local"
         )
         header_banner = ctk.CTkLabel(container, image=banner_img, text="", corner_radius=12)
         header_banner.pack(fill="x", padx=10, pady=(10, 15))
@@ -568,107 +629,79 @@ class App(ctk.CTk):
         )
         self.auth_indicator.pack(side="right", padx=10)
         
-        # --- CARD 2: CADERNOS NOTEBOOKLM ---
-        card_notebooks = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
-        card_notebooks.pack(fill="x", padx=10, pady=10)
         
-        card_notebooks_title = ctk.CTkLabel(
-            card_notebooks,
-            text="🔗 URLs dos Cadernos do Google NotebookLM",
+        # --- CARD 2: API KEY DO GOOGLE GEMINI ---
+        card_gemini = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
+        card_gemini.pack(fill="x", padx=10, pady=10)
+        
+        card_gemini_title = ctk.CTkLabel(
+            card_gemini,
+            text="🔑 Google Gemini API Key",
             font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"),
             text_color="#E4E4E7"
         )
-        card_notebooks_title.pack(padx=20, pady=(15, 5), anchor="w")
+        card_gemini_title.pack(padx=20, pady=(15, 5), anchor="w")
         
-        desc_notebooks = ctk.CTkLabel(
-            card_notebooks,
-            text="Insira os links de compartilhamento específicos do NotebookLM correspondentes a cada jogo.",
+        desc_gemini = ctk.CTkLabel(
+            card_gemini,
+            text="Insira sua chave de API do Gemini para habilitar o Assistente IA de Chat RAG local.",
             font=ctk.CTkFont(family="Segoe UI", size=11),
             text_color="#A1A1AA"
         )
-        desc_notebooks.pack(padx=20, pady=2, anchor="w")
+        desc_gemini.pack(padx=20, pady=2, anchor="w")
         
-        # Grid para os 3 campos
-        grid_notebooks = ctk.CTkFrame(card_notebooks, fg_color="transparent")
-        grid_notebooks.pack(padx=20, pady=12, fill="x")
-        grid_notebooks.grid_columnconfigure(1, weight=1)
+        self.gemini_key_entry = ctk.CTkEntry(
+            card_gemini,
+            placeholder_text="Cole sua GEMINI_API_KEY aqui...",
+            height=35,
+            corner_radius=8,
+            show="*"
+        )
+        self.gemini_key_entry.pack(padx=20, pady=12, fill="x")
         
-        # ZZZ
-        zzz_lbl = ctk.CTkLabel(grid_notebooks, text="🟢 URL Notebook ZZZ:   ", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"))
-        zzz_lbl.grid(row=0, column=0, pady=6, sticky="w")
-        self.notebook_url_zzz = ctk.CTkEntry(grid_notebooks, placeholder_text="Cole o link do caderno de Zenless Zone Zero...", height=32, corner_radius=6)
-        self.notebook_url_zzz.grid(row=0, column=1, pady=6, sticky="ew")
+        gemini_action_frame = ctk.CTkFrame(card_gemini, fg_color="transparent")
+        gemini_action_frame.pack(padx=20, pady=(0, 20), fill="x")
         
-        # Genshin
-        genshin_lbl = ctk.CTkLabel(grid_notebooks, text="🟡 URL Notebook Genshin: ", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"))
-        genshin_lbl.grid(row=1, column=0, pady=6, sticky="w")
-        self.notebook_url_genshin = ctk.CTkEntry(grid_notebooks, placeholder_text="Cole o link do caderno de Genshin Impact...", height=32, corner_radius=6)
-        self.notebook_url_genshin.grid(row=1, column=1, pady=6, sticky="ew")
-        
-        # HSR
-        hsr_lbl = ctk.CTkLabel(grid_notebooks, text="🟣 URL Notebook HSR:     ", font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"))
-        hsr_lbl.grid(row=2, column=0, pady=6, sticky="w")
-        self.notebook_url_hsr = ctk.CTkEntry(grid_notebooks, placeholder_text="Cole o link do caderno de Honkai: Star Rail...", height=32, corner_radius=6)
-        self.notebook_url_hsr.grid(row=2, column=1, pady=6, sticky="ew")
-        
-        self.save_links_btn = ctk.CTkButton(
-            card_notebooks,
-            text="💾 Salvar Configurações de Links",
+        self.save_gemini_key_btn = ctk.CTkButton(
+            gemini_action_frame,
+            text="💾 Salvar Chave API",
             font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             fg_color="#2E2E35",
             hover_color="#3F3F46",
-            height=32,
-            command=self.salvar_notebooks_config
+            height=35,
+            command=self.salvar_gemini_config
         )
-        self.save_links_btn.pack(padx=20, pady=(0, 20), anchor="w")
+        self.save_gemini_key_btn.pack(side="left", padx=(0, 10))
         
-        # --- CARD 3: AÇÕES DE SINCRONIZAÇÃO ---
-        card_sync = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
-        card_sync.pack(fill="x", padx=10, pady=10)
-        
-        card_sync_title = ctk.CTkLabel(
-            card_sync,
-            text="🚀 Sincronização em Massa (Upload Google)",
-            font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"),
-            text_color="#E4E4E7"
+        self.toggle_gemini_visibility_btn = ctk.CTkButton(
+            gemini_action_frame,
+            text="👁️ Mostrar",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            fg_color="#2E2E35",
+            hover_color="#3F3F46",
+            height=35,
+            command=self.toggle_gemini_key_visibility
         )
-        card_sync_title.pack(padx=20, pady=(15, 5), anchor="w")
+        self.toggle_gemini_visibility_btn.pack(side="left", padx=(0, 10))
         
-        desc_sync = ctk.CTkLabel(
-            card_sync,
-            text="Selecione quais pastas locais consolidar e enviar automaticamente aos respectivos cadernos do NotebookLM.",
-            font=ctk.CTkFont(family="Segoe UI", size=11),
+        self.test_gemini_btn = ctk.CTkButton(
+            gemini_action_frame,
+            text="⚡ Testar Conexão",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            fg_color="#3B82F6",
+            hover_color="#2563EB",
+            height=35,
+            command=self.start_test_gemini_thread
+        )
+        self.test_gemini_btn.pack(side="left")
+        
+        self.gemini_status_lbl = ctk.CTkLabel(
+            gemini_action_frame,
+            text="🔌 Status: Não testado",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             text_color="#A1A1AA"
         )
-        desc_sync.pack(padx=20, pady=2, anchor="w")
-        
-        # Checkboxes Horizontais
-        cbs_frame = ctk.CTkFrame(card_sync, fg_color="transparent")
-        cbs_frame.pack(padx=20, pady=12, fill="x")
-        cbs_frame.grid_columnconfigure((0, 1, 2), weight=1)
-        
-        self.sync_zzz_cb = ctk.CTkCheckBox(cbs_frame, text="Zenless Zone Zero (ZZZ)", font=ctk.CTkFont(family="Segoe UI", size=12), fg_color="#8B5CF6", hover_color="#7C3AED")
-        self.sync_zzz_cb.grid(row=0, column=0, padx=5, sticky="w")
-        self.sync_zzz_cb.select()
-        
-        self.sync_genshin_cb = ctk.CTkCheckBox(cbs_frame, text="Genshin Impact (GI)", font=ctk.CTkFont(family="Segoe UI", size=12), fg_color="#8B5CF6", hover_color="#7C3AED")
-        self.sync_genshin_cb.grid(row=0, column=1, padx=5, sticky="w")
-        
-        self.sync_hsr_cb = ctk.CTkCheckBox(cbs_frame, text="Honkai: Star Rail (HSR)", font=ctk.CTkFont(family="Segoe UI", size=12), fg_color="#8B5CF6", hover_color="#7C3AED")
-        self.sync_hsr_cb.grid(row=0, column=2, padx=5, sticky="w")
-        
-        # Botão Upload
-        self.sync_btn = ctk.CTkButton(
-            card_sync,
-            text="📤 EXECUTAR SINCRONIZAÇÃO NOTEBOOKLM",
-            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
-            fg_color="#8B5CF6",
-            hover_color="#7C3AED",
-            height=40,
-            corner_radius=8
-        )
-        self.sync_btn.pack(padx=20, pady=(5, 20), fill="x")
-        self.sync_btn.configure(command=self.start_sync_thread)
+        self.gemini_status_lbl.pack(side="right", padx=10)
 
     # LOGICA DE CONFIGURAÇÕES DE CARREGAR/SALVAR
     # ==========================================
@@ -701,56 +734,86 @@ class App(ctk.CTk):
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     config = json.load(f)
                 
-                # Carrega URLs
-                url_zzz = config.get("notebook_zzz", "")
-                if url_zzz:
-                    self.notebook_url_zzz.insert(0, url_zzz)
-                    
-                url_genshin = config.get("notebook_genshin", "")
-                if url_genshin:
-                    self.notebook_url_genshin.insert(0, url_genshin)
-                    
-                url_hsr = config.get("notebook_hsr", "")
-                if url_hsr:
-                    self.notebook_url_hsr.insert(0, url_hsr)
-                    
-                # Carrega checkboxes
-                if config.get("sync_zzz", True):
-                    self.sync_zzz_cb.select()
-                else:
-                    self.sync_zzz_cb.deselect()
-                    
-                if config.get("sync_genshin", False):
-                    self.sync_genshin_cb.select()
-                else:
-                    self.sync_genshin_cb.deselect()
-                    
-                if config.get("sync_hsr", False):
-                    self.sync_hsr_cb.select()
-                else:
-                    self.sync_hsr_cb.deselect()
+                key = config.get("gemini_api_key", "")
+                if key:
+                    self.gemini_key_entry.delete(0, "end")
+                    self.gemini_key_entry.insert(0, key)
+                    threading.Thread(target=self.run_silent_gemini_test, args=(key,), daemon=True).start()
             except Exception as e:
                 self.log(f"Erro ao carregar configuracoes: {e}", "WARN")
 
-    def salvar_notebooks_config(self):
+    def run_silent_gemini_test(self, key):
+        from gemini_rag import GeminiRAG
+        tester = GeminiRAG(api_key=key)
+        success, _ = tester.test_connection()
+        if success:
+            self.after(0, lambda: self.gemini_status_lbl.configure(text="✅ Status: Conectado", text_color="#10B981"))
+        else:
+            self.after(0, lambda: self.gemini_status_lbl.configure(text="❌ Status: Erro / Desconectado", text_color="#EF4444"))
+
+    def salvar_gemini_config(self):
+        key = self.gemini_key_entry.get().strip()
+        if not key:
+            self.log("API Key do Gemini está vazia.", "WARN")
+            return
+            
         try:
             config = {}
             if os.path.exists(self.config_file):
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     config = json.load(f)
-                    
-            config["notebook_zzz"] = self.notebook_url_zzz.get().strip()
-            config["notebook_genshin"] = self.notebook_url_genshin.get().strip()
-            config["notebook_hsr"] = self.notebook_url_hsr.get().strip()
-            config["sync_zzz"] = bool(self.sync_zzz_cb.get())
-            config["sync_genshin"] = bool(self.sync_genshin_cb.get())
-            config["sync_hsr"] = bool(self.sync_hsr_cb.get())
+            
+            config["gemini_api_key"] = key
             
             with open(self.config_file, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=4)
-            self.log("Links e seleções de cadernos salvos com sucesso!", "SUCCESS")
+                
+            self.log("API Key do Gemini salva em config.json!", "SUCCESS")
+            
+            from gemini_rag import GeminiRAG
+            self.gemini_rag = GeminiRAG(api_key=key)
         except Exception as e:
-            self.log(f"Erro ao salvar configuracao: {e}", "ERROR")
+            self.log(f"Erro ao salvar API Key do Gemini: {e}", "ERROR")
+
+    def toggle_gemini_key_visibility(self):
+        current_show = self.gemini_key_entry.cget("show")
+        if current_show == "*":
+            self.gemini_key_entry.configure(show="")
+            self.toggle_gemini_visibility_btn.configure(text="🙈 Ocultar")
+        else:
+            self.gemini_key_entry.configure(show="*")
+            self.toggle_gemini_visibility_btn.configure(text="👁️ Mostrar")
+
+    def start_test_gemini_thread(self):
+        key = self.gemini_key_entry.get().strip()
+        if not key:
+            self.log("Por favor, insira uma API Key do Gemini para testar.", "WARN")
+            return
+            
+        self.test_gemini_btn.configure(state="disabled")
+        self.gemini_status_lbl.configure(text="🔌 Status: Conectando...", text_color="#3B82F6")
+        self.log("Testando conexão com o Google Gemini...", "INFO")
+        
+        thread = threading.Thread(target=self.run_test_gemini_connection, args=(key,))
+        thread.daemon = True
+        thread.start()
+
+    def run_test_gemini_connection(self, key):
+        from gemini_rag import GeminiRAG
+        tester = GeminiRAG(api_key=key)
+        success, msg = tester.test_connection()
+        self.after(0, self.on_test_gemini_completed, success, msg)
+
+    def on_test_gemini_completed(self, success, msg):
+        self.test_gemini_btn.configure(state="normal")
+        if success:
+            self.gemini_status_lbl.configure(text="✅ Status: Conectado", text_color="#10B981")
+            self.log(msg, "SUCCESS")
+            self.salvar_gemini_config()
+        else:
+            self.gemini_status_lbl.configure(text="❌ Status: Erro", text_color="#EF4444")
+            self.log(msg, "ERROR")
+
 
     def parse_cookie_string(self, cookie_str: str) -> dict:
         cookies = {}
@@ -931,6 +994,9 @@ class App(ctk.CTk):
                         except Exception as child_err:
                             self.log(f"Erro no guia de {c['name']}: {child_err}", "WARN")
                     self.log("Guias de HSR baixados com sucesso!", "SUCCESS")
+                    
+                    self.log("Consolidando guias individuais de HSR...", "INFO")
+                    bundle_guides("hsr/guias", "hsr/todos_os_guias_hsr.md", "Honkai: Star Rail")
                 except Exception as scraper_err:
                     traceback.print_exc()
                     self.log(f"Erro ao obter guias HSR: {scraper_err}", "ERROR")
@@ -949,12 +1015,48 @@ class App(ctk.CTk):
                         except Exception as child_err:
                             self.log(f"Erro no guia de {a['name']}: {child_err}", "WARN")
                     self.log("Guias de ZZZ baixados com sucesso!", "SUCCESS")
+                    
+                    self.log("Consolidando guias individuais de ZZZ...", "INFO")
+                    bundle_guides("zzz/guias", "zzz/todos_os_guias_zzz.md", "Zenless Zone Zero")
                 except Exception as scraper_err:
                     traceback.print_exc()
                     self.log(f"Erro ao obter guias ZZZ: {scraper_err}", "ERROR")
                     
             elif game_id == "genshin":
-                self.log("O raspador KeqingMains (KQM) para Genshin Impact ainda não está ativo.", "WARN")
+                try:
+                    # Puxa a lista de personagens do roster
+                    extracted_characters = []
+                    roster_path = "genshin/roster_genshin.md"
+                    if os.path.exists(roster_path):
+                        try:
+                            with open(roster_path, "r", encoding="utf-8") as f:
+                                for line in f:
+                                    if line.startswith("|") and not line.startswith("| Personagem") and not line.startswith("| :---"):
+                                        parts = [p.strip() for p in line.split("|")]
+                                        if len(parts) > 2:
+                                            cname = parts[1].replace("**", "").strip()
+                                            if cname and cname not in extracted_characters:
+                                                extracted_characters.append(cname)
+                        except Exception as e:
+                            self.log(f"Erro ao carregar roster de Genshin: {e}", "WARN")
+                    
+                    if not extracted_characters:
+                        self.log("Roster de Genshin não encontrado. Usando lista padrão de personagens populares.", "INFO")
+                        extracted_characters = ["Keqing", "Hu Tao", "Raiden Shogun", "Furina", "Nahida", "Bennett", "Zhongli", "Kaedehara Kazuha", "Yelan", "Xingqiu"]
+                        
+                    self.log(f"Iniciando raspagem de guias KQM para {len(extracted_characters)} personagens de Genshin...", "INFO")
+                    from scraper_kqm import KQMScraper
+                    
+                    kqm = KQMScraper(output_dir="genshin/guias")
+                    kqm.scrape_all_guides(character_list=extracted_characters, logger_cb=self.log)
+                    self.log("Guias do KQM extraídos e salvos em: genshin/guias/", "SUCCESS")
+                    
+                    self.log("Consolidando guias individuais de Genshin...", "INFO")
+                    bundle_guides("genshin/guias", "genshin/todos_os_guias_genshin.md", "Genshin Impact")
+                except Exception as scraper_err:
+                    traceback.print_exc()
+                    self.log(f"Erro ao extrair guias do KQM: {scraper_err}", "ERROR")
+
 
         # --- 3. EXTRAÇÃO DE META E ENDGAME ---
         if run_meta:
@@ -994,7 +1096,17 @@ class App(ctk.CTk):
                     traceback.print_exc()
                     self.log(f"Falha ao extrair meta ZZZ: {meta_err}", "ERROR")
             elif game_id == "genshin":
-                self.log("Relatório de endgame (Abismo/Teatro) do Genshin ainda não está ativo.", "WARN")
+                try:
+                    self.log("Iniciando extração do meta e endgame de GENSHIN do Game8...", "INFO")
+                    from scraper_genshin_meta import GenshinMetaScraper
+                    
+                    meta_scraper = GenshinMetaScraper(output_path="genshin/meta_kqm_genshin.md")
+                    meta_scraper.run_full_scrape(logger_cb=self.log)
+                    self.log("Relatório de Endgame e Tier List salvos em: genshin/meta_kqm_genshin.md", "SUCCESS")
+                except Exception as meta_err:
+                    traceback.print_exc()
+                    self.log(f"Erro ao extrair metagame do Genshin: {meta_err}", "ERROR")
+
                 
         self.after(0, self.game_task_completed, game_id, True, "Tarefas concluídas.")
         
@@ -1011,131 +1123,196 @@ class App(ctk.CTk):
             self.log(f"Tarefas de {game_id.upper()} falharam: {msg}", "ERROR")
 
     # ==========================================
-    # THREAD DE SINCRONIZAÇÃO NOTEBOOKLM
+    # GERENCIAMENTO DO CHAT ASSISTENTE IA RAG
     # ==========================================
     
-    def start_sync_thread(self):
-        # Primeiro, salva as configurações de links e seleções atuais
-        self.salvar_notebooks_config()
+    def setup_chat_frame(self, container):
+        # Banner Superior
+        banner_img = self.create_game_banner(
+            banner_path="assets/config_banner.png",
+            theme_color_hex="#1D4ED8",
+            title="HoYo AI Assistant",
+            subtitle="Assistente IA integrado com RAG local em tempo real (Gemini 1.5 / 2.0 Flash)"
+        )
+        header_banner = ctk.CTkLabel(container, image=banner_img, text="", corner_radius=12)
+        header_banner.pack(fill="x", padx=10, pady=(10, 10))
         
-        # Carrega links dos campos
-        url_zzz = self.notebook_url_zzz.get().strip()
-        url_genshin = self.notebook_url_genshin.get().strip()
-        url_hsr = self.notebook_url_hsr.get().strip()
+        # Filtro de Jogo Ativo / Contexto
+        filter_frame = ctk.CTkFrame(container, fg_color="transparent")
+        filter_frame.pack(fill="x", padx=10, pady=(0, 10))
         
-        # Verifica se pelo menos um jogo marcado possui URL
-        marked_games = []
-        if self.sync_zzz_cb.get():
-            marked_games.append(("zzz", url_zzz))
-        if self.sync_genshin_cb.get():
-            marked_games.append(("genshin", url_genshin))
-        if self.sync_hsr_cb.get():
-            marked_games.append(("hsr", url_hsr))
-            
-        if not marked_games:
-            self.log("Nenhum jogo selecionado para sincronização ou sem cadernos marcados.", "WARN")
+        filter_lbl = ctk.CTkLabel(
+            filter_frame,
+            text="Contexto do Assistente RAG:",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            text_color="#E4E4E7"
+        )
+        filter_lbl.pack(side="left", padx=(5, 10))
+        
+        self.chat_game_selector = ctk.CTkSegmentedButton(
+            filter_frame,
+            values=["Todos", "ZZZ", "Genshin", "HSR"],
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            selected_color="#2563EB",
+            selected_hover_color="#1D4ED8"
+        )
+        self.chat_game_selector.pack(side="left", fill="x", expand=True)
+        self.chat_game_selector.set("Todos")
+        
+        # Scrollable Frame para o Histórico de Mensagens
+        self.chat_scroll = ctk.CTkScrollableFrame(container, fg_color="#141416", corner_radius=12, border_width=1, border_color="#2D2D35")
+        self.chat_scroll.pack(fill="both", expand=True, padx=10, pady=(0, 10))
+        
+        # Adiciona mensagem de boas-vindas inicial
+        self.append_welcome_message()
+        
+        # Base: Campo de Entrada de Texto e Enviar
+        self.chat_input_frame = ctk.CTkFrame(container, fg_color="transparent")
+        self.chat_input_frame.pack(fill="x", padx=10, pady=(0, 10))
+        
+        self.chat_entry = ctk.CTkEntry(
+            self.chat_input_frame,
+            placeholder_text="Pergunte sobre builds do meta, seu roster, equipes recomendadas...",
+            height=40,
+            corner_radius=8
+        )
+        self.chat_entry.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.chat_entry.bind("<Return>", lambda event: self.send_chat_message())
+        
+        self.chat_send_btn = ctk.CTkButton(
+            self.chat_input_frame,
+            text="🚀 Enviar",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            fg_color="#2563EB",
+            hover_color="#1D4ED8",
+            width=80,
+            height=40,
+            corner_radius=8,
+            command=self.send_chat_message
+        )
+        self.chat_send_btn.pack(side="left", padx=(0, 10))
+        
+        self.chat_clear_btn = ctk.CTkButton(
+            self.chat_input_frame,
+            text="🧹 Limpar",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            fg_color="#EF4444",
+            hover_color="#DC2626",
+            width=80,
+            height=40,
+            corner_radius=8,
+            command=self.clear_chat_history
+        )
+        self.chat_clear_btn.pack(side="left")
+
+    def append_welcome_message(self):
+        welcome = (
+            "Olá! Eu sou o HoYo AI Assistant, seu conselheiro do metagame.\n\n"
+            "Posso analisar seus personagens extraídos e relacioná-los com as informações das builds do Prydwen, KeqingMains e Game8 para recomendar composições e builds ótimas.\n\n"
+            "Como posso te ajudar hoje?"
+        )
+        self.add_message_bubble("assistant", welcome)
+
+    def add_message_bubble(self, sender: str, text: str):
+        bubble_container = ctk.CTkFrame(self.chat_scroll, fg_color="transparent")
+        bubble_container.pack(fill="x", padx=5, pady=6)
+        
+        is_user = (sender.lower() == "user")
+        
+        align_side = "right" if is_user else "left"
+        fg_color = "#1D4ED8" if is_user else "#27272A"
+        prefix = "🧑 Você:" if is_user else "🤖 Assistente Gemini:"
+        
+        # Calcula tamanho vertical adequado para o CTkTextbox com base no conteúdo
+        lines_count = max(len(text.split('\n')), 1)
+        tb_height = min(max(lines_count * 20 + 20, 50), 380)
+        
+        sender_lbl = ctk.CTkLabel(
+            bubble_container,
+            text=prefix,
+            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            text_color="#A1A1AA"
+        )
+        sender_lbl.pack(anchor="ne" if is_user else "nw", padx=8, pady=(0, 2))
+        
+        tb = ctk.CTkTextbox(
+            bubble_container,
+            fg_color=fg_color,
+            text_color="#FFFFFF",
+            font=ctk.CTkFont(family="Segoe UI", size=12),
+            height=tb_height,
+            corner_radius=10,
+            border_width=0,
+            wrap="word"
+        )
+        tb.pack(anchor="ne" if is_user else "nw", fill="x", padx=5, expand=True)
+        tb.insert("1.0", text)
+        tb.configure(state="disabled")
+        
+        # Autoscroll suave
+        self.after(60, lambda: self.chat_scroll._parent_canvas.yview_moveto(1.0))
+
+    def send_chat_message(self):
+        query = self.chat_entry.get().strip()
+        if not query:
             return
             
-        # Verifica se as URLs dos marcados estão vazias
-        for g_id, url in marked_games:
-            if not url:
-                self.log(f"A URL do notebook para {g_id.upper()} não foi preenchida na aba de Configurações.", "ERROR")
-                return
-                
-        self.sync_btn.configure(state="disabled")
+        self.chat_entry.delete(0, "end")
+        self.add_message_bubble("user", query)
+        self.chat_history.append({"role": "user", "text": query})
+        
+        # Estado carregando
+        self.chat_entry.configure(state="disabled")
+        self.chat_send_btn.configure(state="disabled")
         self.progress_bar.configure(mode="indeterminate")
         self.progress_bar.start()
+        self.status_label.configure(text="Gemini pensando... ⌛", text_color="#3B82F6")
         
-        self.log("Iniciando fila de upload para os cadernos selecionados no NotebookLM...", "INFO")
-        
-        thread = threading.Thread(target=self.sync_task, daemon=True)
+        # Identifica filtro de jogo selecionado
+        game_sel = self.chat_game_selector.get().lower()
+        game_id = "todos"
+        if "zzz" in game_sel:
+            game_id = "zzz"
+        elif "genshin" in game_sel:
+            game_id = "genshin"
+        elif "hsr" in game_sel:
+            game_id = "hsr"
+            
+        thread = threading.Thread(target=self.process_chat_api_call, args=(query, game_id), daemon=True)
         thread.start()
-        
-    def sync_task(self):
+
+    def process_chat_api_call(self, query: str, game_id: str):
         try:
-            from notebooklm_uploader import bundle_guides
-            
-            game_uploads = {}
-            
-            # --- 1. ZENLESS ZONE ZERO ---
-            if self.sync_zzz_cb.get():
-                files = []
-                if os.path.exists("zzz/roster_zzz.md"):
-                    files.append("zzz/roster_zzz.md")
-                if os.path.exists("zzz/meta_endgame_zzz.md"):
-                    files.append("zzz/meta_endgame_zzz.md")
-                if os.path.exists("zzz/guias") and os.path.isdir("zzz/guias"):
-                    md_files = [f for f in os.listdir("zzz/guias") if f.endswith(".md")]
-                    if md_files:
-                        self.log("Consolidando guias individuais de ZZZ...", "INFO")
-                        bundle_path = bundle_guides("zzz/guias", "zzz/todos_os_guias_zzz.md", "Zenless Zone Zero")
-                        if bundle_path and os.path.exists(bundle_path):
-                            files.append("zzz/todos_os_guias_zzz.md")
-                game_uploads["zzz"] = {
-                    "url": self.notebook_url_zzz.get().strip(),
-                    "files": files
-                }
+            if not self.gemini_rag.client:
+                # Recarrega se não inicializado
+                from gemini_rag import GeminiRAG
+                self.gemini_rag = GeminiRAG()
                 
-            # --- 2. GENSHIN IMPACT ---
-            if self.sync_genshin_cb.get():
-                files = []
-                if os.path.exists("genshin/roster_genshin.md"):
-                    files.append("genshin/roster_genshin.md")
-                if os.path.exists("genshin/meta_kqm_genshin.md"):
-                    files.append("genshin/meta_kqm_genshin.md")
-                if os.path.exists("genshin/guias") and os.path.isdir("genshin/guias"):
-                    md_files = [f for f in os.listdir("genshin/guias") if f.endswith(".md")]
-                    if md_files:
-                        self.log("Consolidando guias individuais de Genshin...", "INFO")
-                        bundle_path = bundle_guides("genshin/guias", "genshin/todos_os_guias_genshin.md", "Genshin Impact")
-                        if bundle_path and os.path.exists(bundle_path):
-                            files.append("genshin/todos_os_guias_genshin.md")
-                game_uploads["genshin"] = {
-                    "url": self.notebook_url_genshin.get().strip(),
-                    "files": files
-                }
-                
-            # --- 3. HONKAI: STAR RAIL ---
-            if self.sync_hsr_cb.get():
-                files = []
-                if os.path.exists("hsr/roster_hsr.md"):
-                    files.append("hsr/roster_hsr.md")
-                if os.path.exists("hsr/meta_endgame_hsr.md"):
-                    files.append("hsr/meta_endgame_hsr.md")
-                if os.path.exists("hsr/guias") and os.path.isdir("hsr/guias"):
-                    md_files = [f for f in os.listdir("hsr/guias") if f.endswith(".md")]
-                    if md_files:
-                        self.log("Consolidando guias individuais de HSR...", "INFO")
-                        bundle_path = bundle_guides("hsr/guias", "hsr/todos_os_guias_hsr.md", "Honkai Star Rail")
-                        if bundle_path and os.path.exists(bundle_path):
-                            files.append("hsr/todos_os_guias_hsr.md")
-                game_uploads["hsr"] = {
-                    "url": self.notebook_url_hsr.get().strip(),
-                    "files": files
-                }
-                
-            if not game_uploads:
-                raise Exception("Nenhum caderno foi selecionado com arquivos válidos para sincronização.")
-                
-            from notebooklm_uploader import NotebookLMUploader
-            uploader = NotebookLMUploader()
-            
-            uploader.upload_multiple_games(game_uploads)
-            
-            self.after(0, self.sync_completed, True, "Sincronização de todos os cadernos concluída com sucesso!")
+            history_input = self.chat_history[:-1] # exclui a query recém-adicionada
+            response = self.gemini_rag.ask_assistant(query, game_id, history_input)
+            self.after(0, self.on_chat_response_received, response)
         except Exception as e:
             traceback.print_exc()
-            self.after(0, self.sync_completed, False, str(e))
-            
-    def sync_completed(self, success: bool, message: str):
+            self.after(0, self.on_chat_response_received, f"Erro ao chamar assistente: {e}")
+
+    def on_chat_response_received(self, response: str):
+        self.add_message_bubble("model", response)
+        self.chat_history.append({"role": "model", "text": response})
+        
+        # Desliga carregamento
         self.progress_bar.stop()
         self.progress_bar.set(0)
-        self.sync_btn.configure(state="normal")
-        
-        if success:
-            self.log(message, "SUCCESS")
-        else:
-            self.log(f"Erro de Sincronização: {message}", "ERROR")
+        self.chat_entry.configure(state="normal")
+        self.chat_send_btn.configure(state="normal")
+        self.chat_entry.focus()
+        self.status_label.configure(text="Pronto.", text_color="#A1A1AA")
+
+    def clear_chat_history(self):
+        self.chat_history = []
+        for child in self.chat_scroll.winfo_children():
+            child.destroy()
+        self.append_welcome_message()
+        self.log("Histórico de conversa limpo.", "INFO")
 
 if __name__ == "__main__":
     app = App()
