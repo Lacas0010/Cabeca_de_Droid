@@ -380,7 +380,7 @@ class PrydwenScraper:
                     
         return data
         
-    def save_to_markdown(self, character_name: str, data: dict, output_dir: str = "guias_prydwen") -> str:
+    def save_to_markdown(self, character_name: str, data: dict, output_dir: str = "hsr/guias") -> str:
         """
         Salva o guia do personagem com as análises descritivas formatadas em Markdown.
         """

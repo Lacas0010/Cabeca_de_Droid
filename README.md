@@ -1,30 +1,32 @@
-# HSR Roster Extractor & Prydwen Scraper
+# HoYoverse Multi-Game RAG Hub
 
-Uma ferramenta poderosa com interface gráfica desenvolvida em Python (CustomTkinter) projetada para extrair dados detalhados de personagens de **Honkai: Star Rail** do HoYoLAB, raspar guias, builds e análises de meta sazonais do site **Prydwen.gg**, e sincronizar tudo automaticamente com o **Google NotebookLM** usando Playwright.
+Uma ferramenta poderosa com interface gráfica moderna desenvolvida em Python (**CustomTkinter**) projetada para centralizar a extração de dados de perfil/roster de jogos da HoYoverse via HoYoLAB, raspar guias analíticos e relatórios de meta dos sites **Prydwen.gg** (para Star Rail e Zenless Zone Zero), e sincronizar automaticamente todos os relatórios consolidados com o **Google NotebookLM** utilizando automação via Playwright.
 
-O principal objetivo deste projeto é gerar relatórios de texto denso em linguagem natural, otimizados para alimentar sistemas de RAG (Retrieval-Augmented Generation) no NotebookLM.
+O principal objetivo deste projeto é gerar fontes de texto denso em formato Markdown estruturado, idealmente otimizadas para alimentar sistemas de RAG (Retrieval-Augmented Generation) ou bases de conhecimento no NotebookLM.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
-- **Interface Gráfica:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) (Aparência Dark Mode Premium)
+- **Interface Gráfica:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) (Aparência Dark Premium dinâmica)
+- **Processamento de Imagem:** Pillow (manipulação de banners e gradientes dinâmicos na interface)
 - **API HoYoLAB:** [genshin.py](https://github.com/thebowja/genshin.py)
-- **Raspagem de Dados (Scraping):** BeautifulSoup4 & Requests
-- **Navegador e Automação:** Playwright (Python)
-- **Concorrência:** Multi-threading em Python (evita congelamento da GUI)
+- **Raspagem de Dados (Scraping):** BeautifulSoup4 & Requests (com cabeçalhos realistas anti-bloqueio)
+- **Navegador e Automação:** Playwright (Python) para capturar cookies e fazer upload automático de fontes
+- **Concorrência:** Multi-threading em Python (evita o travamento da interface durante tarefas pesadas de rede)
 
 ---
 
 ## 📂 Estrutura do Projeto
 
-- `main.py`: Ponto de entrada do aplicativo.
-- `gui.py`: Gerenciamento e layout da interface gráfica CustomTkinter.
-- `auth.py`: Autenticação via Playwright headed para captura e validação de cookies do HoYoLAB.
-- `extractor.py`: Integração com a API do HoYoLAB (`genshin.py`) para buscar e traduzir as informações dos personagens ativos.
-- `scraper_prydwen.py`: Raspador analítico de guias e builds dos personagens do Prydwen.
-- `scraper_meta.py`: Raspador de Tier Lists globais e relatórios analíticos de endgame (MoC, PF, AS, AA).
-- `notebooklm_uploader.py`: Automação com Playwright para sincronizar os dados gerados diretamente em um notebook do NotebookLM.
+- `main.py`: Ponto de entrada do aplicativo que inicializa o loop principal da GUI.
+- `gui.py`: Gerenciamento e design do layout da interface, console de logs em tempo real e orquestração de threads de trabalho.
+- `auth.py`: Autenticação via navegador headed (visível) do Playwright para capturar cookies oficiais do HoYoLAB de forma simplificada.
+- `extractor.py`: Extrator integrado utilizando a API do `genshin.py` para obter dados detalhados dos personagens ativos do jogador nos três jogos.
+- `scraper_prydwen.py`: Raspador analítico de builds, prós/contras, e sinergias de personagens de **Honkai: Star Rail** do Prydwen.
+- `scraper_zzz.py`: Raspador analítico de agentes, builds de W-Engines, Discos de Áudio e Cinema de Mente de **Zenless Zone Zero** do Prydwen.
+- `scraper_meta.py`: Raspador de Tier Lists globais e estatísticas detalhadas de endgame (MoC, PF, AS, AA) para **Honkai: Star Rail**.
+- `notebooklm_uploader.py`: Automação com Playwright que gerencia a consolidação de múltiplos guias em arquivos únicos e o upload direto nos respectivos cadernos do Google NotebookLM.
 
 ---
 
@@ -47,8 +49,8 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-### 3. Instalar Navegador do Playwright
-Para habilitar o módulo de autenticação e o uploader automático, instale o navegador Chromium gerenciado pelo Playwright:
+### 3. Instalar o Navegador do Playwright
+Para habilitar a captura automática de cookies e o sincronizador do NotebookLM, instale o navegador Chromium gerenciado pelo Playwright:
 
 ```bash
 playwright install chromium
@@ -63,27 +65,39 @@ python main.py
 
 ---
 
-## 📖 Funcionalidades e Guias de Uso
+## 📖 Funcionalidades e Organização de Dados
 
-A interface é dividida em três abas principais:
+A interface divide-se em abas de jogos à esquerda e um painel de Configurações globais:
 
-### 1. HoYoLAB Extractor
-- **Login no HoYoLAB:** Abre um navegador para você se autenticar na sua conta do HoYoLAB. Após a conclusão, os cookies são validados e salvos localmente em `cookies.json` para que você não precise logar todas as vezes.
-- **Gerar Arquivo Markdown:** Consulta as APIs oficiais e monta um relatório contendo o nível de desbravamento, conquistas, e informações detalhadas de nível, eidolons, cones equipados, conjuntos de relíquias e status finais de todos os personagens. Salva o resultado em `meus_personagens_hsr.md`.
+### 🟡 Zenless Zone Zero (ZZZ)
+- **Roster & Agentes:** Extrai o nível de Inter-nó, conquistas e detalhes de cada agente (nível, Cinema de Mente, W-Engine equipado, discos de áudio equipados e status consolidados). Salva em [roster_zzz.md](file:///c:/Users/07049770108/Documents/hoyo-projetos/zzz/roster_zzz.md).
+- **Guias Individuais:** Raspa e traduz guias de build de agentes de ZZZ, salvando arquivos Markdown individuais na pasta `zzz/guias/`.
+- **Tier List & Meta:** Compila e formata as recomendações de meta e ratings em [meta_endgame_zzz.md](file:///c:/Users/07049770108/Documents/hoyo-projetos/zzz/meta_endgame_zzz.md).
 
-### 2. Prydwen Scraper
-- **Baixar Guias de Builds:** Baixa o guia completo de um personagem específico ou de todos do jogo de uma só vez. A análise raspa prós/contras, descrição detalhada do kit, justificativa mecânica de cada equipamento e análises de sinergias (salvando individualmente em `guias_prydwen/`).
-- **Atualizar Tier Lists e Meta Sazonal:** Sincroniza a tier list global (em `meta_e_tierlists_atual.md`) e os relatórios de endgame (em `meta_endgame_report.md`), cobrando estatísticas detalhadas de uso e as equipes mais rápidas dos modos **Memory of Chaos (MoC)**, **Pure Fiction (PF)**, **Apocalyptic Shadow (AS)** e **Anomaly Arbitration (AA)**.
+### 🟢 Genshin Impact
+- **Roster & Personagens:** Extrai o nível de Aventura, conquistas, e fichas de personagens ativos (nível, constelações, arma equipada, conjunto de artefatos e atributos). Salva em `genshin/roster_genshin.md`.
+- **Guias & Endgame:** *(Em desenvolvimento/planejado para builds futuras)*.
 
-### 3. NotebookLM Sync
-- **URL do Notebook:** Insira o link do seu notebook de trabalho do NotebookLM (esta URL fica salva de forma persistente no arquivo local `config.json`).
-- **Sincronizar com NotebookLM:**
-  - O script detecta todos os arquivos Markdown gerados.
-  - Consolida todos os guias de personagens individuais da pasta `guias_prydwen/` em um único arquivo mestre: `todos_os_guias_prydwen.md` (evitando ultrapassar o limite de 50 fontes do NotebookLM).
-  - Executa o upload de no máximo **4 fontes consolidadas** através de automação Playwright heads-up.
-  - Salva e persiste a sua conta Google na pasta local `./user_data_google/`, exigindo o login apenas uma vez.
+### 🟣 Honkai: Star Rail (HSR)
+- **Roster & Personagens:** Extrai o nível de Desbravamento, conquistas, e detalhes de builds atuais de personagens (nível, eidolons, Cones de Luz equipados, conjuntos de relíquias e status finais). Salva em `hsr/roster_hsr.md`.
+- **Guias Individuais:** Raspa guias completos de personagens HSR da Prydwen (salvos individualmente na pasta `hsr/guias/`).
+- **Tier List & Relatório Endgame:** Extrai a tier list atual (`hsr/meta_e_tierlists_atual.md`) e estatísticas sazonais de modos como *Memory of Chaos (MoC)*, *Pure Fiction (PF)*, *Apocalyptic Shadow (AS)* e *Anomaly Arbitration (AA)* (`hsr/meta_endgame_report.md`). Consolida tudo em [meta_endgame_hsr.md](file:///c:/Users/07049770108/Documents/hoyo-projetos/hsr/meta_endgame_hsr.md).
+
+---
+
+## ⚙️ Painel de Configurações e Google NotebookLM Sync
+
+1. **Credenciais HoYoLAB:** 
+   - **Login Automático:** Abre o navegador com Playwright para que você entre no site oficial do HoYoLAB. O script detecta, extrai e salva os cookies localmente em `cookies.json` de forma segura.
+   - **Manual:** Permite colar a string de cookies diretamente na caixa de entrada.
+2. **URLs dos Cadernos do NotebookLM:**
+   - Permite definir as URLs de compartilhamento específicas dos cadernos para ZZZ, Genshin e HSR de forma persistente (salvas no arquivo `config.json`).
+3. **Sincronização em Massa:**
+   - Consolida todos os guias de personagens individuais (da pasta `guias/`) em um único arquivo unificado (ex: `todos_os_guias_hsr.md` ou `todos_os_guias_zzz.md`). Isso é feito para evitar exceder o limite de 50 fontes do NotebookLM.
+   - Faz o upload automático das fontes consolidadas (roster, meta e compilado de guias) para os respectivos cadernos do Google NotebookLM.
+   - Os dados do perfil Google Chrome são persistidos de forma segura no diretório `./user_data_google/`, exigindo o login apenas na primeira sincronização.
 
 ---
 
 ## 🔒 Segurança e Privacidade
-Os cookies do HoYoLAB e os dados de login da sua conta Google são armazenados localmente e de forma restrita na pasta do projeto (`cookies.json` e `./user_data_google/`). O código não compartilha informações com servidores de terceiros.
+Todos os dados sensíveis como cookies do HoYoLAB (`cookies.json`), tokens e sessão do navegador Google (`./user_data_google/`) são armazenados **exclusivamente de forma local** no seu computador. Nenhuma informação é enviada a servidores externos além das APIs oficiais da HoYoverse e os servidores seguros da Google.

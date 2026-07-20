@@ -248,7 +248,7 @@ class PrydwenMetaScraper:
                         
         return results
 
-    def save_meta_markdown(self, data: dict, filepath: str = "meta_e_tierlists_atual.md") -> str:
+    def save_meta_markdown(self, data: dict, filepath: str = "hsr/meta_e_tierlists_atual.md") -> str:
         """
         Formata o changelog e a tier list de cada modo de jogo em Markdown em linguagem natural.
         """
@@ -318,12 +318,13 @@ class PrydwenMetaScraper:
                 lines.append("")
                 
         content = "\n".join(lines)
+        os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
             
         return filepath
 
-    def save_endgame_markdown(self, reports: dict, filepath: str = "meta_endgame_report.md") -> str:
+    def save_endgame_markdown(self, reports: dict, filepath: str = "hsr/meta_endgame_report.md") -> str:
         """
         Salva o relatório consolidado de dados de endgame para cada um dos 4 modos em Markdown
         estruturado em linguagem natural para consumo por LLM.
@@ -426,6 +427,7 @@ class PrydwenMetaScraper:
             lines.append("")
             
         content = "\n".join(lines)
+        os.makedirs(os.path.dirname(filepath) or ".", exist_ok=True)
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
             

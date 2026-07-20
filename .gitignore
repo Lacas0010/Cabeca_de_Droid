@@ -29,6 +29,11 @@ cookies.json
 user_data_google/
 
 # Automatically generated reports and markdown scrapings (avoid committing raw data)
+hsr/
+zzz/
+genshin/
+
+# Legacy generated files (from previous versions)
 meus_personagens_hsr.md
 meta_e_tierlists_atual.md
 meta_endgame_report.md
