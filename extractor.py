@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import requests
 import asyncio
 import genshin
@@ -266,6 +267,38 @@ class HSRExtractor(BaseExtractor):
                 lines.append("---")
                 lines.append("")
 
+        # Salva dados estruturados em JSON para a Galeria Visual da UI
+        roster_json_path = "hsr/roster_data_hsr.json"
+        try:
+            char_json_list = []
+            for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
+                e_name = char.element.name if hasattr(char.element, "name") else str(char.element)
+                element = ELEMENT_MAP.get(e_name, e_name)
+                
+                w_info = {}
+                if hasattr(char, "equip") and char.equip:
+                    w_info = {
+                        "name": char.equip.name,
+                        "level": getattr(char.equip, "level", 80),
+                        "rank": getattr(char.equip, "rank", 1),
+                        "icon": getattr(char.equip, "icon", "")
+                    }
+                    
+                char_json_list.append({
+                    "name": char.name,
+                    "level": char.level,
+                    "rarity": char.rarity,
+                    "rank_str": f"E{char.rank}",
+                    "element": element,
+                    "icon": getattr(char, "icon", getattr(char, "image", "")),
+                    "weapon": w_info
+                })
+            os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
+            with open(roster_json_path, "w", encoding="utf-8") as jf:
+                json.dump(char_json_list, jf, ensure_ascii=False, indent=2)
+        except Exception as json_err:
+            print(f"Aviso ao salvar roster_data_hsr.json: {json_err}")
+
         markdown_content = "\n".join(lines)
         
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
@@ -417,6 +450,34 @@ class GenshinExtractor(BaseExtractor):
                 lines.append("---")
                 lines.append("")
                 
+        # Salva dados estruturados em JSON para a Galeria Visual da UI
+        roster_json_path = "genshin/roster_data_genshin.json"
+        try:
+            char_json_list = []
+            for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
+                w_info = {}
+                if hasattr(char, "weapon") and char.weapon:
+                    w_info = {
+                        "name": char.weapon.name,
+                        "level": getattr(char.weapon, "level", 90),
+                        "rank": getattr(char.weapon, "refinement", 1),
+                        "icon": getattr(char.weapon, "icon", "")
+                    }
+                char_json_list.append({
+                    "name": char.name,
+                    "level": char.level,
+                    "rarity": char.rarity,
+                    "rank_str": f"C{char.constellation}",
+                    "element": getattr(getattr(char, "element", None), "name", "Anemo"),
+                    "icon": getattr(char, "icon", ""),
+                    "weapon": w_info
+                })
+            os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
+            with open(roster_json_path, "w", encoding="utf-8") as jf:
+                json.dump(char_json_list, jf, ensure_ascii=False, indent=2)
+        except Exception as json_err:
+            print(f"Aviso ao salvar roster_data_genshin.json: {json_err}")
+
         markdown_content = "\n".join(lines)
         
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
@@ -578,6 +639,36 @@ class ZZZExtractor(BaseExtractor):
                 lines.append("---")
                 lines.append("")
                 
+        # Salva dados estruturados em JSON para a Galeria Visual da UI
+        roster_json_path = "zzz/roster_data_zzz.json"
+        try:
+            char_json_list = []
+            for agent in sorted(agents, key=lambda a: (a.rarity, a.level), reverse=True):
+                w_info = {}
+                if hasattr(agent, "w_engine") and agent.w_engine:
+                    w_info = {
+                        "name": agent.w_engine.name,
+                        "level": getattr(agent.w_engine, "level", 60),
+                        "rank": getattr(agent.w_engine, "refinement", 1),
+                        "icon": getattr(agent.w_engine, "icon", "")
+                    }
+                icon_url = getattr(agent, "square_icon", getattr(agent, "rectangle_icon", getattr(agent, "icon", "")))
+                rarity_num = 5 if str(agent.rarity).upper() in ["S", "5"] else 4
+                char_json_list.append({
+                    "name": agent.name,
+                    "level": agent.level,
+                    "rarity": rarity_num,
+                    "rank_str": f"M{agent.rank}",
+                    "element": getattr(agent.element, "name", str(agent.element)),
+                    "icon": icon_url,
+                    "weapon": w_info
+                })
+            os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
+            with open(roster_json_path, "w", encoding="utf-8") as jf:
+                json.dump(char_json_list, jf, ensure_ascii=False, indent=2)
+        except Exception as json_err:
+            print(f"Aviso ao salvar roster_data_zzz.json: {json_err}")
+
         markdown_content = "\n".join(lines)
         
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)

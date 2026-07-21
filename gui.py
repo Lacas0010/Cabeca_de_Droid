@@ -7,6 +7,7 @@ import traceback
 import time
 import datetime
 import sys
+import webbrowser
 import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from auth import capturar_cookies_hoyolab
@@ -65,6 +66,7 @@ class App(ctk.CTk):
         self.cookie_file = "cookies.json"
         self.config_file = "config.json"
         self.chat_history = []
+        self.loaded_images_cache = {}
         
         # Inicializa o assistente Groq RAG
         from groq_rag import GroqRAG
@@ -90,6 +92,7 @@ class App(ctk.CTk):
         # Carrega dados salvos
         self.carregar_cookies_salvos()
         self.carregar_configuracao()
+        self.after(100, self.start_avatar_prefetch)
         self.log("HoYo AI Assistant inicializado com sucesso. Pronto.", "SUCCESS")
         
     def center_window(self, width: int, height: int):
@@ -320,6 +323,20 @@ class App(ctk.CTk):
         )
         self.btn_help.pack(padx=15, pady=4, fill="x")
         
+        # Botão Global de Sincronizar Todos os Jogos em 1-Clique
+        self.btn_sync_all = ctk.CTkButton(
+            self.sidebar,
+            text="🚀 Sincronizar Tudo",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            height=38,
+            corner_radius=8,
+            fg_color="#8B5CF6",
+            hover_color="#7C3AED",
+            text_color="#FFFFFF",
+            command=self.run_sync_all_games
+        )
+        self.btn_sync_all.pack(padx=15, pady=(12, 4), fill="x")
+        
         # Painel de Status no Rodapé da Sidebar
         self.status_panel = ctk.CTkFrame(self.sidebar, height=110, corner_radius=10, fg_color="#1E1E24")
         self.status_panel.pack(side="bottom", padx=15, pady=20, fill="x")
@@ -510,6 +527,350 @@ class App(ctk.CTk):
             
         return summary
 
+    def run_sync_all_games(self):
+        """Dispara as tarefas de todos os jogos simultaneamente em background."""
+        self.show_toast("🚀 Sincronização Global Iniciada", "Atualizando ZZZ, Genshin e HSR em segundo plano...")
+        for g_id in ["zzz", "genshin", "hsr"]:
+            self.start_game_task_thread(g_id)
+            
+    def start_avatar_prefetch(self):
+        """Baixa todos os avatares dos personagens em background em paralelo para a Galeria Visual carregar instantaneamente."""
+        def _bg_prefetch():
+            import concurrent.futures
+            for game_id in ["zzz", "genshin", "hsr"]:
+                chars = self.parse_roster_characters(game_id)
+                def _download_one(c):
+                    c_name = c.get("name", "")
+                    if not c_name: return
+                    url = c.get("icon", "") or self.get_fallback_avatar_url(game_id, c_name)
+                    if not url: return
+                    safe_fn = re.sub(r'[^a-zA-Z0-9]', '_', c_name.lower()) + ".png"
+                    cache_path = f"assets/avatars/{game_id}/{safe_fn}"
+                    if not os.path.exists(cache_path) or os.path.getsize(cache_path) < 500:
+                        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                        try:
+                            headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                            res = requests.get(url, headers=headers, timeout=6)
+                            if res.status_code == 200 and len(res.content) > 500:
+                                with open(cache_path, "wb") as f:
+                                    f.write(res.content)
+                        except Exception:
+                            pass
+                with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+                    executor.map(_download_one, chars[:50])
+            try:
+                self.after(0, lambda: self.update_dashboard_ui(self.current_game))
+            except Exception:
+                pass
+        threading.Thread(target=_bg_prefetch, daemon=True).start()
+
+    def load_remote_image(self, url: str, cache_path: str, size: tuple = (40, 40), target_label=None) -> ctk.CTkImage:
+        """Carrega imagem do cache local se existir; se não, baixa em background sem travar a UI."""
+        cache_key = f"{cache_path}_{size[0]}x{size[1]}"
+        if cache_key in self.loaded_images_cache:
+            return self.loaded_images_cache[cache_key]
+            
+        if os.path.exists(cache_path) and os.path.getsize(cache_path) >= 500:
+            try:
+                img = Image.open(cache_path).convert("RGBA")
+                ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=size)
+                self.loaded_images_cache[cache_key] = ctk_img
+                return ctk_img
+            except Exception:
+                pass
+                
+        if url and target_label:
+            def _async_download():
+                try:
+                    os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+                    res = requests.get(url, headers=headers, timeout=8)
+                    if res.status_code == 200 and len(res.content) > 500:
+                        with open(cache_path, "wb") as f:
+                            f.write(res.content)
+                        img = Image.open(cache_path).convert("RGBA")
+                        ctk_img = ctk.CTkImage(light_image=img, dark_image=img, size=size)
+                        self.loaded_images_cache[cache_key] = ctk_img
+                        
+                        def _update():
+                            if target_label.winfo_exists():
+                                target_label.configure(image=ctk_img, text="")
+                                target_label._img_ref = ctk_img
+                        self.after(0, _update)
+                except Exception:
+                    pass
+            threading.Thread(target=_async_download, daemon=True).start()
+            
+        return None
+
+    def parse_roster_characters(self, game_id: str) -> list:
+        """Extrai lista de personagens a partir do JSON ou diretamente do roster_{game_id}.md."""
+        json_path = f"{game_id}/roster_data_{game_id}.json"
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as jf:
+                    data = json.load(jf)
+                    if data:
+                        return data
+            except Exception:
+                pass
+                
+        md_path = f"{game_id}/roster_{game_id}.md"
+        if not os.path.exists(md_path):
+            return []
+            
+        chars = []
+        try:
+            with open(md_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                
+            for l in lines:
+                if not l.startswith("|") or l.startswith("| Personagem") or l.startswith("| Agente") or l.startswith("| :---"):
+                    continue
+                parts = [p.strip() for p in l.split("|")[1:-1]]
+                if len(parts) >= 4:
+                    name = parts[0]
+                    lvl_raw = parts[1].replace("Nv.", "").strip()
+                    rarity_str = parts[2]
+                    rank_str = parts[3]
+                    
+                    rarity = 5 if ("⭐⭐⭐⭐⭐" in rarity_str or "S (" in rarity_str or "5" in rarity_str) else 4
+                    
+                    element = "Físico"
+                    if len(parts) >= 6:
+                        element = parts[5]
+                    elif len(parts) == 5:
+                        element = parts[4]
+                        
+                    chars.append({
+                        "name": name,
+                        "level": lvl_raw,
+                        "rarity": rarity,
+                        "rank_str": rank_str,
+                        "element": element,
+                        "icon": ""
+                    })
+        except Exception as e:
+            print(f"Aviso ao parsear personagens do md: {e}")
+            
+        return chars
+
+    def get_character_build_detail(self, game_id: str, char_name: str) -> str:
+        """Lê roster_{game_id}.md e extrai o bloco de detalhes da build do personagem especificado."""
+        filepath = f"{game_id}/roster_{game_id}.md"
+        if not os.path.exists(filepath):
+            return "Nenhum relatório de Roster extraído ainda."
+            
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+                
+            pattern = rf'(\*\*(?:Personagem|Agente):\*\*\s*{re.escape(char_name)}.*?)(?=\n\*\*(?:Personagem|Agente):\*\*|\n## |\Z)'
+            match = re.search(pattern, content, re.DOTALL | re.I)
+            if match:
+                return match.group(1).strip()
+        except Exception as e:
+            print(f"Erro ao buscar detalhes da build de {char_name}: {e}")
+            
+        return f"Build detalhada de {char_name} não encontrada no relatório.\n\n(Dica: Personagens no nível máximo possuem relatórios completos com armas/cones, conjuntos de artefatos/relíquias e substatus no arquivo roster_{game_id}.md)."
+
+    def parse_character_build_data(self, game_id: str, char_name: str) -> dict:
+        """Lê roster_{game_id}.md e estrutura todos os dados da build em um dicionário limpo."""
+        raw_text = self.get_character_build_detail(game_id, char_name)
+        
+        data = {
+            "name": char_name,
+            "raw": raw_text,
+            "weapon": "Não informado / Nível < máx.",
+            "sets": [],
+            "stats": {},
+            "pieces": []
+        }
+        
+        if "não encontrada" in raw_text.lower():
+            return data
+            
+        m_w = re.search(r'-\s*\*\*(?:Cone de Luz|Arma|W-Engine):\*\*\s*(.*)', raw_text)
+        if m_w:
+            data["weapon"] = m_w.group(1).strip()
+            
+        m_s = re.search(r'-\s*\*\*(?:Relíquias|Artefatos|Discos):\*\*\s*(.*)', raw_text)
+        if m_s:
+            sets_raw = m_s.group(1).strip()
+            data["sets"] = [s.strip() for s in sets_raw.split('+')]
+            
+        m_st = re.search(r'-\s*\*\*Status Finais:\*\*\s*(.*)', raw_text)
+        if m_st:
+            stats_raw = m_st.group(1).strip()
+            for pair in stats_raw.split(','):
+                if ':' in pair:
+                    k, v = pair.split(':', 1)
+                    data["stats"][k.strip()] = v.strip()
+                    
+        m_pieces = re.findall(r'•\s*\[(.*?)\]\s*(.*?)\n\s*-\s*Principal:\s*(.*?)\n\s*-\s*Substatus:\s*(.*?)(?=\n\s*•|\Z|\n\n|\n---)', raw_text, re.DOTALL)
+        for slot, p_name, main_s, sub_s in m_pieces:
+            data["pieces"].append({
+                "slot": slot.strip(),
+                "name": p_name.strip(),
+                "main": main_s.strip(),
+                "sub": sub_s.strip()
+            })
+            
+        return data
+
+    def get_fallback_avatar_url(self, game_id: str, char_name: str) -> str:
+        """Retorna uma URL de CDN pública para avatares caso a extração inicial não tenha imagem."""
+        safe_n = char_name.strip()
+        if game_id == "hsr":
+            safe_mapped = {
+                "Desbravador(a)": "8001", "Himeko": "1003", "Himeko - Nova": "1003",
+                "Seele": "1102", "Bronya": "1101", "Kafka": "1005", "Blade": "1205",
+                "Jingliu": "1212", "Acheron": "1308", "Firefly": "1310", "Ruan Mei": "1303",
+                "Robin": "1309", "Sparkle": "1306", "Luocha": "1203", "Aventurine": "1304",
+                "Fu Xuan": "1208", "Silver Wolf": "1006", "Loba Prateada": "1006",
+                "Tingyun": "1202", "Pela": "1105", "Evanescia": "1308", "Yao Guang": "1204",
+                "Cyrene": "1306", "Sparxie": "1306", "Castorice": "1308", "Cipher": "1006",
+                "A Herta": "1013", "A Dália": "1303", "Rappa": "1317"
+            }
+            char_id = safe_mapped.get(safe_n, "8001")
+            return f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/avatar/{char_id}.png"
+        elif game_id == "genshin":
+            clean_name = safe_n.replace(" ", "")
+            return f"https://enka.network/ui/UI_AvatarIcon_{clean_name}.png"
+        elif game_id == "zzz":
+            clean_name = safe_n.replace(" ", "")
+            return f"https://raw.githubusercontent.com/Mar-7th/ZenlessZoneZeroRes/main/icon/agent/{clean_name}.png"
+        return ""
+
+    def inspect_character_build(self, game_id: str, char_info: dict):
+        """Exibe o painel retrátil de Build Detalhada diretamente DENTRO da página principal (Zero popups!)."""
+        char_name = char_info.get("name", "Personagem")
+        build_data = self.parse_character_build_data(game_id, char_name)
+        
+        container = getattr(self, f"{game_id}_build_inspector_frame", None)
+        if not container:
+            return
+            
+        for widget in container.winfo_children():
+            widget.destroy()
+            
+        container.pack(fill="x", padx=12, pady=(0, 12))
+        
+        # Header do Painel de Build
+        hdr = ctk.CTkFrame(container, fg_color="#18181B", corner_radius=10, border_width=1, border_color="#3B82F6")
+        hdr.pack(fill="x", padx=4, pady=(4, 6))
+        
+        # Esquerda: Avatar + Nome + Nível + Elemento
+        left_box = ctk.CTkFrame(hdr, fg_color="transparent")
+        left_box.pack(side="left", padx=12, pady=8)
+        
+        c_icon_url = char_info.get("icon", "") or self.get_fallback_avatar_url(game_id, char_name)
+        safe_fn = re.sub(r'[^a-zA-Z0-9]', '_', char_name.lower()) + ".png"
+        c_path = f"assets/avatars/{game_id}/{safe_fn}"
+        
+        lbl_hdr_avatar = ctk.CTkLabel(left_box, text="👤", font=ctk.CTkFont(size=22))
+        lbl_hdr_avatar.pack(side="left", padx=(0, 10))
+        
+        ctk_img = self.load_remote_image(c_icon_url, c_path, size=(44, 44), target_label=lbl_hdr_avatar)
+        if ctk_img:
+            lbl_hdr_avatar.configure(image=ctk_img, text="")
+            lbl_hdr_avatar._img_ref = ctk_img
+            
+        name_box = ctk.CTkFrame(left_box, fg_color="transparent")
+        name_box.pack(side="left")
+        
+        ctk.CTkLabel(name_box, text=f"⚔️ Build Detalhada: {char_name}", font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"), text_color="#FFFFFF").pack(anchor="w")
+        sub_info = f"{char_info.get('rank_str', '')} • Elemento: {char_info.get('element', 'Desconhecido')} • Nível {char_info.get('level', '')}"
+        ctk.CTkLabel(name_box, text=sub_info, font=ctk.CTkFont(family="Segoe UI", size=11), text_color="#A1A1AA").pack(anchor="w")
+        
+        # Direita: Botão Fechar Painel
+        btn_close = ctk.CTkButton(
+            hdr,
+            text="❌ Fechar Detalhes",
+            font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
+            fg_color="#3F3F46",
+            hover_color="#52525B",
+            height=28,
+            width=110,
+            command=lambda: container.pack_forget()
+        )
+        btn_close.pack(side="right", padx=12, pady=8)
+        
+        # Corpo Principal: Grid com Equipamento, Relíquias e Status Finais
+        body = ctk.CTkFrame(container, fg_color="#09090B", corner_radius=10)
+        body.pack(fill="x", padx=4, pady=(0, 4))
+        
+        # Linha 1: Arma + Conjuntos de Relíquias
+        row1 = ctk.CTkFrame(body, fg_color="transparent")
+        row1.pack(fill="x", padx=8, pady=(8, 4))
+        row1.grid_columnconfigure((0, 1), weight=1)
+        
+        # Card Arma
+        w_card = ctk.CTkFrame(row1, fg_color="#18181B", corner_radius=8, border_width=1, border_color="#27272A")
+        w_card.grid(row=0, column=0, padx=4, sticky="ew")
+        
+        w_info = char_info.get("weapon", {})
+        w_icon_url = w_info.get("icon", "")
+        w_box = ctk.CTkFrame(w_card, fg_color="transparent")
+        w_box.pack(fill="x", padx=8, pady=6)
+        
+        if w_icon_url:
+            w_fn = re.sub(r'[^a-zA-Z0-9]', '_', build_data['weapon'].lower()) + ".png"
+            w_path = f"assets/weapons/{game_id}/{w_fn}"
+            lbl_w = ctk.CTkLabel(w_box, text="")
+            lbl_w.pack(side="left", padx=(0, 8))
+            w_img = self.load_remote_image(w_icon_url, w_path, size=(36, 36), target_label=lbl_w)
+            if w_img:
+                lbl_w.configure(image=w_img)
+                lbl_w._img_ref = w_img
+                
+        w_txt_box = ctk.CTkFrame(w_box, fg_color="transparent")
+        w_txt_box.pack(side="left", fill="x", expand=True)
+        ctk.CTkLabel(w_txt_box, text="🗡️ EQUIPAMENTO / ARMA", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(anchor="w")
+        ctk.CTkLabel(w_txt_box, text=build_data["weapon"], font=ctk.CTkFont(size=11, weight="bold"), text_color="#3B82F6", wraplength=240).pack(anchor="w")
+        
+        # Card Conjuntos
+        s_card = ctk.CTkFrame(row1, fg_color="#18181B", corner_radius=8, border_width=1, border_color="#27272A")
+        s_card.grid(row=0, column=1, padx=4, sticky="ew")
+        ctk.CTkLabel(s_card, text="🔮 CONJUNTOS DE ARTEFATOS / RELÍQUIAS", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(padx=10, pady=(6, 2), anchor="w")
+        sets_text = " + ".join(build_data["sets"]) if build_data["sets"] else "Nenhum conjunto ativado"
+        ctk.CTkLabel(s_card, text=sets_text, font=ctk.CTkFont(size=11, weight="bold"), text_color="#10B981", wraplength=260).pack(padx=10, pady=(0, 8), anchor="w")
+        
+        # Linha 2: Pílulas de Status Finais
+        if build_data["stats"]:
+            st_card = ctk.CTkFrame(body, fg_color="#18181B", corner_radius=8, border_width=1, border_color="#27272A")
+            st_card.pack(fill="x", padx=12, pady=4)
+            
+            ctk.CTkLabel(st_card, text="📊 STATUS FINAIS CONSOLIDADOS", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(padx=10, pady=(6, 2), anchor="w")
+            
+            pills_box = ctk.CTkFrame(st_card, fg_color="transparent")
+            pills_box.pack(fill="x", padx=6, pady=(0, 6))
+            
+            for k, v in build_data["stats"].items():
+                pill = ctk.CTkFrame(pills_box, fg_color="#27272A", corner_radius=6)
+                pill.pack(side="left", padx=2, pady=2)
+                ctk.CTkLabel(pill, text=f"{k}: ", font=ctk.CTkFont(size=9), text_color="#A1A1AA").pack(side="left", padx=(6, 0), pady=2)
+                ctk.CTkLabel(pill, text=f"{v}", font=ctk.CTkFont(size=10, weight="bold"), text_color="#F59E0B").pack(side="left", padx=(0, 6), pady=2)
+                
+        # Linha 3: Cards de Peças Individuais (Substatus)
+        if build_data["pieces"]:
+            pc_box = ctk.CTkFrame(body, fg_color="transparent")
+            pc_box.pack(fill="x", padx=10, pady=(4, 8))
+            
+            ctk.CTkLabel(pc_box, text="📜 DETALHAMENTO DE PEÇAS E SUBSTATUS", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(padx=4, pady=(2, 4), anchor="w")
+            
+            pc_scroll = ctk.CTkScrollableFrame(pc_box, orientation="horizontal", height=80, fg_color="transparent")
+            pc_scroll.pack(fill="x")
+            
+            for piece in build_data["pieces"]:
+                p_frame = ctk.CTkFrame(pc_scroll, fg_color="#18181B", corner_radius=8, width=170, height=75, border_width=1, border_color="#27272A")
+                p_frame.pack(side="left", padx=3, pady=2)
+                p_frame.pack_propagate(False)
+                
+                ctk.CTkLabel(p_frame, text=f"[{piece['slot']}] {piece['name'][:18]}", font=ctk.CTkFont(size=9, weight="bold"), text_color="#8B5CF6").pack(padx=6, pady=(4, 0), anchor="w")
+                ctk.CTkLabel(p_frame, text=f"Principal: {piece['main']}", font=ctk.CTkFont(size=9, weight="bold"), text_color="#10B981").pack(padx=6, pady=0, anchor="w")
+                ctk.CTkLabel(p_frame, text=f"Subs: {piece['sub']}", font=ctk.CTkFont(size=8), text_color="#D4D4D8", wraplength=160).pack(padx=6, pady=(0, 4), anchor="w")
+
     def update_dashboard_ui(self, game_id: str):
         card = getattr(self, f"{game_id}_dashboard_card", None)
         if not card:
@@ -561,6 +922,81 @@ class App(ctk.CTk):
                 command=lambda g=game_id: self.open_game_folder(g)
             )
             btn_folder.grid(row=0, column=4, padx=4, sticky="ew")
+            
+            # Renderiza a Galeria Visual de Personagens (com fallback pro MD)
+            char_data = self.parse_roster_characters(game_id)
+            if char_data:
+                try:
+                    gallery_box = ctk.CTkFrame(card, fg_color="#141416", corner_radius=10)
+                    gallery_box.pack(fill="x", padx=12, pady=(0, 12))
+                    
+                    lbl_gal = ctk.CTkLabel(
+                        gallery_box,
+                        text="🎴 Galeria Visual de Personagens Extraídos (Clique para ver a Build completa)",
+                        font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                        text_color="#E4E4E7"
+                    )
+                    lbl_gal.pack(padx=12, pady=(8, 4), anchor="w")
+                    
+                    scroll_gal = ctk.CTkScrollableFrame(
+                        gallery_box,
+                        orientation="horizontal",
+                        height=90,
+                        fg_color="transparent"
+                    )
+                    scroll_gal.pack(fill="x", padx=6, pady=(0, 8))
+                    
+                    elem_colors = {
+                        "Fogo": "#5F1D1D", "Pyro": "#5F1D1D", "Fire": "#5F1D1D",
+                        "Gelo": "#1D3A5F", "Cryo": "#1D3A5F", "Ice": "#1D3A5F",
+                        "Vento": "#1D5F3A", "Anemo": "#1D5F3A", "Wind": "#1D5F3A",
+                        "Raio": "#4D1D5F", "Electro": "#4D1D5F", "Lightning": "#4D1D5F",
+                        "Quântico": "#2E1D5F", "Quantum": "#2E1D5F",
+                        "Imaginário": "#5F4D1D", "Geo": "#5F4D1D", "Imaginary": "#5F4D1D",
+                        "Dendro": "#1D5F2E", "Hydro": "#085F75", "Físico": "#374151", "Physical": "#374151"
+                    }
+                    
+                    for char in char_data[:40]: # Exibe os 40 principais
+                        bg_c = elem_colors.get(char.get("element", ""), "#27272A")
+                        
+                        c_card = ctk.CTkFrame(scroll_gal, fg_color=bg_c, corner_radius=8, width=105, height=85)
+                        c_card.pack(side="left", padx=4, pady=2)
+                        c_card.pack_propagate(False)
+                        
+                        # Torna o card inteiro clicável para abrir a build no painel da própria página
+                        c_card.bind("<Button-1>", lambda e, g=game_id, c=char: self.inspect_character_build(g, c))
+                        
+                        c_name = char["name"]
+                        if len(c_name) > 11:
+                            c_name = c_name[:10] + "…"
+                            
+                        lbl_n = ctk.CTkLabel(c_card, text=c_name, font=ctk.CTkFont(size=10, weight="bold"), text_color="#FFFFFF")
+                        lbl_n.pack(pady=(4, 0))
+                        lbl_n.bind("<Button-1>", lambda e, g=game_id, c=char: self.inspect_character_build(g, c))
+                        
+                        c_icon_url = char.get("icon", "") or self.get_fallback_avatar_url(game_id, char['name'])
+                        safe_fn = re.sub(r'[^a-zA-Z0-9]', '_', char['name'].lower()) + ".png"
+                        c_path = f"assets/avatars/{game_id}/{safe_fn}"
+                        
+                        lbl_i = ctk.CTkLabel(c_card, text="👤", font=ctk.CTkFont(size=18))
+                        lbl_i.pack(pady=1)
+                        lbl_i.bind("<Button-1>", lambda e, g=game_id, c=char: self.inspect_character_build(g, c))
+                        
+                        ctk_img = self.load_remote_image(c_icon_url, c_path, size=(36, 36), target_label=lbl_i)
+                        if ctk_img:
+                            lbl_i.configure(image=ctk_img, text="")
+                            lbl_i._img_ref = ctk_img
+                            
+                        r_lvl = f"{char.get('rank_str', '')} • Nv.{char.get('level', '')}"
+                        lbl_r = ctk.CTkLabel(c_card, text=r_lvl, font=ctk.CTkFont(size=9), text_color="#F4F4F5")
+                        lbl_r.pack(pady=(0, 4))
+                        lbl_r.bind("<Button-1>", lambda e, g=game_id, c=char: self.inspect_character_build(g, c))
+                        
+                    # Frame container para a inspeção de build embutida na página (retrátil)
+                    inspector_frame = ctk.CTkFrame(card, fg_color="transparent")
+                    setattr(self, f"{game_id}_build_inspector_frame", inspector_frame)
+                except Exception as gal_err:
+                    print(f"Aviso ao renderizar galeria visual: {gal_err}")
             
         else:
             inner.grid_columnconfigure(0, weight=3)
@@ -1439,12 +1875,12 @@ class App(ctk.CTk):
             
             btn_cfg = ctk.CTkButton(
                 warn_card,
-                text="⚙️ Ir para Configurações",
-                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                text="🔑 Obter Chave Gratuita Groq",
+                font=ctk.CTkFont(family="Segoe UI", size=11, weight="bold"),
                 fg_color="#DC2626",
                 hover_color="#B91C1C",
                 height=28,
-                command=lambda: self.select_frame("config")
+                command=lambda: webbrowser.open("https://console.groq.com/keys")
             )
             btn_cfg.pack(side="right", padx=15, pady=10)
         
@@ -1477,6 +1913,36 @@ class App(ctk.CTk):
         # Adiciona mensagem de boas-vindas inicial
         self.append_welcome_message()
         
+        # Chips de Prompts Rápidos Sugeridos
+        chips_frame = ctk.CTkFrame(container, fg_color="transparent")
+        chips_frame.pack(fill="x", padx=10, pady=(0, 6))
+        
+        lbl_chips = ctk.CTkLabel(chips_frame, text="💡 Sugestões de Perguntas Rápida:", font=ctk.CTkFont(size=11, weight="bold"), text_color="#A1A1AA")
+        lbl_chips.pack(anchor="w", padx=2, pady=(0, 4))
+        
+        chips_box = ctk.CTkFrame(chips_frame, fg_color="transparent")
+        chips_box.pack(fill="x")
+        
+        prompts = [
+            "🏆 Monte meu melhor time para o Endgame",
+            "⚡ QUAIS PERSONAGENS PRECISAM DE ATRIBUTOS?",
+            "⚔️ Melhores 2 times de maior DPS com meu Roster"
+        ]
+        
+        for p in prompts:
+            btn_p = ctk.CTkButton(
+                chips_box,
+                text=p,
+                font=ctk.CTkFont(size=11),
+                fg_color="#27272A",
+                hover_color="#3F3F46",
+                text_color="#E4E4E7",
+                height=26,
+                corner_radius=13,
+                command=lambda text=p: self.insert_prompt_and_send(text)
+            )
+            btn_p.pack(side="left", padx=3, pady=2)
+            
         # Base: Campo de Entrada de Texto e Enviar
         self.chat_input_frame = ctk.CTkFrame(container, fg_color="transparent")
         self.chat_input_frame.pack(fill="x", padx=10, pady=(0, 10))
@@ -1563,6 +2029,12 @@ class App(ctk.CTk):
         # Autoscroll suave
         self.after(60, lambda: self.chat_scroll._parent_canvas.yview_moveto(1.0))
 
+    def insert_prompt_and_send(self, prompt_text: str):
+        """Insere o texto do prompt sugerido e dispara o envio automaticamente."""
+        self.chat_entry.delete(0, "end")
+        self.chat_entry.insert(0, prompt_text)
+        self.send_chat_message()
+
     def send_chat_message(self):
         query = self.chat_entry.get().strip()
         if not query:
@@ -1575,9 +2047,10 @@ class App(ctk.CTk):
         # Estado carregando
         self.chat_entry.configure(state="disabled")
         self.chat_send_btn.configure(state="disabled")
-        self.progress_bar.configure(mode="indeterminate")
-        self.progress_bar.start()
-        self.status_label.configure(text="Groq pensando... ⌛", text_color="#3B82F6")
+        logger = self.loggers.get("global")
+        logger.progress_bar.configure(mode="indeterminate")
+        logger.progress_bar.start()
+        logger.atualizar_status("Groq pensando... ⌛")
         
         # Identifica filtro de jogo selecionado
         game_sel = self.chat_game_selector.get().lower()
@@ -1612,12 +2085,13 @@ class App(ctk.CTk):
         self.chat_history.append({"role": "model", "text": response})
         
         # Desliga carregamento
-        self.progress_bar.stop()
-        self.progress_bar.set(0)
+        logger = self.loggers.get("global")
+        logger.progress_bar.stop()
+        logger.progress_bar.set(0)
+        logger.atualizar_status("Pronto.")
         self.chat_entry.configure(state="normal")
         self.chat_send_btn.configure(state="normal")
         self.chat_entry.focus()
-        self.status_label.configure(text="Pronto.", text_color="#A1A1AA")
 
     def clear_chat_history(self):
         self.chat_history = []
