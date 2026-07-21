@@ -16,8 +16,10 @@ class KQMScraper:
         
         # Mapeamento especial de nomes de personagens do Genshin para a slug do KQM (Nome bruto PT-BR/EN -> Slug base)
         self.slug_map = {
-            "viajante": "traveler-dendro",
-            "traveler": "traveler-dendro",
+            "viajante": "dendro-traveler",
+            "traveler": "dendro-traveler",
+            "kaedehara kazuha": "kazuha",
+            "kazuha": "kazuha",
             "shogun raiden": "raiden",
             "raiden shogun": "raiden",
             "kujou sara": "sara",
@@ -31,12 +33,13 @@ class KQMScraper:
 
         # Dicionário de exceções conhecidas de nomes/slugs do KQM pós-processamento
         self.slug_aliases = {
+            "kaedehara-kazuha": "kazuha",
             "shogun-raiden": "raiden",
             "raiden-shogun": "raiden",
             "kujou-sara": "sara",
             "kuki-shinobu": "shinobu",
-            "viajante": "traveler-dendro",
-            "traveler": "traveler-dendro",
+            "viajante": "dendro-traveler",
+            "traveler": "dendro-traveler",
             "kamisato-ayaka": "ayaka",
             "kamisato-ayato": "ayato",
             "shikanoin-heizou": "heizou",
@@ -44,7 +47,7 @@ class KQMScraper:
         }
 
         # Slugs/Personagens a ignorar (NPCs/Manequins do Roster)
-        self.skip_slugs = {"manequina", "mannequin"}
+        self.skip_slugs = {"manequina", "mannequin", "nicole"}
 
         # Configuração da Sessão HTTP Resiliente com Urllib3 Retries
         self.session = requests.Session()
@@ -68,9 +71,12 @@ class KQMScraper:
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 
-    def _log(self, message: str, level: str = "INFO", logger_cb=None):
+    def _log(self, message: str, level: str = "INFO", logger_cb=None, progresso: float = None):
         if logger_cb:
-            logger_cb(message, level)
+            try:
+                logger_cb(message, level, progresso=progresso)
+            except TypeError:
+                logger_cb(message, level)
         else:
             print(f"[{level}] {message}")
 
@@ -282,46 +288,52 @@ class KQMScraper:
         
         return "\n".join(final_md)
 
+    def save_to_markdown(self, char_name: str, content: str) -> str:
+        """
+        Salva o conteúdo em Markdown na pasta de saída.
+        """
+        os.makedirs(self.output_dir, exist_ok=True)
+        slug = self._normalize_name(char_name)
+        filename = f"{slug}.md"
+        filepath = os.path.join(self.output_dir, filename)
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+        return filepath
+
     def scrape_all_guides(self, character_list: list, logger_cb=None):
         """
-        Executa a raspagem em lote de uma lista de personagens com delays respeitosos e tratamento de erros.
+        Executa a coleta em lote de uma lista de personagens com delays respeitosos e tratamento de erros.
         """
-        self._log(f"Iniciando raspagem em lote de {len(character_list)} personagens no KQM...", "INFO", logger_cb)
-        os.makedirs(self.output_dir, exist_ok=True)
-        
+        self._log(f"Iniciando coleta em lote de {len(character_list)} personagens no KQM...", "INFO", logger_cb)
         success_count = 0
+        total = len(character_list)
+        
         for idx, char_name in enumerate(character_list, 1):
-            self._log(f"({idx}/{len(character_list)}) Processando {char_name}...", "INFO", logger_cb)
+            progress_val = idx / total if total > 0 else 1.0
+            self._log(f"({idx}/{total}) Coletando guia de {char_name}...", "INFO", logger_cb, progresso=progress_val)
             
-            slug = self._normalize_name(char_name)
-            if slug in self.skip_slugs:
-                self._log(f"Pulado: {char_name} (NPC/Manequim detectado).", "WARN", logger_cb)
-                continue
-                
             try:
-                # Extrai e formata o guia
-                md_content = self.get_character_guide(char_name, logger_cb)
-                
-                # Salva o arquivo local
-                filename = f"{slug}.md"
-                filepath = os.path.join(self.output_dir, filename)
-                
-                with open(filepath, "w", encoding="utf-8") as f:
-                    f.write(md_content)
+                slug = self._normalize_name(char_name)
+                if slug in self.skip_slugs:
+                    self._log(f"Pulado: {char_name} (NPC/Manequim detectado).", "WARN", logger_cb, progresso=progress_val)
+                    continue
                     
-                self._log(f"Guia de {char_name} extraído e salvo com sucesso!", "SUCCESS", logger_cb)
-                success_count += 1
-                
-                # Delay respeitoso para requisições bem-sucedidas
-                time.sleep(1.2)
-                
+                md_content = self.get_character_guide(char_name, logger_cb)
+                if md_content:
+                    filepath = self.save_to_markdown(char_name, md_content)
+                    if filepath:
+                        success_count += 1
+                        self._log(f"Guia de {char_name} obtido com sucesso!", "SUCCESS", logger_cb, progresso=progress_val)
+                    else:
+                        self._log(f"Erro ao salvar arquivo de {char_name}.", "ERROR", logger_cb, progresso=progress_val)
+                else:
+                    self._log(f"Guia de {char_name} não encontrado no KQM.", "WARN", logger_cb, progresso=progress_val)
+                    
             except FileNotFoundError as fnf:
-                # Trata 404 e pulos com aviso (WARN) sem travar a execução
-                self._log(f"Ignorado: {fnf}", "WARN", logger_cb)
-                time.sleep(0.5)  # Delay leve de segurança pós-erro
+                self._log(f"⚠️ {fnf}", "WARN", logger_cb, progresso=progress_val)
             except Exception as e:
-                # Qualquer falha não esperada é capturada e logada
-                self._log(f"Falha ao extrair guia de {char_name}: {e}", "ERROR", logger_cb)
-                time.sleep(0.5)  # Delay leve de segurança pós-erro
+                self._log(f"Falha ao obter guia de {char_name}: {e}", "ERROR", logger_cb, progresso=progress_val)
                 
-        self._log(f"Fim da raspagem em lote. {success_count} guias extraídos com sucesso em: {self.output_dir}", "SUCCESS", logger_cb)
+            time.sleep(1.0)
+            
+        self._log(f"Fim da coleta em lote. {success_count} guias obtidos em: {self.output_dir}", "SUCCESS", logger_cb, progresso=1.0)

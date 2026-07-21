@@ -352,53 +352,36 @@ class App(ctk.CTk):
     # ==========================================
     
     def setup_bottom_terminal(self):
-        self.terminal = ctk.CTkFrame(self, height=140, corner_radius=0, fg_color="#09090B")
-        self.terminal.pack(side="bottom", fill="x", expand=False)
-        self.terminal.pack_propagate(False)
+        from status_logger import StatusLoggerFrame
+        self.terminal_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.terminal_container.pack(side="bottom", fill="x", expand=False)
         
-        # Divisor superior para separar o terminal
-        sep = ctk.CTkFrame(self.terminal, height=1, fg_color="#27272A")
-        sep.pack(fill="x")
+        self.loggers = {}
+        logger_titles = {
+            "zzz": "Status - Zenless Zone Zero",
+            "genshin": "Status - Genshin Impact",
+            "hsr": "Status - Honkai: Star Rail",
+            "global": "Status do Sistema"
+        }
         
-        terminal_header = ctk.CTkFrame(self.terminal, height=25, fg_color="transparent")
-        terminal_header.pack(fill="x", padx=15, pady=(5, 0))
-        
-        title = ctk.CTkLabel(
-            terminal_header,
-            text="LOGS DO SISTEMA EM TEMPO REAL",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
-            text_color="#71717A"
-        )
-        title.pack(side="left")
-        
-        # Caixa de Texto estilo Terminal
-        self.console = ctk.CTkTextbox(
-            self.terminal,
-            fg_color="#0C0C0E",
-            text_color="#F4F4F5",
-            font=ctk.CTkFont(family="Consolas", size=10),
-            corner_radius=6,
-            border_width=1,
-            border_color="#1E1E24"
-        )
-        self.console.pack(padx=15, pady=(2, 4), fill="both", expand=True)
-        self.console.configure(state="disabled")
-        
-        # Barra de Progresso Fina e Status
-        status_bar = ctk.CTkFrame(self.terminal, height=22, fg_color="transparent")
-        status_bar.pack(fill="x", padx=15, pady=(0, 5))
-        
-        self.status_label = ctk.CTkLabel(
-            status_bar,
-            text="Pronto.",
-            font=ctk.CTkFont(family="Segoe UI", size=11),
-            text_color="#A1A1AA"
-        )
-        self.status_label.pack(side="left")
-        
-        self.progress_bar = ctk.CTkProgressBar(status_bar, width=150, height=5, corner_radius=2, fg_color="#1E1E24", progress_color="#3B82F6")
-        self.progress_bar.pack(side="right", pady=5)
-        self.progress_bar.set(0)
+        for key, title in logger_titles.items():
+            st_frame = StatusLoggerFrame(self.terminal_container, title=title, corner_radius=0, border_width=0)
+            self.loggers[key] = st_frame
+            
+        self.active_logger_key = None
+        self.switch_status_logger("global")
+
+    def switch_status_logger(self, key: str):
+        target_key = key if key in self.loggers else "global"
+        if self.active_logger_key == target_key:
+            return
+            
+        for k, logger_frame in self.loggers.items():
+            logger_frame.pack_forget()
+            
+        self.loggers[target_key].pack(side="bottom", fill="x", expand=False)
+        self.active_logger_key = target_key
+        self.progress_bar = self.loggers[target_key].progress_bar
 
     # ==========================================
     # GERENCIAMENTO DE TELA E NAVEGAÇÃO
@@ -430,6 +413,9 @@ class App(ctk.CTk):
         self.build_how_to_screen(self.frame_how_to)
 
     def select_frame(self, name: str):
+        # Alterna o logger de status do rodapé para o jogo/aba correspondente
+        self.switch_status_logger(name)
+
         # Oculta todos os frames principais
         self.frame_zzz.pack_forget()
         self.frame_genshin.pack_forget()
@@ -502,13 +488,13 @@ class App(ctk.CTk):
         roster_cb.pack(padx=40, pady=(5, 20), anchor="w")
         roster_cb.select()
         
-        # Card 2: Guias e Endgame (Scraping)
+        # Card 2: Guias e Endgame (Coleta de Dados)
         card_scraping = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
         card_scraping.pack(fill="x", padx=10, pady=10)
         
         scraping_title = ctk.CTkLabel(
             card_scraping,
-            text="📚 Guias & Metagame (Web Scraping)",
+            text="📚 Guias & Metagame (Sincronização Online)",
             font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"),
             text_color="#E4E4E7"
         )
@@ -971,32 +957,33 @@ class App(ctk.CTk):
         except Exception as e:
             self.log(f"Falha ao salvar cookies: {e}", "ERROR")
 
-    def log(self, message: str, level: str = "INFO"):
-        """Adiciona uma mensagem formatada ao console inferior."""
-        colors = {
-            "INFO": "🔹",
-            "WARN": "⚠️",
-            "ERROR": "❌",
-            "SUCCESS": "✅"
-        }
-        prefix = colors.get(level, "🔹")
-        full_msg = f"{prefix} [{level}] {message}\n"
+    def log(self, message: str, level: str = "INFO", progresso: float = None, game_id: str = None):
+        """Adiciona uma mensagem formatada ao componente de status e logs."""
+        target_key = game_id if (game_id and game_id in self.loggers) else (self.active_logger_key or "global")
+        logger = self.loggers.get(target_key, self.loggers["global"])
         
-        self.console.configure(state="normal")
-        self.console.insert("end", full_msg)
-        self.console.see("end")
-        self.console.configure(state="disabled")
-        self.status_label.configure(text=message)
+        if level == "ERROR":
+            logger.exibir_erro(mensagem_usuario=message, erro_tecnico=message)
+        else:
+            prefixos = {
+                "INFO": "ℹ️ ",
+                "WARN": "⚠️ ",
+                "SUCCESS": "✨ "
+            }
+            emoji_prefix = prefixos.get(level, "🔹 ")
+            logger.atualizar_status(f"{emoji_prefix}{message}", progresso=progresso)
+            logger.log_tecnico(f"[{level}] {message}")
 
     # ==========================================
     # THREAD DE LOGIN AUTOMÁTICO
     # ==========================================
     
     def start_login_thread(self):
-        self.log("Abrindo navegador... Faça login manualmente na janela do HoYoLAB.", "INFO")
+        self.log("Abrindo navegador... Faça login manualmente na janela do HoYoLAB.", "INFO", game_id="global")
         self.login_btn.configure(state="disabled")
-        self.progress_bar.configure(mode="indeterminate")
-        self.progress_bar.start()
+        logger = self.loggers.get("global")
+        logger.progress_bar.configure(mode="indeterminate")
+        logger.progress_bar.start()
         
         thread = threading.Thread(target=self.login_task, daemon=True)
         thread.start()
@@ -1013,14 +1000,15 @@ class App(ctk.CTk):
             self.after(0, self.login_failed, str(e))
             
     def login_completed(self, cookies_captured: dict):
-        self.progress_bar.stop()
-        self.progress_bar.set(0)
+        logger = self.loggers.get("global")
+        logger.progress_bar.stop()
+        logger.progress_bar.set(0)
         self.login_btn.configure(state="normal")
         
         self.cookies = cookies_captured
         self.auth_indicator.configure(text="✅ Autenticado", text_color="#10B981")
         self.sidebar_auth_badge.configure(text="🔓 Conectado", text_color="#10B981")
-        self.log("Cookies capturados automaticamente do navegador com sucesso!", "SUCCESS")
+        self.log("Cookies capturados automaticamente do navegador com sucesso!", "SUCCESS", game_id="global")
         
         # Preenche o campo visual
         uid = cookies_captured.get("ltuid_v2") or cookies_captured.get("ltuid")
@@ -1032,15 +1020,16 @@ class App(ctk.CTk):
             with open(self.cookie_file, "w", encoding="utf-8") as f:
                 json.dump(cookies_captured, f, indent=4)
         except Exception as e:
-            self.log(f"Erro ao salvar cookies: {e}", "ERROR")
+            self.log(f"Erro ao salvar cookies: {e}", "ERROR", game_id="global")
         
     def login_failed(self, error_message: str):
-        self.progress_bar.stop()
-        self.progress_bar.set(0)
+        logger = self.loggers.get("global")
+        logger.progress_bar.stop()
+        logger.progress_bar.set(0)
         self.login_btn.configure(state="normal")
         self.auth_indicator.configure(text="🔒 Falha na Autenticação", text_color="#EF4444")
         self.sidebar_auth_badge.configure(text="🔒 Não Autenticado", text_color="#EF4444")
-        self.log(f"Falha de Login: {error_message}", "ERROR")
+        self.log(f"Falha de Login: {error_message}", "ERROR", game_id="global")
 
     # ==========================================
     # THREAD DE EXECUÇÃO DE JOGOS
@@ -1053,15 +1042,16 @@ class App(ctk.CTk):
         
         # Verifica se alguma opção foi selecionada
         if not (roster_cb.get() or guides_cb.get() or meta_cb.get()):
-            self.log(f"Nenhuma opção de tarefa selecionada para {game_id.upper()}.", "WARN")
+            self.log(f"Nenhuma opção de tarefa selecionada para {game_id.upper()}.", "WARN", game_id=game_id)
             return
             
         # Desabilita o botão para evitar cliques duplicados
         run_btn = getattr(self, f"{game_id}_run_btn")
         run_btn.configure(state="disabled")
         
-        self.progress_bar.configure(mode="indeterminate")
-        self.progress_bar.start()
+        logger = self.loggers.get(game_id, self.loggers["global"])
+        logger.progress_bar.configure(mode="determinate")
+        logger.atualizar_status("⏳ Preparando tarefas...", progresso=0.0)
         
         thread = threading.Thread(
             target=self.run_game_tasks,
@@ -1071,71 +1061,78 @@ class App(ctk.CTk):
         thread.start()
         
     def run_game_tasks(self, game_id: str, run_roster: bool, run_guides: bool, run_meta: bool):
-        self.log(f"Iniciando tarefas selecionadas para {game_id.upper()}...", "INFO")
+        def log_game(msg, level="INFO", progresso=None):
+            self.log(msg, level=level, progresso=progresso, game_id=game_id)
+
+        log_game(f"Iniciando tarefas selecionadas para {game_id.upper()}...", "INFO", progresso=0.02)
         
         # --- 1. EXTRAÇÃO DE ROSTER ---
         if run_roster:
             if not self.cookies:
-                self.log("HoYoLAB Cookies não localizados. Faça login ou insira manualmente na aba Configurações.", "ERROR")
+                log_game("HoYoLAB Cookies não localizados. Faça login ou insira manualmente na aba Configurações.", "ERROR")
                 self.after(0, self.game_task_completed, game_id, False, "Cookies ausentes.")
                 return
                 
-            self.log(f"Conectando a HoYoLAB para extração do roster de {game_id.upper()}...", "INFO")
+            log_game(f"Conectando a HoYoLAB para extração do roster de {game_id.upper()}...", "INFO", progresso=0.05)
             try:
                 extractor = MultiGameExtractor(self.cookies)
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
                 filename = loop.run_until_complete(extractor.extrair_jogo(game_id))
                 loop.close()
-                self.log(f"Roster extraído e salvo com sucesso em: {filename}", "SUCCESS")
+                log_game(f"Roster extraído e salvo com sucesso em: {filename}", "SUCCESS", progresso=0.25)
             except Exception as roster_err:
                 traceback.print_exc()
-                self.log(f"Falha ao extrair Roster de {game_id.upper()}: {roster_err}", "ERROR")
+                log_game(f"Falha ao extrair Roster de {game_id.upper()}: {roster_err}", "ERROR")
 
         # --- 2. EXTRAÇÃO DE GUIDES ---
         if run_guides:
-            self.log(f"Iniciando raspagem de guias para {game_id.upper()}...", "INFO")
+            log_game(f"Iniciando busca de guias para {game_id.upper()}...", "INFO", progresso=0.28)
             if game_id == "hsr":
                 try:
-                    self.log("Obtendo lista de personagens HSR...", "INFO")
+                    log_game("Obtendo lista de personagens HSR...", "INFO", progresso=0.30)
                     scraper = PrydwenScraper()
                     chars = scraper.get_character_list()
-                    self.log(f"Encontrados {len(chars)} personagens. Baixando guias...", "INFO")
+                    log_game(f"Encontrados {len(chars)} personagens. Baixando guias...", "INFO", progresso=0.32)
+                    total_chars = len(chars)
                     for idx, c in enumerate(chars, 1):
-                        self.log(f"({idx}/{len(chars)}) Raspando guia de {c['name']}...", "INFO")
+                        p_val = 0.32 + 0.50 * (idx / total_chars if total_chars > 0 else 1.0)
+                        log_game(f"({idx}/{total_chars}) Coletando guia de {c['name']}...", "INFO", progresso=p_val)
                         try:
                             data = scraper.scrape_character_guide(c["name"], c["url"])
                             scraper.save_to_markdown(c["name"], data)
                         except Exception as child_err:
-                            self.log(f"Erro no guia de {c['name']}: {child_err}", "WARN")
-                    self.log("Guias de HSR baixados com sucesso!", "SUCCESS")
+                            log_game(f"Erro no guia de {c['name']}: {child_err}", "WARN", progresso=p_val)
+                    log_game("Guias de HSR baixados com sucesso!", "SUCCESS", progresso=0.82)
                     
-                    self.log("Consolidando guias individuais de HSR...", "INFO")
+                    log_game("Consolidando guias individuais de HSR...", "INFO", progresso=0.84)
                     bundle_guides("hsr/guias", "hsr/todos_os_guias_hsr.md", "Honkai: Star Rail")
                 except Exception as scraper_err:
                     traceback.print_exc()
-                    self.log(f"Erro ao obter guias HSR: {scraper_err}", "ERROR")
+                    log_game(f"Erro ao obter guias HSR: {scraper_err}", "ERROR")
                     
             elif game_id == "zzz":
                 try:
-                    self.log("Obtendo lista de agentes ZZZ...", "INFO")
+                    log_game("Obtendo lista de agentes ZZZ...", "INFO", progresso=0.30)
                     scraper = PrydwenZZZScraper()
                     agents = scraper.get_agent_list()
-                    self.log(f"Encontrados {len(agents)} agentes. Baixando guias...", "INFO")
+                    log_game(f"Encontrados {len(agents)} agentes. Baixando guias...", "INFO", progresso=0.32)
+                    total_agents = len(agents)
                     for idx, a in enumerate(agents, 1):
-                        self.log(f"({idx}/{len(agents)}) Raspando guia de {a['name']}...", "INFO")
+                        p_val = 0.32 + 0.50 * (idx / total_agents if total_agents > 0 else 1.0)
+                        log_game(f"({idx}/{total_agents}) Coletando guia de {a['name']}...", "INFO", progresso=p_val)
                         try:
                             data = scraper.scrape_agent_guide(a["name"], a["url"])
                             scraper.save_to_markdown(a["name"], data)
                         except Exception as child_err:
-                            self.log(f"Erro no guia de {a['name']}: {child_err}", "WARN")
-                    self.log("Guias de ZZZ baixados com sucesso!", "SUCCESS")
+                            log_game(f"Erro no guia de {a['name']}: {child_err}", "WARN", progresso=p_val)
+                    log_game("Guias de ZZZ baixados com sucesso!", "SUCCESS", progresso=0.82)
                     
-                    self.log("Consolidando guias individuais de ZZZ...", "INFO")
+                    log_game("Consolidando guias individuais de ZZZ...", "INFO", progresso=0.84)
                     bundle_guides("zzz/guias", "zzz/todos_os_guias_zzz.md", "Zenless Zone Zero")
                 except Exception as scraper_err:
                     traceback.print_exc()
-                    self.log(f"Erro ao obter guias ZZZ: {scraper_err}", "ERROR")
+                    log_game(f"Erro ao obter guias ZZZ: {scraper_err}", "ERROR")
                     
             elif game_id == "genshin":
                 try:
@@ -1153,37 +1150,37 @@ class App(ctk.CTk):
                                             if cname and cname not in extracted_characters:
                                                 extracted_characters.append(cname)
                         except Exception as e:
-                            self.log(f"Erro ao carregar roster de Genshin: {e}", "WARN")
+                            log_game(f"Erro ao carregar roster de Genshin: {e}", "WARN")
                     
                     if not extracted_characters:
-                        self.log("Roster de Genshin não encontrado. Usando lista padrão de personagens populares.", "INFO")
+                        log_game("Roster de Genshin não encontrado. Usando lista padrão de personagens populares.", "INFO", progresso=0.30)
                         extracted_characters = ["Keqing", "Hu Tao", "Raiden Shogun", "Furina", "Nahida", "Bennett", "Zhongli", "Kaedehara Kazuha", "Yelan", "Xingqiu"]
                         
-                    self.log(f"Iniciando raspagem de guias KQM para {len(extracted_characters)} personagens de Genshin...", "INFO")
+                    log_game(f"Iniciando busca de guias KQM para {len(extracted_characters)} personagens de Genshin...", "INFO", progresso=0.32)
                     from scraper_kqm import KQMScraper
                     
                     kqm = KQMScraper(output_dir="genshin/guias")
-                    kqm.scrape_all_guides(character_list=extracted_characters, logger_cb=self.log)
-                    self.log("Guias do KQM extraídos e salvos em: genshin/guias/", "SUCCESS")
+                    kqm.scrape_all_guides(character_list=extracted_characters, logger_cb=log_game)
+                    log_game("Guias do KQM obtidos e salvos em: genshin/guias/", "SUCCESS", progresso=0.82)
                     
-                    self.log("Consolidando guias individuais de Genshin...", "INFO")
+                    log_game("Consolidando guias individuais de Genshin...", "INFO", progresso=0.84)
                     bundle_guides("genshin/guias", "genshin/todos_os_guias_genshin.md", "Genshin Impact")
                 except Exception as scraper_err:
                     traceback.print_exc()
-                    self.log(f"Erro ao extrair guias do KQM: {scraper_err}", "ERROR")
+                    log_game(f"Erro ao obter guias do KQM: {scraper_err}", "ERROR")
 
 
         # --- 3. EXTRAÇÃO DE META E ENDGAME ---
         if run_meta:
-            self.log(f"Iniciando extração do meta de {game_id.upper()}...", "INFO")
+            log_game(f"Iniciando sincronização do meta de {game_id.upper()}...", "INFO", progresso=0.86)
             if game_id == "hsr":
                 try:
-                    self.log("Raspando Tier Lists HSR do Prydwen...", "INFO")
+                    log_game("Coletando Tier Lists HSR do Prydwen...", "INFO", progresso=0.88)
                     scraper_m = PrydwenMetaScraper()
                     data = scraper_m.scrape_tier_list()
                     filepath_tier = scraper_m.save_meta_markdown(data, "hsr/meta_e_tierlists_atual.md")
                     
-                    self.log("Raspando estatísticas de endgame HSR...", "INFO")
+                    log_game("Coletando estatísticas de endgame HSR...", "INFO", progresso=0.92)
                     reports = scraper_m.scrape_endgame_reports()
                     filepath_endgame = scraper_m.save_endgame_markdown(reports, "hsr/meta_endgame_report.md")
                     
@@ -1197,45 +1194,42 @@ class App(ctk.CTk):
                         if os.path.exists(filepath_endgame):
                             with open(filepath_endgame, "r", encoding="utf-8") as f2:
                                 out_f.write(f2.read())
-                    self.log(f"Meta de HSR consolidado com sucesso em: {consolidated_path}", "SUCCESS")
+                    log_game(f"Meta de HSR consolidado com sucesso em: {consolidated_path}", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
-                    self.log(f"Falha ao extrair meta HSR: {meta_err}", "ERROR")
+                    log_game(f"Falha ao obter meta HSR: {meta_err}", "ERROR")
             elif game_id == "zzz":
                 try:
-                    self.log("Extraindo meta, tier list e relatórios de endgame do ZZZ...", "INFO")
+                    log_game("Coletando meta, tier list e relatórios de endgame do ZZZ...", "INFO", progresso=0.90)
                     scraper = PrydwenZZZScraper()
                     filepath = scraper.save_meta_to_markdown()
-                    self.log(f"Meta de ZZZ salvo e consolidado com sucesso em: {filepath}", "SUCCESS")
+                    log_game(f"Meta de ZZZ salvo e consolidado com sucesso em: {filepath}", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
-                    self.log(f"Falha ao extrair meta ZZZ: {meta_err}", "ERROR")
+                    log_game(f"Falha ao obter meta ZZZ: {meta_err}", "ERROR")
             elif game_id == "genshin":
                 try:
-                    self.log("Iniciando extração do meta e endgame de GENSHIN do Game8...", "INFO")
+                    log_game("Iniciando busca de meta e endgame de GENSHIN do Game8...", "INFO", progresso=0.90)
                     from scraper_genshin_meta import GenshinMetaScraper
                     
                     meta_scraper = GenshinMetaScraper(output_path="genshin/meta_kqm_genshin.md")
-                    meta_scraper.run_full_scrape(logger_cb=self.log)
-                    self.log("Relatório de Endgame e Tier List salvos em: genshin/meta_kqm_genshin.md", "SUCCESS")
+                    meta_scraper.run_full_scrape(logger_cb=log_game)
+                    log_game("Relatório de Endgame e Tier List salvos em: genshin/meta_kqm_genshin.md", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
-                    self.log(f"Erro ao extrair metagame do Genshin: {meta_err}", "ERROR")
+                    log_game(f"Erro ao obter metagame do Genshin: {meta_err}", "ERROR")
 
                 
         self.after(0, self.game_task_completed, game_id, True, "Tarefas concluídas.")
         
     def game_task_completed(self, game_id: str, success: bool, msg: str):
-        self.progress_bar.stop()
-        self.progress_bar.set(0)
-        
         run_btn = getattr(self, f"{game_id}_run_btn")
         run_btn.configure(state="normal")
         
         if success:
-            self.log(f"Todas as tarefas de {game_id.upper()} foram finalizadas com sucesso!", "SUCCESS")
+            self.log(f"Todas as tarefas de {game_id.upper()} foram finalizadas com sucesso!", "SUCCESS", progresso=1.0, game_id=game_id)
         else:
-            self.log(f"Tarefas de {game_id.upper()} falharam: {msg}", "ERROR")
+            self.log(f"Tarefas de {game_id.upper()} falharam: {msg}", "ERROR", game_id=game_id)
 
     # ==========================================
     # GERENCIAMENTO DO CHAT ASSISTENTE IA RAG
