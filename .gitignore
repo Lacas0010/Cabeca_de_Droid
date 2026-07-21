@@ -27,7 +27,7 @@ desktop.ini
 config.json
 cookies.json
 user_data_google/
-
+chave de api.txt
 # Automatically generated reports and markdown scrapings (avoid committing raw data)
 hsr/
 zzz/

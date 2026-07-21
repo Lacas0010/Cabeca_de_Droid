@@ -52,7 +52,7 @@ class App(ctk.CTk):
         super().__init__()
         
         # Configuração da janela principal
-        self.title("HoYo AI Assistant (Gemini RAG Local)")
+        self.title("HoYo AI Assistant (Groq RAG Local)")
         self.geometry("1050x700")
         self.resizable(True, True)
         self.center_window(1050, 700)
@@ -63,9 +63,9 @@ class App(ctk.CTk):
         self.config_file = "config.json"
         self.chat_history = []
         
-        # Inicializa o assistente Gemini RAG
-        from gemini_rag import GeminiRAG
-        self.gemini_rag = GeminiRAG()
+        # Inicializa o assistente Groq RAG
+        from groq_rag import GroqRAG
+        self.groq_rag = GroqRAG()
         
         # --- ESTRUTURA DO LAYOUT ---
         # 1. Sidebar à esquerda (largura ~240px)
@@ -196,7 +196,7 @@ class App(ctk.CTk):
         
         app_sub = ctk.CTkLabel(
             self.sidebar,
-            text="AI Gemini RAG Hub v3.0",
+            text="AI Groq RAG Hub v3.0",
             font=ctk.CTkFont(family="Segoe UI", size=11),
             text_color="#71717A"
         )
@@ -630,78 +630,78 @@ class App(ctk.CTk):
         self.auth_indicator.pack(side="right", padx=10)
         
         
-        # --- CARD 2: API KEY DO GOOGLE GEMINI ---
-        card_gemini = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
-        card_gemini.pack(fill="x", padx=10, pady=10)
+        # --- CARD 2: API KEY DA GROQ ---
+        card_groq = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
+        card_groq.pack(fill="x", padx=10, pady=10)
         
-        card_gemini_title = ctk.CTkLabel(
-            card_gemini,
-            text="🔑 Google Gemini API Key",
+        card_groq_title = ctk.CTkLabel(
+            card_groq,
+            text="🔑 Groq API Key",
             font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"),
             text_color="#E4E4E7"
         )
-        card_gemini_title.pack(padx=20, pady=(15, 5), anchor="w")
+        card_groq_title.pack(padx=20, pady=(15, 5), anchor="w")
         
-        desc_gemini = ctk.CTkLabel(
-            card_gemini,
-            text="Insira sua chave de API do Gemini para habilitar o Assistente IA de Chat RAG local.",
+        desc_groq = ctk.CTkLabel(
+            card_groq,
+            text="Insira sua chave de API da Groq para habilitar o Assistente IA de Chat RAG local.",
             font=ctk.CTkFont(family="Segoe UI", size=11),
             text_color="#A1A1AA"
         )
-        desc_gemini.pack(padx=20, pady=2, anchor="w")
+        desc_groq.pack(padx=20, pady=2, anchor="w")
         
-        self.gemini_key_entry = ctk.CTkEntry(
-            card_gemini,
-            placeholder_text="Cole sua GEMINI_API_KEY aqui...",
+        self.groq_key_entry = ctk.CTkEntry(
+            card_groq,
+            placeholder_text="Cole sua GROQ_API_KEY aqui...",
             height=35,
             corner_radius=8,
             show="*"
         )
-        self.gemini_key_entry.pack(padx=20, pady=12, fill="x")
+        self.groq_key_entry.pack(padx=20, pady=12, fill="x")
         
-        gemini_action_frame = ctk.CTkFrame(card_gemini, fg_color="transparent")
-        gemini_action_frame.pack(padx=20, pady=(0, 20), fill="x")
+        groq_action_frame = ctk.CTkFrame(card_groq, fg_color="transparent")
+        groq_action_frame.pack(padx=20, pady=(0, 20), fill="x")
         
-        self.save_gemini_key_btn = ctk.CTkButton(
-            gemini_action_frame,
+        self.save_groq_key_btn = ctk.CTkButton(
+            groq_action_frame,
             text="💾 Salvar Chave API",
             font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             fg_color="#2E2E35",
             hover_color="#3F3F46",
             height=35,
-            command=self.salvar_gemini_config
+            command=self.salvar_groq_config
         )
-        self.save_gemini_key_btn.pack(side="left", padx=(0, 10))
+        self.save_groq_key_btn.pack(side="left", padx=(0, 10))
         
-        self.toggle_gemini_visibility_btn = ctk.CTkButton(
-            gemini_action_frame,
+        self.toggle_groq_visibility_btn = ctk.CTkButton(
+            groq_action_frame,
             text="👁️ Mostrar",
             font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             fg_color="#2E2E35",
             hover_color="#3F3F46",
             height=35,
-            command=self.toggle_gemini_key_visibility
+            command=self.toggle_groq_key_visibility
         )
-        self.toggle_gemini_visibility_btn.pack(side="left", padx=(0, 10))
+        self.toggle_groq_visibility_btn.pack(side="left", padx=(0, 10))
         
-        self.test_gemini_btn = ctk.CTkButton(
-            gemini_action_frame,
+        self.test_groq_btn = ctk.CTkButton(
+            groq_action_frame,
             text="⚡ Testar Conexão",
             font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             fg_color="#3B82F6",
             hover_color="#2563EB",
             height=35,
-            command=self.start_test_gemini_thread
+            command=self.start_test_groq_thread
         )
-        self.test_gemini_btn.pack(side="left")
+        self.test_groq_btn.pack(side="left")
         
-        self.gemini_status_lbl = ctk.CTkLabel(
-            gemini_action_frame,
+        self.groq_status_lbl = ctk.CTkLabel(
+            groq_action_frame,
             text="🔌 Status: Não testado",
             font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
             text_color="#A1A1AA"
         )
-        self.gemini_status_lbl.pack(side="right", padx=10)
+        self.groq_status_lbl.pack(side="right", padx=10)
 
     # LOGICA DE CONFIGURAÇÕES DE CARREGAR/SALVAR
     # ==========================================
@@ -734,27 +734,27 @@ class App(ctk.CTk):
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     config = json.load(f)
                 
-                key = config.get("gemini_api_key", "")
+                key = config.get("groq_api_key") or config.get("gemini_api_key", "")
                 if key:
-                    self.gemini_key_entry.delete(0, "end")
-                    self.gemini_key_entry.insert(0, key)
-                    threading.Thread(target=self.run_silent_gemini_test, args=(key,), daemon=True).start()
+                    self.groq_key_entry.delete(0, "end")
+                    self.groq_key_entry.insert(0, key)
+                    threading.Thread(target=self.run_silent_groq_test, args=(key,), daemon=True).start()
             except Exception as e:
                 self.log(f"Erro ao carregar configuracoes: {e}", "WARN")
 
-    def run_silent_gemini_test(self, key):
-        from gemini_rag import GeminiRAG
-        tester = GeminiRAG(api_key=key)
+    def run_silent_groq_test(self, key):
+        from groq_rag import GroqRAG
+        tester = GroqRAG(api_key=key)
         success, _ = tester.test_connection()
         if success:
-            self.after(0, lambda: self.gemini_status_lbl.configure(text="✅ Status: Conectado", text_color="#10B981"))
+            self.after(0, lambda: self.groq_status_lbl.configure(text="✅ Status: Conectado", text_color="#10B981"))
         else:
-            self.after(0, lambda: self.gemini_status_lbl.configure(text="❌ Status: Erro / Desconectado", text_color="#EF4444"))
+            self.after(0, lambda: self.groq_status_lbl.configure(text="❌ Status: Erro / Desconectado", text_color="#EF4444"))
 
-    def salvar_gemini_config(self):
-        key = self.gemini_key_entry.get().strip()
+    def salvar_groq_config(self):
+        key = self.groq_key_entry.get().strip()
         if not key:
-            self.log("API Key do Gemini está vazia.", "WARN")
+            self.log("API Key da Groq está vazia.", "WARN")
             return
             
         try:
@@ -763,55 +763,55 @@ class App(ctk.CTk):
                 with open(self.config_file, "r", encoding="utf-8") as f:
                     config = json.load(f)
             
-            config["gemini_api_key"] = key
+            config["groq_api_key"] = key
             
             with open(self.config_file, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=4)
                 
-            self.log("API Key do Gemini salva em config.json!", "SUCCESS")
+            self.log("API Key da Groq salva em config.json!", "SUCCESS")
             
-            from gemini_rag import GeminiRAG
-            self.gemini_rag = GeminiRAG(api_key=key)
+            from groq_rag import GroqRAG
+            self.groq_rag = GroqRAG(api_key=key)
         except Exception as e:
-            self.log(f"Erro ao salvar API Key do Gemini: {e}", "ERROR")
+            self.log(f"Erro ao salvar API Key da Groq: {e}", "ERROR")
 
-    def toggle_gemini_key_visibility(self):
-        current_show = self.gemini_key_entry.cget("show")
+    def toggle_groq_key_visibility(self):
+        current_show = self.groq_key_entry.cget("show")
         if current_show == "*":
-            self.gemini_key_entry.configure(show="")
-            self.toggle_gemini_visibility_btn.configure(text="🙈 Ocultar")
+            self.groq_key_entry.configure(show="")
+            self.toggle_groq_visibility_btn.configure(text="🙈 Ocultar")
         else:
-            self.gemini_key_entry.configure(show="*")
-            self.toggle_gemini_visibility_btn.configure(text="👁️ Mostrar")
+            self.groq_key_entry.configure(show="*")
+            self.toggle_groq_visibility_btn.configure(text="👁️ Mostrar")
 
-    def start_test_gemini_thread(self):
-        key = self.gemini_key_entry.get().strip()
+    def start_test_groq_thread(self):
+        key = self.groq_key_entry.get().strip()
         if not key:
-            self.log("Por favor, insira uma API Key do Gemini para testar.", "WARN")
+            self.log("Por favor, insira uma API Key da Groq para testar.", "WARN")
             return
             
-        self.test_gemini_btn.configure(state="disabled")
-        self.gemini_status_lbl.configure(text="🔌 Status: Conectando...", text_color="#3B82F6")
-        self.log("Testando conexão com o Google Gemini...", "INFO")
+        self.test_groq_btn.configure(state="disabled")
+        self.groq_status_lbl.configure(text="🔌 Status: Conectando...", text_color="#3B82F6")
+        self.log("Testando conexão com a Groq...", "INFO")
         
-        thread = threading.Thread(target=self.run_test_gemini_connection, args=(key,))
+        thread = threading.Thread(target=self.run_test_groq_connection, args=(key,))
         thread.daemon = True
         thread.start()
 
-    def run_test_gemini_connection(self, key):
-        from gemini_rag import GeminiRAG
-        tester = GeminiRAG(api_key=key)
+    def run_test_groq_connection(self, key):
+        from groq_rag import GroqRAG
+        tester = GroqRAG(api_key=key)
         success, msg = tester.test_connection()
-        self.after(0, self.on_test_gemini_completed, success, msg)
+        self.after(0, self.on_test_groq_completed, success, msg)
 
-    def on_test_gemini_completed(self, success, msg):
-        self.test_gemini_btn.configure(state="normal")
+    def on_test_groq_completed(self, success, msg):
+        self.test_groq_btn.configure(state="normal")
         if success:
-            self.gemini_status_lbl.configure(text="✅ Status: Conectado", text_color="#10B981")
+            self.groq_status_lbl.configure(text="✅ Status: Conectado", text_color="#10B981")
             self.log(msg, "SUCCESS")
-            self.salvar_gemini_config()
+            self.salvar_groq_config()
         else:
-            self.gemini_status_lbl.configure(text="❌ Status: Erro", text_color="#EF4444")
+            self.groq_status_lbl.configure(text="❌ Status: Erro", text_color="#EF4444")
             self.log(msg, "ERROR")
 
 
@@ -1132,7 +1132,7 @@ class App(ctk.CTk):
             banner_path="assets/config_banner.png",
             theme_color_hex="#1D4ED8",
             title="HoYo AI Assistant",
-            subtitle="Assistente IA integrado com RAG local em tempo real (Gemini 1.5 / 2.0 Flash)"
+            subtitle="Assistente IA integrado com RAG local em tempo real (Groq / Llama 3.3)"
         )
         header_banner = ctk.CTkLabel(container, image=banner_img, text="", corner_radius=12)
         header_banner.pack(fill="x", padx=10, pady=(10, 10))
@@ -1221,7 +1221,7 @@ class App(ctk.CTk):
         
         align_side = "right" if is_user else "left"
         fg_color = "#1D4ED8" if is_user else "#27272A"
-        prefix = "🧑 Você:" if is_user else "🤖 Assistente Gemini:"
+        prefix = "🧑 Você:" if is_user else "🤖 Assistente Groq:"
         
         # Calcula tamanho vertical adequado para o CTkTextbox com base no conteúdo
         lines_count = max(len(text.split('\n')), 1)
@@ -1266,7 +1266,7 @@ class App(ctk.CTk):
         self.chat_send_btn.configure(state="disabled")
         self.progress_bar.configure(mode="indeterminate")
         self.progress_bar.start()
-        self.status_label.configure(text="Gemini pensando... ⌛", text_color="#3B82F6")
+        self.status_label.configure(text="Groq pensando... ⌛", text_color="#3B82F6")
         
         # Identifica filtro de jogo selecionado
         game_sel = self.chat_game_selector.get().lower()
@@ -1283,13 +1283,14 @@ class App(ctk.CTk):
 
     def process_chat_api_call(self, query: str, game_id: str):
         try:
-            if not self.gemini_rag.client:
+            if not self.groq_rag.client:
                 # Recarrega se não inicializado
-                from gemini_rag import GeminiRAG
-                self.gemini_rag = GeminiRAG()
+                from groq_rag import GroqRAG
+                self.groq_rag = GroqRAG()
                 
             history_input = self.chat_history[:-1] # exclui a query recém-adicionada
-            response = self.gemini_rag.ask_assistant(query, game_id, history_input)
+            contexto = self.groq_rag.load_game_context(game_id, query)
+            response = self.groq_rag.ask_assistant(query, contexto, history_input)
             self.after(0, self.on_chat_response_received, response)
         except Exception as e:
             traceback.print_exc()
