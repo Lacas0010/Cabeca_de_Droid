@@ -9,6 +9,10 @@ __pycache__/
 *.pyo
 *.pyd
 
+# Playwright dependencies
+.playwright/
+*playwright*.log
+
 # Operating system files
 Thumbs.db
 desktop.ini
@@ -28,11 +32,11 @@ config.json
 cookies.json
 user_data_google/
 chave de api.txt
+
 # Automatically generated reports and markdown scrapings (avoid committing raw data)
 hsr/
 zzz/
 genshin/
-
 
 # Legacy generated files (from previous versions)
 meus_personagens_hsr.md
@@ -42,3 +46,9 @@ todos_os_guias_prydwen.md
 guias_prydwen/
 moc_payload_dump.txt
 *.log
+
+# PyInstaller
+build/
+dist/
+*.spec
+

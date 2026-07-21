@@ -207,6 +207,7 @@ class App(ctk.CTk):
         icon_hsr = self.load_sidebar_icon("assets/hsr_icon.png")
         icon_chat = self.load_sidebar_icon("assets/chat_icon.png")
         icon_config = self.load_sidebar_icon("assets/config_icon.png")
+        icon_help = self.load_sidebar_icon("assets/help_icon.png")
         
         # Botões de Navegação
         self.btn_zzz = ctk.CTkButton(
@@ -289,6 +290,22 @@ class App(ctk.CTk):
             command=lambda: self.select_frame("config")
         )
         self.btn_config.pack(padx=15, pady=4, fill="x")
+        
+        self.btn_help = ctk.CTkButton(
+            self.sidebar,
+            text=" Como Usar" if icon_help else "❓ Como Usar",
+            image=icon_help,
+            compound="left",
+            font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+            height=40,
+            corner_radius=8,
+            fg_color="transparent",
+            text_color="#D4D4D8",
+            hover_color="#2E2E35",
+            anchor="w",
+            command=lambda: self.select_frame("how_to")
+        )
+        self.btn_help.pack(padx=15, pady=4, fill="x")
         
         # Painel de Status no Rodapé da Sidebar
         self.status_panel = ctk.CTkFrame(self.sidebar, height=110, corner_radius=10, fg_color="#1E1E24")
@@ -396,6 +413,10 @@ class App(ctk.CTk):
         # 5. Frame do Chat IA Assistant
         self.frame_chat = ctk.CTkFrame(self.main_container, corner_radius=0, fg_color="transparent")
         self.setup_chat_frame(self.frame_chat)
+        
+        # 6. Frame de Como Usar
+        self.frame_how_to = ctk.CTkScrollableFrame(self.main_container, corner_radius=0, fg_color="transparent")
+        self.build_how_to_screen(self.frame_how_to)
 
     def select_frame(self, name: str):
         # Oculta todos os frames principais
@@ -404,6 +425,7 @@ class App(ctk.CTk):
         self.frame_hsr.pack_forget()
         self.frame_config.pack_forget()
         self.frame_chat.pack_forget()
+        self.frame_how_to.pack_forget()
         
         # Reseta cores de fundo dos botões da sidebar para transparente
         self.btn_zzz.configure(fg_color="transparent", text_color="#D4D4D8")
@@ -411,6 +433,7 @@ class App(ctk.CTk):
         self.btn_hsr.configure(fg_color="transparent", text_color="#D4D4D8")
         self.btn_config.configure(fg_color="transparent", text_color="#D4D4D8")
         self.btn_chat.configure(fg_color="transparent", text_color="#D4D4D8")
+        self.btn_help.configure(fg_color="transparent", text_color="#D4D4D8")
         
         # Destaca o botão ativo com a cor do tema de cada aba
         if name == "zzz":
@@ -428,6 +451,9 @@ class App(ctk.CTk):
         elif name == "chat":
             self.btn_chat.configure(fg_color="#2563EB", text_color="#FFFFFF")
             self.frame_chat.pack(fill="both", expand=True, padx=5, pady=5)
+        elif name == "how_to":
+            self.btn_help.configure(fg_color="#10B981", text_color="#FFFFFF")
+            self.frame_how_to.pack(fill="both", expand=True, padx=5, pady=5)
 
     # ==========================================
     # DESIGN SYSTEM: LAYOUT DE ABAS DE JOGOS
@@ -457,7 +483,7 @@ class App(ctk.CTk):
         
         roster_cb = ctk.CTkCheckBox(
             card_roster,
-            text=f"Extrair Roster, Eidolons/Constelações e Builds (Nível Máximo: {max_lvl})",
+            text=f"Extrair Roster, Eidolons/Constelações, Builds e Recordes de Endgames (Nível Máximo: {max_lvl})",
             font=ctk.CTkFont(family="Segoe UI", size=12),
             fg_color=theme_color,
             hover_color=theme_color
@@ -498,6 +524,7 @@ class App(ctk.CTk):
         setattr(self, f"{game_id}_roster_cb", roster_cb)
         setattr(self, f"{game_id}_guides_cb", guides_cb)
         setattr(self, f"{game_id}_meta_cb", meta_cb)
+
         
         # Card 3: Ações de Execução
         card_actions = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
@@ -553,6 +580,83 @@ class App(ctk.CTk):
             roster.deselect()
             guides.deselect()
             meta.deselect()
+
+    def build_how_to_screen(self, container):
+        title_lbl = ctk.CTkLabel(
+            container,
+            text="📖 Como usar o HoYo AI Assistant",
+            font=ctk.CTkFont(family="Segoe UI", size=24, weight="bold"),
+            text_color="#F4F4F5"
+        )
+        title_lbl.pack(padx=20, pady=(20, 10), anchor="w")
+
+        # Texto explicativo geral
+        intro_text = (
+            "Este aplicativo foi criado para ajudar você a analisar suas contas da HoYoverse utilizando Inteligência Artificial.\n"
+            "Ele puxa automaticamente todos os seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e cruza com dados de Metagame."
+        )
+        intro_lbl = ctk.CTkLabel(container, text=intro_text, font=ctk.CTkFont(family="Segoe UI", size=14), text_color="#D4D4D8", justify="left")
+        intro_lbl.pack(padx=20, pady=(0, 20), anchor="w")
+
+        # Passo a Passo (Configurações)
+        step1_title = ctk.CTkLabel(container, text="1. Faça o Login na HoYoLAB", font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"), text_color="#10B981")
+        step1_title.pack(padx=20, pady=(10, 5), anchor="w")
+        step1_text = (
+            "Vá até a aba de '⚙️ Configurações' no menu esquerdo e clique em 'Login Automático (Navegador)'.\n"
+            "O app vai abrir o site da HoYoLAB, onde você deve logar na sua conta. Após o login, ele irá extrair os cookies \n"
+            "necessários (ltuid e ltoken) e salvá-los localmente para poder acessar seu histórico das contas."
+        )
+        step1_lbl = ctk.CTkLabel(container, text=step1_text, font=ctk.CTkFont(family="Segoe UI", size=13), text_color="#A1A1AA", justify="left")
+        step1_lbl.pack(padx=20, pady=(0, 15), anchor="w")
+
+        # Passo a Passo (Extração)
+        step2_title = ctk.CTkLabel(container, text="2. Selecione o Jogo e Extraia os Dados", font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"), text_color="#3B82F6")
+        step2_title.pack(padx=20, pady=(10, 5), anchor="w")
+        step2_text = (
+            "Nas abas 'Zenless Zone Zero', 'Genshin Impact' ou 'Honkai: Star Rail', você encontra as opções de extração.\n"
+            "- A opção 'Roster' vai buscar todos os seus personagens, níveis, constelações/eidolons, além de extrair todos os seus \n"
+            "recordes recentes dos modos Endgame (MoC, Abismo, Shiyu).\n"
+            "- A opção de Guias/Meta faz web-scraping automático de sites de tier list (como Prydwen e KeqingMains) para montar o RAG."
+        )
+        step2_lbl = ctk.CTkLabel(container, text=step2_text, font=ctk.CTkFont(family="Segoe UI", size=13), text_color="#A1A1AA", justify="left")
+        step2_lbl.pack(padx=20, pady=(0, 15), anchor="w")
+
+        # Passo a Passo (Chat IA)
+        step3_title = ctk.CTkLabel(container, text="3. Converse com a Inteligência Artificial", font=ctk.CTkFont(family="Segoe UI", size=16, weight="bold"), text_color="#8B5CF6")
+        step3_title.pack(padx=20, pady=(10, 5), anchor="w")
+        step3_text = (
+            "Na aba '🤖 Chat IA Meta' você pode conversar diretamente com uma LLM treinada que já conhece sua conta.\n"
+            "Para isso funcionar, você precisará gerar uma API Key gratuita na Groq e colar na aba de '⚙️ Configurações'."
+        )
+        step3_lbl = ctk.CTkLabel(container, text=step3_text, font=ctk.CTkFont(family="Segoe UI", size=13), text_color="#A1A1AA", justify="left")
+        step3_lbl.pack(padx=20, pady=(0, 15), anchor="w")
+
+        # Opção Gemini Notebook (Externo)
+        gemini_card = ctk.CTkFrame(container, corner_radius=10, fg_color="#27272A")
+        gemini_card.pack(fill="x", padx=20, pady=20)
+        
+        gemini_title = ctk.CTkLabel(gemini_card, text="Alternativa: Usando o NotebookLM (Opcional)", font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"), text_color="#E4E4E7")
+        gemini_title.pack(padx=15, pady=(15, 5), anchor="w")
+        gemini_text = (
+            "Se você não quiser usar a API da Groq, o Chat IA do programa é totalmente opcional! Você pode simplesmente gerar os\n"
+            "arquivos '.md' (ex: roster_hsr.md) nas pastas dos jogos geradas no seu PC e fazer o upload manual deles para o NotebookLM do Google.\n"
+            "O Gemini também fará o papel de Coach de Endgame lindamente usando os arquivos markdown gerados por esse app."
+        )
+        gemini_lbl = ctk.CTkLabel(gemini_card, text=gemini_text, font=ctk.CTkFont(family="Segoe UI", size=13), text_color="#A1A1AA", justify="left")
+        gemini_lbl.pack(padx=15, pady=(0, 10), anchor="w")
+
+        def open_notebooklm():
+            import webbrowser
+            webbrowser.open("https://notebooklm.google.com/")
+
+        btn_notebook = ctk.CTkButton(
+            gemini_card,
+            text="Abrir Google NotebookLM",
+            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            fg_color="#3F3F46", hover_color="#52525B",
+            command=open_notebooklm
+        )
+        btn_notebook.pack(padx=15, pady=(0, 15), anchor="w")
 
     # ==========================================
     def build_config_screen(self, container):

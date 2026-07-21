@@ -297,7 +297,8 @@ class GroqRAG:
         # 2. Definir o system prompt persona com o contexto local injetado
         system_prompt = (
             "Você é um assistente especializado nos jogos da HoYoverse (Genshin Impact, Honkai: Star Rail, Zenless Zone Zero). "
-            "Responda com base no contexto fornecido e formate em Markdown claro para a interface gráfica."
+            "Responda com base no contexto fornecido e formate em Markdown claro para a interface gráfica.\n\n"
+            "Você tem acesso aos recordes de Endgame (Caos da Memória / Abismo Espiral) do jogador. Se o jogador não tiver alcançado as 36 estrelas ou travado em um andar específico, analise os times e as builds fornecidas para dar conselhos táticos: sugira trocas de composição de time para quebrar fraquezas e indique qual personagem precisa de melhoria urgente para passar daquela fase."
         )
         
         if contexto_str.strip():

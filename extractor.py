@@ -3,6 +3,7 @@ import re
 import requests
 import asyncio
 import genshin
+import endgame_extractor
 
 # Dicionários de mapeamento para traduzir Elementos e Caminhos para Português em HSR
 ELEMENT_MAP = {
@@ -143,6 +144,15 @@ class HSRExtractor(BaseExtractor):
         lines.append(f"**Conquistas Desbloqueadas:** {stats.achievement_num}")
         lines.append(f"**Baús Abertos:** {stats.chest_num}")
         lines.append(f"**Salão Esquecido:** {stats.abyss_process}")
+        
+        try:
+            endgame_text = await endgame_extractor.extrair_endgame_hsr(self.client, uid)
+            if endgame_text:
+                lines.append("")
+                lines.append(endgame_text)
+        except Exception as e:
+            print(f"Aviso: Não foi possível puxar dados de Endgame HSR: {e}")
+
         lines.append("")
         lines.append("## Detalhes do Roster de Personagens")
         lines.append("")
@@ -179,10 +189,17 @@ class HSRExtractor(BaseExtractor):
                 
                 # 2. Relíquias e Ornamentos
                 relics_list = []
-                if hasattr(char, "relics") and char.relics:
-                    relics_list.extend(char.relics)
-                if hasattr(char, "ornaments") and char.ornaments:
-                    relics_list.extend(char.ornaments)
+                try:
+                    detail = await self.client.get_starrail_character_details(char.id)
+                    if hasattr(detail, "relics") and detail.relics:
+                        relics_list.extend(detail.relics)
+                    if hasattr(detail, "ornaments") and detail.ornaments:
+                        relics_list.extend(detail.ornaments)
+                except Exception:
+                    if hasattr(char, "relics") and char.relics:
+                        relics_list.extend(char.relics)
+                    if hasattr(char, "ornaments") and char.ornaments:
+                        relics_list.extend(char.ornaments)
                 
                 set_counts = {}
                 for r in relics_list:
@@ -216,6 +233,35 @@ class HSRExtractor(BaseExtractor):
                 lines.append(f"- **Cone de Luz:** {equip_text}")
                 lines.append(f"- **Relíquias:** {relics_text}")
                 lines.append(f"- **Status Finais:** {properties_text}")
+                
+                if relics_list:
+                    lines.append("\n  **Detalhamento de Peças (Substatus):**")
+                    for relic in relics_list:
+                        main_prop = getattr(relic, "main_property", getattr(relic, "main_stat", None))
+                        if main_prop:
+                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            main_stat = f"{m_name} ({m_val})"
+                        else:
+                            main_stat = "Desconhecido"
+                            
+                        substats_str = "Sem substatus"
+                        sub_props = getattr(relic, "properties", getattr(relic, "sub_properties", getattr(relic, "sub_stats", getattr(relic, "sub_property_list", []))))
+                        if sub_props:
+                            subs = []
+                            for sub in sub_props:
+                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                subs.append(f"{s_name}: {s_val}")
+                            substats_str = ", ".join(subs)
+                        
+                        hsr_slot_map = {1: "Cabeça", 2: "Mãos", 3: "Corpo", 4: "Pés", 5: "Esfera Plana", 6: "Corda de Ligação"}
+                        pos = getattr(relic, 'pos', '?')
+                        pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
+                        lines.append(f"  • [{pos_name}] {relic.name}")
+                        lines.append(f"    - Principal: {main_stat}")
+                        lines.append(f"    - Substatus: {substats_str}")
+                        
                 lines.append("")
                 lines.append("---")
                 lines.append("")
@@ -257,6 +303,15 @@ class GenshinExtractor(BaseExtractor):
         lines.append("# Relatório de Personagens - Genshin Impact")
         lines.append(f"**UID:** {uid}")
         lines.append(f"**Personagens Obtidos:** {len(chars)}")
+        
+        try:
+            endgame_text = await endgame_extractor.extrair_endgame_genshin(self.client, uid)
+            if endgame_text:
+                lines.append("")
+                lines.append(endgame_text)
+        except Exception as e:
+            print(f"Aviso: Não foi possível puxar dados de Endgame Genshin: {e}")
+            
         lines.append("")
         lines.append("## Detalhes do Roster de Personagens")
         lines.append("")
@@ -321,6 +376,43 @@ class GenshinExtractor(BaseExtractor):
                 lines.append(f"- **Arma:** {weapon_text}")
                 lines.append(f"- **Artefatos:** {artifacts_text}")
                 lines.append(f"- **Status Finais:** {properties_text}")
+                
+                if hasattr(char, "artifacts") and char.artifacts:
+                    lines.append("\n  **Detalhamento de Peças (Substatus):**")
+                    for art in char.artifacts:
+                        main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
+                        if main_prop:
+                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            main_stat = f"{m_name} ({m_val})"
+                        else:
+                            main_stat = "Desconhecido"
+                            
+                        substats_str = "Sem substatus"
+                        sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
+                        if sub_props:
+                            subs = []
+                            for sub in sub_props:
+                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                subs.append(f"{s_name}: {s_val}")
+                            substats_str = ", ".join(subs)
+                        
+                        genshin_slot_map = {
+                            "EQUIP_BRACER": "Flor da Vida",
+                            "EQUIP_NECKLACE": "Pluma da Morte",
+                            "EQUIP_SHOES": "Areia do Tempo",
+                            "EQUIP_RING": "Cálice de Eonothem",
+                            "EQUIP_DRESS": "Tiara de Logos"
+                        }
+                        # Genshin usa equip_type, mas tem um formato de string as vezes
+                        pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
+                        if hasattr(pos, "name"): pos = pos.name # caso seja enum
+                        pos_name = genshin_slot_map.get(str(pos), str(pos))
+                        lines.append(f"  • [{pos_name}] {art.name}")
+                        lines.append(f"    - Principal: {main_stat}")
+                        lines.append(f"    - Substatus: {substats_str}")
+                        
                 lines.append("")
                 lines.append("---")
                 lines.append("")
@@ -377,6 +469,15 @@ class ZZZExtractor(BaseExtractor):
         lines.append(f"**Agentes Obtidos:** {user_data.stats.character_num}")
         lines.append(f"**Bangboos Obtidos:** {user_data.stats.bangboo_obtained}")
         lines.append(f"**Conquistas:** {user_data.stats.achievement_count}")
+        
+        try:
+            endgame_text = await endgame_extractor.extrair_endgame_zzz(self.client, uid)
+            if endgame_text:
+                lines.append("")
+                lines.append(endgame_text)
+        except Exception as e:
+            print(f"Aviso: Não foi possível puxar dados de Endgame ZZZ: {e}")
+            
         lines.append("")
         lines.append("## Detalhes do Roster de Agentes")
         lines.append("")
@@ -443,6 +544,36 @@ class ZZZExtractor(BaseExtractor):
                 lines.append(f"- **W-Engine:** {w_engine_text}")
                 lines.append(f"- **Discos:** {discs_text}")
                 lines.append(f"- **Status Finais:** {properties_text}")
+                
+                if hasattr(agent, "discs") and agent.discs:
+                    lines.append("\n  **Detalhamento de Peças (Substatus):**")
+                    for disc in agent.discs:
+                        main_props_list = getattr(disc, "main_properties", getattr(disc, "main_stat", []))
+                        if not isinstance(main_props_list, list): main_props_list = [main_props_list]
+                        main_prop = main_props_list[0] if main_props_list else None
+                        
+                        if main_prop:
+                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            main_stat = f"{m_name} ({m_val})"
+                        else:
+                            main_stat = "Desconhecido"
+                            
+                        substats_str = "Sem substatus"
+                        sub_props = getattr(disc, "properties", getattr(disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))))
+                        if sub_props:
+                            subs = []
+                            for sub in sub_props:
+                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                subs.append(f"{s_name}: {s_val}")
+                            substats_str = ", ".join(subs)
+                        
+                        pos = getattr(disc, 'position', getattr(disc, 'pos', '?'))
+                        lines.append(f"  • [Disco {pos}] {disc.name}")
+                        lines.append(f"    - Principal: {main_stat}")
+                        lines.append(f"    - Substatus: {substats_str}")
+
                 lines.append("")
                 lines.append("---")
                 lines.append("")
