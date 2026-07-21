@@ -4,5 +4,6 @@ genshin
 groq
 Pillow
 playwright
+pyinstaller
 requests
 urllib3
