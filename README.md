@@ -1,89 +1,77 @@
-# HoYo AI Assistant (Groq RAG Local)
+# 🎮 HoYo AI Assistant (Groq RAG Local)
 
-Uma ferramenta de desktop moderna com interface gráfica premium desenvolvida em Python (**CustomTkinter**) projetada para extrair rosters de jogo e recordes de Endgames via HoYoLAB, raspar guias analíticos de builds, tier lists e estatísticas do meta (via BeautifulSoup/Requests), e rodar um **Assistente de Chat IA com RAG local integrado** usando a incrível e rápida API da Groq (Llama-3).
+Uma ferramenta de desktop moderna com interface gráfica premium desenvolvida em Python (**CustomTkinter**) projetada para sincronizar rosters de personagens e recordes de Endgames via HoYoLAB, coletar guias analíticos de builds, tier lists e estatísticas do meta (KeqingMains, Prydwen, Game8), e rodar um **Assistente de Chat IA com RAG local integrado** usando a ultra-rápida API da Groq (Llama 3.3).
 
-O principal objetivo deste projeto é centralizar e processar o roster da sua conta HoYoverse junto com as fontes mais confiáveis de guias (KeqingMains, Prydwen, Game8), fornecendo um assistente RAG local completo para atuar como seu 'Coach de Endgame', recomendando composições de equipes, avaliando suas builds e ajudando com o meta atual do jogo.
+---
+
+## 🌟 Principais Recursos e Interface (UI/UX)
+
+- **📊 Mini-Dashboards da Conta:** Exibição em tempo real de estatísticas do jogador (UID, Nível da Conta, Total de Personagens e Personagens 5★/Rank S) no topo da tela de cada jogo.
+- **📁 Acesso Rápido a Arquivos:** Botão integrado `📁 Pasta (.md)` para abrir a pasta local do jogo diretamente no Windows Explorer.
+- **⚡ Status & Barra de Progresso Real (Porcentagem Flutuante):** Barra de progresso `determinate` precisa (0% a 100%) durante downloads e sincronizações de guias.
+- **🔀 Rodapé de Logs Isolado por Aba:** Suporte completo a execuções simultâneas em segundo plano. Cada jogo mantém seu próprio indicador e histórico de logs técnicos no rodapé.
+- **🛠️ Modo Dev / Painel Retrátil de Logs:** Console escuro em estilo terminal colapsável para inspecionar erros e chamadas HTTP sem poluir a interface do usuário final.
+- **🔔 Notificações Toast Flutuantes:** Avisos suaves no canto superior direito informando quando extrações são concluídas.
+- **🔑 Validação Inteligente no Chat IA:** Alerta automático no chat caso a chave da Groq não esteja configurada, oferecendo botão de atalho em 1-clique para as Configurações.
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Interface Gráfica:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) (Aparência Dark Premium)
-- **Modelos de IA e RAG:** Integração oficial com a `groq` utilizando os modelos rápidos da família Llama-3.
-- **API HoYoLAB:** [genshin.py](https://github.com/seriaati/genshin.py).
-- **Raspagem de Dados (Scraping):** BeautifulSoup4 & Requests (com cabeçalhos realistas anti-bloqueio).
-- **Concorrência:** Multi-threading em Python (evita o travamento da interface do CustomTkinter).
+- **Modelos de IA e RAG:** Integração oficial com a `groq` (Llama 3.3 70B Versatile).
+- **API HoYoLAB:** [genshin.py](https://github.com/seriaati/genshin.py) com suporte a Endgames estendidos (3 times no MoC / Shiyu / Abismo).
+- **Coleta de Dados:** BeautifulSoup4 & Requests HTTP resilientes com estratégias de retry automático.
+- **Autenticação:** [Playwright](https://playwright.dev/) para captura automatizada e segura de cookies HoYoLAB.
+- **Empacotamento:** [PyInstaller](https://pyinstaller.org/) configurado para gerar executáveis autônomos (`.exe` em 1 arquivo só).
 
 ---
 
 ## 📂 Estrutura do Projeto
 
-- `main.py`: Ponto de entrada que inicia o loop principal da GUI.
-- `gui.py`: Gerenciamento e design do layout da interface, console de logs em tempo real, abas de ajuda e orquestração de threads.
-- `groq_rag.py`: Módulo RAG que carrega chaves, consolida e indexa dinamicamente arquivos Markdown locais como contexto para a API da Groq (Coach de Endgame).
-- `auth.py`: Autenticação via navegador do Playwright para capturar os cookies oficiais da sua conta HoYoLAB de forma automatizada.
-- `extractor.py` & `endgame_extractor.py`: Extratores integrados utilizando a API do `genshin.py` para obter dados detalhados do perfil de jogo (Personagens ativos, níveis, constelações e extração de todos os Nodes do Endgame como MoC, Shiyu e Abismo).
-- `scraper_kqm.py`, `scraper_genshin_meta.py`: Raspadores de meta para Genshin Impact (KQM e Game8).
-- `scraper_prydwen.py`, `scraper_meta.py`: Raspadores de meta para Honkai: Star Rail (Prydwen).
-- `scraper_zzz.py`: Raspadores de meta para Zenless Zone Zero (Prydwen).
+- `main.py`: Ponto de entrada que inicializa os caminhos de navegadores e inicia a aplicação.
+- `gui.py`: Gerenciamento do layout CustomTkinter, navegação por abas e orquestração de threads.
+- `status_logger.py`: Componente modular de feedback visual (`StatusLoggerFrame`) com barra de progresso, status amigável e console retrátil dev.
+- `groq_rag.py`: Módulo RAG que carrega chaves, consolida e indexa dinamicamente arquivos Markdown locais como contexto para a IA da Groq (Coach de Endgame).
+- `auth.py`: Autenticação via navegador do Playwright para capturar os cookies oficiais da sua conta HoYoLAB.
+- `extractor.py` & `endgame_extractor.py`: Extratores de Roster e Endgames da API do HoYoLAB.
+- `scraper_kqm.py`, `scraper_genshin_meta.py`: Módulos de sincronização de guias e meta para Genshin Impact (KQM e Game8).
+- `scraper_prydwen.py`, `scraper_meta.py`: Módulos de sincronização para Honkai: Star Rail (Prydwen).
+- `scraper_zzz.py`: Módulos de sincronização para Zenless Zone Zero (Prydwen).
 
 ---
 
-## 🚀 Instalação e Configuração
+## 🚀 Instalação e Execução (Desenvolvimento)
 
-### 1. Instalar Dependências
-Crie um ambiente virtual e instale os pacotes listados no `requirements.txt`:
-
+### 1. Criar Ambiente Virtual e Instalar Dependências
 ```bash
-# Criar ambiente virtual
 python -m venv .venv
-
-# Ativar o ambiente virtual (Windows)
 .venv\Scripts\activate
-
-# Instalar dependências
 pip install -r requirements.txt
 ```
 
 ### 2. Instalar o Navegador do Playwright
-Para habilitar a captura automática de cookies do HoYoLAB, instale o navegador Chromium gerenciado pelo Playwright:
-
 ```bash
 playwright install chromium
 ```
 
-### 3. Executar a Aplicação
-Inicie a interface gráfica:
-
+### 3. Executar o Aplicativo
 ```bash
 python main.py
 ```
 
 ---
 
-## 📖 Funcionalidades e Organização de Dados
+## 📦 Gerando o Executável Autônomo (.exe)
 
-### 🔵 Zenless Zone Zero (ZZZ)
-- **Roster, Agentes & Endgame:** Extrai nível de Inter-nó, conquistas, detalhes de agentes obtidos e progressão de Defesa Shiyu salvando em `zzz/roster_zzz.md`.
-- **Guias & Meta:** Raspa guias individuais e compila em `zzz/meta_endgame_zzz.md`. Consolida em `zzz/todos_os_guias_zzz.md`.
+Para compilar o aplicativo completo em um único arquivo `.exe` portátil para distribuição:
 
-### 🟢 Genshin Impact
-- **Roster, Personagens & Endgame:** Extrai nível de Aventura, atributos consolidados e os inimigos e times utilizados no último piso do Abismo Espiral e Teatro Imaginário em `genshin/roster_genshin.md`.
-- **Guias & Meta:** Raspa guias do KeqingMains e Tier Lists do Game8.
-
-### 🟣 Honkai: Star Rail (HSR)
-- **Roster, Personagens & Endgame:** Extrai nível de Desbravamento, status de relíquias/Eidolons e todos os Times, Nós (incluindo o Node 3) e Pontuações do Caos da Memória, Ficção Pura e Sombra Apocalíptica em `hsr/roster_hsr.md`.
-- **Guias & Meta:** Raspa guias do Prydwen e compila as estatísticas.
-
----
-
-## ⚙️ Painel do Assistente IA RAG e Configurações
-
-1. **Credenciais HoYoLAB:** Autenticação automática via botão na interface, salvando os cookies locais em `cookies.json`.
-2. **Chave API Groq:** Configure sua `GROQ_API_KEY` na aba de Configurações globais de forma mascarada. O sistema valida a conexão salvando em `config.json`.
-3. **Alternativa Google NotebookLM:** O uso da API interna é totalmente opcional! Se preferir, upe os arquivos `.md` gerados na sua pasta diretamente no [NotebookLM do Google](https://notebooklm.google.com/) para atuar como RAG!
+```bash
+pyinstaller --noconfirm --onefile --windowed --name "HoYoAssistant" --add-data "assets;assets" --collect-all customtkinter --collect-all playwright main.py
+```
+O executável final será gerado dentro da pasta `dist/HoYoAssistant.exe`.
 
 ---
 
 ## 🔒 Segurança e Privacidade
-Todos os dados sensíveis como cookies do HoYoLAB (`cookies.json`), chaves de API (`config.json`) e base de guias raspadas são armazenados **exclusivamente localmente** na sua máquina. Nenhuma telemetria é enviada para fora do seu PC a não ser as requisições primárias oficiais paras as APIs (HoYoLAB e Groq).
+Todos os cookies (`cookies.json`), chaves de API (`config.json`) e arquivos markdown gerados são armazenados **exclusivamente no seu computador**. O app é 100% user-level e não requer privilégios de Administrador no Windows.

@@ -2,6 +2,7 @@
 .venv/
 venv/
 ENV/
+env/
 
 # Python cache and bytecode
 __pycache__/
@@ -33,7 +34,7 @@ cookies.json
 user_data_google/
 chave de api.txt
 
-# Automatically generated reports and markdown scrapings (avoid committing raw data)
+# Automatically generated reports and markdown files (avoid committing user data)
 hsr/
 zzz/
 genshin/
@@ -47,8 +48,7 @@ guias_prydwen/
 moc_payload_dump.txt
 *.log
 
-# PyInstaller
+# PyInstaller build artifacts
 build/
 dist/
 *.spec
-

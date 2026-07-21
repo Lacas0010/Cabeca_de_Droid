@@ -1,9 +1,11 @@
 import os
+import re
 import json
 import asyncio
 import threading
 import traceback
 import time
+import datetime
 import sys
 import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageFont, ImageOps
@@ -452,6 +454,173 @@ class App(ctk.CTk):
             self.btn_help.configure(fg_color="#10B981", text_color="#FFFFFF")
             self.frame_how_to.pack(fill="both", expand=True, padx=5, pady=5)
 
+    def open_game_folder(self, game_id: str):
+        """Abre o diretório local do jogo no Windows Explorer."""
+        folder_path = os.path.abspath(game_id)
+        os.makedirs(folder_path, exist_ok=True)
+        try:
+            if sys.platform == "win32":
+                os.startfile(folder_path)
+            else:
+                import subprocess
+                subprocess.run(["open" if sys.platform == "darwin" else "xdg-open", folder_path])
+        except Exception as e:
+            self.log(f"Erro ao abrir pasta {folder_path}: {e}", "WARN", game_id=game_id)
+
+    def parse_roster_summary(self, game_id: str) -> dict:
+        """Lê o arquivo roster_{game_id}.md se existir e extrai estatísticas resumidas."""
+        filepath = f"{game_id}/roster_{game_id}.md"
+        if not os.path.exists(filepath):
+            return None
+            
+        summary = {
+            "exists": True,
+            "mtime": datetime.datetime.fromtimestamp(os.path.getmtime(filepath)).strftime("%d/%m %H:%M"),
+            "uid": "N/A",
+            "level": "N/A",
+            "total_chars": 0,
+            "5star_count": 0
+        }
+        
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                content = f.read()
+                
+            # UID: pega tanto "(UID: 600156277)" quanto "**UID:** 1000135767"
+            m_uid = re.search(r'UID[^\d]*(\d+)', content)
+            if m_uid:
+                summary["uid"] = m_uid.group(1)
+                
+            # Nível: pega **Nível de Desbravamento:** 70 ou **Nível de Intermediário:** 59
+            m_lvl = re.search(r'\*\*Nível[^*:]*:\*\*\s*(\d+)', content)
+            if m_lvl:
+                summary["level"] = f"Nv. {m_lvl.group(1)}"
+            else:
+                summary["level"] = "Ativo"
+                
+            lines = content.splitlines()
+            char_lines = [l for l in lines if l.startswith("|") and not l.startswith("| Personagem") and not l.startswith("| Agente") and not l.startswith("| :---")]
+            summary["total_chars"] = len(char_lines)
+            
+            # 5 estrelas: verifica ⭐⭐⭐⭐⭐, S (⭐⭐⭐⭐⭐), 5★ ou 5 Estrelas
+            five_stars = [l for l in char_lines if "⭐⭐⭐⭐⭐" in l or "S (" in l or "5★" in l or "5 Estrelas" in l]
+            summary["5star_count"] = len(five_stars)
+        except Exception:
+            pass
+            
+        return summary
+
+    def update_dashboard_ui(self, game_id: str):
+        card = getattr(self, f"{game_id}_dashboard_card", None)
+        if not card:
+            return
+            
+        for widget in card.winfo_children():
+            widget.destroy()
+            
+        info = self.parse_roster_summary(game_id)
+        
+        inner = ctk.CTkFrame(card, fg_color="transparent")
+        inner.pack(padx=16, pady=12, fill="x")
+        
+        if info:
+            inner.grid_columnconfigure((0, 1, 2, 3, 4), weight=1)
+            
+            # Col 0: UID
+            f0 = ctk.CTkFrame(inner, fg_color="#27272A", corner_radius=8)
+            f0.grid(row=0, column=0, padx=4, sticky="ew")
+            ctk.CTkLabel(f0, text="UID DA CONTA", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(pady=(6, 0))
+            ctk.CTkLabel(f0, text=info["uid"], font=ctk.CTkFont(size=13, weight="bold"), text_color="#3B82F6").pack(pady=(0, 6))
+            
+            # Col 1: Nível
+            f1 = ctk.CTkFrame(inner, fg_color="#27272A", corner_radius=8)
+            f1.grid(row=0, column=1, padx=4, sticky="ew")
+            ctk.CTkLabel(f1, text="NÍVEL DE JOGO", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(pady=(6, 0))
+            ctk.CTkLabel(f1, text=info["level"], font=ctk.CTkFont(size=13, weight="bold"), text_color="#10B981").pack(pady=(0, 6))
+            
+            # Col 2: Total de Personagens
+            f2 = ctk.CTkFrame(inner, fg_color="#27272A", corner_radius=8)
+            f2.grid(row=0, column=2, padx=4, sticky="ew")
+            ctk.CTkLabel(f2, text="ROSTER OBTIDO", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(pady=(6, 0))
+            ctk.CTkLabel(f2, text=f"{info['total_chars']} Chars ({info['5star_count']} 5★)", font=ctk.CTkFont(size=12, weight="bold"), text_color="#F59E0B").pack(pady=(0, 6))
+            
+            # Col 3: Última Sincronização
+            f3 = ctk.CTkFrame(inner, fg_color="#27272A", corner_radius=8)
+            f3.grid(row=0, column=3, padx=4, sticky="ew")
+            ctk.CTkLabel(f3, text="ÚLTIMA SINCRONIZAÇÃO", font=ctk.CTkFont(size=9, weight="bold"), text_color="#A1A1AA").pack(pady=(6, 0))
+            ctk.CTkLabel(f3, text=f"🟢 {info['mtime']}", font=ctk.CTkFont(size=11, weight="bold"), text_color="#8B5CF6").pack(pady=(0, 6))
+            
+            # Col 4: Botão de Abrir Pasta no Explorer
+            btn_folder = ctk.CTkButton(
+                inner,
+                text="📁 Pasta (.md)",
+                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                fg_color="#3F3F46",
+                hover_color="#52525B",
+                height=38,
+                command=lambda g=game_id: self.open_game_folder(g)
+            )
+            btn_folder.grid(row=0, column=4, padx=4, sticky="ew")
+            
+        else:
+            inner.grid_columnconfigure(0, weight=3)
+            inner.grid_columnconfigure(1, weight=1)
+            
+            lbl_empty = ctk.CTkLabel(
+                inner,
+                text="⚪ Nenhum dado extraído localmente para este jogo ainda. Marque as opções abaixo e execute!",
+                font=ctk.CTkFont(family="Segoe UI", size=12),
+                text_color="#A1A1AA",
+                anchor="w"
+            )
+            lbl_empty.grid(row=0, column=0, padx=5, sticky="w")
+            
+            btn_folder = ctk.CTkButton(
+                inner,
+                text="📁 Abrir Pasta no Explorer",
+                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                fg_color="#27272A",
+                hover_color="#3F3F46",
+                height=32,
+                command=lambda g=game_id: self.open_game_folder(g)
+            )
+            btn_folder.grid(row=0, column=1, padx=5, sticky="e")
+
+    def show_toast(self, title: str, message: str, level: str = "SUCCESS"):
+        """Exibe uma notificação flutuante suave (Toast) temporária na UI."""
+        def _create_toast():
+            toast = ctk.CTkFrame(
+                self,
+                fg_color="#065F46" if level == "SUCCESS" else "#7F1D1D",
+                corner_radius=10,
+                border_width=1,
+                border_color="#10B981" if level == "SUCCESS" else "#EF4444"
+            )
+            
+            lbl_title = ctk.CTkLabel(
+                toast,
+                text=title,
+                font=ctk.CTkFont(family="Segoe UI", size=13, weight="bold"),
+                text_color="#FFFFFF"
+            )
+            lbl_title.pack(padx=16, pady=(10, 2), anchor="w")
+            
+            lbl_msg = ctk.CTkLabel(
+                toast,
+                text=message,
+                font=ctk.CTkFont(family="Segoe UI", size=11),
+                text_color="#F4F4F5"
+            )
+            lbl_msg.pack(padx=16, pady=(0, 10), anchor="w")
+            
+            toast.place(relx=0.97, rely=0.04, anchor="ne")
+            self.after(4000, lambda: toast.destroy() if toast.winfo_exists() else None)
+            
+        if threading.current_thread() is threading.main_thread():
+            _create_toast()
+        else:
+            self.after(0, _create_toast)
+
     # ==========================================
     # DESIGN SYSTEM: LAYOUT DE ABAS DE JOGOS
     # ==========================================
@@ -465,7 +634,13 @@ class App(ctk.CTk):
             subtitle=f"Gerenciador de RAG e Extrações de Meta-Guias para {title}"
         )
         header_banner = ctk.CTkLabel(container, image=banner_img, text="", corner_radius=12)
-        header_banner.pack(fill="x", padx=10, pady=(10, 15))
+        header_banner.pack(fill="x", padx=10, pady=(10, 12))
+        
+        # Dashboard Resumo da Conta & Acesso Rápido
+        dashboard_card = ctk.CTkFrame(container, corner_radius=12, fg_color="#18181B", border_width=1, border_color="#27272A")
+        dashboard_card.pack(fill="x", padx=10, pady=(0, 10))
+        setattr(self, f"{game_id}_dashboard_card", dashboard_card)
+        self.update_dashboard_ui(game_id)
         # Card 1: Dados do Roster (HoYoLAB)
         card_roster = ctk.CTkFrame(container, corner_radius=12, fg_color="#1C1C22", border_width=1, border_color="#2D2D35")
         card_roster.pack(fill="x", padx=10, pady=10)
@@ -1228,8 +1403,11 @@ class App(ctk.CTk):
         
         if success:
             self.log(f"Todas as tarefas de {game_id.upper()} foram finalizadas com sucesso!", "SUCCESS", progresso=1.0, game_id=game_id)
+            self.show_toast(f"✨ {game_id.upper()} Concluído", f"Todas as tarefas de {game_id.upper()} foram finalizadas!")
+            self.update_dashboard_ui(game_id)
         else:
             self.log(f"Tarefas de {game_id.upper()} falharam: {msg}", "ERROR", game_id=game_id)
+            self.show_toast(f"❌ {game_id.upper()} Falhou", f"Erro: {msg}", level="ERROR")
 
     # ==========================================
     # GERENCIAMENTO DO CHAT ASSISTENTE IA RAG
@@ -1245,6 +1423,30 @@ class App(ctk.CTk):
         )
         header_banner = ctk.CTkLabel(container, image=banner_img, text="", corner_radius=12)
         header_banner.pack(fill="x", padx=10, pady=(10, 10))
+        
+        # Banner de Validação da API Key se não estiver salva
+        if not (self.groq_rag and self.groq_rag.api_key):
+            warn_card = ctk.CTkFrame(container, corner_radius=10, fg_color="#371B1B", border_width=1, border_color="#7F1D1D")
+            warn_card.pack(fill="x", padx=10, pady=(0, 10))
+            
+            lbl = ctk.CTkLabel(
+                warn_card,
+                text="🔑 Nenhuma API Key da Groq configurada. O assistente IA precisa de uma chave gratuita para responder.",
+                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                text_color="#FCA5A5"
+            )
+            lbl.pack(side="left", padx=15, pady=10)
+            
+            btn_cfg = ctk.CTkButton(
+                warn_card,
+                text="⚙️ Ir para Configurações",
+                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                fg_color="#DC2626",
+                hover_color="#B91C1C",
+                height=28,
+                command=lambda: self.select_frame("config")
+            )
+            btn_cfg.pack(side="right", padx=15, pady=10)
         
         # Filtro de Jogo Ativo / Contexto
         filter_frame = ctk.CTkFrame(container, fg_color="transparent")
