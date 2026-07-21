@@ -4,6 +4,7 @@ import asyncio
 import threading
 import traceback
 import time
+import sys
 import customtkinter as ctk
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from auth import capturar_cookies_hoyolab
@@ -97,14 +98,23 @@ class App(ctk.CTk):
         y = (screen_height // 2) - (height // 2)
         self.geometry(f"{width}x{height}+{x}+{y}")
 
+    def resource_path(self, relative_path: str):
+        """ Retorna o caminho absoluto do recurso, compatível com PyInstaller --onefile """
+        try:
+            base_path = sys._MEIPASS
+        except Exception:
+            base_path = os.path.abspath(".")
+        return os.path.join(base_path, relative_path)
+
     def load_sidebar_icon(self, icon_path: str):
         """Carrega e redimensiona um ícone de sidebar, retornando um CTkImage ou None."""
-        if os.path.exists(icon_path):
+        full_path = self.resource_path(icon_path)
+        if os.path.exists(full_path):
             try:
-                img = Image.open(icon_path).convert("RGBA")
+                img = Image.open(full_path).convert("RGBA")
                 return ctk.CTkImage(light_image=img, dark_image=img, size=(20, 20))
             except Exception as e:
-                self.log(f"Erro ao carregar ícone {icon_path}: {e}", "WARN")
+                self.log(f"Erro ao carregar ícone {full_path}: {e}", "WARN")
         return None
 
     def hex_to_rgb(self, hex_str: str) -> tuple:
@@ -116,10 +126,11 @@ class App(ctk.CTk):
         Preenche 100% do banner com a arte do jogo e adiciona um degradê
         escuro no canto esquerdo para garantir leitura do texto.
         """
+        full_path = self.resource_path(banner_path)
         try:
             # 1. Carrega e ajusta a imagem para preencher 100% do container (Crop estilo Cover)
-            if os.path.exists(banner_path):
-                img = Image.open(banner_path).convert("RGBA")
+            if os.path.exists(full_path):
+                img = Image.open(full_path).convert("RGBA")
                 
                 # Proporção Cover
                 target_ratio = width / height
@@ -152,11 +163,11 @@ class App(ctk.CTk):
                 # Aplica a sombra sobre a imagem
                 final_banner = Image.alpha_composite(img, overlay)
             else:
-                self.log(f"Asset de banner não encontrado: {banner_path}. Usando cor sólida.", "INFO")
+                self.log(f"Asset de banner não encontrado: {full_path}. Usando cor sólida.", "INFO")
                 final_banner = Image.new("RGBA", (width, height), theme_color_hex)
 
         except Exception as e:
-            self.log(f"Erro ao carregar banner {banner_path}: {e}", "WARN")
+            self.log(f"Erro ao carregar banner {full_path}: {e}", "WARN")
             # Fallback para fundo com a cor temática
             final_banner = Image.new("RGBA", (width, height), theme_color_hex)
 
