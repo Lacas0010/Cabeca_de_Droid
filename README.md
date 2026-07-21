@@ -10,7 +10,7 @@ O principal objetivo deste projeto é centralizar e processar o roster da sua co
 
 - **Interface Gráfica:** [CustomTkinter](https://github.com/TomSchimansky/CustomTkinter) (Aparência Dark Premium)
 - **Modelos de IA e RAG:** Integração oficial com a `groq` utilizando os modelos rápidos da família Llama-3.
-- **API HoYoLAB:** [genshin.py](https://github.com/thebowja/genshin.py)
+- **API HoYoLAB:** [genshin.py](https://github.com/seriaati/genshin.py).
 - **Raspagem de Dados (Scraping):** BeautifulSoup4 & Requests (com cabeçalhos realistas anti-bloqueio).
 - **Concorrência:** Multi-threading em Python (evita o travamento da interface do CustomTkinter).
 
