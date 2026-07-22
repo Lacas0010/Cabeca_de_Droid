@@ -1,6 +1,11 @@
-# 🎮 HoYo AI Assistant (Groq RAG Web Local)
+# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG)
 
-Uma ferramenta local moderna com interface gráfica **Web Premium** desenvolvida em **HTML5, CSS3, Vanilla JS** e servida em background por um servidor local em Python (**FastAPI**). O assistente foi projetado para sincronizar rosters de personagens e recordes de Endgames via HoYoLAB, coletar guias analíticos de builds, tier lists e estatísticas do meta (KeqingMains, Prydwen, Game8), e rodar um **Assistente de Chat IA com RAG local integrado** usando a ultra-rápida API da Groq (Llama 3.3).
+Uma ferramenta local moderna com interface gráfica **Web Premium** desenvolvida em **HTML5, CSS3, Vanilla JS** e servida por um backend local em Python (**FastAPI**). 
+
+> [!NOTE]
+> **Sobre o nome:** "Cabeça de Droid" é uma brincadeira e uma leve referência a Honkai: Star Rail — especificamente como a Herta carinhosamente chama o **Aeon Nous** (o Aeon da Erudição), que na lore é um supercomputador astral gigante que desenvolveu uma Inteligência Artificial Geral/Superinteligente (ASI) e ascendeu à divindade. A logo do projeto é justamente inspirada nessa grande inteligência robótica!
+
+O assistente foi projetado para sincronizar rosters de personagens e recordes de Endgames via HoYoLAB, coletar guias analíticos de builds, tier lists e estatísticas do meta (KeqingMains, Prydwen, Game8), e rodar um **Assistente de Chat IA com RAG local integrado** usando a API da Groq ou modelos locais.
 
 ---
 
