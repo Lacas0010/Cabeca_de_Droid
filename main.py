@@ -45,8 +45,10 @@ import uvicorn
 
 setup_playwright()
 
+from server import app
+
 def start_server():
-    uvicorn.run("server:app", host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
 
 def main():
     """

@@ -717,14 +717,22 @@ ELEMENT_ICONS_MAP = {
     }
 }
 
+def get_resource_path(relative_path):
+    """Obtém o caminho absoluto para o recurso, compatível com desenvolvimento e executável do PyInstaller."""
+    import sys
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.abspath(relative_path)
+
 def download_element_icons():
     """Garante que todos os ícones oficiais de elementos dos 3 jogos estejam em cache local."""
     import requests
-    os.makedirs("assets/elements", exist_ok=True)
+    target_dir = get_resource_path(os.path.join("assets", "elements"))
+    os.makedirs(target_dir, exist_ok=True)
     headers = {"User-Agent": "Mozilla/5.0"}
     for game, elements in ELEMENT_ICONS_MAP.items():
         for elem_name, url in elements.items():
-            path = f"assets/elements/{game}_{elem_name}.png"
+            path = os.path.join(target_dir, f"{game}_{elem_name}.png")
             if not os.path.exists(path):
                 try:
                     res = requests.get(url, headers=headers, timeout=10)
@@ -740,11 +748,14 @@ download_element_icons()
 
 # ==========================================
 
-os.makedirs("static", exist_ok=True)
-os.makedirs("assets", exist_ok=True)
+static_dir = get_resource_path("static")
+assets_dir = get_resource_path("assets")
 
-app.mount("/assets", StaticFiles(directory="assets"), name="assets")
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
+os.makedirs(static_dir, exist_ok=True)
+os.makedirs(assets_dir, exist_ok=True)
+
+app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
