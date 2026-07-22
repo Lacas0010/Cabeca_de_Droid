@@ -39,6 +39,11 @@ hsr/
 zzz/
 genshin/
 
+# Ignore remote avatars, weapons, and relics downloaded at run
+assets/avatars/
+assets/weapons/
+assets/relics/
+
 # Legacy generated files (from previous versions)
 meus_personagens_hsr.md
 meta_e_tierlists_atual.md
@@ -47,8 +52,3 @@ todos_os_guias_prydwen.md
 guias_prydwen/
 moc_payload_dump.txt
 *.log
-
-# PyInstaller build artifacts
-build/
-dist/
-*.spec

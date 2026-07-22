@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HoYo AI Assistant</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Marked.js para renderizar Markdown do RAG -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- CSS Estilos Customizados -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR DE NAVEGAÇÃO -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <img src="/assets/config_icon.png" class="brand-logo" alt="Logo">
+                </div>
+                <div class="brand-text">
+                    <h1>HoYo Assistant</h1>
+                    <span>Groq RAG Engine v3.0</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="zzz">
+                    <img src="/assets/zzz_icon.png" class="tab-icon" alt="ZZZ"> ZZZ (Zenless Zone Zero)
+                </button>
+                <button class="nav-btn" data-tab="genshin">
+                    <img src="/assets/genshin_icon.png" class="tab-icon" alt="Genshin"> Genshin Impact
+                </button>
+                <button class="nav-btn" data-tab="hsr">
+                    <img src="/assets/hsr_icon.png" class="tab-icon" alt="HSR"> Honkai: Star Rail
+                </button>
+                <button class="nav-btn" data-tab="chat">
+                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Chat"> Chat IA Meta
+                </button>
+                <button class="nav-btn" data-tab="config">
+                    <img src="/assets/config_icon.png" class="tab-icon" alt="Config"> Configurações
+                </button>
+                <button class="nav-btn" data-tab="help">
+                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Help" style="filter: hue-rotate(140deg);"> Como Usar
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="btn-sync-all" class="sync-all-btn">🚀 Sincronização Global</button>
+                <div class="conn-status">
+                    <span id="api-status-dot" class="status-dot offline"></span>
+                    <span id="api-status-text">Buscando status...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            <!-- ABA ZZZ -->
+            <section id="tab-zzz" class="tab-pane active">
+                <div class="game-banner banner-zzz">
+                    <div class="banner-overlay">
+                        <h2>Zenless Zone Zero</h2>
+                        <p>Perfil de Agentes e análise de discos em tempo real</p>
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <div class="sync-config">
+                        <label><input type="checkbox" id="sync-roster-zzz" checked> Roster</label>
+                        <label><input type="checkbox" id="sync-guides-zzz" checked> Guias</label>
+                        <label><input type="checkbox" id="sync-meta-zzz" checked> Metagame</label>
+                        <button class="action-btn sync-game-btn" data-game="zzz">Sincronizar ZZZ</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="Buscar agente..." class="search-input" data-game="zzz">
+                    </div>
+                </div>
+
+                <div id="sync-logger-zzz" class="sync-logger" style="display: none;">
+                    <div class="logger-header">
+                        <span class="logger-title">Sincronizando ZZZ...</span>
+                        <span class="logger-percentage">0%</span>
+                    </div>
+                    <div class="logger-progress"><div class="logger-progress-bar"></div></div>
+                    <div class="logger-message">Aguardando...</div>
+                    <details class="logger-details">
+                        <summary>Ver logs de execução</summary>
+                        <pre class="logger-terminal"></pre>
+                    </details>
+                </div>
+
+                <div class="gallery-container">
+                    <div id="gallery-zzz" class="character-gallery">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA GENSHIN -->
+            <section id="tab-genshin" class="tab-pane">
+                <div class="game-banner banner-genshin">
+                    <div class="banner-overlay">
+                        <h2>Genshin Impact</h2>
+                        <p>Visualização de artefatos e builds ativas da Enka Network</p>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="sync-config">
+                        <label><input type="checkbox" id="sync-roster-genshin" checked> Roster</label>
+                        <label><input type="checkbox" id="sync-guides-genshin" checked> Guias</label>
+                        <label><input type="checkbox" id="sync-meta-genshin" checked> Metagame</label>
+                        <button class="action-btn sync-game-btn" data-game="genshin">Sincronizar Genshin</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="Buscar personagem..." class="search-input" data-game="genshin">
+                    </div>
+                </div>
+
+                <div id="sync-logger-genshin" class="sync-logger" style="display: none;">
+                    <div class="logger-header">
+                        <span class="logger-title">Sincronizando Genshin...</span>
+                        <span class="logger-percentage">0%</span>
+                    </div>
+                    <div class="logger-progress"><div class="logger-progress-bar"></div></div>
+                    <div class="logger-message">Aguardando...</div>
+                    <details class="logger-details">
+                        <summary>Ver logs de execução</summary>
+                        <pre class="logger-terminal"></pre>
+                    </details>
+                </div>
+
+                <div class="gallery-container">
+                    <div id="gallery-genshin" class="character-gallery">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA HSR -->
+            <section id="tab-hsr" class="tab-pane">
+                <div class="game-banner banner-hsr">
+                    <div class="banner-overlay">
+                        <h2>Honkai: Star Rail</h2>
+                        <p>Metagame, Cones de Luz e status do Caos da Memória</p>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="sync-config">
+                        <label><input type="checkbox" id="sync-roster-hsr" checked> Roster</label>
+                        <label><input type="checkbox" id="sync-guides-hsr" checked> Guias</label>
+                        <label><input type="checkbox" id="sync-meta-hsr" checked> Metagame</label>
+                        <button class="action-btn sync-game-btn" data-game="hsr">Sincronizar HSR</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="Buscar personagem..." class="search-input" data-game="hsr">
+                    </div>
+                </div>
+
+                <div id="sync-logger-hsr" class="sync-logger" style="display: none;">
+                    <div class="logger-header">
+                        <span class="logger-title">Sincronizando HSR...</span>
+                        <span class="logger-percentage">0%</span>
+                    </div>
+                    <div class="logger-progress"><div class="logger-progress-bar"></div></div>
+                    <div class="logger-message">Aguardando...</div>
+                    <details class="logger-details">
+                        <summary>Ver logs de execução</summary>
+                        <pre class="logger-terminal"></pre>
+                    </details>
+                </div>
+
+                <div class="gallery-container">
+                    <div id="gallery-hsr" class="character-gallery">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA CHAT IA RAG -->
+            <section id="tab-chat" class="tab-pane">
+                <div class="chat-container">
+                    <div class="chat-header">
+                        <h2>HoYo AI Assistant</h2>
+                        <div class="chat-context">
+                            <label for="chat-context-select">Contexto do RAG:</label>
+                            <select id="chat-context-select">
+                                <option value="todos">Todos os Jogos (Global)</option>
+                                <option value="zzz">Zenless Zone Zero</option>
+                                <option value="genshin">Genshin Impact</option>
+                                <option value="hsr">Honkai: Star Rail</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div id="chat-messages" class="chat-messages-area">
+                        <div class="chat-msg assistant">
+                            <div class="msg-avatar">🤖</div>
+                            <div class="msg-content">
+                                <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
+                                <ul>
+                                    <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
+                                    <li><em>"Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"</em></li>
+                                    <li><em>"Quais são os melhores discos para o agente que escolhi no ZZZ?"</em></li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-area">
+                        <textarea id="chat-input" placeholder="Pergunte sobre seus personagens, times ou builds..." rows="1"></textarea>
+                        <button id="chat-send-btn" class="chat-send-btn">Enviar ➔</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA CONFIGURAÇÕES -->
+            <section id="tab-config" class="tab-pane">
+                <div class="config-container">
+                    <h2>Configurações do Aplicativo</h2>
+                    <p class="config-desc">As chaves de API e credenciais de login são armazenadas localmente no seu computador e não são enviadas a servidores externos.</p>
+                    
+                    <div class="config-section">
+                        <h3>🔑 API Key do Groq</h3>
+                        <p class="section-desc">Insira a chave da API do Groq (começando com <code>gsk_</code>). Você pode obter uma gratuitamente no console oficial da Groq.</p>
+                        <div class="input-group">
+                            <input type="password" id="cfg-groq-key" placeholder="gsk_..." class="config-input">
+                        </div>
+                    </div>
+                    
+                    <div class="config-section">
+                        <h3>🍪 Cookies de Sessão HoYoLAB</h3>
+                        <p class="section-desc">Insira os cookies da sua sessão HoYoLAB no formato <code>ltuid_v2=xxx; ltoken_v2=yyy;</code> ou utilize o login automático abaixo.</p>
+                        <div class="input-group">
+                            <textarea id="cfg-hoyolab-cookies" placeholder="Cole os cookies de sessão aqui..." class="config-input config-textarea"></textarea>
+                        </div>
+                        <div class="btn-row">
+                            <button id="btn-auto-login" class="secondary-btn">🌐 Login Automático via Playwright</button>
+                            <span class="btn-info">Isto abrirá uma janela do navegador temporária para você logar no site da HoYoLAB.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="config-actions">
+                        <button id="btn-save-config" class="primary-btn">Salvar Configurações</button>
+                        <span id="config-save-status" class="status-msg"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA COMO USAR -->
+            <section id="tab-help" class="tab-pane">
+                <div class="config-container">
+                    <h2>📖 Como usar o HoYo AI Assistant</h2>
+                    <p class="config-desc" style="margin-bottom: 20px;">Este aplicativo foi criado para ajudar você a analisar suas contas da HoYoverse utilizando Inteligência Artificial. Ele puxa automaticamente todos os seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e cruza com dados de Metagame.</p>
+                    
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;">1. Faça o Login na HoYoLAB</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Vá até a aba de <strong>Configurações</strong> no menu esquerdo e clique em <strong>Login Automático (Navegador)</strong> ou insira manualmente seus cookies de sessão. O app vai abrir o site da HoYoLAB em segundo plano para capturar as credenciais necessárias (<code>ltuid_v2</code> e <code>ltoken_v2</code>) e salvá-las localmente para ter acesso ao seu histórico.</p>
+                    </div>
+                    
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #3b82f6; font-size: 15px; margin-bottom: 4px;">2. Selecione o Jogo e Extraia os Dados</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas <strong>Zenless Zone Zero</strong>, <strong>Genshin Impact</strong> ou <strong>Honkai: Star Rail</strong>, selecione o que deseja atualizar:</p>
+                        <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
+                            <li style="margin-bottom: 4px;"><strong>Roster</strong>: Busca seus personagens obtidos, níveis, constelações/eidolons, além de extrair os recordes recentes de Endgame (Shiyu, Abismo, MoC).</li>
+                            <li style="margin-bottom: 4px;"><strong>Guias</strong> e <strong>Metagame</strong>: Faz raspagem automática das tier lists e guias atualizados de referências como KeqingMains e Prydwen para montar a base de dados do RAG.</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #8b5cf6; font-size: 15px; margin-bottom: 4px;">3. Converse com a Inteligência Artificial</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Chat IA Meta</strong>, você pode bater um papo em tempo real com um LLM configurado localmente. A IA lerá seus arquivos de roster e metagame consolidados e poderá responder perguntas específicas sobre o que melhorar nas suas builds ou composições de times. Para isso funcionar, basta obter uma chave de API gratuita no console do Groq e salvá-la em <strong>Configurações</strong>.</p>
+                    </div>
+                    
+                    <div class="config-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                        <h3 style="font-size: 15px; margin-bottom: 4px;">Alternativa: Usando o NotebookLM (Opcional)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Se você preferir não utilizar a API do Groq, o Chat integrado do programa é 100% opcional! Você pode simplesmente gerar os arquivos de texto Markdown (ex: <code>roster_hsr.md</code> ou <code>todos_os_guias_hsr.md</code> nas pastas locais dos jogos) e carregá-los no <strong>Google NotebookLM</strong>. O Gemini fará o papel de Coach de forma incrível analisando os arquivos markdown gerados por este app.</p>
+                        <button onclick="window.open('https://notebooklm.google.com/', '_blank')" class="secondary-btn">Abrir Google NotebookLM ➔</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- COLLAPSIBLE BUILD INSPECTOR (INSPEÇÃO DE PERSONAGEM SIDEBAR) -->
+        <aside id="build-inspector" class="build-inspector">
+            <div class="inspector-header">
+                <div class="inspector-title">
+                    <img id="ins-avatar" src="" alt="Avatar" class="ins-char-avatar">
+                    <div>
+                        <h3 id="ins-name">Personagem</h3>
+                        <span id="ins-meta">Rank • Elemento • Nv. 90</span>
+                    </div>
+                </div>
+                <button id="btn-close-inspector" class="close-inspector-btn">✕</button>
+            </div>
+            
+            <div class="inspector-body">
+                <!-- Seção 1: Equipamento / Arma -->
+                <div class="inspector-card">
+                    <h4>🗡️ Equipamento / Arma</h4>
+                    <div class="weapon-detail">
+                        <img id="ins-weapon-icon" src="" alt="Arma" class="weapon-icon">
+                        <div>
+                            <strong id="ins-weapon-name">Nome do Equipamento</strong>
+                            <span id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Seção 2: Conjuntos de Relíquias -->
+                <div class="inspector-card">
+                    <h4>🔮 Conjuntos de Relíquias / Artefatos</h4>
+                    <div id="ins-relic-sets" class="relic-sets-list">
+                        <!-- Inserido dinamicamente -->
+                    </div>
+                </div>
+                
+                <!-- Seção 3: Atributos Consolidados -->
+                <div class="inspector-card">
+                    <h4>📊 Status Finais Consolidados</h4>
+                    <div id="ins-stats-grid" class="stats-grid">
+                        <!-- Inserido dinamicamente -->
+                    </div>
+                </div>
+                
+                <!-- Seção 4: Detalhamento de Peças -->
+                <div class="inspector-card">
+                    <h4>💿 Detalhamento de Peças e Substatus</h4>
+                    <div id="ins-relic-pieces" class="relic-pieces-list">
+                        <!-- Inserido dinamicamente -->
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- JavaScript Lógica do Frontend -->
+    <script src="app.js"></script>
+</body>
+</html>

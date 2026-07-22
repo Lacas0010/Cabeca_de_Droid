@@ -271,6 +271,7 @@ class HSRExtractor(BaseExtractor):
         roster_json_path = "hsr/roster_data_hsr.json"
         try:
             char_json_list = []
+            hsr_slot_map = {1: "Cabeça", 2: "Mãos", 3: "Corpo", 4: "Pés", 5: "Esfera Plana", 6: "Corda de Ligação"}
             for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
                 e_name = char.element.name if hasattr(char.element, "name") else str(char.element)
                 element = ELEMENT_MAP.get(e_name, e_name)
@@ -284,6 +285,35 @@ class HSRExtractor(BaseExtractor):
                         "icon": getattr(char.equip, "icon", "")
                     }
                     
+                relics_json = []
+                r_list = []
+                if hasattr(char, "relics") and char.relics: r_list.extend(char.relics)
+                if hasattr(char, "ornaments") and char.ornaments: r_list.extend(char.ornaments)
+                for r in r_list:
+                    pos = getattr(r, 'pos', '?')
+                    pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
+                    main_prop = getattr(r, "main_property", getattr(r, "main_stat", None))
+                    main_stat = "Desconhecido"
+                    if main_prop:
+                        m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                        m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                        main_stat = f"{m_name} ({m_val})"
+                        
+                    sub_props = getattr(r, "properties", getattr(r, "sub_properties", getattr(r, "sub_stats", getattr(r, "sub_property_list", []))))
+                    subs = []
+                    if sub_props:
+                        for sub in sub_props:
+                            s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                            s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                            subs.append(f"{s_name}: {s_val}")
+                    relics_json.append({
+                        "name": r.name,
+                        "icon": getattr(r, "icon", ""),
+                        "slot": pos_name,
+                        "main": main_stat,
+                        "sub": ", ".join(subs) if subs else "Sem substatus"
+                    })
+                    
                 char_json_list.append({
                     "name": char.name,
                     "level": char.level,
@@ -291,7 +321,8 @@ class HSRExtractor(BaseExtractor):
                     "rank_str": f"E{char.rank}",
                     "element": element,
                     "icon": getattr(char, "icon", getattr(char, "image", "")),
-                    "weapon": w_info
+                    "weapon": w_info,
+                    "relics": relics_json
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
@@ -454,6 +485,13 @@ class GenshinExtractor(BaseExtractor):
         roster_json_path = "genshin/roster_data_genshin.json"
         try:
             char_json_list = []
+            genshin_slot_map = {
+                "EQUIP_BRACER": "Flor da Vida",
+                "EQUIP_NECKLACE": "Pluma da Morte",
+                "EQUIP_SHOES": "Areia do Tempo",
+                "EQUIP_RING": "Cálice de Eonothem",
+                "EQUIP_DRESS": "Tiara de Logos"
+            }
             for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
                 w_info = {}
                 if hasattr(char, "weapon") and char.weapon:
@@ -463,6 +501,34 @@ class GenshinExtractor(BaseExtractor):
                         "rank": getattr(char.weapon, "refinement", 1),
                         "icon": getattr(char.weapon, "icon", "")
                     }
+                artifacts_json = []
+                if hasattr(char, "artifacts") and char.artifacts:
+                    for art in char.artifacts:
+                        pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
+                        if hasattr(pos, "name"): pos = pos.name
+                        pos_name = genshin_slot_map.get(str(pos), str(pos))
+                        main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
+                        main_stat = "Desconhecido"
+                        if main_prop:
+                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            main_stat = f"{m_name} ({m_val})"
+                            
+                        sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
+                        subs = []
+                        if sub_props:
+                            for sub in sub_props:
+                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                subs.append(f"{s_name}: {s_val}")
+                        artifacts_json.append({
+                            "name": art.name,
+                            "icon": getattr(art, "icon", ""),
+                            "slot": pos_name,
+                            "main": main_stat,
+                            "sub": ", ".join(subs) if subs else "Sem substatus"
+                        })
+                        
                 char_json_list.append({
                     "name": char.name,
                     "level": char.level,
@@ -470,7 +536,8 @@ class GenshinExtractor(BaseExtractor):
                     "rank_str": f"C{char.constellation}",
                     "element": getattr(getattr(char, "element", None), "name", "Anemo"),
                     "icon": getattr(char, "icon", ""),
-                    "weapon": w_info
+                    "weapon": w_info,
+                    "relics": artifacts_json
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
@@ -652,6 +719,34 @@ class ZZZExtractor(BaseExtractor):
                         "rank": getattr(agent.w_engine, "refinement", 1),
                         "icon": getattr(agent.w_engine, "icon", "")
                     }
+                discs_json = []
+                if hasattr(agent, "discs") and agent.discs:
+                    for disc in agent.discs:
+                        pos = getattr(disc, 'position', getattr(disc, 'pos', '?'))
+                        pos_name = f"Disco {pos}"
+                        main_props_list = getattr(disc, "main_properties", getattr(disc, "main_stat", []))
+                        if not isinstance(main_props_list, list): main_props_list = [main_props_list]
+                        main_prop = main_props_list[0] if main_props_list else None
+                        main_stat = "Desconhecido"
+                        if main_prop:
+                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            main_stat = f"{m_name} ({m_val})"
+                            
+                        sub_props = getattr(disc, "properties", getattr(disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))))
+                        subs = []
+                        if sub_props:
+                            for sub in sub_props:
+                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                subs.append(f"{s_name}: {s_val}")
+                        discs_json.append({
+                            "name": disc.name,
+                            "icon": getattr(disc, "icon", ""),
+                            "slot": pos_name,
+                            "main": main_stat,
+                            "sub": ", ".join(subs) if subs else "Sem substatus"
+                        })
                 icon_url = getattr(agent, "square_icon", getattr(agent, "rectangle_icon", getattr(agent, "icon", "")))
                 rarity_num = 5 if str(agent.rarity).upper() in ["S", "5"] else 4
                 char_json_list.append({
@@ -661,7 +756,8 @@ class ZZZExtractor(BaseExtractor):
                     "rank_str": f"M{agent.rank}",
                     "element": getattr(agent.element, "name", str(agent.element)),
                     "icon": icon_url,
-                    "weapon": w_info
+                    "weapon": w_info,
+                    "relics": discs_json
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
