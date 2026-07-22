@@ -21,7 +21,7 @@ from scraper_kqm import KQMScraper
 from scraper_genshin_meta import GenshinMetaScraper
 from groq_rag import GroqRAG
 
-app = FastAPI(title="HoYo Assistant API", version="3.0")
+app = FastAPI(title="Cabeça de Droid API", version="3.0")
 
 # Estado global para progresso da sincronização
 sync_status = {
@@ -512,6 +512,88 @@ def parse_character_build_data(game_id: str, char_name: str) -> dict:
         })
     return data
 
+@app.get("/api/overview")
+async def get_overview():
+    """Gera dados resumidos consolidados dos 3 jogos."""
+    overview = {}
+    
+    # 1. Honkai Star Rail
+    hsr_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
+    hsr_json_path = "hsr/roster_data_hsr.json"
+    hsr_md_path = "hsr/roster_hsr.md"
+    if os.path.exists(hsr_json_path):
+        try:
+            with open(hsr_json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                hsr_info["char_count"] = len(data)
+                hsr_info["five_stars"] = sum(1 for c in data if c.get("rarity") == 5)
+                hsr_info["active"] = True
+        except Exception:
+            pass
+    if os.path.exists(hsr_md_path):
+        try:
+            with open(hsr_md_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            m_uid = re.search(r'UID:\s*(\d+)', content)
+            if m_uid: hsr_info["uid"] = m_uid.group(1)
+            m_lvl = re.search(r'Nível de Desbravamento:\*\* (\d+)', content)
+            if m_lvl: hsr_info["level"] = m_lvl.group(1)
+        except Exception:
+            pass
+    overview["hsr"] = hsr_info
+
+    # 2. Genshin Impact
+    genshin_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
+    genshin_json_path = "genshin/roster_data_genshin.json"
+    genshin_md_path = "genshin/roster_genshin.md"
+    if os.path.exists(genshin_json_path):
+        try:
+            with open(genshin_json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                genshin_info["char_count"] = len(data)
+                genshin_info["five_stars"] = sum(1 for c in data if c.get("rarity") == 5)
+                genshin_info["active"] = True
+        except Exception:
+            pass
+    if os.path.exists(genshin_md_path):
+        try:
+            with open(genshin_md_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            m_uid = re.search(r'UID:\*\*\s*(\d+)', content)
+            if m_uid: genshin_info["uid"] = m_uid.group(1)
+            m_lvl = re.search(r'Rank de Aventura:\*\*\s*(\d+)', content)
+            if m_lvl: genshin_info["level"] = m_lvl.group(1)
+        except Exception:
+            pass
+    overview["genshin"] = genshin_info
+
+    # 3. Zenless Zone Zero
+    zzz_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
+    zzz_json_path = "zzz/roster_data_zzz.json"
+    zzz_md_path = "zzz/roster_zzz.md"
+    if os.path.exists(zzz_json_path):
+        try:
+            with open(zzz_json_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                zzz_info["char_count"] = len(data)
+                zzz_info["five_stars"] = sum(1 for c in data if str(c.get("rarity")) in ["5", "S"])
+                zzz_info["active"] = True
+        except Exception:
+            pass
+    if os.path.exists(zzz_md_path):
+        try:
+            with open(zzz_md_path, "r", encoding="utf-8") as f:
+                content = f.read()
+            m_uid = re.search(r'UID:\*\*\s*(\d+)', content)
+            if m_uid: zzz_info["uid"] = m_uid.group(1)
+            m_lvl = re.search(r'Nível de Intermediário:\*\*\s*(\d+)', content)
+            if m_lvl: zzz_info["level"] = m_lvl.group(1)
+        except Exception:
+            pass
+    overview["zzz"] = zzz_info
+
+    return overview
+
 @app.get("/api/build/{game_id}/{char_name}")
 async def get_build_detail(game_id: str, char_name: str):
     """Retorna os dados detalhados da build de um personagem, parseando o MD consolidado."""
@@ -519,6 +601,142 @@ async def get_build_detail(game_id: str, char_name: str):
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido.")
     return parse_character_build_data(game_id, char_name)
+
+# ==========================================
+# ENDPOINT OTIMIZADOR DE BUILDS VIA IA
+# ==========================================
+
+@app.get("/api/optimize/{game_id}/{char_name}")
+async def optimize_character_build(game_id: str, char_name: str):
+    """Gera sugestões de otimização de build com base nos dados do roster e no guia de meta."""
+    game_id = game_id.lower().strip()
+    if game_id not in ["hsr", "genshin", "zzz"]:
+        raise HTTPException(status_code=400, detail="Jogo inválido.")
+        
+    config = get_config()
+    api_key = config.get("groq_api_key") or config.get("gemini_api_key") or os.environ.get("GROQ_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="Chave API do Groq não configurada nas Configurações.")
+        
+    # Carrega dados do personagem e o contexto de guias
+    build_data = parse_character_build_data(game_id, char_name)
+    if not build_data.get("raw"):
+        return {"suggestions": ["Nenhum dado de Roster/Build encontrado para este personagem. Faça a sincronização primeiro na aba do jogo."]}
+        
+    # Carrega o guia de metagame
+    guide_context = ""
+    guides_dir = f"{game_id}/guias_prydwen" if game_id in ["hsr", "zzz"] else f"{game_id}/guias_kqm"
+    if os.path.exists(guides_dir):
+        safe_fn = char_name.lower().replace(" ", "_") + ".md"
+        guide_path = os.path.join(guides_dir, safe_fn)
+        if os.path.exists(guide_path):
+            try:
+                with open(guide_path, "r", encoding="utf-8") as f:
+                    guide_context = f.read()[:3000] # Limita tamanho do guia
+            except Exception:
+                pass
+                
+    rag = GroqRAG(api_key=api_key)
+    prompt = (
+        f"Você é um coach especializado de {game_id.upper()}. Dê exatamente 3 sugestões de melhorias curtas, diretas e acionáveis "
+        f"para a build de {char_name} com base na build atual e nas recomendações de metagame.\n\n"
+        f"Build atual do jogador:\n{build_data['raw']}\n\n"
+        f"Guia de Metagame de referência:\n{guide_context if guide_context else 'Não disponível. Sugira com base nas melhores práticas do jogo.'}\n\n"
+        f"Responda apenas em formato JSON com uma lista de strings sob a chave 'suggestions'. Exemplo:\n"
+        f"{{\"suggestions\": [\"1. Trocar a bota por velocidade\", \"2. Focar em taxa crítica nos substatus\", \"3. Usar o conjunto de 4 peças de quebra\"]}}"
+    )
+    
+    try:
+        completion = rag.client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=[
+                {"role": "system", "content": "Você responde estritamente em formato JSON válido, contendo apenas a chave 'suggestions'."},
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            temperature=0.4,
+            max_tokens=250
+        )
+        if completion and completion.choices:
+            resp = completion.choices[0].message.content
+            return json.loads(resp)
+    except Exception as e:
+        print(f"Erro ao gerar otimização IA com GPT-OSS 120B: {e}")
+        # Fallback para Llama
+        try:
+            completion = rag.client.chat.completions.create(
+                model="llama-3.3-70b-versatile",
+                messages=[
+                    {"role": "system", "content": "Você responde estritamente em formato JSON válido, contendo apenas a chave 'suggestions'."},
+                    {"role": "user", "content": prompt}
+                ],
+                response_format={"type": "json_object"},
+                temperature=0.4,
+                max_tokens=250
+            )
+            if completion and completion.choices:
+                return json.loads(completion.choices[0].message.content)
+        except Exception:
+            pass
+            
+    return {"suggestions": [
+        "1. Priorizar os atributos principais recomendados nas peças de Relíquias/Artefatos.",
+        "2. Tentar alcançar os bônus máximos de conjunto equipando 4 peças ideais.",
+        "3. Fortalecer o nível das relíquias equipadas para maximizar os atributos base."
+    ]}
+
+# ==========================================
+# DOWNLOAD AUTOMÁTICO DE ÍCONES DE ELEMENTOS
+# ==========================================
+
+ELEMENT_ICONS_MAP = {
+    "hsr": {
+        "fire": "https://static.wikia.nocookie.net/houkai-star-rail/images/c/ca/Element_Fire.png",
+        "ice": "https://static.wikia.nocookie.net/houkai-star-rail/images/1/15/Element_Ice.png",
+        "physical": "https://static.wikia.nocookie.net/houkai-star-rail/images/2/29/Element_Physical.png",
+        "wind": "https://static.wikia.nocookie.net/houkai-star-rail/images/7/77/Element_Wind.png",
+        "lightning": "https://static.wikia.nocookie.net/houkai-star-rail/images/e/e0/Element_Lightning.png",
+        "quantum": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/df/Element_Quantum.png",
+        "imaginary": "https://static.wikia.nocookie.net/houkai-star-rail/images/a/ab/Element_Imaginary.png",
+    },
+    "genshin": {
+        "pyro": "https://static.wikia.nocookie.net/genshin-impact/images/a/ad/Element_Pyro.png",
+        "hydro": "https://static.wikia.nocookie.net/genshin-impact/images/3/35/Element_Hydro.png",
+        "anemo": "https://static.wikia.nocookie.net/genshin-impact/images/a/a4/Element_Anemo.png",
+        "electro": "https://static.wikia.nocookie.net/genshin-impact/images/7/73/Element_Electro.png",
+        "dendro": "https://static.wikia.nocookie.net/genshin-impact/images/f/f4/Element_Dendro.png",
+        "cryo": "https://static.wikia.nocookie.net/genshin-impact/images/8/88/Element_Cryo.png",
+        "geo": "https://static.wikia.nocookie.net/genshin-impact/images/4/4a/Element_Geo.png",
+    },
+    "zzz": {
+        "fire": "https://static.wikia.nocookie.net/zenless-zone-zero/images/d/df/Attribute_Fire.png",
+        "electric": "https://static.wikia.nocookie.net/zenless-zone-zero/images/5/52/Attribute_Electric.png",
+        "ice": "https://static.wikia.nocookie.net/zenless-zone-zero/images/c/c3/Attribute_Ice.png",
+        "physical": "https://static.wikia.nocookie.net/zenless-zone-zero/images/1/15/Attribute_Physical.png",
+        "ether": "https://static.wikia.nocookie.net/zenless-zone-zero/images/e/ea/Attribute_Ether.png",
+    }
+}
+
+def download_element_icons():
+    """Garante que todos os ícones oficiais de elementos dos 3 jogos estejam em cache local."""
+    import requests
+    os.makedirs("assets/elements", exist_ok=True)
+    headers = {"User-Agent": "Mozilla/5.0"}
+    for game, elements in ELEMENT_ICONS_MAP.items():
+        for elem_name, url in elements.items():
+            path = f"assets/elements/{game}_{elem_name}.png"
+            if not os.path.exists(path):
+                try:
+                    res = requests.get(url, headers=headers, timeout=10)
+                    if res.status_code == 200:
+                        with open(path, "wb") as f:
+                            f.write(res.content)
+                        print(f"[INFO] Elemento em cache local: {game}_{elem_name}.png")
+                except Exception as e:
+                    print(f"[WARN] Falha ao baixar ícone de elemento {game}_{elem_name}: {e}")
+
+# Executa download de elementos no carregamento do módulo
+download_element_icons()
 
 # ==========================================
 
@@ -530,4 +748,15 @@ app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=True)
+    import webbrowser
+    import time
+    
+    def open_browser():
+        time.sleep(3.5)
+        print("[INFO] Abrindo Cabeça de Droid no navegador...")
+        webbrowser.open("http://127.0.0.1:8000")
+        
+    # Inicia a thread para abrir o navegador em background
+    threading.Thread(target=open_browser, daemon=True).start()
+    
+    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=False)

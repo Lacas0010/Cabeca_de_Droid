@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HoYo AI Assistant</title>
+    <title>Cabeça de Droid</title>
     <!-- Google Fonts: Outfit & Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,23 +12,32 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- CSS Estilos Customizados -->
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
 </head>
 <body>
+    <div class="background-glow">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
     <div class="app-container">
         <!-- SIDEBAR DE NAVEGAÇÃO -->
         <aside class="sidebar">
             <div class="brand">
                 <div class="brand-icon">
-                    <img src="/assets/config_icon.png" class="brand-logo" alt="Logo">
+                    <img src="/assets/logo.svg" class="brand-logo" alt="Logo">
                 </div>
                 <div class="brand-text">
-                    <h1>HoYo Assistant</h1>
+                    <h1>Cabeça de Droid</h1>
                     <span>Groq RAG Engine v3.0</span>
                 </div>
             </div>
             
             <nav class="nav-menu">
-                <button class="nav-btn active" data-tab="zzz">
+                <button class="nav-btn active" data-tab="home">
+                    <img src="/assets/home_icon.png" class="tab-icon" alt="Home" style="filter: hue-rotate(220deg);"> Início
+                </button>
+                <button class="nav-btn" data-tab="zzz">
                     <img src="/assets/zzz_icon.png" class="tab-icon" alt="ZZZ"> ZZZ (Zenless Zone Zero)
                 </button>
                 <button class="nav-btn" data-tab="genshin">
@@ -59,8 +68,97 @@
 
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
+            <!-- ABA INÍCIO (DASHBOARD GLOBAL) -->
+            <section id="tab-home" class="tab-pane active">
+                <div class="game-banner home-banner">
+                    <div class="banner-overlay">
+                        <h2>Cabeça de Droid</h2>
+                        <p>Visão geral unificada das suas contas da HoYoverse e otimização IA</p>
+                    </div>
+                </div>
+                
+                <div class="overview-grid">
+                    <!-- Card ZZZ -->
+                    <div class="overview-card game-card zzz-theme">
+                        <div class="overview-header">
+                            <img src="/assets/zzz_icon.png" class="game-logo" alt="ZZZ">
+                            <div>
+                                <h3>Zenless Zone Zero</h3>
+                                <span id="ov-zzz-uid" class="uid-label">Não sincronizado</span>
+                            </div>
+                        </div>
+                        <div class="overview-stats">
+                            <div class="stat-box">
+                                <span class="stat-title">Nível Conta</span>
+                                <strong id="ov-zzz-lvl" class="stat-number zzz-text">N/A</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-title">Agentes</span>
+                                <strong id="ov-zzz-chars" class="stat-number zzz-text">0</strong>
+                            </div>
+                        </div>
+                        <button onclick="document.querySelector('[data-tab=zzz]').click()" class="secondary-btn card-action-btn">Ir para Galeria ZZZ ➔</button>
+                    </div>
+
+                    <!-- Card Genshin -->
+                    <div class="overview-card game-card genshin-theme">
+                        <div class="overview-header">
+                            <img src="/assets/genshin_icon.png" class="game-logo" alt="Genshin">
+                            <div>
+                                <h3>Genshin Impact</h3>
+                                <span id="ov-genshin-uid" class="uid-label">Não sincronizado</span>
+                            </div>
+                        </div>
+                        <div class="overview-stats">
+                            <div class="stat-box">
+                                <span class="stat-title">Nível Conta</span>
+                                <strong id="ov-genshin-lvl" class="stat-number genshin-text">N/A</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-title">Personagens</span>
+                                <strong id="ov-genshin-chars" class="stat-number genshin-text">0</strong>
+                            </div>
+                        </div>
+                        <button onclick="document.querySelector('[data-tab=genshin]').click()" class="secondary-btn card-action-btn">Ir para Galeria Genshin ➔</button>
+                    </div>
+
+                    <!-- Card HSR -->
+                    <div class="overview-card game-card hsr-theme">
+                        <div class="overview-header">
+                            <img src="/assets/hsr_icon.png" class="game-logo" alt="HSR">
+                            <div>
+                                <h3>Honkai: Star Rail</h3>
+                                <span id="ov-hsr-uid" class="uid-label">Não sincronizado</span>
+                            </div>
+                        </div>
+                        <div class="overview-stats">
+                            <div class="stat-box">
+                                <span class="stat-title">Nível Conta</span>
+                                <strong id="ov-hsr-lvl" class="stat-number hsr-text">N/A</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-title">Personagens</span>
+                                <strong id="ov-hsr-chars" class="stat-number hsr-text">0</strong>
+                            </div>
+                        </div>
+                        <button onclick="document.querySelector('[data-tab=hsr]').click()" class="secondary-btn card-action-btn">Ir para Galeria HSR ➔</button>
+                    </div>
+                </div>
+
+                <div class="overview-card start-guide-card">
+                    <h3>🚀 Começando com o Assistente de IA</h3>
+                    <p>
+                        O Cabeça de Droid consolidou suas contas locais. Vá na aba <strong>Chat IA Meta</strong> no menu lateral para conversar diretamente com o <strong>GPT-OSS 120B</strong>! Ele tem conhecimento de todos os personagens do seu roster e do metagame atualizado de builds.
+                    </p>
+                    <div class="button-group">
+                        <button onclick="document.querySelector('[data-tab=chat]').click()" class="primary-btn guide-btn">💬 Abrir Chat com IA</button>
+                        <button onclick="document.querySelector('[data-tab=help]').click()" class="secondary-btn guide-btn">📖 Ver Tutorial de Uso</button>
+                    </div>
+                </div>
+            </section>
+
             <!-- ABA ZZZ -->
-            <section id="tab-zzz" class="tab-pane active">
+            <section id="tab-zzz" class="tab-pane">
                 <div class="game-banner banner-zzz">
                     <div class="banner-overlay">
                         <h2>Zenless Zone Zero</h2>
@@ -94,6 +192,15 @@
                 </div>
 
                 <div class="gallery-container">
+                    <!-- Filtro de Elemento -->
+                    <div class="element-filters" data-game="zzz">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="fire"><img src="/assets/elements/zzz_fire.png" class="filter-elem-icon"> Fogo</button>
+                        <button class="filter-btn" data-filter="electric"><img src="/assets/elements/zzz_electric.png" class="filter-elem-icon"> Elétrico</button>
+                        <button class="filter-btn" data-filter="ice"><img src="/assets/elements/zzz_ice.png" class="filter-elem-icon"> Gelo</button>
+                        <button class="filter-btn" data-filter="physical"><img src="/assets/elements/zzz_physical.png" class="filter-elem-icon"> Físico</button>
+                        <button class="filter-btn" data-filter="ether"><img src="/assets/elements/zzz_ether.png" class="filter-elem-icon"> Éter</button>
+                    </div>
                     <div id="gallery-zzz" class="character-gallery">
                         <!-- Renderizado via JS -->
                     </div>
@@ -135,6 +242,17 @@
                 </div>
 
                 <div class="gallery-container">
+                    <!-- Filtro de Elemento -->
+                    <div class="element-filters" data-game="genshin">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="pyro"><img src="/assets/elements/genshin_pyro.png" class="filter-elem-icon"> Pyro</button>
+                        <button class="filter-btn" data-filter="hydro"><img src="/assets/elements/genshin_hydro.png" class="filter-elem-icon"> Hydro</button>
+                        <button class="filter-btn" data-filter="anemo"><img src="/assets/elements/genshin_anemo.png" class="filter-elem-icon"> Anemo</button>
+                        <button class="filter-btn" data-filter="electro"><img src="/assets/elements/genshin_electro.png" class="filter-elem-icon"> Electro</button>
+                        <button class="filter-btn" data-filter="dendro"><img src="/assets/elements/genshin_dendro.png" class="filter-elem-icon"> Dendro</button>
+                        <button class="filter-btn" data-filter="cryo"><img src="/assets/elements/genshin_cryo.png" class="filter-elem-icon"> Cryo</button>
+                        <button class="filter-btn" data-filter="geo"><img src="/assets/elements/genshin_geo.png" class="filter-elem-icon"> Geo</button>
+                    </div>
                     <div id="gallery-genshin" class="character-gallery">
                         <!-- Renderizado via JS -->
                     </div>
@@ -176,6 +294,17 @@
                 </div>
 
                 <div class="gallery-container">
+                    <!-- Filtro de Elemento -->
+                    <div class="element-filters" data-game="hsr">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="fire"><img src="/assets/elements/hsr_fire.png" class="filter-elem-icon"> Fogo</button>
+                        <button class="filter-btn" data-filter="ice"><img src="/assets/elements/hsr_ice.png" class="filter-elem-icon"> Gelo</button>
+                        <button class="filter-btn" data-filter="physical"><img src="/assets/elements/hsr_physical.png" class="filter-elem-icon"> Físico</button>
+                        <button class="filter-btn" data-filter="wind"><img src="/assets/elements/hsr_wind.png" class="filter-elem-icon"> Vento</button>
+                        <button class="filter-btn" data-filter="lightning"><img src="/assets/elements/hsr_lightning.png" class="filter-elem-icon"> Raio</button>
+                        <button class="filter-btn" data-filter="quantum"><img src="/assets/elements/hsr_quantum.png" class="filter-elem-icon"> Quantum</button>
+                        <button class="filter-btn" data-filter="imaginary"><img src="/assets/elements/hsr_imaginary.png" class="filter-elem-icon"> Imaginário</button>
+                    </div>
                     <div id="gallery-hsr" class="character-gallery">
                         <!-- Renderizado via JS -->
                     </div>
@@ -186,7 +315,7 @@
             <section id="tab-chat" class="tab-pane">
                 <div class="chat-container">
                     <div class="chat-header">
-                        <h2>HoYo AI Assistant</h2>
+                        <h2>Cabeça de Droid</h2>
                         <div class="chat-context">
                             <label for="chat-context-select">Contexto do RAG:</label>
                             <select id="chat-context-select">
@@ -255,7 +384,7 @@
             <!-- ABA COMO USAR -->
             <section id="tab-help" class="tab-pane">
                 <div class="config-container">
-                    <h2>📖 Como usar o HoYo AI Assistant</h2>
+                    <h2>📖 Como usar o Cabeça de Droid</h2>
                     <p class="config-desc" style="margin-bottom: 20px;">Este aplicativo foi criado para ajudar você a analisar suas contas da HoYoverse utilizando Inteligência Artificial. Ele puxa automaticamente todos os seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e cruza com dados de Metagame.</p>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
@@ -300,6 +429,21 @@
             </div>
             
             <div class="inspector-body">
+                <!-- NOVO: Otimizador IA de Build -->
+                <div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
+                    <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                        <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;">🧠 Otimizador de Build IA</h4>
+                        <button id="btn-ai-optimize" class="action-btn" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
+                    </div>
+                    <div id="ins-ai-loading" class="ai-opt-loading" style="display: none; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
+                        <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
+                        <span>Avaliando Roster & Metagame...</span>
+                    </div>
+                    <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px; padding-left: 16px; margin-bottom: 0;">
+                        <!-- Sugestões inseridas aqui -->
+                    </ul>
+                </div>
+                
                 <!-- Seção 1: Equipamento / Arma -->
                 <div class="inspector-card">
                     <h4>🗡️ Equipamento / Arma</h4>

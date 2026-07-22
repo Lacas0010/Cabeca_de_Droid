@@ -58,10 +58,10 @@ def main():
     server_thread.start()
     
     # Espera o servidor iniciar
-    time.sleep(1.5)
+    time.sleep(3.5)
     
     # Abre o navegador padrão na porta 8000
-    print("[INFO] Iniciando HoYo AI Assistant...")
+    print("[INFO] Iniciando Cabeça de Droid...")
     print("[INFO] Abrindo navegador em: http://127.0.0.1:8000")
     webbrowser.open("http://127.0.0.1:8000")
     

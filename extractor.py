@@ -366,6 +366,7 @@ class GenshinExtractor(BaseExtractor):
         lines = []
         lines.append("# Relatório de Personagens - Genshin Impact")
         lines.append(f"**UID:** {uid}")
+        lines.append(f"**Rank de Aventura:** {genshin_acc.level}")
         lines.append(f"**Personagens Obtidos:** {len(chars)}")
         
         try:
@@ -534,7 +535,7 @@ class GenshinExtractor(BaseExtractor):
                     "level": char.level,
                     "rarity": char.rarity,
                     "rank_str": f"C{char.constellation}",
-                    "element": getattr(getattr(char, "element", None), "name", "Anemo"),
+                    "element": getattr(char, "element", "Anemo"),
                     "icon": getattr(char, "icon", ""),
                     "weapon": w_info,
                     "relics": artifacts_json
