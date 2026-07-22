@@ -52,3 +52,12 @@ todos_os_guias_prydwen.md
 guias_prydwen/
 moc_payload_dump.txt
 *.log
+
+# Local environment variables
+.env
+.env.local
+.env.*
+
+# Python check/test scripts
+check_*.py
+test_*.py

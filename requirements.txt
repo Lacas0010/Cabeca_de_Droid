@@ -1,9 +1,20 @@
-beautifulsoup4
+# FastAPI & Uvicorn (Backend Web Server)
 fastapi
-genshin
-groq
-Pillow
-playwright
+uvicorn
+
+# HTTP Requests & Scraping
 requests
 urllib3
-uvicorn
+beautifulsoup4
+
+# HoYoLAB API integration
+genshin
+
+# Playwright (Auto-login / Cookie extraction)
+playwright
+
+# Groq Cloud IA integration
+groq
+
+# Image Processing (Avatar caching)
+Pillow
