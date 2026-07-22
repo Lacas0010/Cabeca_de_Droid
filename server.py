@@ -654,7 +654,7 @@ async def optimize_character_build(game_id: str, char_name: str):
                 {"role": "user", "content": prompt}
             ],
             response_format={"type": "json_object"},
-            temperature=0.4,
+            temperature=0.1,
             max_tokens=250
         )
         if completion and completion.choices:
@@ -671,7 +671,7 @@ async def optimize_character_build(game_id: str, char_name: str):
                     {"role": "user", "content": prompt}
                 ],
                 response_format={"type": "json_object"},
-                temperature=0.4,
+                temperature=0.1,
                 max_tokens=250
             )
             if completion and completion.choices:

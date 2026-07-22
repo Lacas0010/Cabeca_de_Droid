@@ -339,7 +339,7 @@ class GroqRAG:
             try:
                 print(f"[INFO] Chamando API da Groq com o modelo: {model}...")
                 # Modelos de raciocínio como GPT-OSS funcionam melhor com temperaturas um pouco menores (ex: 0.6)
-                temp = 0.6 if "gpt-oss" in model or "deepseek" in model else 0.7
+                temp = 0.1 if "gpt-oss" in model or "deepseek" in model else 0.1
                 completion = self.client.chat.completions.create(
                     model=model,
                     messages=messages,
