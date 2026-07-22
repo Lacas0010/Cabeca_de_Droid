@@ -59,10 +59,41 @@ document.addEventListener("DOMContentLoaded", () => {
     
     // Carrega dados iniciais
     fetchConfig();
+    loadOverview();
     loadRoster("zzz");
     loadRoster("genshin");
     loadRoster("hsr");
 });
+
+async function loadOverview() {
+    try {
+        const res = await fetch("/api/overview");
+        const overview = await res.json();
+        
+        // ZZZ
+        if (overview.zzz) {
+            document.getElementById("ov-zzz-uid").innerText = overview.zzz.uid !== "Não sincronizado" ? `UID: ${overview.zzz.uid}` : "Não sincronizado";
+            document.getElementById("ov-zzz-lvl").innerText = overview.zzz.level;
+            document.getElementById("ov-zzz-chars").innerText = overview.zzz.char_count;
+        }
+        
+        // Genshin
+        if (overview.genshin) {
+            document.getElementById("ov-genshin-uid").innerText = overview.genshin.uid !== "Não sincronizado" ? `UID: ${overview.genshin.uid}` : "Não sincronizado";
+            document.getElementById("ov-genshin-lvl").innerText = overview.genshin.level;
+            document.getElementById("ov-genshin-chars").innerText = overview.genshin.char_count;
+        }
+        
+        // HSR
+        if (overview.hsr) {
+            document.getElementById("ov-hsr-uid").innerText = overview.hsr.uid !== "Não sincronizado" ? `UID: ${overview.hsr.uid}` : "Não sincronizado";
+            document.getElementById("ov-hsr-lvl").innerText = overview.hsr.level;
+            document.getElementById("ov-hsr-chars").innerText = overview.hsr.char_count;
+        }
+    } catch (err) {
+        console.error("Erro ao carregar visão geral:", err);
+    }
+}
 
 // ==========================================================================
 // GERENCIAMENTO DE ABAS (TABS)
@@ -266,6 +297,7 @@ function startPollingStatus(gameId) {
                 // Recarrega o roster visual do jogo que acabou de sincronizar
                 setTimeout(() => {
                     loadRoster(gameId);
+                    loadOverview();
                 }, 1000);
             }
         } catch (err) {
@@ -279,7 +311,15 @@ function startPollingStatus(gameId) {
 // ==========================================================================
 async function loadRoster(gameId) {
     const gallery = document.getElementById(`gallery-${gameId}`);
-    gallery.innerHTML = `<div class="loading-spinner">Buscando personagens de ${gameId.toUpperCase()}...</div>`;
+    gallery.innerHTML = Array(12).fill(0).map(() => `
+        <div class="skeleton-card">
+            <div class="skeleton-avatar"></div>
+            <div class="skeleton-info">
+                <div class="skeleton-name"></div>
+                <div class="skeleton-lvl"></div>
+            </div>
+        </div>
+    `).join('');
     
     try {
         const res = await fetch(`/api/roster/${gameId}`);
@@ -297,12 +337,33 @@ async function loadRoster(gameId) {
         
         gallery.innerHTML = ""; // Limpa spinner
         
-        // Filtro de Busca local por input
+        // Estado dos filtros combinados
+        let activeElementFilter = "all";
+        let searchQuery = "";
+        
         const searchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
         
-        const renderCards = (list) => {
+        const renderCards = () => {
             gallery.innerHTML = "";
-            list.forEach(char => {
+            
+            // Filtra a lista local baseado na busca de texto E elemento
+            const filtered = roster.filter(char => {
+                const matchesSearch = char.name.toLowerCase().includes(searchQuery);
+                const matchesElement = activeElementFilter === "all" || 
+                    (char.element || "").toLowerCase() === activeElementFilter.toLowerCase();
+                return matchesSearch && matchesElement;
+            });
+            
+            if (filtered.length === 0) {
+                gallery.innerHTML = `
+                    <div class="empty-gallery" style="grid-column: 1 / -1; padding: 40px 0;">
+                        <p>Nenhum personagem encontrado com os filtros ativos.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            filtered.forEach(char => {
                 const card = document.createElement("div");
                 
                 // Normaliza o elemento para a classe CSS de borda colorida
@@ -314,14 +375,17 @@ async function loadRoster(gameId) {
                 const safeFn = getSafeFileName(char.name);
                 const localAvatarPath = `/assets/avatars/${gameId}/${safeFn}`;
                 
-                // Estrutura o HTML do Card
+                // Estrutura o HTML do Card incluindo o ícone do Elemento ao lado do nome
                 card.innerHTML = `
                     <div class="char-avatar-container">
                         <img class="char-avatar" src="${localAvatarPath}" onerror="this.onerror=null; this.src='${char.icon || '/assets/config_icon.png'}';" alt="${char.name}">
                         <div class="char-rank-badge">${char.rank_str || 'C0'}</div>
                     </div>
                     <div class="char-info">
-                        <div class="char-name" title="${char.name}">${char.name}</div>
+                        <div class="char-name" title="${char.name}">
+                            <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" onerror="this.style.display='none';" alt="">
+                            ${char.name}
+                        </div>
                         <div class="char-lvl">Nível ${char.level}</div>
                     </div>
                 `;
@@ -335,17 +399,38 @@ async function loadRoster(gameId) {
             });
         };
         
-        // Inicializa com a lista inteira
-        renderCards(roster);
+        // Configura ouvintes de clique nos botões de filtro de elementos
+        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]`);
+        if (filterContainer) {
+            const filterBtns = filterContainer.querySelectorAll(".filter-btn");
+            filterBtns.forEach(btn => {
+                // Remove listeners anteriores
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+            
+            // Adiciona novos listeners aos botões clonados
+            const freshBtns = filterContainer.querySelectorAll(".filter-btn");
+            freshBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    freshBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    activeElementFilter = btn.getAttribute("data-filter");
+                    renderCards();
+                });
+            });
+        }
         
         // Evento de busca em tempo real
         searchInput.replaceWith(searchInput.cloneNode(true)); // Limpa listeners antigos
         const newSearchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
         newSearchInput.addEventListener("input", (e) => {
-            const query = e.target.value.toLowerCase().trim();
-            const filtered = roster.filter(c => c.name.toLowerCase().includes(query));
-            renderCards(filtered);
+            searchQuery = e.target.value.toLowerCase().trim();
+            renderCards();
         });
+        
+        // Renderização inicial do Grid
+        renderCards();
         
     } catch (err) {
         gallery.innerHTML = `<div class="error-msg">Erro ao carregar roster: ${err.message}</div>`;
@@ -366,7 +451,57 @@ async function inspectCharacter(gameId, char) {
     };
     
     document.getElementById("ins-name").innerText = char.name;
-    document.getElementById("ins-meta").innerText = `${char.rank_str || 'C0'} • Elemento: ${(char.element || 'N/A').toUpperCase()} • Nível ${char.level}`;
+    
+    const elemKey = (char.element || "").toLowerCase();
+    const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${(char.element || 'N/A').toUpperCase()}`;
+    document.getElementById("ins-meta").innerHTML = `${char.rank_str || 'C0'} • ${elemHtml} • Nível ${char.level}`;
+    
+    // Configura e limpa o card do Otimizador IA
+    const btnOptimize = document.getElementById("btn-ai-optimize");
+    const aiLoading = document.getElementById("ins-ai-loading");
+    const aiSuggestions = document.getElementById("ins-ai-suggestions");
+    
+    aiLoading.style.display = "none";
+    aiSuggestions.style.display = "none";
+    aiSuggestions.innerHTML = "";
+    btnOptimize.disabled = false;
+    btnOptimize.innerText = "Analisar";
+    
+    btnOptimize.onclick = async () => {
+        btnOptimize.disabled = true;
+        btnOptimize.innerText = "Analisando...";
+        aiLoading.style.display = "flex";
+        aiSuggestions.style.display = "none";
+        aiSuggestions.innerHTML = "";
+        
+        try {
+            const optRes = await fetch(`/api/optimize/${gameId}/${encodeURIComponent(char.name)}`);
+            const optData = await optRes.json();
+            
+            aiLoading.style.display = "none";
+            
+            if (optData && optData.suggestions) {
+                optData.suggestions.forEach(sug => {
+                    const li = document.createElement("li");
+                    li.style.marginBottom = "6px";
+                    li.innerText = sug;
+                    aiSuggestions.appendChild(li);
+                });
+                aiSuggestions.style.display = "block";
+            } else {
+                aiSuggestions.innerHTML = "<li>Não foi possível obter recomendações agora. Verifique a chave Groq.</li>";
+                aiSuggestions.style.display = "block";
+            }
+        } catch (optErr) {
+            console.error("Erro ao rodar otimizador IA:", optErr);
+            aiLoading.style.display = "none";
+            aiSuggestions.innerHTML = `<li>Erro ao contactar API: ${optErr.message}</li>`;
+            aiSuggestions.style.display = "block";
+        } finally {
+            btnOptimize.disabled = false;
+            btnOptimize.innerText = "Reanalisar";
+        }
+    };
     
     // Exibe esqueleto de loading na área de detalhes
     document.getElementById("ins-relic-sets").innerHTML = "Carregando conjuntos...";

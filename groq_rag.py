@@ -49,7 +49,7 @@ class GroqRAG:
             
             # Executa uma chamada rápida de teste
             completion = test_client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="llama-3.1-8b-instant",
                 messages=[
                     {"role": "user", "content": "ping"}
                 ],
@@ -59,7 +59,7 @@ class GroqRAG:
             
             if completion and completion.choices:
                 self.client = test_client # Atualiza o cliente ativo
-                return True, "Conexão com a Groq estabelecida com sucesso usando 'llama-3.3-70b-versatile'!"
+                return True, "Conexão com a Groq estabelecida com sucesso!"
             else:
                 return False, "A API da Groq retornou uma resposta sem conteúdo."
                 
@@ -329,6 +329,7 @@ class GroqRAG:
 
         # 4. Lista de modelos (Principal + Fallbacks em caso de instabilidade)
         modelos = [
+            "openai/gpt-oss-120b",
             "llama-3.3-70b-versatile",
             "llama-3.1-8b-instant"
         ]
@@ -337,14 +338,32 @@ class GroqRAG:
         for model in modelos:
             try:
                 print(f"[INFO] Chamando API da Groq com o modelo: {model}...")
+                # Modelos de raciocínio como GPT-OSS funcionam melhor com temperaturas um pouco menores (ex: 0.6)
+                temp = 0.6 if "gpt-oss" in model or "deepseek" in model else 0.7
                 completion = self.client.chat.completions.create(
                     model=model,
                     messages=messages,
-                    temperature=0.7
+                    temperature=temp
                 )
                 if completion and completion.choices:
-                    response_text = completion.choices[0].message.content
+                    msg = completion.choices[0].message
+                    response_text = msg.content
                     if response_text:
+                        # Extrai o raciocínio se o modelo o expor como um campo separado (ex: GPT-OSS)
+                        reasoning_text = getattr(msg, "reasoning", None) or getattr(msg, "reasoning_content", None)
+                        if reasoning_text:
+                            model_display = "GPT-OSS 120B" if "gpt-oss" in model else model.split("/")[-1].upper()
+                            response_text = f"<details class='think-details'><summary>🧠 Ver Processo de Pensamento ({model_display})</summary><div class='think-content'>{reasoning_text}</div></details>\n\n" + response_text
+                        
+                        # Fallback para tags de pensamento embutidas no texto (ex: DeepSeek se reativado)
+                        elif "<think>" in response_text and "</think>" in response_text:
+                            response_text = response_text.replace(
+                                "<think>", 
+                                "<details class='think-details'><summary>🧠 Ver Processo de Pensamento</summary><div class='think-content'>"
+                            ).replace(
+                                "</think>", 
+                                "</div></details>"
+                            )
                         return response_text
                     else:
                         raise Exception("A resposta retornada estava vazia.")
