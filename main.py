@@ -38,17 +38,39 @@ def setup_playwright():
         except Exception as e:
             pass # Falha silenciosa, o usuário verá erro no login depois
 
+import threading
+import time
+import webbrowser
+import uvicorn
+
 setup_playwright()
 
-from gui import App
+def start_server():
+    uvicorn.run("server:app", host="127.0.0.1", port=8000, log_level="info")
 
 def main():
     """
     Função principal que atua como ponto de entrada da aplicação.
-    Instancia a classe App do módulo gui e inicia o loop principal da interface.
+    Inicia o servidor FastAPI local e abre o navegador padrão do sistema.
     """
-    app = App()
-    app.mainloop()
+    # Cria a thread do uvicorn
+    server_thread = threading.Thread(target=start_server, daemon=True)
+    server_thread.start()
+    
+    # Espera o servidor iniciar
+    time.sleep(1.5)
+    
+    # Abre o navegador padrão na porta 8000
+    print("[INFO] Iniciando HoYo AI Assistant...")
+    print("[INFO] Abrindo navegador em: http://127.0.0.1:8000")
+    webbrowser.open("http://127.0.0.1:8000")
+    
+    # Mantém a thread principal ativa
+    try:
+        while server_thread.is_alive():
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("\n[INFO] Servidor local encerrado pelo usuário.")
 
 if __name__ == "__main__":
     main()

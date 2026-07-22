@@ -1,9 +1,9 @@
 beautifulsoup4
-customtkinter
+fastapi
 genshin
 groq
 Pillow
 playwright
-pyinstaller
 requests
 urllib3
+uvicorn
