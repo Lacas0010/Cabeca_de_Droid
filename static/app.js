@@ -4,6 +4,9 @@
 const API_URL = ""; // Relativo ao servidor que serve a página
 let chatHistory = [];
 let activePolling = { zzz: null, genshin: null, hsr: null };
+let globalRoster = { zzz: [], genshin: [], hsr: [] };
+let activeInspectGame = "";
+let activeInspectChar = null;
 
 // Dicionário de normalização de elementos para classes CSS
 const ELEMENT_MAPPING = {
@@ -56,6 +59,9 @@ document.addEventListener("DOMContentLoaded", () => {
     setupConfigForm();
     setupSyncControls();
     setupChatSystem();
+    setupEnergyMonitor();
+    setupCheckinSystem();
+    setupInspectorTabs();
     
     // Carrega dados iniciais
     fetchConfig();
@@ -325,6 +331,10 @@ async function loadRoster(gameId) {
         const res = await fetch(`/api/roster/${gameId}`);
         const roster = await res.json();
         
+        // Salva no estado global e atualiza os gráficos SVG
+        globalRoster[gameId] = roster || [];
+        renderRosterCharts();
+        
         if (!roster || roster.length === 0) {
             gallery.innerHTML = `
                 <div class="empty-gallery">
@@ -442,6 +452,12 @@ async function loadRoster(gameId) {
 // ==========================================================================
 async function inspectCharacter(gameId, char) {
     const inspector = document.getElementById("build-inspector");
+    activeInspectGame = gameId;
+    activeInspectChar = char;
+    
+    // Força reset para a aba de build
+    const btnBuild = document.getElementById("ins-tab-build");
+    if (btnBuild) btnBuild.click();
     
     // Preenche cabeçalho básico instantaneamente
     const safeAvatarFn = getSafeFileName(char.name);
@@ -670,31 +686,65 @@ function setupChatSystem() {
                     history: chatHistory
                 })
             });
-            const data = await res.json();
             
             // Remove o balão de digitando
             document.getElementById(typingId).remove();
             
-            if (res.ok) {
-                // 4. Renderiza Markdown usando Marked.js
-                const formattedResponse = marked.parse(data.response);
-                appendChatMessage("assistant", formattedResponse);
+            if (!res.ok) {
+                appendChatMessage("assistant", `❌ Erro na API do Chat.`);
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+                return;
+            }
+            
+            // Cria um balão vazio para receber a resposta de forma incremental (streaming)
+            const responseId = appendChatMessage("assistant", "");
+            const responseEl = document.getElementById(responseId).querySelector(".msg-content");
+            
+            const reader = res.body.getReader();
+            const decoder = new TextDecoder();
+            let rawText = "";
+            let buffer = "";
+            
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
                 
-                // Grava no histórico de memória
-                chatHistory.push({ role: "user", text: message });
-                chatHistory.push({ role: "model", text: data.response });
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split("\n");
+                // Salva a última linha incompleta de volta no buffer
+                buffer = lines.pop();
                 
-                // Limita histórico local para no máximo 10 mensagens para não estourar contexto
-                if (chatHistory.length > 20) {
-                    chatHistory = chatHistory.slice(-20);
+                for (const line of lines) {
+                    if (line.startsWith("data: ")) {
+                        try {
+                            const parsed = JSON.parse(line.substring(6));
+                            if (parsed.token) {
+                                rawText += parsed.token;
+                                responseEl.innerHTML = marked.parse(rawText);
+                                messagesArea.scrollTop = messagesArea.scrollHeight;
+                            } else if (parsed.error) {
+                                rawText += `\n\n❌ Erro: ${parsed.error}`;
+                                responseEl.innerHTML = marked.parse(rawText);
+                            }
+                        } catch (e) {
+                            // Ignora erros parciais
+                        }
+                    }
                 }
-            } else {
-                appendChatMessage("assistant", `❌ Erro na API do Chat: ${data.detail || "Erro inesperado"}`);
+            }
+            
+            // Grava no histórico de memória
+            chatHistory.push({ role: "user", text: message });
+            chatHistory.push({ role: "model", text: rawText });
+            
+            // Limita histórico local para no máximo 10 mensagens
+            if (chatHistory.length > 20) {
+                chatHistory = chatHistory.slice(-20);
             }
             messagesArea.scrollTop = messagesArea.scrollHeight;
         } catch (err) {
             document.getElementById(typingId).remove();
-            appendChatMessage("assistant", `❌ Falha ao conectar ao processador Groq.`);
+            appendChatMessage("assistant", `❌ Falha ao conectar ao processador Groq: ${err.message}`);
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
     };
@@ -725,4 +775,766 @@ function appendChatMessage(role, content) {
     
     messagesArea.appendChild(msgDiv);
     return msgId;
+}
+
+// ==========================================================================
+// FUNÇÕES DO MONITOR DE ENERGIA (RESINA / PODER / BATERIA)
+// ==========================================================================
+async function setupEnergyMonitor() {
+    const fetchNotes = async () => {
+        try {
+            const res = await fetch("/api/notes");
+            const data = await res.json();
+            
+            // Genshin
+            if (data.genshin) {
+                const notes = data.genshin;
+                let timeStr = "Totalmente carregada";
+                if (notes.recovery_time && notes.recovery_time !== "0:00:00" && notes.recovery_time !== "0") {
+                    // Formata a string de tempo (ex: "1 day, 2:30:15" -> "1d 2h 30m" ou "2h 30m")
+                    let displayTime = notes.recovery_time;
+                    try {
+                        const parts = notes.recovery_time.split(":");
+                        if (parts.length >= 2) {
+                            displayTime = `${parts[0]}h ${parts[1]}m`;
+                        }
+                    } catch(e) {}
+                    timeStr = `Recuperação: ${displayTime}`;
+                }
+                updateEnergyCircle("genshin", notes.current_energy, notes.max_energy, timeStr);
+            } else {
+                updateEnergyCircle("genshin", 0, 200, "Sem dados sincronizados");
+            }
+            
+            // HSR
+            if (data.hsr) {
+                const notes = data.hsr;
+                let timeStr = "Totalmente carregado";
+                if (notes.recovery_time && notes.recovery_time !== "0" && notes.recovery_time !== "0:00:00") {
+                    let displayTime = notes.recovery_time;
+                    try {
+                        const sec = parseInt(notes.recovery_time);
+                        if (!isNaN(sec) && sec > 0) {
+                            const hrs = Math.floor(sec / 3600);
+                            const mins = Math.floor((sec % 3600) / 60);
+                            displayTime = `${hrs}h ${mins}m`;
+                        }
+                    } catch(e) {}
+                    timeStr = `Recuperação: ${displayTime}`;
+                }
+                updateEnergyCircle("hsr", notes.current_energy, notes.max_energy, timeStr);
+            } else {
+                updateEnergyCircle("hsr", 0, 240, "Sem dados sincronizados");
+            }
+            
+            // ZZZ
+            if (data.zzz) {
+                const notes = data.zzz;
+                let timeStr = "Totalmente carregada";
+                if (notes.recovery_time && notes.recovery_time !== "0" && notes.recovery_time !== "0:00:00") {
+                    let displayTime = notes.recovery_time;
+                    try {
+                        const sec = parseInt(notes.recovery_time);
+                        if (!isNaN(sec) && sec > 0) {
+                            const hrs = Math.floor(sec / 3600);
+                            const mins = Math.floor((sec % 3600) / 60);
+                            displayTime = `${hrs}h ${mins}m`;
+                        }
+                    } catch(e) {}
+                    timeStr = `Recuperação: ${displayTime}`;
+                }
+                updateEnergyCircle("zzz", notes.current_energy, notes.max_energy, timeStr);
+            } else {
+                updateEnergyCircle("zzz", 0, 240, "Sem dados sincronizados");
+            }
+        } catch (err) {
+            console.error("Erro ao carregar notas diárias:", err);
+        }
+    };
+    
+    fetchNotes();
+    setInterval(fetchNotes, 60000); // Atualiza a cada 1 minuto
+}
+
+function updateEnergyCircle(gameId, current, max, remainText) {
+    const ring = document.getElementById(`ring-${gameId}`);
+    const valEl = document.getElementById(`lbl-${gameId}-val`);
+    const timeEl = document.getElementById(`lbl-${gameId}-time`);
+    if (!ring || !valEl || !timeEl) return;
+    
+    valEl.innerText = `${current}/${max}`;
+    timeEl.innerText = remainText;
+    
+    const pct = Math.min(Math.max(current / max, 0), 1);
+    const offset = 213.6 - (pct * 213.6);
+    ring.style.strokeDashoffset = offset;
+}
+
+// ==========================================================================
+// FUNÇÕES DO AUTO-CHECKIN DIÁRIO
+// ==========================================================================
+function setupCheckinSystem() {
+    const checkinBtn = document.getElementById("btn-manual-checkin");
+    const container = document.getElementById("checkin-logs-container");
+    const list = document.getElementById("checkin-logs-list");
+    if (!checkinBtn) return;
+    
+    const loadLogs = async () => {
+        try {
+            const res = await fetch("/api/checkin/today");
+            const logs = await res.json();
+            if (logs && logs.length > 0) {
+                container.style.display = "block";
+                list.innerHTML = logs.map(l => {
+                    const time = l.timestamp ? l.timestamp.substring(11, 19) : "";
+                    const gameName = l.game_id.toUpperCase();
+                    let statusColor = "var(--color-success)";
+                    if (l.status === "ERROR") statusColor = "var(--color-danger)";
+                    else if (l.status === "ALREADY_CLAIMED") statusColor = "var(--text-muted)";
+                    
+                    return `<li style="margin-bottom: 4px;">[${time}] <strong>${gameName}</strong>: <span style="color: ${statusColor}">${l.message}</span></li>`;
+                }).join('');
+            }
+        } catch(e) {
+            console.error("Erro ao ler logs de checkin:", e);
+        }
+    };
+    
+    checkinBtn.addEventListener("click", async () => {
+        checkinBtn.disabled = true;
+        checkinBtn.innerText = "Resgatando...";
+        try {
+            const res = await fetch("/api/checkin/run", { method: "POST" });
+            if (res.ok) {
+                await loadLogs();
+            }
+        } catch (e) {
+            console.error("Erro ao rodar checkin manual:", e);
+        } finally {
+            checkinBtn.disabled = false;
+            checkinBtn.innerText = "🚀 Resgatar Recompensas Agora";
+        }
+    });
+    
+    loadLogs();
+}
+
+// ==========================================================================
+// ABAS E COMPARADOR DO BUILD INSPECTOR
+// ==========================================================================
+function setupInspectorTabs() {
+    const btnBuild = document.getElementById("ins-tab-build");
+    const btnCompare = document.getElementById("ins-tab-compare");
+    const panelBuild = document.getElementById("panel-build");
+    const panelCompare = document.getElementById("panel-compare");
+    
+    if (!btnBuild || !btnCompare) return;
+    
+    btnBuild.addEventListener("click", () => {
+        btnBuild.classList.add("active");
+        btnBuild.style.borderBottomColor = "var(--color-hsr)";
+        btnCompare.classList.remove("active");
+        btnCompare.style.borderBottomColor = "transparent";
+        
+        panelBuild.style.display = "block";
+        panelCompare.style.display = "none";
+    });
+    
+    btnCompare.addEventListener("click", () => {
+        btnCompare.classList.add("active");
+        btnCompare.style.borderBottomColor = "var(--color-hsr)";
+        btnBuild.classList.remove("active");
+        btnBuild.style.borderBottomColor = "transparent";
+        
+        panelBuild.style.display = "none";
+        panelCompare.style.display = "block";
+        
+        loadBuildComparison();
+    });
+}
+
+async function loadBuildComparison() {
+    const rowsContainer = document.getElementById("ins-comparison-rows");
+    if (!rowsContainer || !activeInspectChar) return;
+    
+    rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px 0; color: var(--text-muted);">Carregando comparação...</td></tr>`;
+    
+    try {
+        const res = await fetch(`/api/compare/${activeInspectGame}/${encodeURIComponent(activeInspectChar.name)}`);
+        const data = await res.json();
+        
+        const build = data.player_build;
+        const target = data.meta_target;
+        
+        // Dicionário de tradução Português <-> Inglês para itens/sets comuns de Genshin, Star Rail e ZZZ
+        const translationDict = {
+            // ZZZ Sets
+            "salão sibilante": "wuthering salon",
+            "ode ao cavaleiro lunar": "ode to moonlight",
+            "voz astral": "astral voice",
+            "rei do monte": "woodpecker electro",
+            "techno pica-pau": "woodpecker electro",
+            "canção das ondas": "water ballad",
+            "canção da espada de ramo": "branch sword",
+            "metal infernal": "infernal metal",
+            "metal polar": "polar metal",
+            "jazz com swing": "swing jazz",
+            "disco estrelante": "starlight engine",
+            "punk hormonal": "hormone punk",
+            "harmonia das sombras": "shockstar disco",
+            // ZZZ Weapons
+            "eco rítmico": "rhythmic wave",
+            "perfuratriz - eixo vermelho": "red axis",
+            "engrenagens infernais": "hellfire gears",
+            "radiância das nuvens": "cloudcleave radiance",
+            "caldeirão da lucidez": "lucid cauldron",
+            "transmorfo original": "original transmuter",
+            "motor da constelação": "constellation engine",
+            "baú da fortuna": "lucky chest",
+            "o restrito": "the restrained",
+            "cozido a vapor": "steam oven",
+            "rugido das chamas": "blazing roar",
+            "gourmet tropical": "tropical gourmet",
+            "exúvia solar": "solar exuvia",
+            "núcleo sísmico": "seismic core",
+            "canhão cabum": "kaboom cannon",
+            "demônio bisonho": "bashful demon",
+            "bateria da demara - tipo ii": "demara battery mark ii",
+            "plenilúnio": "full moon",
+            "tempestade magnética": "magnetic storm",
+            // HSR Sets
+            "como o navegador isee vê": "as navigator isee sees it",
+            "ancoradouro da estrela caída": "fallen star anchorage",
+            "lushaka, os mares afundados": "lushaka's waterside",
+            "desfiladeiro aquático de lushaka": "lushaka's waterside",
+            "pistas duplas de lushaka": "lushaka's waterside",
+            "profeta de alcance distante": "scholar lost in erudition",
+            "menina mágica sempre gloriosa": "pioneer diver of dead waters",
+            "estágio zero de punklorde": "stage zero of punklorde",
+            "grinalda do campeonato do herói": "hero of canyons",
+            "braçadeiras douradas do herói": "hero of canyons",
+            "armadura dourada galante do herói": "hero of canyons",
+            "caneleiras perseguidoras das chamas do herói": "hero of canyons",
+            "cidade do arco-íris de punklorde": "talia: kingdom of banditry",
+            "fluxo de dados de punklorde": "talia: kingdom of banditry",
+            // HSR Weapons
+            "antes do amanhecer": "before dawn",
+            "noite sobre a via láctea": "night on the milky way",
+            "repouso dos gênios": "geniuses' repose",
+            "cálculo eterno": "eternal calculus",
+            "hoje também é um dia pacífico": "today is another peaceful day",
+            "o dia em que o cosmos caiu": "the day the cosmos fell",
+            "a seriedade do café da manhã": "the seriousness of breakfast",
+            "ao véu inalcançável": "earthly escapade",
+            "as aventuras do cogumelinho fofinho": "the adventure of mollusc",
+            // Genshin Sets
+            "sombra verde": "viridescent venerer",
+            "millelith firmes": "tenacity of the millelith",
+            "selo da insulação": "emblem of severed fate",
+            "herói invernal": "blizzard strayer",
+            "caçador das sombras": "marechaussee hunter",
+            "trupe dourada": "golden troupe",
+            "memórias da floresta": "deepwood memories",
+            "sonhos dourados": "gilded dreams",
+            "antigo ritual real": "noblesse oblige",
+            "pergaminho do herói da cidade incandescente": "scroll of the hero of the cinder city",
+            "códice de obsidiana": "obsidian codex",
+            "dádiva celestial": "song of days past",
+            "serenata das estrelas e da lua": "serenade of stars and moon",
+            "noite da revelação do céu": "night of the sky's unveiling",
+            "juramento da noite eterna": "oath of the eternal night",
+            "pedra arcaica": "archaic petra",
+            "último juramento do gladiador": "gladiator's finale",
+            "ascensão zéfira": "a day carved from rising winds",
+            // Genshin Weapons
+            "cortadora da neblina reforjada": "mistsplitter reforged",
+            "luz lunar de xiphos": "xiphos' moonlight",
+            "espinha dorsal da serpente": "serpent spine",
+            "esplendor das águas silenciosas": "splendor of silent waters",
+            "memórias de sacrifício": "sacrificial fragments",
+            "chave de hierofania": "key of khaj-nisut",
+            "subjugadora de calamidades": "calamity queller",
+            "aqua simulacra": "aqua simulacra",
+            "oração perdida aos ventos sagrados": "lost prayer to the sacred winds",
+            "histórias extraordinárias de caçadores de dragões": "thrilling tales of dragon slayers",
+            "a fisgada": "the catch",
+            "arcana original": "the first great magic",
+            "espada de favonius": "favonius sword",
+            "lâmina amenoma kageuchi": "amenoma kageuchi",
+            "amenoma kageuchi": "amenoma kageuchi",
+            "prenúncio do alvorecer": "harbinger of dawn",
+            "falcão": "aquila favonia"
+        };
+        
+        function translateToEnglish(name) {
+            if (!name) return "";
+            const clean = name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/•/g, "").replace(/[^a-z0-9\s]/g, "").trim();
+            for (const key in translationDict) {
+                if (clean.includes(key) || key.includes(clean)) {
+                    return translationDict[key];
+                }
+            }
+            return clean;
+        }
+        
+        const wordMappings = {
+            "ferro": "iron",
+            "cavalaria": "cavalry",
+            "praga": "scourge",
+            "ninjutsu": "ninjutsu",
+            "inscrição": "inscription",
+            "deslumbrante": "dazzling",
+            "mal": "evil",
+            "destruição": "destruição",
+            "reino": "kingdom",
+            "banditismo": "banditry",
+            "duke": "duque",
+            "ashblazing": "cinzas",
+            "amanhecer": "dawn",
+            "antes": "before",
+            "luz": "light",
+            "estrelas": "stars",
+            "lua": "moon",
+            "sombra": "shadow",
+            "verde": "green",
+            "venerer": "venerer",
+            "millelith": "millelith",
+            "firmes": "tenacity",
+            "insulação": "severed",
+            "selo": "emblem",
+            "invernal": "blizzard",
+            "herói": "hero",
+            "caçador": "hunter",
+            "sombras": "shadows",
+            "dourada": "golden",
+            "trupe": "troupe",
+            "floresta": "deepwood",
+            "memórias": "memories",
+            "sonhos": "dreams",
+            "dourados": "gilded",
+            "ritual": "noblesse",
+            "real": "oblige",
+            "incandescente": "cinder",
+            "cidade": "city",
+            "pergaminho": "scroll",
+            "obsidiana": "obsidian",
+            "códice": "codex",
+            "dádiva": "gift",
+            "celestial": "song",
+            "revelação": "unveiling",
+            "céu": "sky",
+            "noite": "night",
+            "eterna": "eternal",
+            "juramento": "oath",
+            "pedra": "stone",
+            "arcaica": "archaic",
+            "gladiador": "gladiator",
+            "último": "finale",
+            "zéfira": "winds",
+            "ascensão": "carved",
+            "neblina": "mistsplitter",
+            "reforjada": "reforged",
+            "cortadora": "reforged",
+            "xiphos": "xiphos",
+            "serpente": "serpent",
+            "espinha": "spine",
+            "águas": "waters",
+            "silenciosas": "silent",
+            "esplendor": "splendor",
+            "sacrifício": "sacrificial",
+            "hierofania": "khaj",
+            "calamidades": "calamity",
+            "subjugadora": "queller",
+            "oração": "prayer",
+            "sagrados": "sacred",
+            "ventos": "winds",
+            "dragões": "dragon",
+            "caçadores": "slayers",
+            "fisgada": "catch",
+            "lâmina": "blade",
+            "alvorecer": "dawn",
+            "falcão": "aquila",
+            "navegador": "navigator",
+            "vejo": "sees",
+            "vê": "sees",
+            "estrela": "star",
+            "caída": "anchorage",
+            "afundados": "waterside",
+            "profeta": "scholar",
+            "alcance": "erudition",
+            "distante": "erudition",
+            "menina": "pioneer",
+            "mágica": "diver"
+        };
+        
+        function checkFuzzyMatch(name1, name2) {
+            if (!name1 || !name2) return false;
+            const clean1 = translateToEnglish(name1).toLowerCase();
+            const clean2 = translateToEnglish(name2).toLowerCase();
+            
+            if (clean1.includes(clean2) || clean2.includes(clean1)) {
+                return true;
+            }
+            
+            const words1 = clean1.split(/\s+/);
+            const words2 = clean2.split(/\s+/);
+            
+            const mapped1 = words1.map(w => wordMappings[w] || w);
+            const mapped2 = words2.map(w => wordMappings[w] || w);
+            
+            const sig1 = mapped1.filter(w => w.length > 3);
+            const sig2 = mapped2.filter(w => w.length > 3);
+            
+            const intersection = sig1.filter(w => sig2.includes(w));
+            if (intersection.length >= 2) {
+                return true;
+            }
+            return false;
+        }
+        
+        let html = "";
+        
+        // 1. Arma (com verificação de múltiplos substitutos e tradução)
+        const recommendedWeapons = target.weapons && target.weapons.length > 0 ? target.weapons : [target.weapon];
+        const hasWeaponMatch = recommendedWeapons.some(w => checkFuzzyMatch(build.weapon, w));
+        
+        const weaponClass = target.weapon === "Não informado" ? "comparison-neutral" : (hasWeaponMatch ? "comparison-match" : "comparison-mismatch");
+        
+        html += `
+            <tr>
+                <td class="comparison-row-title">🗡️ Arma/Cone</td>
+                <td class="${weaponClass}">${build.weapon}</td>
+                <td class="comparison-val-target" style="text-align: right;">${target.weapon} ${recommendedWeapons.length > 1 ? '<br><small style="color: var(--text-muted); font-size: 10px;">(Ou substitutos recomendados)</small>' : ''}</td>
+            </tr>
+        `;
+        
+        // 2. Sets (com verificação de múltiplos substitutos e tradução)
+        const currentSetsStr = build.sets.join(" / ") || "Nenhum";
+        const targetSetsStr = target.sets.join(" / ") || "Não informado";
+        
+        let setsClass = "comparison-neutral";
+        if (targetSetsStr !== "Não informado" && build.sets.length > 0) {
+            const recommendedSets = target.all_sets && target.all_sets.length > 0 ? target.all_sets : target.sets;
+            const hasSetMatch = build.sets.some(bSet => 
+                recommendedSets.some(tSet => checkFuzzyMatch(bSet, tSet))
+            );
+            setsClass = hasSetMatch ? "comparison-match" : "comparison-mismatch";
+        }
+        
+        html += `
+            <tr>
+                <td class="comparison-row-title">🔮 Sets</td>
+                <td class="${setsClass}">${currentSetsStr}</td>
+                <td class="comparison-val-target" style="text-align: right;">${targetSetsStr} ${target.all_sets && target.all_sets.length > 1 ? '<br><small style="color: var(--text-muted); font-size: 10px;">(Ou substitutos recomendados)</small>' : ''}</td>
+            </tr>
+        `;
+        
+        // 3. Status Alvo (Sands, Goblet, Circlet / Discos 4, 5, 6 / Corpo, Pés, Esfera, Corda)
+        const targetStatsKeys = Object.keys(target.stats);
+        
+        function normalizeStatTerm(str) {
+            if (!str) return "";
+            return str.toLowerCase()
+                .replace(/%/g, "")
+                .replace(/\batk\b/g, "ataque")
+                .replace(/\batq\b/g, "ataque")
+                .replace(/\bhp\b/g, "vida")
+                .replace(/\bpv\b/g, "vida")
+                .replace(/\bdef\b/g, "defesa")
+                .replace(/crítico/g, "crit")
+                .replace(/crít/g, "crit")
+                .replace(/crítica/g, "crit")
+                .replace(/recharge/g, "recarga")
+                .replace(/regen/g, "recarga")
+                .replace(/recuperação de energia/g, "recarga")
+                .replace(/recarga de energia/g, "recarga")
+                .replace(/perfuração ratio/g, "perfuração")
+                .replace(/taxa de perfuração/g, "perfuração")
+                .trim();
+        }
+        
+        if (targetStatsKeys.length > 0) {
+            targetStatsKeys.forEach(key => {
+                let playerVal = "Não equipado";
+                let statClass = "comparison-mismatch";
+                
+                // Tenta encontrar a peça correspondente ao slot (rótulos agora são padronizados exatamente)
+                const matchedPiece = (build.pieces || []).find(p => {
+                    const slotLower = p.slot.toLowerCase().trim();
+                    const keyLower = key.toLowerCase().trim();
+                    return slotLower === keyLower || slotLower.includes(keyLower) || keyLower.includes(slotLower);
+                });
+                
+                if (matchedPiece) {
+                    playerVal = matchedPiece.main;
+                    const targetValLower = target.stats[key].toLowerCase();
+                    const options = targetValLower.split(/[=/>]|\bou\b/).map(s => s.trim());
+                    
+                    const isMatch = options.some(opt => {
+                        if (!opt) return false;
+                        const optNorm = normalizeStatTerm(opt);
+                        const mainNorm = normalizeStatTerm(matchedPiece.main);
+                        return mainNorm.includes(optNorm) || optNorm.includes(mainNorm);
+                    });
+                    
+                    statClass = isMatch ? "comparison-match" : "comparison-mismatch";
+                } else {
+                    // Fallback para buscar nas estatísticas gerais do jogador
+                    playerVal = "Não encontrado";
+                    const targetValLower = target.stats[key].toLowerCase();
+                    const playerStatsKeys = Object.keys(build.stats || {});
+                    const options = targetValLower.split(/[=/>]|\bou\b/).map(s => s.trim());
+                    
+                    for (const opt of options) {
+                        if (!opt) continue;
+                        const matchedKey = playerStatsKeys.find(pK => {
+                            const pKNorm = normalizeStatTerm(pK);
+                            const optNorm = normalizeStatTerm(opt);
+                            return pKNorm.includes(optNorm) || optNorm.includes(pKNorm);
+                        });
+                        
+                        if (matchedKey) {
+                            playerVal = build.stats[matchedKey];
+                            statClass = "comparison-match";
+                            break;
+                        }
+                    }
+                }
+                
+                html += `
+                    <tr>
+                        <td class="comparison-row-title">• ${key}</td>
+                        <td class="${statClass}">${playerVal}</td>
+                        <td class="comparison-val-target" style="text-align: right;">${target.stats[key]}</td>
+                    </tr>
+                `;
+            });
+        } else {
+            html += `
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 10px 0; color: var(--text-muted);">Nenhum detalhe de status alvo no guia.</td>
+                </tr>
+            `;
+        }
+        
+        // 4. Atributos Finais Recomendados (Endgame Stats)
+        const endgameStats = target.endgame_stats || {};
+        const endgameKeys = Object.keys(endgameStats);
+        if (endgameKeys.length > 0) {
+            html += `
+                <tr style="border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.02);">
+                    <td colspan="3" style="padding: 8px 0; font-weight: 700; color: var(--text-secondary); font-size: 11px;">📊 Atributos Finais (Endgame Stats)</td>
+                </tr>
+            `;
+            
+            endgameKeys.forEach(key => {
+                let playerVal = "Não encontrado";
+                let statClass = "comparison-neutral";
+                
+                const keyLower = key.toLowerCase();
+                const playerStatsKeys = Object.keys(build.stats || {});
+                
+                const termMappings = {
+                    "atk": ["ataque", "atk", "atq"],
+                    "atq": ["ataque", "atk", "atq"],
+                    "hp": ["vida", "hp", "pv", "vida máxima", "vida máx"],
+                    "pv": ["vida", "hp", "pv", "vida máxima", "vida máx"],
+                    "vida máxima": ["vida", "hp", "pv", "vida máxima", "vida máx"],
+                    "def": ["defesa", "def"],
+                    "defesa": ["defesa", "def"],
+                    "proficiência de anomalia": ["proficiência de anomalia", "anomaly proficiency", "profic"],
+                    "recuperação de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia"],
+                    "taxa de regeneração de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia"],
+                    "taxa crítica": ["taxa crítica", "crit rate", "taxa crít", "chance de crit", "taxa crt"],
+                    "chance de crit": ["taxa crítica", "crit rate", "taxa crít", "chance de crit", "taxa crt", "chance de crítico"],
+                    "dano crítico": ["dano crítico", "crit dmg", "dano crít", "dano crit", "dano crt"],
+                    "dano crit": ["dano crítico", "crit dmg", "dano crít", "dano crit", "dano crt"],
+                    "recarga de energia": ["recarga de energia", "energy recharge", "recarga"],
+                    "efeito de quebra": ["efeito de quebra", "break effect", "quebra"],
+                    "proficiência elemental": ["proficiência elemental", "elemental mastery", "proficiência"],
+                    "vel": ["vel", "speed", "velocidade"],
+                    "velocidade": ["vel", "speed", "velocidade"]
+                };
+                
+                let searchTerms = [keyLower];
+                for (const kMap in termMappings) {
+                    if (keyLower.includes(kMap) || kMap.includes(keyLower)) {
+                        searchTerms = searchTerms.concat(termMappings[kMap]);
+                    }
+                }
+                
+                const matchedKey = playerStatsKeys.find(pK => {
+                    const pKLower = pK.toLowerCase();
+                    return searchTerms.some(term => pKLower.includes(term) || term.includes(pKLower));
+                });
+                
+                if (matchedKey) {
+                    playerVal = build.stats[matchedKey];
+                    const targetStr = endgameStats[key];
+                    const playerNum = parseFloat(playerVal.replace(/[^0-9.]/g, ""));
+                    const targetMinNum = parseFloat(targetStr.split(/[-+]/)[0].replace(/[^0-9.]/g, ""));
+                    
+                    if (!isNaN(playerNum) && !isNaN(targetMinNum)) {
+                        statClass = playerNum >= targetMinNum ? "comparison-match" : "comparison-mismatch";
+                    }
+                }
+                
+                html += `
+                    <tr>
+                        <td class="comparison-row-title">• ${key}</td>
+                        <td class="${statClass}">${playerVal}</td>
+                        <td class="comparison-val-target" style="text-align: right;">${endgameStats[key]}</td>
+                    </tr>
+                `;
+            });
+        }
+        
+        rowsContainer.innerHTML = html;
+    } catch(err) {
+        console.error("Erro ao carregar comparação de builds:", err);
+        rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px 0; color: var(--color-danger);">Erro ao carregar comparação.</td></tr>`;
+    }
+}
+
+// ==========================================================================
+// FUNÇÕES DOS GRÁFICOS SVG DO ROSTER (PÁGINA INICIAL)
+// ==========================================================================
+function renderRosterCharts() {
+    const allChars = [
+        ...globalRoster.hsr,
+        ...globalRoster.genshin,
+        ...globalRoster.zzz
+    ].filter(c => c.level >= 70); // Apenas personagens ativos
+    
+    if (allChars.length === 0) {
+        document.getElementById("chart-elements").innerHTML = `<text x="100" y="100" fill="var(--text-muted)" text-anchor="middle" font-size="12">Sem personagens Nv >= 70</text>`;
+        document.getElementById("chart-rarity").innerHTML = `<text x="100" y="100" fill="var(--text-muted)" text-anchor="middle" font-size="12">Sem personagens Nv >= 70</text>`;
+        return;
+    }
+    
+    // 1. Gráfico de Raridade
+    const rarities = { "5★": 0, "4★": 0 };
+    allChars.forEach(c => {
+        if (c.rarity === 5 || c.rarity === "5" || c.rarity === "S") {
+            rarities["5★"]++;
+        } else {
+            rarities["4★"]++;
+        }
+    });
+    drawPieChart("chart-rarity", "legend-rarity", [
+        { label: "5★ Lendário", value: rarities["5★"], color: "#f59e0b" },
+        { label: "4★ Épico", value: rarities["4★"], color: "#8b5cf6" }
+    ]);
+    
+    // 2. Gráfico de Elementos
+    const elements = {};
+    allChars.forEach(c => {
+        const el = c.element ? c.element.toLowerCase().trim() : "desconhecido";
+        elements[el] = (elements[el] || 0) + 1;
+    });
+    
+    const elementColors = {
+        "pyro": "#ef4444", "fogo": "#ef4444", "fire": "#ef4444",
+        "hydro": "#3b82f6", "ice": "#60a5fa", "gelo": "#60a5fa",
+        "anemo": "#10b981", "vento": "#10b981", "wind": "#10b981",
+        "electro": "#a78bfa", "electric": "#a78bfa", "raio": "#a78bfa", "lightning": "#a78bfa",
+        "dendro": "#22c55e",
+        "geo": "#eab308",
+        "cryo": "#93c5fd",
+        "physical": "#9ca3af", "físico": "#9ca3af",
+        "quantum": "#c084fc", "quântico": "#c084fc",
+        "imaginary": "#fde047", "imaginário": "#fde047",
+        "ether": "#f472b6", "éter": "#f472b6"
+    };
+    
+    const elementData = Object.keys(elements).map(el => {
+        const label = el.charAt(0).toUpperCase() + el.slice(1);
+        return {
+            label: label,
+            value: elements[el],
+            color: elementColors[el] || "#6b7280"
+        };
+    }).sort((a, b) => b.value - a.value);
+    
+    let chartData = elementData;
+    if (elementData.length > 5) {
+        const main = elementData.slice(0, 4);
+        const othersVal = elementData.slice(4).reduce((sum, item) => sum + item.value, 0);
+        main.push({ label: "Outros", value: othersVal, color: "#6b7280" });
+        chartData = main;
+    }
+    
+    drawPieChart("chart-elements", "legend-elements", chartData);
+}
+
+function drawPieChart(svgId, legendId, data) {
+    const svg = document.getElementById(svgId);
+    const legend = document.getElementById(legendId);
+    if (!svg || !legend) return;
+    
+    svg.innerHTML = "";
+    legend.innerHTML = "";
+    
+    const total = data.reduce((sum, item) => sum + item.value, 0);
+    if (total === 0) return;
+    
+    let startAngle = 0;
+    
+    if (data.filter(item => item.value > 0).length === 1) {
+        const activeItem = data.find(item => item.value > 0);
+        svg.innerHTML = `<circle cx="100" cy="100" r="70" fill="${activeItem.color}" />
+                         <circle cx="100" cy="100" r="40" fill="#050507" />`;
+        
+        legend.innerHTML = `<div class="chart-legend-item">
+                                <span class="chart-legend-color" style="background: ${activeItem.color}"></span>
+                                <span>${activeItem.label}: ${activeItem.value} (${100}%)</span>
+                            </div>`;
+        return;
+    }
+    
+    data.forEach(item => {
+        if (item.value === 0) return;
+        
+        const angle = (item.value / total) * 360;
+        const endAngle = startAngle + angle;
+        
+        const x1 = 100 + 70 * Math.cos((Math.PI * startAngle) / 180);
+        const y1 = 100 + 70 * Math.sin((Math.PI * startAngle) / 180);
+        const x2 = 100 + 70 * Math.cos((Math.PI * endAngle) / 180);
+        const y2 = 100 + 70 * Math.sin((Math.PI * endAngle) / 180);
+        
+        const largeArcFlag = angle > 180 ? 1 : 0;
+        
+        const pathData = `
+            M 100 100
+            L ${x1} ${y1}
+            A 70 70 0 ${largeArcFlag} 1 ${x2} ${y2}
+            Z
+        `;
+        
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", pathData);
+        path.setAttribute("fill", item.color);
+        path.setAttribute("stroke", "#050507");
+        path.setAttribute("stroke-width", "2");
+        svg.appendChild(path);
+        
+        const pct = Math.round((item.value / total) * 100);
+        const legendItem = document.createElement("div");
+        legendItem.className = "chart-legend-item";
+        legendItem.innerHTML = `
+            <span class="chart-legend-color" style="background: ${item.color}"></span>
+            <span>${item.label}: ${item.value} (${pct}%)</span>
+        `;
+        legend.appendChild(legendItem);
+        
+        startAngle = endAngle;
+    });
+    
+    const hole = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    hole.setAttribute("cx", "100");
+    hole.setAttribute("cy", "100");
+    hole.setAttribute("r", "40");
+    hole.setAttribute("fill", "#050507");
+    svg.appendChild(hole);
 }

@@ -148,6 +148,73 @@
                     </div>
                 </div>
 
+                <!-- NOVO: Monitor de Energia em Tempo Real -->
+                <div class="overview-card energy-monitor-card">
+                    <h3>🔋 Monitor de Energia em Tempo Real</h3>
+                    <p class="section-desc">Poder, Resina e Bateria sincronizados da sua conta HoYoLAB</p>
+                    <div class="energy-grid">
+                        <div class="energy-box genshin-theme">
+                            <div class="energy-circle-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring__background" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+                                    <circle id="ring-genshin" class="progress-ring__circle" stroke="var(--color-genshin)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                                </svg>
+                                <div id="lbl-genshin-val" class="energy-value">0/200</div>
+                            </div>
+                            <span class="energy-label">Resina (Genshin)</span>
+                            <span id="lbl-genshin-time" class="energy-time">Aguardando...</span>
+                        </div>
+                        <div class="energy-box hsr-theme">
+                            <div class="energy-circle-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring__background" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+                                    <circle id="ring-hsr" class="progress-ring__circle" stroke="var(--color-hsr)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                                </svg>
+                                <div id="lbl-hsr-val" class="energy-value">0/240</div>
+                            </div>
+                            <span class="energy-label">Poder de Desbravamento</span>
+                            <span id="lbl-hsr-time" class="energy-time">Aguardando...</span>
+                        </div>
+                        <div class="energy-box zzz-theme">
+                            <div class="energy-circle-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring__background" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+                                    <circle id="ring-zzz" class="progress-ring__circle" stroke="var(--color-zzz)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                                </svg>
+                                <div id="lbl-zzz-val" class="energy-value">0/240</div>
+                            </div>
+                            <span class="energy-label">Bateria (ZZZ)</span>
+                            <span id="lbl-zzz-time" class="energy-time">Aguardando...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- NOVO: Estatísticas do Roster em Gráficos SVG -->
+                <div class="overview-card charts-card">
+                    <h3>📊 Estatísticas do seu Roster</h3>
+                    <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
+                    <div class="charts-container">
+                        <div class="chart-box">
+                            <h4>Elementos (Roster Consolidado)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-elements" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-elements" class="chart-legend"></div>
+                            </div>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Raridade (Personagens 5★ vs 4★)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-rarity" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-rarity" class="chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="overview-card start-guide-card">
                     <h3>🚀 Começando com o Assistente de IA</h3>
                     <p>
@@ -377,6 +444,21 @@
                         </div>
                     </div>
                     
+                    <div class="config-section">
+                        <h3>📅 Resgate de Recompensas Diárias HoYoLAB</h3>
+                        <p class="section-desc">O aplicativo realiza automaticamente o resgate de recompensas diárias a cada 6 horas. Você também pode forçar o resgate manual abaixo.</p>
+                        <div class="btn-row">
+                            <button id="btn-manual-checkin" class="secondary-btn" style="border-color: var(--color-success); color: #4ade80;">🚀 Resgatar Recompensas Agora</button>
+                            <span class="btn-info">Executa o check-in diário para todas as contas vinculadas.</span>
+                        </div>
+                        <div id="checkin-logs-container" style="display: none; margin-top: 12px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px;">
+                            <strong style="display: block; margin-bottom: 6px;">Logs de check-in de hoje:</strong>
+                            <ul id="checkin-logs-list" style="margin-left: 16px; color: var(--text-secondary); line-height: 1.6; list-style: disc;">
+                                <!-- Preenchido via JS -->
+                            </ul>
+                        </div>
+                    </div>
+                    
                     <div class="config-actions">
                         <button id="btn-save-config" class="primary-btn">Salvar Configurações</button>
                         <span id="config-save-status" class="status-msg"></span>
@@ -431,55 +513,86 @@
                 <button id="btn-close-inspector" class="close-inspector-btn">✕</button>
             </div>
             
+            <!-- Abas do Inspetor de Build -->
+            <div class="inspector-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.15); padding: 0 16px;">
+                <button id="ins-tab-build" class="ins-tab-btn active" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid var(--color-hsr); color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer;">🛡️ Sua Build</button>
+                <button id="ins-tab-compare" class="ins-tab-btn" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer;">⚖️ Comparador Meta</button>
+            </div>
+            
             <div class="inspector-body">
-                <!-- NOVO: Otimizador IA de Build -->
-                <div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
-                    <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                        <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;">🧠 Otimizador de Build IA</h4>
-                        <button id="btn-ai-optimize" class="action-btn" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
+                <!-- PAINEL 1: DETALHES DA SUA BUILD -->
+                <div id="panel-build" class="inspector-panel active">
+                    <!-- NOVO: Otimizador IA de Build -->
+                    <div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
+                        <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;">🧠 Otimizador de Build IA</h4>
+                            <button id="btn-ai-optimize" class="action-btn" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
+                        </div>
+                        <div id="ins-ai-loading" class="ai-opt-loading" style="display: none; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
+                            <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
+                            <span>Avaliando Roster & Metagame...</span>
+                        </div>
+                        <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px; padding-left: 16px; margin-bottom: 0;">
+                            <!-- Sugestões inseridas aqui -->
+                        </ul>
                     </div>
-                    <div id="ins-ai-loading" class="ai-opt-loading" style="display: none; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
-                        <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
-                        <span>Avaliando Roster & Metagame...</span>
+                    
+                    <!-- Seção 1: Equipamento / Arma -->
+                    <div class="inspector-card">
+                        <h4>🗡️ Equipamento / Arma</h4>
+                        <div class="weapon-detail">
+                            <img id="ins-weapon-icon" src="" alt="Arma" class="weapon-icon">
+                            <div>
+                                <strong id="ins-weapon-name">Nome do Equipamento</strong>
+                                <span id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
+                            </div>
+                        </div>
                     </div>
-                    <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px; padding-left: 16px; margin-bottom: 0;">
-                        <!-- Sugestões inseridas aqui -->
-                    </ul>
-                </div>
-                
-                <!-- Seção 1: Equipamento / Arma -->
-                <div class="inspector-card">
-                    <h4>🗡️ Equipamento / Arma</h4>
-                    <div class="weapon-detail">
-                        <img id="ins-weapon-icon" src="" alt="Arma" class="weapon-icon">
-                        <div>
-                            <strong id="ins-weapon-name">Nome do Equipamento</strong>
-                            <span id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
+                    
+                    <!-- Seção 2: Conjuntos de Relíquias -->
+                    <div class="inspector-card">
+                        <h4>🔮 Conjuntos de Relíquias / Artefatos</h4>
+                        <div id="ins-relic-sets" class="relic-sets-list">
+                            <!-- Inserido dinamicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 3: Atributos Consolidados -->
+                    <div class="inspector-card">
+                        <h4>📊 Status Finais Consolidados</h4>
+                        <div id="ins-stats-grid" class="stats-grid">
+                            <!-- Inserido dinamicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 4: Detalhamento de Peças -->
+                    <div class="inspector-card">
+                        <h4>💿 Detalhamento de Peças e Substatus</h4>
+                        <div id="ins-relic-pieces" class="relic-pieces-list">
+                            <!-- Inserido dinamicamente -->
                         </div>
                     </div>
                 </div>
-                
-                <!-- Seção 2: Conjuntos de Relíquias -->
-                <div class="inspector-card">
-                    <h4>🔮 Conjuntos de Relíquias / Artefatos</h4>
-                    <div id="ins-relic-sets" class="relic-sets-list">
-                        <!-- Inserido dinamicamente -->
-                    </div>
-                </div>
-                
-                <!-- Seção 3: Atributos Consolidados -->
-                <div class="inspector-card">
-                    <h4>📊 Status Finais Consolidados</h4>
-                    <div id="ins-stats-grid" class="stats-grid">
-                        <!-- Inserido dinamicamente -->
-                    </div>
-                </div>
-                
-                <!-- Seção 4: Detalhamento de Peças -->
-                <div class="inspector-card">
-                    <h4>💿 Detalhamento de Peças e Substatus</h4>
-                    <div id="ins-relic-pieces" class="relic-pieces-list">
-                        <!-- Inserido dinamicamente -->
+
+                <!-- PAINEL 2: COMPARADOR SIDE-BY-SIDE -->
+                <div id="panel-compare" class="inspector-panel" style="display: none;">
+                    <div class="inspector-card">
+                        <h4>⚖️ Comparação Lado a Lado</h4>
+                        <p class="section-desc" style="margin-bottom: 12px;">Seus equipamentos e atributos comparados com as recomendações de metagame.</p>
+                        <div class="comparison-table-wrapper">
+                            <table class="comparison-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-align: left;">
+                                        <th style="padding: 6px 0;">Item/Atributo</th>
+                                        <th style="padding: 6px 0;">Sua Build</th>
+                                        <th style="padding: 6px 0; text-align: right;">Meta Alvo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ins-comparison-rows">
+                                    <!-- Preenchido via JS -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
