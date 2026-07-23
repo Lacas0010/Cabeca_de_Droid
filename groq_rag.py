@@ -388,3 +388,77 @@ class GroqRAG:
             return error_msg
 
         return "Erro: Não foi possível obter resposta de nenhum modelo da Groq."
+
+    def ask_assistant_stream(self, prompt_usuario: str, contexto_rag: str | list, historico_chat: list = None):
+        """
+        Gera resposta em formato streaming utilizando a API da Groq.
+        Yields strings contendo os tokens gerados.
+        """
+        if not self.client:
+            yield "Erro: Chave API da Groq não configurada ou inválida. Por favor, configure e teste a chave na aba Configurações."
+            return
+
+        # 1. Tratar o contexto_rag (pode ser str ou list)
+        if isinstance(contexto_rag, list):
+            contexto_str = "\n\n".join(contexto_rag)
+        else:
+            contexto_str = contexto_rag
+
+        # 2. Definir o system prompt persona com o contexto local injetado
+        system_prompt = (
+            "Você é um assistente especializado nos jogos da HoYoverse (Genshin Impact, Honkai: Star Rail, Zenless Zone Zero). "
+            "Responda com base no contexto fornecido e formate em Markdown claro para a interface gráfica.\n\n"
+            "Você tem acesso aos recordes de Endgame (Caos da Memória / Abismo Espiral) do jogador. Se o jogador não tiver alcançado as 36 estrelas ou travado em um andar específico, analise os times e as builds fornecidas para dar conselhos táticos: sugira trocas de composição de time para quebrar fraquezas e indique qual personagem precisa de melhoria urgente para passar daquela fase."
+        )
+        
+        if contexto_str.strip():
+            system_prompt += f"\n\n## CONTEXTO DE DADOS LOCAIS DO JOGADOR E GUIAS:\n{contexto_str}"
+
+        # Limite de segurança geral rígido para a API da Groq
+        MAX_SYSTEM_PROMPT_CHARS = 18000
+        if len(system_prompt) > MAX_SYSTEM_PROMPT_CHARS:
+            print(f"[INFO] Truncando contexto de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres por segurança.")
+            system_prompt = system_prompt[:MAX_SYSTEM_PROMPT_CHARS] + "\n\n... (Contexto local truncado por limite de tokens da API) ..."
+
+        # 3. Formatar o histórico e mensagens
+        messages = [
+            {"role": "system", "content": system_prompt}
+        ]
+
+        if historico_chat:
+            for msg in historico_chat:
+                role = msg.get("role")
+                role_mapped = "assistant" if role in ["model", "assistant"] else "user"
+                content = msg.get("text") or msg.get("content", "")
+                if content.strip():
+                    messages.append({"role": role_mapped, "content": content})
+
+        # Adiciona a mensagem atual
+        messages.append({"role": "user", "content": prompt_usuario})
+
+        # 4. Lista de modelos compatíveis com streaming rápido
+        modelos = [
+            "llama-3.3-70b-versatile",
+            "llama-3.1-8b-instant"
+        ]
+
+        for model in modelos:
+            try:
+                print(f"[INFO] Iniciando stream com o modelo: {model}...")
+                completion = self.client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.1,
+                    stream=True
+                )
+                
+                # Iterar e retornar tokens em stream
+                for chunk in completion:
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        yield chunk.choices[0].delta.content
+                return
+            except Exception as e:
+                print(f"[WARN] Falha de streaming com o modelo {model}: {e}. Tentando fallback...")
+                continue
+        
+        yield "Erro: Não foi possível obter resposta de nenhum modelo de streaming da Groq."

@@ -5,8 +5,10 @@ import asyncio
 import threading
 import traceback
 import datetime
+import time
+import genshin
 from fastapi import FastAPI, BackgroundTasks, HTTPException
-from fastapi.responses import JSONResponse, FileResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
@@ -20,6 +22,7 @@ from scraper_meta import PrydwenMetaScraper
 from scraper_kqm import KQMScraper
 from scraper_genshin_meta import GenshinMetaScraper
 from groq_rag import GroqRAG
+import database
 
 app = FastAPI(title="Cabeça de Droid API", version="3.0")
 
@@ -290,6 +293,91 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
         sync_status[game_id]["running"] = False
 
 # ==========================================
+# ROTINAS DE CHECK-IN AUTOMÁTICO
+# ==========================================
+async def perform_auto_checkin():
+    cookies = get_cookies()
+    if not cookies:
+        print("[CHECKIN] Nenhum cookie configurado para o check-in automático.")
+        return []
+        
+    client = genshin.Client(cookies=cookies, lang="pt-pt")
+    
+    try:
+        accounts = await client.get_game_accounts()
+    except Exception as e:
+        print(f"[CHECKIN] Erro ao obter contas para check-in: {e}")
+        return []
+        
+    logs = []
+    processed = set()
+    
+    for acc in accounts:
+        game_biz = acc.game_biz
+        uid = str(acc.uid)
+        
+        game_type = None
+        game_key = None
+        if game_biz.startswith("hk4e"):
+            game_type = genshin.Game.GENSHIN
+            game_key = "genshin"
+        elif game_biz.startswith("hkrpg"):
+            game_type = genshin.Game.STARRAIL
+            game_key = "hsr"
+        elif game_biz.startswith("nap"):
+            game_type = genshin.Game.ZZZ
+            game_key = "zzz"
+            
+        if not game_type or (game_key, uid) in processed:
+            continue
+            
+        processed.add((game_key, uid))
+        client.game = game_type
+        
+        try:
+            reward = await client.claim_daily_reward()
+            msg = f"Check-in realizado com sucesso! Recompensa: {reward.name} (x{reward.amount})"
+            database.save_checkin_log(game_key, uid, "SUCCESS", msg)
+            logs.append({"game_id": game_key, "uid": uid, "status": "SUCCESS", "message": msg})
+            print(f"[CHECKIN] {game_key.upper()} ({uid}): {msg}")
+        except genshin.AlreadyClaimed:
+            msg = "Recompensa diária já foi resgatada hoje."
+            database.save_checkin_log(game_key, uid, "ALREADY_CLAIMED", msg)
+            logs.append({"game_id": game_key, "uid": uid, "status": "ALREADY_CLAIMED", "message": msg})
+            print(f"[CHECKIN] {game_key.upper()} ({uid}): {msg}")
+        except Exception as err:
+            err_msg = str(err)
+            if "1008" in err_msg or "already claimed" in err_msg.lower():
+                msg = "Recompensa diária já foi resgatada hoje."
+                database.save_checkin_log(game_key, uid, "ALREADY_CLAIMED", msg)
+                logs.append({"game_id": game_key, "uid": uid, "status": "ALREADY_CLAIMED", "message": msg})
+            else:
+                msg = f"Erro no check-in: {err_msg}"
+                database.save_checkin_log(game_key, uid, "ERROR", msg)
+                logs.append({"game_id": game_key, "uid": uid, "status": "ERROR", "message": msg})
+            print(f"[CHECKIN] {game_key.upper()} ({uid}): Erro: {err_msg}")
+            
+    return logs
+
+@app.on_event("startup")
+def startup_checkin_scheduler():
+    def checkin_loop():
+        # Espera 10 segundos antes da primeira execução
+        time.sleep(10)
+        while True:
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.run_until_complete(perform_auto_checkin())
+                loop.close()
+            except Exception as loop_err:
+                print(f"[CHECKIN] Erro no loop de check-in automático: {loop_err}")
+            # Aguarda 6 horas
+            time.sleep(21600)
+            
+    threading.Thread(target=checkin_loop, daemon=True).start()
+
+# ==========================================
 # ROTAS DA API REST
 # ==========================================
 
@@ -299,6 +387,14 @@ async def get_roster(game_id: str):
     game_id = game_id.lower().strip()
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido. Escolha 'hsr', 'genshin' ou 'zzz'.")
+        
+    # Tenta carregar do SQLite primeiro
+    try:
+        data = database.get_roster_data(game_id)
+        if data:
+            return data
+    except Exception as e:
+        print(f"Aviso ao carregar roster do SQLite para {game_id}: {e}")
         
     json_path = f"{game_id}/roster_data_{game_id}.json"
     if os.path.exists(json_path):
@@ -422,14 +518,545 @@ async def auto_login_hoyolab(background_tasks: BackgroundTasks):
     background_tasks.add_task(_run_login)
     return {"status": "started", "message": "Navegador de Login Automático iniciado em segundo plano."}
 
+@app.get("/api/notes")
+async def get_notes():
+    """Busca as notas diárias (resina, energia, diárias) em tempo real via API do HoYoLAB."""
+    cookies = get_cookies()
+    if not cookies:
+        try:
+            return database.get_cached_daily_notes()
+        except Exception:
+            return {}
+            
+    client = genshin.Client(cookies=cookies, lang="pt-pt")
+    
+    try:
+        accounts = await client.get_game_accounts()
+    except Exception as e:
+        print(f"Erro ao obter contas vinculadas no HoYoLAB para notas: {e}")
+        try:
+            return database.get_cached_daily_notes()
+        except Exception:
+            return {}
+            
+    for acc in accounts:
+        # 1. Genshin Impact
+        if acc.game_biz.startswith("hk4e"):
+            try:
+                client.game = genshin.Game.GENSHIN
+                notes = await client.get_genshin_notes(acc.uid)
+                
+                expeditions = []
+                for exp in notes.expeditions:
+                    rem_time = getattr(exp, "remaining_time", getattr(exp, "remained_time", None))
+                    expeditions.append({
+                        "character_icon": getattr(exp, "character_icon", getattr(getattr(exp, "character", None), "icon", "")),
+                        "status": str(exp.status),
+                        "remaining_time": str(rem_time) if rem_time is not None else "0"
+                    })
+                    
+                extra_info = {
+                    "completed_commissions": notes.completed_commissions,
+                    "max_commissions": notes.max_commissions,
+                    "claimed_commission_reward": notes.claimed_commission_reward,
+                    "expeditions": expeditions,
+                    "current_realm_currency": notes.current_realm_currency,
+                    "max_realm_currency": notes.max_realm_currency
+                }
+                
+                database.save_daily_notes(
+                    uid=str(acc.uid),
+                    game_id="genshin",
+                    nickname=acc.nickname,
+                    current_energy=notes.current_resin,
+                    max_energy=notes.max_resin,
+                    recovery_time=str(notes.remaining_resin_recovery_time),
+                    extra_info=extra_info
+                )
+            except Exception as ge:
+                print(f"Erro ao obter notas do Genshin: {ge}")
+                
+        # 2. Honkai: Star Rail
+        elif acc.game_biz.startswith("hkrpg"):
+            try:
+                client.game = genshin.Game.STARRAIL
+                notes = await client.get_starrail_notes(acc.uid)
+                
+                expeditions = []
+                for exp in notes.expeditions:
+                    rem_time = getattr(exp, "remaining_time", getattr(exp, "remained_time", None))
+                    expeditions.append({
+                        "name": getattr(exp, "name", "Expedição"),
+                        "remaining_time": str(rem_time) if rem_time is not None else "0"
+                    })
+                    
+                extra_info = {
+                    "expeditions": expeditions,
+                    "current_train_score": notes.current_train_score,
+                    "max_train_score": notes.max_train_score,
+                    "current_rogue_score": getattr(notes, "current_rogue_score", 0),
+                    "max_rogue_score": getattr(notes, "max_rogue_score", 0)
+                }
+                
+                database.save_daily_notes(
+                    uid=str(acc.uid),
+                    game_id="hsr",
+                    nickname=acc.nickname,
+                    current_energy=notes.current_stamina,
+                    max_energy=notes.max_stamina,
+                    recovery_time=str(notes.stamina_recover_time),
+                    extra_info=extra_info
+                )
+            except Exception as he:
+                print(f"Erro ao obter notas do HSR: {he}")
+                
+        # 3. Zenless Zone Zero
+        elif acc.game_biz.startswith("nap"):
+            try:
+                client.game = genshin.Game.ZZZ
+                notes = await client.get_zzz_notes(acc.uid)
+                
+                extra_info = {
+                    "engagement": getattr(notes.engagement, "current", 0) if hasattr(notes, "engagement") and hasattr(notes.engagement, "current") else getattr(notes, "engagement", 0),
+                    "video_store_state": str(getattr(notes, "video_store_state", "Desconhecido")),
+                    "scratch_card_completed": bool(getattr(notes, "scratch_card_completed", False))
+                }
+                
+                database.save_daily_notes(
+                    uid=str(acc.uid),
+                    game_id="zzz",
+                    nickname=acc.nickname,
+                    current_energy=notes.battery_charge.current if hasattr(notes.battery_charge, "current") else getattr(notes, "battery_charge", 0),
+                    max_energy=notes.battery_charge.max if hasattr(notes.battery_charge, "max") else 240,
+                    recovery_time=str(getattr(notes.battery_charge, "remain_time", "0")),
+                    extra_info=extra_info
+                )
+            except Exception as ze:
+                print(f"Erro ao obter notas do ZZZ: {ze}")
+                
+    try:
+        return database.get_cached_daily_notes()
+    except Exception as e:
+        return {}
+
+@app.post("/api/checkin/run")
+async def run_manual_checkin():
+    """Roda o check-in manual na HoYoLAB e retorna o resultado."""
+    logs = await perform_auto_checkin()
+    return {"status": "completed", "logs": logs}
+
+@app.get("/api/checkin/today")
+async def get_checkin_today():
+    """Retorna os logs de check-in efetuados hoje."""
+    try:
+        return database.get_today_checkin_logs()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+# TRADUTOR DE ITENS E STATUS (INGLÊS -> PT-BR)
+# ==========================================
+
+TRANSLATIONS = {}
+try:
+    with open("traducoes.json", "r", encoding="utf-8") as f:
+        TRANSLATIONS = json.load(f)
+except Exception as te:
+    print(f"[WARN] Não foi possível carregar traducoes.json: {te}")
+
+def traduzir_item(nome_ingles: str) -> str:
+    if not nome_ingles:
+        return nome_ingles
+        
+    nome_clean = nome_ingles.strip()
+    
+    # Extrai sufixos comuns como (4-PC), (2-PC), (S1), (R5)
+    suffix = ""
+    match_suffix = re.search(r'\s*(\((?:\d-PC|\d-pc|S\d|R\d)\))\s*$', nome_clean, re.I)
+    if match_suffix:
+        suffix = " " + match_suffix.group(1)
+        nome_clean = nome_clean[:match_suffix.start()].strip()
+        
+    # Tenta correspondência exata no dicionário
+    if nome_clean in TRANSLATIONS:
+        return TRANSLATIONS[nome_clean] + suffix
+        
+    # Tenta correspondência case-insensitive
+    nome_lower = nome_clean.lower()
+    for eng_key, pt_val in TRANSLATIONS.items():
+        if eng_key.lower() == nome_lower:
+            return pt_val + suffix
+            
+    # Tenta substituir termos dentro de expressões maiores (como em status principais)
+    traduzido = nome_clean
+    for eng_key, pt_val in TRANSLATIONS.items():
+        if len(eng_key) < 30:
+            pattern = re.compile(rf'\b{re.escape(eng_key)}\b', re.IGNORECASE)
+            traduzido = pattern.sub(pt_val, traduzido)
+            
+    return traduzido + suffix
+
+def find_best_guide_file(game_id: str, char_name: str, element: str = "") -> str:
+    char_name_lower = char_name.lower()
+    
+    # Mapeamento do Trailblazer e Traveler baseado no elemento
+    if game_id == "hsr" and ("desbravador" in char_name_lower or "trailblazer" in char_name_lower):
+        elem_map = {
+            "ice": "remembrance",
+            "fire": "preservation",
+            "physical": "destruction",
+            "imaginary": "harmony"
+        }
+        path_name = elem_map.get(element.lower(), "harmony")
+        char_name = f"trailblazer • {path_name}"
+    elif game_id == "genshin" and ("viajante" in char_name_lower or "traveler" in char_name_lower):
+        elem_map = {
+            "anemo": "anemo",
+            "geo": "geo",
+            "electro": "electro",
+            "dendro": "dendro",
+            "hydro": "hydro",
+            "pyro": "pyro",
+            "cryo": "cryo"
+        }
+        path_name = elem_map.get(element.lower(), "dendro")
+        char_name = f"{path_name} traveler"
+        
+    char_name_clean = char_name.lower().replace(' ', '').replace('-', '').replace('•', '').replace('_', '').replace('(a)', '')
+    
+    # 1. Correspondência exata/preferencial de caminhos
+    paths_to_check = [
+        f"{game_id}/guias/{char_name.lower().replace(' ', '_').replace('•_', '')}.md",
+        f"{game_id}/guias/{char_name.lower().replace(' ', '_')}.md",
+        f"{game_id}/guias/{char_name.lower()}.md",
+        f"{game_id}/guias_prydwen/{char_name.lower().replace(' ', '_')}.md",
+        f"{game_id}/guias_kqm/{char_name.lower().replace(' ', '_')}.md"
+    ]
+    for p in paths_to_check:
+        if os.path.exists(p):
+            return p
+            
+    # 2. Varredura e correspondência por substring inteligente nos arquivos
+    guias_dir = f"{game_id}/guias"
+    if os.path.exists(guias_dir):
+        files = os.listdir(guias_dir)
+        best_match = None
+        best_len = 0
+        for f in files:
+            if not f.endswith(".md"):
+                continue
+            f_clean = f.lower().replace('.md', '').replace(' ', '').replace('-', '').replace('•', '').replace('_', '')
+            
+            # Checa se o nome limpo do arquivo está contido no personagem ou vice-versa
+            if f_clean in char_name_clean or char_name_clean in f_clean:
+                if len(f_clean) > best_len:
+                    best_match = f
+                    best_len = len(f_clean)
+        if best_match:
+            return os.path.join(guias_dir, best_match)
+            
+    return paths_to_check[0]
+
+def parse_meta_target(game_id: str, char_name: str, element: str = "") -> dict:
+    target = {
+        "weapon": "Não informado",
+        "weapons": [],
+        "sets": ["Não informado"],
+        "all_sets": [],
+        "stats": {},
+        "endgame_stats": {}
+    }
+    
+    guide_path = find_best_guide_file(game_id, char_name, element)
+    
+    guide_content = ""
+    if os.path.exists(guide_path):
+        try:
+            with open(guide_path, "r", encoding="utf-8") as f:
+                guide_content = f.read()
+        except Exception:
+            pass
+                
+    if not guide_content:
+        return target
+
+    lines = guide_content.splitlines()
+    
+    # 1. Busca W-Engine / Arma / Cone baseada em seção (listas ou tabelas)
+    found_weapon_section = False
+    weapons_list = []
+    for i, line in enumerate(lines):
+        if any(term in line.lower() for term in ["melhores w-engines", "melhor w-engine", "best w-engine", "melhores cones", "melhor cone", "best light cone", "melhores armas", "melhor arma", "best weapon", "weapons"]):
+            for next_line in lines[i+1:i+16]:
+                next_line_strip = next_line.strip()
+                if next_line_strip.startswith("-") or next_line_strip.startswith("*") or (next_line_strip and next_line_strip[0].isdigit() and "." in next_line_strip):
+                    val = next_line_strip.lstrip("-*0123456789. \t").strip()
+                    if "(" in val:
+                        val = val.split("(")[0].strip()
+                    val = val.replace("**", "").replace("`", "").strip()
+                    if val and val not in weapons_list:
+                        weapons_list.append(val)
+                elif "|" in next_line_strip:
+                    parts = [p.strip() for p in next_line_strip.split("|") if p.strip()]
+                    if parts:
+                        val = parts[0].replace("**", "").replace("`", "").strip()
+                        if val and val.lower() not in ["weapon", "arma", "cone", "w-engine", "cone de luz", "eficácia"]:
+                            if "(" in val:
+                                val = val.split("(")[0].strip()
+                            if val and val not in weapons_list:
+                                weapons_list.append(val)
+            if weapons_list:
+                target["weapon"] = weapons_list[0]
+                target["weapons"] = weapons_list
+                found_weapon_section = True
+                break
+
+    # Fallback clássico se não achou por seção
+    if target["weapon"] == "Não informado":
+        m_w = re.search(r'(?:Melhor Cone de Luz|Melhor Arma|Melhor W-Engine|Cone de Luz Recomendado|Arma Recomendada|W-Engine Recomendado|Best Light Cone|Best Weapon|Best W-Engine)[:\*\-\s]+([^\n]+)', guide_content, re.IGNORECASE)
+        if m_w:
+            target["weapon"] = m_w.group(1).replace("**", "").strip()
+            target["weapons"] = [target["weapon"]]
+
+    # 2. Busca Sets / Relíquias / Discos baseada em seção (listas ou tabelas)
+    found_sets_section = False
+    sets_list = []
+    for i, line in enumerate(lines):
+        if any(term in line.lower() for term in ["melhores conjuntos", "melhores artefatos", "relíquias recomendadas", "best relics", "best artifacts", "best discs", "melhores discos", "artifact sets", "artifacts", "relics", "discs"]):
+            for next_line in lines[i+1:i+16]:
+                next_line_strip = next_line.strip()
+                if next_line_strip.startswith("-") or next_line_strip.startswith("*") or (next_line_strip and next_line_strip[0].isdigit() and "." in next_line_strip):
+                    val = next_line_strip.lstrip("-*0123456789. \t").strip()
+                    if "(" in val:
+                        val = val.split("(")[0].strip()
+                    val = val.replace("**", "").replace("`", "").strip()
+                    if val and val not in sets_list:
+                        sets_list.append(val)
+                elif "|" in next_line_strip:
+                    parts = [p.strip() for p in next_line_strip.split("|") if p.strip()]
+                    if parts:
+                        val = parts[0].replace("**", "").replace("`", "").strip()
+                        if val and val.lower() not in ["artifact", "set", "conjunto", "artefato", "relíquia", "relic", "disco", "eficácia"]:
+                            if "(" in val:
+                                val = val.split("(")[0].strip()
+                            if val and val not in sets_list:
+                                sets_list.append(val)
+            if sets_list:
+                target["sets"] = [sets_list[0]]
+                target["all_sets"] = sets_list
+                found_sets_section = True
+                break
+
+    if target["sets"] == ["Não informado"]:
+        m_s = re.search(r'(?:Melhores Conjuntos|Melhores Artefatos|Relíquias Recomendadas|Best Relics|Best Artifacts|Best Discs)[:\*\-\s]+([^\n]+)', guide_content, re.IGNORECASE)
+        if m_s:
+            target["sets"] = [s.strip().replace("**", "") for s in m_s.group(1).split(',')]
+            target["all_sets"] = target["sets"]
+
+    # 3. Busca Peças e Status (Corpo, Bota, Esfera, Corda / Tiara, Copo, Areia, Pena, Flor / Discos)
+    stats_found = {}
+    
+    # 3a. Tenta buscar em tabelas de status de Genshin (Sands | Goblet | Circlet)
+    if game_id == "genshin":
+        for i, line in enumerate(lines):
+            line_strip = line.strip().lower()
+            if "sands" in line_strip and "goblet" in line_strip and "circlet" in line_strip:
+                if i + 2 < len(lines):
+                    val_line = lines[i+2].strip()
+                    if val_line.startswith("|") and val_line.endswith("|"):
+                        parts = [p.strip().replace("**", "").replace("`", "") for p in val_line.split("|") if p.strip()]
+                        if len(parts) >= 3:
+                            stats_found["Areia"] = parts[0]
+                            stats_found["Copo"] = parts[1]
+                            stats_found["Tiara"] = parts[2]
+                break
+                
+    # 3b. Tenta buscar em formato de lista baseado no jogo
+    if not stats_found:
+        if game_id == "genshin":
+            piece_patterns = [
+                (re.compile(r'\b(?:Tiara|Circlet)\b', re.IGNORECASE), "Tiara"),
+                (re.compile(r'\b(?:Cálice|Copo|Goblet)\b', re.IGNORECASE), "Copo"),
+                (re.compile(r'\b(?:Areia|Sands)\b', re.IGNORECASE), "Areia"),
+                (re.compile(r'\b(?:Pena|Plume)\b', re.IGNORECASE), "Pena"),
+                (re.compile(r'\b(?:Flor|Flower)\b', re.IGNORECASE), "Flor"),
+            ]
+        elif game_id == "hsr":
+            piece_patterns = [
+                (re.compile(r'\b(?:Corpo|Body)\b', re.IGNORECASE), "Corpo"),
+                (re.compile(r'\b(?:Bota|Pés|Feet)\b', re.IGNORECASE), "Bota"),
+                (re.compile(r'\b(?:Esfera|Planar Sphere)\b', re.IGNORECASE), "Esfera"),
+                (re.compile(r'\b(?:Corda|Link Rope)\b', re.IGNORECASE), "Corda"),
+                (re.compile(r'\b(?:Cabeça|Head)\b', re.IGNORECASE), "Cabeça"),
+                (re.compile(r'\b(?:Mãos|Hands)\b', re.IGNORECASE), "Mãos"),
+            ]
+        else: # zzz
+            piece_patterns = [
+                (re.compile(r'\b(?:Disco 4|Disk 4)\b', re.IGNORECASE), "Disco 4"),
+                (re.compile(r'\b(?:Disco 5|Disk 5)\b', re.IGNORECASE), "Disco 5"),
+                (re.compile(r'\b(?:Disco 6|Disk 6)\b', re.IGNORECASE), "Disco 6"),
+                (re.compile(r'\b(?:Disco 1|Disk 1)\b', re.IGNORECASE), "Disco 1"),
+                (re.compile(r'\b(?:Disco 2|Disk 2)\b', re.IGNORECASE), "Disco 2"),
+                (re.compile(r'\b(?:Disco 3|Disk 3)\b', re.IGNORECASE), "Disco 3"),
+            ]
+            
+        for line in lines:
+            line_strip = line.strip()
+            if not line_strip.startswith("-") and not line_strip.startswith("*"):
+                continue
+                
+            for pattern, label in piece_patterns:
+                if pattern.search(line_strip):
+                    clean_val = line_strip.lstrip("-* \t")
+                    clean_val = pattern.sub("", clean_val).strip()
+                    clean_val = clean_val.lstrip(":-*` \t").replace("**", "").replace("`", "").strip()
+                    if clean_val:
+                        stats_found[label] = clean_val
+                        break
+                        
+    if stats_found:
+        target["stats"] = stats_found
+    else:
+        stats_matches = re.findall(r'(?:Corpo|Bota|Pés|Corda|Esfera|Areia|Cálice|Copo|Tiara|Flor|Pluma|Pena|Body|Feet|Sands|Goblet|Circlet|Link Rope|Planar Sphere|Disco \d)[:\*\-\s]+([^\n\r]+)', guide_content, re.IGNORECASE)
+        if stats_matches:
+            if game_id == "genshin":
+                parts = ["Tiara", "Copo", "Areia", "Pena", "Flor"]
+            elif game_id == "hsr":
+                parts = ["Corpo", "Bota", "Esfera", "Corda", "Cabeça", "Mãos"]
+            else:
+                parts = ["Disco 4", "Disco 5", "Disco 6"]
+            for idx, match in enumerate(stats_matches[:len(parts)]):
+                label = parts[idx]
+                target["stats"][label] = match.replace("**", "").strip()
+                
+    # 4. Busca Atributos Finais Recomendados (Endgame Stats)
+    endgame_stats = {}
+    for i, line in enumerate(lines):
+        if any(term in line.lower() for term in ["atributos finais", "endgame stats"]):
+            for next_line in lines[i+1:i+12]:
+                next_line_strip = next_line.strip()
+                if next_line_strip.startswith("-") or next_line_strip.startswith("*"):
+                    clean_line = next_line_strip.lstrip("-* \t")
+                    if ":" in clean_line:
+                        parts = clean_line.split(":")
+                        stat_name = parts[0].replace("**", "").replace("`", "").strip()
+                        stat_val = parts[1].replace("**", "").replace("`", "").strip()
+                        endgame_stats[stat_name] = stat_val
+                elif next_line_strip and next_line_strip.startswith("#"):
+                    break
+            break
+            
+    # Se não houver atributos finais no guia (caso do HSR e Genshin), geramos valores de benchmark recomendados
+    if not endgame_stats:
+        if game_id == "hsr":
+            guide_lower = guide_content.lower()
+            is_break = "break effect" in guide_lower or "efeito de quebra" in guide_lower or "super break" in guide_lower
+            is_def = "def%" in guide_lower or "defesa" in guide_lower
+            is_hp = "hp%" in guide_lower or "pv%" in guide_lower
+            
+            endgame_stats["VEL"] = "134+"
+            if is_break:
+                endgame_stats["Efeito de Quebra"] = "150%+"
+            else:
+                endgame_stats["Chance de CRIT"] = "70%+"
+                endgame_stats["Dano CRIT"] = "140%+"
+                
+            if is_def:
+                endgame_stats["DEF"] = "3000+"
+            elif is_hp:
+                endgame_stats["PV"] = "5000+"
+            else:
+                endgame_stats["ATQ"] = "3000+"
+                
+        elif game_id == "genshin":
+            guide_lower = guide_content.lower()
+            is_em = "elemental mastery" in guide_lower or "proficiência elemental" in guide_lower or "mastery" in guide_lower
+            is_hp = "hp%" in guide_lower or "vida%" in guide_lower
+            is_def = "def%" in guide_lower or "defesa%" in guide_lower
+            
+            endgame_stats["Recarga de Energia"] = "150%+"
+            if is_em:
+                endgame_stats["Proficiência Elemental"] = "600+"
+            else:
+                endgame_stats["Taxa Crítica"] = "60%+"
+                endgame_stats["Dano Crítico"] = "120%+"
+                
+            if is_hp:
+                endgame_stats["Vida Máxima"] = "30000+"
+            elif is_def:
+                endgame_stats["DEF"] = "2000+"
+            else:
+                endgame_stats["ATQ"] = "1800+"
+                
+    target["endgame_stats"] = endgame_stats
+    
+    # 5. Traduz todos os campos extraídos para PT-BR usando o dicionário local
+    if target["weapon"] != "Não informado":
+        target["weapon"] = traduzir_item(target["weapon"])
+    if target["weapons"]:
+        target["weapons"] = [traduzir_item(w) for w in target["weapons"]]
+    if target["sets"] and target["sets"] != ["Não informado"]:
+        target["sets"] = [traduzir_item(s) for s in target["sets"]]
+    if target["all_sets"]:
+        target["all_sets"] = [traduzir_item(s) for s in target["all_sets"]]
+        
+    translated_stats = {}
+    for k, v in target["stats"].items():
+        translated_stats[traduzir_item(k)] = traduzir_item(v)
+    target["stats"] = translated_stats
+    
+    translated_endgame = {}
+    for k, v in target["endgame_stats"].items():
+        translated_endgame[traduzir_item(k)] = traduzir_item(v)
+    target["endgame_stats"] = translated_endgame
+    
+    return target
+
+@app.get("/api/compare/{game_id}/{char_name}")
+async def compare_build(game_id: str, char_name: str):
+    """Retorna os dados da build do jogador comparados aos dados ideais do metagame."""
+    game_id = game_id.lower().strip()
+    if game_id not in ["hsr", "genshin", "zzz"]:
+        raise HTTPException(status_code=400, detail="Jogo inválido.")
+        
+    element = ""
+    try:
+        roster_json_path = f"{game_id}/roster_data_{game_id}.json"
+        if os.path.exists(roster_json_path):
+            with open(roster_json_path, "r", encoding="utf-8") as rf:
+                roster_data = json.load(rf)
+                for char in roster_data:
+                    if char.get("name") == char_name:
+                        element = char.get("element", "").lower()
+                        break
+    except Exception as e:
+        print(f"Erro ao buscar elemento do personagem: {e}")
+        
+    build_data = parse_character_build_data(game_id, char_name)
+    meta_target = parse_meta_target(game_id, char_name, element)
+    
+    return {
+        "character": char_name,
+        "game_id": game_id,
+        "player_build": {
+            "weapon": build_data.get("weapon", "Não informado"),
+            "sets": build_data.get("sets", []),
+            "stats": build_data.get("stats", {}),
+            "pieces": build_data.get("pieces", [])
+        },
+        "meta_target": meta_target
+    }
+
 @app.post("/api/chat")
 async def chat_interaction(req: ChatRequest):
-    """Endpoint do Chat RAG Local (Groq) que injeta dados de roster, guias e meta."""
+    """Endpoint do Chat RAG Local (Groq) com streaming SSE de tokens."""
     config = get_config()
     api_key = config.get("groq_api_key") or config.get("gemini_api_key") or os.environ.get("GROQ_API_KEY")
     
     if not api_key:
-        return {"response": "Erro: Chave API do Groq não configurada. Salve-a na aba Configurações."}
+        async def err_generator():
+            yield "data: " + json.dumps({"error": "Erro: Chave API do Groq não configurada. Salve-a na aba Configurações."}) + "\n\n"
+        return StreamingResponse(err_generator(), media_type="text/event-stream")
         
     try:
         rag = GroqRAG(api_key=api_key)
@@ -442,21 +1069,37 @@ async def chat_interaction(req: ChatRequest):
                 "text": h.text
             })
             
-        reply = rag.ask_assistant(
-            prompt_usuario=req.message,
-            contexto_rag=context,
-            historico_chat=history_list
-        )
-        return {"response": reply}
+        async def event_generator():
+            try:
+                for chunk in rag.ask_assistant_stream(
+                    prompt_usuario=req.message,
+                    contexto_rag=context,
+                    historico_chat=history_list
+                ):
+                    yield "data: " + json.dumps({"token": chunk}) + "\n\n"
+            except Exception as stream_err:
+                yield "data: " + json.dumps({"error": str(stream_err)}) + "\n\n"
+                
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
     except Exception as chat_err:
         traceback.print_exc()
-        return {"response": f"Ocorreu um erro no processador do chat: {chat_err}"}
+        async def err_gen():
+            yield "data: " + json.dumps({"error": f"Ocorreu um erro no processador do chat: {chat_err}"}) + "\n\n"
+        return StreamingResponse(err_gen(), media_type="text/event-stream")
 
 # ==========================================
 # PARSER DE DETALHES DE BUILD DE PERSONAGEM
 # ==========================================
 
 def get_character_build_detail(game_id: str, char_name: str) -> str:
+    # Tenta obter do SQLite primeiro
+    try:
+        db_md = database.get_character_build_md(game_id, char_name)
+        if db_md:
+            return db_md
+    except Exception as e:
+        print(f"Erro ao buscar build no SQLite para {char_name}: {e}")
+
     filepath = f"{game_id}/roster_{game_id}.md"
     if not os.path.exists(filepath):
         return ""
@@ -504,8 +1147,36 @@ def parse_character_build_data(game_id: str, char_name: str) -> dict:
                 
     m_pieces = re.findall(r'•\s*\[(.*?)\]\s*(.*?)\n\s*-\s*Principal:\s*(.*?)\n\s*-\s*Substatus:\s*(.*?)(?=\n\s*•|\Z|\n\n|\n---)', raw_text, re.DOTALL)
     for slot, p_name, main_s, sub_s in m_pieces:
+        slot_clean = slot.strip()
+        if game_id == "genshin":
+            if any(term in slot_clean.lower() for term in ["circlet", "tiara", "tiara de logos"]) or slot_clean == "5":
+                slot_clean = "Tiara"
+            elif any(term in slot_clean.lower() for term in ["goblet", "cálice", "copo", "cálice de eonothem"]) or slot_clean == "4":
+                slot_clean = "Copo"
+            elif any(term in slot_clean.lower() for term in ["sands", "areia", "ampulheta", "areias do tempo"]) or slot_clean == "3":
+                slot_clean = "Areia"
+            elif any(term in slot_clean.lower() for term in ["plume", "pena", "pluma da morte"]) or slot_clean == "2":
+                slot_clean = "Pena"
+            elif any(term in slot_clean.lower() for term in ["flower", "flor", "flor da vida"]) or slot_clean == "1":
+                slot_clean = "Flor"
+        elif game_id == "hsr":
+            if any(term in slot_clean.lower() for term in ["body", "corpo"]):
+                slot_clean = "Corpo"
+            elif any(term in slot_clean.lower() for term in ["feet", "bota", "pés"]):
+                slot_clean = "Bota"
+            elif any(term in slot_clean.lower() for term in ["sphere", "esfera", "esfera plana"]):
+                slot_clean = "Esfera"
+            elif any(term in slot_clean.lower() for term in ["rope", "corda", "corda de ligação"]):
+                slot_clean = "Corda"
+            elif any(term in slot_clean.lower() for term in ["head", "cabeça"]):
+                slot_clean = "Cabeça"
+            elif any(term in slot_clean.lower() for term in ["hands", "mãos"]):
+                slot_clean = "Mãos"
+        elif game_id == "zzz":
+            slot_clean = slot_clean.replace("Disk", "Disco").replace("disk", "Disco")
+            
         data["pieces"].append({
-            "slot": slot.strip(),
+            "slot": slot_clean,
             "name": p_name.strip(),
             "main": main_s.strip(),
             "sub": sub_s.strip()
@@ -515,6 +1186,18 @@ def parse_character_build_data(game_id: str, char_name: str) -> dict:
 @app.get("/api/overview")
 async def get_overview():
     """Gera dados resumidos consolidados dos 3 jogos."""
+    # Tenta buscar do SQLite primeiro
+    try:
+        db_overview = database.get_overview_data()
+        if db_overview:
+            # Completa campos vazios/desativados para consistência com o frontend
+            for game in ["hsr", "genshin", "zzz"]:
+                if game not in db_overview:
+                    db_overview[game] = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
+            return db_overview
+    except Exception as e:
+        print(f"Erro ao buscar visão geral no SQLite: {e}")
+
     overview = {}
     
     # 1. Honkai Star Rail

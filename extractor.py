@@ -336,6 +336,47 @@ class HSRExtractor(BaseExtractor):
         with open(filename, "w", encoding="utf-8") as f:
             f.write(markdown_content)
             
+        # Salva no SQLite
+        try:
+            import database
+            import re
+            database.save_game_account(uid, "hsr", info.nickname, info.level, stats.active_days)
+            for c in char_json_list:
+                char_md = ""
+                pattern = rf'(\*\*(?:Personagem):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)'
+                match = re.search(pattern, markdown_content, re.DOTALL | re.I)
+                if match:
+                    char_md = match.group(1).strip()
+                database.save_character(
+                    uid=uid,
+                    game_id="hsr",
+                    name=c["name"],
+                    level=c["level"],
+                    rarity=c["rarity"],
+                    rank_str=c["rank_str"],
+                    element=c["element"],
+                    icon=c["icon"],
+                    weapon_name=c["weapon"].get("name") if c["weapon"] else None,
+                    weapon_level=c["weapon"].get("level") if c["weapon"] else None,
+                    weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
+                    weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
+                    raw_md=char_md
+                )
+                database.clear_character_relics(uid, c["name"])
+                for r in c["relics"]:
+                    database.save_relic(
+                        uid=uid,
+                        character_name=c["name"],
+                        name=r["name"],
+                        slot=r["slot"],
+                        main_stat=r["main"],
+                        sub_stats=r["sub"],
+                        icon=r["icon"]
+                    )
+            print("[INFO] Roster HSR salvo com sucesso no banco de dados SQLite.")
+        except Exception as sqlite_err:
+            print(f"Aviso ao salvar HSR no SQLite: {sqlite_err}")
+
         return filename
 
 
@@ -552,6 +593,47 @@ class GenshinExtractor(BaseExtractor):
         with open(filename, "w", encoding="utf-8") as f:
             f.write(markdown_content)
             
+        # Salva no SQLite
+        try:
+            import database
+            import re
+            database.save_game_account(uid, "genshin", genshin_acc.nickname if hasattr(genshin_acc, "nickname") else "Viajante", genshin_acc.level, getattr(genshin_acc, "active_days", 0))
+            for c in char_json_list:
+                char_md = ""
+                pattern = rf'(\*\*(?:Personagem):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)'
+                match = re.search(pattern, markdown_content, re.DOTALL | re.I)
+                if match:
+                    char_md = match.group(1).strip()
+                database.save_character(
+                    uid=uid,
+                    game_id="genshin",
+                    name=c["name"],
+                    level=c["level"],
+                    rarity=c["rarity"],
+                    rank_str=c["rank_str"],
+                    element=c["element"],
+                    icon=c["icon"],
+                    weapon_name=c["weapon"].get("name") if c["weapon"] else None,
+                    weapon_level=c["weapon"].get("level") if c["weapon"] else None,
+                    weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
+                    weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
+                    raw_md=char_md
+                )
+                database.clear_character_relics(uid, c["name"])
+                for r in c["relics"]:
+                    database.save_relic(
+                        uid=uid,
+                        character_name=c["name"],
+                        name=r["name"],
+                        slot=r["slot"],
+                        main_stat=r["main"],
+                        sub_stats=r["sub"],
+                        icon=r["icon"]
+                    )
+            print("[INFO] Roster Genshin salvo com sucesso no banco de dados SQLite.")
+        except Exception as sqlite_err:
+            print(f"Aviso ao salvar Genshin no SQLite: {sqlite_err}")
+
         return filename
 
 
@@ -772,6 +854,47 @@ class ZZZExtractor(BaseExtractor):
         with open(filename, "w", encoding="utf-8") as f:
             f.write(markdown_content)
             
+        # Salva no SQLite
+        try:
+            import database
+            import re
+            database.save_game_account(uid, "zzz", zzz_acc.nickname if hasattr(zzz_acc, "nickname") else "Proxy", zzz_acc.level, getattr(user_data.stats, "active_days", 0))
+            for c in char_json_list:
+                char_md = ""
+                pattern = rf'(\*\*(?:Agente):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Agente)|\n## |\Z)'
+                match = re.search(pattern, markdown_content, re.DOTALL | re.I)
+                if match:
+                    char_md = match.group(1).strip()
+                database.save_character(
+                    uid=uid,
+                    game_id="zzz",
+                    name=c["name"],
+                    level=c["level"],
+                    rarity=c["rarity"],
+                    rank_str=c["rank_str"],
+                    element=c["element"],
+                    icon=c["icon"],
+                    weapon_name=c["weapon"].get("name") if c["weapon"] else None,
+                    weapon_level=c["weapon"].get("level") if c["weapon"] else None,
+                    weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
+                    weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
+                    raw_md=char_md
+                )
+                database.clear_character_relics(uid, c["name"])
+                for r in c["relics"]:
+                    database.save_relic(
+                        uid=uid,
+                        character_name=c["name"],
+                        name=r["name"],
+                        slot=r["slot"],
+                        main_stat=r["main"],
+                        sub_stats=r["sub"],
+                        icon=r["icon"]
+                    )
+            print("[INFO] Roster ZZZ salvo com sucesso no banco de dados SQLite.")
+        except Exception as sqlite_err:
+            print(f"Aviso ao salvar ZZZ no SQLite: {sqlite_err}")
+
         return filename
 
 

@@ -33,6 +33,7 @@ config.json
 cookies.json
 user_data_google/
 chave de api.txt
+hoyo_app.db
 
 # Automatically generated reports and markdown files (avoid committing user data)
 hsr/
