@@ -10,8 +10,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Marked.js para renderizar Markdown do RAG -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- FontAwesome 6 Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- CSS Estilos Customizados -->
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3.1">
     <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
 </head>
 <body>
@@ -58,7 +60,7 @@
             </nav>
             
             <div class="sidebar-footer">
-                <button id="btn-sync-all" class="sync-all-btn">🚀 Sincronização Global</button>
+                <button id="btn-sync-all" class="sync-all-btn"><i class="fa-solid fa-rotate"></i> Sincronização Global</button>
                 <div class="conn-status">
                     <span id="api-status-dot" class="status-dot offline"></span>
                     <span id="api-status-text">Buscando status...</span>
@@ -150,7 +152,7 @@
 
                 <!-- NOVO: Monitor de Energia em Tempo Real -->
                 <div class="overview-card energy-monitor-card">
-                    <h3>🔋 Monitor de Energia em Tempo Real</h3>
+                    <h3><i class="fa-solid fa-battery-three-quarters"></i> Monitor de Energia em Tempo Real</h3>
                     <p class="section-desc">Poder, Resina e Bateria sincronizados da sua conta HoYoLAB</p>
                     <div class="energy-grid">
                         <div class="energy-box genshin-theme">
@@ -192,13 +194,13 @@
 
 
                 <div class="overview-card start-guide-card">
-                    <h3>🚀 Começando com o Assistente de IA</h3>
+                    <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Começando com o Assistente de IA</h3>
                     <p>
-                        O Cabeça de Droid consolidou suas contas locais. Vá na aba <strong>Chat IA Meta</strong> no menu lateral para conversar diretamente com o <strong>GPT-OSS 120B</strong>! Ele tem conhecimento de todos os personagens do seu roster e do metagame atualizado de builds.
+                        O Cabeça de Droid consolidou suas contas locais. Vá na aba <strong>Chat IA Meta</strong> no menu lateral para conversar diretamente com o <strong>GPT-OSS 120B</strong>! Ele tem conhecimento de todos os personagens do seu roster e do metagame updated de builds.
                     </p>
                     <div class="button-group">
-                        <button onclick="document.querySelector('[data-tab=chat]').click()" class="primary-btn guide-btn">💬 Abrir Chat com IA</button>
-                        <button onclick="document.querySelector('[data-tab=help]').click()" class="secondary-btn guide-btn">📖 Ver Tutorial de Uso</button>
+                        <button onclick="document.querySelector('[data-tab=chat]').click()" class="primary-btn guide-btn"><i class="fa-solid fa-comments"></i> Abrir Chat com IA</button>
+                        <button onclick="document.querySelector('[data-tab=help]').click()" class="secondary-btn guide-btn"><i class="fa-solid fa-book-open"></i> Ver Tutorial de Uso</button>
                     </div>
                 </div>
             </section>
@@ -239,7 +241,7 @@
 
                 <!-- Estatísticas do Roster ZZZ -->
                 <div class="overview-card charts-card game-charts-card" id="charts-zzz" style="margin-bottom: 20px; display: none;">
-                    <h3>📊 Estatísticas do Roster (Zenless Zone Zero)</h3>
+                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Zenless Zone Zero)</h3>
                     <p class="section-desc">Distribuição de elementos e especialidades/raridade dos seus agentes ativos (Nv >= 50)</p>
                     <div class="charts-container">
                         <div class="chart-box">
@@ -315,7 +317,7 @@
 
                 <!-- Estatísticas do Roster Genshin -->
                 <div class="overview-card charts-card game-charts-card" id="charts-genshin" style="margin-bottom: 20px; display: none;">
-                    <h3>📊 Estatísticas do Roster (Genshin Impact)</h3>
+                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Genshin Impact)</h3>
                     <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
                     <div class="charts-container">
                         <div class="chart-box">
@@ -393,7 +395,7 @@
 
                 <!-- Estatísticas do Roster HSR -->
                 <div class="overview-card charts-card game-charts-card" id="charts-hsr" style="margin-bottom: 20px; display: none;">
-                    <h3>📊 Estatísticas do Roster (Honkai: Star Rail)</h3>
+                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Honkai: Star Rail)</h3>
                     <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
                     <div class="charts-container">
                         <div class="chart-box">
@@ -453,7 +455,7 @@
                     
                     <div id="chat-messages" class="chat-messages-area">
                         <div class="chat-msg assistant">
-                            <div class="msg-avatar">🤖</div>
+                            <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
                             <div class="msg-content">
                                 <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
                                 <ul>
@@ -479,7 +481,7 @@
                     <p class="config-desc">As chaves de API e credenciais de login são armazenadas localmente no seu computador e não são enviadas a servidores externos.</p>
                     
                     <div class="config-section">
-                        <h3>🔑 API Key do Groq</h3>
+                        <h3><i class="fa-solid fa-key"></i> API Key do Groq</h3>
                         <p class="section-desc">Insira a chave da API do Groq (começando com <code>gsk_</code>). Você pode obter uma gratuitamente no console oficial da Groq.</p>
                         <div class="input-group">
                             <input type="password" id="cfg-groq-key" placeholder="gsk_..." class="config-input">
@@ -487,22 +489,22 @@
                     </div>
                     
                     <div class="config-section">
-                        <h3>🍪 Cookies de Sessão HoYoLAB</h3>
+                        <h3><i class="fa-solid fa-cookie-bite"></i> Cookies de Sessão HoYoLAB</h3>
                         <p class="section-desc">Insira os cookies da sua sessão HoYoLAB no formato <code>ltuid_v2=xxx; ltoken_v2=yyy;</code> ou utilize o login automático abaixo.</p>
                         <div class="input-group">
                             <textarea id="cfg-hoyolab-cookies" placeholder="Cole os cookies de sessão aqui..." class="config-input config-textarea"></textarea>
                         </div>
                         <div class="btn-row">
-                            <button id="btn-auto-login" class="secondary-btn">🌐 Login Automático via Playwright</button>
+                            <button id="btn-auto-login" class="secondary-btn"><i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright</button>
                             <span class="btn-info">Isto abrirá uma janela do navegador temporária para você logar no site da HoYoLAB.</span>
                         </div>
                     </div>
                     
                     <div class="config-section">
-                        <h3>📅 Resgate de Recompensas Diárias HoYoLAB</h3>
+                        <h3><i class="fa-regular fa-calendar-check"></i> Resgate de Recompensas Diárias HoYoLAB</h3>
                         <p class="section-desc">O aplicativo realiza automaticamente o resgate de recompensas diárias a cada 6 horas. Você também pode forçar o resgate manual abaixo.</p>
                         <div class="btn-row">
-                            <button id="btn-manual-checkin" class="secondary-btn" style="border-color: var(--color-success); color: #4ade80;">🚀 Resgatar Recompensas Agora</button>
+                            <button id="btn-manual-checkin" class="secondary-btn" style="border-color: var(--color-success); color: #4ade80;"><i class="fa-solid fa-gift"></i> Resgatar Recompensas Agora</button>
                             <span class="btn-info">Executa o check-in diário para todas as contas vinculadas.</span>
                         </div>
                         <div id="checkin-logs-container" style="display: none; margin-top: 12px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px;">
@@ -523,7 +525,7 @@
             <!-- ABA COMO USAR -->
             <section id="tab-help" class="tab-pane">
                 <div class="config-container">
-                    <h2>📖 Como usar o Cabeça de Droid</h2>
+                    <h2><i class="fa-solid fa-book-open"></i> Como usar o Cabeça de Droid</h2>
                     <p class="config-desc" style="margin-bottom: 20px;">Este aplicativo foi criado para ajudar você a analisar suas contas da HoYoverse utilizando Inteligência Artificial. Ele puxa automaticamente todos os seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e cruza com dados de Metagame.</p>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
@@ -569,8 +571,8 @@
             
             <!-- Abas do Inspetor de Build -->
             <div class="inspector-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.15); padding: 0 16px;">
-                <button id="ins-tab-build" class="ins-tab-btn active" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid var(--color-hsr); color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer;">🛡️ Sua Build</button>
-                <button id="ins-tab-compare" class="ins-tab-btn" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer;">⚖️ Comparador Meta</button>
+                <button id="ins-tab-build" class="ins-tab-btn active" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid var(--color-hsr); color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer;"><i class="fa-solid fa-shield-halved"></i> Sua Build</button>
+                <button id="ins-tab-compare" class="ins-tab-btn" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer;"><i class="fa-solid fa-scale-balanced"></i> Comparador Meta</button>
             </div>
             
             <div class="inspector-body">
@@ -579,21 +581,16 @@
                     <!-- NOVO: Otimizador IA de Build -->
                     <div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
                         <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;">🧠 Otimizador de Build IA</h4>
+                            <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-brain"></i> Otimizador de Build IA</h4>
                             <button id="btn-ai-optimize" class="action-btn" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
                         </div>
                         <div id="ins-ai-loading" class="ai-opt-loading" style="display: none; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
                             <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
                             <span>Avaliando Roster & Metagame...</span>
                         </div>
-                        <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin-top: 8px; padding-left: 16px; margin-bottom: 0;">
-                            <!-- Sugestões inseridas aqui -->
-                        </ul>
-                    </div>
-                    
-                    <!-- Seção 1: Equipamento / Arma -->
+                        <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.                    <!-- Seção 1: Equipamento / Arma -->
                     <div class="inspector-card">
-                        <h4>🗡️ Equipamento / Arma</h4>
+                        <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Equipamento / Arma</h4>
                         <div class="weapon-detail">
                             <img id="ins-weapon-icon" src="" alt="Arma" class="weapon-icon">
                             <div>
@@ -605,7 +602,7 @@
                     
                     <!-- Seção 2: Conjuntos de Relíquias -->
                     <div class="inspector-card">
-                        <h4>🔮 Conjuntos de Relíquias / Artefatos</h4>
+                        <h4><i class="fa-solid fa-gem"></i> Conjuntos de Relíquias / Artefatos</h4>
                         <div id="ins-relic-sets" class="relic-sets-list">
                             <!-- Inserido dinamicamente -->
                         </div>
@@ -613,7 +610,7 @@
                     
                     <!-- Seção 3: Atributos Consolidados -->
                     <div class="inspector-card">
-                        <h4>📊 Status Finais Consolidados</h4>
+                        <h4><i class="fa-solid fa-chart-simple"></i> Status Finais Consolidados</h4>
                         <div id="ins-stats-grid" class="stats-grid">
                             <!-- Inserido dinamicamente -->
                         </div>
@@ -621,17 +618,17 @@
                     
                     <!-- Seção 4: Detalhamento de Peças -->
                     <div class="inspector-card">
-                        <h4>💿 Detalhamento de Peças e Substatus</h4>
+                        <h4><i class="fa-solid fa-compact-disc"></i> Detalhamento de Peças e Substatus</h4>
                         <div id="ins-relic-pieces" class="relic-pieces-list">
                             <!-- Inserido dinamicamente -->
                         </div>
                     </div>
                 </div>
-
+ 
                 <!-- PAINEL 2: COMPARADOR SIDE-BY-SIDE -->
                 <div id="panel-compare" class="inspector-panel" style="display: none;">
                     <div class="inspector-card">
-                        <h4>⚖️ Comparação Lado a Lado</h4>
+                        <h4><i class="fa-solid fa-scale-balanced"></i> Comparação Lado a Lado</h4>
                         <p class="section-desc" style="margin-bottom: 12px;">Seus equipamentos e atributos comparados com as recomendações de metagame.</p>
                         <div class="comparison-table-wrapper">
                             <table class="comparison-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
@@ -654,6 +651,6 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js"></script>
+    <script src="app.js?v=3.1"></script>
 </body>
 </html>

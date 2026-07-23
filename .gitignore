@@ -34,6 +34,9 @@ cookies.json
 user_data_google/
 chave de api.txt
 hoyo_app.db
+*.db-journal
+*.db-shm
+*.db-wal
 
 # Automatically generated reports and markdown files (avoid committing user data)
 hsr/
@@ -67,6 +70,7 @@ test_*.py
 dist/
 build/
 *.spec
+*.exe
 
 # Generated assets
 assets/logo.ico

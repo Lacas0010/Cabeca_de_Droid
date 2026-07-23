@@ -546,6 +546,14 @@ async def get_notes():
                 client.game = genshin.Game.GENSHIN
                 notes = await client.get_genshin_notes(acc.uid)
                 
+                # Salva os detalhes básicos da conta no banco de dados para sincronizar nível
+                database.save_game_account(
+                    uid=str(acc.uid),
+                    game_id="genshin",
+                    nickname=acc.nickname,
+                    level=acc.level
+                )
+                
                 expeditions = []
                 for exp in notes.expeditions:
                     rem_time = getattr(exp, "remaining_time", getattr(exp, "remained_time", None))
@@ -582,6 +590,14 @@ async def get_notes():
                 client.game = genshin.Game.STARRAIL
                 notes = await client.get_starrail_notes(acc.uid)
                 
+                # Salva os detalhes básicos da conta no banco de dados para sincronizar nível
+                database.save_game_account(
+                    uid=str(acc.uid),
+                    game_id="hsr",
+                    nickname=acc.nickname,
+                    level=acc.level
+                )
+                
                 expeditions = []
                 for exp in notes.expeditions:
                     rem_time = getattr(exp, "remaining_time", getattr(exp, "remained_time", None))
@@ -598,13 +614,18 @@ async def get_notes():
                     "max_rogue_score": getattr(notes, "max_rogue_score", 0)
                 }
                 
+                # Stamina recovery time é timedelta, convertemos para segundos (string int) para o front decodificar
+                recovery_sec = "0"
+                if hasattr(notes, "stamina_recover_time") and notes.stamina_recover_time:
+                    recovery_sec = str(int(notes.stamina_recover_time.total_seconds()))
+                
                 database.save_daily_notes(
                     uid=str(acc.uid),
                     game_id="hsr",
                     nickname=acc.nickname,
                     current_energy=notes.current_stamina,
                     max_energy=notes.max_stamina,
-                    recovery_time=str(notes.stamina_recover_time),
+                    recovery_time=recovery_sec,
                     extra_info=extra_info
                 )
             except Exception as he:
@@ -616,11 +637,24 @@ async def get_notes():
                 client.game = genshin.Game.ZZZ
                 notes = await client.get_zzz_notes(acc.uid)
                 
+                # Salva os detalhes básicos da conta no banco de dados para sincronizar nível
+                database.save_game_account(
+                    uid=str(acc.uid),
+                    game_id="zzz",
+                    nickname=acc.nickname,
+                    level=acc.level
+                )
+                
                 extra_info = {
                     "engagement": getattr(notes.engagement, "current", 0) if hasattr(notes, "engagement") and hasattr(notes.engagement, "current") else getattr(notes, "engagement", 0),
                     "video_store_state": str(getattr(notes, "video_store_state", "Desconhecido")),
                     "scratch_card_completed": bool(getattr(notes, "scratch_card_completed", False))
                 }
+                
+                # No pydantic model do genshin.py, recovery_time está em battery_charge.seconds_till_full
+                recovery_sec = "0"
+                if hasattr(notes, "battery_charge"):
+                    recovery_sec = str(getattr(notes.battery_charge, "seconds_till_full", 0))
                 
                 database.save_daily_notes(
                     uid=str(acc.uid),
@@ -628,7 +662,7 @@ async def get_notes():
                     nickname=acc.nickname,
                     current_energy=notes.battery_charge.current if hasattr(notes.battery_charge, "current") else getattr(notes, "battery_charge", 0),
                     max_energy=notes.battery_charge.max if hasattr(notes.battery_charge, "max") else 240,
-                    recovery_time=str(getattr(notes.battery_charge, "remain_time", "0")),
+                    recovery_time=recovery_sec,
                     extra_info=extra_info
                 )
             except Exception as ze:
@@ -1185,96 +1219,71 @@ def parse_character_build_data(game_id: str, char_name: str) -> dict:
 
 @app.get("/api/overview")
 async def get_overview():
-    """Gera dados resumidos consolidados dos 3 jogos."""
-    # Tenta buscar do SQLite primeiro
+    """Gera dados resumidos consolidados dos 3 jogos mesclando SQLite e arquivos locais."""
+    db_overview = {}
     try:
         db_overview = database.get_overview_data()
-        if db_overview:
-            # Completa campos vazios/desativados para consistência com o frontend
-            for game in ["hsr", "genshin", "zzz"]:
-                if game not in db_overview:
-                    db_overview[game] = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
-            return db_overview
     except Exception as e:
         print(f"Erro ao buscar visão geral no SQLite: {e}")
 
     overview = {}
-    
-    # 1. Honkai Star Rail
-    hsr_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
-    hsr_json_path = "hsr/roster_data_hsr.json"
-    hsr_md_path = "hsr/roster_hsr.md"
-    if os.path.exists(hsr_json_path):
-        try:
-            with open(hsr_json_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                hsr_info["char_count"] = len(data)
-                hsr_info["five_stars"] = sum(1 for c in data if c.get("rarity") == 5)
-                hsr_info["active"] = True
-        except Exception:
-            pass
-    if os.path.exists(hsr_md_path):
-        try:
-            with open(hsr_md_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            m_uid = re.search(r'UID:\s*(\d+)', content)
-            if m_uid: hsr_info["uid"] = m_uid.group(1)
-            m_lvl = re.search(r'Nível de Desbravamento:\*\* (\d+)', content)
-            if m_lvl: hsr_info["level"] = m_lvl.group(1)
-        except Exception:
-            pass
-    overview["hsr"] = hsr_info
+    for game in ["hsr", "genshin", "zzz"]:
+        # Inicializa a estrutura de fallback
+        fallback_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
+        
+        # Carrega dados do arquivo local
+        json_path = f"{game}/roster_data_{game}.json"
+        md_path = f"{game}/roster_{game}.md"
+        
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    fallback_info["char_count"] = len(data)
+                    if game == "zzz":
+                        fallback_info["five_stars"] = sum(1 for c in data if str(c.get("rarity")) in ["5", "S"])
+                    else:
+                        fallback_info["five_stars"] = sum(1 for c in data if c.get("rarity") == 5)
+                    fallback_info["active"] = True
+            except Exception:
+                pass
+                
+        if os.path.exists(md_path):
+            try:
+                with open(md_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                
+                # Regex flexível para capturar UID independente de formatação do Markdown
+                m_uid = re.search(r'UID[:\*]*\s*(\d+)', content)
+                if m_uid:
+                    fallback_info["uid"] = m_uid.group(1)
+                    
+                # Regex flexível para capturar o Nível/Rank independente de formatação
+                if game == "hsr":
+                    m_lvl = re.search(r'Nível de Desbravamento[:\*]*\s*(\d+)', content)
+                elif game == "genshin":
+                    m_lvl = re.search(r'Rank de Aventura[:\*]*\s*(\d+)', content)
+                else: # zzz
+                    m_lvl = re.search(r'Nível de Intermediário[:\*]*\s*(\d+)', content)
+                    
+                if m_lvl:
+                    fallback_info["level"] = m_lvl.group(1)
+            except Exception:
+                pass
 
-    # 2. Genshin Impact
-    genshin_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
-    genshin_json_path = "genshin/roster_data_genshin.json"
-    genshin_md_path = "genshin/roster_genshin.md"
-    if os.path.exists(genshin_json_path):
-        try:
-            with open(genshin_json_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                genshin_info["char_count"] = len(data)
-                genshin_info["five_stars"] = sum(1 for c in data if c.get("rarity") == 5)
-                genshin_info["active"] = True
-        except Exception:
-            pass
-    if os.path.exists(genshin_md_path):
-        try:
-            with open(genshin_md_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            m_uid = re.search(r'UID:\*\*\s*(\d+)', content)
-            if m_uid: genshin_info["uid"] = m_uid.group(1)
-            m_lvl = re.search(r'Rank de Aventura:\*\*\s*(\d+)', content)
-            if m_lvl: genshin_info["level"] = m_lvl.group(1)
-        except Exception:
-            pass
-    overview["genshin"] = genshin_info
-
-    # 3. Zenless Zone Zero
-    zzz_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
-    zzz_json_path = "zzz/roster_data_zzz.json"
-    zzz_md_path = "zzz/roster_zzz.md"
-    if os.path.exists(zzz_json_path):
-        try:
-            with open(zzz_json_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                zzz_info["char_count"] = len(data)
-                zzz_info["five_stars"] = sum(1 for c in data if str(c.get("rarity")) in ["5", "S"])
-                zzz_info["active"] = True
-        except Exception:
-            pass
-    if os.path.exists(zzz_md_path):
-        try:
-            with open(zzz_md_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            m_uid = re.search(r'UID:\*\*\s*(\d+)', content)
-            if m_uid: zzz_info["uid"] = m_uid.group(1)
-            m_lvl = re.search(r'Nível de Intermediário:\*\*\s*(\d+)', content)
-            if m_lvl: zzz_info["level"] = m_lvl.group(1)
-        except Exception:
-            pass
-    overview["zzz"] = zzz_info
-
+        # Decisão de qual info usar
+        db_game = db_overview.get(game, {})
+        
+        # Se temos dados válidos no DB e ele possui personagens cadastrados, prioriza o DB
+        if db_game and db_game.get("active") and db_game.get("char_count", 0) > 0:
+            overview[game] = db_game
+        # Caso contrário, se o fallback do arquivo local tiver personagens sincronizados, usa o local
+        elif fallback_info["active"] and fallback_info.get("char_count", 0) > 0:
+            overview[game] = fallback_info
+        else:
+            # Fallback final, priorizando o DB se existir
+            overview[game] = db_game if db_game else fallback_info
+            
     return overview
 
 @app.get("/api/build/{game_id}/{char_name}")
