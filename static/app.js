@@ -1397,38 +1397,67 @@ async function loadBuildComparison() {
 }
 
 // ==========================================================================
-// FUNÇÕES DOS GRÁFICOS SVG DO ROSTER (PÁGINA INICIAL)
+// FUNÇÕES DOS GRÁFICOS SVG DO ROSTER (POR JOGO)
 // ==========================================================================
 function renderRosterCharts() {
-    const allChars = [
-        ...globalRoster.hsr,
-        ...globalRoster.genshin,
-        ...globalRoster.zzz
-    ].filter(c => c.level >= 70); // Apenas personagens ativos
+    renderGameCharts("zzz", 50); // ZZZ Nv >= 50
+    renderGameCharts("genshin", 70); // Genshin Nv >= 70
+    renderGameCharts("hsr", 70); // HSR Nv >= 70
+}
+
+function renderGameCharts(gameId, levelThreshold) {
+    const chars = (globalRoster[gameId] || []).filter(c => c.level >= levelThreshold);
+    const chartsDiv = document.getElementById(`charts-${gameId}`);
+    const svgElements = document.getElementById(`chart-elements-${gameId}`);
+    const svgRarity = document.getElementById(`chart-rarity-${gameId}`);
     
-    if (allChars.length === 0) {
-        document.getElementById("chart-elements").innerHTML = `<text x="100" y="100" fill="var(--text-muted)" text-anchor="middle" font-size="12">Sem personagens Nv >= 70</text>`;
-        document.getElementById("chart-rarity").innerHTML = `<text x="100" y="100" fill="var(--text-muted)" text-anchor="middle" font-size="12">Sem personagens Nv >= 70</text>`;
+    if (!chartsDiv || !svgElements || !svgRarity) return;
+    
+    if (chars.length === 0) {
+        chartsDiv.style.display = "none";
         return;
     }
     
+    // Exibe o card de estatísticas
+    chartsDiv.style.display = "block";
+    
     // 1. Gráfico de Raridade
-    const rarities = { "5★": 0, "4★": 0 };
-    allChars.forEach(c => {
-        if (c.rarity === 5 || c.rarity === "5" || c.rarity === "S") {
-            rarities["5★"]++;
-        } else {
-            rarities["4★"]++;
-        }
-    });
-    drawPieChart("chart-rarity", "legend-rarity", [
-        { label: "5★ Lendário", value: rarities["5★"], color: "#f59e0b" },
-        { label: "4★ Épico", value: rarities["4★"], color: "#8b5cf6" }
-    ]);
+    const rarities = {};
+    if (gameId === "zzz") {
+        rarities["Classe S"] = 0;
+        rarities["Classe A"] = 0;
+        chars.forEach(c => {
+            const r = String(c.rarity || "").toUpperCase();
+            if (r === "S" || r === "5") {
+                rarities["Classe S"]++;
+            } else {
+                rarities["Classe A"]++;
+            }
+        });
+        drawPieChart(`chart-rarity-${gameId}`, `legend-rarity-${gameId}`, [
+            { label: "Classe S", value: rarities["Classe S"], color: "#f59e0b" },
+            { label: "Classe A", value: rarities["Classe A"], color: "#a78bfa" }
+        ]);
+    } else {
+        rarities["5★"] = 0;
+        rarities["4★"] = 0;
+        chars.forEach(c => {
+            const r = Number(c.rarity);
+            if (r === 5 || c.rarity === "5" || r === "S") {
+                rarities["5★"]++;
+            } else {
+                rarities["4★"]++;
+            }
+        });
+        drawPieChart(`chart-rarity-${gameId}`, `legend-rarity-${gameId}`, [
+            { label: "5★ Lendário", value: rarities["5★"], color: "#f59e0b" },
+            { label: "4★ Épico", value: rarities["4★"], color: "#8b5cf6" }
+        ]);
+    }
     
     // 2. Gráfico de Elementos
     const elements = {};
-    allChars.forEach(c => {
+    chars.forEach(c => {
         const el = c.element ? c.element.toLowerCase().trim() : "desconhecido";
         elements[el] = (elements[el] || 0) + 1;
     });
@@ -1464,7 +1493,7 @@ function renderRosterCharts() {
         chartData = main;
     }
     
-    drawPieChart("chart-elements", "legend-elements", chartData);
+    drawPieChart(`chart-elements-${gameId}`, `legend-elements-${gameId}`, chartData);
 }
 
 function drawPieChart(svgId, legendId, data) {
