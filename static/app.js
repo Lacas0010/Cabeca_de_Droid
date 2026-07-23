@@ -22,29 +22,30 @@ const ELEMENT_MAPPING = {
     "electric": "el-electric", "ether": "el-ether"
 };
 
-// Emojis de fallback para slots de relíquias / artefatos / discos
-const SLOT_EMOJIS = {
+// Classes de ícones de fallback (FontAwesome) para slots de relíquias / artefatos / discos
+const SLOT_ICONS = {
     // HSR
-    "cabeça": "🪖", "cabeça (head)": "🪖", "cabeça(head)": "🪖",
-    "mãos": "🥊", "mãos (hands)": "🥊", "mãos(hands)": "🥊",
-    "corpo": "🥼", "corpo (body)": "🥼", "corpo(body)": "🥼",
-    "pés": "👟", "pés (feet)": "👟", "pés(feet)": "👟",
-    "esfera plana": "🔮", "esfera plana (planar sphere)": "🔮", "esfera plana(planar sphere)": "🔮",
-    "corda de ligação": "📿", "corda de ligação (link rope)": "📿", "corda de ligação(link rope)": "📿",
+    "cabeça": "fa-solid fa-helmet-safety", "cabeça (head)": "fa-solid fa-helmet-safety", "cabeça(head)": "fa-solid fa-helmet-safety",
+    "mãos": "fa-solid fa-hand-fist", "mãos (hands)": "fa-solid fa-hand-fist", "mãos(hands)": "fa-solid fa-hand-fist",
+    "corpo": "fa-solid fa-shirt", "corpo (body)": "fa-solid fa-shirt", "corpo(body)": "fa-solid fa-shirt",
+    "pés": "fa-solid fa-shoe-prints", "pés (feet)": "fa-solid fa-shoe-prints", "pés(feet)": "fa-solid fa-shoe-prints",
+    "esfera plana": "fa-solid fa-globe", "esfera plana (planar sphere)": "fa-solid fa-globe", "esfera plana(planar sphere)": "fa-solid fa-globe",
+    "corda de ligação": "fa-solid fa-link", "corda de ligação (link rope)": "fa-solid fa-link", "corda de ligação(link rope)": "fa-solid fa-link",
     // Genshin
-    "flor da vida": "🌸", "flor da vida (flower)": "🌸", "flor da vida(flower)": "🌸",
-    "pluma da morte": "🪶", "pluma da morte (plume)": "🪶", "pluma da morte(plume)": "🪶",
-    "areia do tempo": "⏳", "areia do tempo (sands)": "⏳", "areia do tempo(sands)": "⏳",
-    "cálice de eonothem": "🏆", "cálice de eonothem (goblet)": "🏆", "cálice de eonothem(goblet)": "🏆",
-    "tiara de logos": "👑", "tiara de logos (circlet)": "👑", "tiara de logos(circlet)": "👑",
+    "flor da vida": "fa-solid fa-seedling", "flor da vida (flower)": "fa-solid fa-seedling", "flor da vida(flower)": "fa-solid fa-seedling",
+    "pluma da morte": "fa-solid fa-feather", "pluma da morte (plume)": "fa-solid fa-feather", "pluma da morte(plume)": "fa-solid fa-feather",
+    "areia do tempo": "fa-solid fa-hourglass-half", "areia do tempo (sands)": "fa-solid fa-hourglass-half", "areia do tempo(sands)": "fa-solid fa-hourglass-half",
+    "cálice de eonothem": "fa-solid fa-glass-water", "cálice de eonothem (goblet)": "fa-solid fa-glass-water", "cálice de eonothem(goblet)": "fa-solid fa-glass-water",
+    "tiara de logos": "fa-solid fa-crown", "tiara de logos (circlet)": "fa-solid fa-crown", "tiara de logos(circlet)": "fa-solid fa-crown",
     // ZZZ
-    "disco 1": "💿", "disco 2": "💿", "disco 3": "💿",
-    "disco 4": "💿", "disco 5": "💿", "disco 6": "💿"
+    "disco 1": "fa-solid fa-compact-disc", "disco 2": "fa-solid fa-compact-disc", "disco 3": "fa-solid fa-compact-disc",
+    "disco 4": "fa-solid fa-compact-disc", "disco 5": "fa-solid fa-compact-disc", "disco 6": "fa-solid fa-compact-disc"
 };
 
-function getSlotEmoji(slotName) {
+function getSlotIcon(slotName) {
     const key = slotName.toLowerCase().trim();
-    return SLOT_EMOJIS[key] || "🛡️";
+    const iconClass = SLOT_ICONS[key] || "fa-solid fa-shield-halved";
+    return `<i class="${iconClass}"></i>`;
 }
 
 function getSafeFileName(name) {
@@ -189,7 +190,7 @@ async function setupConfigForm() {
 
     autoLoginBtn.addEventListener("click", async () => {
         autoLoginBtn.disabled = true;
-        autoLoginBtn.innerText = "Aguardando login no navegador...";
+        autoLoginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguardando login no navegador...';
         
         try {
             const res = await fetch("/api/login/auto", { method: "POST" });
@@ -203,14 +204,14 @@ async function setupConfigForm() {
                     if (checkCfg.has_cookies || attempts > 60) {
                         clearInterval(interval);
                         autoLoginBtn.disabled = false;
-                        autoLoginBtn.innerText = "🌐 Login Automático via Playwright";
+                        autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
                         fetchConfig();
                     }
                 }, 2000);
             }
         } catch (err) {
             autoLoginBtn.disabled = false;
-            autoLoginBtn.innerText = "🌐 Login Automático via Playwright";
+            autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
         }
     });
 }
@@ -236,7 +237,7 @@ function setupSyncControls() {
     const syncAllBtn = document.getElementById("btn-sync-all");
     syncAllBtn.addEventListener("click", () => {
         syncAllBtn.disabled = true;
-        syncAllBtn.innerText = "🚀 Sincronização em Lote Iniciada";
+        syncAllBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Sincronização em Lote Iniciada';
         
         triggerSync("zzz", true, true, true);
         triggerSync("genshin", true, true, true);
@@ -244,7 +245,7 @@ function setupSyncControls() {
         
         setTimeout(() => {
             syncAllBtn.disabled = false;
-            syncAllBtn.innerText = "🚀 Sincronização Global";
+            syncAllBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronização Global';
         }, 8000);
     });
 }
@@ -559,7 +560,7 @@ async function inspectCharacter(gameId, char) {
             build.sets.forEach(set => {
                 const item = document.createElement("div");
                 item.className = "set-item";
-                item.innerHTML = `✨ ${set}`;
+                item.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles" style="font-size: 11px; margin-right: 4px; color: var(--color-hsr);"></i> ${set}`;
                 setsList.appendChild(item);
             });
         } else {
@@ -604,13 +605,13 @@ async function inspectCharacter(gameId, char) {
                     p.name.toLowerCase().includes(piece.name.toLowerCase())
                 );
                 
-                const slotEmoji = getSlotEmoji(piece.slot);
+                const slotIcon = getSlotIcon(piece.slot);
                 const safePieceFn = getSafeFileName(piece.name);
                 const cachedPiecePath = `/assets/relics/${gameId}/${safePieceFn}`;
                 
                 const iconHtml = equivalentLocalPiece 
                     ? `<img class="relic-piece-icon" src="${cachedPiecePath}" onerror="this.onerror=null; this.src='${equivalentLocalPiece.icon}';" alt="${piece.slot}">`
-                    : `<span class="relic-piece-icon" style="font-size:20px; display:flex; align-items:center; justify-content:center;">${slotEmoji}</span>`;
+                    : `<span class="relic-piece-icon" style="font-size:20px; display:flex; align-items:center; justify-content:center;">${slotIcon}</span>`;
                 
                 row.innerHTML = `
                     ${iconHtml}
@@ -691,7 +692,7 @@ function setupChatSystem() {
             document.getElementById(typingId).remove();
             
             if (!res.ok) {
-                appendChatMessage("assistant", `❌ Erro na API do Chat.`);
+                appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro na API do Chat.`);
                 messagesArea.scrollTop = messagesArea.scrollHeight;
                 return;
             }
@@ -723,7 +724,7 @@ function setupChatSystem() {
                                 responseEl.innerHTML = marked.parse(rawText);
                                 messagesArea.scrollTop = messagesArea.scrollHeight;
                             } else if (parsed.error) {
-                                rawText += `\n\n❌ Erro: ${parsed.error}`;
+                                rawText += `\n\n<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro: ${parsed.error}`;
                                 responseEl.innerHTML = marked.parse(rawText);
                             }
                         } catch (e) {
@@ -744,7 +745,7 @@ function setupChatSystem() {
             messagesArea.scrollTop = messagesArea.scrollHeight;
         } catch (err) {
             document.getElementById(typingId).remove();
-            appendChatMessage("assistant", `❌ Falha ao conectar ao processador Groq: ${err.message}`);
+            appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Falha ao conectar ao processador Groq: ${err.message}`);
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
     };
@@ -766,7 +767,9 @@ function appendChatMessage(role, content) {
     msgDiv.id = msgId;
     msgDiv.className = `chat-msg ${role}`;
     
-    const avatar = role === "user" ? "👤" : "🤖";
+    const avatar = role === "user" 
+        ? '<i class="fa-solid fa-user"></i>' 
+        : '<i class="fa-solid fa-robot"></i>';
     
     msgDiv.innerHTML = `
         <div class="msg-avatar">${avatar}</div>
@@ -902,7 +905,7 @@ function setupCheckinSystem() {
     
     checkinBtn.addEventListener("click", async () => {
         checkinBtn.disabled = true;
-        checkinBtn.innerText = "Resgatando...";
+        checkinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resgatando...';
         try {
             const res = await fetch("/api/checkin/run", { method: "POST" });
             if (res.ok) {
@@ -912,7 +915,7 @@ function setupCheckinSystem() {
             console.error("Erro ao rodar checkin manual:", e);
         } finally {
             checkinBtn.disabled = false;
-            checkinBtn.innerText = "🚀 Resgatar Recompensas Agora";
+            checkinBtn.innerHTML = '<i class="fa-solid fa-gift"></i> Resgatar Recompensas Agora';
         }
     });
     
@@ -1202,7 +1205,7 @@ async function loadBuildComparison() {
         
         html += `
             <tr>
-                <td class="comparison-row-title">🗡️ Arma/Cone</td>
+                <td class="comparison-row-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 6px;"></i> Arma/Cone</td>
                 <td class="${weaponClass}">${build.weapon}</td>
                 <td class="comparison-val-target" style="text-align: right;">${target.weapon} ${recommendedWeapons.length > 1 ? '<br><small style="color: var(--text-muted); font-size: 10px;">(Ou substitutos recomendados)</small>' : ''}</td>
             </tr>
@@ -1223,7 +1226,7 @@ async function loadBuildComparison() {
         
         html += `
             <tr>
-                <td class="comparison-row-title">🔮 Sets</td>
+                <td class="comparison-row-title"><i class="fa-solid fa-gem" style="margin-right: 6px;"></i> Sets</td>
                 <td class="${setsClass}">${currentSetsStr}</td>
                 <td class="comparison-val-target" style="text-align: right;">${targetSetsStr} ${target.all_sets && target.all_sets.length > 1 ? '<br><small style="color: var(--text-muted); font-size: 10px;">(Ou substitutos recomendados)</small>' : ''}</td>
             </tr>
@@ -1323,7 +1326,7 @@ async function loadBuildComparison() {
         if (endgameKeys.length > 0) {
             html += `
                 <tr style="border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.02);">
-                    <td colspan="3" style="padding: 8px 0; font-weight: 700; color: var(--text-secondary); font-size: 11px;">📊 Atributos Finais (Endgame Stats)</td>
+                    <td colspan="3" style="padding: 8px 0; font-weight: 700; color: var(--text-secondary); font-size: 11px;"><i class="fa-solid fa-chart-simple" style="margin-right: 6px;"></i> Atributos Finais (Endgame Stats)</td>
                 </tr>
             `;
             

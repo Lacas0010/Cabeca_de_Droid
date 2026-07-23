@@ -102,13 +102,21 @@ init_db()
 # FUNÇÕES DE PERSISTÊNCIA E LEITURA
 # ==========================================================================
 
-def save_game_account(uid: str, game_id: str, nickname: str, level: int, active_days: int):
+def save_game_account(uid: str, game_id: str, nickname: str, level: int, active_days: int = None):
     conn = get_connection()
     cursor = conn.cursor()
+    
+    # Se active_days for 0 ou None, preserva o valor atual do banco se houver
+    if active_days is None or active_days == 0:
+        cursor.execute("SELECT active_days FROM game_accounts WHERE uid = ?", (uid,))
+        row = cursor.fetchone()
+        if row:
+            active_days = row["active_days"]
+            
     cursor.execute("""
     INSERT OR REPLACE INTO game_accounts (uid, game_id, nickname, level, active_days, updated_at)
     VALUES (?, ?, ?, ?, ?, ?)
-    """, (uid, game_id, nickname, level, active_days, datetime.now().isoformat()))
+    """, (uid, game_id, nickname, level, active_days or 0, datetime.now().isoformat()))
     conn.commit()
     conn.close()
 
@@ -209,21 +217,32 @@ def save_daily_notes(uid: str, game_id: str, nickname: str, current_energy: int,
 def get_cached_daily_notes() -> dict:
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM daily_notes_cache")
+    # Junta com game_accounts para obter o level de cada conta para resolver multi-contas
+    cursor.execute("""
+        SELECT d.*, COALESCE(a.level, 0) as account_level
+        FROM daily_notes_cache d
+        LEFT JOIN game_accounts a ON d.uid = a.uid AND d.game_id = a.game_id
+    """)
     rows = cursor.fetchall()
     conn.close()
     
     notes = {}
     for r in rows:
-        notes[r["game_id"]] = {
-            "uid": r["uid"],
-            "nickname": r["nickname"],
-            "current_energy": r["current_energy"],
-            "max_energy": r["max_energy"],
-            "recovery_time": r["recovery_time"],
-            "extra_info": json.loads(r["extra_info"]) if r["extra_info"] else {},
-            "updated_at": r["updated_at"]
-        }
+        game_id = r["game_id"]
+        level = r["account_level"]
+        
+        # Se houver mais de uma conta para o mesmo jogo, mantém a de maior nível
+        if game_id not in notes or level > notes[game_id].get("account_level", 0):
+            notes[game_id] = {
+                "uid": r["uid"],
+                "nickname": r["nickname"],
+                "current_energy": r["current_energy"],
+                "max_energy": r["max_energy"],
+                "recovery_time": r["recovery_time"],
+                "extra_info": json.loads(r["extra_info"]) if r["extra_info"] else {},
+                "updated_at": r["updated_at"],
+                "account_level": level
+            }
     return notes
 
 def save_checkin_log(game_id: str, uid: str, status: str, message: str):

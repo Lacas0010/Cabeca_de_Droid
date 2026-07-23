@@ -10,27 +10,34 @@ O assistente foi projetado para sincronizar rosters de personagens e recordes de
 ---
 
 ## 🌟 Principais Recursos e Interface (UI/UX)
-
+ 
 - **📊 Mini-Dashboards da Conta:** Exibição em tempo real de estatísticas do jogador (UID, Nível da Conta, Total de Personagens e Personagens 5★/Rank S) no topo da tela de cada jogo.
 - **📁 Interface Web Premium (Glassmorphism)**: Painel escuro elegante com tons correspondentes de cada jogo (ZZZ, Genshin, HSR) com efeitos de vidro fosco, transições fluidas e layout responsivo.
+- **🎨 Interface Visual com Ícones (Font Awesome)**: Enriquecida com ícones dinâmicos modernos integrados que melhoram significativamente o visual e a interatividade dos menus e abas.
 - **⚡ Status & Barra de Progresso Real (Logs em Tempo Real):** Barra de progresso percentual e terminal retrátil integrado para acompanhar os logs de raspagem e downloads de imagens linha por linha.
 - **🗡️ Inspetor de Builds & Comparador Meta Avançado (Sidebar)**: Exibe a arma equipada, conjuntos de relíquias ativos, status finais consolidados e detalhes de substatus com ícones originais. Ao clicar em "Comparador Meta", exibe uma tabela de comparação lado a lado contra as metas ideais extraídas dos guias, destacando correspondências em verde e desvios em vermelho.
 - **🌐 Dicionário de Tradução Inteligente Local (`traducoes.json`):** Mapeia armas, conjuntos de relíquias, discos e atributos de Inglês para Português (PT-BR) de forma local e extremamente veloz, permitindo match nativo contra os nomes oficiais do jogo.
 - **🏷️ Peças Exclusivas por Jogo:** Mapeamento específico e exato para as peças de cada jogo (Cabeça/Mãos/Corpo/Bota/Esfera/Corda no HSR; Flor/Pena/Areia/Copo/Tiara no Genshin; Discos 1 a 6 no ZZZ).
 - **📊 Comparador de Atributos Finais (Endgame Stats):** Analisa e compara os atributos de combate totais do jogador contra os valores ideais (nativos do ZZZ, ou calculados dinamicamente via gerador inteligente de benchmarks baseado em escala para HSR e Genshin).
+- **👥 Resolução Inteligente Multi-Contas**: Seleção automática inteligente caso o usuário possua mais de uma conta vinculada por jogo, mantendo e exibindo no cache as informações da conta de maior nível.
+- **🔋 Monitoramento Preciso de Energia (Daily Notes)**: Acompanhamento em tempo real da Bateria (ZZZ) e Resina (Genshin/HSR), com cálculo otimizado usando segundos restantes precisos para carga completa no ZZZ.
+- **🔄 Mecanismo de Fallback para Visão Geral (Overview)**: Sincronização inteligente dos mini-dashboards que mescla registros de banco SQLite locais com caches em Markdown e JSON, servindo dados mesmo em caso de falha temporária na rede.
 - **🤖 Assistente de Chat IA com RAG**: Chat interativo inteligente integrado ao RAG local (Llama 3.3) que já conhece seu Roster e guias de meta.
 - **🔑 Login Automático HoYoLAB**: Painel de login facilitado que usa Playwright para capturar os cookies de sessão de forma segura.
+
 
 ---
 
 ## 🛠️ Tecnologias Utilizadas
 
 - **Servidor & Backend:** [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) (Python)
-- **Interface Gráfica (Frontend):** HTML5, CSS3 (Vanilla) e JavaScript Puro (Vanilla) - *Sem dependências de Node.js ou compilações externas*.
-- **Modelos de IA e RAG:** Integração oficial com a `groq` (Llama 3.3 70B Versatile).
+- **Interface Gráfica (Frontend):** HTML5, CSS3 (Vanilla) com ícones da biblioteca [Font Awesome](https://fontawesome.com/) e JavaScript Puro (Vanilla) - *Sem dependências de Node.js ou compilações externas*.
+- **Modelos de IA e RAG:** Integração oficial com a `groq` (Llama 3.3 70B Versatile) e suporte para chaves Gemini via fallback (`gemini_api_key`) local.
 - **API HoYoLAB:** [genshin.py](https://github.com/seriaati/genshin.py) com suporte a Endgames estendidos (3 times no MoC / Shiyu / Abismo).
 - **Coleta de Dados:** BeautifulSoup4 & Requests HTTP resilientes com estratégias de retry automático.
 - **Autenticação:** [Playwright](https://playwright.dev/) para captura automatizada e segura de cookies HoYoLAB.
+- **Compilação do Executável:** [PyInstaller](https://pyinstaller.org/) configurado para empacotamento local no Windows.
+
 
 ---
 

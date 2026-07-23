@@ -20,3 +20,7 @@ google-genai==2.12.1
 
 # Image Processing (Avatar caching)
 pillow==12.3.0
+
+# Executable Building / Packaging
+pyinstaller==6.21.0
+
