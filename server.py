@@ -23,6 +23,7 @@ from scraper_kqm import KQMScraper
 from scraper_genshin_meta import GenshinMetaScraper
 from groq_rag import GroqRAG
 import database
+from build_calculator import score_relic, calculate_ascension
 
 app = FastAPI(title="Cabeça de Droid API", version="3.0")
 
@@ -118,6 +119,16 @@ class ChatRequest(BaseModel):
     message: str
     game_id: str
     history: List[ChatMessage] = []
+
+class TeamAnalyzeRequest(BaseModel):
+    game_id: str
+    characters: List[str]
+
+class MaterialsCalculateRequest(BaseModel):
+    game_id: str
+    char_name: str
+    current_level: int
+    target_level: int
 
 # ==========================================
 # LÓGICA DA THREAD DE SINCRONIZAÇÃO
@@ -388,27 +399,37 @@ async def get_roster(game_id: str):
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido. Escolha 'hsr', 'genshin' ou 'zzz'.")
         
+    data = None
     # Tenta carregar do SQLite primeiro
     try:
         data = database.get_roster_data(game_id)
-        if data:
-            return data
     except Exception as e:
         print(f"Aviso ao carregar roster do SQLite para {game_id}: {e}")
         
-    json_path = f"{game_id}/roster_data_{game_id}.json"
-    if os.path.exists(json_path):
-        try:
-            with open(json_path, "r", encoding="utf-8") as jf:
-                data = json.load(jf)
-                return data
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Erro ao carregar banco de dados local: {e}")
-            
-    # Caso não exista JSON, tenta buscar do Markdown (.md)
-    md_path = f"{game_id}/roster_{game_id}.md"
-    if os.path.exists(md_path):
-        return []
+    # Se não carregou do SQLite, tenta do JSON
+    if not data:
+        json_path = f"{game_id}/roster_data_{game_id}.json"
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as jf:
+                    data = json.load(jf)
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Erro ao carregar banco de dados local: {e}")
+                
+    if data:
+        # Pondera e calcula as notas de cada relíquia do roster
+        for char in data:
+            for relic in char.get("relics", []):
+                grade, score = score_relic(
+                    game_id=game_id,
+                    character_name=char.get("name", ""),
+                    slot=str(relic.get("slot", "")),
+                    main_stat=relic.get("main", ""),
+                    substats_str=relic.get("sub", "")
+                )
+                relic["grade"] = grade
+                relic["score"] = score
+        return data
         
     return []
 
@@ -1293,6 +1314,59 @@ async def get_build_detail(game_id: str, char_name: str):
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido.")
     return parse_character_build_data(game_id, char_name)
+
+@app.post("/api/team/analyze")
+async def analyze_team(req: TeamAnalyzeRequest):
+    """Endpoint que analisa a sinergia de um time de personagens do roster via IA (SSE Stream)."""
+    config = get_config()
+    api_key = config.get("groq_api_key") or config.get("gemini_api_key") or os.environ.get("GROQ_API_KEY")
+    
+    if not api_key:
+        async def err_generator():
+            yield "data: " + json.dumps({"error": "Erro: Chave API do Groq/Gemini não configurada. Configure na aba Configurações."}) + "\n\n"
+        return StreamingResponse(err_generator(), media_type="text/event-stream")
+        
+    try:
+        rag = GroqRAG(api_key=api_key)
+        # Carrega o contexto filtrando pelos personagens selecionados
+        query_str = ", ".join(req.characters)
+        context = rag.load_game_context(req.game_id, query_str)
+        
+        prompt_analysis = (
+            f"Faça uma análise de sinergia de combate extremamente profissional e aprofundada para a seguinte equipe selecionada do jogo {req.game_id.upper()}: {', '.join(req.characters)}.\n"
+            "Com base no contexto fornecido (suas builds reais de personagem + guias de metagame ideais):\n"
+            "1. Descreva a sinergia geral do time e como as habilidades se complementam.\n"
+            "2. Avalie as armas e relíquias/discos equipados em relação ao ideal do metagame, apontando acertos e desvios críticos.\n"
+            "3. Detalhe a rotação de combate ideal passo a passo (quem inicia, quem buffa, quem aplica elemento, quem é o DPS principal).\n"
+            "4. Forneça sugestões de melhorias diretas (substitutos ideais de personagens ou trocas recomendadas de armas/artefatos).\n"
+            "Formate a resposta em Markdown limpo e amigável com emojis."
+        )
+        
+        async def event_generator():
+            try:
+                for chunk in rag.ask_assistant_stream(
+                    prompt_usuario=prompt_analysis,
+                    contexto_rag=context,
+                    historico_chat=[]
+                ):
+                    yield "data: " + json.dumps({"token": chunk}) + "\n\n"
+            except Exception as stream_err:
+                yield "data: " + json.dumps({"error": str(stream_err)}) + "\n\n"
+                
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
+    except Exception as chat_err:
+        traceback.print_exc()
+        async def err_gen():
+            yield "data: " + json.dumps({"error": f"Erro no processamento do time: {chat_err}"}) + "\n\n"
+        return StreamingResponse(err_gen(), media_type="text/event-stream")
+
+@app.post("/api/materials/calculate")
+async def calculate_materials(req: MaterialsCalculateRequest):
+    """Calcula o total estimado de materiais necessários para elevar um personagem."""
+    res = calculate_ascension(req.game_id, req.current_level, req.target_level)
+    if not res:
+        raise HTTPException(status_code=400, detail="Erro ao realizar o cálculo de ascensão.")
+    return res
 
 # ==========================================
 # ENDPOINT OTIMIZADOR DE BUILDS VIA IA

@@ -48,6 +48,26 @@ O **Cabeça de Droid** opera como um ecossistema local híbrido composto por tr�
   * **Ingestão Otimizada:** Ele lê os arquivos Markdown locais do seu roster, filtrando apenas personagens ativos (nível 70+) e carregando apenas o guia específico (`/guias/<personagem>.md`) e a build do personagem que você perguntou. Isso otimiza drasticamente os limites de tokens da API da Groq/Gemini.
   * **Prompt Enriquecido:** A pergunta do usuário é encapsulada em um superprompt contendo a sua build real + o benchmark ideal do metagame + a tier list. O LLM (Llama 3.3 ou Gemini) responde então com um nível de precisão cirúrgico focado na sua conta de jogo real.
 
+## 📊 Sistema de Pontuação de Equipamentos & Cálculo de Ascensão
+
+O **Cabeça de Droid** possui mecanismos matemáticos locais integrados para ajudar o jogador a gerenciar recursos e otimizar builds:
+
+### 1. Calculadora de Pontuação de Relíquias (Relic / Disc Scorer)
+O sistema avalia cada artefato/relíquia/disco individual do seu Roster e atribui uma nota (**D** a **SSS**) e pontuação baseando-se no arquétipo do personagem:
+* **DPS Crítico (CRIT_DPS):** Pondera o valor bruto de crítico via fórmula $CV = \text{Dano Crítico} + (2 \times \text{Taxa Crítica})$, somando bônus para status úteis adicionais como Velocidade ($1.5\times$), ATQ% ($0.5\times$) e Recarga de Energia ($0.2\times$).
+* **Efeito de Quebra (BREAK):** Foca em Efeito de Quebra ($1.0\times$), com peso extra extremo para Velocidade ($2.5\times$) e Vida% ($0.3\times$).
+* **Suportes Elementares & Anomalia (SUPPORT_EM / ANOMALY):** Pondera a Proficiência Elemental/Proficiência em Anomalia ($0.2\times$), Recarga de Energia ($0.5\times$) e Velocidade ($1.5\times$).
+* **Curadores & Suportes de Sobrevivência (HEALER_HP / SUPPORT_HP):** Pondera Vida% ($1.0\times$), Defesa% ($0.8\times$), Recarga de Energia ($0.5\times$) e Velocidade ($2.0\times$).
+
+As peças que atingem o grau máximo **SSS** (scores elevados de substatus perfeitos) recebem um destaque visual pulsante na interface.
+
+### 2. Calculadora de Materiais de Ascensão
+Integrada diretamente no painel de inspeção de personagens, ela estima a quantidade total de recursos necessários para elevar o nível de um personagem da sua conta até o nível de destino selecionado (ex: Nível 80 no HSR/ZZZ, Nível 90 no Genshin).
+O cálculo avalia a diferença acumulada e retorna o checklist detalhado de:
+* Livros de XP (e estimativa de quantos livros roxos de 20k XP farmar).
+* Moeda do jogo (Mora, Créditos ou Dennys).
+* Quantidade exata de materiais de quebra de limite (Itens de Chefes mundiais).
+
 ---
 
 ## 🛠️ Tecnologias Utilizadas

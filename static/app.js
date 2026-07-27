@@ -583,6 +583,64 @@ async function inspectCharacter(gameId, char) {
         }
     };
     
+    // Configura e limpa o card da Calculadora de Ascensão
+    const ascResults = document.getElementById("ins-asc-results");
+    const ascTargetSelect = document.getElementById("ins-asc-target");
+    const btnCalculateAsc = document.getElementById("btn-ins-asc-calculate");
+    
+    ascResults.style.display = "none";
+    ascResults.innerHTML = "";
+    
+    // Configura opções do nível alvo baseadas no jogo (90 para Genshin, 80 para HSR/ZZZ)
+    ascTargetSelect.value = gameId === "genshin" ? "90" : "80";
+    
+    btnCalculateAsc.onclick = async () => {
+        const targetLvl = parseInt(ascTargetSelect.value);
+        if (char.level >= targetLvl) {
+            ascResults.style.display = "block";
+            ascResults.innerHTML = `<span style="color: #10b981; font-weight: 500;"><i class="fa-solid fa-circle-check"></i> Este personagem já está no nível ${char.level} ou superior!</span>`;
+            return;
+        }
+        
+        btnCalculateAsc.disabled = true;
+        btnCalculateAsc.innerText = "Calculando...";
+        
+        try {
+            const mRes = await fetch("/api/materials/calculate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    game_id: gameId,
+                    char_name: char.name,
+                    current_level: parseInt(char.level),
+                    target_level: targetLvl
+                })
+            });
+            const mData = await mRes.json();
+            ascResults.style.display = "block";
+            
+            if (mData && mData.xp_needed !== undefined) {
+                ascResults.innerHTML = `
+                    <div style="margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; font-weight: 600; color: var(--text-primary);">
+                        📋 Custos Estimados (${char.level} ➔ ${targetLvl})
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 4px; padding-left: 4px;">
+                        <div>• <strong>XP necessária:</strong> ${mData.xp_needed.toLocaleString()} (~${mData.xp_books_purple} livros roxos)</div>
+                        <div>• <strong>${mData.currency_name}:</strong> ${mData.currency_needed.toLocaleString()}</div>
+                        ${mData.boss_items_needed > 0 ? `<div>• <strong>${mData.boss_item_name}:</strong> ${mData.boss_items_needed} unidades</div>` : ''}
+                    </div>
+                `;
+            } else {
+                ascResults.innerHTML = `<span style="color: var(--color-danger);">Erro nos dados de retorno.</span>`;
+            }
+        } catch (err) {
+            ascResults.style.display = "block";
+            ascResults.innerHTML = `<span style="color: var(--color-danger);">Erro: ${err.message}</span>`;
+        }
+        btnCalculateAsc.disabled = false;
+        btnCalculateAsc.innerText = "Calcular";
+    };
+    
     // Exibe esqueleto de loading na área de detalhes
     document.getElementById("ins-relic-sets").innerHTML = "Carregando conjuntos...";
     document.getElementById("ins-stats-grid").innerHTML = "Carregando atributos...";
@@ -707,14 +765,24 @@ async function inspectCharacter(gameId, char) {
                     subsHtml = `<span class="text-muted" style="font-size: 10px;">Sem substatus</span>`;
                 }
                 
+                let gradeHtml = "";
+                if (equivalentLocalPiece && equivalentLocalPiece.grade) {
+                    gradeHtml = `<span class="badge-relic badge-relic-${equivalentLocalPiece.grade.toLowerCase()}">${equivalentLocalPiece.grade}</span><span style="font-size: 10px; color: var(--text-secondary); margin-left: 6px; font-weight: 500;">Score: ${equivalentLocalPiece.score || 0}</span>`;
+                }
+                
                 row.innerHTML = `
                     ${iconHtml}
-                    <div class="relic-piece-details">
-                        <div class="relic-piece-title">
-                            <span class="piece-slot">[${piece.slot}]</span>
-                            <span class="piece-name">${piece.name}</span>
+                    <div class="relic-piece-details" style="flex: 1;">
+                        <div class="relic-piece-title" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 4px;">
+                            <div>
+                                <span class="piece-slot" style="font-weight: 600; color: var(--text-muted); margin-right: 4px;">[${piece.slot}]</span>
+                                <span class="piece-name" style="font-weight: 500;">${piece.name}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                ${gradeHtml}
+                            </div>
                         </div>
-                        <div class="piece-main">Principal: ${piece.main}</div>
+                        <div class="piece-main" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">Principal: ${piece.main}</div>
                         <div class="piece-subs">${subsHtml}</div>
                     </div>
                 `;
@@ -851,6 +919,153 @@ function setupChatSystem() {
             triggerSend();
         }
     });
+
+    // ==========================================
+    // CONFIGURAÇÃO DO MONTADOR DE TIMES (TEAM BUILDER)
+    // ==========================================
+    const teamGameSelect = document.getElementById("team-game-select");
+    const teamAnalyzeBtn = document.getElementById("team-analyze-btn");
+    
+    if (teamGameSelect) {
+        teamGameSelect.addEventListener("change", (e) => {
+            updateTeamBuilderGrid(e.target.value);
+        });
+        
+        // Inicializa com o valor padrão do select após carregamento
+        setTimeout(() => {
+            updateTeamBuilderGrid(teamGameSelect.value);
+        }, 1500);
+    }
+    
+    if (teamAnalyzeBtn) {
+        teamAnalyzeBtn.addEventListener("click", async () => {
+            if (selectedTeam.length === 0) return;
+            const gameId = teamGameSelect.value;
+            const message = `Análise do Time: ${selectedTeam.join(", ")}`;
+            
+            appendChatMessage("user", `Fazer análise de sinergia da equipe: **${selectedTeam.join(", ")}**`);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            
+            const typingId = appendChatMessage("assistant", `<div class="typing-loader"><span></span><span></span><span></span></div>`);
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+            
+            try {
+                const res = await fetch("/api/team/analyze", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        game_id: gameId,
+                        characters: selectedTeam
+                    })
+                });
+                
+                document.getElementById(typingId).remove();
+                
+                if (!res.ok) {
+                    appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro ao analisar sinergia.`);
+                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                    return;
+                }
+                
+                const responseId = appendChatMessage("assistant", "");
+                const responseEl = document.getElementById(responseId).querySelector(".msg-content");
+                
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let rawText = "";
+                let buffer = "";
+                
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop();
+                    
+                    for (const line of lines) {
+                        if (line.startsWith("data: ")) {
+                            try {
+                                const parsed = JSON.parse(line.substring(6));
+                                if (parsed.token) {
+                                    rawText += parsed.token;
+                                    responseEl.innerHTML = marked.parse(rawText);
+                                    messagesArea.scrollTop = messagesArea.scrollHeight;
+                                } else if (parsed.error) {
+                                    rawText += `\n\n<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro: ${parsed.error}`;
+                                    responseEl.innerHTML = marked.parse(rawText);
+                                }
+                            } catch (e) {}
+                        }
+                    }
+                }
+                
+                chatHistory.push({ role: "user", text: message });
+                chatHistory.push({ role: "model", text: rawText });
+                
+            } catch (err) {
+                document.getElementById(typingId).remove();
+                appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro ao processar: ${err.message}`);
+                messagesArea.scrollTop = messagesArea.scrollHeight;
+            }
+        });
+    }
+}
+
+// Funções globais auxiliares do Montador de Times
+let selectedTeam = [];
+
+function updateTeamBuilderGrid(gameId) {
+    const grid = document.getElementById("team-characters-grid");
+    if (!grid) return;
+    
+    selectedTeam = [];
+    const btn = document.getElementById("team-analyze-btn");
+    if (btn) btn.disabled = true;
+    
+    const roster = globalRoster[gameId] || [];
+    if (roster.length === 0) {
+        grid.innerHTML = `<div style="grid-column: span 4; font-size: 10px; color: var(--text-secondary); text-align: center; padding: 12px;">Roster do ${gameId.toUpperCase()} não sincronizado.</div>`;
+        return;
+    }
+    
+    grid.innerHTML = roster.map(char => {
+        const safeFn = getSafeFileName(char.name);
+        const localAvatarPath = `/assets/avatars/${gameId}/${safeFn}`;
+        return `
+            <div class="team-char-select-card" data-name="${char.name}" style="position: relative; aspect-ratio: 1; cursor: pointer; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; background: rgba(0,0,0,0.3); transition: all 0.2s;" onclick="toggleCharacterInTeam(this, '${char.name.replace(/'/g, "\\'")}', '${gameId}')">
+                <img src="${localAvatarPath}" onerror="this.onerror=null; this.src='${char.icon || '/assets/config_icon.png'}';" style="width: 100%; height: 100%; object-fit: cover;" alt="${char.name}">
+                <div class="char-select-overlay" style="position: absolute; inset: 0; background: rgba(167, 139, 250, 0.45); display: none; align-items: center; justify-content: center; font-size: 14px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
+                    <i class="fa-solid fa-check"></i>
+                </div>
+                <div class="char-select-name" style="position: absolute; bottom: 0; left: 0; right: 0; font-size: 8px; background: rgba(0,0,0,0.85); color: #fff; text-align: center; padding: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">${char.name}</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function toggleCharacterInTeam(element, charName, gameId) {
+    const overlay = element.querySelector(".char-select-overlay");
+    const maxSelect = gameId === "zzz" ? 3 : 4;
+    
+    if (selectedTeam.includes(charName)) {
+        selectedTeam = selectedTeam.filter(name => name !== charName);
+        element.style.borderColor = "rgba(255,255,255,0.06)";
+        element.style.boxShadow = "none";
+        overlay.style.display = "none";
+    } else {
+        if (selectedTeam.length >= maxSelect) {
+            alert(`Você só pode selecionar até ${maxSelect} personagens para o time de ${gameId.toUpperCase()}!`);
+            return;
+        }
+        selectedTeam.push(charName);
+        element.style.borderColor = "#a78bfa";
+        element.style.boxShadow = "0 0 8px rgba(167, 139, 250, 0.3)";
+        overlay.style.display = "flex";
+    }
+    
+    const btn = document.getElementById("team-analyze-btn");
+    if (btn) btn.disabled = selectedTeam.length === 0;
 }
 
 function appendChatMessage(role, content) {

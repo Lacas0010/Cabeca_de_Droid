@@ -454,37 +454,63 @@
 
             <!-- ABA CHAT IA RAG -->
             <section id="tab-chat" class="tab-pane">
-                <div class="chat-container">
-                    <div class="chat-header">
-                        <h2>Cabeça de Droid</h2>
-                        <div class="chat-context">
-                            <label for="chat-context-select">Contexto do RAG:</label>
-                            <select id="chat-context-select">
-                                <option value="todos">Todos os Jogos (Global)</option>
-                                <option value="zzz">Zenless Zone Zero</option>
-                                <option value="genshin">Genshin Impact</option>
-                                <option value="hsr">Honkai: Star Rail</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div id="chat-messages" class="chat-messages-area">
-                        <div class="chat-msg assistant">
-                            <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
-                            <div class="msg-content">
-                                <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
-                                <ul>
-                                    <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
-                                    <li><em>"Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"</em></li>
-                                    <li><em>"Quais são os melhores discos para o agente que escolhi no ZZZ?"</em></li>
-                                </ul>
+                <div class="chat-layout-wrapper" style="display: flex; gap: 15px; height: 100%;">
+                    <div class="chat-container" style="flex: 2; display: flex; flex-direction: column;">
+                        <div class="chat-header">
+                            <h2>Cabeça de Droid</h2>
+                            <div class="chat-context">
+                                <label for="chat-context-select">Contexto do RAG:</label>
+                                <select id="chat-context-select">
+                                    <option value="todos">Todos os Jogos (Global)</option>
+                                    <option value="zzz">Zenless Zone Zero</option>
+                                    <option value="genshin">Genshin Impact</option>
+                                    <option value="hsr">Honkai: Star Rail</option>
+                                </select>
                             </div>
                         </div>
+                        
+                        <div id="chat-messages" class="chat-messages-area" style="flex: 1; overflow-y: auto;">
+                            <div class="chat-msg assistant">
+                                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                                <div class="msg-content">
+                                    <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
+                                    <ul>
+                                        <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
+                                        <li><em>"Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"</em></li>
+                                        <li><em>"Quais são os melhores discos para o agente que escolhi no ZZZ?"</em></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-area">
+                            <textarea id="chat-input" placeholder="Pergunte sobre seus personagens, times ou builds..." rows="1"></textarea>
+                            <button id="chat-send-btn" class="chat-send-btn">Enviar ➔</button>
+                        </div>
                     </div>
                     
-                    <div class="chat-input-area">
-                        <textarea id="chat-input" placeholder="Pergunte sobre seus personagens, times ou builds..." rows="1"></textarea>
-                        <button id="chat-send-btn" class="chat-send-btn">Enviar ➔</button>
+                    <!-- PAINEL SELECIONADOR DE TIMES (TEAM BUILDER) -->
+                    <div class="team-builder-panel" style="flex: 1; min-width: 280px; max-width: 380px; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 16px; backdrop-filter: blur(12px); padding: 16px;">
+                        <div class="panel-header" style="margin-bottom: 12px;">
+                            <h3 style="margin-top: 0; margin-bottom: 6px; font-size: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-users" style="color: #a78bfa;"></i> Montador de Times</h3>
+                            <p style="margin: 0; font-size: 11px; color: var(--text-secondary); line-height: 1.4;">Selecione o jogo e monte sua equipe abaixo para que a IA analise a sinergia e recomende melhorias de combate.</p>
+                        </div>
+                        
+                        <div class="panel-select-game" style="margin-bottom: 12px;">
+                            <select id="team-game-select" style="width: 100%; padding: 8px; font-size: 13px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                                <option value="hsr">Honkai: Star Rail</option>
+                                <option value="genshin">Genshin Impact</option>
+                                <option value="zzz">Zenless Zone Zero</option>
+                            </select>
+                        </div>
+                        
+                        <div id="team-characters-grid" class="team-chars-grid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px;">
+                            <!-- Inserido via JS -->
+                        </div>
+                        
+                        <div class="panel-actions">
+                            <button id="team-analyze-btn" class="primary-btn" style="width: 100%; font-size: 13px; padding: 10px; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 6px;" disabled><i class="fa-solid fa-brain"></i> Analisar Sinergia</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -604,6 +630,24 @@
                             <span>Avaliando Roster & Metagame...</span>
                         </div>
                         <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding-left: 20px;"></ul>
+                    </div>
+                    
+                    <!-- NOVO: Calculadora de Ascensão -->
+                    <div class="inspector-card ascension-calc-card" style="border: 1px solid rgba(14, 165, 233, 0.25); background: rgba(14, 165, 233, 0.03); border-radius: 12px; margin-bottom: 12px; padding: 12px;">
+                        <h4 style="margin-top: 0; margin-bottom: 8px; color: #38bdf8; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-calculator"></i> Calculadora de Ascensão</h4>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                            <label for="ins-asc-target" style="font-size: 11px; color: var(--text-secondary);">Nível Alvo:</label>
+                            <select id="ins-asc-target" style="font-size: 11px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 2px 4px;">
+                                <option value="80">Nível 80</option>
+                                <option value="90">Nível 90</option>
+                                <option value="70">Nível 70</option>
+                                <option value="60">Nível 60</option>
+                            </select>
+                            <button id="btn-ins-asc-calculate" class="action-btn" style="padding: 3px 8px; font-size: 11px; background: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.3); color: #38bdf8; border-radius: 6px; cursor: pointer; margin-left: auto;">Calcular</button>
+                        </div>
+                        <div id="ins-asc-results" style="display: none; font-size: 11px; color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.05); line-height: 1.5;">
+                            <!-- Inserido dinamicamente via JS -->
+                        </div>
                     </div>
                     
                     <!-- Seção 1: Equipamento / Arma -->
