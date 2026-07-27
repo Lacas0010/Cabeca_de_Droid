@@ -11,7 +11,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 # Importações dos módulos do projeto
 from auth import capturar_cookies_hoyolab
@@ -297,6 +297,14 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                     traceback.print_exc()
                     log_game(game_id, f"Falha ao obter meta Genshin: {meta_err}", "ERROR")
 
+        # Regenera a base estruturada meta_data.json com os guias recém-baixados
+        try:
+            from build_calculator import generate_meta_json_from_markdown
+            generate_meta_json_from_markdown(game_id)
+            log_game(game_id, f"Banco de metadados meta_data.json de {game_id.upper()} reconstruído com sucesso!", "INFO", progresso=0.99)
+        except Exception as json_err:
+            log_game(game_id, f"Aviso ao atualizar cache JSON de metadados: {json_err}", "WARN")
+            
         log_game(game_id, "Sincronização concluída com sucesso!", "SUCCESS", progresso=1.0)
     except Exception as general_err:
         log_game(game_id, f"Erro crítico na sincronização: {general_err}", "ERROR", progresso=0.0)
@@ -1367,6 +1375,16 @@ async def calculate_materials(req: MaterialsCalculateRequest):
     if not res:
         raise HTTPException(status_code=400, detail="Erro ao realizar o cálculo de ascensão.")
     return res
+
+@app.post("/api/evaluate-stats/{game_id}/{char_name}")
+async def evaluate_character_stats(game_id: str, char_name: str, final_stats: Dict[str, str]):
+    """Compara os status consolidados reais do personagem contra os benchmarks do metagame."""
+    game_id = game_id.lower().strip()
+    if game_id not in ["hsr", "genshin", "zzz"]:
+        raise HTTPException(status_code=400, detail="Jogo inválido.")
+    from build_calculator import evaluate_general_stats
+    results = evaluate_general_stats(game_id, char_name, final_stats)
+    return results
 
 # ==========================================
 # ENDPOINT OTIMIZADOR DE BUILDS VIA IA
