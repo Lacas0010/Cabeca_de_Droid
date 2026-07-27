@@ -65,6 +65,7 @@ moc_payload_dump.txt
 # Python check/test scripts
 check_*.py
 test_*.py
+scratch/
 
 # PyInstaller build outputs and generated spec files
 dist/

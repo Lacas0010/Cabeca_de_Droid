@@ -278,18 +278,22 @@ def get_overview_data() -> dict:
     overview = {}
     for r in accounts_rows:
         game_id = r["game_id"]
-        # Conta personagens e de 5 estrelas
-        cursor.execute("SELECT COUNT(*), SUM(CASE WHEN rarity = 5 THEN 1 ELSE 0 END) FROM characters WHERE game_id = ?", (game_id,))
+        # Conta personagens e de 5 estrelas filtrando pelo UID específico da conta
+        cursor.execute("SELECT COUNT(*), SUM(CASE WHEN rarity = 5 THEN 1 ELSE 0 END) FROM characters WHERE game_id = ? AND uid = ?", (game_id, r["uid"]))
         stats_row = cursor.fetchone()
         count_all = stats_row[0] if stats_row else 0
         count_five = stats_row[1] if stats_row else 0
         
-        overview[game_id] = {
-            "active": True,
-            "uid": r["uid"],
-            "level": str(r["level"]),
-            "char_count": count_all,
-            "five_stars": count_five or 0
-        }
+        # Só insere ou substitui se for a primeira conta deste jogo ou se possuir nível maior
+        current_lvl = int(r["level"]) if r["level"] is not None else 0
+        if game_id not in overview or current_lvl > int(overview[game_id]["level"]):
+            overview[game_id] = {
+                "active": True,
+                "uid": r["uid"],
+                "level": str(r["level"]),
+                "char_count": count_all,
+                "five_stars": count_five or 0
+            }
+            
     conn.close()
     return overview

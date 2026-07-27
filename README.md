@@ -22,6 +22,7 @@ O assistente foi projetado para sincronizar rosters de personagens e recordes de
 - **👥 Resolução Inteligente Multi-Contas**: Seleção automática inteligente caso o usuário possua mais de uma conta vinculada por jogo, mantendo e exibindo no cache as informações da conta de maior nível.
 - **🔋 Monitoramento Preciso de Energia (Daily Notes)**: Acompanhamento em tempo real da Bateria (ZZZ) e Resina (Genshin/HSR), com cálculo otimizado usando segundos restantes precisos para carga completa no ZZZ.
 - **🔄 Mecanismo de Fallback para Visão Geral (Overview)**: Sincronização inteligente dos mini-dashboards que mescla registros de banco SQLite locais com caches em Markdown e JSON, servindo dados mesmo em caso de falha temporária na rede.
+- **🎭 Suporte Dinâmico a Skins/Costumes**: Detecção de roupas cosméticas ativas equipadas no jogo. No HSR e ZZZ, renderiza os avatares de skin dinâmicos enviados pela API. No Genshin Impact, resolve e mapeia automaticamente os IDs de vestimentas de gacha/evento para suas respectivas URLs quadradas de rosto do Enka.Network, impedindo distorções de splash arts esticadas nos cards.
 - **🤖 Assistente de Chat IA com RAG**: Chat interativo inteligente integrado ao RAG local (Llama 3.3) que já conhece seu Roster e guias de meta.
 - **🔑 Login Automático HoYoLAB**: Painel de login facilitado que usa Playwright para capturar os cookies de sessão de forma segura.
 
