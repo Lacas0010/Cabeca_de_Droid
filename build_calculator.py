@@ -1,6 +1,29 @@
 import os
 import re
+import json
 from typing import Dict, List, Tuple, Optional
+
+# ==========================================
+# CACHE DO BANCO DE METADADOS JSON
+# ==========================================
+META_DATA_CACHE = {}
+
+def get_meta_data(game_id: str) -> dict:
+    """Carrega o banco de metadados JSON do cache em memória."""
+    game_id = game_id.lower().strip()
+    if game_id in META_DATA_CACHE:
+        return META_DATA_CACHE[game_id]
+        
+    path = f"{game_id}/meta_data.json"
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                META_DATA_CACHE[game_id] = data
+                return data
+        except Exception as e:
+            print(f"[WARN] Erro ao ler {path}: {e}")
+    return {}
 
 # ==========================================
 # DICIONÁRIO DE VALORES MÁXIMOS DE UM ÚNICO ROLL (5★ / S-Rank)
@@ -82,14 +105,12 @@ def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
     """Normaliza o nome do atributo para chaves padrão do motor de cálculo."""
     name_clean = raw_name.strip().lower()
     
-    # Se o nome já tem "%" ou has_percent é verdadeiro, força mapear para percentual
     if "%" in name_clean:
         has_percent = True
         name_clean = name_clean.replace("%", "").strip()
         
     mapped = STAT_NAME_MAP.get(name_clean, name_clean)
     
-    # Faz o ajuste se for percentual e caiu num mapeamento plano
     if has_percent:
         if mapped == "atk_flat": return "atk_pct"
         if mapped == "hp_flat": return "hp_pct"
@@ -102,16 +123,41 @@ def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
 # ==========================================
 def extract_weights_from_guide(game_id: str, character_name: str) -> Dict[str, float]:
     """
-    Varre o arquivo markdown de guias local do personagem e extrai a prioridade de substatus,
-    atribuindo pesos dinâmicos em uma escala de 0.0 a 1.0.
+    Busca no arquivo meta_data.json a prioridade de substatus e converte em pesos (0.0 a 1.0).
+    Faz fallback para o parsing clássico do markdown caso não encontre no JSON.
     """
     game_id = game_id.lower().strip()
-    char_clean = character_name.lower().replace(" ", "_")
+    meta_db = get_meta_data(game_id)
     
+    # 1. Tenta buscar no JSON compilado primeiro
+    char_meta = None
+    for name, m in meta_db.items():
+        if name.lower().strip() == character_name.lower().strip():
+            char_meta = m
+            break
+            
+    if char_meta:
+        subs = char_meta.get("substats_priority", [])
+        if subs:
+            weights = {}
+            scale = [1.0, 0.85, 0.70, 0.55, 0.40]
+            for i, s in enumerate(subs):
+                norm_name = normalize_stat_name(s)
+                weight_val = scale[i] if i < len(scale) else 0.30
+                weights[norm_name] = weight_val
+                
+            if "crit_rate" in weights and "crit_dmg" not in weights:
+                weights["crit_dmg"] = weights["crit_rate"] * 0.85
+            elif "crit_dmg" in weights and "crit_rate" not in weights:
+                weights["crit_rate"] = weights["crit_dmg"] * 0.85
+                
+            return weights
+
+    # 2. Fallback caso não esteja no JSON: Parseia Markdown direto
+    char_clean = character_name.lower().replace(" ", "_")
     guias_dir = f"{game_id}/guias"
     filepath = None
     
-    # Busca inteligente/difusa no diretório de guias
     if os.path.exists(guias_dir):
         try:
             files = os.listdir(guias_dir)
@@ -124,10 +170,9 @@ def extract_weights_from_guide(game_id: str, character_name: str) -> Dict[str, f
                         f_name in char_clean):
                         filepath = os.path.join(guias_dir, f)
                         break
-        except Exception as e:
-            print(f"[WARN] Erro ao listar diretório {guias_dir}: {e}")
+        except Exception:
+            pass
 
-    # Fallbacks padrão caso não encontre o guia do personagem
     default_weights = {
         "crit_rate": 1.0,
         "crit_dmg": 1.0,
@@ -145,14 +190,11 @@ def extract_weights_from_guide(game_id: str, character_name: str) -> Dict[str, f
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
             
-        # Regex para buscar a seção de substatus prioritários
-        # Suporta formatos como: "#### Subatributos Prioritários (Sub-stats)", "Sub-stats", etc.
         pattern = r"(?:subatributos prioritários|sub-stats|prioridade de substatus).*?\n(.*)"
         match = re.search(pattern, content, re.IGNORECASE)
         
         if match:
             sub_line = match.group(1).strip()
-            # Se a linha seguinte estiver vazia, tenta ler a próxima
             if not sub_line:
                 lines = content[match.start(1):].split("\n")
                 for l in lines:
@@ -160,26 +202,21 @@ def extract_weights_from_guide(game_id: str, character_name: str) -> Dict[str, f
                         sub_line = l.strip()
                         break
             
-            # Limpa e divide a linha de prioridades (ex: "SPD > Break Effect% > ATK%")
             tokens = []
-            # Divide por >, vírgula ou ponto-e-vírgula
             for tok in re.split(r'[>,;]', sub_line):
                 tok_clean = tok.strip()
-                # Remove anotações entre parênteses como "(Until Breakpoint)"
                 tok_clean = re.sub(r'\(.*?\)', '', tok_clean).strip()
                 if tok_clean:
                     tokens.append(tok_clean)
                     
             if tokens:
                 weights = {}
-                # Atribui pesos decrescentes baseados na ordem de prioridade
                 scale = [1.0, 0.85, 0.70, 0.55, 0.40]
                 for i, token in enumerate(tokens):
                     norm_name = normalize_stat_name(token)
                     weight_val = scale[i] if i < len(scale) else 0.30
                     weights[norm_name] = weight_val
                 
-                # Garante que taxa e dano crítico andem juntos se um deles for mencionado
                 if "crit_rate" in weights and "crit_dmg" not in weights:
                     weights["crit_dmg"] = weights["crit_rate"] * 0.85
                 elif "crit_dmg" in weights and "crit_rate" not in weights:
@@ -187,8 +224,8 @@ def extract_weights_from_guide(game_id: str, character_name: str) -> Dict[str, f
                     
                 return weights
                 
-    except Exception as ex:
-        print(f"[WARN] Erro ao ler ou extrair pesos dinâmicos do arquivo {filepath}: {ex}")
+    except Exception:
+        pass
         
     return default_weights
 
@@ -205,9 +242,6 @@ def clean_value(val_str: str) -> Tuple[float, bool]:
 def score_relic(game_id: str, character_name: str, slot: str, main_stat: str, substats_str: str) -> Tuple[str, float]:
     """
     Calcula a nota de uma relíquia usando Roll Value (RV) e Main Stat Forgiveness (Compensação).
-    
-    Fórmula de RV: Valor real / Valor Máximo do Roll.
-    Nota Final: Porcentagem do score real comparado ao máximo ideal da peça.
     """
     game_id = game_id.lower().strip()
     if game_id not in MAX_ROLL_VALUES:
@@ -216,13 +250,9 @@ def score_relic(game_id: str, character_name: str, slot: str, main_stat: str, su
     if not substats_str or substats_str.strip() in ["Sem substatus", "Status não disponíveis", ""]:
         return "D", 0.0
         
-    # 1. Extração dinâmica de pesos baseados no RAG do personagem
     weights = extract_weights_from_guide(game_id, character_name)
     
-    # 2. Identificação e Normalização do Main Stat para aplicação do Forgiveness
     main_clean = main_stat.lower()
-    # Se o nome da peça/slot indica que o Main Stat é fixo (ex: Flor/Pena no Genshin, Cabeça/Mãos no HSR)
-    # nós não compensamos porque o Main Stat não é opcional/competidor de substatus.
     slot_clean = slot.lower()
     is_fixed_main = False
     if game_id == "genshin" and ("flower" in slot_clean or "plume" in slot_clean or "flor" in slot_clean or "pena" in slot_clean):
@@ -232,38 +262,26 @@ def score_relic(game_id: str, character_name: str, slot: str, main_stat: str, su
         
     main_stat_norm = normalize_stat_name(main_stat, has_percent=("%" in main_clean))
     
-    # 3. Main Stat Forgiveness: Remove o Main Stat da lista de possíveis substatus
-    # Ordena as prioridades de substatus do personagem por peso decrescente
     sorted_priorities = [k for k, v in sorted(weights.items(), key=lambda item: item[1], reverse=True) if v > 0.0]
     
-    # Se o Main Stat for útil e não for um slot fixo, nós removemos do pool de substatus disponíveis
     if not is_fixed_main and main_stat_norm in sorted_priorities:
         available_substats = [s for s in sorted_priorities if s != main_stat_norm]
     else:
         available_substats = sorted_priorities
         
-    # Obtém as top 4 substatus ideais que a peça poderia ter
     ideal_substats = available_substats[:4]
     while len(ideal_substats) < 4:
         ideal_substats.append("none")
         
-    # 4. Calcula o Teto Máximo Teórico de Pontuação (Max Possible Score)
-    # Ponderação típica de distribuição de rolagens perfeitas (+15 possui 9 rolagens totais em média):
-    # - 5 rolls no melhor substatus
-    # - 2 rolls no segundo melhor
-    # - 1 roll no terceiro
-    # - 1 roll no quarto
     roll_distribution = [5, 2, 1, 1]
     max_possible_score = 0.0
     for i, sub in enumerate(ideal_substats):
         w = weights.get(sub, 0.0)
         max_possible_score += w * roll_distribution[i]
         
-    # Proteção de divisão por zero caso o personagem não tenha pesos válidos
     if max_possible_score <= 0:
         max_possible_score = 5.0
         
-    # 5. Calcula o Score Real baseado em Roll Value (RV)
     game_max_rolls = MAX_ROLL_VALUES[game_id]
     actual_score = 0.0
     
@@ -274,19 +292,14 @@ def score_relic(game_id: str, character_name: str, slot: str, main_stat: str, su
             val, has_pct = clean_value(val_str)
             sub_name_norm = normalize_stat_name(name, has_percent=has_pct)
             
-            # Obtém o valor máximo de roll para esse status
             max_roll = game_max_rolls.get(sub_name_norm, 0.0)
             
             if max_roll > 0.0:
-                # Calcula o Roll Value (quantos rolls perfeitos esse substatus equivale)
                 rv = val / max_roll
-                # Soma ponderada
                 actual_score += rv * weights.get(sub_name_norm, 0.0)
                 
-    # 6. Calcula a nota percentual final
     rating_pct = (actual_score / max_possible_score) * 100.0
     
-    # 7. Classificação por letras
     if rating_pct >= 90.0: grade = "SSS"
     elif rating_pct >= 75.0: grade = "SS"
     elif rating_pct >= 60.0: grade = "S"
@@ -296,6 +309,181 @@ def score_relic(game_id: str, character_name: str, slot: str, main_stat: str, su
     else: grade = "D"
     
     return grade, round(rating_pct, 1)
+
+# ==========================================
+# AVALIADOR DE STATUS GERAIS DO PERSONAGEM
+# ==========================================
+def evaluate_general_stats(game_id: str, character_name: str, final_stats: Dict[str, str]) -> List[Dict[str, str]]:
+    """
+    Compara os status consolidados reais do personagem contra os benchmarks ideais do metagame.
+    Retorna uma lista estruturada de avaliações.
+    """
+    game_id = game_id.lower().strip()
+    meta_db = get_meta_data(game_id)
+    
+    char_meta = None
+    for name, m in meta_db.items():
+        if name.lower().strip() == character_name.lower().strip():
+            char_meta = m
+            break
+            
+    if not char_meta or "general_benchmarks" not in char_meta:
+        return []
+        
+    benchmarks = char_meta["general_benchmarks"]
+    results = []
+    
+    normalized_player_stats = {}
+    for p_name, p_val in final_stats.items():
+        norm_key = normalize_stat_name(p_name)
+        normalized_player_stats[norm_key] = (p_name, p_val)
+        
+    for bench_key, target_expr in benchmarks.items():
+        player_stat_info = normalized_player_stats.get(bench_key)
+        if not player_stat_info:
+            continue
+            
+        p_name, p_val_str = player_stat_info
+        
+        target_val = clean_value(target_expr)[0]
+        actual_val = clean_value(p_val_str)[0]
+        
+        operator = ">="
+        if "<=" in target_expr: operator = "<="
+        elif "<" in target_expr: operator = "<"
+        elif ">" in target_expr: operator = ">"
+        
+        is_good = False
+        if operator == ">=": is_good = (actual_val >= target_val)
+        elif operator == "<=": is_good = (actual_val <= target_val)
+        elif operator == ">": is_good = (actual_val > target_val)
+        elif operator == "<": is_good = (actual_val < target_val)
+        
+        status = "GOOD" if is_good else "LOW"
+        if status == "GOOD":
+            msg = f"Sua {p_name} ({p_val_str}) atingiu a meta recomendada ({target_expr})!"
+        else:
+            msg = f"Aumente sua {p_name} ({p_val_str}), a meta recomendada é {target_expr}."
+            
+        results.append({
+            "stat": p_name,
+            "target": target_expr,
+            "actual": p_val_str,
+            "status": status,
+            "message": msg
+        })
+        
+    return results
+
+# ==========================================
+# GERADOR DE ARQUIVOS META_DATA.JSON
+# ==========================================
+def generate_meta_json_from_markdown(game_id: str):
+    """
+    Varre todos os guias markdown do jogo e regenera o arquivo meta_data.json
+    """
+    game_id = game_id.lower().strip()
+    guias_dir = f"{game_id}/guias"
+    meta_db = {}
+    
+    def parse_hsr(content):
+        meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
+        matches = re.findall(r"-\s*(Body|Feet|Planar Sphere|Link Rope):\s*(.*)", content)
+        for slot, val in matches:
+            stats = [normalize_stat_name(s) for s in re.split(r'[/|or]', val)]
+            meta["main_stats"][slot.lower().replace(" ", "_")] = [s for s in stats if s]
+            
+        sub_match = re.search(r"(?:subatributos prioritários|sub-stats|substats).*?\n(.*)", content, re.I)
+        if sub_match:
+            sub_line = sub_match.group(1).strip()
+            if not sub_line:
+                lines = content[sub_match.start(1):].split("\n")
+                for l in lines:
+                    if l.strip(): sub_line = l.strip(); break
+            tokens = [normalize_stat_name(tok.strip()) for tok in re.split(r'[>,\/;]', sub_line) if tok.strip()]
+            meta["substats_priority"] = [t for t in tokens if t]
+            
+        benchmarks = {}
+        speed_goal = re.search(r'(\d+)\s*speed\s*goal|speed\s*goal\s*of\s*(\d+)|breakpoint\s*of\s*(\d+)\s*spd|(\d+)\s*spd', content, re.I)
+        if speed_goal:
+            val = next(v for v in speed_goal.groups() if v)
+            benchmarks["spd"] = f">= {val}"
+        crit_goal = re.search(r'crit\s*rate\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*crit\s*rate', content, re.I)
+        if crit_goal:
+            val = next(v for v in crit_goal.groups() if v)
+            benchmarks["crit_rate"] = f">= {val}%"
+        be_goal = re.search(r'break\s*effect\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*break\s*effect', content, re.I)
+        if be_goal:
+            val = next(v for v in be_goal.groups() if v)
+            benchmarks["break_effect"] = f">= {val}%"
+        meta["general_benchmarks"] = benchmarks
+        return meta
+
+    def parse_genshin(content):
+        meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
+        main_match = re.search(r"\|\s*\*?\*?Sands\*?\*?\s*\|\s*\*?\*?Goblet\*?\*?\s*\|\s*\*?\*?Circlet\*?\*?\s*\|.*?\n\|.*?\|.*?\|.*?\|\n\|\s*(.*?)\s*\|\s*(.*?)\s*\|\s*(.*?)\s*\|", content, re.I)
+        if main_match:
+            sands = [normalize_stat_name(s) for s in re.split(r'[/|or]', main_match.group(1))]
+            goblet = [normalize_stat_name(s) for s in re.split(r'[/|or]', main_match.group(2))]
+            circlet = [normalize_stat_name(s) for s in re.split(r'[/|or]', main_match.group(3))]
+            meta["main_stats"] = {
+                "sands": [s for s in sands if s],
+                "goblet": [s for s in goblet if s],
+                "circlet": [s for s in circlet if s]
+            }
+        else:
+            matches = re.findall(r"-\s*(Sands|Goblet|Circlet):\s*(.*)", content, re.I)
+            for slot, val in matches:
+                stats = [normalize_stat_name(s) for s in re.split(r'[/|or]', val)]
+                meta["main_stats"][slot.lower()] = [s for s in stats if s]
+                
+        sub_match = re.search(r"\*?\*?Stat Priority:\*?\*?\s*(.*)", content, re.I)
+        if sub_match:
+            sub_line = sub_match.group(1).strip()
+            tokens = [normalize_stat_name(tok.strip()) for tok in re.split(r'[>=\/;\+]', sub_line) if tok.strip()]
+            meta["substats_priority"] = [t for t in tokens if t]
+        return meta
+
+    def parse_zzz(content):
+        meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
+        matches = re.findall(r"Slot\s*(4|5|6):\s*(.*)", content, re.I)
+        for slot, val in matches:
+            stats = [normalize_stat_name(s) for s in re.split(r'[/|or]', val)]
+            meta["main_stats"][f"slot_{slot}"] = [s for s in stats if s]
+            
+        sub_match = re.search(r"(?:substatus prioritários|substats):\s*(.*)", content, re.I)
+        if sub_match:
+            sub_line = sub_match.group(1).strip()
+            tokens = [normalize_stat_name(tok.strip()) for tok in re.split(r'[>,\/;]', sub_line) if tok.strip()]
+            meta["substats_priority"] = [t for t in tokens if t]
+        return meta
+
+    parse_fn = parse_hsr if game_id == "hsr" else (parse_genshin if game_id == "genshin" else parse_zzz)
+    
+    if os.path.exists(guias_dir):
+        try:
+            files = os.listdir(guias_dir)
+            for f in files:
+                if f.endswith(".md"):
+                    char_name = f[:-3].replace("_", " ").title()
+                    if char_name.lower().startswith("dan heng"):
+                        char_name = char_name.replace("•", "•")
+                    filepath = os.path.join(guias_dir, f)
+                    try:
+                        with open(filepath, "r", encoding="utf-8") as file:
+                            char_meta = parse_fn(file.read())
+                            meta_db[char_name] = char_meta
+                    except Exception as ex:
+                        print(f"[WARN] Erro ao parsear {filepath}: {ex}")
+        except Exception as e:
+            print(f"[WARN] Erro ao listar diretório {guias_dir}: {e}")
+            
+    output_path = f"{game_id}/meta_data.json"
+    with open(output_path, "w", encoding="utf-8") as out:
+        json.dump(meta_db, out, indent=4, ensure_ascii=False)
+        
+    if game_id in META_DATA_CACHE:
+        del META_DATA_CACHE[game_id]
 
 
 # ==========================================================================

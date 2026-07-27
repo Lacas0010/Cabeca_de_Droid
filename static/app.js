@@ -707,6 +707,46 @@ async function inspectCharacter(gameId, char) {
             statsGrid.innerHTML = `<span class="text-muted">Consolidação de status não disponível.</span>`;
         }
         
+        // NOVO: Renderiza Comparação de Metas Gerais (Benchmarks)
+        const benchmarksCard = document.getElementById("ins-benchmarks-card");
+        const benchmarksList = document.getElementById("ins-benchmarks-list");
+        
+        if (benchmarksCard && benchmarksList) {
+            benchmarksCard.style.display = "none";
+            benchmarksList.innerHTML = "";
+            
+            if (statsKeys.length > 0) {
+                try {
+                    const evalRes = await fetch(`/api/evaluate-stats/${gameId}/${encodeURIComponent(char.name)}`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(build.stats)
+                    });
+                    if (evalRes.ok) {
+                        const evalData = await evalRes.json();
+                        if (evalData && evalData.length > 0) {
+                            benchmarksCard.style.display = "block";
+                            benchmarksList.innerHTML = evalData.map(item => {
+                                const isGood = item.status === "GOOD";
+                                const color = isGood ? "#10b981" : "#fca5a5";
+                                const icon = isGood ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+                                return `
+                                    <div style="display: flex; align-items: flex-start; gap: 6px; color: ${color}; font-size: 11px; margin-bottom: 4px;">
+                                        <span style="font-size: 11px; margin-top: 1px;">${icon}</span>
+                                        <div>
+                                            <strong style="color: var(--text-primary); font-size: 11px;">${item.stat}:</strong> ${item.message}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join("");
+                        }
+                    }
+                } catch (err) {
+                    console.error("Erro ao avaliar metas gerais:", err);
+                }
+            }
+        }
+        
         // 4. Renderiza Peças Individuais combinando RAG MD e Local JSON
         const piecesList = document.getElementById("ins-relic-pieces");
         piecesList.innerHTML = "";
