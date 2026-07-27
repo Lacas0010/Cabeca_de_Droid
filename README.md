@@ -53,13 +53,15 @@ O **Cabeça de Droid** opera como um ecossistema local híbrido composto por tr�
 O **Cabeça de Droid** possui mecanismos matemáticos locais integrados para ajudar o jogador a gerenciar recursos e otimizar builds:
 
 ### 1. Calculadora de Pontuação de Relíquias (Relic / Disc Scorer)
-O sistema avalia cada artefato/relíquia/disco individual do seu Roster e atribui uma nota (**D** a **SSS**) e pontuação baseando-se no arquétipo do personagem:
-* **DPS Crítico (CRIT_DPS):** Pondera o valor bruto de crítico via fórmula $CV = \text{Dano Crítico} + (2 \times \text{Taxa Crítica})$, somando bônus para status úteis adicionais como Velocidade ($1.5\times$), ATQ% ($0.5\times$) e Recarga de Energia ($0.2\times$).
-* **Efeito de Quebra (BREAK):** Foca em Efeito de Quebra ($1.0\times$), com peso extra extremo para Velocidade ($2.5\times$) e Vida% ($0.3\times$).
-* **Suportes Elementares & Anomalia (SUPPORT_EM / ANOMALY):** Pondera a Proficiência Elemental/Proficiência em Anomalia ($0.2\times$), Recarga de Energia ($0.5\times$) e Velocidade ($1.5\times$).
-* **Curadores & Suportes de Sobrevivência (HEALER_HP / SUPPORT_HP):** Pondera Vida% ($1.0\times$), Defesa% ($0.8\times$), Recarga de Energia ($0.5\times$) e Velocidade ($2.0\times$).
+O sistema abandona arquétipos globais estáticos e utiliza um motor matemático dinâmico baseado em:
+* **Matriz de Pesos Dinâmicos:** A função `extract_weights_from_guide` analisa o arquivo markdown de guia local do personagem (extraído de Prydwen, KQM ou Game8) e infere os substatus recomendados da seção de prioridades (ex: `SPD > Break Effect% > ATK%`), atribuindo pesos decrescentes de `0.0` a `1.0` de forma única e específica para o personagem.
+* **Cálculo por Roll Value (RV):** Em vez de avaliar valores brutos, o motor calcula o RV de cada substatus dividindo seu valor real pelo **valor máximo de um roll perfeito de 5★ / S-Rank** para aquele jogo específico (Genshin, HSR ou ZZZ):
+  $$RV = \frac{\text{Valor Real}}{\text{Valor Máximo do Roll}}$$
+  O score final da peça é a soma ponderada de todos os RVs dos substatus:
+  $$\text{Score Real} = \sum (RV_i \times \text{Peso}_i)$$
+* **Main Stat Forgiveness (Compensação de Main Stat):** Uma relíquia não pode ter seu Main Stat repetido nos substatus. O motor compensa isso: se o Main Stat da peça for útil (peso > 0) e não for um slot de Main Stat fixo (como Flor/Pena no Genshin ou Cabeça/Mão no HSR), esse atributo é removido da lista de possíveis substatus ao calcular a pontuação máxima teórica da peça. O teto máximo (denominador) é reduzido de forma justa, garantindo notas excelentes para botas de velocidade ou cordas de break effect.
 
-As peças que atingem o grau máximo **SSS** (scores elevados de substatus perfeitos) recebem um destaque visual pulsante na interface.
+As peças que atingem o grau máximo **SSS** (scores elevados de substatus perfeitos com $\ge 90\%$ do teto compensado) recebem um destaque visual pulsante na interface.
 
 ### 2. Calculadora de Materiais de Ascensão
 Integrada diretamente no painel de inspeção de personagens, ela estima a quantidade total de recursos necessários para elevar o nível de um personagem da sua conta até o nível de destino selecionado (ex: Nível 80 no HSR/ZZZ, Nível 90 no Genshin).
