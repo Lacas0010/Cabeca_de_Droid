@@ -175,13 +175,13 @@ class HSRExtractor(BaseExtractor):
             
             lines.append(f"| {char.name} | {char.level} | {stars} | {eidolon} | {path} | {element} |")
             
-        # Seção de Builds para Personagens Nível 80
+        # Seção de Builds para Personagens Nível 70 ou mais
         lines.append("")
-        lines.append("## Detalhes de Builds (Personagens Nv. 80)")
+        lines.append("## Detalhes de Builds (Personagens Nv. 70 ou mais)")
         lines.append("")
         
         for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
-            if char.level == 80:
+            if char.level >= 70:
                 # 1. Cone de Luz
                 if char.equip:
                     equip_text = f"{char.equip.name} (Sobreposição {char.equip.rank})"
@@ -440,13 +440,13 @@ class GenshinExtractor(BaseExtractor):
             
             lines.append(f"| {char.name} | Nv. {char.level} | {stars} | C{char.constellation} | {weapon} | {art_str} |")
             
-        # Seção de Builds para Personagens Nível 90
+        # Seção de Builds para Personagens Nível 70 ou mais
         lines.append("")
-        lines.append("## Detalhes de Builds (Personagens Nv. 90)")
+        lines.append("## Detalhes de Builds (Personagens Nv. 70 ou mais)")
         lines.append("")
         
         for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
-            if char.level == 90:
+            if char.level >= 70:
                 # 1. Arma
                 if char.weapon:
                     refinement = getattr(char.weapon, "refinement", 1)
@@ -712,13 +712,13 @@ class ZZZExtractor(BaseExtractor):
             
             lines.append(f"| {agent.name} | Nv. {agent.level} | {agent.rarity} ({stars}) | M{agent.rank} | {w_engine} | {disc_str} |")
             
-        # Seção de Builds para Agentes Nível 60
+        # Seção de Builds para Agentes Nível 50 ou mais
         lines.append("")
-        lines.append("## Detalhes de Builds (Agentes Nv. 60)")
+        lines.append("## Detalhes de Builds (Agentes Nv. 50 ou mais)")
         lines.append("")
         
         for agent in sorted(agents, key=lambda a: (a.rarity, a.level), reverse=True):
-            if agent.level == 60:
+            if agent.level >= 50:
                 # 1. W-Engine
                 if agent.w_engine:
                     refinement = getattr(agent.w_engine, "refinement", 1)
