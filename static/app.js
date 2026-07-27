@@ -378,6 +378,7 @@ async function loadRoster(gameId) {
         
         // Estado dos filtros combinados
         let activeElementFilter = "all";
+        let activeRarityFilter = "all";
         let searchQuery = "";
         
         const searchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
@@ -385,12 +386,24 @@ async function loadRoster(gameId) {
         const renderCards = () => {
             gallery.innerHTML = "";
             
-            // Filtra a lista local baseado na busca de texto E elemento
+            // Filtra a lista local baseado na busca de texto, elemento E raridade
             const filtered = roster.filter(char => {
                 const matchesSearch = char.name.toLowerCase().includes(searchQuery);
                 const matchesElement = activeElementFilter === "all" || 
                     (char.element || "").toLowerCase() === activeElementFilter.toLowerCase();
-                return matchesSearch && matchesElement;
+                
+                let matchesRarity = true;
+                if (activeRarityFilter !== "all") {
+                    const rarityNum = Number(char.rarity);
+                    const isFiveStar = rarityNum === 5 || char.rarity === "5" || String(char.rarity).toUpperCase() === "S";
+                    if (activeRarityFilter === "5") {
+                        matchesRarity = isFiveStar;
+                    } else if (activeRarityFilter === "4") {
+                        matchesRarity = !isFiveStar;
+                    }
+                }
+                
+                return matchesSearch && matchesElement && matchesRarity;
             });
             
             if (filtered.length === 0) {
@@ -439,7 +452,7 @@ async function loadRoster(gameId) {
         };
         
         // Configura ouvintes de clique nos botões de filtro de elementos
-        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]`);
+        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters)`);
         if (filterContainer) {
             const filterBtns = filterContainer.querySelectorAll(".filter-btn");
             filterBtns.forEach(btn => {
@@ -455,6 +468,28 @@ async function loadRoster(gameId) {
                     freshBtns.forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
                     activeElementFilter = btn.getAttribute("data-filter");
+                    renderCards();
+                });
+            });
+        }
+        
+        // Configura ouvintes de clique nos botões de filtro de raridade
+        const rarityContainer = document.querySelector(`.rarity-filters[data-game="${gameId}"]`);
+        if (rarityContainer) {
+            const rarityBtns = rarityContainer.querySelectorAll(".filter-btn");
+            rarityBtns.forEach(btn => {
+                // Remove listeners anteriores
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+            
+            // Adiciona novos listeners aos botões clonados
+            const freshRarityBtns = rarityContainer.querySelectorAll(".filter-btn");
+            freshRarityBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    freshRarityBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    activeRarityFilter = btn.getAttribute("data-rarity");
                     renderCards();
                 });
             });
@@ -1461,14 +1496,49 @@ async function loadBuildComparison() {
 // ==========================================================================
 // FUNÇÕES DOS GRÁFICOS SVG DO ROSTER (POR JOGO)
 // ==========================================================================
-function renderRosterCharts() {
-    renderGameCharts("zzz", 50); // ZZZ Nv >= 50
-    renderGameCharts("genshin", 70); // Genshin Nv >= 70
-    renderGameCharts("hsr", 70); // HSR Nv >= 70
+// Mapeamento de nomes de elementos localizados e oficiais por jogo
+const ELEMENT_LABELS = {
+    "zzz": {
+        "electric": "Elétrico",
+        "ether": "Éter",
+        "fire": "Fogo",
+        "ice": "Gelo",
+        "physical": "Físico",
+        "wind": "Vento"
+    },
+    "hsr": {
+        "fire": "Fogo",
+        "ice": "Gelo",
+        "imaginary": "Imaginário",
+        "lightning": "Raio",
+        "physical": "Físico",
+        "quantum": "Quântico",
+        "wind": "Vento"
+    },
+    "genshin": {
+        "pyro": "Pyro",
+        "hydro": "Hydro",
+        "anemo": "Anemo",
+        "electro": "Electro",
+        "dendro": "Dendro",
+        "cryo": "Cryo",
+        "geo": "Geo"
+    }
+};
+
+function getElementLabel(gameId, elementKey) {
+    const gameLabels = ELEMENT_LABELS[gameId] || {};
+    return gameLabels[elementKey] || elementKey.charAt(0).toUpperCase() + elementKey.slice(1);
 }
 
-function renderGameCharts(gameId, levelThreshold) {
-    const chars = (globalRoster[gameId] || []).filter(c => c.level >= levelThreshold);
+function renderRosterCharts() {
+    renderGameCharts("zzz");
+    renderGameCharts("genshin");
+    renderGameCharts("hsr");
+}
+
+function renderGameCharts(gameId) {
+    const chars = globalRoster[gameId] || [];
     const chartsDiv = document.getElementById(`charts-${gameId}`);
     const svgElements = document.getElementById(`chart-elements-${gameId}`);
     const svgRarity = document.getElementById(`chart-rarity-${gameId}`);
@@ -1539,7 +1609,7 @@ function renderGameCharts(gameId, levelThreshold) {
     };
     
     const elementData = Object.keys(elements).map(el => {
-        const label = el.charAt(0).toUpperCase() + el.slice(1);
+        const label = getElementLabel(gameId, el);
         return {
             label: label,
             value: elements[el],
@@ -1547,15 +1617,7 @@ function renderGameCharts(gameId, levelThreshold) {
         };
     }).sort((a, b) => b.value - a.value);
     
-    let chartData = elementData;
-    if (elementData.length > 5) {
-        const main = elementData.slice(0, 4);
-        const othersVal = elementData.slice(4).reduce((sum, item) => sum + item.value, 0);
-        main.push({ label: "Outros", value: othersVal, color: "#6b7280" });
-        chartData = main;
-    }
-    
-    drawPieChart(`chart-elements-${gameId}`, `legend-elements-${gameId}`, chartData);
+    drawPieChart(`chart-elements-${gameId}`, `legend-elements-${gameId}`, elementData);
 }
 
 function drawPieChart(svgId, legendId, data) {
