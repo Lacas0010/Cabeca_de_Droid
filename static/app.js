@@ -22,28 +22,55 @@ const ELEMENT_MAPPING = {
     "electric": "el-electric", "ether": "el-ether"
 };
 
+// Helper para normalizar slots de relíquias / artefatos / discos de todos os jogos
+function getNormalizedSlot(slot) {
+    if (!slot) return "";
+    const s = slot.toLowerCase().trim();
+    if (s.includes("bota") || s.includes("pés") || s.includes("pes") || s.includes("feet")) return "bota";
+    if (s.includes("esfera") || s.includes("sphere")) return "esfera";
+    if (s.includes("corda") || s.includes("rope")) return "corda";
+    if (s.includes("flor") || s.includes("flower")) return "flor";
+    if (s.includes("pena") || s.includes("pluma") || s.includes("plume")) return "pena";
+    if (s.includes("areia") || s.includes("sands")) return "areia";
+    if (s.includes("copo") || s.includes("cálice") || s.includes("calice") || s.includes("goblet")) return "copo";
+    if (s.includes("tiara") || s.includes("logos") || s.includes("circlet")) return "tiara";
+    if (s.includes("cabeça") || s.includes("cabeca") || s.includes("head")) return "cabeça";
+    if (s.includes("mãos") || s.includes("maos") || s.includes("hands")) return "mãos";
+    if (s.includes("corpo") || s.includes("body")) return "corpo";
+    if (s.includes("disco 1") || s.includes("disk 1") || s === "1") return "disco 1";
+    if (s.includes("disco 2") || s.includes("disk 2") || s === "2") return "disco 2";
+    if (s.includes("disco 3") || s.includes("disk 3") || s === "3") return "disco 3";
+    if (s.includes("disco 4") || s.includes("disk 4") || s === "4") return "disco 4";
+    if (s.includes("disco 5") || s.includes("disk 5") || s === "5") return "disco 5";
+    if (s.includes("disco 6") || s.includes("disk 6") || s === "6") return "disco 6";
+    return s;
+}
+
 // Classes de ícones de fallback (FontAwesome) para slots de relíquias / artefatos / discos
 const SLOT_ICONS = {
-    // HSR
-    "cabeça": "fa-solid fa-helmet-safety", "cabeça (head)": "fa-solid fa-helmet-safety", "cabeça(head)": "fa-solid fa-helmet-safety",
-    "mãos": "fa-solid fa-hand-fist", "mãos (hands)": "fa-solid fa-hand-fist", "mãos(hands)": "fa-solid fa-hand-fist",
-    "corpo": "fa-solid fa-shirt", "corpo (body)": "fa-solid fa-shirt", "corpo(body)": "fa-solid fa-shirt",
-    "pés": "fa-solid fa-shoe-prints", "pés (feet)": "fa-solid fa-shoe-prints", "pés(feet)": "fa-solid fa-shoe-prints",
-    "esfera plana": "fa-solid fa-globe", "esfera plana (planar sphere)": "fa-solid fa-globe", "esfera plana(planar sphere)": "fa-solid fa-globe",
-    "corda de ligação": "fa-solid fa-link", "corda de ligação (link rope)": "fa-solid fa-link", "corda de ligação(link rope)": "fa-solid fa-link",
-    // Genshin
-    "flor da vida": "fa-solid fa-seedling", "flor da vida (flower)": "fa-solid fa-seedling", "flor da vida(flower)": "fa-solid fa-seedling",
-    "pluma da morte": "fa-solid fa-feather", "pluma da morte (plume)": "fa-solid fa-feather", "pluma da morte(plume)": "fa-solid fa-feather",
-    "areia do tempo": "fa-solid fa-hourglass-half", "areia do tempo (sands)": "fa-solid fa-hourglass-half", "areia do tempo(sands)": "fa-solid fa-hourglass-half",
-    "cálice de eonothem": "fa-solid fa-glass-water", "cálice de eonothem (goblet)": "fa-solid fa-glass-water", "cálice de eonothem(goblet)": "fa-solid fa-glass-water",
-    "tiara de logos": "fa-solid fa-crown", "tiara de logos (circlet)": "fa-solid fa-crown", "tiara de logos(circlet)": "fa-solid fa-crown",
+    // HSR / Genshin
+    "cabeça": "fa-solid fa-helmet-safety",
+    "mãos": "fa-solid fa-hand-fist",
+    "corpo": "fa-solid fa-shirt",
+    "bota": "fa-solid fa-shoe-prints",
+    "esfera": "fa-solid fa-globe",
+    "corda": "fa-solid fa-link",
+    "flor": "fa-solid fa-seedling",
+    "pena": "fa-solid fa-feather",
+    "areia": "fa-solid fa-hourglass-half",
+    "copo": "fa-solid fa-glass-water",
+    "tiara": "fa-solid fa-crown",
     // ZZZ
-    "disco 1": "fa-solid fa-compact-disc", "disco 2": "fa-solid fa-compact-disc", "disco 3": "fa-solid fa-compact-disc",
-    "disco 4": "fa-solid fa-compact-disc", "disco 5": "fa-solid fa-compact-disc", "disco 6": "fa-solid fa-compact-disc"
+    "disco 1": "fa-solid fa-compact-disc",
+    "disco 2": "fa-solid fa-compact-disc",
+    "disco 3": "fa-solid fa-compact-disc",
+    "disco 4": "fa-solid fa-compact-disc",
+    "disco 5": "fa-solid fa-compact-disc",
+    "disco 6": "fa-solid fa-compact-disc"
 };
 
 function getSlotIcon(slotName) {
-    const key = slotName.toLowerCase().trim();
+    const key = getNormalizedSlot(slotName);
     const iconClass = SLOT_ICONS[key] || "fa-solid fa-shield-halved";
     return `<i class="${iconClass}"></i>`;
 }
@@ -51,6 +78,7 @@ function getSlotIcon(slotName) {
 function getSafeFileName(name) {
     return name.toLowerCase().replace(/[^a-zA-Z0-9]/g, "_") + ".png";
 }
+
 
 // ==========================================================================
 // INICIALIZAÇÃO DA APLICAÇÃO
@@ -600,9 +628,8 @@ async function inspectCharacter(gameId, char) {
                 
                 // Encontra a peça equivalente local para extrair o ícone
                 const equivalentLocalPiece = localRelics.find(p => 
-                    p.slot.toLowerCase().includes(piece.slot.toLowerCase()) || 
-                    piece.slot.toLowerCase().includes(p.slot.toLowerCase()) ||
-                    p.name.toLowerCase().includes(piece.name.toLowerCase())
+                    (p.slot && piece.slot && getNormalizedSlot(p.slot) === getNormalizedSlot(piece.slot)) ||
+                    (p.name && piece.name && p.name.toLowerCase().includes(piece.name.toLowerCase()))
                 );
                 
                 const slotIcon = getSlotIcon(piece.slot);
@@ -613,6 +640,38 @@ async function inspectCharacter(gameId, char) {
                     ? `<img class="relic-piece-icon" src="${cachedPiecePath}" onerror="this.onerror=null; this.src='${equivalentLocalPiece.icon}';" alt="${piece.slot}">`
                     : `<span class="relic-piece-icon" style="font-size:20px; display:flex; align-items:center; justify-content:center;">${slotIcon}</span>`;
                 
+                // Formata os substatus em grid de 2 colunas para melhor legibilidade
+                const subsArray = (piece.sub || "").split(",")
+                    .map(s => s.trim())
+                    .filter(s => s && s.toLowerCase() !== "sem substatus");
+                
+                let subsHtml = "";
+                if (subsArray.length > 0) {
+                    subsHtml = `<div class="piece-subs-grid">`;
+                    subsArray.forEach(sub => {
+                        const parts = sub.split(":");
+                        if (parts.length >= 2) {
+                            const name = parts[0].trim();
+                            const value = parts[1].trim();
+                            subsHtml += `
+                                <div class="sub-item">
+                                    <span class="sub-label">${name}</span>
+                                    <span class="sub-value">${value}</span>
+                                </div>
+                            `;
+                        } else {
+                            subsHtml += `
+                                <div class="sub-item">
+                                    <span class="sub-label">${sub}</span>
+                                </div>
+                            `;
+                        }
+                    });
+                    subsHtml += `</div>`;
+                } else {
+                    subsHtml = `<span class="text-muted" style="font-size: 10px;">Sem substatus</span>`;
+                }
+                
                 row.innerHTML = `
                     ${iconHtml}
                     <div class="relic-piece-details">
@@ -621,7 +680,7 @@ async function inspectCharacter(gameId, char) {
                             <span class="piece-name">${piece.name}</span>
                         </div>
                         <div class="piece-main">Principal: ${piece.main}</div>
-                        <div class="piece-subs">Substatus: ${piece.sub}</div>
+                        <div class="piece-subs">${subsHtml}</div>
                     </div>
                 `;
                 piecesList.appendChild(row);

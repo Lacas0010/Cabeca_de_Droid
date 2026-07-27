@@ -1281,6 +1281,34 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-secondary);
     line-height: 1.4;
 }
+.piece-subs-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px 8px;
+    margin-top: 4px;
+}
+.sub-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    padding: 3px 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 9.5px;
+}
+.sub-label {
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 4px;
+}
+.sub-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
 
 /* ==========================================================================
    DEEPSEEK REASONING (THINK) STYLES
