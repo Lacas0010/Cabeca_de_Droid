@@ -339,7 +339,6 @@ class HSRExtractor(BaseExtractor):
         # Salva no SQLite
         try:
             import database
-            import re
             database.save_game_account(uid, "hsr", info.nickname, info.level, stats.active_days)
             for c in char_json_list:
                 char_md = ""
@@ -596,7 +595,6 @@ class GenshinExtractor(BaseExtractor):
         # Salva no SQLite
         try:
             import database
-            import re
             database.save_game_account(uid, "genshin", genshin_acc.nickname if hasattr(genshin_acc, "nickname") else "Viajante", genshin_acc.level, getattr(genshin_acc, "active_days", 0))
             for c in char_json_list:
                 char_md = ""
@@ -857,7 +855,6 @@ class ZZZExtractor(BaseExtractor):
         # Salva no SQLite
         try:
             import database
-            import re
             database.save_game_account(uid, "zzz", zzz_acc.nickname if hasattr(zzz_acc, "nickname") else "Proxy", zzz_acc.level, getattr(user_data.stats, "active_days", 0))
             for c in char_json_list:
                 char_md = ""
