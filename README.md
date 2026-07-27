@@ -28,7 +28,29 @@ O assistente foi projetado para sincronizar rosters de personagens e recordes de
 
 ---
 
+## ⚙️ Como Funciona o Sistema
+
+O **Cabeça de Droid** opera como um ecossistema local híbrido composto por três pilares principais:
+
+### 1. Coleta e Sincronização de Dados
+* **API HoYoLAB (Python):** Utiliza a biblioteca `genshin.py` para consultar as APIs oficiais do HoYoLAB a partir dos cookies do usuário. Ele extrai informações do perfil ativo, lista de personagens, equipamentos, substatus de artefatos/discos/relíquias e estatísticas de progresso nos modos endgame (Abismo Espiral, Salão Esquecido/Pura Ficção/Apocalipse Sombrio e Defesa Shiyu).
+* **Web Scraping Dinâmico:** Raspadores dedicados em Python vasculham guias meta e tier lists atualizadas (como *Prydwen* e *KeqingMains*), salvando esses benchmarks ideais localmente.
+
+### 2. Armazenamento e Tradução Local
+* **Banco SQLite (`hoyo_app.db`):** Os dados brutos das contas e builds são salvos localmente em um banco SQLite relacional, permitindo velocidade instantânea no carregamento e persistência das contas sincronizadas.
+* **Documentos Markdown de Cache:** O roster estruturado e as builds completas de cada jogo são exportados em arquivos markdown legíveis dentro de diretórios correspondentes (`/genshin`, `/hsr`, `/zzz`), servindo como cache.
+* **Dicionário de Tradução (`traducoes.json`):** Mapeia de forma extremamente veloz os termos de atributos, armas e artefatos de Inglês para Português (PT-BR), fornecendo uma interface localizada uniforme.
+
+### 3. Assistente de Chat Inteligente (RAG Local)
+* Quando você faz uma pergunta na aba de Chat, a inteligência local entra em ação usando a classe `GroqRAG` (`groq_rag.py`):
+  * **Interseção Inteligente:** O sistema varre sua pergunta em busca de nomes de personagens ou termos relacionados a builds e times.
+  * **Ingestão Otimizada:** Ele lê os arquivos Markdown locais do seu roster, filtrando apenas personagens ativos (nível 70+) e carregando apenas o guia específico (`/guias/<personagem>.md`) e a build do personagem que você perguntou. Isso otimiza drasticamente os limites de tokens da API da Groq/Gemini.
+  * **Prompt Enriquecido:** A pergunta do usuário é encapsulada em um superprompt contendo a sua build real + o benchmark ideal do metagame + a tier list. O LLM (Llama 3.3 ou Gemini) responde então com um nível de precisão cirúrgico focado na sua conta de jogo real.
+
+---
+
 ## 🛠️ Tecnologias Utilizadas
+
 
 - **Servidor & Backend:** [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) (Python)
 - **Interface Gráfica (Frontend):** HTML5, CSS3 (Vanilla) com ícones da biblioteca [Font Awesome](https://fontawesome.com/) e JavaScript Puro (Vanilla) - *Sem dependências de Node.js ou compilações externas*.
@@ -56,27 +78,120 @@ O assistente foi projetado para sincronizar rosters de personagens e recordes de
 
 ---
 
-## 🚀 Instalação e Execução (Desenvolvimento)
+## 🚀 Instalação e Execução (Passo a Passo Detalhado)
 
-### 1. Criar Ambiente Virtual e Instalar Dependências
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
+Siga as instruções abaixo para preparar o ambiente e colocar o **Cabeça de Droid** para rodar localmente.
 
-### 2. Instalar o Navegador do Playwright
+### 📋 Pré-requisitos
+* **Python 3.10 ou superior** instalado no seu sistema.
+* **Git** (opcional, para controle de versão).
+
+---
+
+### 1. Preparar o Ambiente Virtual (venv) e Instalar Dependências
+
+O ambiente virtual isola as dependências do projeto para evitar conflitos com outros pacotes do Python.
+
+1. Abra o terminal (PowerShell, CMD ou terminal do Linux/macOS) na pasta raiz do projeto.
+2. Crie o ambiente virtual executando:
+   ```bash
+   python -m venv .venv
+   ```
+3. Ative o ambiente virtual conforme seu sistema operacional:
+   * **Windows (PowerShell):**
+     ```powershell
+     .venv\Scripts\Activate.ps1
+     ```
+     *(Se receber um erro de política de execução, execute `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` no terminal antes)*
+   * **Windows (CMD):**
+     ```cmd
+     .venv\Scripts\activate.bat
+     ```
+   * **Linux / macOS:**
+     ```bash
+     source .venv/bin/activate
+     ```
+4. Atualize o gerenciador de pacotes (`pip`) e instale todas as dependências do arquivo `requirements.txt`:
+   ```bash
+   python -m pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+
+---
+
+### 2. Instalar o Navegador Chromium do Playwright
+
+O Playwright é utilizado para simular a janela do navegador e capturar os cookies do HoYoLAB automaticamente de forma segura durante o login.
+
+Execute o comando abaixo para baixar a versão correta do Chromium usada pelo Playwright:
 ```bash
 playwright install chromium
 ```
 
+> [!NOTE]  
+> A aplicação possui um mecanismo inteligente (`setup_playwright` no `main.py`) que tenta instalar o Chromium em segundo plano no primeiro início se ele não for detectado. No entanto, é altamente recomendado rodar o comando manual acima para garantir que não haja erros de conexão silenciosos.
+
+---
+
 ### 3. Executar o Aplicativo
+
+Com o ambiente virtual ativo e as dependências instaladas, inicialize o servidor local:
 ```bash
 python main.py
 ```
-O aplicativo abrirá automaticamente o navegador padrão no endereço: **`http://127.0.0.1:8000`**.
+
+**O que acontece a partir daqui:**
+1. O backend inicia o banco de dados SQLite local `hoyo_app.db` automaticamente se for a primeira execução.
+2. O servidor local **FastAPI + Uvicorn** é iniciado em `http://127.0.0.1:8000`.
+3. O script aguarda 3.5 segundos e **abre automaticamente** o seu navegador de internet padrão nesse endereço.
+4. Para fechar o programa, volte ao terminal e pressione `Ctrl + C`.
+
+---
+
+### 📦 4. Compilar para Executável (Opcional - Windows)
+
+Se você deseja gerar um único executável portátil (`.exe`) que possa rodar com apenas dois cliques no Windows (sem depender da instalação do Python ou terminal aberto), você pode compilar a aplicação usando o [PyInstaller](https://pyinstaller.org/):
+
+1. Com o ambiente virtual ativado, rode:
+   ```bash
+   pyinstaller main.spec
+   ```
+2. Após o término do processo, você encontrará a pasta `build/` e a pasta `dist/`.
+3. O executável standalone compilado estará localizado dentro da pasta `dist/` (`dist/main.exe`).
+4. Os recursos estáticos (como a interface web em `/static` e o ícone do robô em `/assets`) já são empacotados automaticamente para dentro do binário.
+
+
+---
+
+## 🔑 Configuração de Credenciais
+
+Para o funcionamento completo de todas as funcionalidades da aplicação (sincronização do roster de personagens via HoYoLAB e Assistente de Chat IA com RAG), é necessário configurar suas credenciais. Isso pode ser feito de três maneiras:
+
+### 1. Pela Interface Web (Recomendado)
+Após iniciar o aplicativo com `python main.py` e acessar o endereço local no navegador, navegue até a seção de **Configurações**. Lá você poderá colar sua chave da Groq/Gemini e inserir seus cookies do HoYoLAB com facilidade. Os dados são salvos localmente de forma automática.
+
+### 2. Manualmente via Arquivos na Raiz
+Você pode criar ou editar os arquivos JSON diretamente na raiz do projeto:
+- **`config.json`**: Contém as chaves de API dos modelos de IA. Exemplo de estrutura:
+  ```json
+  {
+      "groq_api_key": "SUA_CHAVE_GROQ_AQUI",
+      "gemini_api_key": "SUA_CHAVE_GEMINI_AQUI"
+  }
+  ```
+- **`cookies.json`**: Contém seus cookies da sessão HoYoLAB salvos em formato de dicionário JSON.
+
+### 3. Variáveis de Ambiente
+Caso prefira não salvar a chave de API em arquivos locais, você pode exportar a variável de ambiente `GROQ_API_KEY` diretamente no seu terminal antes de iniciar a aplicação:
+- **Windows (PowerShell):** `$env:GROQ_API_KEY="gsk_..."`
+- **Windows (CMD):** `set GROQ_API_KEY=gsk_...`
+- **Linux / macOS:** `export GROQ_API_KEY="gsk_..."`
+
+Para obter mais detalhes sobre como gerar suas chaves e proteger seus tokens de sessão, consulte o arquivo [SECURITY.md](file:///c:/Users/07049770108/Documents/hoyo-projetos/SECURITY.md).
 
 ---
 
 ## 🔒 Segurança e Privacidade
-Todos os cookies (`cookies.json`), chaves de API (`config.json`) e arquivos markdown gerados são armazenados **exclusivamente no seu computador**. O app é 100% user-level e não requer privilégios de Administrador no Windows.
+
+Todos os cookies (`cookies.json`), chaves de API (`config.json`) e arquivos markdown gerados são armazenados **exclusivamente no seu computador**. O app é 100% user-level e não requer privilégios de Administrador no Windows. Ambos os arquivos `config.json` e `cookies.json` estão inclusos por padrão no arquivo [.gitignore](file:///c:/Users/07049770108/Documents/hoyo-projetos/.gitignore) para garantir que eles nunca sejam commitados acidentalmente.
+
