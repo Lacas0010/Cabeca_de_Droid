@@ -6,6 +6,35 @@ import asyncio
 import genshin
 import endgame_extractor
 
+# Mapeamento de IDs de costumes (skins) para os nomes correspondentes de imagens de rosto no Enka.Network
+GENSHIN_SKIN_MAP = {
+    200201: "UI_AvatarIcon_AyakaCostumeFruhling",
+    200301: "UI_AvatarIcon_QinCostumeSea",
+    200302: "UI_AvatarIcon_QinCostumeWic",
+    200601: "UI_AvatarIcon_LisaCostumeStudentin",
+    201401: "UI_AvatarIcon_BarbaraCostumeSummertime",
+    201501: "UI_AvatarIcon_KaeyaCostumeDancer",
+    201601: "UI_AvatarIcon_DilucCostumeFlamme",
+    202101: "UI_AvatarIcon_AmborCostumeWic",
+    202301: "UI_AvatarIcon_XianglingCostumeWinter",
+    202501: "UI_AvatarIcon_XingqiuCostumeBamboo",
+    202701: "UI_AvatarIcon_NingguangCostumeFloral",
+    202901: "UI_AvatarIcon_KleeCostumeWitch",
+    203101: "UI_AvatarIcon_FischlCostumeHighness",
+    203201: "UI_AvatarIcon_BennettCostumeSummer",
+    203701: "UI_AvatarIcon_GanyuCostumeYu",
+    204101: "UI_AvatarIcon_MonaCostumeWic",
+    204201: "UI_AvatarIcon_KeqingCostumeFeather",
+    204501: "UI_AvatarIcon_RosariaCostumeWic",
+    204601: "UI_AvatarIcon_HutaoCostumeWinter",
+    206001: "UI_AvatarIcon_YelanCostumeSummer",
+    206101: "UI_AvatarIcon_MomokaCostumeErrantry",
+    206301: "UI_AvatarIcon_ShenheCostumeDai",
+    207001: "UI_AvatarIcon_NilouCostumeFairy",
+    210701: "UI_AvatarIcon_CitlaliCostumeXia",
+    212301: "UI_AvatarIcon_DurinCostumeWic"
+}
+
 # Dicionários de mapeamento para traduzir Elementos e Caminhos para Português em HSR
 ELEMENT_MAP = {
     "Ice": "Gelo",
@@ -570,13 +599,19 @@ class GenshinExtractor(BaseExtractor):
                             "sub": ", ".join(subs) if subs else "Sem substatus"
                         })
                         
+                char_icon = getattr(char, "icon", "")
+                if hasattr(char, "costumes") and char.costumes:
+                    costume_id = char.costumes[0].id
+                    if costume_id in GENSHIN_SKIN_MAP:
+                        char_icon = f"https://enka.network/ui/{GENSHIN_SKIN_MAP[costume_id]}.png"
+                        
                 char_json_list.append({
                     "name": char.name,
                     "level": char.level,
                     "rarity": char.rarity,
                     "rank_str": f"C{char.constellation}",
                     "element": getattr(char, "element", "Anemo"),
-                    "icon": getattr(char, "icon", ""),
+                    "icon": char_icon,
                     "weapon": w_info,
                     "relics": artifacts_json
                 })
@@ -829,6 +864,8 @@ class ZZZExtractor(BaseExtractor):
                             "sub": ", ".join(subs) if subs else "Sem substatus"
                         })
                 icon_url = getattr(agent, "square_icon", getattr(agent, "rectangle_icon", getattr(agent, "icon", "")))
+                if hasattr(agent, "costumes") and agent.costumes:
+                    icon_url = agent.costumes[0].icon or icon_url
                 rarity_num = 5 if str(agent.rarity).upper() in ["S", "5"] else 4
                 char_json_list.append({
                     "name": agent.name,
