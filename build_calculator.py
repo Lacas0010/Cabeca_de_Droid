@@ -327,6 +327,8 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
     """
     Busca no arquivo meta_data.json a prioridade de substatus diretamente pelo char_id (chave primária)
     e converte em pesos (0.0 a 1.0).
+    Aplica forgiveness inteligente: atribui peso parcial (50%) aos atributos Flat correspondentes
+    a atributos % recomendados (ex: hp_pct -> hp_flat com 50% do peso de hp_pct).
     """
     game_id = game_id.lower().strip()
     meta_db = get_meta_data(game_id)
@@ -342,10 +344,19 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
                 weight_val = scale[i] if i < len(scale) else 0.30
                 weights[norm_name] = weight_val
                 
+            # Forgiveness para Críticos (Crit Rate <-> Crit Dmg)
             if "crit_rate" in weights and "crit_dmg" not in weights:
-                weights["crit_dmg"] = weights["crit_rate"] * 0.85
+                weights["crit_dmg"] = round(weights["crit_rate"] * 0.85, 3)
             elif "crit_dmg" in weights and "crit_rate" not in weights:
-                weights["crit_rate"] = weights["crit_dmg"] * 0.85
+                weights["crit_rate"] = round(weights["crit_dmg"] * 0.85, 3)
+                
+            # Forgiveness inteligente para atributos Flat (50% do peso da versão % correspondente)
+            if "hp_pct" in weights and "hp_flat" not in weights:
+                weights["hp_flat"] = round(weights["hp_pct"] * 0.5, 3)
+            if "atk_pct" in weights and "atk_flat" not in weights:
+                weights["atk_flat"] = round(weights["atk_pct"] * 0.5, 3)
+            if "def_pct" in weights and "def_flat" not in weights:
+                weights["def_flat"] = round(weights["def_pct"] * 0.5, 3)
                 
             return weights
 
@@ -353,10 +364,14 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
         "crit_rate": 1.0,
         "crit_dmg": 1.0,
         "atk_pct": 0.6,
+        "hp_pct": 0.6,
         "spd": 0.6,
         "break_effect": 0.5,
         "em": 0.5,
-        "er": 0.5
+        "er": 0.5,
+        "hp_flat": 0.3,
+        "atk_flat": 0.3,
+        "def_flat": 0.2
     }
 
 # ==========================================
