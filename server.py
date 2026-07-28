@@ -284,24 +284,24 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                     log_game(game_id, f"Falha ao obter meta ZZZ: {meta_err}", "ERROR")
             elif game_id == "genshin":
                 try:
-                    log_game(game_id, "Coletando meta de Genshin do Game8...", "INFO", progresso=0.90)
-                    from scraper_genshin_meta import GenshinMetaScraper
-                    meta_scraper = GenshinMetaScraper(output_path="genshin/meta_kqm_genshin.md")
+                    log_game(game_id, "Coletando meta e builds de Genshin do Game8...", "INFO", progresso=0.90)
+                    from scraper_game8 import run_genshin_game8_builds
                     
-                    def genshin_meta_callback(msg, level="INFO"):
-                        log_game(game_id, msg, level, progresso=0.95)
+                    def genshin_meta_callback(msg, level="INFO", prog=None):
+                        p_val = 0.90 + 0.08 * (prog if prog is not None else 0.5)
+                        log_game(game_id, msg, level, progresso=p_val)
                         
-                    meta_scraper.run_full_scrape(logger_cb=genshin_meta_callback)
-                    log_game(game_id, "Meta de Genshin salvo com sucesso!", "SUCCESS", progresso=0.98)
+                    run_genshin_game8_builds(logger_cb=genshin_meta_callback)
+                    log_game(game_id, "Meta e builds de Genshin do Game8 salvos com sucesso!", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
                     log_game(game_id, f"Falha ao obter meta Genshin: {meta_err}", "ERROR")
 
-        # Regenera a base estruturada meta_data.json com os guias recém-baixados
+        # Regenera a base estruturada meta_data_{game_id}.json com os guias recém-baixados
         try:
             from build_calculator import generate_meta_json_from_markdown
             generate_meta_json_from_markdown(game_id)
-            log_game(game_id, f"Banco de metadados meta_data.json de {game_id.upper()} reconstruído com sucesso!", "INFO", progresso=0.99)
+            log_game(game_id, f"Banco de metadados meta_data_{game_id}.json de {game_id.upper()} reconstruído com sucesso!", "INFO", progresso=0.99)
         except Exception as json_err:
             log_game(game_id, f"Aviso ao atualizar cache JSON de metadados: {json_err}", "WARN")
             
@@ -427,10 +427,11 @@ async def get_roster(game_id: str):
     if data:
         # Pondera e calcula as notas de cada relíquia do roster
         for char in data:
+            char_id_val = str(char.get("id") or char.get("character_id") or "")
             for relic in char.get("relics", []):
                 grade, score = score_relic(
                     game_id=game_id,
-                    character_name=char.get("name", ""),
+                    char_id=char_id_val,
                     slot=str(relic.get("slot", "")),
                     main_stat=relic.get("main", ""),
                     substats_str=relic.get("sub", "")
@@ -1376,14 +1377,14 @@ async def calculate_materials(req: MaterialsCalculateRequest):
         raise HTTPException(status_code=400, detail="Erro ao realizar o cálculo de ascensão.")
     return res
 
-@app.post("/api/evaluate-stats/{game_id}/{char_name}")
-async def evaluate_character_stats(game_id: str, char_name: str, final_stats: Dict[str, str]):
+@app.post("/api/evaluate-stats/{game_id}/{char_id}")
+async def evaluate_character_stats(game_id: str, char_id: str, final_stats: Dict[str, str]):
     """Compara os status consolidados reais do personagem contra os benchmarks do metagame."""
     game_id = game_id.lower().strip()
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido.")
     from build_calculator import evaluate_general_stats
-    results = evaluate_general_stats(game_id, char_name, final_stats)
+    results = evaluate_general_stats(game_id, str(char_id), final_stats)
     return results
 
 # ==========================================

@@ -344,6 +344,7 @@ class HSRExtractor(BaseExtractor):
                     })
                     
                 char_json_list.append({
+                    "id": str(char.id),
                     "name": char.name,
                     "level": char.level,
                     "rarity": char.rarity,
@@ -375,9 +376,11 @@ class HSRExtractor(BaseExtractor):
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
+                # NOTA: O arquivo database.py e a tabela SQLite precisarão ser atualizados para receber a nova coluna char_id
                 database.save_character(
                     uid=uid,
                     game_id="hsr",
+                    char_id=str(c["id"]),
                     name=c["name"],
                     level=c["level"],
                     rarity=c["rarity"],
@@ -606,6 +609,7 @@ class GenshinExtractor(BaseExtractor):
                         char_icon = f"https://enka.network/ui/{GENSHIN_SKIN_MAP[costume_id]}.png"
                         
                 char_json_list.append({
+                    "id": str(char.id),
                     "name": char.name,
                     "level": char.level,
                     "rarity": char.rarity,
@@ -637,9 +641,11 @@ class GenshinExtractor(BaseExtractor):
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
+                # NOTA: O arquivo database.py e a tabela SQLite precisarão ser atualizados para receber a nova coluna char_id
                 database.save_character(
                     uid=uid,
                     game_id="genshin",
+                    char_id=str(c["id"]),
                     name=c["name"],
                     level=c["level"],
                     rarity=c["rarity"],
@@ -868,6 +874,7 @@ class ZZZExtractor(BaseExtractor):
                     icon_url = agent.costumes[0].icon or icon_url
                 rarity_num = 5 if str(agent.rarity).upper() in ["S", "5"] else 4
                 char_json_list.append({
+                    "id": str(agent.id),
                     "name": agent.name,
                     "level": agent.level,
                     "rarity": rarity_num,
@@ -899,9 +906,11 @@ class ZZZExtractor(BaseExtractor):
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
+                # NOTA: O arquivo database.py e a tabela SQLite precisarão ser atualizados para receber a nova coluna char_id
                 database.save_character(
                     uid=uid,
                     game_id="zzz",
+                    char_id=str(c["id"]),
                     name=c["name"],
                     level=c["level"],
                     rarity=c["rarity"],

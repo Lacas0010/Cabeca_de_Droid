@@ -37,9 +37,10 @@ O **Cabeça de Droid** opera como um ecossistema local híbrido composto por tr�
 * **API HoYoLAB (Python):** Utiliza a biblioteca `genshin.py` para consultar as APIs oficiais do HoYoLAB a partir dos cookies do usuário. Ele extrai informações do perfil ativo, lista de personagens, equipamentos, substatus de artefatos/discos/relíquias e estatísticas de progresso nos modos endgame (Abismo Espiral, Salão Esquecido/Pura Ficção/Apocalipse Sombrio e Defesa Shiyu).
 * **Web Scraping Dinâmico:** Raspadores dedicados em Python vasculham guias meta e tier lists atualizadas (como *Prydwen* e *KeqingMains*), salvando esses benchmarks ideais localmente.
 
-### 2. Armazenamento e Tradução Local
-* **Banco SQLite (`hoyo_app.db`):** Os dados brutos das contas e builds são salvos localmente em um banco SQLite relacional, permitindo velocidade instantânea no carregamento e persistência das contas sincronizadas.
-* **Documentos Markdown de Cache:** O roster estruturado e as builds completas de cada jogo são exportados em arquivos markdown legíveis dentro de diretórios correspondentes (`/genshin`, `/hsr`, `/zzz`), servindo como cache.
+### 2. Armazenamento, Metadados Indexados por ID e Tradução Local
+* **Banco SQLite (`hoyo_app.db`):** Os dados brutos das contas e builds são salvos localmente em um banco SQLite relacional com suporte a `char_id`, permitindo velocidade instantânea no carregamento e persistência das contas sincronizadas.
+* **Arquivos Meta Estruturados por ID (`meta_data_<jogo>.json`):** Arquivos JSON onde a chave primária de cada personagem é o seu **Character ID numérico oficial** (ex: `"1310"` para Firefly, `"10000047"` para Kazuha). Em Honkai: Star Rail e Zenless Zone Zero, estes arquivos são gerados a partir do parse dos guias locais. Em Genshin Impact, o script `game8_scraper.py` realiza a extração automatizada via Game8, garantindo 100% de precisão nos main stats e substats.
+* **Documentos Markdown de Cache:** O roster estruturado e os guias analíticos de cada jogo são exportados em arquivos markdown dentro de diretórios correspondentes (`/genshin`, `/hsr`, `/zzz`), servindo como contexto RAG para os LLMs.
 * **Dicionário de Tradução (`traducoes.json`):** Mapeia de forma extremamente veloz os termos de atributos, armas e artefatos de Inglês para Português (PT-BR), fornecendo uma interface localizada uniforme.
 
 ### 3. Assistente de Chat Inteligente (RAG Local)
@@ -52,9 +53,9 @@ O **Cabeça de Droid** opera como um ecossistema local híbrido composto por tr�
 
 O **Cabeça de Droid** possui mecanismos matemáticos locais integrados para ajudar o jogador a gerenciar recursos e otimizar builds:
 
-### 1. Calculadora de Pontuação de Relíquias (Relic / Disc Scorer)
-O sistema abandona arquétipos globais estáticos e utiliza um motor matemático dinâmico baseado em:
-* **Matriz de Pesos Dinâmicos:** A função `extract_weights_from_guide` analisa o arquivo markdown de guia local do personagem (extraído de Prydwen, KQM ou Game8) e infere os substatus recomendados da seção de prioridades (ex: `SPD > Break Effect% > ATK%`), atribuindo pesos decrescentes de `0.0` a `1.0` de forma única e específica para o personagem.
+### 1. Calculadora de Pontuação de Relíquias (Relic / Disc Scorer Agnostic por ID)
+O sistema opera de forma 100% agnóstica de idioma usando a chave primária `char_id`:
+* **Matriz de Pesos Dinâmicos por ID:** A função `extract_weights_from_guide` busca diretamente no cache `meta_data_<jogo>.json` pela chave do `char_id` (ex: `"1310"`) e recupera a prioridade sanitizada pela whitelist (`VALID_SUBSTATS`), atribuindo pesos decrescentes de `0.0` a `1.0`.
 * **Cálculo por Roll Value (RV):** Em vez de avaliar valores brutos, o motor calcula o RV de cada substatus dividindo seu valor real pelo **valor máximo de um roll perfeito de 5★ / S-Rank** para aquele jogo específico (Genshin, HSR ou ZZZ):
   $$RV = \frac{\text{Valor Real}}{\text{Valor Máximo do Roll}}$$
   O score final da peça é a soma ponderada de todos os RVs dos substatus:
@@ -79,7 +80,7 @@ O cálculo avalia a diferença acumulada e retorna o checklist detalhado de:
 - **Interface Gráfica (Frontend):** HTML5, CSS3 (Vanilla) com ícones da biblioteca [Font Awesome](https://fontawesome.com/) e JavaScript Puro (Vanilla) - *Sem dependências de Node.js ou compilações externas*.
 - **Modelos de IA e RAG:** Integração oficial com a `groq` (Llama 3.3 70B Versatile) e suporte para chaves Gemini via fallback (`gemini_api_key`) local.
 - **API HoYoLAB:** [genshin.py](https://github.com/seriaati/genshin.py) com suporte a Endgames estendidos (3 times no MoC / Shiyu / Abismo).
-- **Coleta de Dados:** BeautifulSoup4 & Requests HTTP resilientes com estratégias de retry automático.
+- **Coleta de Dados:** BeautifulSoup4, Playwright Async API & Requests HTTP com estratégias de retry automático.
 - **Autenticação:** [Playwright](https://playwright.dev/) para captura automatizada e segura de cookies HoYoLAB.
 - **Compilação do Executável:** [PyInstaller](https://pyinstaller.org/) configurado para empacotamento local no Windows.
 
@@ -90,11 +91,13 @@ O cálculo avalia a diferença acumulada e retorna o checklist detalhado de:
 
 - `main.py`: Ponto de entrada unificado que sobe o servidor FastAPI e abre o navegador automaticamente.
 - `server.py`: Servidor FastAPI com as rotas estáticas e APIs REST de sincronização, chat RAG e configurações.
+- `build_calculator.py`: Motor matemático de scoring (RV, Main Stat Forgiveness), extração de pesos por ID e fonte mestre de IDs.
+- `game8_scraper.py` & `scraper_game8.py`: Raspador automatizado de builds e metadados de Genshin Impact via Game8.
 - `static/`: Diretório do frontend contendo `index.html`, `style.css` e `app.js`.
 - `assets/`: Imagens estáticas locais (ícones dos jogos, banners) e pastas onde são salvos os downloads em cache.
 - `groq_rag.py`: Módulo RAG que consolida e indexa dinamicamente arquivos Markdown locais como contexto para a IA da Groq.
 - `auth.py`: Autenticação via navegador do Playwright para capturar os cookies oficiais da sua conta HoYoLAB.
-- `extractor.py` & `endgame_extractor.py`: Extratores de Roster e Endgames da API do HoYoLAB.
+- `extractor.py` & `endgame_extractor.py`: Extratores de Roster e Endgames da API do HoYoLAB com suporte a `char_id`.
 - `scraper_kqm.py`, `scraper_genshin_meta.py`: Módulos de sincronização de guias e meta para Genshin Impact (KQM e Game8).
 - `scraper_prydwen.py`, `scraper_meta.py`: Módulos de sincronização para Honkai: Star Rail (Prydwen).
 - `scraper_zzz.py`: Módulos de sincronização para Zenless Zone Zero (Prydwen).

@@ -62,10 +62,12 @@ moc_payload_dump.txt
 .env.local
 .env.*
 
-# Python check/test scripts
+# Python check/test scripts and scratch
 check_*.py
 test_*.py
 scratch/
+game8_temp.json
+*.tmp
 
 # PyInstaller build outputs and generated spec files
 dist/
