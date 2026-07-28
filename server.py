@@ -425,10 +425,12 @@ async def get_roster(game_id: str):
                 raise HTTPException(status_code=500, detail=f"Erro ao carregar banco de dados local: {e}")
                 
     if data:
-        # Pondera e calcula as notas de cada relíquia do roster
+        # Pondera e calcula as notas de cada relíquia do roster e a nota geral da build
         for char in data:
             char_id_val = str(char.get("id") or char.get("character_id") or "")
-            for relic in char.get("relics", []):
+            relic_scores = []
+            relics = char.get("relics", [])
+            for relic in relics:
                 grade, score = score_relic(
                     game_id=game_id,
                     char_id=char_id_val,
@@ -438,6 +440,23 @@ async def get_roster(game_id: str):
                 )
                 relic["grade"] = grade
                 relic["score"] = score
+                relic_scores.append(score)
+            
+            if relic_scores:
+                avg_score = round(sum(relic_scores) / len(relic_scores), 1)
+            else:
+                avg_score = 0.0
+
+            if avg_score >= 90.0: overall_grade = "SSS"
+            elif avg_score >= 75.0: overall_grade = "SS"
+            elif avg_score >= 60.0: overall_grade = "S"
+            elif avg_score >= 45.0: overall_grade = "A"
+            elif avg_score >= 30.0: overall_grade = "B"
+            elif avg_score >= 15.0: overall_grade = "C"
+            else: overall_grade = "D"
+
+            char["overall_score"] = avg_score
+            char["overall_grade"] = overall_grade
         return data
         
     return []

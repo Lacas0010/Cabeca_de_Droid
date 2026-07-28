@@ -570,27 +570,35 @@
                     <p class="config-desc" style="margin-bottom: 20px;">Este aplicativo foi criado para ajudar você a analisar suas contas da HoYoverse utilizando Inteligência Artificial e Cálculo Matemático de Builds por ID. Ele puxa automaticamente todos os seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e cruza com dados de Metagame.</p>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;">1. Faça o Login na HoYoLAB</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Vá até a aba de <strong>Configurações</strong> no menu esquerdo e clique em <strong>Login Automático (Navegador)</strong> ou insira manualmente seus cookies de sessão. O app vai abrir o site da HoYoLAB em segundo plano para capturar as credenciais necessárias (<code>ltuid_v2</code> e <code>ltoken_v2</code>) e salvá-las localmente para ter acesso ao seu histórico.</p>
+                        <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;">1. Faça o Login Automático na HoYoLAB</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Vá até a aba de <strong>Configurações</strong> no menu esquerdo e clique em <strong>Login Automático (Navegador)</strong>. O app usará o Playwright para abrir uma janela segura em segundo plano, capturar seus cookies de sessão (<code>ltuid_v2</code> e <code>ltoken_v2</code>) e salvá-los localmente no computador.</p>
                     </div>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #3b82f6; font-size: 15px; margin-bottom: 4px;">2. Selecione o Jogo e Sincronize seus Dados</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas <strong>Zenless Zone Zero</strong>, <strong>Genshin Impact</strong> ou <strong>Honkai: Star Rail</strong>, selecione o que deseja atualizar:</p>
+                        <h3 style="color: #3b82f6; font-size: 15px; margin-bottom: 4px;">2. Selecione o Jogo e Sincronize em Background</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas <strong>Zenless Zone Zero</strong>, <strong>Genshin Impact</strong> ou <strong>Honkai: Star Rail</strong>, selecione os módulos e clique em Sincronizar:</p>
                         <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
-                            <li style="margin-bottom: 4px;"><strong>Roster</strong>: Busca seus personagens obtidos, níveis, constelações/eidolons, preservando seus IDs numéricos únicos e extraindo recordes recentes de Endgame (Shiyu, Abismo, MoC).</li>
-                            <li style="margin-bottom: 4px;"><strong>Guias</strong> e <strong>Metagame</strong>: Para HSR e ZZZ, faz a raspagem automática via Prydwen. Para Genshin Impact, utiliza o pipeline automatizado via Game8 com sanitização estrita de substats por whitelist, gerando o cache por ID (<code>meta_data_genshin.json</code>).</li>
+                            <li style="margin-bottom: 4px;"><strong>Roster</strong>: Busca seus personagens obtidos, níveis, constelações/eidolons (vinculados por IDs numéricos universais) e recordes recentes de Endgame (Shiyu, Abismo, MoC).</li>
+                            <li style="margin-bottom: 4px;"><strong>Guias e Metagame</strong>: Para HSR e ZZZ, extrai os dados via Prydwen. Para Genshin Impact, o sistema baixa automaticamente as builds estruturadas do **Game8** em background para alimentar o motor matemático e baixa em paralelo os guias textuais do **KeqingMains (KQM)** para o contexto da IA.</li>
                         </ul>
                     </div>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;">3. Inspetor de Builds & Avaliador de Relíquias (RV + Main Stat Forgiveness)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Ao clicar em qualquer personagem da galeria, a sidebar de inspeção exibe a build atual do personagem, seus atributos finais e uma avaliação matemática por **Roll Value (RV)** com compensação de Main Stat. A aba **Comparador Meta** exibe o confronto direto lado a lado entre sua build e o ideal raspado do metagame.</p>
+                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;">3. Inspetor de Builds & Sistema de Notas (SSS a D)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 8px;">Ao clicar em qualquer personagem na galeria, o painel exibe a **Nota Geral da Build** (média das peças equipadas) e a nota individual de cada relíquia/artefato calculada via Roll Value (RV):</p>
+                        <ul class="section-desc" style="line-height: 1.5; font-size: 12px; margin-left: 20px;">
+                            <li><strong style="color: #f59e0b;">SSS (90%+):</strong> Build/Peça perfeita com rolls máximos nos atributos recomendados.</li>
+                            <li><strong style="color: #ec4899;">SS (75% a 89%):</strong> Excelente qualidade com rolls altamente otimizados.</li>
+                            <li><strong style="color: #f59e0b;">S (60% a 74%):</strong> Muito boa e 100% pronta para os desafios de Endgame.</li>
+                            <li><strong style="color: #8b5cf6;">A (45% a 59%):</strong> Boa, aproveitando a maioria dos substatus.</li>
+                            <li><strong style="color: #3b82f6;">B (30% a 44%):</strong> Mediana, recomendada para transição de conta.</li>
+                            <li><strong style="color: #6b7280;">C / D (&lt; 30%):</strong> Baixo aproveitamento de substatus ou peça a substituir.</li>
+                        </ul>
                     </div>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #8b5cf6; font-size: 15px; margin-bottom: 4px;">4. Converse com a Inteligência Artificial (Chat RAG Local)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Chat IA Meta</strong>, você pode bater um papo em tempo real com um LLM configurado localmente. A IA lerá seus arquivos de roster e metagame consolidados e poderá responder perguntas específicas sobre o que melhorar nas suas builds ou composições de times. Para isso funcionar, basta obter uma chave de API gratuita no console do Groq e salvá-la em <strong>Configurações</strong>.</p>
+                        <h3 style="color: #8b5cf6; font-size: 15px; margin-bottom: 4px;">4. Converse com o Coach IA (Chat RAG Local)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Chat IA Meta</strong>, converse em tempo real com o assistente local (Groq / Llama 3.3). A IA consultará automaticamente o seu Roster e os guias locais sincronizados para dar conselhos personalizados de comps, rotações e substitutos de armas.</p>
                     </div>
                     
                     <div class="config-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">

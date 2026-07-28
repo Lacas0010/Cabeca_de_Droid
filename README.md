@@ -35,16 +35,18 @@ O **Cabeça de Droid** opera como um ecossistema local híbrido composto por tr�
 
 ### 1. Coleta e Sincronização de Dados
 * **API HoYoLAB (Python):** Utiliza a biblioteca `genshin.py` para consultar as APIs oficiais do HoYoLAB a partir dos cookies do usuário. Ele extrai informações do perfil ativo, lista de personagens, equipamentos, substatus de artefatos/discos/relíquias e estatísticas de progresso nos modos endgame (Abismo Espiral, Salão Esquecido/Pura Ficção/Apocalipse Sombrio e Defesa Shiyu).
-* **Web Scraping Dinâmico:** Raspadores dedicados em Python vasculham guias meta e tier lists atualizadas (como *Prydwen* e *KeqingMains*), salvando esses benchmarks ideais localmente.
+* **Múltiplos Scrapers de Meta:**
+  * **Honkai: Star Rail e Zenless Zone Zero:** Utilizam o *Prydwen Scraper* para extrair guias analíticos, conjuntos recomendados e prioridades de atributos.
+  * **Genshin Impact:** O metagame estruturado de atributos e tabelas de slots é extraído automaticamente do **Game8** via `game8_scraper.py` (usando Playwright e BeautifulSoup), garantindo 100% de consistência nos dados numéricos. Os guias extensos do **KeqingMains (KQM)** são sincronizados em paralelo e utilizados exclusivamente para alimentar o contexto RAG da inteligência artificial.
 
-### 2. Armazenamento, Metadados Indexados por ID e Tradução Local
+### 2. Identificação Universal por ID e Armazenamento Local
+* **Identificação Universal por Character ID (`fetch_master_id_list`):** O backend é 100% agnóstico de idioma. O sistema opera exclusivamente usando **Character IDs numéricos oficiais** (ex: `"1310"` para Firefly, `"10000070"` para Nilou) como fonte mestre de verdade. Isso previne falhas de localização ou inconsistências de tradução entre português e inglês.
 * **Banco SQLite (`hoyo_app.db`):** Os dados brutos das contas e builds são salvos localmente em um banco SQLite relacional com suporte a `char_id`, permitindo velocidade instantânea no carregamento e persistência das contas sincronizadas.
-* **Arquivos Meta Estruturados por ID (`meta_data_<jogo>.json`):** Arquivos JSON onde a chave primária de cada personagem é o seu **Character ID numérico oficial** (ex: `"1310"` para Firefly, `"10000047"` para Kazuha). Em Honkai: Star Rail e Zenless Zone Zero, estes arquivos são gerados a partir do parse dos guias locais. Em Genshin Impact, o script `game8_scraper.py` realiza a extração automatizada via Game8, garantindo 100% de precisão nos main stats e substats.
+* **Arquivos Meta Estruturados por ID (`meta_data_<jogo>.json`):** Caches JSON por jogo onde cada entrada é indexada pelo `char_id` e contém os atributos principais e a prioridade de substatus sanitizada por uma whitelist estrita (`VALID_SUBSTATS`).
 * **Documentos Markdown de Cache:** O roster estruturado e os guias analíticos de cada jogo são exportados em arquivos markdown dentro de diretórios correspondentes (`/genshin`, `/hsr`, `/zzz`), servindo como contexto RAG para os LLMs.
-* **Dicionário de Tradução (`traducoes.json`):** Mapeia de forma extremamente veloz os termos de atributos, armas e artefatos de Inglês para Português (PT-BR), fornecendo uma interface localizada uniforme.
 
 ### 3. Assistente de Chat Inteligente (RAG Local)
-* Quando você faz uma pergunta na aba de Chat, a inteligência local entra em ação usando a classe `GroqRAG` (`groq_rag.py`):
+* Quando você faz uma pergunta na aba de Chat, a inteligência local entra em action usando a classe `GroqRAG` (`groq_rag.py`):
   * **Interseção Inteligente:** O sistema varre sua pergunta em busca de nomes de personagens ou termos relacionados a builds e times.
   * **Ingestão Otimizada:** Ele lê os arquivos Markdown locais do seu roster, filtrando apenas personagens ativos (nível 70+) e carregando apenas o guia específico (`/guias/<personagem>.md`) e a build do personagem que você perguntou. Isso otimiza drasticamente os limites de tokens da API da Groq/Gemini.
   * **Prompt Enriquecido:** A pergunta do usuário é encapsulada em um superprompt contendo a sua build real + o benchmark ideal do metagame + a tier list. O LLM (Llama 3.3 ou Gemini) responde então com um nível de precisão cirúrgico focado na sua conta de jogo real.
@@ -53,16 +55,21 @@ O **Cabeça de Droid** opera como um ecossistema local híbrido composto por tr�
 
 O **Cabeça de Droid** possui mecanismos matemáticos locais integrados para ajudar o jogador a gerenciar recursos e otimizar builds:
 
-### 1. Calculadora de Pontuação de Relíquias (Relic / Disc Scorer Agnostic por ID)
-O sistema opera de forma 100% agnóstica de idioma usando a chave primária `char_id`:
-* **Matriz de Pesos Dinâmicos por ID:** A função `extract_weights_from_guide` busca diretamente no cache `meta_data_<jogo>.json` pela chave do `char_id` (ex: `"1310"`) e recupera a prioridade sanitizada pela whitelist (`VALID_SUBSTATS`), atribuindo pesos decrescentes de `0.0` a `1.0`.
-* **Cálculo por Roll Value (RV):** Em vez de avaliar valores brutos, o motor calcula o RV de cada substatus dividindo seu valor real pelo **valor máximo de um roll perfeito de 5★ / S-Rank** para aquele jogo específico (Genshin, HSR ou ZZZ):
+### 1. Calculadora de Pontuação de Relíquias (Motor RV System com Forgiveness)
+O sistema avalia cada relíquia/artefato/disco individualmente e calcula a nota geral da build:
+* **Cálculo por Roll Value (RV):** O motor calcula o RV de cada substatus dividindo seu valor real pelo **valor máximo de um roll perfeito de 5★ / S-Rank** para aquele jogo específico (Genshin, HSR ou ZZZ):
   $$RV = \frac{\text{Valor Real}}{\text{Valor Máximo do Roll}}$$
-  O score final da peça é a soma ponderada de todos os RVs dos substatus:
+  O score da peça é a soma ponderada dos RVs dos substatus:
   $$\text{Score Real} = \sum (RV_i \times \text{Peso}_i)$$
-* **Main Stat Forgiveness (Compensação de Main Stat):** Uma relíquia não pode ter seu Main Stat repetido nos substatus. O motor compensa isso: se o Main Stat da peça for útil (peso > 0) e não for um slot de Main Stat fixo (como Flor/Pena no Genshin ou Cabeça/Mão no HSR), esse atributo é removido da lista de possíveis substatus ao calcular a pontuação máxima teórica da peça. O teto máximo (denominador) é reduzido de forma justa, garantindo notas excelentes para botas de velocidade ou cordas de break effect.
-
-As peças que atingem o grau máximo **SSS** (scores elevados de substatus perfeitos com $\ge 90\%$ do teto compensado) recebem um destaque visual pulsante na interface.
+* **Main Stat Forgiveness (Compensação de Main Stat):** Ao avaliar peças com Main Stat variável (como Botas, Tiara, Areia ou Copo), se o Main Stat for um dos atributos recomendados pelo guia, ele é removido da lista de substatus desejados para evitar penalizar injustamente peças que não podem rolar o próprio atributo principal nos substatus.
+* **Flat Stat Fallback / Partial Weight (Forgiveness de Atributos Flat):** Caso o guia recomende a versão percentual de um atributo (ex: `hp_pct`, `atk_pct`, `def_pct`), o motor atribui automaticamente um peso parcial (50% do peso do %) para a versão Flat correspondente (`hp_flat`, `atk_flat`, `def_flat`), garantindo que rolls residuais de Vida/Ataque/Defesa Flat sejam aproveitados.
+* **Nota Geral da Build (`overall_score` & `overall_grade`):** A média das pontuações das peças equipadas gera a nota final consolidada do personagem:
+  * **SSS**: $\ge 90.0\%$ (Build Perfeita / Destaque Pulsante na UI)
+  * **SS**: $\ge 75.0\%$ (Build Excelente)
+  * **S**: $\ge 60.0\%$ (Build Muito Boa)
+  * **A**: $\ge 45.0\%$ (Build Boa)
+  * **B**: $\ge 30.0\%$ (Build Mediana)
+  * **C / D**: $< 30.0\%$ (Build a Otimizar)
 
 ### 2. Calculadora de Materiais de Ascensão
 Integrada diretamente no painel de inspeção de personagens, ela estima a quantidade total de recursos necessários para elevar o nível de um personagem da sua conta até o nível de destino selecionado (ex: Nível 80 no HSR/ZZZ, Nível 90 no Genshin).

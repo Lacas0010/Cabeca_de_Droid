@@ -751,6 +751,23 @@ async function inspectCharacter(gameId, char) {
         const piecesList = document.getElementById("ins-relic-pieces");
         piecesList.innerHTML = "";
         
+        // Elemento visual no topo com a Nota Geral da Build
+        const overallGrade = (char.overall_grade || "D").toUpperCase();
+        const overallScore = char.overall_score !== undefined ? char.overall_score : 0.0;
+        const gradeClass = `badge-${overallGrade.toLowerCase()}`;
+        
+        const banner = document.createElement("div");
+        banner.className = "overall-build-banner";
+        banner.innerHTML = `
+            <div class="overall-build-title">
+                <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Nota Geral da Build
+            </div>
+            <div class="overall-badge ${gradeClass}">
+                ${overallGrade} (${overallScore} pts)
+            </div>
+        `;
+        piecesList.appendChild(banner);
+        
         // As peças do roster extraído via HoYoLAB local (contêm URLs originais dos ícones de cada peça!)
         const localRelics = char.relics || char.artifacts || char.discs || [];
         
