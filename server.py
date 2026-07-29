@@ -15,7 +15,7 @@ from typing import List, Optional, Dict
 
 # Importações dos módulos do projeto
 from auth import capturar_cookies_hoyolab
-from extractor import MultiGameExtractor
+from extractor import MultiGameExtractor, clean_relic_name
 from scraper_prydwen import PrydwenScraper
 from scraper_zzz import PrydwenZZZScraper
 from scraper_meta import PrydwenMetaScraper
@@ -431,6 +431,8 @@ async def get_roster(game_id: str):
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
             for relic in relics:
+                if "name" in relic:
+                    relic["name"] = clean_relic_name(relic["name"])
                 grade, score = score_relic(
                     game_id=game_id,
                     char_id=char_id_val,

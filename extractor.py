@@ -75,6 +75,38 @@ PATH_MAP = {
     "Elation": "Euforia"
 }
 
+def clean_relic_name(text: str) -> str:
+    """
+    Remove tags de variação de gênero (ex: {F#da Portadora}{M#do Portador})
+    retornando o nome limpo da relíquia/artefato/disco.
+
+    Exemplos:
+        'Capuz {F#da Portadora}{M#do Portador}' -> 'Capuz da Portadora'
+        'Manopla da Espada {F#da Portadora}{M#do Portador}' -> 'Manopla da Espada da Portadora'
+        'Botas Pioneiras {F#da Portadora}{M#do Portador}' -> 'Botas Pioneiras da Portadora'
+    """
+    if not text or not isinstance(text, str):
+        return "" if text is None else str(text)
+
+    def replace_gender_block(match):
+        block = match.group(0)
+        tags = re.findall(r'\{([fFmM])\s*#\s*([^}]*)\}', block)
+        if not tags:
+            return ""
+        for gender, content in tags:
+            if gender.upper() == 'F':
+                return content.strip()
+        return tags[0][1].strip()
+
+    cleaned = re.sub(
+        r'(\{[fFmM]\s*#\s*[^}]*\}\s*)+',
+        replace_gender_block,
+        text
+    )
+
+    return re.sub(r'\s+', ' ', cleaned).strip()
+
+
 class BaseExtractor:
     def __init__(self, cookies: dict):
         """
@@ -234,12 +266,12 @@ class HSRExtractor(BaseExtractor):
                 set_counts = {}
                 for r in relics_list:
                     # Tenta extrair o nome do conjunto amigável via mapeamento do HoYoWiki
-                    set_name = r.name  # Fallback
+                    set_name = clean_relic_name(r.name)  # Fallback
                     if hasattr(r, "wiki") and r.wiki:
                         match = re.search(r'/entry/(\d+)', r.wiki)
                         if match:
                             w_id = match.group(1)
-                            set_name = wiki_map.get(w_id, f"Conjunto {w_id}")
+                            set_name = clean_relic_name(wiki_map.get(w_id, f"Conjunto {w_id}"))
                     set_counts[set_name] = set_counts.get(set_name, 0) + 1
                 
                 set_strings = []
@@ -288,7 +320,7 @@ class HSRExtractor(BaseExtractor):
                         hsr_slot_map = {1: "Cabeça", 2: "Mãos", 3: "Corpo", 4: "Pés", 5: "Esfera Plana", 6: "Corda de Ligação"}
                         pos = getattr(relic, 'pos', '?')
                         pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
-                        lines.append(f"  • [{pos_name}] {relic.name}")
+                        lines.append(f"  • [{pos_name}] {clean_relic_name(relic.name)}")
                         lines.append(f"    - Principal: {main_stat}")
                         lines.append(f"    - Substatus: {substats_str}")
                         
@@ -336,7 +368,7 @@ class HSRExtractor(BaseExtractor):
                             s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
                             subs.append(f"{s_name}: {s_val}")
                     relics_json.append({
-                        "name": r.name,
+                        "name": clean_relic_name(r.name),
                         "icon": getattr(r, "icon", ""),
                         "slot": pos_name,
                         "main": main_stat,
@@ -546,7 +578,7 @@ class GenshinExtractor(BaseExtractor):
                         pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
                         if hasattr(pos, "name"): pos = pos.name # caso seja enum
                         pos_name = genshin_slot_map.get(str(pos), str(pos))
-                        lines.append(f"  • [{pos_name}] {art.name}")
+                        lines.append(f"  • [{pos_name}] {clean_relic_name(art.name)}")
                         lines.append(f"    - Principal: {main_stat}")
                         lines.append(f"    - Substatus: {substats_str}")
                         
@@ -595,7 +627,7 @@ class GenshinExtractor(BaseExtractor):
                                 s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
                                 subs.append(f"{s_name}: {s_val}")
                         artifacts_json.append({
-                            "name": art.name,
+                            "name": clean_relic_name(art.name),
                             "icon": getattr(art, "icon", ""),
                             "slot": pos_name,
                             "main": main_stat,
@@ -820,7 +852,7 @@ class ZZZExtractor(BaseExtractor):
                             substats_str = ", ".join(subs)
                         
                         pos = getattr(disc, 'position', getattr(disc, 'pos', '?'))
-                        lines.append(f"  • [Disco {pos}] {disc.name}")
+                        lines.append(f"  • [Disco {pos}] {clean_relic_name(disc.name)}")
                         lines.append(f"    - Principal: {main_stat}")
                         lines.append(f"    - Substatus: {substats_str}")
 
@@ -863,7 +895,7 @@ class ZZZExtractor(BaseExtractor):
                                 s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
                                 subs.append(f"{s_name}: {s_val}")
                         discs_json.append({
-                            "name": disc.name,
+                            "name": clean_relic_name(disc.name),
                             "icon": getattr(disc, "icon", ""),
                             "slot": pos_name,
                             "main": main_stat,
