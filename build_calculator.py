@@ -1,7 +1,40 @@
 import os
 import re
 import json
+import unicodedata
 from typing import Dict, List, Tuple, Optional
+
+def remove_accents(input_str: str) -> str:
+    """Remove acentos e diacríticos de uma string."""
+    if not input_str:
+        return ""
+    nfkd_form = unicodedata.normalize('NFKD', input_str)
+    return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+
+def normalize_slot_name(slot_str: str) -> str:
+    """Normaliza nomes de slots em português ou inglês para chaves padrão."""
+    s = remove_accents(slot_str.lower().strip())
+    
+    # 1. Slots numerados do ZZZ
+    for i in range(1, 7):
+        if f'disco {i}' in s or f'slot_{i}' in s or f'slot {i}' in s or f'disc {i}' in s or f'disco_{i}' in s or f'disc_{i}' in s or s == str(i):
+            return f'slot_{i}'
+
+    # 2. Ornamentos HSR (verificar antes de 'feet' para evitar que 'rope' dê match em 'pe')
+    if any(k in s for k in ['esfera', 'planar_sphere', 'sphere']): return 'planar_sphere'
+    if any(k in s for k in ['corda', 'link_rope', 'rope']): return 'link_rope'
+    
+    # 3. Peças Principais Genshin / HSR
+    if any(k in s for k in ['copo', 'calice', 'goblet']): return 'goblet'
+    if any(k in s for k in ['areia', 'relogio', 'sands']): return 'sands'
+    if any(k in s for k in ['tiara', 'coroa', 'circlet']): return 'circlet'
+    if any(k in s for k in ['flor', 'flower']): return 'flower'
+    if any(k in s for k in ['pena', 'plume', 'feather']): return 'plume'
+    if any(k in s for k in ['cabeca', 'head']): return 'head'
+    if any(k in s for k in ['mao', 'maos', 'hands']): return 'hands'
+    if any(k in s for k in ['corpo', 'body']): return 'body'
+    if any(k in s for k in ['bota', 'botas', 'feet']) or s in ['pe', 'pes', 'pés', 'pé']: return 'feet'
+    return s
 
 # ==========================================
 # FONTE MESTRE DE IDS DE PERSONAGENS
@@ -275,47 +308,61 @@ def get_meta_data(game_id: str) -> dict:
     return {}
 
 # ==========================================
-# DICIONÁRIO DE VALORES MÁXIMOS DE UM ÚNICO ROLL (5★ / S-Rank)
+# ESPECIFICAÇÃO DE ROLLS / PROCS DE SUBSTATUS POR JOGO
 # ==========================================
-MAX_ROLL_VALUES = {
+GAME_ROLL_SPECS = {
     "genshin": {
-        "crit_rate": 3.89,
-        "crit_dmg": 7.77,
-        "atk_pct": 5.83,
-        "hp_pct": 5.83,
-        "def_pct": 7.29,
-        "em": 23.31,
-        "er": 6.48,
-        "atk_flat": 19.45,
-        "hp_flat": 298.75,
-        "def_flat": 23.15
+        "max_possible_rolls": 9,
+        "stats": {
+            "crit_rate":  {"min": 2.72, "avg": 3.305, "max": 3.89},
+            "crit_dmg":   {"min": 5.44, "avg": 6.61,  "max": 7.77},
+            "atk_pct":    {"min": 4.08, "avg": 4.955, "max": 5.83},
+            "hp_pct":     {"min": 4.08, "avg": 4.955, "max": 5.83},
+            "def_pct":    {"min": 5.10, "avg": 6.195, "max": 7.29},
+            "em":         {"min": 16.32, "avg": 19.815, "max": 23.31},
+            "er":         {"min": 4.53, "avg": 5.505, "max": 6.48},
+            "atk_flat":   {"min": 13.62, "avg": 16.535, "max": 19.45},
+            "hp_flat":    {"min": 209.13, "avg": 253.94, "max": 298.75},
+            "def_flat":   {"min": 16.20, "avg": 19.675, "max": 23.15},
+        }
     },
     "hsr": {
-        "crit_rate": 3.24,
-        "crit_dmg": 6.48,
-        "atk_pct": 4.32,
-        "hp_pct": 4.32,
-        "def_pct": 5.40,
-        "break_effect": 6.48,
-        "spd": 2.60,
-        "atk_flat": 21.30,
-        "hp_flat": 42.30,
-        "def_flat": 21.30,
-        "ehr": 4.32,  # Effect Hit Rate
-        "res": 4.32   # Effect RES
+        "max_possible_rolls": 9,
+        "stats": {
+            "crit_rate":    {"min": 2.59, "avg": 2.91, "max": 3.24},
+            "crit_dmg":     {"min": 5.18, "avg": 5.83, "max": 6.48},
+            "atk_pct":      {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "hp_pct":       {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "def_pct":      {"min": 4.32, "avg": 4.86, "max": 5.40},
+            "break_effect": {"min": 5.18, "avg": 5.83, "max": 6.48},
+            "spd":          {"min": 2.00, "avg": 2.30, "max": 2.60},
+            "ehr":          {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "res":          {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "atk_flat":     {"min": 17.00, "avg": 19.15, "max": 21.30},
+            "hp_flat":      {"min": 33.80, "avg": 38.05, "max": 42.30},
+            "def_flat":     {"min": 17.00, "avg": 19.15, "max": 21.30},
+        }
     },
     "zzz": {
-        "crit_rate": 3.00,
-        "crit_dmg": 6.00,
-        "atk_pct": 3.00,
-        "hp_pct": 3.00,
-        "def_pct": 4.80,
-        "anomaly_prof": 9.00,
-        "pen_flat": 9.00,
-        "atk_flat": 15.00,
-        "hp_flat": 112.00,
-        "def_flat": 15.00
+        "max_possible_rolls": 9,
+        "stats": {
+            "crit_rate":    {"min": 2.40, "avg": 2.70, "max": 3.00},
+            "crit_dmg":     {"min": 4.80, "avg": 5.40, "max": 6.00},
+            "atk_pct":      {"min": 2.40, "avg": 2.70, "max": 3.00},
+            "hp_pct":       {"min": 2.40, "avg": 2.70, "max": 3.00},
+            "def_pct":      {"min": 3.84, "avg": 4.32, "max": 4.80},
+            "anomaly_prof": {"min": 7.20, "avg": 8.10, "max": 9.00},
+            "pen_flat":     {"min": 7.20, "avg": 8.10, "max": 9.00},
+            "atk_flat":     {"min": 12.00, "avg": 13.50, "max": 15.00},
+            "hp_flat":      {"min": 89.60, "avg": 100.80, "max": 112.00},
+            "def_flat":     {"min": 12.00, "avg": 13.50, "max": 15.00},
+        }
     }
+}
+
+MAX_ROLL_VALUES = {
+    g: {s: spec["max"] for s, spec in data["stats"].items()}
+    for g, data in GAME_ROLL_SPECS.items()
 }
 
 # ==========================================
@@ -323,17 +370,17 @@ MAX_ROLL_VALUES = {
 # ==========================================
 STAT_NAME_MAP = {
     # Taxa Crítica
-    "taxa crítica": "crit_rate", "taxa crit": "crit_rate", "crit rate": "crit_rate", "crit_rate": "crit_rate", "rate": "crit_rate", "taxa": "crit_rate",
+    "taxa crítica": "crit_rate", "taxa critica": "crit_rate", "taxa crit": "crit_rate", "crit rate": "crit_rate", "crit_rate": "crit_rate", "rate": "crit_rate", "taxa": "crit_rate",
     "chance de crit": "crit_rate", "chance de crit%": "crit_rate", "taxa de crit": "crit_rate", "taxa de crit%": "crit_rate",
-    "taxa crítica%": "crit_rate", "taxa crit%": "crit_rate", "chance de crt": "crit_rate", "chance de crt%": "crit_rate",
-    "chance de crítico": "crit_rate", "chance de crítico%": "crit_rate", "taxa de crítico": "crit_rate", "taxa de crítico%": "crit_rate",
+    "taxa crítica%": "crit_rate", "taxa critica%": "crit_rate", "taxa crit%": "crit_rate", "chance de crt": "crit_rate", "chance de crt%": "crit_rate",
+    "chance de crítico": "crit_rate", "chance de critico": "crit_rate", "chance de crítico%": "crit_rate", "chance de critico%": "crit_rate", "taxa de crítico": "crit_rate", "taxa de critico": "crit_rate", "taxa de crítico%": "crit_rate", "taxa de critico%": "crit_rate",
     "taxa crt": "crit_rate", "taxa crt%": "crit_rate", "crit rate%": "crit_rate", "critical rate": "crit_rate",
     
     # Dano Crítico
-    "dano crítico": "crit_dmg", "dano crit": "crit_dmg", "crit dmg": "crit_dmg", "crit_dmg": "crit_dmg", "dmg": "crit_dmg", "dano": "crit_dmg", "damage": "crit_dmg",
-    "dano crit%": "crit_dmg", "dano de crit": "crit_dmg", "dano de crit%": "crit_dmg", "dano crítico%": "crit_dmg",
+    "dano crítico": "crit_dmg", "dano critico": "crit_dmg", "dano crit": "crit_dmg", "crit dmg": "crit_dmg", "crit_dmg": "crit_dmg", "dmg": "crit_dmg", "dano": "crit_dmg", "damage": "crit_dmg",
+    "dano crit%": "crit_dmg", "dano de crit": "crit_dmg", "dano de crit%": "crit_dmg", "dano crítico%": "crit_dmg", "dano critico%": "crit_dmg",
     "dano crt": "crit_dmg", "dano crt%": "crit_dmg", "dano de crt": "crit_dmg", "dano de crt%": "crit_dmg",
-    "dano de crítico": "crit_dmg", "dano de crítico%": "crit_dmg", "crit dmg%": "crit_dmg", "critical damage": "crit_dmg",
+    "dano de crítico": "crit_dmg", "dano de critico": "crit_dmg", "dano de crítico%": "crit_dmg", "dano de critico%": "crit_dmg", "crit dmg%": "crit_dmg", "critical damage": "crit_dmg",
     
     # Velocidade
     "velocidade": "spd", "vel": "spd", "spd": "spd", "speed": "spd",
@@ -343,16 +390,16 @@ STAT_NAME_MAP = {
     "efeito de quebra%": "break_effect", "break_effect%": "break_effect", "break": "break_effect",
     
     # Proficiência Elemental / Anomalia
-    "proficiência elemental": "em", "proficiência": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "mastery": "em",
-    "anomaly proficiency": "anomaly_prof", "proficiência em anomalia": "anomaly_prof", "proficiência de anomalia": "anomaly_prof", "anomaly_prof": "anomaly_prof",
-    "proficiência de anomalia%": "anomaly_prof", "anomalia": "anomaly_prof",
+    "proficiência elemental": "em", "proficiencia elemental": "em", "proficiência": "em", "proficiencia": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "mastery": "em",
+    "anomaly proficiency": "anomaly_prof", "proficiência em anomalia": "anomaly_prof", "proficiencia em anomalia": "anomaly_prof", "proficiência de anomalia": "anomaly_prof", "proficiencia de anomalia": "anomaly_prof", "anomaly_prof": "anomaly_prof",
+    "proficiência de anomalia%": "anomaly_prof", "proficiencia de anomalia%": "anomaly_prof", "anomalia": "anomaly_prof",
     
     # Recarga de Energia / Taxa de Regeneração de Energia
     "recarga de energia": "er", "recarga": "er", "energy recharge": "er", "er": "er", "recharge": "er", "recarga de energia%": "er",
-    "taxa de regeneração de energia": "err", "recuperação de energia": "err", "energy regen rate": "err", "energy regen": "err", "err": "err",
+    "taxa de regeneração de energia": "err", "taxa de regeneracao de energia": "err", "recuperação de energia": "err", "recuperacao de energia": "err", "energy regen rate": "err", "energy regen": "err", "err": "err",
     
     # Bônus de Cura
-    "bônus de cura": "healing_bonus", "bônus de cura%": "healing_bonus", "healing bonus": "healing_bonus", "healing": "healing_bonus", "healing_bonus": "healing_bonus",
+    "bônus de cura": "healing_bonus", "bonus de cura": "healing_bonus", "bônus de cura%": "healing_bonus", "bonus de cura%": "healing_bonus", "healing bonus": "healing_bonus", "healing": "healing_bonus", "healing_bonus": "healing_bonus",
     
     # Atributos Percentuais
     "atq %": "atk_pct", "atq%": "atk_pct", "atk%": "atk_pct", "atk %": "atk_pct", "ataque%": "atk_pct", "attack%": "atk_pct", "atk_pct": "atk_pct",
@@ -366,30 +413,37 @@ STAT_NAME_MAP = {
     "pv": "hp_flat", "pv%": "hp_pct", "pontos de vida": "hp_flat",
     
     # Bônus Elementais (Genshin / HSR / ZZZ)
-    "pyro dmg": "pyro_dmg", "bônus de dano pyro": "pyro_dmg", "bônus de dano de fogo": "fire_dmg", "fire dmg": "fire_dmg", "fogo": "fire_dmg", "pyro": "pyro_dmg",
-    "hydro dmg": "hydro_dmg", "bônus de dano hydro": "hydro_dmg", "bônus de dano de água": "hydro_dmg", "hydro": "hydro_dmg",
-    "electro dmg": "electro_dmg", "bônus de dano electro": "electro_dmg", "bônus de dano de raio": "lightning_dmg", "bônus de dano elétrico": "electric_dmg", "lightning dmg": "lightning_dmg", "electric dmg": "electric_dmg", "raio": "lightning_dmg", "eletro": "electro_dmg",
-    "cryo dmg": "cryo_dmg", "bônus de dano cryo": "cryo_dmg", "bônus de dano de gelo": "ice_dmg", "ice dmg": "ice_dmg", "gelo": "ice_dmg", "cryo": "cryo_dmg",
-    "anemo dmg": "anemo_dmg", "bônus de dano anemo": "anemo_dmg", "bônus de dano de vento": "wind_dmg", "wind dmg": "wind_dmg", "vento": "wind_dmg", "anemo": "anemo_dmg",
-    "geo dmg": "geo_dmg", "bônus de dano geo": "geo_dmg", "geo": "geo_dmg",
-    "dendro dmg": "dendro_dmg", "bônus de dano dendro": "dendro_dmg", "dendro": "dendro_dmg",
-    "physical dmg": "physical_dmg", "bônus de dano físico": "physical_dmg", "físico": "physical_dmg", "physical": "physical_dmg",
-    "quantum dmg": "quantum_dmg", "bônus de dano quântico": "quantum_dmg", "quântico": "quantum_dmg", "quantum": "quantum_dmg",
-    "imaginary dmg": "imaginary_dmg", "bônus de dano imaginário": "imaginary_dmg", "imaginário": "imaginary_dmg", "imaginary": "imaginary_dmg",
-    "ether dmg": "ether_dmg", "bônus de dano de éter": "ether_dmg", "éter": "ether_dmg", "ether": "ether_dmg",
+    "pyro dmg": "pyro_dmg", "pyro dmg bonus": "pyro_dmg", "bônus de dano pyro": "pyro_dmg", "bonus de dano pyro": "pyro_dmg", "bônus de dano de fogo": "fire_dmg", "bonus de dano de fogo": "fire_dmg", "fire dmg": "fire_dmg", "fire dmg bonus": "fire_dmg", "fogo": "fire_dmg", "pyro": "pyro_dmg", "dano de fogo": "fire_dmg", "dano fogo": "fire_dmg", "bônus de dano fogo": "fire_dmg", "bonus de dano fogo": "fire_dmg",
+    "hydro dmg": "hydro_dmg", "hydro dmg bonus": "hydro_dmg", "bônus de dano hydro": "hydro_dmg", "bonus de dano hydro": "hydro_dmg", "bônus de dano de água": "hydro_dmg", "bonus de dano de agua": "hydro_dmg", "hydro": "hydro_dmg", "dano de agua": "hydro_dmg", "dano hydro": "hydro_dmg", "bônus de dano agua": "hydro_dmg", "bonus de dano agua": "hydro_dmg",
+    "electro dmg": "electro_dmg", "electro dmg bonus": "electro_dmg", "bônus de dano electro": "electro_dmg", "bonus de dano electro": "electro_dmg", "bônus de dano de raio": "lightning_dmg", "bonus de dano de raio": "lightning_dmg", "bônus de dano elétrico": "electric_dmg", "bonus de dano eletrico": "electric_dmg", "lightning dmg": "lightning_dmg", "lightning dmg bonus": "lightning_dmg", "electric dmg": "electric_dmg", "electric dmg bonus": "electric_dmg", "raio": "lightning_dmg", "eletro": "electro_dmg", "dano eletrico": "electric_dmg", "dano de raio": "lightning_dmg", "bônus de dano eletrico": "electric_dmg", "bonus de dano eletrico": "electric_dmg",
+    "cryo dmg": "cryo_dmg", "cryo dmg bonus": "cryo_dmg", "bônus de dano cryo": "cryo_dmg", "bonus de dano cryo": "cryo_dmg", "bônus de dano de gelo": "ice_dmg", "bonus de dano de gelo": "ice_dmg", "ice dmg": "ice_dmg", "ice dmg bonus": "ice_dmg", "gelo": "ice_dmg", "cryo": "cryo_dmg", "dano de gelo": "ice_dmg", "dano gelo": "ice_dmg", "bônus de dano gelo": "ice_dmg", "bonus de dano gelo": "ice_dmg",
+    "anemo dmg": "anemo_dmg", "anemo dmg bonus": "anemo_dmg", "bônus de dano anemo": "anemo_dmg", "bonus de dano anemo": "anemo_dmg", "bônus de dano de vento": "wind_dmg", "bonus de dano de vento": "wind_dmg", "wind dmg": "wind_dmg", "wind dmg bonus": "wind_dmg", "vento": "wind_dmg", "anemo": "anemo_dmg", "dano de vento": "wind_dmg", "dano vento": "wind_dmg", "bônus de dano vento": "wind_dmg", "bonus de dano vento": "wind_dmg",
+    "geo dmg": "geo_dmg", "geo dmg bonus": "geo_dmg", "bônus de dano geo": "geo_dmg", "bonus de dano geo": "geo_dmg", "geo": "geo_dmg", "dano geo": "geo_dmg",
+    "dendro dmg": "dendro_dmg", "dendro dmg bonus": "dendro_dmg", "bônus de dano dendro": "dendro_dmg", "bonus de dano dendro": "dendro_dmg", "dendro": "dendro_dmg", "dano dendro": "dendro_dmg",
+    "physical dmg": "physical_dmg", "physical dmg bonus": "physical_dmg", "bônus de dano físico": "physical_dmg", "bonus de dano fisico": "physical_dmg", "físico": "physical_dmg", "fisico": "physical_dmg", "physical": "physical_dmg", "dano físico": "physical_dmg", "dano fisico": "physical_dmg", "bônus de dano fisico": "physical_dmg", "bonus de dano fisico": "physical_dmg",
+    "quantum dmg": "quantum_dmg", "quantum dmg bonus": "quantum_dmg", "bônus de dano quântico": "quantum_dmg", "bonus de dano quantico": "quantum_dmg", "quântico": "quantum_dmg", "quantico": "quantum_dmg", "quantum": "quantum_dmg", "dano quântico": "quantum_dmg", "dano quantico": "quantum_dmg",
+    "imaginary dmg": "imaginary_dmg", "imaginary dmg bonus": "imaginary_dmg", "bônus de dano imaginário": "imaginary_dmg", "bonus de dano imaginario": "imaginary_dmg", "imaginário": "imaginary_dmg", "imaginario": "imaginary_dmg", "imaginary": "imaginary_dmg", "dano imaginário": "imaginary_dmg", "dano imaginario": "imaginary_dmg",
+    "ether dmg": "ether_dmg", "ether dmg bonus": "ether_dmg", "bônus de dano de éter": "ether_dmg", "bonus de dano de eter": "ether_dmg", "éter": "ether_dmg", "eter": "ether_dmg", "dano de éter": "ether_dmg", "dano de eter": "ether_dmg", "dano éter": "ether_dmg", "dano eter": "ether_dmg", "bônus de dano eter": "ether_dmg", "bonus de dano eter": "ether_dmg",
     
     # HSR Específicos
     "effect hit rate": "ehr", "ehr": "ehr", "taxa de acerto de efeito": "ehr",
     "chance de acerto de efeito": "ehr", "chance de acerto de efeito%": "ehr", "chance de acerto": "ehr", "acerto de efeito": "ehr",
-    "effect res": "res", "res": "res", "resistência a efeito": "res", "res_efeito": "res",
-    "res a efeito": "res", "res a efeito%": "res", "resistência a efeito%": "res",
+    "effect res": "res", "res": "res", "resistência a efeito": "res", "resistencia a efeito": "res", "res_efeito": "res",
+    "res a efeito": "res", "res a efeito%": "res", "resistência a efeito%": "res", "resistencia a efeito%": "res",
+    "outgoing healing": "healing_bonus", "outgoing_healing": "healing_bonus",
     
     # ZZZ Específicos
-    "pen flat": "pen_flat", "pen": "pen_flat", "pen flat bonus": "pen_flat", "perfuração": "pen_flat",
-    "pen ratio": "pen_pct", "pen_pct": "pen_pct", "taxa de perfuração": "pen_pct", "perfuração%": "pen_pct",
+    "pen flat": "pen_flat", "pen": "pen_flat", "pen flat bonus": "pen_flat", "perfuração": "pen_flat", "perfuracao": "pen_flat",
+    "pen ratio": "pen_pct", "pen_pct": "pen_pct", "taxa de perfuração": "pen_pct", "taxa de perfuracao": "pen_pct", "perfuração%": "pen_pct", "perfuracao%": "pen_pct", "perfuracao ratio": "pen_pct", "perfuração ratio": "pen_pct",
     "impacto": "impact", "impact": "impact", "impact_pct": "impact",
-    "taxa de controle de anomalia": "anomaly_mastery", "controle de anomalia": "anomaly_mastery", "anomaly mastery": "anomaly_mastery", "anomaly_mastery": "anomaly_mastery"
+    "taxa de controle de anomalia": "anomaly_mastery", "controle de anomalia": "anomaly_mastery", "anomaly mastery": "anomaly_mastery", "anomaly_mastery": "anomaly_mastery", "maestria de anomalia": "anomaly_mastery"
 }
+
+_unaccented_map = {}
+for _k, _v in STAT_NAME_MAP.items():
+    _unaccented_map[_k] = _v
+    _unaccented_map[remove_accents(_k)] = _v
+STAT_NAME_MAP = _unaccented_map
 
 # ==========================================
 # WHITELIST ESTRITA DE SUBSTATS VÁLIDOS
@@ -409,8 +463,8 @@ DEFAULT_SUBSTATS_FALLBACK = {
 }
 
 def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
-    """Normaliza o nome do atributo para chaves padrão do motor de cálculo."""
-    name_clean = raw_name.strip().lower()
+    """Normaliza o nome do atributo para chaves padrão do motor de cálculo, ignorando acentos e case."""
+    name_clean = remove_accents(raw_name.strip().lower())
     
     if "%" in name_clean:
         has_percent = True
@@ -501,16 +555,10 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
                 weight_val = scale[i] if i < len(scale) else 0.30
                 weights[norm_name] = weight_val
                 
-            if len(weights) < 4:
-                survival_stats = ["hp_pct", "def_pct", "res"] if game_id == "hsr" else ["hp_pct", "def_pct"]
-                for st in survival_stats:
-                    if st not in weights:
-                        weights[st] = 0.40
-                
-            if "crit_rate" in weights and "crit_dmg" not in weights:
-                weights["crit_dmg"] = round(weights["crit_rate"] * 0.85, 3)
-            elif "crit_dmg" in weights and "crit_rate" not in weights:
-                weights["crit_rate"] = round(weights["crit_dmg"] * 0.85, 3)
+            if "crit_rate" in weights or "crit_dmg" in weights:
+                top_crit = max(weights.get("crit_rate", 0.0), weights.get("crit_dmg", 0.0), 1.0)
+                weights["crit_rate"] = top_crit
+                weights["crit_dmg"] = top_crit
                 
             if "hp_pct" in weights and "hp_flat" not in weights:
                 weights["hp_flat"] = round(weights["hp_pct"] * 0.5, 3)
@@ -561,15 +609,11 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     char_meta = meta_db.get(str(char_id), {})
     
     main_clean = main_stat.lower()
-    slot_clean = slot.lower()
+    norm_slot = normalize_slot_name(slot)
     
     # 1. Identifica se o slot possui Main Stat Fixo
     is_fixed_main = False
-    if game_id == "genshin" and any(k in slot_clean for k in ["flower", "plume", "flor", "pena"]):
-        is_fixed_main = True
-    elif game_id == "hsr" and any(k in slot_clean for k in ["head", "hands", "cabeça", "mão", "mãos"]):
-        is_fixed_main = True
-    elif game_id == "zzz" and any(k in slot_clean for k in ["slot_1", "slot_2", "slot_3", "disco 1", "disco 2", "disco 3", "disc 1", "disc 2", "disc 3", "1", "2", "3"]):
+    if norm_slot in ["flower", "plume", "head", "hands", "slot_1", "slot_2", "slot_3"]:
         is_fixed_main = True
 
     # Extrai main stat normalizado
@@ -577,26 +621,37 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     has_pct = "%" in main_clean or "%" in main_stat
     main_stat_norm = normalize_stat_name(raw_main_name, has_percent=has_pct)
     
-    # 2. Avalia a validade do Main Stat
-    main_stat_valid = False
+    # 2. Avalia a validade do Main Stat (Sistema de 3 Níveis: 1.0 Ideal, 0.6 Útil/Alternativo, 0.0 Inútil)
+    main_stat_tier = 0.0
     if is_fixed_main:
-        main_stat_valid = True
+        main_stat_tier = 1.0
     else:
         guide_mains = char_meta.get("main_stats", {})
         slot_key = None
         for k in guide_mains:
-            if k.lower() in slot_clean or slot_clean in k.lower():
+            norm_k = normalize_slot_name(k)
+            if norm_k == norm_slot or norm_k in norm_slot or norm_slot in norm_k:
                 slot_key = k
                 break
                 
         rec_mains = guide_mains.get(slot_key, []) if slot_key else []
         if rec_mains:
             norm_rec = [normalize_stat_name(m) for m in rec_mains]
-            main_stat_valid = any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec)
+            if "anything" in norm_rec or "any" in norm_rec or "qualquer" in norm_rec or any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec):
+                main_stat_tier = 1.0
+            elif weights.get(main_stat_norm, 0.0) > 0.3:
+                main_stat_tier = 0.6
+            else:
+                main_stat_tier = 0.0
         else:
-            main_stat_valid = weights.get(main_stat_norm, 0.0) > 0.35
+            if weights.get(main_stat_norm, 0.0) > 0.35:
+                main_stat_tier = 1.0
+            elif weights.get(main_stat_norm, 0.0) > 0.0:
+                main_stat_tier = 0.6
+            else:
+                main_stat_tier = 0.0
 
-    # 3. Pontuação de Substatus (RV - Roll Value)
+    # 3. Pontuação de Substatus (RV - Roll Value) com suporte a Procs
     sorted_priorities = [k for k, v in sorted(weights.items(), key=lambda item: item[1], reverse=True) if v > 0.0]
     
     if not is_fixed_main and main_stat_norm in sorted_priorities:
@@ -605,20 +660,30 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
         available_substats = sorted_priorities
         
     ideal_substats = available_substats[:4]
-    while len(ideal_substats) < 4:
-        ideal_substats.append("none")
-        
-    # Calibração realista do denominador de substatus
+    
+    # Distribuição calibrada para o limite teórico de 9 rolls úteis (4 base + 5 procs)
+    # Até 6 rolls no 1º atributo prioritário, 1 roll nos demais
+    roll_distribution = [6.0, 1.0, 1.0, 1.0]
+    if len(ideal_substats) < 4:
+        if len(ideal_substats) == 1:
+            roll_distribution = [9.0]
+        elif len(ideal_substats) == 2:
+            roll_distribution = [6.0, 3.0]
+        elif len(ideal_substats) == 3:
+            roll_distribution = [6.0, 2.0, 1.0]
+        elif len(ideal_substats) == 0:
+            roll_distribution = []
+
     max_possible_sub_score = 0.0
-    roll_distribution = [3.5, 2.0, 1.0, 0.5]
     for i, sub in enumerate(ideal_substats):
         w = weights.get(sub, 0.0)
-        max_possible_sub_score += w * roll_distribution[i]
+        dist = roll_distribution[i] if i < len(roll_distribution) else 1.0
+        max_possible_sub_score += w * dist
         
     if max_possible_sub_score <= 0:
         max_possible_sub_score = 3.5
         
-    game_max_rolls = MAX_ROLL_VALUES[game_id]
+    game_specs = GAME_ROLL_SPECS[game_id]["stats"]
     actual_sub_score = 0.0
     
     parts = substats_str.split(",")
@@ -628,21 +693,21 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
             val, has_p = clean_value(val_str)
             sub_name_norm = normalize_stat_name(name, has_percent=has_p)
             
-            max_roll = game_max_rolls.get(sub_name_norm, 0.0)
-            if max_roll > 0.0:
-                rv = val / max_roll
-                actual_sub_score += rv * weights.get(sub_name_norm, 0.0)
+            spec = game_specs.get(sub_name_norm)
+            if spec:
+                max_roll = spec["max"]
+                if max_roll > 0.0:
+                    rv = val / max_roll
+                    actual_sub_score += rv * weights.get(sub_name_norm, 0.0)
 
     sub_ratio = min(1.0, actual_sub_score / max_possible_sub_score)
     
     # 4. Composição da Nota Final
     if is_fixed_main:
-        rating_pct = sub_ratio * 100.0
+        rating_pct = (0.30 + 0.70 * sub_ratio) * 100.0
     else:
-        if main_stat_valid:
-            rating_pct = (0.40 + 0.60 * sub_ratio) * 100.0
-        else:
-            rating_pct = (0.40 * sub_ratio) * 100.0
+        main_stat_credit = 0.40 * main_stat_tier
+        rating_pct = (main_stat_credit + 0.60 * sub_ratio) * 100.0
 
     rating_pct = round(rating_pct, 1)
     
@@ -655,6 +720,42 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     else: grade = "D"
     
     return grade, rating_pct
+
+def estimate_relic_procs(game_id: str, substats_str: str) -> Dict[str, Dict[str, float]]:
+    """
+    Dada uma string de substatus (ex: "Taxa Crítica: 9.3%, Dano Crítico: 14.0%"),
+    calcula os procs estimados (rolls), valor numérico real, RV e roll médio de cada substatus.
+    """
+    game_id = game_id.lower().strip()
+    if game_id not in GAME_ROLL_SPECS:
+        return {}
+        
+    specs = GAME_ROLL_SPECS[game_id]["stats"]
+    result = {}
+    
+    parts = substats_str.split(",")
+    for p in parts:
+        if ":" in p:
+            name, val_str = p.split(":", 1)
+            val, has_p = clean_value(val_str)
+            sub_name_norm = normalize_stat_name(name, has_percent=has_p)
+            
+            spec = specs.get(sub_name_norm)
+            if spec and spec["max"] > 0:
+                avg_roll = spec["avg"]
+                max_roll = spec["max"]
+                est_procs = round(val / avg_roll) if avg_roll > 0 else 0
+                rv = round(val / max_roll, 2)
+                result[sub_name_norm] = {
+                    "stat_name": sub_name_norm,
+                    "value": val,
+                    "estimated_procs": est_procs,
+                    "roll_value": rv,
+                    "min_roll": spec["min"],
+                    "avg_roll": spec["avg"],
+                    "max_roll": spec["max"]
+                }
+    return result
 
 # ==========================================
 # AVALIADOR DE STATUS GERAIS DO PERSONAGEM

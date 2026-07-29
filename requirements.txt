@@ -3,26 +3,24 @@ fastapi==0.139.2
 uvicorn==0.51.0
 pydantic==2.13.4
 
-# HTTP Requests & Scraping
+# HTTP Requests & Web Scraping
 requests==2.34.2
 urllib3==2.7.0
 beautifulsoup4==4.15.0
 
-# HoYoLAB API integration
+# HoYoLAB API Integration & Endgames
 genshin==1.7.28
 
-# Playwright (Auto-login / Cookie extraction)
+# Playwright (Auto-login & Cookie extraction)
 playwright==1.61.0
 
-# Groq Cloud / Gemini IA integration
+# Groq Cloud & Gemini IA Integration (RAG Local)
 groq==1.5.0
 google-genai==2.12.1
 python-dotenv==1.2.2
 
-# Image Processing (Avatar caching)
+# Image Processing (Element & Avatar caching)
 pillow==12.3.0
 
-# Executable Building / Packaging
+# Executable Packaging (PyInstaller Windows)
 pyinstaller==6.21.0
-
-
