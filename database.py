@@ -2,6 +2,7 @@ import sqlite3
 import os
 import json
 from datetime import datetime
+from extractor import clean_relic_name
 
 DATABASE_NAME = "hoyo_app.db"
 
@@ -147,10 +148,11 @@ def clear_character_relics(uid: str, character_name: str):
 def save_relic(uid: str, character_name: str, name: str, slot: str, main_stat: str, sub_stats: str, icon: str):
     conn = get_connection()
     cursor = conn.cursor()
+    clean_name = clean_relic_name(name) if name else name
     cursor.execute("""
     INSERT INTO character_relics (uid, character_name, name, slot, main_stat, sub_stats, icon)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (uid, character_name, name, slot, main_stat, sub_stats, icon))
+    """, (uid, character_name, clean_name, slot, main_stat, sub_stats, icon))
     conn.commit()
     conn.close()
 
@@ -170,7 +172,12 @@ def get_roster_data(game_id: str) -> list:
         WHERE uid = ? AND character_name = ?
         """, (r["uid"], r["name"]))
         relics_rows = cursor.fetchall()
-        relics_list = [dict(rel) for rel in relics_rows]
+        relics_list = []
+        for rel in relics_rows:
+            r_dict = dict(rel)
+            if "name" in r_dict:
+                r_dict["name"] = clean_relic_name(r_dict["name"])
+            relics_list.append(r_dict)
         
         char_dict = {
             "uid": r["uid"],
