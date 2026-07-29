@@ -430,6 +430,7 @@ async function loadRoster(gameId) {
                 // Estrutura o HTML do Card incluindo o ícone do Elemento ao lado do nome
                 card.innerHTML = `
                     <div class="char-avatar-container">
+                        ${char.overall_grade ? `<div class="char-grade-badge badge-${char.overall_grade.toLowerCase()}">${char.overall_grade}</div>` : ''}
                         <img class="char-avatar" src="${localAvatarPath}" onerror="this.onerror=null; this.src='${char.icon || '/assets/config_icon.png'}';" alt="${char.name}">
                         <div class="char-rank-badge">${char.rank_str || 'C0'}</div>
                     </div>

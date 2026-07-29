@@ -166,7 +166,7 @@ def get_roster_data(game_id: str) -> list:
     for r in rows:
         # Busca as relíquias vinculadas a este personagem
         cursor.execute("""
-        SELECT name, slot, main_stat, sub_stats as sub, icon FROM character_relics 
+        SELECT name, slot, main_stat as main, sub_stats as sub, icon FROM character_relics 
         WHERE uid = ? AND character_name = ?
         """, (r["uid"], r["name"]))
         relics_rows = cursor.fetchall()

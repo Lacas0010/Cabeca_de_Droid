@@ -325,7 +325,7 @@ class PrydwenScraper:
                         data["light_cones"].append(item_data)
                     elif "relic" in section_name:
                         data["relics"].append(item_data)
-                    elif "planar" in section_name or "planetary" in section_name:
+                    elif re.search(r'planar|planetary', section_name):
                         data["planar_ornaments"].append(item_data)
                 idx += 1
                 
@@ -336,22 +336,88 @@ class PrydwenScraper:
             if main_stats_div:
                 for div in main_stats_div.find_all('div', class_='flex-1'):
                     text = div.get_text().strip()
-                    for slot in ["Body", "Feet", "Planar Sphere", "Link Rope"]:
-                        if text.startswith(slot):
-                            val = text[len(slot):].strip()
-                            for op in [">=", "<=", ">", "<", "="]:
-                                if op in val:
-                                    val = f" {op} ".join([p.strip() for p in val.split(op)])
-                                    break
-                            data["stats_main"].append(f"{slot}: {val}")
+                    
+                    matched_slot = None
+                    text_clean = text.strip()
+                    for slot_key, slot_name in [("body", "Body"), ("feet", "Feet"), ("planar sphere", "Planar Sphere"), ("sphere", "Planar Sphere"), ("link rope", "Link Rope"), ("rope", "Link Rope")]:
+                        if text_clean.lower().startswith(slot_key):
+                            matched_slot = slot_name
+                            val = text_clean[len(slot_key):].strip()
                             break
+                            
+                    if matched_slot:
+                        # Remove dois pontos iniciais e espaços em branco/quebras de linha
+                        val = val.lstrip(':').strip()
+                        # Divide por barra '/' e limpa cada opção
+                        options = [opt.strip() for opt in val.split('/') if opt.strip()]
+                        val = " / ".join(options)
+                        
+                        for op in [">=", "<=", ">", "<", "="]:
+                            if op in val:
+                                val = f" {op} ".join([p.strip() for p in val.split(op)])
+                                break
+                        data["stats_main"].append(f"{matched_slot}: {val}")
                             
             for div in stats_sec.find_all('div', class_='flex-wrap'):
                 sub_div = div.find('div', class_='flex-1')
                 if sub_div:
                     sub_text = sub_div.get_text().strip()
-                    if sub_text.startswith("Substats:"):
-                        data["stats_sub"] = sub_text[len("Substats:"):].strip()
+                    if sub_text.lower().startswith("substats:"):
+                        raw_sub = sub_text[len("substats:"):].strip()
+                        # Remove completamente qualquer texto dentro de parênteses
+                        cleaned_sub = re.sub(r'\(.*?\)', '', raw_sub)
+                        
+                        # Divide por '>', limpa cada item e mapeia os atributos
+                        parts = [p.strip() for p in cleaned_sub.split('>') if p.strip()]
+                        
+                        mapped_parts = []
+                        for part in parts:
+                            part_lower = part.lower()
+                            mapped_val = part  # Fallback
+                            
+                            substat_map = {
+                                "spd": "vel",
+                                "speed": "vel",
+                                "vel": "vel",
+                                "velocidade": "vel",
+                                "crit rate": "crit_rate",
+                                "crit_rate": "crit_rate",
+                                "chance de crit": "crit_rate",
+                                "taxa crítica": "crit_rate",
+                                "taxa de crit": "crit_rate",
+                                "crit dmg": "crit_dmg",
+                                "crit_dmg": "crit_dmg",
+                                "dano crítico": "crit_dmg",
+                                "dano de crit": "crit_dmg",
+                                "break effect": "break_effect",
+                                "break_effect": "break_effect",
+                                "efeito de quebra": "break_effect",
+                                "quebra": "break_effect",
+                                "ehr": "ehr",
+                                "effect hit rate": "ehr",
+                                "taxa de acerto de efeito": "ehr",
+                                "res": "res",
+                                "effect res": "res",
+                                "resistência a efeito": "res",
+                                "atk%": "atk_pct",
+                                "atk percent": "atk_pct",
+                                "atk_pct": "atk_pct",
+                                "atk": "atk_flat",
+                                "hp%": "hp_pct",
+                                "hp percent": "hp_pct",
+                                "hp_pct": "hp_pct",
+                                "hp": "hp_flat",
+                                "def%": "def_pct",
+                                "def percent": "def_pct",
+                                "def_pct": "def_pct",
+                                "def": "def_flat",
+                            }
+                            
+                            if part_lower in substat_map:
+                                mapped_val = substat_map[part_lower]
+                            mapped_parts.append(mapped_val)
+                            
+                        data["stats_sub"] = " > ".join(mapped_parts)
                         
             info_div = stats_sec.find('div', class_='information')
             if info_div:
