@@ -23,80 +23,42 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     game_id = game_id.lower().strip()
     master_map = {}
 
-    aliases_pt_to_en = {
-        "cisne negro": "black swan",
-        "vaga-lume": "firefly",
-        "faísca": "sparkle",
-        "loba prateada": "silver wolf",
-        "7 de março": "march 7th",
-        "topaz e numby": "topaz & numby",
-        "topaz e dinheirinho": "topaz & numby",
-        "dr. ratio": "dr. ratio",
-        "loba prateada nv. 999": "silver wolf lv. 999",
-        "noite eterna": "march 7th evernight",
-        "desbravador(a)": "trailblazer",
-        "a herta": "the herta",
-        "fugue": "tingyun fugue"
-    }
-
-    roster_file = f"{game_id}/roster_data_{game_id}.json"
-    if os.path.exists(roster_file):
-        try:
-            with open(roster_file, "r", encoding="utf-8") as f:
-                roster_data = json.load(f)
-                for char in roster_data:
-                    c_name = char.get("name", "").strip()
-                    c_id = char.get("id") or char.get("character_id")
-                    if c_name and c_id:
-                        c_name_lower = c_name.lower()
-                        master_map[c_name_lower] = str(c_id)
-                        master_map[normalize_char_name(c_name)] = str(c_id)
-                        # Cria o alias em inglês apontando para o ID real
-                        if c_name_lower in aliases_pt_to_en:
-                            en_alias = aliases_pt_to_en[c_name_lower]
-                            master_map[en_alias.lower()] = str(c_id)
-                            master_map[normalize_char_name(en_alias)] = str(c_id)
-                        # Verifica com o nome normalizado também em aliases
-                        norm_c_name = normalize_char_name(c_name)
-                        if norm_c_name in aliases_pt_to_en:
-                            en_alias = aliases_pt_to_en[norm_c_name]
-                            master_map[en_alias.lower()] = str(c_id)
-                            master_map[normalize_char_name(en_alias)] = str(c_id)
-        except Exception:
-            pass
-
-    # 2. Tabela Mestre Oficial de IDs (Fallback / Simulação)
+    # 1. Tabela Mestre Oficial de IDs (Fonte de verdade primária)
     known_master = {
         "hsr": {
             "acheron": "1308",
             "firefly": "1310",
             "sparkle": "1306",
-            "black swan": "1315",
-            "blade": "1305",
-            "jingliu": "1302",
-            "jing yuan": "1212",
+            "black swan": "1307",
+            "blade": "1205",
+            "jingliu": "1212",
+            "jing yuan": "1204",
             "march 7th": "1001",
+            "march 7th the hunt": "1224",
+            "march 7th • the hunt": "1224",
             "aglaea": "1402",
             "anaxa": "1403",
-            "archer": "1404",
+            "archer": "1015",
             "argenti": "1302",
             "arlan": "1008",
             "asta": "1009",
             "aventurine": "1304",
             "bailu": "1211",
             "bronya": "1101",
-            "boothill": "1312",
+            "boothill": "1316",
             "clara": "1107",
             "dan heng": "1002",
-            "dr. ratio": "1301",
+            "dr. ratio": "1305",
             "feixiao": "1220",
             "fu xuan": "1208",
-            "gallagher": "1307",
+            "gallagher": "1301",
             "gepard": "1104",
-            "guinaifen": "1216",
+            "guinaifen": "1210",
             "hanya": "1215",
             "herta": "1013",
             "himeko": "1003",
+            "himeko - nova": "1510",
+            "himeko_nova": "1510",
             "hook": "1109",
             "huohuo": "1217",
             "jade": "1314",
@@ -106,8 +68,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "luka": "1111",
             "luocha": "1203",
             "lynx": "1110",
-            "misha": "1311",
-            "moze": "1224",
+            "misha": "1312",
+            "moze": "1223",
             "natasha": "1105",
             "pela": "1106",
             "qingque": "1201",
@@ -140,15 +102,53 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "nahida": "10000073"
         },
         "zzz": {
-            "ellen": "1011",
-            "zhu yuan": "1021",
-            "jane doe": "1191",
-            "caesar": "1181",
-            "burnice": "1201",
-            "miyabi": "1291"
+            "anby": "1011",
+            "nekomata": "1021",
+            "nicole": "1031",
+            "soldier 11": "1041",
+            "soldier_11": "1041",
+            "corin": "1061",
+            "caesar": "1071",
+            "billy": "1081",
+            "miyabi": "1091",
+            "koleda": "1101",
+            "anton": "1111",
+            "ben": "1121",
+            "soukaku": "1131",
+            "lycaon": "1141",
+            "lucy": "1151",
+            "burnice": "1171",
+            "grace": "1181",
+            "ellen": "1191",
+            "harumasa": "1201",
+            "rina": "1211",
+            "zhu yuan": "1241",
+            "jane": "1261",
+            "jane doe": "1261",
+            "seth": "1271",
+            "piper": "1281",
+            "orphie & magus": "1301",
+            "orphie and magus": "1301",
+            "orphie_&_magus": "1301",
+            "astra yao": "1311",
+            "astra_yao": "1311",
+            "evelyn": "1321",
+            "zhao": "1341",
+            "pulchra": "1351",
+            "yixuan": "1371",
+            "pan yinhu": "1421",
+            "pan_yinhu": "1421",
+            "ye shunguang": "1431",
+            "ye_shunguang": "1431",
+            "manato": "1441",
+            "dialyn": "1481",
+            "cissia": "1521",
+            "pyrois": "1551",
+            "velina": "1561"
         }
     }
 
+    # Preenche primeiro com a tabela oficial de conhecidos (para evitar colisões/sobrescritas incorretas)
     if game_id in known_master:
         for name, cid in known_master[game_id].items():
             name_lower = name.lower()
@@ -157,6 +157,63 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             norm_name = normalize_char_name(name)
             if norm_name not in master_map:
                 master_map[norm_name] = cid
+
+    aliases_pt_to_en = {
+        "cisne negro": "black swan",
+        "vaga-lume": "firefly",
+        "faísca": "sparkle",
+        "loba prateada": "silver wolf",
+        "7 de março": "march 7th",
+        "topaz e numby": "topaz & numby",
+        "topaz e dinheirinho": "topaz & numby",
+        "dr. ratio": "dr. ratio",
+        "loba prateada nv. 999": "silver wolf lv. 999",
+        "noite eterna": "march 7th evernight",
+        "desbravador(a)": "trailblazer",
+        "a herta": "the herta",
+        "fugue": "tingyun fugue"
+    }
+
+    # 2. Carrega roster local como fallback
+    roster_file = f"{game_id}/roster_data_{game_id}.json"
+    if os.path.exists(roster_file):
+        try:
+            with open(roster_file, "r", encoding="utf-8") as f:
+                roster_data = json.load(f)
+                for char in roster_data:
+                    c_name = char.get("name", "").strip()
+                    c_id = char.get("id") or char.get("character_id")
+                    if c_name and c_id:
+                        c_name_lower = c_name.lower()
+                        norm_c_name = normalize_char_name(c_name)
+                        
+                        if c_name_lower not in master_map:
+                            master_map[c_name_lower] = str(c_id)
+                        if norm_c_name not in master_map:
+                            master_map[norm_c_name] = str(c_id)
+                            
+                        # Cria o alias em inglês apontando para o ID real se não existir
+                        if c_name_lower in aliases_pt_to_en:
+                            en_alias = aliases_pt_to_en[c_name_lower]
+                            en_alias_lower = en_alias.lower()
+                            norm_en_alias = normalize_char_name(en_alias)
+                            
+                            if en_alias_lower not in master_map:
+                                master_map[en_alias_lower] = str(c_id)
+                            if norm_en_alias not in master_map:
+                                master_map[norm_en_alias] = str(c_id)
+                                
+                        if norm_c_name in aliases_pt_to_en:
+                            en_alias = aliases_pt_to_en[norm_c_name]
+                            en_alias_lower = en_alias.lower()
+                            norm_en_alias = normalize_char_name(en_alias)
+                            
+                            if en_alias_lower not in master_map:
+                                master_map[en_alias_lower] = str(c_id)
+                            if norm_en_alias not in master_map:
+                                master_map[norm_en_alias] = str(c_id)
+        except Exception:
+            pass
 
     return master_map
 
@@ -615,7 +672,7 @@ def generate_meta_json_from_markdown(game_id: str):
 
     def parse_zzz(content):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
-        matches = re.findall(r"Slot\s*(4|5|6):\s*(.*)", content, re.I)
+        matches = re.findall(r"(?:Disk|Slot|Disco)\s*(4|5|6)[:\- ]\s*(.*)", content, re.I)
         for slot, val in matches:
             stats = [normalize_stat_name(s) for s in re.split(r'\s*(?:/|\||\bor\b|,)\s*', val, flags=re.IGNORECASE) if s]
             meta["main_stats"][f"slot_{slot}"] = [s for s in stats if s]

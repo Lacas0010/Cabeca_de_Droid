@@ -228,11 +228,37 @@ class PrydwenScraper:
             "teams": []
         }
         
-        if not tabs or len(tabs) < 3:
+        if not tabs:
             return data
             
+        tab_kit = None
+        tab_review = None
+        tab_build = None
+
+        for tab in tabs:
+            if tab.find('div', class_='build-stats') or tab.find('div', class_='detailed-cones'):
+                tab_build = tab
+            h5_texts = [h.text.strip().lower() for h in tab.find_all('h5')]
+            if 'pros' in h5_texts or 'cons' in h5_texts or tab.find('div', class_='section-analysis'):
+                tab_review = tab
+
+        for tab in tabs:
+            if tab == tab_review or tab == tab_build:
+                continue
+            if tab.find('div', class_='skill-header'):
+                text_lower = tab.get_text().lower()
+                if any(x in text_lower for x in ["basic atk", "skill", "ultimate", "talent", "technique"]):
+                    tab_kit = tab
+                    break
+
+        if not tab_kit and len(tabs) >= 1:
+            tab_kit = tabs[0]
+        if not tab_review and len(tabs) >= 2:
+            tab_review = tabs[1]
+        if not tab_build and len(tabs) >= 3:
+            tab_build = tabs[2]
+
         # --- 1. ABA 1: KIT DE HABILIDADES ---
-        tab_kit = tabs[0]
         for header in tab_kit.find_all('div', class_='skill-header'):
             header_text = header.get_text(separator=' ').strip()
             desc_div = header.find_next_sibling('div', class_=re.compile('skill-with-coloring|eidolon'))
@@ -258,192 +284,190 @@ class PrydwenScraper:
                     })
                     
         # --- 2. ABA 2: REVIEW DETALHADO ---
-        tab_review = tabs[1]
-        
-        # Prós
-        pros_h5 = [h for h in tab_review.find_all('h5') if h.text.strip().lower() == 'pros']
-        if pros_h5:
-            div = pros_h5[0].find_next_sibling('div')
-            if div:
-                data["pros"] = [p.text.strip() for p in div.find_all('p') if p.text.strip()]
-                
-        # Contras
-        cons_h5 = [h for h in tab_review.find_all('h5') if h.text.strip().lower() == 'cons']
-        if cons_h5:
-            div = cons_h5[0].find_next_sibling('div')
-            if div:
-                data["cons"] = [p.text.strip() for p in div.find_all('p') if p.text.strip()]
-                
-        # Análise de Review
-        analysis_divs = tab_review.find_all('div', class_='section-analysis')
-        if len(analysis_divs) > 1:
-            data["review"] = [p.text.strip() for p in analysis_divs[1].find_all('p') if p.text.strip()]
-        elif len(analysis_divs) == 1:
-            data["review"] = [p.text.strip() for p in analysis_divs[0].find_all('p') if p.text.strip()]
+        if tab_review:
+            # Prós
+            pros_h5 = [h for h in tab_review.find_all('h5') if h.text.strip().lower() == 'pros']
+            if pros_h5:
+                div = pros_h5[0].find_next_sibling('div')
+                if div:
+                    data["pros"] = [p.text.strip() for p in div.find_all('p') if p.text.strip()]
+                    
+            # Contras
+            cons_h5 = [h for h in tab_review.find_all('h5') if h.text.strip().lower() == 'cons']
+            if cons_h5:
+                div = cons_h5[0].find_next_sibling('div')
+                if div:
+                    data["cons"] = [p.text.strip() for p in div.find_all('p') if p.text.strip()]
+                    
+            # Análise de Review
+            analysis_divs = tab_review.find_all('div', class_='section-analysis')
+            if len(analysis_divs) > 1:
+                data["review"] = [p.text.strip() for p in analysis_divs[1].find_all('p') if p.text.strip()]
+            elif len(analysis_divs) == 1:
+                data["review"] = [p.text.strip() for p in analysis_divs[0].find_all('p') if p.text.strip()]
             
         # --- 3. ABA 3: BUILDS E TIMES ---
-        tab_build = tabs[2]
-        
-        for dc in tab_build.find_all('div', class_='detailed-cones'):
-            heading = dc.find_previous(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
-            section_name = heading.text.strip().lower() if heading else ""
-            
-            children = dc.find_all(recursive=False)
-            idx = 0
-            while idx < len(children):
-                child = children[idx]
-                child_classes = child.get('class', [])
+        if tab_build:
+            for dc in tab_build.find_all('div', class_='detailed-cones'):
+                heading = dc.find_previous(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])
+                section_name = heading.text.strip().lower() if heading else ""
                 
-                if any('single-cone' in c for c in child_classes):
-                    name_el = child.find('span', class_='hsr-set-name')
-                    name = name_el.text.strip() if name_el else ""
+                children = dc.find_all(recursive=False)
+                idx = 0
+                while idx < len(children):
+                    child = children[idx]
+                    child_classes = child.get('class', [])
                     
-                    percent_el = child.find('div', class_='percentage')
-                    pct = percent_el.text.strip() if percent_el else ""
-                    
-                    super_el = child.find('span', class_='cone-super')
-                    sup = super_el.text.strip() if super_el else ""
-                    if sup and not sup.startswith('('):
-                        sup = f"({sup})"
+                    if any('single-cone' in c for c in child_classes):
+                        name_el = child.find('span', class_='hsr-set-name')
+                        name = name_el.text.strip() if name_el else ""
                         
-                    justification = ""
-                    if idx + 1 < len(children):
-                        next_child = children[idx + 1]
-                        next_classes = next_child.get('class', [])
-                        if 'information' in next_classes and 'with-padding' not in next_classes:
-                            justification = next_child.get_text().strip()
-                            idx += 1
-                            
-                    item_data = {
-                        "name": name,
-                        "percentage": pct,
-                        "justification": justification
-                    }
-                    
-                    if "light cone" in section_name:
-                        item_data["super"] = sup
-                        data["light_cones"].append(item_data)
-                    elif "relic" in section_name:
-                        data["relics"].append(item_data)
-                    elif re.search(r'planar|planetary', section_name):
-                        data["planar_ornaments"].append(item_data)
-                idx += 1
-                
-        # Stats
-        stats_sec = tab_build.find('div', class_='build-stats')
-        if stats_sec:
-            main_stats_div = stats_sec.find('div', class_='main-stats')
-            if main_stats_div:
-                for div in main_stats_div.find_all('div', class_='flex-1'):
-                    text = div.get_text().strip()
-                    
-                    matched_slot = None
-                    text_clean = text.strip()
-                    for slot_key, slot_name in [("body", "Body"), ("feet", "Feet"), ("planar sphere", "Planar Sphere"), ("sphere", "Planar Sphere"), ("link rope", "Link Rope"), ("rope", "Link Rope")]:
-                        if text_clean.lower().startswith(slot_key):
-                            matched_slot = slot_name
-                            val = text_clean[len(slot_key):].strip()
-                            break
-                            
-                    if matched_slot:
-                        # Remove dois pontos iniciais e espaços em branco/quebras de linha
-                        val = val.lstrip(':').strip()
-                        # Divide por barra '/' e limpa cada opção
-                        options = [opt.strip() for opt in val.split('/') if opt.strip()]
-                        val = " / ".join(options)
+                        percent_el = child.find('div', class_='percentage')
+                        pct = percent_el.text.strip() if percent_el else ""
                         
-                        for op in [">=", "<=", ">", "<", "="]:
-                            if op in val:
-                                val = f" {op} ".join([p.strip() for p in val.split(op)])
+                        super_el = child.find('span', class_='cone-super')
+                        sup = super_el.text.strip() if super_el else ""
+                        if sup and not sup.startswith('('):
+                            sup = f"({sup})"
+                            
+                        justification = ""
+                        if idx + 1 < len(children):
+                            next_child = children[idx + 1]
+                            next_classes = next_child.get('class', [])
+                            if 'information' in next_classes and 'with-padding' not in next_classes:
+                                justification = next_child.get_text().strip()
+                                idx += 1
+                                
+                        item_data = {
+                            "name": name,
+                            "percentage": pct,
+                            "justification": justification
+                        }
+                        
+                        if "light cone" in section_name:
+                            item_data["super"] = sup
+                            data["light_cones"].append(item_data)
+                        elif "relic" in section_name:
+                            data["relics"].append(item_data)
+                        elif re.search(r'planar|planetary', section_name):
+                            data["planar_ornaments"].append(item_data)
+                    idx += 1
+                    
+            # Stats
+            stats_sec = tab_build.find('div', class_='build-stats')
+            if stats_sec:
+                main_stats_div = stats_sec.find('div', class_='main-stats')
+                if main_stats_div:
+                    for div in main_stats_div.find_all('div', class_='flex-1'):
+                        text = div.get_text().strip()
+                        
+                        matched_slot = None
+                        text_clean = text.strip()
+                        for slot_key, slot_name in [("body", "Body"), ("feet", "Feet"), ("planar sphere", "Planar Sphere"), ("sphere", "Planar Sphere"), ("link rope", "Link Rope"), ("rope", "Link Rope")]:
+                            if text_clean.lower().startswith(slot_key):
+                                matched_slot = slot_name
+                                val = text_clean[len(slot_key):].strip()
                                 break
-                        data["stats_main"].append(f"{matched_slot}: {val}")
+                                
+                        if matched_slot:
+                            # Remove dois pontos iniciais e espaços em branco/quebras de linha
+                            val = val.lstrip(':').strip()
+                            # Divide por barra '/' e limpa cada opção
+                            options = [opt.strip() for opt in val.split('/') if opt.strip()]
+                            val = " / ".join(options)
                             
-            for div in stats_sec.find_all('div', class_='flex-wrap'):
-                sub_div = div.find('div', class_='flex-1')
-                if sub_div:
-                    sub_text = sub_div.get_text().strip()
-                    if sub_text.lower().startswith("substats:"):
-                        raw_sub = sub_text[len("substats:"):].strip()
-                        # Remove completamente qualquer texto dentro de parênteses
-                        cleaned_sub = re.sub(r'\(.*?\)', '', raw_sub)
-                        
-                        # Divide por '>', limpa cada item e mapeia os atributos
-                        parts = [p.strip() for p in cleaned_sub.split('>') if p.strip()]
-                        
-                        mapped_parts = []
-                        for part in parts:
-                            part_lower = part.lower()
-                            mapped_val = part  # Fallback
+                            for op in [">=", "<=", ">", "<", "="]:
+                                if op in val:
+                                    val = f" {op} ".join([p.strip() for p in val.split(op)])
+                                    break
+                            data["stats_main"].append(f"{matched_slot}: {val}")
+                                
+                for div in stats_sec.find_all('div', class_='flex-wrap'):
+                    sub_div = div.find('div', class_='flex-1')
+                    if sub_div:
+                        sub_text = sub_div.get_text().strip()
+                        if sub_text.lower().startswith("substats:"):
+                            raw_sub = sub_text[len("substats:"):].strip()
+                            # Remove completamente qualquer texto dentro de parênteses
+                            cleaned_sub = re.sub(r'\(.*?\)', '', raw_sub)
                             
-                            substat_map = {
-                                "spd": "vel",
-                                "speed": "vel",
-                                "vel": "vel",
-                                "velocidade": "vel",
-                                "crit rate": "crit_rate",
-                                "crit_rate": "crit_rate",
-                                "chance de crit": "crit_rate",
-                                "taxa crítica": "crit_rate",
-                                "taxa de crit": "crit_rate",
-                                "crit dmg": "crit_dmg",
-                                "crit_dmg": "crit_dmg",
-                                "dano crítico": "crit_dmg",
-                                "dano de crit": "crit_dmg",
-                                "break effect": "break_effect",
-                                "break_effect": "break_effect",
-                                "efeito de quebra": "break_effect",
-                                "quebra": "break_effect",
-                                "ehr": "ehr",
-                                "effect hit rate": "ehr",
-                                "taxa de acerto de efeito": "ehr",
-                                "res": "res",
-                                "effect res": "res",
-                                "resistência a efeito": "res",
-                                "atk%": "atk_pct",
-                                "atk percent": "atk_pct",
-                                "atk_pct": "atk_pct",
-                                "atk": "atk_flat",
-                                "hp%": "hp_pct",
-                                "hp percent": "hp_pct",
-                                "hp_pct": "hp_pct",
-                                "hp": "hp_flat",
-                                "def%": "def_pct",
-                                "def percent": "def_pct",
-                                "def_pct": "def_pct",
-                                "def": "def_flat",
-                            }
+                            # Divide por '>', limpa cada item e mapeia os atributos
+                            parts = [p.strip() for p in cleaned_sub.split('>') if p.strip()]
                             
-                            if part_lower in substat_map:
-                                mapped_val = substat_map[part_lower]
-                            mapped_parts.append(mapped_val)
+                            mapped_parts = []
+                            for part in parts:
+                                part_lower = part.lower()
+                                mapped_val = part  # Fallback
+                                
+                                substat_map = {
+                                    "spd": "vel",
+                                    "speed": "vel",
+                                    "vel": "vel",
+                                    "velocidade": "vel",
+                                    "crit rate": "crit_rate",
+                                    "crit_rate": "crit_rate",
+                                    "chance de crit": "crit_rate",
+                                    "taxa crítica": "crit_rate",
+                                    "taxa de crit": "crit_rate",
+                                    "crit dmg": "crit_dmg",
+                                    "crit_dmg": "crit_dmg",
+                                    "dano crítico": "crit_dmg",
+                                    "dano de crit": "crit_dmg",
+                                    "break effect": "break_effect",
+                                    "break_effect": "break_effect",
+                                    "efeito de quebra": "break_effect",
+                                    "quebra": "break_effect",
+                                    "ehr": "ehr",
+                                    "effect hit rate": "ehr",
+                                    "taxa de acerto de efeito": "ehr",
+                                    "res": "res",
+                                    "effect res": "res",
+                                    "resistência a efeito": "res",
+                                    "atk%": "atk_pct",
+                                    "atk percent": "atk_pct",
+                                    "atk_pct": "atk_pct",
+                                    "atk": "atk_flat",
+                                    "hp%": "hp_pct",
+                                    "hp percent": "hp_pct",
+                                    "hp_pct": "hp_pct",
+                                    "hp": "hp_flat",
+                                    "def%": "def_pct",
+                                    "def percent": "def_pct",
+                                    "def_pct": "def_pct",
+                                    "def": "def_flat",
+                                }
+                                
+                                if part_lower in substat_map:
+                                    mapped_val = substat_map[part_lower]
+                                mapped_parts.append(mapped_val)
+                                
+                            data["stats_sub"] = " > ".join(mapped_parts)
                             
-                        data["stats_sub"] = " > ".join(mapped_parts)
-                        
-            info_div = stats_sec.find('div', class_='information')
-            if info_div:
-                data["stats_info"] = info_div.get_text().strip()
-                
-        # Times
-        teams_div = tab_build.find('div', class_='team-container-moc')
-        if teams_div:
-            rows = teams_div.find_all('div', class_='team-row')
-            for row in rows[:5]:
-                char_names = []
-                for img in row.find_all('img'):
-                    alt = img.get('alt')
-                    if alt and alt not in ["Physical", "Fire", "Ice", "Lightning", "Wind", "Quantum", "Imaginary", "Void"]:
-                        if alt not in char_names:
-                            char_names.append(alt)
-                
-                stats_text = row.get_text(separator=' ').strip()
-                stats_text = " ".join(stats_text.split())
-                
-                if char_names:
-                    data["teams"].append({
-                        "members": " + ".join(char_names),
-                        "stats": stats_text
-                    })
+                info_div = stats_sec.find('div', class_='information')
+                if info_div:
+                    data["stats_info"] = info_div.get_text().strip()
                     
+            # Times
+            teams_div = tab_build.find('div', class_='team-container-moc')
+            if teams_div:
+                rows = teams_div.find_all('div', class_='team-row')
+                for row in rows[:5]:
+                    char_names = []
+                    for img in row.find_all('img'):
+                        alt = img.get('alt')
+                        if alt and alt not in ["Physical", "Fire", "Ice", "Lightning", "Wind", "Quantum", "Imaginary", "Void"]:
+                            if alt not in char_names:
+                                char_names.append(alt)
+                    
+                    stats_text = row.get_text(separator=' ').strip()
+                    stats_text = " ".join(stats_text.split())
+                    
+                    if char_names:
+                        data["teams"].append({
+                            "members": " + ".join(char_names),
+                            "stats": stats_text
+                        })
+                        
         return data
         
     def save_to_markdown(self, character_name: str, data: dict, output_dir: str = "hsr/guias") -> str:
