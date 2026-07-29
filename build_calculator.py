@@ -6,6 +6,15 @@ from typing import Dict, List, Tuple, Optional
 # ==========================================
 # FONTE MESTRE DE IDS DE PERSONAGENS
 # ==========================================
+def normalize_char_name(name: str) -> str:
+    """
+    Normaliza o nome do personagem para facilitar o cruzamento de IDs,
+    removendo hifens, bullets, parênteses e múltiplos espaços.
+    """
+    name = name.lower()
+    name = name.replace("•", " ").replace("-", " ").replace("(", " ").replace(")", " ").replace(".", " ")
+    return re.sub(r'\s+', ' ', name).strip()
+
 def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     """
     Simula/obtém a fonte mestre de IDs de personagens vinculando nomes em inglês aos IDs oficiais (chaves primárias).
@@ -21,7 +30,13 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
         "loba prateada": "silver wolf",
         "7 de março": "march 7th",
         "topaz e numby": "topaz & numby",
-        "dr. ratio": "dr. ratio"
+        "topaz e dinheirinho": "topaz & numby",
+        "dr. ratio": "dr. ratio",
+        "loba prateada nv. 999": "silver wolf lv. 999",
+        "noite eterna": "march 7th evernight",
+        "desbravador(a)": "trailblazer",
+        "a herta": "the herta",
+        "fugue": "tingyun fugue"
     }
 
     roster_file = f"{game_id}/roster_data_{game_id}.json"
@@ -30,13 +45,23 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             with open(roster_file, "r", encoding="utf-8") as f:
                 roster_data = json.load(f)
                 for char in roster_data:
-                    c_name = char.get("name", "").strip().lower()
+                    c_name = char.get("name", "").strip()
                     c_id = char.get("id") or char.get("character_id")
                     if c_name and c_id:
-                        master_map[c_name] = str(c_id)
+                        c_name_lower = c_name.lower()
+                        master_map[c_name_lower] = str(c_id)
+                        master_map[normalize_char_name(c_name)] = str(c_id)
                         # Cria o alias em inglês apontando para o ID real
-                        if c_name in aliases_pt_to_en:
-                            master_map[aliases_pt_to_en[c_name]] = str(c_id)
+                        if c_name_lower in aliases_pt_to_en:
+                            en_alias = aliases_pt_to_en[c_name_lower]
+                            master_map[en_alias.lower()] = str(c_id)
+                            master_map[normalize_char_name(en_alias)] = str(c_id)
+                        # Verifica com o nome normalizado também em aliases
+                        norm_c_name = normalize_char_name(c_name)
+                        if norm_c_name in aliases_pt_to_en:
+                            en_alias = aliases_pt_to_en[norm_c_name]
+                            master_map[en_alias.lower()] = str(c_id)
+                            master_map[normalize_char_name(en_alias)] = str(c_id)
         except Exception:
             pass
 
@@ -126,8 +151,12 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
 
     if game_id in known_master:
         for name, cid in known_master[game_id].items():
-            if name not in master_map:
-                master_map[name] = cid
+            name_lower = name.lower()
+            if name_lower not in master_map:
+                master_map[name_lower] = cid
+            norm_name = normalize_char_name(name)
+            if norm_name not in master_map:
+                master_map[norm_name] = cid
 
     return master_map
 
@@ -327,8 +356,8 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
     """
     Busca no arquivo meta_data.json a prioridade de substatus diretamente pelo char_id (chave primária)
     e converte em pesos (0.0 a 1.0).
-    Aplica forgiveness inteligente: atribui peso parcial (50%) aos atributos Flat correspondentes
-    a atributos % recomendados (ex: hp_pct -> hp_flat com 50% do peso de hp_pct).
+    Aplica Survival/Support Fallback para personagens com poucos atributos recomendados (< 4)
+    e Forgiveness inteligente de atributos Flat (50% do peso da versão % correspondente).
     """
     game_id = game_id.lower().strip()
     meta_db = get_meta_data(game_id)
@@ -344,13 +373,23 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
                 weight_val = scale[i] if i < len(scale) else 0.30
                 weights[norm_name] = weight_val
                 
-            # Forgiveness para Críticos (Crit Rate <-> Crit Dmg)
+            # 1. Survival/Support Fallback para suportes/kits restritos (< 4 substats)
+            # Se o dicionário de pesos tiver menos de 4 substatus cadastrados pelo guia,
+            # injeta atributos básicos de sobrevivência/suporte com peso base 0.40.
+            # Evita que peças excelentes de suporte recebam nota baixa por falta de substats prioritários.
+            if len(weights) < 4:
+                survival_stats = ["hp_pct", "def_pct", "res"] if game_id == "hsr" else ["hp_pct", "def_pct"]
+                for st in survival_stats:
+                    if st not in weights:
+                        weights[st] = 0.40
+                
+            # 2. Forgiveness para Críticos (Crit Rate <-> Crit Dmg)
             if "crit_rate" in weights and "crit_dmg" not in weights:
                 weights["crit_dmg"] = round(weights["crit_rate"] * 0.85, 3)
             elif "crit_dmg" in weights and "crit_rate" not in weights:
                 weights["crit_rate"] = round(weights["crit_dmg"] * 0.85, 3)
                 
-            # Forgiveness inteligente para atributos Flat (50% do peso da versão % correspondente)
+            # 3. Forgiveness inteligente para atributos Flat (50% do peso da versão % correspondente)
             if "hp_pct" in weights and "hp_flat" not in weights:
                 weights["hp_flat"] = round(weights["hp_pct"] * 0.5, 3)
             if "atk_pct" in weights and "atk_flat" not in weights:
@@ -538,7 +577,7 @@ def generate_meta_json_from_markdown(game_id: str):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
         matches = re.findall(r"-\s*(Body|Feet|Planar Sphere|Link Rope):\s*(.*)", content)
         for slot, val in matches:
-            stats = [normalize_stat_name(s) for s in re.split(r'[/|or]', val)]
+            stats = [normalize_stat_name(s) for s in re.split(r'\s*(?:/|\||\bor\b|,)\s*', val, flags=re.IGNORECASE) if s]
             meta["main_stats"][slot.lower().replace(" ", "_")] = [s for s in stats if s]
             
         sub_match = re.search(
@@ -578,7 +617,7 @@ def generate_meta_json_from_markdown(game_id: str):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
         matches = re.findall(r"Slot\s*(4|5|6):\s*(.*)", content, re.I)
         for slot, val in matches:
-            stats = [normalize_stat_name(s) for s in re.split(r'[/|or]', val)]
+            stats = [normalize_stat_name(s) for s in re.split(r'\s*(?:/|\||\bor\b|,)\s*', val, flags=re.IGNORECASE) if s]
             meta["main_stats"][f"slot_{slot}"] = [s for s in stats if s]
             
         sub_match = re.search(r"(?:substatus prioritários|substats):\s*(.*)", content, re.I)
@@ -601,7 +640,8 @@ def generate_meta_json_from_markdown(game_id: str):
                         display_name = display_name.replace("•", "•")
                     
                     # Cruza com a fonte mestre de IDs
-                    char_id = master_ids.get(raw_name.lower(), raw_name.lower().replace(" ", "_"))
+                    normalized_raw = normalize_char_name(raw_name)
+                    char_id = master_ids.get(normalized_raw, raw_name.lower().replace(" ", "_"))
                     filepath = os.path.join(guias_dir, f)
                     try:
                         with open(filepath, "r", encoding="utf-8") as file:

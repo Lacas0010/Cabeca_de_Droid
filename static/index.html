@@ -567,7 +567,7 @@
             <section id="tab-help" class="tab-pane">
                 <div class="config-container">
                     <h2><i class="fa-solid fa-book-open"></i> Como usar o Cabeça de Droid</h2>
-                    <p class="config-desc" style="margin-bottom: 20px;">Este aplicativo foi criado para ajudar você a analisar suas contas da HoYoverse utilizando Inteligência Artificial e Cálculo Matemático de Builds por ID. Ele puxa automaticamente todos os seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e cruza com dados de Metagame.</p>
+                    <p class="config-desc" style="margin-bottom: 20px;">Este aplicativo foi criado para ajudar você a analisar suas contas da HoYoverse utilizando Inteligência Artificial e Cálculo Matemático de Builds por ID. Ele puxa automaticamente todos os seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e cruza com dados de Metagame através de um motor de normalização robusto.</p>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
                         <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;">1. Faça o Login Automático na HoYoLAB</h3>
@@ -580,6 +580,7 @@
                         <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
                             <li style="margin-bottom: 4px;"><strong>Roster</strong>: Busca seus personagens obtidos, níveis, constelações/eidolons (vinculados por IDs numéricos universais) e recordes recentes de Endgame (Shiyu, Abismo, MoC).</li>
                             <li style="margin-bottom: 4px;"><strong>Guias e Metagame</strong>: Para HSR e ZZZ, extrai os dados via Prydwen. Para Genshin Impact, o sistema baixa automaticamente as builds estruturadas do **Game8** em background para alimentar o motor matemático e baixa em paralelo os guias textuais do **KeqingMains (KQM)** para o contexto da IA.</li>
+                            <li style="margin-bottom: 4px;"><strong>Normalização Inteligente</strong>: O sistema resolve automaticamente discrepâncias de formatação (hifens, acentos, bullets e parênteses) e apelidos. Personagens novos e suas formas alternativas (ex: <em>Himeko - Nova</em>, <em>Tingyun - Fugue</em>, <em>Dan Heng - Permansor Terrae</em>) são associados perfeitamente a seus respectivos IDs de roster numéricos (ex: <code>1510</code>, <code>1225</code> e <code>1414</code>) sem necessidade de ajustes manuais.</li>
                         </ul>
                     </div>
                     

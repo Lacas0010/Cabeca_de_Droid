@@ -65,6 +65,8 @@ moc_payload_dump.txt
 # Python check/test scripts and scratch
 check_*.py
 test_*.py
+scratch_*.py
+print_roster.py
 scratch/
 game8_temp.json
 *.tmp

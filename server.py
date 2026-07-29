@@ -429,13 +429,13 @@ async def get_roster(game_id: str):
         for char in data:
             char_id_val = str(char.get("id") or char.get("character_id") or "")
             relic_scores = []
-            relics = char.get("relics", [])
+            relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
             for relic in relics:
                 grade, score = score_relic(
                     game_id=game_id,
                     char_id=char_id_val,
                     slot=str(relic.get("slot", "")),
-                    main_stat=relic.get("main", ""),
+                    main_stat=relic.get("main") or relic.get("main_stat") or "",
                     substats_str=relic.get("sub", "")
                 )
                 relic["grade"] = grade

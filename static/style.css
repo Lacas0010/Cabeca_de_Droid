@@ -1369,6 +1369,18 @@ h1, h2, h3, h4, h5, h6 {
 .badge-relic-b { background: #3b82f6; color: #fff; }
 .badge-relic-c { background: #06b6d4; color: #fff; }
 .badge-relic-d { background: #6b7280; color: #fff; }
+
+.char-grade-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    z-index: 2;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
 .sub-label {
     color: var(--text-secondary);
     overflow: hidden;

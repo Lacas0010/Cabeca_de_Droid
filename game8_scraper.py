@@ -33,6 +33,120 @@ def normalize_extracted_text(text: str) -> list:
     tokens = re.split(r'[/|,]| or ', clean_text)
     return [t.strip().lower() for t in tokens if t.strip()]
 
+def clean_and_normalize_genshin_stat(raw_text: str) -> list:
+    """
+    Limpa o texto extraído da tabela do Game8 para Genshin Impact,
+    removendo ruídos, números, parênteses e aplicando o mapeamento estrito.
+    """
+    # 1. Remove tags HTML residuais
+    clean_text = re.sub(r'<[^>]+>', ' ', raw_text)
+    
+    # 2. Separa por delimitadores comuns (/ ou , ou : ou 'or')
+    tokens = re.split(r'[/|:,]| or |\n', clean_text)
+    
+    normalized_stats = []
+    seen = set()
+    
+    # Dicionário de mapeamento estrito de status válidos
+    mapa_main_stats = {
+        "atk": "atk_pct",
+        "atk%": "atk_pct",
+        "atk_pct": "atk_pct",
+        "attack": "atk_pct",
+        "attack%": "atk_pct",
+        "atk percent": "atk_pct",
+        "attack percent": "atk_pct",
+        
+        "hp": "hp_pct",
+        "hp%": "hp_pct",
+        "hp_pct": "hp_pct",
+        "health": "hp_pct",
+        "health%": "hp_pct",
+        "hp percent": "hp_pct",
+        "health percent": "hp_pct",
+        
+        "def": "def_pct",
+        "def%": "def_pct",
+        "def_pct": "def_pct",
+        "defense": "def_pct",
+        "defense%": "def_pct",
+        "def percent": "def_pct",
+        "defense percent": "def_pct",
+        
+        "em": "em",
+        "elemental mastery": "em",
+        "mastery": "em",
+        
+        "er": "er",
+        "energy recharge": "er",
+        "recharge": "er",
+        "energy": "er",
+        
+        "crit rate": "crit_rate",
+        "crit rate%": "crit_rate",
+        "crit_rate": "crit_rate",
+        "rate": "crit_rate",
+        "crit dmg": "crit_dmg",
+        "crit dmg%": "crit_dmg",
+        "crit_dmg": "crit_dmg",
+        
+        "healing bonus": "healing_bonus",
+        "healing": "healing_bonus",
+        "healing%": "healing_bonus",
+        "healing bonus%": "healing_bonus",
+        
+        "anemo dmg bonus": "anemo dmg",
+        "anemo dmg": "anemo dmg",
+        "anemo": "anemo dmg",
+        "geo dmg bonus": "geo dmg",
+        "geo dmg": "geo dmg",
+        "geo": "geo dmg",
+        "electro dmg bonus": "electro dmg",
+        "electro dmg": "electro dmg",
+        "electro": "electro dmg",
+        "dendro dmg bonus": "dendro dmg",
+        "dendro dmg": "dendro dmg",
+        "dendro": "dendro dmg",
+        "hydro dmg bonus": "hydro dmg",
+        "hydro dmg": "hydro dmg",
+        "hydro": "hydro dmg",
+        "pyro dmg bonus": "pyro dmg",
+        "pyro dmg": "pyro dmg",
+        "pyro": "pyro dmg",
+        "cryo dmg bonus": "cryo dmg",
+        "cryo dmg": "cryo dmg",
+        "cryo": "cryo dmg",
+        "physical dmg bonus": "physical dmg",
+        "physical dmg": "physical dmg",
+        "physical": "physical dmg",
+        "phys dmg": "physical dmg",
+        "phys": "physical dmg",
+    }
+    
+    # Lista de termos a serem sumariamente desconsiderados
+    stop_words = {"gacha", "pull", "banner", "wish", "wish simulator", "recommended", "best", "placeholder", "sub", "main", "stat", "weapon", "artifact"}
+    
+    for t in tokens:
+        # Remove parênteses e todo o conteúdo dentro deles (ex: "(187)", "(gacha)")
+        t_clean = re.sub(r'\(.*?\)', '', t)
+        
+        # Remove números, pontos e símbolos de percentagem (ex: "46.6%")
+        t_clean = re.sub(r'[\d%\.]+', '', t_clean)
+        
+        # Substitui múltiplos espaços por um único espaço
+        t_clean = re.sub(r'\s+', ' ', t_clean).strip().lower()
+        
+        if not t_clean or t_clean in stop_words:
+            continue
+            
+        # Tenta mapear o termo sanitizado para o nosso padrão de main stats
+        mapped_stat = mapa_main_stats.get(t_clean)
+        if mapped_stat and mapped_stat not in seen:
+            seen.add(mapped_stat)
+            normalized_stats.append(mapped_stat)
+            
+    return normalized_stats
+
 async def get_all_character_urls(page, master_ids, logger_cb=None):
     """Raspa o index do Game8 e retorna um dicionário {char_id: url_do_guia}"""
     msg = "[INFO] Acessando a lista mestre de personagens do Game8..."
@@ -84,33 +198,61 @@ async def scrape_game8_character(page, char_name, url, logger_cb=None):
         for table in tables:
             rows = table.find_all("tr")
             for row in rows:
-                header = row.find(["th", "td"])
-                if not header:
+                cells = row.find_all(["th", "td"])
+                if not cells:
                     continue
                 
-                header_text = header.get_text(strip=True).lower()
-                value_cell = header.find_next_sibling("td")
-                
-                if not value_cell:
-                    continue
-                
-                # Extraindo Main Stats
-                if "sands of eon" in header_text or "sands" in header_text:
-                    if not build_data["main_stats"]["sands"]:
-                        build_data["main_stats"]["sands"] = normalize_extracted_text(value_cell.text)
-                
-                elif "goblet of eonothem" in header_text or "goblet" in header_text:
-                    if not build_data["main_stats"]["goblet"]:
-                        build_data["main_stats"]["goblet"] = normalize_extracted_text(value_cell.text)
-                
-                elif "circlet of logos" in header_text or "circlet" in header_text:
-                    if not build_data["main_stats"]["circlet"]:
-                        build_data["main_stats"]["circlet"] = normalize_extracted_text(value_cell.text)
-                
-                # Extraindo Substats
-                elif "sub-stats" in header_text or "substats" in header_text or "sub stat" in header_text:
-                    if not build_data["substats_priority"]:
-                        build_data["substats_priority"] = normalize_extracted_text(value_cell.text)
+                for idx, cell in enumerate(cells):
+                    cell_text = cell.get_text(" ", strip=True)
+                    cell_text_lower = cell_text.lower()
+                    
+                    # Ignorar linhas de tabelas de armas ou outras seções indesejadas
+                    if "weapon" in cell_text_lower or "talents" in cell_text_lower:
+                        continue
+                    
+                    # 1. Areias (Sands)
+                    if "sands of eon" in cell_text_lower or "sands:" in cell_text_lower or (cell_text_lower == "sands" and len(cells) > 1):
+                        if not build_data["main_stats"]["sands"]:
+                            val_part = ""
+                            if ":" in cell_text:
+                                val_part = cell_text.split(":", 1)[1]
+                            elif idx + 1 < len(cells):
+                                val_part = cells[idx + 1].get_text(" ", strip=True)
+                            if val_part:
+                                build_data["main_stats"]["sands"] = clean_and_normalize_genshin_stat(val_part)
+                                
+                    # 2. Cálice (Goblet)
+                    elif "goblet of eonothem" in cell_text_lower or "goblet:" in cell_text_lower or (cell_text_lower == "goblet" and len(cells) > 1):
+                        if not build_data["main_stats"]["goblet"]:
+                            val_part = ""
+                            if ":" in cell_text:
+                                val_part = cell_text.split(":", 1)[1]
+                            elif idx + 1 < len(cells):
+                                val_part = cells[idx + 1].get_text(" ", strip=True)
+                            if val_part:
+                                build_data["main_stats"]["goblet"] = clean_and_normalize_genshin_stat(val_part)
+                                
+                    # 3. Tiara (Circlet)
+                    elif "circlet of logos" in cell_text_lower or "circlet:" in cell_text_lower or (cell_text_lower == "circlet" and len(cells) > 1):
+                        if not build_data["main_stats"]["circlet"]:
+                            val_part = ""
+                            if ":" in cell_text:
+                                val_part = cell_text.split(":", 1)[1]
+                            elif idx + 1 < len(cells):
+                                val_part = cells[idx + 1].get_text(" ", strip=True)
+                            if val_part:
+                                build_data["main_stats"]["circlet"] = clean_and_normalize_genshin_stat(val_part)
+                                
+                    # 4. Substats
+                    elif "sub-stats" in cell_text_lower or "substats" in cell_text_lower or "sub stat" in cell_text_lower:
+                        if not build_data["substats_priority"]:
+                            val_part = ""
+                            if ":" in cell_text:
+                                val_part = cell_text.split(":", 1)[1]
+                            elif idx + 1 < len(cells):
+                                val_part = cells[idx + 1].get_text(" ", strip=True)
+                            if val_part:
+                                build_data["substats_priority"] = normalize_extracted_text(val_part)
 
         return build_data
     except Exception as e:
