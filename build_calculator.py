@@ -36,6 +36,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "march 7th": "1001",
             "march 7th the hunt": "1224",
             "march 7th • the hunt": "1224",
+            "march 7th evernight": "1225",
+            "march 7th • evernight": "1225",
             "aglaea": "1402",
             "anaxa": "1403",
             "archer": "1015",
@@ -53,12 +55,14 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "fu xuan": "1208",
             "gallagher": "1301",
             "gepard": "1104",
+            "gilgamesh": "1509",
             "guinaifen": "1210",
             "hanya": "1215",
             "herta": "1013",
             "himeko": "1003",
             "himeko - nova": "1510",
             "himeko_nova": "1510",
+            "himeko nova": "1510",
             "hook": "1109",
             "huohuo": "1217",
             "jade": "1314",
@@ -82,8 +86,14 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "silver wolf": "1006",
             "sunday": "1313",
             "sushang": "1206",
+            "the dahlia": "1321",
+            "a dahlia": "1321",
+            "a dália": "1321",
             "tingyun": "1202",
             "topaz & numby": "1112",
+            "trailblazer": "8009",
+            "desbravador": "8009",
+            "desbravador(a)": "8009",
             "welt": "1004",
             "xueyi": "1214",
             "yanqing": "1209",
@@ -99,7 +109,25 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "furina": "10000088",
             "raiden": "10000052",
             "zhongli": "10000030",
-            "nahida": "10000073"
+            "nahida": "10000073",
+            "kokomi": "10000054",
+            "sangonomiya kokomi": "10000054",
+            "yae": "10000058",
+            "yae miko": "10000058",
+            "shinobu": "10000065",
+            "kuki shinobu": "10000065",
+            "sara": "10000056",
+            "kujou sara": "10000056",
+            "heizou": "10000059",
+            "shikanoin heizou": "10000059",
+            "yunjin": "10000064",
+            "yun jin": "10000064",
+            "mizuki": "10000109",
+            "yumemizuki mizuki": "10000109",
+            "lan yan": "10000108",
+            "viajante": "10000005",
+            "traveler": "10000005",
+            "manequina": "10000118"
         },
         "zzz": {
             "anby": "1011",
@@ -296,30 +324,71 @@ MAX_ROLL_VALUES = {
 STAT_NAME_MAP = {
     # Taxa Crítica
     "taxa crítica": "crit_rate", "taxa crit": "crit_rate", "crit rate": "crit_rate", "crit_rate": "crit_rate", "rate": "crit_rate", "taxa": "crit_rate",
+    "chance de crit": "crit_rate", "chance de crit%": "crit_rate", "taxa de crit": "crit_rate", "taxa de crit%": "crit_rate",
+    "taxa crítica%": "crit_rate", "taxa crit%": "crit_rate", "chance de crt": "crit_rate", "chance de crt%": "crit_rate",
+    "chance de crítico": "crit_rate", "chance de crítico%": "crit_rate", "taxa de crítico": "crit_rate", "taxa de crítico%": "crit_rate",
+    "taxa crt": "crit_rate", "taxa crt%": "crit_rate", "crit rate%": "crit_rate", "critical rate": "crit_rate",
+    
     # Dano Crítico
     "dano crítico": "crit_dmg", "dano crit": "crit_dmg", "crit dmg": "crit_dmg", "crit_dmg": "crit_dmg", "dmg": "crit_dmg", "dano": "crit_dmg", "damage": "crit_dmg",
+    "dano crit%": "crit_dmg", "dano de crit": "crit_dmg", "dano de crit%": "crit_dmg", "dano crítico%": "crit_dmg",
+    "dano crt": "crit_dmg", "dano crt%": "crit_dmg", "dano de crt": "crit_dmg", "dano de crt%": "crit_dmg",
+    "dano de crítico": "crit_dmg", "dano de crítico%": "crit_dmg", "crit dmg%": "crit_dmg", "critical damage": "crit_dmg",
+    
     # Velocidade
     "velocidade": "spd", "vel": "spd", "spd": "spd", "speed": "spd",
+    
     # Efeito de Quebra
     "efeito de quebra": "break_effect", "quebra": "break_effect", "break effect": "break_effect", "break_effect": "break_effect", "be": "break_effect",
+    "efeito de quebra%": "break_effect", "break_effect%": "break_effect", "break": "break_effect",
+    
     # Proficiência Elemental / Anomalia
     "proficiência elemental": "em", "proficiência": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "mastery": "em",
     "anomaly proficiency": "anomaly_prof", "proficiência em anomalia": "anomaly_prof", "proficiência de anomalia": "anomaly_prof", "anomaly_prof": "anomaly_prof",
-    # Recarga de Energia
+    "proficiência de anomalia%": "anomaly_prof", "anomalia": "anomaly_prof",
+    
+    # Recarga de Energia / Taxa de Regeneração de Energia
     "recarga de energia": "er", "recarga": "er", "energy recharge": "er", "er": "er", "recharge": "er", "recarga de energia%": "er",
+    "taxa de regeneração de energia": "err", "recuperação de energia": "err", "energy regen rate": "err", "energy regen": "err", "err": "err",
+    
+    # Bônus de Cura
+    "bônus de cura": "healing_bonus", "bônus de cura%": "healing_bonus", "healing bonus": "healing_bonus", "healing": "healing_bonus", "healing_bonus": "healing_bonus",
+    
     # Atributos Percentuais
     "atq %": "atk_pct", "atq%": "atk_pct", "atk%": "atk_pct", "atk %": "atk_pct", "ataque%": "atk_pct", "attack%": "atk_pct", "atk_pct": "atk_pct",
     "vida %": "hp_pct", "vida%": "hp_pct", "hp%": "hp_pct", "hp %": "hp_pct", "hp_pct": "hp_pct", "vida_pct": "hp_pct",
     "defesa %": "def_pct", "defesa%": "def_pct", "def%": "def_pct", "def %": "def_pct", "defesa_pct": "def_pct", "def_pct": "def_pct",
+    
     # Atributos Planos (Flats)
     "atq": "atk_flat", "atk": "atk_flat", "ataque": "atk_flat", "attack": "atk_flat", "atk_flat": "atk_flat",
     "vida": "hp_flat", "hp": "hp_flat", "hp_flat": "hp_flat",
     "defesa": "def_flat", "def": "def_flat", "defesa_flat": "def_flat", "def_flat": "def_flat",
+    "pv": "hp_flat", "pv%": "hp_pct", "pontos de vida": "hp_flat",
+    
+    # Bônus Elementais (Genshin / HSR / ZZZ)
+    "pyro dmg": "pyro_dmg", "bônus de dano pyro": "pyro_dmg", "bônus de dano de fogo": "fire_dmg", "fire dmg": "fire_dmg", "fogo": "fire_dmg", "pyro": "pyro_dmg",
+    "hydro dmg": "hydro_dmg", "bônus de dano hydro": "hydro_dmg", "bônus de dano de água": "hydro_dmg", "hydro": "hydro_dmg",
+    "electro dmg": "electro_dmg", "bônus de dano electro": "electro_dmg", "bônus de dano de raio": "lightning_dmg", "bônus de dano elétrico": "electric_dmg", "lightning dmg": "lightning_dmg", "electric dmg": "electric_dmg", "raio": "lightning_dmg", "eletro": "electro_dmg",
+    "cryo dmg": "cryo_dmg", "bônus de dano cryo": "cryo_dmg", "bônus de dano de gelo": "ice_dmg", "ice dmg": "ice_dmg", "gelo": "ice_dmg", "cryo": "cryo_dmg",
+    "anemo dmg": "anemo_dmg", "bônus de dano anemo": "anemo_dmg", "bônus de dano de vento": "wind_dmg", "wind dmg": "wind_dmg", "vento": "wind_dmg", "anemo": "anemo_dmg",
+    "geo dmg": "geo_dmg", "bônus de dano geo": "geo_dmg", "geo": "geo_dmg",
+    "dendro dmg": "dendro_dmg", "bônus de dano dendro": "dendro_dmg", "dendro": "dendro_dmg",
+    "physical dmg": "physical_dmg", "bônus de dano físico": "physical_dmg", "físico": "physical_dmg", "physical": "physical_dmg",
+    "quantum dmg": "quantum_dmg", "bônus de dano quântico": "quantum_dmg", "quântico": "quantum_dmg", "quantum": "quantum_dmg",
+    "imaginary dmg": "imaginary_dmg", "bônus de dano imaginário": "imaginary_dmg", "imaginário": "imaginary_dmg", "imaginary": "imaginary_dmg",
+    "ether dmg": "ether_dmg", "bônus de dano de éter": "ether_dmg", "éter": "ether_dmg", "ether": "ether_dmg",
+    
     # HSR Específicos
     "effect hit rate": "ehr", "ehr": "ehr", "taxa de acerto de efeito": "ehr",
+    "chance de acerto de efeito": "ehr", "chance de acerto de efeito%": "ehr", "chance de acerto": "ehr", "acerto de efeito": "ehr",
     "effect res": "res", "res": "res", "resistência a efeito": "res", "res_efeito": "res",
+    "res a efeito": "res", "res a efeito%": "res", "resistência a efeito%": "res",
+    
     # ZZZ Específicos
-    "pen flat": "pen_flat", "pen": "pen_flat", "pen flat bonus": "pen_flat"
+    "pen flat": "pen_flat", "pen": "pen_flat", "pen flat bonus": "pen_flat", "perfuração": "pen_flat",
+    "pen ratio": "pen_pct", "pen_pct": "pen_pct", "taxa de perfuração": "pen_pct", "perfuração%": "pen_pct",
+    "impacto": "impact", "impact": "impact", "impact_pct": "impact",
+    "taxa de controle de anomalia": "anomaly_mastery", "controle de anomalia": "anomaly_mastery", "anomaly mastery": "anomaly_mastery", "anomaly_mastery": "anomaly_mastery"
 }
 
 # ==========================================
@@ -351,39 +420,45 @@ def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
     
     if has_percent:
         if mapped == "atk_flat": return "atk_pct"
-        if mapped == "hp_flat": return "hp_pct"
+        if mapped == "hp_flat" or mapped == "pv": return "hp_pct"
         if mapped == "def_flat": return "def_pct"
         
     return mapped
+
+def is_stat_equivalent(stat1: str, stat2: str) -> bool:
+    """Verifica equivalência entre variantes de nomes de atributos."""
+    if stat1 == stat2:
+        return True
+    eq_groups = [
+        {"cryo_dmg", "ice_dmg"},
+        {"electro_dmg", "lightning_dmg", "electric_dmg"},
+        {"anemo_dmg", "wind_dmg"},
+        {"pyro_dmg", "fire_dmg"},
+        {"er", "err"},
+        {"pen_flat", "pen_pct"},
+        {"em", "anomaly_prof"}
+    ]
+    for group in eq_groups:
+        if stat1 in group and stat2 in group:
+            return True
+    return False
 
 def sanitize_substats(raw_tokens: list, game_id: str) -> list:
     """
     Sanitiza uma lista de tokens brutos extraídos dos guias Markdown,
     filtrando por VALID_SUBSTATS para evitar poluição no meta_data.json.
-    
-    Pipeline:
-      1. Remove ruído de Markdown (###, **, -) e conteúdo entre parênteses
-      2. Faz split secundário em '=' para separar tokens compostos (ex: "crit rate = crit dmg")
-      3. Normaliza via normalize_stat_name()
-      4. Filtra pela whitelist VALID_SUBSTATS
-      5. Remove duplicatas preservando a ordem original
-      6. Limita a no máximo 5 itens
     """
     cleaned = []
     seen = set()
     
     for raw in raw_tokens:
-        # 1. Remove conteúdo entre parênteses (explicações como "breakpoint if you play 134+")
         token = re.sub(r'\([^)]*\)', '', raw)
-        # Remove marcadores de Markdown e bullets
         token = re.sub(r'[#*\-]+', '', token)
-        # Remove espaços extras
         token = token.strip()
         
         if not token:
             continue
         
-        # 2. Split secundário em '=' para tokens compostos ("crit rate = crit dmg")
         sub_tokens = re.split(r'\s*=\s*', token)
         
         for st in sub_tokens:
@@ -391,19 +466,15 @@ def sanitize_substats(raw_tokens: list, game_id: str) -> list:
             if not st:
                 continue
             
-            # Descarta imediatamente tokens que parecem sentenças (> 4 palavras)
             if len(st.split()) > 4:
                 continue
             
-            # 3. Normaliza
             norm = normalize_stat_name(st)
             
-            # 4. Filtra pela whitelist
             if norm in VALID_SUBSTATS and norm not in seen:
                 seen.add(norm)
                 cleaned.append(norm)
     
-    # 5. Limita a no máximo 5 itens
     return cleaned[:5]
 
 # ==========================================
@@ -430,23 +501,17 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
                 weight_val = scale[i] if i < len(scale) else 0.30
                 weights[norm_name] = weight_val
                 
-            # 1. Survival/Support Fallback para suportes/kits restritos (< 4 substats)
-            # Se o dicionário de pesos tiver menos de 4 substatus cadastrados pelo guia,
-            # injeta atributos básicos de sobrevivência/suporte com peso base 0.40.
-            # Evita que peças excelentes de suporte recebam nota baixa por falta de substats prioritários.
             if len(weights) < 4:
                 survival_stats = ["hp_pct", "def_pct", "res"] if game_id == "hsr" else ["hp_pct", "def_pct"]
                 for st in survival_stats:
                     if st not in weights:
                         weights[st] = 0.40
                 
-            # 2. Forgiveness para Críticos (Crit Rate <-> Crit Dmg)
             if "crit_rate" in weights and "crit_dmg" not in weights:
                 weights["crit_dmg"] = round(weights["crit_rate"] * 0.85, 3)
             elif "crit_dmg" in weights and "crit_rate" not in weights:
                 weights["crit_rate"] = round(weights["crit_dmg"] * 0.85, 3)
                 
-            # 3. Forgiveness inteligente para atributos Flat (50% do peso da versão % correspondente)
             if "hp_pct" in weights and "hp_flat" not in weights:
                 weights["hp_flat"] = round(weights["hp_pct"] * 0.5, 3)
             if "atk_pct" in weights and "atk_flat" not in weights:
@@ -471,7 +536,7 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
     }
 
 # ==========================================
-# MOTOR DINÂMICO DE SCORES COM MAIN STAT FORGIVENESS
+# MOTOR DINÂMICO DE SCORES COM MAIN STAT E SUBSTAT WEIGHTING
 # ==========================================
 def clean_value(val_str: str) -> Tuple[float, bool]:
     """Extrai o valor numérico de uma string de status e indica se é percentual."""
@@ -482,7 +547,7 @@ def clean_value(val_str: str) -> Tuple[float, bool]:
 
 def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_str: str) -> Tuple[str, float]:
     """
-    Calcula a nota de uma relíquia usando Roll Value (RV) e Main Stat Forgiveness (Compensação).
+    Calcula a nota de uma relíquia considerando Main Stat (40%) e Substatus (60%).
     """
     game_id = game_id.lower().strip()
     if game_id not in MAX_ROLL_VALUES:
@@ -492,17 +557,46 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
         return "D", 0.0
         
     weights = extract_weights_from_guide(game_id, str(char_id))
+    meta_db = get_meta_data(game_id)
+    char_meta = meta_db.get(str(char_id), {})
     
     main_clean = main_stat.lower()
     slot_clean = slot.lower()
-    is_fixed_main = False
-    if game_id == "genshin" and ("flower" in slot_clean or "plume" in slot_clean or "flor" in slot_clean or "pena" in slot_clean):
-        is_fixed_main = True
-    elif game_id == "hsr" and ("head" in slot_clean or "hands" in slot_clean or "cabeça" in slot_clean or "mão" in slot_clean):
-        is_fixed_main = True
-        
-    main_stat_norm = normalize_stat_name(main_stat, has_percent=("%" in main_clean))
     
+    # 1. Identifica se o slot possui Main Stat Fixo
+    is_fixed_main = False
+    if game_id == "genshin" and any(k in slot_clean for k in ["flower", "plume", "flor", "pena"]):
+        is_fixed_main = True
+    elif game_id == "hsr" and any(k in slot_clean for k in ["head", "hands", "cabeça", "mão", "mãos"]):
+        is_fixed_main = True
+    elif game_id == "zzz" and any(k in slot_clean for k in ["slot_1", "slot_2", "slot_3", "disco 1", "disco 2", "disco 3", "disc 1", "disc 2", "disc 3", "1", "2", "3"]):
+        is_fixed_main = True
+
+    # Extrai main stat normalizado
+    raw_main_name = main_clean.split("(")[0].strip()
+    has_pct = "%" in main_clean or "%" in main_stat
+    main_stat_norm = normalize_stat_name(raw_main_name, has_percent=has_pct)
+    
+    # 2. Avalia a validade do Main Stat
+    main_stat_valid = False
+    if is_fixed_main:
+        main_stat_valid = True
+    else:
+        guide_mains = char_meta.get("main_stats", {})
+        slot_key = None
+        for k in guide_mains:
+            if k.lower() in slot_clean or slot_clean in k.lower():
+                slot_key = k
+                break
+                
+        rec_mains = guide_mains.get(slot_key, []) if slot_key else []
+        if rec_mains:
+            norm_rec = [normalize_stat_name(m) for m in rec_mains]
+            main_stat_valid = any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec)
+        else:
+            main_stat_valid = weights.get(main_stat_norm, 0.0) > 0.35
+
+    # 3. Pontuação de Substatus (RV - Roll Value)
     sorted_priorities = [k for k, v in sorted(weights.items(), key=lambda item: item[1], reverse=True) if v > 0.0]
     
     if not is_fixed_main and main_stat_norm in sorted_priorities:
@@ -514,32 +608,43 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     while len(ideal_substats) < 4:
         ideal_substats.append("none")
         
-    roll_distribution = [5, 2, 1, 1]
-    max_possible_score = 0.0
+    # Calibração realista do denominador de substatus
+    max_possible_sub_score = 0.0
+    roll_distribution = [3.5, 2.0, 1.0, 0.5]
     for i, sub in enumerate(ideal_substats):
         w = weights.get(sub, 0.0)
-        max_possible_score += w * roll_distribution[i]
+        max_possible_sub_score += w * roll_distribution[i]
         
-    if max_possible_score <= 0:
-        max_possible_score = 5.0
+    if max_possible_sub_score <= 0:
+        max_possible_sub_score = 3.5
         
     game_max_rolls = MAX_ROLL_VALUES[game_id]
-    actual_score = 0.0
+    actual_sub_score = 0.0
     
     parts = substats_str.split(",")
     for p in parts:
         if ":" in p:
             name, val_str = p.split(":", 1)
-            val, has_pct = clean_value(val_str)
-            sub_name_norm = normalize_stat_name(name, has_percent=has_pct)
+            val, has_p = clean_value(val_str)
+            sub_name_norm = normalize_stat_name(name, has_percent=has_p)
             
             max_roll = game_max_rolls.get(sub_name_norm, 0.0)
-            
             if max_roll > 0.0:
                 rv = val / max_roll
-                actual_score += rv * weights.get(sub_name_norm, 0.0)
-                
-    rating_pct = (actual_score / max_possible_score) * 100.0
+                actual_sub_score += rv * weights.get(sub_name_norm, 0.0)
+
+    sub_ratio = min(1.0, actual_sub_score / max_possible_sub_score)
+    
+    # 4. Composição da Nota Final
+    if is_fixed_main:
+        rating_pct = sub_ratio * 100.0
+    else:
+        if main_stat_valid:
+            rating_pct = (0.40 + 0.60 * sub_ratio) * 100.0
+        else:
+            rating_pct = (0.40 * sub_ratio) * 100.0
+
+    rating_pct = round(rating_pct, 1)
     
     if rating_pct >= 90.0: grade = "SSS"
     elif rating_pct >= 75.0: grade = "SS"
@@ -549,7 +654,7 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     elif rating_pct >= 15.0: grade = "C"
     else: grade = "D"
     
-    return grade, round(rating_pct, 1)
+    return grade, rating_pct
 
 # ==========================================
 # AVALIADOR DE STATUS GERAIS DO PERSONAGEM
@@ -634,8 +739,15 @@ def generate_meta_json_from_markdown(game_id: str):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
         matches = re.findall(r"-\s*(Body|Feet|Planar Sphere|Link Rope):\s*(.*)", content)
         for slot, val in matches:
-            stats = [normalize_stat_name(s) for s in re.split(r'\s*(?:/|\||\bor\b|,)\s*', val, flags=re.IGNORECASE) if s]
-            meta["main_stats"][slot.lower().replace(" ", "_")] = [s for s in stats if s]
+            tokens = re.split(r'\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*', val, flags=re.IGNORECASE)
+            stats = []
+            for t in tokens:
+                t_clean = re.sub(r'\([^)]*\)', '', t).strip()
+                if t_clean:
+                    norm = normalize_stat_name(t_clean)
+                    if norm and norm not in stats:
+                        stats.append(norm)
+            meta["main_stats"][slot.lower().replace(" ", "_")] = stats
             
         sub_match = re.search(
             r"(?:subatributos prioritários|sub-stats|substats)[^\n]*\n"
@@ -674,8 +786,15 @@ def generate_meta_json_from_markdown(game_id: str):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
         matches = re.findall(r"(?:Disk|Slot|Disco)\s*(4|5|6)[:\- ]\s*(.*)", content, re.I)
         for slot, val in matches:
-            stats = [normalize_stat_name(s) for s in re.split(r'\s*(?:/|\||\bor\b|,)\s*', val, flags=re.IGNORECASE) if s]
-            meta["main_stats"][f"slot_{slot}"] = [s for s in stats if s]
+            tokens = re.split(r'\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*', val, flags=re.IGNORECASE)
+            stats = []
+            for t in tokens:
+                t_clean = re.sub(r'\([^)]*\)', '', t).strip()
+                if t_clean:
+                    norm = normalize_stat_name(t_clean)
+                    if norm and norm not in stats:
+                        stats.append(norm)
+            meta["main_stats"][f"slot_{slot}"] = stats
             
         sub_match = re.search(r"(?:substatus prioritários|substats):\s*(.*)", content, re.I)
         if sub_match:
@@ -698,7 +817,7 @@ def generate_meta_json_from_markdown(game_id: str):
                     
                     # Cruza com a fonte mestre de IDs
                     normalized_raw = normalize_char_name(raw_name)
-                    char_id = master_ids.get(normalized_raw, raw_name.lower().replace(" ", "_"))
+                    char_id = master_ids.get(normalized_raw, master_ids.get(raw_name.lower(), raw_name.lower().replace(" ", "_")))
                     filepath = os.path.join(guias_dir, f)
                     try:
                         with open(filepath, "r", encoding="utf-8") as file:
