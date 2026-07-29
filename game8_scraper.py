@@ -14,16 +14,18 @@ GAME8_INDEX_URL = "https://game8.co/games/Genshin-Impact/archives/297496"
 def clean_character_name(raw_name: str) -> str:
     """Limpa o nome do Game8 para cruzar com o nosso banco de IDs"""
     name = raw_name.lower().strip()
-    # Remove títulos e sobrenomes comuns que o Game8 usa
-    prefixes_to_remove = ["kamisato ", "kaedehara ", "sangonomiya ", "shikanoin ", "kuki ", "arabalanq "]
-    for prefix in prefixes_to_remove:
-        name = name.replace(prefix, "")
     
-    # Tratamentos específicos
+    # Tratamentos específicos para aliases populares do Game8
     if "raiden" in name: return "raiden"
     if "tartaglia" in name or "childe" in name: return "tartaglia"
-    if "yae" in name: return "yae"
-    if "hu tao" in name: return "hutao"
+    if "yae" in name: return "yae miko"
+    if "hu tao" in name: return "hu tao"
+    if "kokomi" in name: return "sangonomiya kokomi"
+    if "shinobu" in name: return "kuki shinobu"
+    if "heizou" in name: return "shikanoin heizou"
+    if "sara" in name and "kujou" in name: return "kujou sara"
+    if "yunjin" in name or "yun jin" in name: return "yun jin"
+    if "mizuki" in name: return "yumemizuki mizuki"
     
     return name
 
