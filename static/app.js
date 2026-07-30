@@ -2190,7 +2190,8 @@ function drawPieChart(svgId, legendId, data) {
 
 function getZzzPrydwenSlug(name) {
     if (!name) return "";
-    const clean = String(name).toLowerCase().trim();
+    const noAccents = String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const clean = noAccents.toLowerCase().trim();
     const specialMap = {
         "anby demara": "anby-demara",
         "anby": "anby-demara",
@@ -2204,14 +2205,45 @@ function getZzzPrydwenSlug(name) {
         "hoshimi miyabi": "miyabi",
         "asaba harumasa": "harumasa",
         "jane doe": "jane-doe",
+        "jane": "jane-doe",
         "koleda belobog": "koleda",
         "nicole demara": "nicole-demara",
         "nicole": "nicole-demara",
+        "orphie & magus": "orphie-and-magus",
+        "orphie and magus": "orphie-and-magus",
+        "orfeu & magus": "orphie-and-magus",
+        "orfeu e magus": "orphie-and-magus",
         "piper wheel": "piper",
         "seth lowell": "seth",
         "soldier 11": "soldier-11",
+        "n. 11": "soldier-11",
+        "n.º 11": "soldier-11",
+        "n.o 11": "soldier-11",
         "von lycaon": "lycaon",
-        "zhu yuan": "zhu-yuan"
+        "zhu yuan": "zhu-yuan",
+
+        // Mapeamento PT-BR de ZZZ
+        "císsia": "cissia",
+        "cissia": "cissia",
+        "caesar": "caesar",
+        "caesar king": "caesar",
+        "luciana": "lucy",
+        "luciana de montefio": "lucy",
+        "lucy": "lucy",
+        "vovó": "lucy",
+        "vovo": "lucy",
+        "soukaku": "soukaku",
+        "burnice": "burnice",
+        "burnice white": "burnice",
+        "lighter": "lighter",
+        "yanagi": "yanagi",
+        "tsukishiro yanagi": "yanagi",
+        "miyabi": "miyabi",
+        "harumasa": "harumasa",
+        "evelyn": "evelyn",
+        "evelyn chevalier": "evelyn",
+        "pulchra": "pulchra",
+        "koleda": "koleda"
     };
     if (specialMap[clean]) return specialMap[clean];
     for (const [k, v] of Object.entries(specialMap)) {
@@ -2347,12 +2379,16 @@ async function generateBuildCardCanvas(char, gameId) {
     if (gameId === 'hsr' && char.id && !char.gacha_art) {
         splashUrl = `https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${char.id}.png`;
     } else if (gameId === 'zzz') {
-        const isZzzSkin = splashUrl && splashUrl.split("_").some(part => /^\d{7,}$/.test(part.replace(".png", "")));
-        if (!isZzzSkin) {
+        const iconStr = String(char.icon || "");
+        const gArtStr = String(char.gacha_art || "");
+        const checkStr = iconStr + " " + gArtStr + " " + String(char.splash_art || "");
+        const skinMatch = checkStr.match(/(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png/);
+        if (skinMatch) {
+            splashUrl = `https://act-webstatic.hoyoverse.com/game_record/zzzv2/role_vertical_painting/role_vertical_painting_${skinMatch[1]}_${skinMatch[2]}.png`;
+        } else {
             const zzzSlug = getZzzPrydwenSlug(char.name);
-            const zzzPrydwenUrl = zzzSlug ? `https://cdn.prydwen.gg/images/zenless-zone-zero/characters/${zzzSlug}_full.webp` : "";
-            if (!splashUrl || splashUrl.includes("role_vertical_painting") || splashUrl.includes("role_square_avatar")) {
-                splashUrl = zzzPrydwenUrl || splashUrl;
+            if (zzzSlug) {
+                splashUrl = `https://cdn.prydwen.gg/images/zenless-zone-zero/characters/${zzzSlug}_full.webp`;
             }
         }
     } else if (gameId === 'genshin') {
@@ -2462,11 +2498,19 @@ async function generateBuildCardCanvas(char, gameId) {
             const cropRatio = imgW / imgH;
             let drawW, drawH, drawX, drawY;
 
-            // Escala a altura para preencher todo o container (611px), garantindo o personagem grande e em destaque
-            drawH = targetH;
-            drawW = targetH * cropRatio;
-            drawX = (hx + 2) - (drawW - targetW) / 2;
-            drawY = hy + 2;
+            if (splashUrl && splashUrl.includes("role_vertical_painting")) {
+                // Enquadramento inteligente para pinturas verticais de skins do HoYoLAB (evita cortar chapéu/óculos/cabeça)
+                drawW = targetW * 1.12;
+                drawH = drawW / cropRatio;
+                drawX = (hx + 2) - (drawW - targetW) / 2;
+                drawY = hy + 45;
+            } else {
+                // Escala a altura para preencher todo o container (611px), garantindo o personagem grande e em destaque
+                drawH = targetH;
+                drawW = targetH * cropRatio;
+                drawX = (hx + 2) - (drawW - targetW) / 2;
+                drawY = hy + 2;
+            }
 
             ctx.drawImage(charImg, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
         }
@@ -2811,6 +2855,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const exportCardStatus = document.getElementById("export-card-status");
 
     let currentGeneratedCanvas = null;
+    let currentGeneratedBlob = null;
 
     const openExportModalHandler = async () => {
         if (!window.currentInspectorChar || !window.currentInspectorGameId) {
@@ -2826,6 +2871,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             currentGeneratedCanvas = await generateBuildCardCanvas(window.currentInspectorChar, window.currentInspectorGameId);
+            currentGeneratedBlob = await new Promise(resolve => currentGeneratedCanvas.toBlob(resolve, "image/png"));
             const dataUrl = currentGeneratedCanvas.toDataURL("image/png");
             exportPreviewImg.src = dataUrl;
             exportPreviewImg.style.display = "block";
@@ -2875,23 +2921,30 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         if (btnCopyCardImg) {
-            btnCopyCardImg.addEventListener("click", () => {
+            btnCopyCardImg.addEventListener("click", async () => {
                 if (!currentGeneratedCanvas) return;
-                currentGeneratedCanvas.toBlob(async (blob) => {
-                    if (!blob) {
-                        showToast("Erro ao processar imagem.");
-                        return;
-                    }
+
+                if (navigator.clipboard && window.ClipboardItem && navigator.clipboard.write) {
                     try {
-                        await navigator.clipboard.write([
-                            new ClipboardItem({ "image/png": blob })
-                        ]);
-                        showToast("Imagem copiada para a área de transferência! (Pressione Ctrl+V para colar)");
-                    } catch (err) {
-                        console.error("Erro ao copiar para clipboard:", err);
-                        showToast("Não foi possível copiar automaticamente. Use o botão Baixar PNG.");
+                        if (!currentGeneratedBlob) {
+                            currentGeneratedBlob = await new Promise(resolve => currentGeneratedCanvas.toBlob(resolve, "image/png"));
+                        }
+                        const item = new ClipboardItem({ "image/png": currentGeneratedBlob });
+                        await navigator.clipboard.write([item]);
+                        showToast("Imagem copiada para a área de transferência! (Pressione Ctrl+V no Discord/WhatsApp)");
+                        return;
+                    } catch (clipErr) {
+                        console.warn("navigator.clipboard.write falhou:", clipErr);
                     }
-                }, "image/png");
+                }
+
+                showToast("Navegadores em conexões HTTP de celular/rede local bloqueiam a cópia direta. Baixando PNG...");
+                const charName = window.currentInspectorChar ? window.currentInspectorChar.name : "Personagem";
+                const gameId = window.currentInspectorGameId || "hoyo";
+                const link = document.createElement("a");
+                link.download = `Build_${getSafeFileName(charName)}_${gameId.toUpperCase()}.png`;
+                link.href = currentGeneratedCanvas.toDataURL("image/png");
+                link.click();
             });
         }
     }

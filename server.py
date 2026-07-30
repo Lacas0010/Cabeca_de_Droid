@@ -492,11 +492,17 @@ async def get_roster(game_id: str):
             # Garante fallback de gacha_art em HD para ZZZ e skins do Genshin
             if game_id == "zzz":
                 from extractor import get_zzz_prydwen_slug
-                slug = get_zzz_prydwen_slug(char.get("name", ""))
-                g_art = str(char.get("gacha_art") or "")
-                is_zzz_skin = any(part.isdigit() and len(part) >= 7 for part in g_art.split("_"))
-                if slug and not is_zzz_skin and (not char.get("gacha_art") or "role_vertical_painting" in g_art or "role_square_avatar" in g_art):
-                    char["gacha_art"] = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{slug}_full.webp"
+                icon_str = str(char.get("icon") or "")
+                g_art_str = str(char.get("gacha_art") or "")
+                check_str = icon_str + " " + g_art_str
+                match = re.search(r'(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png', check_str)
+                if match:
+                    base_id, skin_id = match.group(1), match.group(2)
+                    char["gacha_art"] = f"https://act-webstatic.hoyoverse.com/game_record/zzzv2/role_vertical_painting/role_vertical_painting_{base_id}_{skin_id}.png"
+                else:
+                    slug = get_zzz_prydwen_slug(char.get("name", ""))
+                    if slug:
+                        char["gacha_art"] = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{slug}_full.webp"
             elif game_id == "genshin":
                 g_art = char.get("gacha_art") or ""
                 c_icon = char.get("icon") or ""
