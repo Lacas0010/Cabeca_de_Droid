@@ -2,7 +2,13 @@ import os
 import re
 import json
 import unicodedata
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
+
+# Expressões regulares pré-compiladas para alta performance
+RE_MULTIPLE_SPACES = re.compile(r'\s+')
+RE_PARENTHESES = re.compile(r'\([^)]*\)')
+RE_CLEAN_CHARS = re.compile(r'[#*\-]+')
+RE_EQUAL_SPLIT = re.compile(r'\s*=\s*')
 
 def remove_accents(input_str: str) -> str:
     """Remove acentos e diacríticos de uma string."""
@@ -66,9 +72,11 @@ def normalize_char_name(name: str) -> str:
     Normaliza o nome do personagem para facilitar o cruzamento de IDs,
     removendo hifens, bullets, parênteses e múltiplos espaços.
     """
+    if not name:
+        return ""
     name = name.lower()
     name = name.replace("•", " ").replace("-", " ").replace("(", " ").replace(")", " ").replace(".", " ")
-    return re.sub(r'\s+', ' ', name).strip()
+    return RE_MULTIPLE_SPACES.sub(' ', name).strip()
 
 def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     """
@@ -868,12 +876,12 @@ def generate_meta_json_from_markdown(game_id: str):
     """
     Varre todos os guias markdown do jogo e regenera o arquivo meta_data.json
     tendo o ID do personagem como chave principal.
-    Para Genshin Impact, os metadados são gerados via game8_scraper.py.
+    Para Genshin Impact, os metadados são gerados via scraper_game8.py.
     """
     game_id = game_id.lower().strip()
 
     if game_id == "genshin":
-        print("[INFO] Metadados de Genshin são gerados via game8_scraper.py. Ignorando parse de Markdown.")
+        print("[INFO] Metadados de Genshin são gerados via scraper_game8.py. Ignorando parse de Markdown.")
         return
 
     guias_dir = f"{game_id}/guias"

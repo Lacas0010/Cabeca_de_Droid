@@ -106,7 +106,6 @@ hoyo-projetos/
 ├── scraper_prydwen.py       # Raspador de meta e guias de HSR (Prydwen)
 ├── scraper_zzz.py           # Raspador de meta e guias de ZZZ (Prydwen ZZZ)
 ├── scraper_meta.py          # Agregador de meta para HSR
-├── scraper_genshin_meta.py  # Agregador de meta para Genshin
 ├── static/                  # Frontend Web (index.html, style.css, app.js)
 ├── assets/                  # Ícones estáticos e cache local de elementos
 ├── traducoes.json           # Dicionário de tradução Inglês -> PT-BR
