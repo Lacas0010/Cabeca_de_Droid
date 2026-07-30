@@ -40,6 +40,7 @@ def init_db():
         rank_str TEXT,
         element TEXT,
         icon TEXT,
+        gacha_art TEXT,
         weapon_name TEXT,
         weapon_level INTEGER,
         weapon_rank INTEGER,
@@ -48,6 +49,14 @@ def init_db():
         PRIMARY KEY (uid, name)
     )
     """)
+    try:
+        cursor.execute("ALTER TABLE characters ADD COLUMN gacha_art TEXT")
+    except Exception:
+        pass
+    try:
+        cursor.execute("ALTER TABLE characters ADD COLUMN char_id TEXT")
+    except Exception:
+        pass
     
     # 3. Tabela de Relíquias / Artefatos / Discos
     cursor.execute("""
@@ -123,16 +132,16 @@ def save_game_account(uid: str, game_id: str, nickname: str, level: int, active_
 
 def save_character(uid: str, game_id: str, name: str, level: int, rarity: int, rank_str: str, 
                    element: str, icon: str, weapon_name: str, weapon_level: int, 
-                   weapon_rank: int, weapon_icon: str, raw_md: str, char_id: str = None):
+                   weapon_rank: int, weapon_icon: str, raw_md: str, char_id: str = None, gacha_art: str = None):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""
     INSERT OR REPLACE INTO characters (
-        uid, game_id, name, level, rarity, rank_str, element, icon, 
-        weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (uid, game_id, name, level, rarity, rank_str, element, icon,
-          weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md))
+        uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
+        weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
+          weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id))
     conn.commit()
     conn.close()
 
@@ -166,6 +175,7 @@ def get_roster_data(game_id: str) -> list:
     
     roster = []
     for r in rows:
+        r_keys = r.keys()
         # Busca as relíquias vinculadas a este personagem
         cursor.execute("""
         SELECT name, slot, main_stat as main, sub_stats as sub, icon FROM character_relics 
@@ -180,6 +190,7 @@ def get_roster_data(game_id: str) -> list:
             relics_list.append(r_dict)
         
         char_dict = {
+            "id": r["char_id"] if "char_id" in r_keys and r["char_id"] else "",
             "uid": r["uid"],
             "name": r["name"],
             "level": r["level"],
@@ -187,6 +198,7 @@ def get_roster_data(game_id: str) -> list:
             "rank_str": r["rank_str"],
             "element": r["element"],
             "icon": r["icon"],
+            "gacha_art": r["gacha_art"] if "gacha_art" in r_keys else None,
             "weapon": {
                 "name": r["weapon_name"],
                 "level": r["weapon_level"],

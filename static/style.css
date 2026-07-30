@@ -1206,29 +1206,59 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 500;
 }
 
-/* Grid de Atributos */
+/* ===== PAINEL DE STATUS FINAIS (COMBAT STATS) ===== */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
 }
+
+/* Bloco de stat individual — glassmorphism escuro */
 .stat-card {
-    background-color: rgba(0,0,0,0.3);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 10px 12px;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(6px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    padding: 7px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    transition: border-color 0.2s;
 }
+.stat-card:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Versão dourada para CRIT / SPD */
+.stat-card--crit {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.25);
+}
+.stat-card--crit:hover {
+    border-color: rgba(245, 158, 11, 0.45);
+}
+
 .stat-label {
     display: block;
     font-size: 10px;
-    color: var(--text-muted);
+    color: #64748b;
     text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .stat-value {
     font-size: 14px;
     font-family: 'Outfit', sans-serif;
     font-weight: 700;
-    color: var(--text-primary);
+    color: #e2e8f0;
+    white-space: nowrap;
+}
+/* Valor CRIT/SPD em destaque âmbar */
+.stat-value--crit {
+    color: #fbbf24;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.35);
 }
 
 /* Detalhamento de Peças de Relíquia */
@@ -1272,30 +1302,78 @@ h1, h2, h3, h4, h5, h6 {
 }
 .piece-main {
     font-size: 11px;
-    color: #3b82f6; /* Azul para status principal */
+    color: var(--text-secondary);
     font-weight: 500;
-    margin-bottom: 4px;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
+
+/* Pill de Main Stat (Dourada) com largura flexível/dinâmica e sem truncamento */
+.main-stat-pill {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    min-width: auto;
+    max-width: 100%;
+    padding: 3px 12px;
+    background: rgba(245, 158, 11, 0.15);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
 .piece-subs {
     font-size: 10px;
     color: var(--text-secondary);
     line-height: 1.4;
 }
+
+/* Grid 2x2 de Substats (Pills escuras) com largura expandida */
 .piece-subs-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 4px 8px;
-    margin-top: 4px;
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+    gap: 6px;
+    margin-top: 6px;
+    width: 100%;
 }
+
+/* Container Flexbox horizontal da Pill de Substat */
 .sub-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 6px;
     background: rgba(255, 255, 255, 0.04);
-    padding: 3px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    font-size: 9.5px;
+    padding: 4px 10px;
+    min-width: 0;
+}
+
+/* Texto do Nome (Esquerda): cinza/prata claro */
+.sub-label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+/* Valor Numérico (Direita): Alinhado à extrema direita em negrito branco */
+.sub-value {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #ffffff;
+    white-space: nowrap;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 
 /* Badge da Nota Geral da Build e Relíquias */

@@ -35,7 +35,7 @@ def patch_genshin_enums():
 
 patch_genshin_enums()
 
-# Mapeamento de IDs de costumes (skins) para os nomes correspondentes de imagens de rosto no Enka.Network
+# Mapeamento de IDs de costumes (skins) para os nomes correspondentes no Enka.Network
 GENSHIN_SKIN_MAP = {
     200201: "UI_AvatarIcon_AyakaCostumeFruhling",
     200301: "UI_AvatarIcon_QinCostumeSea",
@@ -63,6 +63,64 @@ GENSHIN_SKIN_MAP = {
     210701: "UI_AvatarIcon_CitlaliCostumeXia",
     212301: "UI_AvatarIcon_DurinCostumeWic"
 }
+
+def get_genshin_costume_info(costume_id):
+    """Busca com segurança o nome da skin e arte de splash para Genshin Impact."""
+    if not costume_id:
+        return None
+    c_name = None
+    try:
+        cid_int = int(costume_id)
+        if cid_int in GENSHIN_SKIN_MAP:
+            c_name = GENSHIN_SKIN_MAP[cid_int]
+    except (ValueError, TypeError):
+        pass
+    if not c_name and str(costume_id) in GENSHIN_SKIN_MAP:
+        c_name = GENSHIN_SKIN_MAP[str(costume_id)]
+    
+    if c_name:
+        return {
+            "icon": c_name,
+            "art": c_name.replace("UI_AvatarIcon_", "UI_Costume_")
+        }
+    return None
+
+def get_zzz_prydwen_slug(agent_name: str) -> str:
+    """Converte o nome de um Agente do ZZZ para o slug de imagem HD no Prydwen."""
+    if not agent_name:
+        return ""
+    clean = agent_name.lower().strip()
+    special_cases = {
+        "anby demara": "anby-demara",
+        "anby": "anby-demara",
+        "anton ivanov": "anton",
+        "astra yao": "astra-yao",
+        "ben bigger": "ben",
+        "billy kid": "billy-kid",
+        "billy": "billy-kid",
+        "grace howard": "grace-howard",
+        "grace": "grace-howard",
+        "hoshimi miyabi": "miyabi",
+        "asaba harumasa": "harumasa",
+        "jane doe": "jane-doe",
+        "jane": "jane-doe",
+        "koleda belobog": "koleda",
+        "nicole demara": "nicole-demara",
+        "nicole": "nicole-demara",
+        "orphie & magus": "orphie-magus",
+        "piper wheel": "piper",
+        "seth lowell": "seth",
+        "soldier 11": "soldier-11",
+        "von lycaon": "lycaon",
+        "zhu yuan": "zhu-yuan"
+    }
+    if clean in special_cases:
+        return special_cases[clean]
+    for k, v in special_cases.items():
+        if clean == k or k in clean:
+            return v
+    return clean.replace('&', '').replace(' ', '-').replace('_', '-')
+
 
 # Dicionários de mapeamento para traduzir Elementos e Caminhos para Português em HSR
 ELEMENT_MAP = {
@@ -134,6 +192,112 @@ def clean_relic_name(text: str) -> str:
     )
 
     return re.sub(r'\s+', ' ', cleaned).strip()
+
+
+# Mapeamento oficial de sanitização e abreviação compacta de nomes de atributos (Stats / Substats)
+STAT_SHORT_NAMES = {
+    # Honkai: Star Rail (HSR)
+    "Bônus de Dano de Fogo": "Dano Fogo",
+    "Bônus de Dano Fogo": "Dano Fogo",
+    "Bônus de Dano de Gelo": "Dano Gelo",
+    "Bônus de Dano Gelo": "Dano Gelo",
+    "Bônus de Dano de Raio": "Dano Raio",
+    "Bônus de Dano Raio": "Dano Raio",
+    "Bônus de Dano de Vento": "Dano Vento",
+    "Bônus de Dano Vento": "Dano Vento",
+    "Bônus de Dano Quântico": "Dano Quântico",
+    "Bônus de Dano de Quântico": "Dano Quântico",
+    "Bônus de Dano Imaginário": "Dano Imaginário",
+    "Bônus de Dano de Imaginário": "Dano Imaginário",
+    "Bônus de Dano Físico": "Dano Físico",
+    "Bônus de Dano de Físico": "Dano Físico",
+    "Taxa de Acerto de Efeito": "Acerto Efeito",
+    "Resistência a Efeito": "RES Efeito",
+    "RES a Efeito": "RES Efeito",
+    "Efeito de Quebra": "Quebra",
+    "Chance de CRIT": "Taxa CRIT",
+    "Taxa de CRIT": "Taxa CRIT",
+    "Taxa Crítica": "Taxa CRIT",
+    "Dano de CRIT": "Dano CRIT",
+    "Dano Crítico": "Dano CRIT",
+    "Regeneração de Energia": "Regen. Energia",
+    "Taxa de Reg. de Energia": "Regen. Energia",
+    "Taxa de Regeneração de Energia": "Regen. Energia",
+
+    # Genshin Impact
+    "Proficiência Elemental": "Prof. Element.",
+    "Recarga de Energia": "Recarga",
+    "Bônus de Dano Anemo": "Dano Anemo",
+    "Bônus de Dano Pyro": "Dano Pyro",
+    "Bônus de Dano Hydro": "Dano Hydro",
+    "Bônus de Dano Electro": "Dano Electro",
+    "Bônus de Dano Cryo": "Dano Cryo",
+    "Bônus de Dano Geo": "Dano Geo",
+    "Bônus de Dano Dendro": "Dano Dendro",
+    "Bônus de Dano Elemental": "Dano Elem.",
+
+    # Zenless Zone Zero (ZZZ)
+    "Proficiência de Anomalia": "Prof. Anomalia",
+    "Taxa de Acerto de Anomalia": "Maest. Anomalia",
+    "Maestria de Anomalia": "Maest. Anomalia",
+    "Recuperação de Energia": "Recup. Energia",
+    "Taxa de Recuperação de Energia": "Recup. Energia",
+    "Taxa de Perfuração": "Perfuração",
+    "Bônus de Dano Elétrico": "Dano Elétrico",
+    "Bônus de Dano de Elétrico": "Dano Elétrico",
+    "Bônus de Dano Éter": "Dano Éter",
+    "Bônus de Dano de Éter": "Dano Éter",
+
+    # Inglês (API HSR, ZZZ retorna em inglês em alguns idiomas)
+    "CRIT Rate": "Taxa CRIT",
+    "CRIT DMG": "Dano CRIT",
+    "Effect Hit Rate": "Acerto Efeito",
+    "Effect RES": "RES Efeito",
+    "Break Effect": "Quebra",
+    "Energy Regeneration Rate": "Regen. Energia",
+    "Outgoing Healing Boost": "Cura Bônus",
+    "Physical DMG Boost": "Dano Físico",
+    "Fire DMG Boost": "Dano Fogo",
+    "Ice DMG Boost": "Dano Gelo",
+    "Lightning DMG Boost": "Dano Raio",
+    "Wind DMG Boost": "Dano Vento",
+    "Quantum DMG Boost": "Dano Quântico",
+    "Imaginary DMG Boost": "Dano Imaginário",
+    # ZZZ English
+    "Anomaly Proficiency": "Prof. Anomalia",
+    "Anomaly Mastery": "Maest. Anomalia",
+    "PEN Ratio": "Perfuração",
+    "Energy Regen": "Regen. Energia",
+    "Impact": "Impacto",
+    # Genshin English
+    "Elemental Mastery": "Prof. Element.",
+    "Energy Recharge": "Recarga",
+    "Healing Bonus": "Cura Bônus",
+    "Anemo DMG Bonus": "Dano Anemo",
+    "Pyro DMG Bonus": "Dano Pyro",
+    "Hydro DMG Bonus": "Dano Hydro",
+    "Electro DMG Bonus": "Dano Electro",
+    "Cryo DMG Bonus": "Dano Cryo",
+    "Geo DMG Bonus": "Dano Geo",
+    "Dendro DMG Bonus": "Dano Dendro",
+}
+
+def sanitize_stat_name(stat_text: str) -> str:
+    """
+    Substitui nomes longos de atributos por siglas e versões compactas (máx 12-14 caracteres),
+    preservando valores numéricos e sufixos de porcentagem.
+    """
+    if not stat_text:
+        return ""
+    s = str(stat_text).strip()
+    if s in STAT_SHORT_NAMES:
+        return STAT_SHORT_NAMES[s]
+    for k, v in STAT_SHORT_NAMES.items():
+        if k in s:
+            s = s.replace(k, v)
+    s = re.sub(r'Bônus de Dano (?:de )?([A-Za-zÀ-ÿ]+)', r'Dano \1', s, flags=re.IGNORECASE)
+    return s
+
 
 
 class BaseExtractor:
@@ -390,7 +554,7 @@ class HSRExtractor(BaseExtractor):
                     if main_prop:
                         m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
                         m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                        main_stat = f"{m_name} ({m_val})"
+                        main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
                         
                     sub_props = getattr(r, "properties", getattr(r, "sub_properties", getattr(r, "sub_stats", getattr(r, "sub_property_list", []))))
                     subs = []
@@ -398,7 +562,8 @@ class HSRExtractor(BaseExtractor):
                         for sub in sub_props:
                             s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
                             s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                            subs.append(f"{s_name}: {s_val}")
+                            s_clean = sanitize_stat_name(s_name)
+                            subs.append(f"{s_clean}: {s_val}")
                     relics_json.append({
                         "name": clean_relic_name(r.name),
                         "icon": getattr(r, "icon", ""),
@@ -407,6 +572,26 @@ class HSRExtractor(BaseExtractor):
                         "sub": ", ".join(subs) if subs else "Sem substatus"
                     })
                     
+                char_icon = getattr(char, "icon", getattr(char, "image", ""))
+                hsr_splash = getattr(char, "portrait", getattr(char, "draw", getattr(char, "art_url", getattr(char, "image", getattr(char, "figure_path", getattr(char, "gacha_art", getattr(char, "icon", "")))))))
+                costumes = getattr(char, "costumes", getattr(char, "skins", getattr(char, "outfits", None)))
+                if costumes:
+                    c_item = costumes[0]
+                    char_icon = getattr(c_item, "icon", getattr(c_item, "image", char_icon))
+                    c_splash = getattr(c_item, "portrait", getattr(c_item, "draw", getattr(c_item, "art_url", getattr(c_item, "image", getattr(c_item, "figure_path", getattr(c_item, "gacha_art", getattr(c_item, "icon", None)))))))
+                    if c_splash:
+                        hsr_splash = c_splash
+
+                # Extrai Status Finais (Final Stats) do personagem HSR
+                hsr_stats = {}
+                props = getattr(char, "properties", [])
+                for prop in (props or []):
+                    p_name = getattr(getattr(prop, "info", prop), "name", getattr(prop, "property_name", None))
+                    p_final = getattr(prop, "final", getattr(prop, "value", ""))
+                    if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
+                        label = sanitize_stat_name(p_name)
+                        hsr_stats[label] = str(p_final)
+
                 char_json_list.append({
                     "id": str(char.id),
                     "name": char.name,
@@ -414,9 +599,11 @@ class HSRExtractor(BaseExtractor):
                     "rarity": char.rarity,
                     "rank_str": f"E{char.rank}",
                     "element": element,
-                    "icon": getattr(char, "icon", getattr(char, "image", "")),
+                    "icon": char_icon,
+                    "gacha_art": hsr_splash,
                     "weapon": w_info,
-                    "relics": relics_json
+                    "relics": relics_json,
+                    "stats": hsr_stats
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
@@ -451,6 +638,7 @@ class HSRExtractor(BaseExtractor):
                     rank_str=c["rank_str"],
                     element=c["element"],
                     icon=c["icon"],
+                    gacha_art=c.get("gacha_art"),
                     weapon_name=c["weapon"].get("name") if c["weapon"] else None,
                     weapon_level=c["weapon"].get("level") if c["weapon"] else None,
                     weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
@@ -652,7 +840,7 @@ class GenshinExtractor(BaseExtractor):
                         if main_prop:
                             m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
                             m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                            main_stat = f"{m_name} ({m_val})"
+                            main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
                             
                         sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
                         subs = []
@@ -660,7 +848,8 @@ class GenshinExtractor(BaseExtractor):
                             for sub in sub_props:
                                 s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
                                 s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                                subs.append(f"{s_name}: {s_val}")
+                                s_clean = sanitize_stat_name(s_name)
+                                subs.append(f"{s_clean}: {s_val}")
                         artifacts_json.append({
                             "name": clean_relic_name(art.name),
                             "icon": getattr(art, "icon", ""),
@@ -670,11 +859,58 @@ class GenshinExtractor(BaseExtractor):
                         })
                         
                 char_icon = getattr(char, "icon", "")
+                genshin_splash = None
+                
                 if hasattr(char, "costumes") and char.costumes:
-                    costume_id = char.costumes[0].id
-                    if costume_id in GENSHIN_SKIN_MAP:
-                        char_icon = f"https://enka.network/ui/{GENSHIN_SKIN_MAP[costume_id]}.png"
-                        
+                    costume = char.costumes[0]
+                    costume_id = getattr(costume, "id", None)
+                    c_info = get_genshin_costume_info(costume_id)
+                    if c_info:
+                        char_icon = f"https://enka.network/ui/{c_info['icon']}.png"
+                        genshin_splash = f"https://enka.network/ui/{c_info['art']}.png"
+                    elif hasattr(costume, "icon") and costume.icon:
+                        char_icon = costume.icon
+                        if "UI_AvatarIcon_" in costume.icon:
+                            if "Costume" in costume.icon:
+                                genshin_splash = costume.icon.replace("UI_AvatarIcon_", "UI_Costume_")
+                            else:
+                                genshin_splash = costume.icon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_")
+                        else:
+                            genshin_splash = getattr(costume, "gacha_art", getattr(costume, "splash_art", costume.icon))
+
+                if not genshin_splash:
+                    genshin_splash = getattr(char, "gacha_card", getattr(char, "gacha_slice", getattr(char, "gacha_art", getattr(char, "splash_art", getattr(char, "display_image", getattr(char, "card_icon", char_icon))))))
+                    if not genshin_splash or "UI_AvatarIcon_" in genshin_splash:
+                        if "UI_AvatarIcon_" in char_icon:
+                            if "Costume" in char_icon:
+                                genshin_splash = char_icon.replace("UI_AvatarIcon_", "UI_Costume_")
+                            else:
+                                genshin_splash = char_icon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_")
+
+                # Extrai Status Finais (Final Stats) do personagem Genshin
+                genshin_stats = {}
+                props = getattr(char, "properties", getattr(char, "fight_props", None))
+                if props:
+                    for prop in (props or []):
+                        p_name = getattr(getattr(prop, "info", prop), "name", getattr(prop, "property_name", None))
+                        p_final = getattr(prop, "final", getattr(prop, "value", ""))
+                        if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
+                            label = sanitize_stat_name(p_name)
+                            genshin_stats[label] = str(p_final)
+                else:
+                    # Genshin API de Battle Chronicle não retorna fight_props diretamente;
+                    # Extraímos o que está disponível no objeto do personagem
+                    for attr_name in ['hp', 'max_hp', 'atk', 'base_atk', 'def_', 'base_def', 'crit_rate', 'crit_dmg', 'healing_bonus', 'elemental_mastery', 'energy_recharge']:
+                        v = getattr(char, attr_name, None)
+                        if v is not None and v not in (0, 0.0, '', None):
+                            label_map = {
+                                'hp': 'HP', 'max_hp': 'HP', 'atk': 'ATQ', 'base_atk': 'ATQ Base',
+                                'def_': 'DEF', 'base_def': 'DEF Base', 'crit_rate': 'Taxa CRIT',
+                                'crit_dmg': 'Dano CRIT', 'healing_bonus': 'Cura Bônus',
+                                'elemental_mastery': 'Prof. Element.', 'energy_recharge': 'Recarga'
+                            }
+                            genshin_stats[label_map.get(attr_name, attr_name)] = str(v)
+
                 char_json_list.append({
                     "id": str(char.id),
                     "name": char.name,
@@ -683,8 +919,10 @@ class GenshinExtractor(BaseExtractor):
                     "rank_str": f"C{char.constellation}",
                     "element": getattr(char, "element", "Anemo"),
                     "icon": char_icon,
+                    "gacha_art": genshin_splash,
                     "weapon": w_info,
-                    "relics": artifacts_json
+                    "relics": artifacts_json,
+                    "stats": genshin_stats
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
@@ -719,6 +957,7 @@ class GenshinExtractor(BaseExtractor):
                     rank_str=c["rank_str"],
                     element=c["element"],
                     icon=c["icon"],
+                    gacha_art=c.get("gacha_art"),
                     weapon_name=c["weapon"].get("name") if c["weapon"] else None,
                     weapon_level=c["weapon"].get("level") if c["weapon"] else None,
                     weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
@@ -923,7 +1162,7 @@ class ZZZExtractor(BaseExtractor):
                         if main_prop:
                             m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
                             m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                            main_stat = f"{m_name} ({m_val})"
+                            main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
                             
                         sub_props = getattr(disc, "properties", getattr(disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))))
                         subs = []
@@ -931,7 +1170,8 @@ class ZZZExtractor(BaseExtractor):
                             for sub in sub_props:
                                 s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
                                 s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                                subs.append(f"{s_name}: {s_val}")
+                                s_clean = sanitize_stat_name(s_name)
+                                subs.append(f"{s_clean}: {s_val}")
                         discs_json.append({
                             "name": clean_relic_name(disc.name),
                             "icon": getattr(disc, "icon", ""),
@@ -940,9 +1180,43 @@ class ZZZExtractor(BaseExtractor):
                             "sub": ", ".join(subs) if subs else "Sem substatus"
                         })
                 icon_url = getattr(agent, "square_icon", getattr(agent, "rectangle_icon", getattr(agent, "icon", "")))
-                if hasattr(agent, "costumes") and agent.costumes:
-                    icon_url = agent.costumes[0].icon or icon_url
+                hoyolab_splash = getattr(agent, "portrait", getattr(agent, "draw", getattr(agent, "art_url", getattr(agent, "banner_icon", getattr(agent, "rectangle_icon", getattr(agent, "full_icon", icon_url))))))
+                outfit_id = getattr(agent, "outfit_id", None)
+                has_skin = bool(outfit_id) or (bool(hoyolab_splash) and any(p.isdigit() and len(p) >= 7 for p in str(hoyolab_splash).split("_")))
+                
+                costumes = getattr(agent, "costumes", getattr(agent, "skins", getattr(agent, "outfits", None)))
+                if costumes:
+                    c_item = costumes[0]
+                    icon_url = getattr(c_item, "square_icon", getattr(c_item, "icon", icon_url))
+                    c_splash = getattr(c_item, "portrait", getattr(c_item, "draw", getattr(c_item, "art_url", getattr(c_item, "banner_icon", getattr(c_item, "vertical_painting", getattr(c_item, "full_icon", getattr(c_item, "gacha_art", getattr(c_item, "splash_art", getattr(c_item, "rectangle_icon", getattr(c_item, "icon", None))))))))))
+                    if c_splash:
+                        hoyolab_splash = c_splash
+                        has_skin = True
+
+                if has_skin and hoyolab_splash:
+                    splash_url = hoyolab_splash
+                else:
+                    zzz_slug = get_zzz_prydwen_slug(agent.name)
+                    prydwen_splash = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{zzz_slug}_full.webp" if zzz_slug else ""
+                    splash_url = prydwen_splash if prydwen_splash else hoyolab_splash
                 rarity_num = 5 if str(agent.rarity).upper() in ["S", "5"] else 4
+
+                # Extrai Status Finais (Final Stats) do Agente ZZZ
+                zzz_stats = {}
+                try:
+                    full_agents = await self.client.get_zzz_agent_info([agent.id], uid=zzz_account.uid)
+                    if not isinstance(full_agents, list): full_agents = [full_agents]
+                    full_agent = full_agents[0] if full_agents else None
+                    if full_agent:
+                        for prop in (getattr(full_agent, "properties", []) or []):
+                            p_name = getattr(prop, "name", None)
+                            p_final = getattr(prop, "final", getattr(prop, "value", ""))
+                            if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
+                                label = sanitize_stat_name(p_name)
+                                zzz_stats[label] = str(p_final)
+                except Exception:
+                    pass
+
                 char_json_list.append({
                     "id": str(agent.id),
                     "name": agent.name,
@@ -951,8 +1225,10 @@ class ZZZExtractor(BaseExtractor):
                     "rank_str": f"M{agent.rank}",
                     "element": getattr(agent.element, "name", str(agent.element)),
                     "icon": icon_url,
+                    "gacha_art": splash_url,
                     "weapon": w_info,
-                    "relics": discs_json
+                    "relics": discs_json,
+                    "stats": zzz_stats
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
@@ -987,6 +1263,7 @@ class ZZZExtractor(BaseExtractor):
                     rank_str=c["rank_str"],
                     element=c["element"],
                     icon=c["icon"],
+                    gacha_art=c.get("gacha_art"),
                     weapon_name=c["weapon"].get("name") if c["weapon"] else None,
                     weapon_level=c["weapon"].get("level") if c["weapon"] else None,
                     weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,

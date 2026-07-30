@@ -8,14 +8,14 @@ import datetime
 import time
 import genshin
 from fastapi import FastAPI, BackgroundTasks, HTTPException
-from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from fastapi.responses import Response, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional, Dict
 
 # Importações dos módulos do projeto
 from auth import capturar_cookies_hoyolab
-from extractor import MultiGameExtractor, clean_relic_name
+from extractor import MultiGameExtractor, clean_relic_name, sanitize_stat_name
 from scraper_prydwen import PrydwenScraper
 from scraper_zzz import PrydwenZZZScraper
 from scraper_meta import PrydwenMetaScraper
@@ -400,6 +400,43 @@ def startup_checkin_scheduler():
 # ROTAS DA API REST
 # ==========================================
 
+@app.get("/api/proxy_image")
+async def proxy_image(url: str):
+    """Proxy para carregar imagens externas no HTML5 Canvas sem sofrer bloqueio de CORS ou Tainted Canvas."""
+    if not url or not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="URL de imagem inválida.")
+    
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+        "Referer": "https://act.hoyoverse.com/"
+    }
+    
+    try:
+        import requests
+        def fetch():
+            return requests.get(url, headers=headers, timeout=12)
+            
+        resp = await asyncio.to_thread(fetch)
+        
+        if resp.status_code != 200:
+            raise HTTPException(status_code=resp.status_code, detail=f"Falha ao obter imagem da origem: {resp.status_code}")
+            
+        content_type = resp.headers.get("content-type", "image/png")
+        return Response(
+            content=resp.content,
+            media_type=content_type,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Cache-Control": "public, max-age=86400"
+            }
+        )
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao processar proxy de imagem: {e}")
+
 @app.get("/api/roster/{game_id}")
 async def get_roster(game_id: str):
     """Retorna os dados dos personagens salvos no roster local."""
@@ -425,15 +462,54 @@ async def get_roster(game_id: str):
                 raise HTTPException(status_code=500, detail=f"Erro ao carregar banco de dados local: {e}")
                 
     if data:
+        # Enriquece gacha_art do JSON se faltar no banco
+        json_path = f"{game_id}/roster_data_{game_id}.json"
+        json_map = {}
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as jf:
+                    jdata = json.load(jf)
+                    for jc in jdata:
+                        if jc.get("name") and jc.get("gacha_art"):
+                            json_map[jc["name"]] = jc["gacha_art"]
+            except Exception:
+                pass
+
         # Pondera e calcula as notas de cada relíquia do roster e a nota geral da build
         max_slots = 5 if game_id == "genshin" else 6
         for char in data:
+            if char.get("name") in json_map and json_map[char["name"]]:
+                char["gacha_art"] = json_map[char["name"]]
+
+            # Garante fallback de gacha_art em HD para ZZZ e skins do Genshin
+            if game_id == "zzz":
+                from extractor import get_zzz_prydwen_slug
+                slug = get_zzz_prydwen_slug(char.get("name", ""))
+                g_art = str(char.get("gacha_art") or "")
+                is_zzz_skin = any(part.isdigit() and len(part) >= 7 for part in g_art.split("_"))
+                if slug and not is_zzz_skin and (not char.get("gacha_art") or "role_vertical_painting" in g_art or "role_square_avatar" in g_art):
+                    char["gacha_art"] = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{slug}_full.webp"
+            elif game_id == "genshin":
+                g_art = char.get("gacha_art") or ""
+                c_icon = char.get("icon") or ""
+                if "UI_AvatarIcon_" in c_icon and "Costume" in c_icon:
+                    icon_fn = c_icon.split('/')[-1].replace('.png', '')
+                    char["gacha_art"] = f"https://enka.network/ui/{icon_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
+                elif "UI_AvatarIcon_" in g_art and "Costume" in g_art:
+                    art_fn = g_art.split('/')[-1].replace('.png', '')
+                    char["gacha_art"] = f"https://enka.network/ui/{art_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
+
             char_id_val = str(char.get("id") or char.get("character_id") or "")
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
             for relic in relics:
                 if "name" in relic:
                     relic["name"] = clean_relic_name(relic["name"])
+                if "main" in relic:
+                    relic["main"] = sanitize_stat_name(relic["main"])
+                if "sub" in relic and relic["sub"]:
+                    subs_list = [sanitize_stat_name(s.strip()) for s in str(relic["sub"]).split(",") if s.strip()]
+                    relic["sub"] = ", ".join(subs_list)
                 grade, score = score_relic(
                     game_id=game_id,
                     char_id=char_id_val,
@@ -1217,61 +1293,80 @@ def parse_character_build_data(game_id: str, char_name: str) -> dict:
         "pieces": []
     }
     if not raw_text:
-        return data
+        # Mesmo sem texto, tenta carregar stats do JSON
+        pass
         
-    m_w = re.search(r'-\s*\*\*(?:Cone de Luz|Arma|W-Engine):\*\*\s*(.*)', raw_text)
-    if m_w:
-        data["weapon"] = m_w.group(1).strip()
-        
-    m_s = re.search(r'-\s*\*\*(?:Relíquias|Artefatos|Discos):\*\*\s*(.*)', raw_text)
-    if m_s:
-        sets_raw = m_s.group(1).strip()
-        data["sets"] = [s.strip() for s in sets_raw.split('+')]
-        
-    m_st = re.search(r'-\s*\*\*Status Finais:\*\*\s*(.*)', raw_text)
-    if m_st:
-        stats_raw = m_st.group(1).strip()
-        for pair in stats_raw.split(','):
-            if ':' in pair:
-                k, v = pair.split(':', 1)
-                data["stats"][k.strip()] = v.strip()
-                
-    m_pieces = re.findall(r'•\s*\[(.*?)\]\s*(.*?)\n\s*-\s*Principal:\s*(.*?)\n\s*-\s*Substatus:\s*(.*?)(?=\n\s*•|\Z|\n\n|\n---)', raw_text, re.DOTALL)
-    for slot, p_name, main_s, sub_s in m_pieces:
-        slot_clean = slot.strip()
-        if game_id == "genshin":
-            if any(term in slot_clean.lower() for term in ["circlet", "tiara", "tiara de logos"]) or slot_clean == "5":
-                slot_clean = "Tiara"
-            elif any(term in slot_clean.lower() for term in ["goblet", "cálice", "copo", "cálice de eonothem"]) or slot_clean == "4":
-                slot_clean = "Copo"
-            elif any(term in slot_clean.lower() for term in ["sands", "areia", "ampulheta", "areias do tempo"]) or slot_clean == "3":
-                slot_clean = "Areia"
-            elif any(term in slot_clean.lower() for term in ["plume", "pena", "pluma da morte"]) or slot_clean == "2":
-                slot_clean = "Pena"
-            elif any(term in slot_clean.lower() for term in ["flower", "flor", "flor da vida"]) or slot_clean == "1":
-                slot_clean = "Flor"
-        elif game_id == "hsr":
-            if any(term in slot_clean.lower() for term in ["body", "corpo"]):
-                slot_clean = "Corpo"
-            elif any(term in slot_clean.lower() for term in ["feet", "bota", "pés"]):
-                slot_clean = "Bota"
-            elif any(term in slot_clean.lower() for term in ["sphere", "esfera", "esfera plana"]):
-                slot_clean = "Esfera"
-            elif any(term in slot_clean.lower() for term in ["rope", "corda", "corda de ligação"]):
-                slot_clean = "Corda"
-            elif any(term in slot_clean.lower() for term in ["head", "cabeça"]):
-                slot_clean = "Cabeça"
-            elif any(term in slot_clean.lower() for term in ["hands", "mãos"]):
-                slot_clean = "Mãos"
-        elif game_id == "zzz":
-            slot_clean = slot_clean.replace("Disk", "Disco").replace("disk", "Disco")
+    if raw_text:
+        m_w = re.search(r'-\s*\*\*(?:Cone de Luz|Arma|W-Engine):\*\*\s*(.*)', raw_text)
+        if m_w:
+            data["weapon"] = m_w.group(1).strip()
             
-        data["pieces"].append({
-            "slot": slot_clean,
-            "name": p_name.strip(),
-            "main": main_s.strip(),
-            "sub": sub_s.strip()
-        })
+        m_s = re.search(r'-\s*\*\*(?:Relíquias|Artefatos|Discos):\*\*\s*(.*)', raw_text)
+        if m_s:
+            sets_raw = m_s.group(1).strip()
+            data["sets"] = [s.strip() for s in sets_raw.split('+')]
+            
+        m_st = re.search(r'-\s*\*\*Status Finais:\*\*\s*(.*)', raw_text)
+        if m_st:
+            stats_raw = m_st.group(1).strip()
+            for pair in stats_raw.split(','):
+                if ':' in pair:
+                    k, v = pair.split(':', 1)
+                    data["stats"][k.strip()] = v.strip()
+                    
+        m_pieces = re.findall(r'•\s*\[(.*?)\]\s*(.*?)\n\s*-\s*Principal:\s*(.*?)\n\s*-\s*Substatus:\s*(.*?)(?=\n\s*•|\Z|\n\n|\n---)', raw_text, re.DOTALL)
+        for slot, p_name, main_s, sub_s in m_pieces:
+            slot_clean = slot.strip()
+            if game_id == "genshin":
+                if any(term in slot_clean.lower() for term in ["circlet", "tiara", "tiara de logos"]) or slot_clean == "5":
+                    slot_clean = "Tiara"
+                elif any(term in slot_clean.lower() for term in ["goblet", "cálice", "copo", "cálice de eonothem"]) or slot_clean == "4":
+                    slot_clean = "Copo"
+                elif any(term in slot_clean.lower() for term in ["sands", "areia", "ampulheta", "areias do tempo"]) or slot_clean == "3":
+                    slot_clean = "Areia"
+                elif any(term in slot_clean.lower() for term in ["plume", "pena", "pluma da morte"]) or slot_clean == "2":
+                    slot_clean = "Pena"
+                elif any(term in slot_clean.lower() for term in ["flower", "flor", "flor da vida"]) or slot_clean == "1":
+                    slot_clean = "Flor"
+            elif game_id == "hsr":
+                if any(term in slot_clean.lower() for term in ["body", "corpo"]):
+                    slot_clean = "Corpo"
+                elif any(term in slot_clean.lower() for term in ["feet", "bota", "pés"]):
+                    slot_clean = "Bota"
+                elif any(term in slot_clean.lower() for term in ["sphere", "esfera", "esfera plana"]):
+                    slot_clean = "Esfera"
+                elif any(term in slot_clean.lower() for term in ["rope", "corda", "corda de ligação"]):
+                    slot_clean = "Corda"
+                elif any(term in slot_clean.lower() for term in ["head", "cabeça"]):
+                    slot_clean = "Cabeça"
+                elif any(term in slot_clean.lower() for term in ["hands", "mãos"]):
+                    slot_clean = "Mãos"
+            elif game_id == "zzz":
+                slot_clean = slot_clean.replace("Disk", "Disco").replace("disk", "Disco")
+                
+            data["pieces"].append({
+                "slot": slot_clean,
+                "name": p_name.strip(),
+                "main": main_s.strip(),
+                "sub": sub_s.strip()
+            })
+
+    # Enriquece stats com os Status Finais do roster JSON (prioridade sobre MD parsed)
+    try:
+        json_path = f"{game_id}/roster_data_{game_id}.json"
+        if os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as jf:
+                roster_data = json.load(jf)
+            char_lower = char_name.lower().strip()
+            for c in roster_data:
+                if c.get("name", "").lower().strip() == char_lower:
+                    json_stats = c.get("stats") or {}
+                    if json_stats:
+                        data["stats"] = json_stats  # Substitui pelo dado da API, que é mais preciso
+                    break
+    except Exception:
+        pass
+
     return data
 
 @app.get("/api/overview")
