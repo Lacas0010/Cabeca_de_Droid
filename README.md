@@ -1,32 +1,33 @@
 # 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v3.0)
 
-Uma ferramenta local moderna com interface gráfica **Web Premium** desenvolvida em **HTML5, CSS3 (Vanilla), JavaScript ES6+** e backend em Python (**FastAPI + SQLite**). 
+Uma ferramenta local moderna com interface gráfica **Web Premium** desenvolvida em **HTML5, CSS3 (Vanilla Glassmorphism), JavaScript ES6+** e backend em Python (**FastAPI + SQLite**).
 
 > [!NOTE]
 > **Sobre o nome:** "Cabeça de Droid" é uma referência divertida a *Honkai: Star Rail* — especificamente à maneira carinhosa como a Herta chama o **Aeon Nous** (o Aeon da Erudição), um supercomputador astral gigante que ascendeu à divindade após desenvolver uma Inteligência Artificial Geral (ASI).
 
-O assistente sincroniza rosters de personagens, relíquias/artefatos/discos e recordes de Endgames via API do HoYoLAB, coleta guias analíticos de builds, tier lists e estatísticas do metagame (**KeqingMains**, **Prydwen**, **Game8**), realiza cálculo matemático de Roll Value (RV), otimização de builds com IA, cálculo de materiais de ascensão, monitoramento de energia em tempo real (Daily Notes) e **Auto-Check-in Diário** em segundo plano.
+O assistente sincroniza rosters de personagens, relíquias/artefatos/discos e recordes de Endgames via API do HoYoLAB, coleta guias analíticos de builds, tier lists e estatísticas do metagame (**KeqingMains**, **Prydwen**, **Game8**), realiza cálculo matemático de Roll Value (RV), otimização de builds com IA, exportação de cards HD de build, cálculo de materiais de ascensão, monitoramento de energia em tempo real (Daily Notes) e **Auto-Check-in Diário** automático a cada 6 horas em segundo plano.
 
 ---
 
 ## 🌟 Principais Recursos e Interface (UI/UX)
 
-- **📊 Mini-Dashboards da Conta:** Exibição em tempo real de estatísticas do jogador (UID, Nível da Conta, Total de Personagens e Personagens 5★/Rank S) no topo da tela de cada jogo.
+- **📊 Mini-Dashboards da Conta:** Exibição em tempo real de estatísticas do jogador (UID, Nível da Conta, Total de Personagens e Personagens 5★/Rank S) no topo da tela de cada jogo (*Zenless Zone Zero*, *Genshin Impact* e *Honkai: Star Rail*).
 - **🔋 Monitoramento Preciso de Energia (Daily Notes):** Acompanhamento em tempo real da Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR), com cronômetro de recuperação completa em tempo real e expedições ativas.
-- **🎁 Auto-Check-in Diário Automático:** Resgate automático das recompensas diárias do HoYoLAB em segundo plano a cada 6 horas (com disparo inicial automático no arranque do servidor) e botão manual na interface com histórico de logs gravados no banco SQLite.
+- **🎁 Auto-Check-in Diário Automático:** Resgate automático das recompensas diárias do HoYoLAB em segundo plano a cada 6 horas (com disparo inicial no arranque do servidor) e botão manual na interface com histórico de logs gravados no banco SQLite.
 - **📁 Interface Web Premium (Glassmorphism):** Painel escuro moderno com esquemas de cores específicos por jogo (ZZZ, Genshin, HSR), efeitos de vidro fosco, transições fluidas e layout responsivo.
 - **🎨 Visual com Ícones Dinâmicos (Font Awesome & Element Badges):** Ícones nativos de elementos de combate baixados em cache local e integrados à galeria.
 - **⚡ Terminal de Logs em Tempo Real & Barra de Progresso:** Monitoramento visual do progresso de raspagem (0 a 100%) e logs retráteis linha a linha para cada sincronização.
 - **🗡️ Inspetor de Builds & Sistema de Notas RV (SSS a D):**
   - Avaliação individual de cada peça via **Roll Value (RV)** com compensação de Main Stat (*Main Stat Forgiveness*) e peso parcial para atributos Flat.
   - Classificação de builds em **SSS** ($\ge 90\%$), **SS** ($\ge 75\%$), **S** ($\ge 60\%$), **A** ($\ge 45\%$), **B** ($\ge 30\%$) e **C/D** ($<30\%$).
+- **📷 Gerador de Card Imagem HD:** Botão no inspetor para capturar e exportar em imagem de alta definição o resumo da build completa do personagem.
 - **⚖️ Comparador Meta Lado a Lado (Sidebar):** Aba exclusiva no inspetor que contrasta a arma equipada, conjuntos de relíquias e status principais do jogador diretamente contra os benchmarks do metagame, destacando acertos (verde) e desvios (vermelho).
-- **🧠 Otimizador de Build IA:** Botão "Analisar" no painel do personagem que aciona a IA para gerar 3 conselhos diretos e acionáveis de melhorias de build.
+- **🧠 Otimizador de Build IA:** Botão "Analisar" no painel do personagem que aciona a IA Groq para gerar 3 conselhos diretos e acionáveis de melhorias de build.
 - **📈 Calculadora de Materiais de Ascensão:** Estima em tempo real o custo total de Livros de XP, Mora/Créditos/Dennys e materiais de chefes necessários para evoluir um personagem do nível atual até o nível alvo (ex: 1 ao 90).
 - **👥 Analisador de Sinergia de Times:** Seleção interativa de 4 personagens para gerar um relatório completo de rotação de combate, ressonância elemental, otimização de armas e sugestões de trocas via streaming SSE.
 - **🌐 Dicionário de Tradução Inteligente Local (`traducoes.json`):** Traduz instantaneamente armas, artefatos, discos e atributos de Inglês para Português (PT-BR).
 - **🎭 Suporte a Skins/Costumes (Enka.Network):** Mapeamento automático de IDs de roupas cosméticas de Genshin Impact para avatares de rosto do Enka.Network, evitando distorções visuais na galeria.
-- **🤖 Assistente de Chat IA Meta (Groq RAG / Gemini):** Chat interativo alimentado por RAG local (Llama 3.3 70B ou Gemini) que lê o Roster ativo (nível 70+) e guias de meta locais.
+- **🤖 Assistente de Chat IA Meta (Groq RAG):** Chat interativo alimentado por RAG local (Llama 3.3 70B Versatile via Groq Cloud) com gerenciamento rigoroso do orçamento de tokens (máx. 6.000 tokens), lendo o Roster ativo (nível 70+) e guias de meta locais.
 - **🔑 Login Automático HoYoLAB (Playwright):** Disparo de janela isolada Chromium que captura os cookies de sessão (`ltuid_v2`, `ltoken_v2`) automaticamente.
 
 ---
@@ -41,7 +42,7 @@ graph TD
     B -->|Auto Login| E[Playwright Chromium auth.py]
     B -->|Extração de Metagame| F[Scrapers: Game8 / KQM / Prydwen]
     B -->|Calculadora & Roll Value| G[build_calculator.py]
-    B -->|Chat & Otimizador IA| H[Groq Cloud / Gemini RAG groq_rag.py]
+    B -->|Chat & Otimizador IA| H[Groq Cloud RAG groq_rag.py]
     F -->|Caches Estruturados| I[meta_data_game.json & guias markdown]
     H -->|Prompt Contextual| I
 ```
@@ -74,7 +75,6 @@ $$\text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{
 2. **Main Stat Forgiveness:** Se o atributo principal da peça for um dos recomendados no guia (ex: Copo de ATQ% ou Botas de VEL), a peça recebe 40% de crédito base do Main Stat.
 3. **Flat Stat Fallback:** Substatus brutos (Ataque Flat, Vida Flat, Defesa Flat) recebem peso parcial automático (50% do peso da versão %) se a versão percentual for recomendada pelo guia.
 4. **Ponderação Proporcional por Slots Totais:** O divisor da Nota Geral é fixo no total de slots do jogo ($6$ para HSR/ZZZ, $5$ para Genshin). Slots vazios/não equipados pontuam $0.0$, penalizando builds incompletas proporcionalmente (evitando que 2/6 peças recebam nota S).
-5. **Patch Dinâmico de Enums (`patch_genshin_enums`):** Auto-registra novos elementos ou atributos retornado pela API do HoYoLAB (ex: `element_type=300` em ZZZ), prevenindo erros de validação do Pydantic em atualizações do jogo.
 
 ---
 
@@ -82,10 +82,9 @@ $$\text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{
 
 - **Backend:** [FastAPI](https://fastapi.tiangolo.com/), [Uvicorn](https://www.uvicorn.org/), SQLite3, Python 3.10+
 - **Frontend:** HTML5, CSS3 Vanilla (Glassmorphism), JavaScript ES6+, [Font Awesome](https://fontawesome.com/)
-- **Inteligência Artificial:** Groq Cloud API (`groq`), Google Gemini API (`google-genai`), RAG com Llama 3.3 70B Versatile
+- **Inteligência Artificial:** Groq Cloud API (`groq`), RAG local com Llama 3.3 70B Versatile
 - **APIs de Jogos:** [genshin.py](https://github.com/seriaati/genshin.py)
 - **Autenticação & Scraping:** Playwright Async API, BeautifulSoup4, Requests, urllib3
-- **Processamento de Imagens:** Pillow
 - **Empacotamento:** PyInstaller (Windows `.exe`)
 
 ---
@@ -98,7 +97,7 @@ hoyo-projetos/
 ├── server.py                # Servidor FastAPI com rotas REST e tarefas em segundo plano
 ├── database.py              # Camada de persistência SQLite (hoyo_app.db)
 ├── build_calculator.py      # Motor RV, cálculo de ascensão, fonte mestre de IDs
-├── groq_rag.py              # Motor RAG local para Groq/Gemini
+├── groq_rag.py              # Motor RAG local para Groq Cloud (Llama 3.3 70B)
 ├── auth.py                  # Captura automática de cookies via Playwright
 ├── extractor.py             # Extração de roster HoYoLAB com suporte a skins e IDs
 ├── endgame_extractor.py     # Extração de dados de endgame (MoC, Shiyu, Abismo)
@@ -106,12 +105,14 @@ hoyo-projetos/
 ├── scraper_kqm.py           # Raspador de guias analíticos de Genshin (KQM)
 ├── scraper_prydwen.py       # Raspador de meta e guias de HSR (Prydwen)
 ├── scraper_zzz.py           # Raspador de meta e guias de ZZZ (Prydwen ZZZ)
+├── scraper_meta.py          # Agregador de meta para HSR
+├── scraper_genshin_meta.py  # Agregador de meta para Genshin
 ├── static/                  # Frontend Web (index.html, style.css, app.js)
 ├── assets/                  # Ícones estáticos e cache local de elementos
 ├── traducoes.json           # Dicionário de tradução Inglês -> PT-BR
-├── requirements.txt         # Dependências do projeto Python
+├── requirements.txt         # Dependências ativas do projeto Python
 ├── SECURITY.md              # Documentação de segurança e chaves
-└── README.md                # Este documento de documentação
+└── README.md                # Documentação do projeto
 ```
 
 ---
@@ -174,12 +175,12 @@ O executável resultante estará localizado dentro do diretório `dist/main.exe`
 | `POST` | `/api/checkin/run` | Executa o resgate manual do Check-in diário na HoYoLAB |
 | `GET` | `/api/checkin/today` | Retorna os logs do auto check-in efetuado hoje |
 | `GET` | `/api/compare/{game_id}/{char_name}` | Dados de comparação lado a lado contra o metagame |
-| `GET` | `/api/optimize/{game_id}/{char_name}` | Gera 3 sugestões de otimização de build via IA |
+| `GET` | `/api/optimize/{game_id}/{char_name}` | Gera 3 sugestões de otimização de build via IA Groq |
 | `POST` | `/api/materials/calculate` | Calcula materiais necessários para ascensão |
 | `POST` | `/api/team/analyze` | Analisa a sinergia de um time de 4 personagens (SSE Stream) |
-| `POST` | `/api/chat` | Chat RAG local com a IA (SSE Stream) |
+| `POST` | `/api/chat` | Chat RAG local com a IA Groq (SSE Stream) |
 | `POST` | `/api/login/auto` | Inicia o navegador Playwright para captura de cookies |
-| `GET` | `/api/config` / `POST` | Leitura e salvamento das chaves de API e cookies |
+| `GET` / `POST` | `/api/config` | Leitura e salvamento das chaves de API e cookies |
 
 ---
 

@@ -567,58 +567,59 @@
             <section id="tab-help" class="tab-pane">
                 <div class="config-container">
                     <h2><i class="fa-solid fa-book-open"></i> Como usar o Cabeça de Droid</h2>
-                    <p class="config-desc" style="margin-bottom: 20px;">Este aplicativo foi criado para ajudar você a gerenciar e otimizar suas contas da HoYoverse utilizando Inteligência Artificial, Armazenamento Relacional (SQLite) e Cálculo Matemático de Builds por ID. Ele puxa automaticamente seus dados públicos (Roster, Builds e Endgames) da HoYoLAB e os cruza com os melhores guias do Metagame.</p>
+                    <p class="config-desc" style="margin-bottom: 20px;">O <strong>Cabeça de Droid v3.0</strong> foi desenvolvido para otimizar e acompanhar suas contas nos jogos da HoYoverse (<em>Zenless Zone Zero</em>, <em>Genshin Impact</em> e <em>Honkai: Star Rail</em>) combinando Inteligência Artificial (Groq RAG), Armazenamento Relacional (SQLite), Autenticação via Playwright e Cálculo Matemático de Builds via Roll Value (RV).</p>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-key"></i> 1. Faça o Login Automático na HoYoLAB</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Vá até a aba de <strong>Configurações</strong> no menu esquerdo e clique em <strong>Login Automático (Navegador)</strong>. O app usará o Playwright para abrir uma janela isolada em segundo plano, capturar seus cookies de sessão (<code>ltuid_v2</code> e <code>ltoken_v2</code>) e salvá-los localmente no computador no arquivo <code>cookies.json</code>.</p>
+                        <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-key"></i> 1. Autenticação e Login Automático HoYoLAB</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Configurações</strong>, clique em <strong>Login Automático (Navegador)</strong>. O sistema abre uma janela do Chromium via Playwright para capturar com segurança os cookies de sessão (<code>ltuid_v2</code> e <code>ltoken_v2</code>), salvando-os localmente no arquivo <code>cookies.json</code>. Você também pode colar manualmente seus cookies ou chave da API Groq.</p>
                     </div>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #3b82f6; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-rotate"></i> 2. Selecione o Jogo e Sincronize em Background</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas <strong>Zenless Zone Zero</strong>, <strong>Genshin Impact</strong> ou <strong>Honkai: Star Rail</strong>, selecione os módulos desejados e clique em <strong>Sincronizar</strong>:</p>
+                        <h3 style="color: #3b82f6; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-rotate"></i> 2. Sincronização em Segundo Plano & Raspagem de Metagame</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas de cada jogo (<strong>ZZZ</strong>, <strong>Genshin</strong> ou <strong>HSR</strong>), selecione os módulos desejados e clique em <strong>Sincronizar</strong>:</p>
                         <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
-                            <li style="margin-bottom: 4px;"><strong>Roster</strong>: Busca seus personagens obtidos, níveis, constelações/eidolons/cinemas (vinculados por IDs numéricos universais), relíquias equipadas e recordes recentes de Endgame (Shiyu, Abismo, MoC).</li>
-                            <li style="margin-bottom: 4px;"><strong>Guias e Metagame</strong>: Para HSR e ZZZ, extrai os dados via <strong>Prydwen</strong>. Para Genshin Impact, baixa automaticamente as builds estruturadas do <strong>Game8</strong> em background para alimentar o motor matemático e sincroniza em paralelo os guias textuais do <strong>KeqingMains (KQM)</strong> para o contexto da IA.</li>
-                            <li style="margin-bottom: 4px;"><strong>Normalização Inteligente por ID</strong>: O sistema resolve automaticamente discrepâncias de formatação, apelidos e skins (ex: <em>Himeko - Nova</em> $\rightarrow$ ID <code>1510</code>, <em>Tingyun - Fugue</em> $\rightarrow$ ID <code>1225</code>). Roupas cosméticas de Genshin são mapeadas via Enka.Network.</li>
+                            <li style="margin-bottom: 4px;"><strong>Roster & Equipamentos:</strong> Busca personagens obtidos, níveis, constelações/eidolons/cinemas, relíquias equipadas e recordes de Endgame (Abismo Espiral, MoC e Shiyu Defense). Suporta roupas cosméticas de Genshin via Enka.Network.</li>
+                            <li style="margin-bottom: 4px;"><strong>Guias e Metagame Automatizados:</strong> Extrai tier lists e builds recomendadas do <strong>Prydwen</strong> (HSR e ZZZ), <strong>Game8</strong> (Genshin) e bibliotecas de guias em texto do <strong>KeqingMains (KQM)</strong> para contextualizar a IA.</li>
+                            <li style="margin-bottom: 4px;"><strong>Motor de IDs Universais & Apelidos:</strong> O sistema normaliza automaticamente variações de nomes e apelidos (ex: <em>Himeko - Nova</em> &rarr; ID <code>1510</code>, <em>Tingyun - Fugue</em> &rarr; ID <code>1225</code>).</li>
                         </ul>
                     </div>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> 3. Inspetor de Builds, Sistema de Notas RV & Comparador Meta</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 8px;">Ao clicar em qualquer personagem na galeria, o painel lateral é aberto com duas abas principais:</p>
+                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> 3. Inspetor de Builds, Sistema de Notas RV & Exportação em Card</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 8px;">Ao clicar em qualquer personagem na galeria, o painel lateral exibe a análise profunda da build:</p>
                         <ul class="section-desc" style="line-height: 1.5; font-size: 12px; margin-left: 20px;">
-                            <li style="margin-bottom: 6px;"><strong>Sua Build & Pontuação Ponderada por Peças:</strong> Exibe a nota geral da build e a pontuação individual de cada relíquia/artefato/disco via Roll Value (RV), com compensação de Main Stat (*Main Stat Forgiveness*) e pesos parciais para substatus flat.
-                                <br><strong style="color: #38bdf8;">Ponderação Proporcional:</strong> A Nota Geral é calculada dividindo a soma dos pontos pelo total de slots do jogo (6 peças em HSR e ZZZ, 5 peças em Genshin). Slots não equipados contam como 0 pontos, garantindo que builds incompletas recebam notas condizentes (ex: 2/6 peças não recebem nota S).
+                            <li style="margin-bottom: 6px;"><strong>Pontuação Roll Value (RV):</strong> Avalia o valor real dos substatus comparado aos rolagens máximas de peças 5★/S-Rank, com crédito base de 40% para Atributo Principal recomendado (<em>Main Stat Forgiveness</em>) e peso parcial para atributos brutos (Flat).
+                                <br><strong style="color: #38bdf8;">Ponderação Proporcional por Slot:</strong> A nota final divide a pontuação pelo total de slots do jogo (6 em HSR/ZZZ, 5 em Genshin), atribuindo 0 pontos a peças vazias.
                                 <br><strong style="color: #f59e0b;">SSS (&ge;90%):</strong> Perfeita | <strong style="color: #ec4899;">SS (75-89%):</strong> Excelente | <strong style="color: #f59e0b;">S (60-74%):</strong> Muito Boa | <strong style="color: #8b5cf6;">A (45-59%):</strong> Boa | <strong style="color: #3b82f6;">B (30-44%):</strong> Mediana | <strong style="color: #6b7280;">C/D (&lt;30%):</strong> A Otimizar.
                             </li>
-                            <li style="margin-bottom: 4px;"><strong>Comparador Meta:</strong> Compara lado a lado sua arma, conjuntos de relíquias e atributos principais das peças contra as metas ideais extraídas dos guias (mapeados por normalização inteligente de slots por jogo), destacando acertos em verde e divergências em vermelho.</li>
+                            <li style="margin-bottom: 4px;"><strong>Comparador Meta Lado a Lado:</strong> Contrasta a arma e conjuntos equipados contra os benchmarks do metagame.</li>
+                            <li style="margin-bottom: 4px;"><strong>Gerador de Card Imagem:</strong> Clique no botão <em>Card Imagem</em> para exportar uma captura HD em imagem da build completa do personagem.</li>
                         </ul>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
                         <h3 style="color: #a78bfa; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wand-magic-sparkles"></i> 4. Otimizador IA & Calculadora de Ascensão</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">No painel de inspeção de cada personagem, você conta com duas ferramentas exclusivas:</p>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Ferramentas inteligentes diretamente no painel do personagem:</p>
                         <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
-                            <li style="margin-bottom: 4px;"><strong>Otimizador de Build IA:</strong> Clique no botão <em>Analisar</em> para que a IA avalie sua build contra os benchmarks do metagame e devolva 3 recomendações diretas de melhoria.</li>
-                            <li style="margin-bottom: 4px;"><strong>Calculadora de Ascensão:</strong> Escolha o nível atual e o nível desejado (ex: 1 ao 90) para calcular exatamente a quantidade de Livros de XP, Mora/Créditos/Dennys e Materiais de Chefes necessários para o upgrade.</li>
+                            <li style="margin-bottom: 4px;"><strong>Otimizador de Build IA:</strong> Botão <em>Analisar</em> aciona a IA Groq para gerar 3 sugestões imediatas e acionáveis de substituição de atributos ou relíquias.</li>
+                            <li style="margin-bottom: 4px;"><strong>Calculadora de Materiais de Ascensão:</strong> Escolha o nível atual e desejado (ex: Nv. 1 ao 90) para calcular exatamente a quantidade de Livros de XP, Mora/Créditos/Dennys e Materiais de Elevação necessários.</li>
                         </ul>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-bolt"></i> 5. Monitoramento de Energia & Auto-Check-in Diário</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Acompanhe no topo das abas a sua Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR) em tempo real, com contagem regressiva para recarga total e status de expedições.</p>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-top: 4px;"><strong>Auto-Check-in Diário:</strong> O app realiza automaticamente o resgate das recompensas diárias do HoYoLAB a cada 6 horas. Você também pode disparar o check-in manualmente na aba Configurações e visualizar o histórico de logs do dia.</p>
+                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-bolt"></i> 5. Daily Notes em Tempo Real & Auto-Check-in (6 horas)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">O topo de cada aba exibe em tempo real o status de Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR), com cronômetro de recarga completa e progresso de expedições.</p>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-top: 4px;"><strong>Auto-Check-in Diário:</strong> O servidor FastAPI executa o resgate das recompensas do HoYoLAB em segundo plano a cada 6 horas (além do disparo no arranque). O histórico é salvo no SQLite e pode ser consultado na aba Configurações.</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #38bdf8; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-comments"></i> 6. Análise de Times & Chat Coach IA (RAG Local)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Chat IA Meta</strong> ou na seção de Times, converse em tempo real com a IA (Groq Llama 3.3 ou Gemini). Ela analisa seus personagens ativos (nível 70+) e guias sincronizados para indicar composições, rotações de combate e substitutos de equipamentos.</p>
+                        <h3 style="color: #38bdf8; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-comments"></i> 6. Analisador de Times & Chat Coach IA (Groq RAG Local)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas <strong>Times</strong> e <strong>Chat IA Meta</strong>, o assistente utiliza RAG local (Llama 3.3 70B Versatile via Groq) com gerenciamento de orçamento de tokens para responder com respostas em tempo real (Server-Sent Events streaming), analisando apenas seus personagens de nível alto (70+) e os guias locais do metagame.</p>
                     </div>
 
                     <div class="config-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
-                        <h3 style="font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-file-export"></i> Alternativa: Usando o NotebookLM (Opcional)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Se preferir não usar chaves de API, o Chat interno é opcional! Você pode carregar os arquivos Markdown gerados pelo app (ex: <code>roster_hsr.md</code> ou <code>todos_os_guias_hsr.md</code>) diretamente no <strong>Google NotebookLM</strong> para realizar consultas externas.</p>
+                        <h3 style="font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-file-export"></i> Alternativa: Consulta via Google NotebookLM</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Se preferir não utilizar chaves da Groq, todos os dados sincronizados são salvos em arquivos Markdown estruturados nas pastas <code>genshin/</code>, <code>hsr/</code> e <code>zzz/</code> (ex: <code>roster_hsr.md</code> ou <code>todos_os_guias_hsr.md</code>). Você pode fazer upload desses arquivos diretamente no Google NotebookLM.</p>
                         <button onclick="window.open('https://notebooklm.google.com/', '_blank')" class="secondary-btn">Abrir Google NotebookLM ➔</button>
                     </div>
                 </div>

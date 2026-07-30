@@ -28,7 +28,7 @@ desktop.ini
 *.sln
 *.swp
 
-# Local application secrets and configurations
+# Local application secrets, databases and configurations
 config.json
 cookies.json
 user_data_google/
@@ -43,12 +43,13 @@ hsr/
 zzz/
 genshin/
 
-# Ignore remote avatars, weapons, and relics downloaded at run
+# Ignore remote avatars, weapons, relics, and element icons downloaded at runtime
 assets/avatars/
 assets/weapons/
 assets/relics/
+assets/elements/
 
-# Legacy generated files (from previous versions)
+# Legacy generated files and temporary logs
 meus_personagens_hsr.md
 meta_e_tierlists_atual.md
 meta_endgame_report.md
@@ -62,7 +63,7 @@ moc_payload_dump.txt
 .env.local
 .env.*
 
-# Python check/test scripts and scratch
+# Python check/test scripts and scratch files
 check_*.py
 test_*.py
 scratch_*.py
