@@ -185,6 +185,7 @@ function getSafeFileName(name) {
 // INICIALIZAÇÃO DA APLICAÇÃO
 // ==========================================================================
 document.addEventListener("DOMContentLoaded", () => {
+    setupSidebarToggle();
     setupTabSwitching();
     setupConfigForm();
     setupSyncControls();
@@ -232,11 +233,59 @@ async function loadOverview() {
 }
 
 // ==========================================================================
+// CONTROLE DO MENU LATERAL (RETRÁTIL & MOBILE)
+// ==========================================================================
+function setupSidebarToggle() {
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebar-overlay");
+    const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+    const sidebarCloseBtn = document.getElementById("sidebar-close-btn");
+    const sidebarToggleDesktopBtn = document.getElementById("sidebar-toggle-desktop-btn");
+
+    function openMobileSidebar() {
+        if (sidebar) sidebar.classList.add("open");
+        if (sidebarOverlay) sidebarOverlay.classList.add("active");
+    }
+
+    function closeMobileSidebar() {
+        if (sidebar) sidebar.classList.remove("open");
+        if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+    }
+
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener("click", openMobileSidebar);
+    }
+
+    if (sidebarCloseBtn) {
+        sidebarCloseBtn.addEventListener("click", closeMobileSidebar);
+    }
+
+    if (sidebarOverlay) {
+        sidebarOverlay.addEventListener("click", closeMobileSidebar);
+    }
+
+    if (sidebarToggleDesktopBtn) {
+        sidebarToggleDesktopBtn.addEventListener("click", () => {
+            if (sidebar) {
+                sidebar.classList.toggle("collapsed");
+                localStorage.setItem("sidebarCollapsed", sidebar.classList.contains("collapsed"));
+            }
+        });
+
+        if (localStorage.getItem("sidebarCollapsed") === "true") {
+            if (sidebar) sidebar.classList.add("collapsed");
+        }
+    }
+}
+
+// ==========================================================================
 // GERENCIAMENTO DE ABAS (TABS)
 // ==========================================================================
 function setupTabSwitching() {
     const navButtons = document.querySelectorAll(".nav-btn");
     const tabPanes = document.querySelectorAll(".tab-pane");
+    const sidebar = document.getElementById("sidebar");
+    const sidebarOverlay = document.getElementById("sidebar-overlay");
 
     navButtons.forEach(btn => {
         btn.addEventListener("click", () => {
@@ -250,6 +299,12 @@ function setupTabSwitching() {
             
             // Fecha o inspetor de build ao mudar de aba
             closeInspector();
+
+            // No mobile, fecha a sidebar ao selecionar uma aba
+            if (window.innerWidth <= 768) {
+                if (sidebar) sidebar.classList.remove("open");
+                if (sidebarOverlay) sidebarOverlay.classList.remove("active");
+            }
         });
     });
 }
@@ -618,6 +673,10 @@ async function loadRoster(gameId) {
 // ==========================================================================
 async function inspectCharacter(gameId, char) {
     const inspector = document.getElementById("build-inspector");
+    const inspectorOverlay = document.getElementById("inspector-overlay");
+    if (inspector) inspector.classList.add("open");
+    if (inspectorOverlay) inspectorOverlay.classList.add("active");
+    
     activeInspectGame = gameId;
     activeInspectChar = char;
     
@@ -1017,10 +1076,16 @@ async function inspectCharacter(gameId, char) {
 }
 
 function closeInspector() {
-    document.getElementById("build-inspector").classList.remove("open");
+    const inspector = document.getElementById("build-inspector");
+    const inspectorOverlay = document.getElementById("inspector-overlay");
+    if (inspector) inspector.classList.remove("open");
+    if (inspectorOverlay) inspectorOverlay.classList.remove("active");
 }
 
-document.getElementById("btn-close-inspector").addEventListener("click", closeInspector);
+const btnCloseInspector = document.getElementById("btn-close-inspector");
+if (btnCloseInspector) btnCloseInspector.addEventListener("click", closeInspector);
+const inspectorOverlay = document.getElementById("inspector-overlay");
+if (inspectorOverlay) inspectorOverlay.addEventListener("click", closeInspector);
 
 // ==========================================================================
 // ASSISTENTE DE CHAT IA RAG (GROQ ENGINE)
