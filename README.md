@@ -14,10 +14,15 @@ O assistente sincroniza rosters de personagens, relíquias/artefatos/discos e re
 - **📊 Mini-Dashboards da Conta:** Exibição em tempo real de estatísticas do jogador (UID, Nível da Conta, Total de Personagens e Personagens 5★/Rank S) no topo da tela de cada jogo (*Zenless Zone Zero*, *Genshin Impact* e *Honkai: Star Rail*).
 - **🔋 Monitoramento Preciso de Energia (Daily Notes):** Acompanhamento em tempo real da Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR), com cronômetro de recuperação completa em tempo real e expedições ativas.
 - **🎁 Auto-Check-in Diário Automático:** Resgate automático das recompensas diárias do HoYoLAB em segundo plano a cada 6 horas (com disparo inicial no arranque do servidor) e botão manual na interface com histórico de logs gravados no banco SQLite.
-- **📁 Interface Web Premium (Glassmorphism):** Painel escuro moderno com esquemas de cores específicos por jogo (ZZZ, Genshin, HSR), efeitos de vidro fosco, transições fluidas e layout responsivo.
+- **📁 Interface Web Premium (Glassmorphism & Mobile-Ready):** Painel escuro moderno com esquemas de cores específicos por jogo (ZZZ, Genshin, HSR), efeitos de vidro fosco, transições fluidas e suporte total a telas móveis (Smartphones e Tablets) sem perder a qualidade no Desktop.
+- **📱 Acesso por Dispositivos Móveis & Rede Local (Wi-Fi):** Servidor configurado com suporte a CORS e binding em `0.0.0.0:8000`, permitindo acessar a aplicação no celular através do IP local da máquina (ex: `http://10.44.13.16:8000`).
+- **🗂️ Menu Lateral Retrátil & Off-Canvas Mobile Drawer:**
+  - **No Desktop:** Botão de alternância (<i class="fa-solid fa-bars-staggered"></i>) para recolher o menu lateral para modo compacto de ícones (78px) ou expandi-lo (280px), lembrando a escolha do usuário via `localStorage`.
+  - **No Mobile:** O menu se transforma em uma gaveta off-canvas deslizante com cabeçalho superior fixo, botão hambúrguer (<i class="fa-solid fa-bars"></i>) e fundo escuro desfocado.
 - **🎨 Visual com Ícones Dinâmicos (Font Awesome & Element Badges):** Ícones nativos de elementos de combate baixados em cache local e integrados à galeria.
 - **⚡ Terminal de Logs em Tempo Real & Barra de Progresso:** Monitoramento visual do progresso de raspagem (0 a 100%) e logs retráteis linha a linha para cada sincronização.
 - **🗡️ Inspetor de Builds & Sistema de Notas RV (SSS a D):**
+  - Exibição de builds em gaveta deslizante em tela cheia no celular com overlay desfocado, botão proeminente de fechar e grade de status (`stats-grid`) adaptada em 2 colunas para leitura ideal sem rolagem horizontal.
   - Avaliação individual de cada peça via **Roll Value (RV)** com compensação de Main Stat (*Main Stat Forgiveness*) e peso parcial para atributos Flat.
   - Classificação de builds em **SSS** ($\ge 90\%$), **SS** ($\ge 75\%$), **S** ($\ge 60\%$), **A** ($\ge 45\%$), **B** ($\ge 30\%$) e **C/D** ($<30\%$).
 - **📷 Gerador de Card Imagem HD:** Botão no inspetor para capturar e exportar em imagem de alta definição o resumo da build completa do personagem.
@@ -148,7 +153,9 @@ playwright install chromium
 ```bash
 python main.py
 ```
-O servidor FastAPI subirá em `http://127.0.0.1:8000` e abrirá a interface no seu navegador padrão em 3.5 segundos.
+O servidor FastAPI subirá escutando em todas as interfaces (`0.0.0.0:8000`) e abrirá a interface no seu navegador padrão em 3.5 segundos.
+- **Acesso Local (PC):** `http://127.0.0.1:8000`
+- **Acesso na Rede Local (Celular/Tablet):** `http://<IP_DO_SEU_COMPUTADOR>:8000` (o IP da sua máquina na rede Wi-Fi é detectado e exibido automaticamente no terminal no arranque da aplicação).
 
 ---
 

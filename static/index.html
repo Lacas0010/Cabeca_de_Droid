@@ -13,7 +13,7 @@
     <!-- FontAwesome 6 Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- CSS Estilos Customizados -->
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=3.3">
     <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
 </head>
 <body>
@@ -23,8 +23,11 @@
         <div class="glow-orb orb-3"></div>
     </div>
     <div class="app-container">
+        <!-- OVERLAY DO MENU MOBILE -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
         <!-- SIDEBAR DE NAVEGAÇÃO -->
-        <aside class="sidebar">
+        <aside id="sidebar" class="sidebar">
             <div class="brand">
                 <div class="brand-icon">
                     <img src="/assets/logo.svg" class="brand-logo" alt="Logo">
@@ -33,43 +36,70 @@
                     <h1>Cabeça de Droid</h1>
                     <span>Groq RAG Engine v3.0</span>
                 </div>
+                <button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="Fechar Menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <button id="sidebar-toggle-desktop-btn" class="sidebar-toggle-desktop-btn" title="Alternar Menu">
+                    <i class="fa-solid fa-bars-staggered"></i>
+                </button>
             </div>
             
             <nav class="nav-menu">
                 <button class="nav-btn active" data-tab="home">
-                    <img src="/assets/home_icon.png" class="tab-icon" alt="Home" style="filter: hue-rotate(220deg);"> Início
+                    <img src="/assets/home_icon.png" class="tab-icon" alt="Home" style="filter: hue-rotate(220deg);">
+                    <span class="nav-text">Início</span>
                 </button>
                 <button class="nav-btn" data-tab="zzz">
-                    <img src="/assets/zzz_icon.png" class="tab-icon" alt="ZZZ"> ZZZ (Zenless Zone Zero)
+                    <img src="/assets/zzz_icon.png" class="tab-icon" alt="ZZZ">
+                    <span class="nav-text">ZZZ (Zenless Zone Zero)</span>
                 </button>
                 <button class="nav-btn" data-tab="genshin">
-                    <img src="/assets/genshin_icon.png" class="tab-icon" alt="Genshin"> Genshin Impact
+                    <img src="/assets/genshin_icon.png" class="tab-icon" alt="Genshin">
+                    <span class="nav-text">Genshin Impact</span>
                 </button>
                 <button class="nav-btn" data-tab="hsr">
-                    <img src="/assets/hsr_icon.png" class="tab-icon" alt="HSR"> Honkai: Star Rail
+                    <img src="/assets/hsr_icon.png" class="tab-icon" alt="HSR">
+                    <span class="nav-text">Honkai: Star Rail</span>
                 </button>
                 <button class="nav-btn" data-tab="chat">
-                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Chat"> Chat IA Meta
+                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Chat">
+                    <span class="nav-text">Chat IA Meta</span>
                 </button>
                 <button class="nav-btn" data-tab="config">
-                    <img src="/assets/config_icon.png" class="tab-icon" alt="Config"> Configurações
+                    <img src="/assets/config_icon.png" class="tab-icon" alt="Config">
+                    <span class="nav-text">Configurações</span>
                 </button>
                 <button class="nav-btn" data-tab="help">
-                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Help" style="filter: hue-rotate(140deg);"> Como Usar
+                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Help" style="filter: hue-rotate(140deg);">
+                    <span class="nav-text">Como Usar</span>
                 </button>
             </nav>
             
             <div class="sidebar-footer">
-                <button id="btn-sync-all" class="sync-all-btn"><i class="fa-solid fa-rotate"></i> Sincronização Global</button>
+                <button id="btn-sync-all" class="sync-all-btn">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span class="btn-text">Sincronização Global</span>
+                </button>
                 <div class="conn-status">
                     <span id="api-status-dot" class="status-dot offline"></span>
-                    <span id="api-status-text">Buscando status...</span>
+                    <span id="api-status-text" class="status-text">Buscando status...</span>
                 </div>
             </div>
         </aside>
 
         <!-- CONTEÚDO PRINCIPAL -->
         <main class="main-content">
+            <!-- CABEÇALHO MOBILE -->
+            <header class="mobile-header">
+                <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Abrir Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="mobile-brand">
+                    <img src="/assets/logo.svg" class="mobile-logo" alt="Logo">
+                    <span class="mobile-brand-title">Cabeça de Droid</span>
+                </div>
+            </header>
+
             <!-- ABA INÍCIO (DASHBOARD GLOBAL) -->
             <section id="tab-home" class="tab-pane active">
                 <div class="game-banner home-banner">
@@ -627,6 +657,9 @@
 
         </main>
 
+        <!-- OVERLAY DO INSPECTOR MOBILE -->
+        <div id="inspector-overlay" class="sidebar-overlay inspector-overlay"></div>
+
         <!-- COLLAPSIBLE BUILD INSPECTOR (INSPEÇÃO DE PERSONAGEM SIDEBAR) -->
         <aside id="build-inspector" class="build-inspector">
             <div class="inspector-header">
@@ -791,6 +824,6 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js?v=3.2"></script>
+    <script src="app.js?v=3.4"></script>
 </body>
 </html>
