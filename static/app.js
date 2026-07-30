@@ -22,6 +22,107 @@ const ELEMENT_MAPPING = {
     "electric": "el-electric", "ether": "el-ether"
 };
 
+// Dicionário de sanitização e abreviação inteligente de nomes de atributos (Stats / Substats)
+const STAT_SHORT_NAMES = {
+    // Honkai: Star Rail (HSR)
+    "Bônus de Dano de Fogo": "Dano Fogo",
+    "Bônus de Dano Fogo": "Dano Fogo",
+    "Bônus de Dano de Gelo": "Dano Gelo",
+    "Bônus de Dano Gelo": "Dano Gelo",
+    "Bônus de Dano de Raio": "Dano Raio",
+    "Bônus de Dano Raio": "Dano Raio",
+    "Bônus de Dano de Vento": "Dano Vento",
+    "Bônus de Dano Vento": "Dano Vento",
+    "Bônus de Dano Quântico": "Dano Quântico",
+    "Bônus de Dano de Quântico": "Dano Quântico",
+    "Bônus de Dano Imaginário": "Dano Imaginário",
+    "Bônus de Dano de Imaginário": "Dano Imaginário",
+    "Bônus de Dano Físico": "Dano Físico",
+    "Bônus de Dano de Físico": "Dano Físico",
+    "Taxa de Acerto de Efeito": "Acerto Efeito",
+    "Resistência a Efeito": "RES Efeito",
+    "RES a Efeito": "RES Efeito",
+    "Efeito de Quebra": "Quebra",
+    "Chance de CRIT": "Taxa CRIT",
+    "Taxa de CRIT": "Taxa CRIT",
+    "Taxa Crítica": "Taxa CRIT",
+    "Dano de CRIT": "Dano CRIT",
+    "Dano Crítico": "Dano CRIT",
+    "Regeneração de Energia": "Regen. Energia",
+    "Taxa de Reg. de Energia": "Regen. Energia",
+    "Taxa de Regeneração de Energia": "Regen. Energia",
+
+    // Genshin Impact
+    "Proficiência Elemental": "Prof. Element.",
+    "Recarga de Energia": "Recarga",
+    "Bônus de Dano Anemo": "Dano Anemo",
+    "Bônus de Dano Pyro": "Dano Pyro",
+    "Bônus de Dano Hydro": "Dano Hydro",
+    "Bônus de Dano Electro": "Dano Electro",
+    "Bônus de Dano Cryo": "Dano Cryo",
+    "Bônus de Dano Geo": "Dano Geo",
+    "Bônus de Dano Dendro": "Dano Dendro",
+    "Bônus de Dano Elemental": "Dano Elem.",
+
+    // Zenless Zone Zero (ZZZ)
+    "Proficiência de Anomalia": "Prof. Anomalia",
+    "Taxa de Acerto de Anomalia": "Maest. Anomalia",
+    "Maestria de Anomalia": "Maest. Anomalia",
+    "Recuperação de Energia": "Recup. Energia",
+    "Taxa de Recuperação de Energia": "Recup. Energia",
+    "Taxa de Perfuração": "Perfuração",
+    "Bônus de Dano Elétrico": "Dano Elétrico",
+    "Bônus de Dano de Elétrico": "Dano Elétrico",
+    "Bônus de Dano Éter": "Dano Éter",
+    "Bônus de Dano de Éter": "Dano Éter",
+
+    // Inglês (API HSR, ZZZ retorna em inglês em alguns idiomas)
+    "CRIT Rate": "Taxa CRIT",
+    "CRIT DMG": "Dano CRIT",
+    "Effect Hit Rate": "Acerto Efeito",
+    "Effect RES": "RES Efeito",
+    "Break Effect": "Quebra",
+    "Energy Regeneration Rate": "Regen. Energia",
+    "Outgoing Healing Boost": "Cura Bônus",
+    "Physical DMG Boost": "Dano Físico",
+    "Fire DMG Boost": "Dano Fogo",
+    "Ice DMG Boost": "Dano Gelo",
+    "Lightning DMG Boost": "Dano Raio",
+    "Wind DMG Boost": "Dano Vento",
+    "Quantum DMG Boost": "Dano Quântico",
+    "Imaginary DMG Boost": "Dano Imaginário",
+    // ZZZ English
+    "Anomaly Proficiency": "Prof. Anomalia",
+    "Anomaly Mastery": "Maest. Anomalia",
+    "PEN Ratio": "Perfuração",
+    "Energy Regen": "Regen. Energia",
+    "Impact": "Impacto",
+    // Genshin English
+    "Elemental Mastery": "Prof. Element.",
+    "Energy Recharge": "Recarga",
+    "Healing Bonus": "Cura Bônus",
+    "Anemo DMG Bonus": "Dano Anemo",
+    "Pyro DMG Bonus": "Dano Pyro",
+    "Hydro DMG Bonus": "Dano Hydro",
+    "Electro DMG Bonus": "Dano Electro",
+    "Cryo DMG Bonus": "Dano Cryo",
+    "Geo DMG Bonus": "Dano Geo",
+    "Dendro DMG Bonus": "Dano Dendro"
+};
+
+function sanitizeStatName(statText) {
+    if (!statText) return "";
+    let s = String(statText).trim();
+    if (STAT_SHORT_NAMES[s]) return STAT_SHORT_NAMES[s];
+    for (const [k, v] of Object.entries(STAT_SHORT_NAMES)) {
+        if (s.includes(k)) {
+            s = s.replace(k, v);
+        }
+    }
+    s = s.replace(/Bônus de Dano (?:de )?([A-Za-zÀ-ÿ]+)/gi, 'Dano $1');
+    return s;
+}
+
 // Helper para normalizar slots de relíquias / artefatos / discos de todos os jogos
 function getNormalizedSlot(slot) {
     if (!slot) return "";
@@ -527,6 +628,9 @@ async function inspectCharacter(gameId, char) {
     // Preenche cabeçalho básico instantaneamente
     const safeAvatarFn = getSafeFileName(char.name);
     document.getElementById("ins-avatar").src = `/assets/avatars/${gameId}/${safeAvatarFn}`;
+    window.currentInspectorChar = char;
+    window.currentInspectorGameId = gameId;
+
     document.getElementById("ins-avatar").onerror = function() {
         this.src = char.icon || '/assets/config_icon.png';
     };
@@ -689,23 +793,53 @@ async function inspectCharacter(gameId, char) {
             setsList.innerHTML = `<span class="text-muted">Nenhum bônus de conjunto ativo.</span>`;
         }
         
-        // 3. Renderiza Atributos Consolidados (Stats)
+        // 3. Renderiza Painel de Status Finais (Combat Stats) - Glassmorphism Premium
         const statsGrid = document.getElementById("ins-stats-grid");
         statsGrid.innerHTML = "";
         
         const statsKeys = Object.keys(build.stats || {});
         if (statsKeys.length > 0) {
-            statsKeys.forEach(key => {
+            // Define quais stats são "críticos" (destaque dourado/âmbar)
+            const criticalStats = ['Taxa CRIT', 'Dano CRIT', 'CRIT Rate', 'CRIT DMG', 'SPD', 'VEL', 'Velocidade'];
+            // Ordena: HP/ATK/DEF/SPD primeiro, depois CRIT, depois resto
+            const orderedPriority = ['HP', 'ATQ', 'ATK', 'DEF', 'SPD', 'VEL', 'Taxa CRIT', 'CRIT Rate', 'Dano CRIT', 'CRIT DMG'];
+            const sortedKeys = [...statsKeys].sort((a, b) => {
+                const ai = orderedPriority.findIndex(p => a.includes(p) || a === p);
+                const bi = orderedPriority.findIndex(p => b.includes(p) || b === p);
+                if (ai === -1 && bi === -1) return 0;
+                if (ai === -1) return 1;
+                if (bi === -1) return -1;
+                return ai - bi;
+            });
+            
+            sortedKeys.forEach(key => {
+                const isCrit = criticalStats.some(cs => key.includes(cs) || key === cs);
                 const statCard = document.createElement("div");
-                statCard.className = "stat-card";
+                statCard.className = "stat-card" + (isCrit ? " stat-card--crit" : "");
                 statCard.innerHTML = `
-                    <span class="stat-label">${key}</span>
-                    <span class="stat-value">${build.stats[key]}</span>
+                    <span class="stat-label">${sanitizeStatName(key)}</span>
+                    <span class="stat-value${isCrit ? ' stat-value--crit' : ''}">${build.stats[key]}</span>
                 `;
                 statsGrid.appendChild(statCard);
             });
         } else {
-            statsGrid.innerHTML = `<span class="text-muted">Consolidação de status não disponível.</span>`;
+            statsGrid.innerHTML = `
+                <div style="grid-column: 1 / -1; text-align: center; padding: 16px 0; color: var(--text-muted); font-size: 12px;">
+                    <i class="fa-solid fa-rotate" style="margin-bottom: 8px; font-size: 24px; opacity: 0.4; display: block;"></i>
+                    Status finais disponíveis após próxima sincronização do Roster.
+                </div>
+            `;
+        }
+        
+        // Atualiza badge de contagem de stats
+        const statsCountEl = document.getElementById("ins-stats-count");
+        if (statsCountEl) {
+            statsCountEl.textContent = statsKeys.length > 0 ? `(${statsKeys.length} atributos)` : "";
+        }
+        
+        // Merge stats na referência do char atual para o canvas export
+        if (statsKeys.length > 0 && window.currentInspectorChar) {
+            window.currentInspectorChar.stats = build.stats;
         }
         
         // NOVO: Renderiza Comparação de Metas Gerais (Benchmarks)
@@ -762,9 +896,19 @@ async function inspectCharacter(gameId, char) {
         
         const banner = document.createElement("div");
         banner.className = "overall-build-banner";
+        banner.style.display = "flex";
+        banner.style.justifyContent = "space-between";
+        banner.style.alignItems = "center";
         banner.innerHTML = `
-            <div class="overall-build-title">
-                <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Nota Geral da Build${equippedInfo}
+            <div>
+                <div class="overall-build-title">
+                    <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Nota Geral da Build${equippedInfo}
+                </div>
+                <div style="margin-top: 6px;">
+                    <button class="trigger-export-card action-btn" style="padding: 5px 12px; font-size: 11px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35)); border: 1px solid rgba(245, 158, 11, 0.6); color: #fbbf24; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                        <i class="fa-solid fa-camera"></i> Gerar Imagem da Build (Splash Art)
+                    </button>
+                </div>
             </div>
             <div class="overall-badge ${gradeClass}">
                 ${overallGrade} (${overallScore} pts)
@@ -803,10 +947,20 @@ async function inspectCharacter(gameId, char) {
                 if (subsArray.length > 0) {
                     subsHtml = `<div class="piece-subs-grid">`;
                     subsArray.forEach(sub => {
-                        const parts = sub.split(":");
-                        if (parts.length >= 2) {
-                            const name = parts[0].trim();
-                            const value = parts[1].trim();
+                        const cleanSub = sanitizeStatName(sub);
+                        let name = cleanSub;
+                        let value = "";
+                        if (cleanSub.includes(":")) {
+                            const parts = cleanSub.split(":");
+                            name = parts[0].trim();
+                            value = parts[1].trim();
+                        } else if (cleanSub.includes("(")) {
+                            const parts = cleanSub.split("(");
+                            name = parts[0].trim();
+                            value = parts[1].replace(")", "").trim();
+                        }
+                        
+                        if (value) {
                             subsHtml += `
                                 <div class="sub-item">
                                     <span class="sub-label">${name}</span>
@@ -816,7 +970,7 @@ async function inspectCharacter(gameId, char) {
                         } else {
                             subsHtml += `
                                 <div class="sub-item">
-                                    <span class="sub-label">${sub}</span>
+                                    <span class="sub-label">${name}</span>
                                 </div>
                             `;
                         }
@@ -831,6 +985,7 @@ async function inspectCharacter(gameId, char) {
                     gradeHtml = `<span class="badge-relic badge-relic-${equivalentLocalPiece.grade.toLowerCase()}">${equivalentLocalPiece.grade}</span><span style="font-size: 10px; color: var(--text-secondary); margin-left: 6px; font-weight: 500;">Score: ${equivalentLocalPiece.score || 0}</span>`;
                 }
                 
+                const cleanMain = sanitizeStatName(piece.main);
                 row.innerHTML = `
                     ${iconHtml}
                     <div class="relic-piece-details" style="flex: 1;">
@@ -843,7 +998,7 @@ async function inspectCharacter(gameId, char) {
                                 ${gradeHtml}
                             </div>
                         </div>
-                        <div class="piece-main" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">Principal: ${piece.main}</div>
+                        <div class="piece-main" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">Principal: <span class="main-stat-pill">${cleanMain}</span></div>
                         <div class="piece-subs">${subsHtml}</div>
                     </div>
                 `;
@@ -1967,3 +2122,713 @@ function drawPieChart(svgId, legendId, data) {
     hole.setAttribute("fill", "#050507");
     svg.appendChild(hole);
 }
+
+function getZzzPrydwenSlug(name) {
+    if (!name) return "";
+    const clean = String(name).toLowerCase().trim();
+    const specialMap = {
+        "anby demara": "anby-demara",
+        "anby": "anby-demara",
+        "anton ivanov": "anton",
+        "astra yao": "astra-yao",
+        "ben bigger": "ben",
+        "billy kid": "billy-kid",
+        "billy": "billy-kid",
+        "grace howard": "grace-howard",
+        "grace": "grace-howard",
+        "hoshimi miyabi": "miyabi",
+        "asaba harumasa": "harumasa",
+        "jane doe": "jane-doe",
+        "koleda belobog": "koleda",
+        "nicole demara": "nicole-demara",
+        "nicole": "nicole-demara",
+        "piper wheel": "piper",
+        "seth lowell": "seth",
+        "soldier 11": "soldier-11",
+        "von lycaon": "lycaon",
+        "zhu yuan": "zhu-yuan"
+    };
+    if (specialMap[clean]) return specialMap[clean];
+    for (const [k, v] of Object.entries(specialMap)) {
+        if (clean === k || clean.includes(k)) return v;
+    }
+    return clean.replace(/\s+/g, '-').replace(/_/g, '-');
+}
+
+// ==========================================
+// GERADOR DE CARD DE BUILD EM ALTA RESOLUÇÃO (PNG)
+// ==========================================
+
+async function generateBuildCardCanvas(char, gameId) {
+    const canvas = document.createElement("canvas");
+    const width = 1200;
+    const height = 675;
+    canvas.width = width * 2;   // 2x scale for 4K / Retina sharpness
+    canvas.height = height * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+
+    const elemColors = {
+        anemo: { primary: "#10b981", accent: "#059669", bg: "rgba(16, 185, 129, 0.15)", pill: "#059669" },
+        pyro: { primary: "#ef4444", accent: "#dc2626", bg: "rgba(239, 68, 68, 0.15)", pill: "#dc2626" },
+        hydro: { primary: "#3b82f6", accent: "#2563eb", bg: "rgba(59, 130, 246, 0.15)", pill: "#2563eb" },
+        electro: { primary: "#a855f7", accent: "#9333ea", bg: "rgba(168, 85, 247, 0.15)", pill: "#9333ea" },
+        cryo: { primary: "#38bdf8", accent: "#0284c7", bg: "rgba(56, 189, 248, 0.15)", pill: "#0284c7" },
+        geo: { primary: "#f59e0b", accent: "#d97706", bg: "rgba(245, 158, 11, 0.15)", pill: "#d97706" },
+        dendro: { primary: "#84cc16", accent: "#65a30d", bg: "rgba(132, 204, 22, 0.15)", pill: "#65a30d" },
+        quantum: { primary: "#6366f1", accent: "#4f46e5", bg: "rgba(99, 102, 241, 0.15)", pill: "#4f46e5" },
+        imaginary: { primary: "#eab308", accent: "#ca8a04", bg: "rgba(234, 179, 8, 0.15)", pill: "#ca8a04" },
+        physical: { primary: "#94a3b8", accent: "#64748b", bg: "rgba(148, 163, 184, 0.15)", pill: "#64748b" },
+        ether: { primary: "#c084fc", accent: "#a855f7", bg: "rgba(192, 132, 252, 0.15)", pill: "#a855f7" },
+        fire: { primary: "#ef4444", accent: "#dc2626", bg: "rgba(239, 68, 68, 0.15)", pill: "#dc2626" },
+        ice: { primary: "#38bdf8", accent: "#0284c7", bg: "rgba(56, 189, 248, 0.15)", pill: "#0284c7" },
+        electric: { primary: "#a855f7", accent: "#9333ea", bg: "rgba(168, 85, 247, 0.15)", pill: "#9333ea" },
+        wind: { primary: "#10b981", accent: "#059669", bg: "rgba(16, 185, 129, 0.15)", pill: "#059669" }
+    };
+
+    const elemKey = (char.element || "").toLowerCase();
+    const theme = elemColors[elemKey] || elemColors.physical;
+
+    function drawRoundedRect(x, y, w, h, r, fillStyle, strokeStyle, lineWidth = 1) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        if (fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.fill();
+        }
+        if (strokeStyle) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+    }
+
+    function loadImage(url) {
+        return new Promise((resolve) => {
+            if (!url) return resolve(null);
+            let finalUrl = url;
+            if (url.startsWith("http://") || url.startsWith("https://")) {
+                finalUrl = `/api/proxy_image?url=${encodeURIComponent(url)}`;
+            }
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = () => {
+                if (finalUrl !== url) {
+                    const fallbackImg = new Image();
+                    fallbackImg.onload = () => resolve(fallbackImg);
+                    fallbackImg.onerror = () => resolve(null);
+                    fallbackImg.src = url;
+                } else {
+                    resolve(null);
+                }
+            };
+            img.src = finalUrl;
+        });
+    }
+
+    const logoImg = (await loadImage("/assets/logo.svg")) || (await loadImage("/assets/logo.ico"));
+
+    // 1. Fundo do Banner Landscape (16:9)
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0, "#080b13");
+    bgGrad.addColorStop(0.5, "#0f172a");
+    bgGrad.addColorStop(1, "#05070e");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    const glowGrad = ctx.createRadialGradient(220, 300, 20, 220, 300, 500);
+    glowGrad.addColorStop(0, theme.bg.replace("0.15", "0.45"));
+    glowGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Dados de notas e contagem de peças
+    const overallGrade = (char.overall_grade || "D").toUpperCase();
+    const overallScore = char.overall_score !== undefined ? char.overall_score : 0.0;
+    const equippedPieces = char.equipped_pieces !== undefined ? char.equipped_pieces : (char.relics ? char.relics.length : 0);
+    const maxPieces = char.max_pieces || (gameId === 'genshin' ? 5 : 6);
+
+    const gradeColors = {
+        SSS: { bg: "rgba(245, 158, 11, 0.25)", border: "#f59e0b", text: "#fbbf24" },
+        SS: { bg: "rgba(236, 72, 153, 0.25)", border: "#ec4899", text: "#f472b6" },
+        S: { bg: "rgba(245, 158, 11, 0.25)", border: "#f59e0b", text: "#fbbf24" },
+        A: { bg: "rgba(139, 92, 246, 0.25)", border: "#8b5cf6", text: "#c084fc" },
+        B: { bg: "rgba(59, 130, 246, 0.25)", border: "#3b82f6", text: "#60a5fa" },
+        C: { bg: "rgba(107, 114, 128, 0.25)", border: "#6b7280", text: "#9ca3af" },
+        D: { bg: "rgba(107, 114, 128, 0.25)", border: "#6b7280", text: "#9ca3af" }
+    };
+    const gc = gradeColors[overallGrade] || gradeColors.D;
+
+    // ==========================================
+    // 2. HERO COLUMN CONTINUA (COLUNA DA ESQUERDA)
+    // ==========================================
+    const hx = 30, hy = 25, hw = 390, hh = 615;
+    
+    // Container base da Hero Column
+    drawRoundedRect(hx, hy, hw, hh, 16, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.12)", 1.5);
+
+    // Carregamento da Splash Art / Gacha Art
+    let splashUrl = char.gacha_art || char.splash_art || char.portrait || char.draw || char.art_url || char.gacha_card || char.gacha_slice || char.display_image || char.image || char.banner_icon;
+    if (gameId === 'hsr' && char.id && !char.gacha_art) {
+        splashUrl = `https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${char.id}.png`;
+    } else if (gameId === 'zzz') {
+        const isZzzSkin = splashUrl && splashUrl.split("_").some(part => /^\d{7,}$/.test(part.replace(".png", "")));
+        if (!isZzzSkin) {
+            const zzzSlug = getZzzPrydwenSlug(char.name);
+            const zzzPrydwenUrl = zzzSlug ? `https://cdn.prydwen.gg/images/zenless-zone-zero/characters/${zzzSlug}_full.webp` : "";
+            if (!splashUrl || splashUrl.includes("role_vertical_painting") || splashUrl.includes("role_square_avatar")) {
+                splashUrl = zzzPrydwenUrl || splashUrl;
+            }
+        }
+    } else if (gameId === 'genshin') {
+        const checkIcon = char.gacha_art || char.icon || splashUrl || "";
+        if (checkIcon.includes("UI_AvatarIcon_")) {
+            if (checkIcon.includes("Costume")) {
+                splashUrl = checkIcon.replace("UI_AvatarIcon_", "UI_Costume_");
+            } else {
+                splashUrl = checkIcon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_");
+            }
+        } else if (checkIcon.includes("UI_Costume_")) {
+            splashUrl = checkIcon;
+        } else if (!splashUrl && char.icon && char.icon.includes("UI_AvatarIcon_")) {
+            if (char.icon.includes("Costume")) {
+                splashUrl = char.icon.replace("UI_AvatarIcon_", "UI_Costume_");
+            } else {
+                splashUrl = char.icon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_");
+            }
+        }
+    }
+
+    const safeFn = getSafeFileName(char.name);
+    const localAvatarUrl = `/assets/avatars/${gameId}/${safeFn}`;
+
+    let isAvatarFallback = false;
+    let charImg = await loadImage(splashUrl);
+
+    if (!charImg && gameId === 'zzz' && char.name) {
+        const zzzSlug = getZzzPrydwenSlug(char.name);
+        if (zzzSlug) {
+            charImg = await loadImage(`https://cdn.prydwen.gg/images/zenless-zone-zero/characters/${zzzSlug}_full.webp`);
+        }
+    }
+
+    if (!charImg && splashUrl && splashUrl.includes("UI_Gacha_AvatarIcon_")) {
+        charImg = await loadImage(splashUrl.replace("UI_Gacha_AvatarIcon_", "UI_Gacha_AvatarImg_"));
+    }
+
+    if (!charImg && gameId === 'genshin' && (char.icon || char.gacha_art)) {
+        let enkaGacha = char.gacha_art || char.icon;
+        if (enkaGacha.includes("UI_AvatarIcon_")) {
+            if (enkaGacha.includes("Costume")) {
+                enkaGacha = enkaGacha.replace("UI_AvatarIcon_", "UI_Costume_");
+            } else {
+                enkaGacha = enkaGacha.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_");
+            }
+        }
+        if (enkaGacha !== char.icon) {
+            charImg = await loadImage(enkaGacha);
+        }
+    }
+
+    if (!charImg) {
+        charImg = await loadImage(char.icon) || await loadImage(localAvatarUrl);
+        isAvatarFallback = true;
+    } else {
+        const imgRatio = charImg.width / charImg.height;
+        if ((charImg.width <= 300 && charImg.height <= 300 && imgRatio >= 0.75 && imgRatio <= 1.3) ||
+            (splashUrl && (splashUrl.includes("role_square_avatar") || splashUrl.includes("UI_AvatarIcon_")) && !splashUrl.includes("Gacha") && !splashUrl.includes("painting") && !splashUrl.includes("Costume"))) {
+            isAvatarFallback = true;
+        }
+    }
+
+    if (charImg) {
+        ctx.save();
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(hx + 2, hy + 2, hw - 4, hh - 4, 14);
+        } else {
+            ctx.rect(hx + 2, hy + 2, hw - 4, hh - 4);
+        }
+        ctx.clip();
+
+        const imgW = charImg.width;
+        const imgH = charImg.height;
+        const imgRatio = imgW / imgH;
+        const targetW = hw - 4;
+        const targetH = hh - 4;
+
+        if (isAvatarFallback) {
+            // RENDERING ELEGANTE PARA FALLBACK DE AVATAR (NÃO ESTICA O ROSTO!)
+            const avatarBg = ctx.createRadialGradient(hx + hw / 2, hy + 220, 20, hx + hw / 2, hy + 220, 260);
+            avatarBg.addColorStop(0, theme.primary + "44");
+            avatarBg.addColorStop(1, "rgba(15, 23, 42, 0.95)");
+            ctx.fillStyle = avatarBg;
+            ctx.fillRect(hx, hy, hw, hh);
+
+            const avatarRadius = 90;
+            const avatarCx = hx + hw / 2;
+            const avatarCy = hy + 220;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(avatarCx, avatarCy, avatarRadius + 5, 0, Math.PI * 2);
+            ctx.fillStyle = theme.primary;
+            ctx.shadowColor = theme.primary;
+            ctx.shadowBlur = 18;
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(avatarCx, avatarCy, avatarRadius, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(charImg, avatarCx - avatarRadius, avatarCy - avatarRadius, avatarRadius * 2, avatarRadius * 2);
+            ctx.restore();
+        } else {
+            // RENDERING PARA PORTRAITS E SPLASH ARTS (Genshin, HSR, ZZZ)
+            const cropRatio = imgW / imgH;
+            let drawW, drawH, drawX, drawY;
+
+            // Escala a altura para preencher todo o container (611px), garantindo o personagem grande e em destaque
+            drawH = targetH;
+            drawW = targetH * cropRatio;
+            drawX = (hx + 2) - (drawW - targetW) / 2;
+            drawY = hy + 2;
+
+            ctx.drawImage(charImg, 0, 0, imgW, imgH, drawX, drawY, drawW, drawH);
+        }
+
+        // Gradiente escuro no topo para leitura do header
+        const topGlow = ctx.createLinearGradient(hx, hy, hx, hy + 140);
+        topGlow.addColorStop(0, "rgba(5, 8, 16, 0.90)");
+        topGlow.addColorStop(1, "transparent");
+        ctx.fillStyle = topGlow;
+        ctx.fillRect(hx, hy, hw, 140);
+
+        // Gradiente escuro intenso na base para fusão com a Arma
+        const bottomGlow = ctx.createLinearGradient(hx, hy + 200, hx, hy + hh);
+        bottomGlow.addColorStop(0, "transparent");
+        bottomGlow.addColorStop(0.65, "rgba(9, 13, 22, 0.80)");
+        bottomGlow.addColorStop(1, "rgba(9, 13, 22, 0.98)");
+        ctx.fillStyle = bottomGlow;
+        ctx.fillRect(hx, hy + 200, hw, hh - 200);
+
+        ctx.restore();
+    } else {
+        ctx.font = "bold 64px sans-serif";
+        ctx.fillStyle = theme.primary;
+        ctx.textAlign = "center";
+        ctx.fillText(char.name.charAt(0), hx + hw / 2, hy + 250);
+        ctx.textAlign = "left";
+    }
+
+    // Header Sobreposto no Topo da Hero Column
+    const gameNames = { hsr: "HONKAI: STAR RAIL", genshin: "GENSHIN IMPACT", zzz: "ZENLESS ZONE ZERO" };
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillStyle = theme.primary;
+    
+    let headerTextX = hx + 18;
+    if (logoImg) {
+        ctx.drawImage(logoImg, hx + 18, hy + 13, 16, 16);
+        headerTextX = hx + 40;
+    }
+    ctx.fillText((gameNames[gameId] || gameId.toUpperCase()) + " • CABEÇA DE DROID", headerTextX, hy + 26);
+
+    ctx.font = "bold 26px sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(char.name.length > 15 ? char.name.substring(0, 15) + "..." : char.name, hx + 18, hy + 56);
+
+    ctx.font = "500 13px sans-serif";
+    ctx.fillStyle = "#cbd5e1";
+    const elemName = (char.element || "Físico").toUpperCase();
+    ctx.fillText(`Nv. ${char.level} • ${elemName}`, hx + 18, hy + 76);
+
+    // Pill de Constelação / Eidolon em Vermelho Crimson (Red Badge)
+    const rankStr = char.rank_str || "C0";
+    drawRoundedRect(hx + 18, hy + 86, 56, 24, 6, "rgba(225, 29, 72, 0.9)", "#f43f5e", 1);
+    ctx.font = "bold 12px sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.fillText(rankStr, hx + 46, hy + 102);
+    ctx.textAlign = "left";
+
+    // Badge de Nota Geral no canto superior direito da Hero Column
+    drawRoundedRect(hx + hw - 108, hy + 16, 92, 42, 10, gc.bg, gc.border, 1.5);
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillStyle = gc.text;
+    ctx.textAlign = "center";
+    ctx.fillText(`NOTA ${overallGrade}`, hx + hw - 62, hy + 34);
+
+    ctx.font = "500 10px sans-serif";
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillText(`${overallScore} pts`, hx + hw - 62, hy + 49);
+    ctx.textAlign = "left";
+
+    // ==========================================
+    // 2.5 PAINEL DE STATUS FINAIS (COMBAT STATS) — Hero Column
+    // ==========================================
+    const charStats = char.stats || {};
+    const statKeys = Object.keys(charStats);
+    if (statKeys.length > 0) {
+        const statsPanelX = hx + 12;
+        const statsPanelW = hw - 24;
+        const statsPanelH = 110;
+        const statsPanelY = hy + hh - 122 - statsPanelH - 12;
+
+        // Background glassmorphism do painel
+        drawRoundedRect(statsPanelX, statsPanelY, statsPanelW, statsPanelH, 12,
+            "rgba(10, 15, 26, 0.80)", "rgba(255, 255, 255, 0.10)", 1);
+
+        ctx.font = "bold 10px sans-serif";
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillText("STATUS FINAIS DE COMBATE", statsPanelX + 14, statsPanelY + 20);
+
+        // Define os stats prioritários para exibir (máx. 8 no espaço disponível)
+        const priorityOrder = ['HP', 'ATQ', 'ATK', 'DEF', 'SPD', 'VEL', 'Taxa CRIT', 'CRIT Rate', 'Dano CRIT', 'CRIT DMG', 'Prof. Element.', 'Recarga', 'Impacto', 'Impact'];
+        const criticalStatNames = ['Taxa CRIT', 'CRIT Rate', 'Dano CRIT', 'CRIT DMG', 'SPD', 'VEL'];
+
+        const sortedStatKeys = [...statKeys].sort((a, b) => {
+            const ai = priorityOrder.findIndex(p => a.includes(p) || a === p);
+            const bi = priorityOrder.findIndex(p => b.includes(p) || b === p);
+            if (ai === -1 && bi === -1) return 0;
+            if (ai === -1) return 1;
+            if (bi === -1) return -1;
+            return ai - bi;
+        });
+
+        const displayStats = sortedStatKeys.slice(0, 8);
+        const cols = 4;
+        const rows = 2;
+        const cellW = (statsPanelW - 28) / cols;
+        const cellH = (statsPanelH - 30) / rows;
+
+        displayStats.forEach((key, idx) => {
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+            const cx = statsPanelX + 14 + col * cellW;
+            const cy = statsPanelY + 28 + row * cellH;
+            const isCritStat = criticalStatNames.some(cs => key.includes(cs) || key === cs);
+            const val = charStats[key];
+
+            // Mini card glassmorphism
+            const cardBg = isCritStat ? "rgba(245, 158, 11, 0.10)" : "rgba(15, 23, 42, 0.55)";
+            const cardBorder = isCritStat ? "rgba(245, 158, 11, 0.30)" : "rgba(255,255,255,0.06)";
+            drawRoundedRect(cx, cy, cellW - 4, cellH - 4, 5, cardBg, cardBorder, 1);
+
+            // Label
+            ctx.font = "500 9px sans-serif";
+            ctx.fillStyle = isCritStat ? "#d97706" : "#64748b";
+            ctx.textAlign = "left";
+            const cleanKey = sanitizeStatName(key);
+            const shortKey = cleanKey.length > 12 ? cleanKey.substring(0, 11) + "." : cleanKey;
+            ctx.fillText(shortKey.toUpperCase(), cx + 5, cy + 13);
+
+            // Value
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillStyle = isCritStat ? "#fbbf24" : "#e2e8f0";
+            ctx.fillText(val, cx + 5, cy + 29);
+        });
+    }
+
+    // Card da Arma Acoplado na Base da Hero Column
+    const wx = hx + 12, wy = hy + hh - 122, ww = hw - 24, wh = 110;
+    drawRoundedRect(wx, wy, ww, wh, 12, "rgba(10, 15, 26, 0.85)", "rgba(255, 255, 255, 0.12)", 1);
+
+    ctx.font = "bold 10px sans-serif";
+    ctx.fillStyle = "#38bdf8";
+    ctx.fillText("EQUIPAMENTO / ARMA", wx + 14, wy + 20);
+
+    const weapon = char.weapon;
+    if (weapon && weapon.name) {
+        const safeWFn = getSafeFileName(weapon.name);
+        const weaponUrl = `/assets/weapons/${gameId}/${safeWFn}`;
+        const weaponImg = (await loadImage(weapon.icon)) || (await loadImage(weaponUrl));
+
+        if (weaponImg) {
+            drawRoundedRect(wx + 14, wy + 28, 68, 68, 8, "rgba(0,0,0,0.5)", "rgba(255,255,255,0.1)", 1);
+            ctx.drawImage(weaponImg, wx + 16, wy + 30, 64, 64);
+        }
+        const textX = weaponImg ? wx + 92 : wx + 14;
+        ctx.font = "bold 14px sans-serif";
+        ctx.fillStyle = "#ffffff";
+        ctx.fillText(weapon.name.length > 18 ? weapon.name.substring(0, 18) + "..." : weapon.name, textX, wy + 52);
+
+        ctx.font = "500 12px sans-serif";
+        ctx.fillStyle = "#cbd5e1";
+        ctx.fillText(`Nível ${weapon.level || 90} • Refinamento R${weapon.rank || 1}`, textX, wy + 74);
+    } else {
+        ctx.font = "italic 12px sans-serif";
+        ctx.fillStyle = "#64748b";
+        ctx.fillText("Nenhuma arma equipada", wx + 14, wy + 55);
+    }
+
+    // ==========================================
+    // 3. REDESIGN DO GRID DE ARTEFATOS (LINHAS HORIZONTAIS EMPILHADAS)
+    // ==========================================
+    const rx = 440, ry = 25, rw = 730, rh = 615;
+    const relics = char.relics || char.artifacts || char.discs || [];
+
+    const relicImgs = await Promise.all(relics.map(async r => {
+        if (!r) return null;
+        const iconUrl = r.icon || r.image || r.icon_url;
+        const safeRName = getSafeFileName(r.name || "");
+        const localUrl = `/assets/relics/${gameId}/${safeRName}`;
+        return (await loadImage(iconUrl)) || (await loadImage(localUrl));
+    }));
+
+    // Define altura das linhas de acordo com o total de slots (5 para Genshin, 6 para HSR/ZZZ)
+    const rowH = maxPieces === 5 ? 112 : 94;
+    const gapY = maxPieces === 5 ? 10 : 8;
+
+    for (let i = 0; i < maxPieces; i++) {
+        const r = relics[i];
+        const rImg = relicImgs[i];
+        const rowX = rx;
+        const rowY = ry + i * (rowH + gapY);
+
+        if (r) {
+            const relicGrade = (r.grade || "D").toUpperCase();
+            const rgc = gradeColors[relicGrade] || gradeColors.D;
+
+            // Linha horizontal base
+            drawRoundedRect(rowX, rowY, rw, rowH, 12, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.08)", 1);
+
+            // Bloco 1: Ícone + Slot + Nome
+            const iconBoxSize = 46;
+            const iconBoxY = rowY + (rowH - iconBoxSize) / 2;
+            drawRoundedRect(rowX + 10, iconBoxY, iconBoxSize, iconBoxSize, 8, "rgba(0,0,0,0.4)", "rgba(255,255,255,0.1)", 1);
+
+            if (rImg) {
+                ctx.drawImage(rImg, rowX + 12, iconBoxY + 2, 42, 42);
+            }
+
+            const slotName = r.slot ? (r.slot.length > 12 ? r.slot.substring(0,12) : r.slot) : `Peça ${i+1}`;
+            ctx.font = "bold 11px sans-serif";
+            ctx.fillStyle = theme.primary;
+            ctx.fillText(`[${slotName}]`, rowX + 64, rowY + (rowH === 94 ? 32 : 38));
+
+            ctx.font = "bold 13px sans-serif";
+            ctx.fillStyle = "#ffffff";
+            const cleanName = r.name || "Relíquia";
+            ctx.fillText(cleanName.length > 16 ? cleanName.substring(0, 16) + "..." : cleanName, rowX + 64, rowY + (rowH === 94 ? 54 : 64));
+
+            // Bloco 2: Main Stat em Destaque Dourado
+            const rawMain = r.main || r.main_stat || "Desconhecido";
+            const mainText = sanitizeStatName(rawMain);
+            
+            ctx.font = "bold 12px sans-serif";
+            const measuredMainW = ctx.measureText(mainText).width + 24;
+            const mainW = Math.max(140, Math.min(170, measuredMainW));
+            const mainH = 32;
+            const mainY = rowY + (rowH - mainH) / 2;
+            drawRoundedRect(rowX + 210, mainY, mainW, mainH, 8, "rgba(245, 158, 11, 0.12)", "rgba(245, 158, 11, 0.3)", 1);
+            
+            ctx.fillStyle = "#fbbf24";
+            ctx.textAlign = "center";
+            ctx.fillText(mainText, rowX + 210 + mainW / 2, mainY + 20);
+            ctx.textAlign = "left";
+
+            // Bloco 3: Substats Embutidos (Grid 2x2 de Mini Badges Compactas)
+            const subs = (r.sub || r.sub_stats || "").split(",");
+            const pillW = 126;
+            const pillH = 22;
+            const subGridX = rowX + 365;
+            const subGridY = rowY + (rowH - 48) / 2;
+
+            for (let sIdx = 0; sIdx < 4; sIdx++) {
+                const colIdx = sIdx % 2;
+                const rowIdx = Math.floor(sIdx / 2);
+                const px = subGridX + colIdx * (pillW + 6);
+                const py = subGridY + rowIdx * (pillH + 4);
+
+                const subStr = subs[sIdx] ? subs[sIdx].trim() : "";
+                if (subStr) {
+                    const cleanSub = sanitizeStatName(subStr);
+                    let label = cleanSub;
+                    let val = "";
+                    if (cleanSub.includes(":")) {
+                        const parts = cleanSub.split(":");
+                        label = parts[0].trim();
+                        val = parts[1].trim();
+                    } else if (cleanSub.includes("(")) {
+                        const parts = cleanSub.split("(");
+                        label = parts[0].trim();
+                        val = parts[1].replace(")", "").trim();
+                    }
+
+                    const isPriority = cleanSub.includes("CRIT") || cleanSub.includes("Recarga") || cleanSub.includes("ATQ") || cleanSub.includes("Quebra");
+                    const pillBg = isPriority ? "rgba(255, 255, 255, 0.07)" : "rgba(255, 255, 255, 0.03)";
+                    const pillBorder = isPriority ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.06)";
+
+                    drawRoundedRect(px, py, pillW, pillH, 5, pillBg, pillBorder, 1);
+                    
+                    if (val) {
+                        // Label à esquerda
+                        ctx.font = "500 10px sans-serif";
+                        ctx.fillStyle = isPriority ? "#cbd5e1" : "#94a3b8";
+                        ctx.textAlign = "left";
+                        ctx.fillText(label.length > 12 ? label.substring(0, 11) + "." : label, px + 6, py + 15);
+                        
+                        // Valor à direita em negrito branco (NUNCA cortado!)
+                        ctx.font = "bold 10px sans-serif";
+                        ctx.fillStyle = "#ffffff";
+                        ctx.textAlign = "right";
+                        ctx.fillText(val, px + pillW - 6, py + 15);
+                        ctx.textAlign = "left";
+                    } else {
+                        ctx.font = "500 10px sans-serif";
+                        ctx.fillStyle = isPriority ? "#f8fafc" : "#94a3b8";
+                        ctx.textAlign = "left";
+                        ctx.fillText(label.length > 17 ? label.substring(0, 16) + "." : label, px + 6, py + 15);
+                    }
+                } else {
+                    drawRoundedRect(px, py, pillW, pillH, 5, "rgba(255,255,255,0.01)", "rgba(255,255,255,0.03)", 1);
+                }
+            }
+
+            // Bloco 4: RV Score / Grade Badge no extremo direito
+            const scoreW = 78;
+            const scoreH = 36;
+            const scoreX = rowX + rw - scoreW - 12;
+            const scoreY = rowY + (rowH - scoreH) / 2;
+
+            drawRoundedRect(scoreX, scoreY, scoreW, scoreH, 8, rgc.bg, rgc.border, 1.5);
+            ctx.font = "bold 13px sans-serif";
+            ctx.fillStyle = rgc.text;
+            ctx.textAlign = "center";
+            ctx.fillText(relicGrade, scoreX + scoreW / 2, scoreY + 16);
+
+            ctx.font = "bold 11px sans-serif";
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(`${r.score || 0}`, scoreX + scoreW / 2, scoreY + 30);
+            ctx.textAlign = "left";
+
+        } else {
+            // Linha vazia
+            drawRoundedRect(rowX, rowY, rw, rowH, 12, "rgba(15, 23, 42, 0.25)", "rgba(255, 255, 255, 0.04)", 1);
+            ctx.font = "italic 12px sans-serif";
+            ctx.fillStyle = "#475569";
+            ctx.textAlign = "center";
+            ctx.fillText(`[Slot ${i+1} Vazio]`, rowX + rw / 2, rowY + rowH / 2 + 4);
+            ctx.textAlign = "left";
+        }
+    }
+
+    // ==========================================
+    // 4. RODAPÉ DO BANNER LANDSCAPE
+    // ==========================================
+    const nowStr = new Date().toLocaleDateString("pt-BR") + " " + new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+    ctx.font = "500 10px sans-serif";
+    ctx.fillStyle = "#64748b";
+    ctx.textAlign = "right";
+    ctx.fillText(`Gerado em ${nowStr}`, width - 30, 658);
+    ctx.textAlign = "left";
+
+    return canvas;
+}
+
+// Configuração dos eventos do Modal de Exportação de Card
+document.addEventListener("DOMContentLoaded", () => {
+    const btnExportCard = document.getElementById("btn-export-card");
+    const modalExportCard = document.getElementById("modal-export-card");
+    const btnCloseExportModal = document.getElementById("btn-close-export-modal");
+    const btnDownloadCardImg = document.getElementById("btn-download-card-img");
+    const btnCopyCardImg = document.getElementById("btn-copy-card-img");
+    const exportPreviewImg = document.getElementById("export-preview-img");
+    const exportCardStatus = document.getElementById("export-card-status");
+
+    let currentGeneratedCanvas = null;
+
+    const openExportModalHandler = async () => {
+        if (!window.currentInspectorChar || !window.currentInspectorGameId) {
+            showToast("Erro: Nenhum personagem selecionado.");
+            return;
+        }
+
+        modalExportCard.style.display = "flex";
+        exportCardStatus.style.display = "flex";
+        exportPreviewImg.style.display = "none";
+        btnDownloadCardImg.disabled = true;
+        btnCopyCardImg.disabled = true;
+
+        try {
+            currentGeneratedCanvas = await generateBuildCardCanvas(window.currentInspectorChar, window.currentInspectorGameId);
+            const dataUrl = currentGeneratedCanvas.toDataURL("image/png");
+            exportPreviewImg.src = dataUrl;
+            exportPreviewImg.style.display = "block";
+            exportCardStatus.style.display = "none";
+            btnDownloadCardImg.disabled = false;
+            btnCopyCardImg.disabled = false;
+        } catch (err) {
+            console.error("Erro ao gerar card de build:", err);
+            exportCardStatus.innerHTML = `<span style="color: var(--color-danger);">Erro ao gerar imagem da build: ${err.message}</span>`;
+        }
+    };
+
+    if (modalExportCard) {
+        if (btnExportCard) {
+            btnExportCard.addEventListener("click", openExportModalHandler);
+        }
+
+        document.addEventListener("click", (e) => {
+            if (e.target && e.target.closest(".trigger-export-card")) {
+                openExportModalHandler();
+            }
+        });
+
+        if (btnCloseExportModal) {
+            btnCloseExportModal.addEventListener("click", () => {
+                modalExportCard.style.display = "none";
+            });
+        }
+
+        modalExportCard.addEventListener("click", (e) => {
+            if (e.target === modalExportCard) {
+                modalExportCard.style.display = "none";
+            }
+        });
+
+        if (btnDownloadCardImg) {
+            btnDownloadCardImg.addEventListener("click", () => {
+                if (!currentGeneratedCanvas) return;
+                const charName = window.currentInspectorChar ? window.currentInspectorChar.name : "Personagem";
+                const gameId = window.currentInspectorGameId || "hoyo";
+                const link = document.createElement("a");
+                link.download = `Build_${getSafeFileName(charName)}_${gameId.toUpperCase()}.png`;
+                link.href = currentGeneratedCanvas.toDataURL("image/png");
+                link.click();
+                showToast("Download da imagem iniciado!");
+            });
+        }
+
+        if (btnCopyCardImg) {
+            btnCopyCardImg.addEventListener("click", () => {
+                if (!currentGeneratedCanvas) return;
+                currentGeneratedCanvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        showToast("Erro ao processar imagem.");
+                        return;
+                    }
+                    try {
+                        await navigator.clipboard.write([
+                            new ClipboardItem({ "image/png": blob })
+                        ]);
+                        showToast("Imagem copiada para a área de transferência! (Pressione Ctrl+V para colar)");
+                    } catch (err) {
+                        console.error("Erro ao copiar para clipboard:", err);
+                        showToast("Não foi possível copiar automaticamente. Use o botão Baixar PNG.");
+                    }
+                }, "image/png");
+            });
+        }
+    }
+});
+

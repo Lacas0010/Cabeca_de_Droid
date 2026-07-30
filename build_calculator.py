@@ -412,53 +412,61 @@ STAT_NAME_MAP = {
     "efeito de quebra%": "break_effect", "break_effect%": "break_effect", "break": "break_effect",
     
     # Proficiência Elemental / Anomalia
-    "proficiência elemental": "em", "proficiencia elemental": "em", "proficiência": "em", "proficiencia": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "mastery": "em",
-    "anomaly proficiency": "anomaly_prof", "proficiência em anomalia": "anomaly_prof", "proficiencia em anomalia": "anomaly_prof", "proficiência de anomalia": "anomaly_prof", "proficiencia de anomalia": "anomaly_prof", "anomaly_prof": "anomaly_prof",
+    "proficiência elemental": "em", "proficiencia elemental": "em", "proficiência": "em", "proficiencia": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "prof. eleme.": "em", "prof eleme": "em", "prof eleme.": "em", "prof. element.": "em", "prof element": "em", "prof element.": "em", "mastery": "em",
+    "anomaly proficiency": "anomaly_prof", "proficiência em anomalia": "anomaly_prof", "proficiencia em anomalia": "anomaly_prof", "proficiência de anomalia": "anomaly_prof", "proficiencia de anomalia": "anomaly_prof", "prof. anomalia": "anomaly_prof", "prof anomalia": "anomaly_prof", "anomaly_prof": "anomaly_prof",
     "proficiência de anomalia%": "anomaly_prof", "proficiencia de anomalia%": "anomaly_prof", "anomalia": "anomaly_prof",
     
     # Recarga de Energia / Taxa de Regeneração de Energia
     "recarga de energia": "er", "recarga": "er", "energy recharge": "er", "er": "er", "recharge": "er", "recarga de energia%": "er",
-    "taxa de regeneração de energia": "err", "taxa de regeneracao de energia": "err", "recuperação de energia": "err", "recuperacao de energia": "err", "energy regen rate": "err", "energy regen": "err", "err": "err",
+    "taxa de regeneração de energia": "err", "taxa de regeneracao de energia": "err", "recuperação de energia": "err", "recuperacao de energia": "err", "regen. energia": "err", "regen energia": "err", "taxa de reg. de energia": "err", "recup. energia": "err", "recup energia": "err", "energy regen rate": "err", "energy regen": "err", "energy regeneration rate": "err", "err": "err",
     
     # Bônus de Cura
-    "bônus de cura": "healing_bonus", "bonus de cura": "healing_bonus", "bônus de cura%": "healing_bonus", "bonus de cura%": "healing_bonus", "healing bonus": "healing_bonus", "healing": "healing_bonus", "healing_bonus": "healing_bonus",
+    "bônus de cura": "healing_bonus", "bonus de cura": "healing_bonus", "cura bônus": "healing_bonus", "cura bonus": "healing_bonus", "bônus de cura%": "healing_bonus", "bonus de cura%": "healing_bonus", "healing bonus": "healing_bonus", "outgoing healing boost": "healing_bonus", "healing": "healing_bonus", "healing_bonus": "healing_bonus",
     
     # Atributos Percentuais
     "atq %": "atk_pct", "atq%": "atk_pct", "atk%": "atk_pct", "atk %": "atk_pct", "ataque%": "atk_pct", "attack%": "atk_pct", "atk_pct": "atk_pct",
-    "vida %": "hp_pct", "vida%": "hp_pct", "hp%": "hp_pct", "hp %": "hp_pct", "hp_pct": "hp_pct", "vida_pct": "hp_pct",
+    "vida %": "hp_pct", "vida%": "hp_pct", "hp%": "hp_pct", "hp %": "hp_pct", "hp_pct": "hp_pct", "vida_pct": "hp_pct", "pv%": "hp_pct",
     "defesa %": "def_pct", "defesa%": "def_pct", "def%": "def_pct", "def %": "def_pct", "defesa_pct": "def_pct", "def_pct": "def_pct",
     
     # Atributos Planos (Flats)
     "atq": "atk_flat", "atk": "atk_flat", "ataque": "atk_flat", "attack": "atk_flat", "atk_flat": "atk_flat",
-    "vida": "hp_flat", "hp": "hp_flat", "hp_flat": "hp_flat",
+    "vida": "hp_flat", "hp": "hp_flat", "hp_flat": "hp_flat", "pv": "hp_flat", "pontos de vida": "hp_flat",
     "defesa": "def_flat", "def": "def_flat", "defesa_flat": "def_flat", "def_flat": "def_flat",
-    "pv": "hp_flat", "pv%": "hp_pct", "pontos de vida": "hp_flat",
     
     # Bônus Elementais (Genshin / HSR / ZZZ)
-    "pyro dmg": "pyro_dmg", "pyro dmg bonus": "pyro_dmg", "bônus de dano pyro": "pyro_dmg", "bonus de dano pyro": "pyro_dmg", "bônus de dano de fogo": "fire_dmg", "bonus de dano de fogo": "fire_dmg", "fire dmg": "fire_dmg", "fire dmg bonus": "fire_dmg", "fogo": "fire_dmg", "pyro": "pyro_dmg", "dano de fogo": "fire_dmg", "dano fogo": "fire_dmg", "bônus de dano fogo": "fire_dmg", "bonus de dano fogo": "fire_dmg",
-    "hydro dmg": "hydro_dmg", "hydro dmg bonus": "hydro_dmg", "bônus de dano hydro": "hydro_dmg", "bonus de dano hydro": "hydro_dmg", "bônus de dano de água": "hydro_dmg", "bonus de dano de agua": "hydro_dmg", "hydro": "hydro_dmg", "dano de agua": "hydro_dmg", "dano hydro": "hydro_dmg", "bônus de dano agua": "hydro_dmg", "bonus de dano agua": "hydro_dmg",
-    "electro dmg": "electro_dmg", "electro dmg bonus": "electro_dmg", "bônus de dano electro": "electro_dmg", "bonus de dano electro": "electro_dmg", "bônus de dano de raio": "lightning_dmg", "bonus de dano de raio": "lightning_dmg", "bônus de dano elétrico": "electric_dmg", "bonus de dano eletrico": "electric_dmg", "lightning dmg": "lightning_dmg", "lightning dmg bonus": "lightning_dmg", "electric dmg": "electric_dmg", "electric dmg bonus": "electric_dmg", "raio": "lightning_dmg", "eletro": "electro_dmg", "dano eletrico": "electric_dmg", "dano de raio": "lightning_dmg", "bônus de dano eletrico": "electric_dmg", "bonus de dano eletrico": "electric_dmg",
-    "cryo dmg": "cryo_dmg", "cryo dmg bonus": "cryo_dmg", "bônus de dano cryo": "cryo_dmg", "bonus de dano cryo": "cryo_dmg", "bônus de dano de gelo": "ice_dmg", "bonus de dano de gelo": "ice_dmg", "ice dmg": "ice_dmg", "ice dmg bonus": "ice_dmg", "gelo": "ice_dmg", "cryo": "cryo_dmg", "dano de gelo": "ice_dmg", "dano gelo": "ice_dmg", "bônus de dano gelo": "ice_dmg", "bonus de dano gelo": "ice_dmg",
-    "anemo dmg": "anemo_dmg", "anemo dmg bonus": "anemo_dmg", "bônus de dano anemo": "anemo_dmg", "bonus de dano anemo": "anemo_dmg", "bônus de dano de vento": "wind_dmg", "bonus de dano de vento": "wind_dmg", "wind dmg": "wind_dmg", "wind dmg bonus": "wind_dmg", "vento": "wind_dmg", "anemo": "anemo_dmg", "dano de vento": "wind_dmg", "dano vento": "wind_dmg", "bônus de dano vento": "wind_dmg", "bonus de dano vento": "wind_dmg",
-    "geo dmg": "geo_dmg", "geo dmg bonus": "geo_dmg", "bônus de dano geo": "geo_dmg", "bonus de dano geo": "geo_dmg", "geo": "geo_dmg", "dano geo": "geo_dmg",
-    "dendro dmg": "dendro_dmg", "dendro dmg bonus": "dendro_dmg", "bônus de dano dendro": "dendro_dmg", "bonus de dano dendro": "dendro_dmg", "dendro": "dendro_dmg", "dano dendro": "dendro_dmg",
-    "physical dmg": "physical_dmg", "physical dmg bonus": "physical_dmg", "bônus de dano físico": "physical_dmg", "bonus de dano fisico": "physical_dmg", "físico": "physical_dmg", "fisico": "physical_dmg", "physical": "physical_dmg", "dano físico": "physical_dmg", "dano fisico": "physical_dmg", "bônus de dano fisico": "physical_dmg", "bonus de dano fisico": "physical_dmg",
-    "quantum dmg": "quantum_dmg", "quantum dmg bonus": "quantum_dmg", "bônus de dano quântico": "quantum_dmg", "bonus de dano quantico": "quantum_dmg", "quântico": "quantum_dmg", "quantico": "quantum_dmg", "quantum": "quantum_dmg", "dano quântico": "quantum_dmg", "dano quantico": "quantum_dmg",
-    "imaginary dmg": "imaginary_dmg", "imaginary dmg bonus": "imaginary_dmg", "bônus de dano imaginário": "imaginary_dmg", "bonus de dano imaginario": "imaginary_dmg", "imaginário": "imaginary_dmg", "imaginario": "imaginary_dmg", "imaginary": "imaginary_dmg", "dano imaginário": "imaginary_dmg", "dano imaginario": "imaginary_dmg",
-    "ether dmg": "ether_dmg", "ether dmg bonus": "ether_dmg", "bônus de dano de éter": "ether_dmg", "bonus de dano de eter": "ether_dmg", "éter": "ether_dmg", "eter": "ether_dmg", "dano de éter": "ether_dmg", "dano de eter": "ether_dmg", "dano éter": "ether_dmg", "dano eter": "ether_dmg", "bônus de dano eter": "ether_dmg", "bonus de dano eter": "ether_dmg",
+    "pyro dmg": "pyro_dmg", "pyro dmg bonus": "pyro_dmg", "bônus de dano pyro": "pyro_dmg", "bonus de dano pyro": "pyro_dmg", "dano pyro": "pyro_dmg", "dano de pyro": "pyro_dmg", "pyro": "pyro_dmg",
+    "fire dmg": "fire_dmg", "fire dmg bonus": "fire_dmg", "bônus de dano de fogo": "fire_dmg", "bonus de dano de fogo": "fire_dmg", "bônus de dano fogo": "fire_dmg", "bonus de dano fogo": "fire_dmg", "dano de fogo": "fire_dmg", "dano fogo": "fire_dmg", "fogo": "fire_dmg",
+    
+    "hydro dmg": "hydro_dmg", "hydro dmg bonus": "hydro_dmg", "bônus de dano hydro": "hydro_dmg", "bonus de dano hydro": "hydro_dmg", "dano hydro": "hydro_dmg", "dano de hydro": "hydro_dmg", "hydro": "hydro_dmg", "bônus de dano de água": "hydro_dmg", "bonus de dano de agua": "hydro_dmg", "dano de agua": "hydro_dmg", "dano agua": "hydro_dmg", "bônus de dano agua": "hydro_dmg", "bonus de dano agua": "hydro_dmg",
+    
+    "electro dmg": "electro_dmg", "electro dmg bonus": "electro_dmg", "bônus de dano electro": "electro_dmg", "bonus de dano electro": "electro_dmg", "dano electro": "electro_dmg", "dano de electro": "electro_dmg", "electro": "electro_dmg", "eletro": "electro_dmg",
+    "lightning dmg": "lightning_dmg", "lightning dmg bonus": "lightning_dmg", "bônus de dano de raio": "lightning_dmg", "bonus de dano de raio": "lightning_dmg", "bônus de dano raio": "lightning_dmg", "bonus de dano raio": "lightning_dmg", "dano de raio": "lightning_dmg", "dano raio": "lightning_dmg", "raio": "lightning_dmg",
+    "electric dmg": "electric_dmg", "electric dmg bonus": "electric_dmg", "bônus de dano elétrico": "electric_dmg", "bonus de dano eletrico": "electric_dmg", "bônus de dano de elétrico": "electric_dmg", "bonus de dano de eletrico": "electric_dmg", "dano elétrico": "electric_dmg", "dano eletrico": "electric_dmg", "dano de eletrico": "electric_dmg",
+    
+    "cryo dmg": "cryo_dmg", "cryo dmg bonus": "cryo_dmg", "bônus de dano cryo": "cryo_dmg", "bonus de dano cryo": "cryo_dmg", "dano cryo": "cryo_dmg", "dano de cryo": "cryo_dmg", "cryo": "cryo_dmg",
+    "ice dmg": "ice_dmg", "ice dmg bonus": "ice_dmg", "bônus de dano de gelo": "ice_dmg", "bonus de dano de gelo": "ice_dmg", "bônus de dano gelo": "ice_dmg", "bonus de dano gelo": "ice_dmg", "dano de gelo": "ice_dmg", "dano gelo": "ice_dmg", "gelo": "ice_dmg",
+    
+    "anemo dmg": "anemo_dmg", "anemo dmg bonus": "anemo_dmg", "bônus de dano anemo": "anemo_dmg", "bonus de dano anemo": "anemo_dmg", "dano anemo": "anemo_dmg", "dano de anemo": "anemo_dmg", "anemo": "anemo_dmg",
+    "wind dmg": "wind_dmg", "wind dmg bonus": "wind_dmg", "bônus de dano de vento": "wind_dmg", "bonus de dano de vento": "wind_dmg", "bônus de dano vento": "wind_dmg", "bonus de dano vento": "wind_dmg", "dano de vento": "wind_dmg", "dano vento": "wind_dmg", "vento": "wind_dmg",
+    
+    "geo dmg": "geo_dmg", "geo dmg bonus": "geo_dmg", "bônus de dano geo": "geo_dmg", "bonus de dano geo": "geo_dmg", "dano geo": "geo_dmg", "dano de geo": "geo_dmg", "geo": "geo_dmg",
+    "dendro dmg": "dendro_dmg", "dendro dmg bonus": "dendro_dmg", "bônus de dano dendro": "dendro_dmg", "bonus de dano dendro": "dendro_dmg", "dano dendro": "dendro_dmg", "dano de dendro": "dendro_dmg", "dendro": "dendro_dmg",
+    
+    "physical dmg": "physical_dmg", "physical dmg bonus": "physical_dmg", "bônus de dano físico": "physical_dmg", "bonus de dano fisico": "physical_dmg", "dano físico": "physical_dmg", "dano fisico": "physical_dmg", "físico": "physical_dmg", "fisico": "physical_dmg", "physical": "physical_dmg",
+    "quantum dmg": "quantum_dmg", "quantum dmg bonus": "quantum_dmg", "bônus de dano quântico": "quantum_dmg", "bonus de dano quantico": "quantum_dmg", "dano quântico": "quantum_dmg", "dano quantico": "quantum_dmg", "quântico": "quantum_dmg", "quantico": "quantum_dmg", "quantum": "quantum_dmg",
+    "imaginary dmg": "imaginary_dmg", "imaginary dmg bonus": "imaginary_dmg", "bônus de dano imaginário": "imaginary_dmg", "bonus de dano imaginario": "imaginary_dmg", "dano imaginário": "imaginary_dmg", "dano imaginario": "imaginary_dmg", "imaginário": "imaginary_dmg", "imaginario": "imaginary_dmg", "imaginary": "imaginary_dmg",
+    "ether dmg": "ether_dmg", "ether dmg bonus": "ether_dmg", "bônus de dano de éter": "ether_dmg", "bonus de dano de eter": "ether_dmg", "bônus de dano éter": "ether_dmg", "bonus de dano eter": "ether_dmg", "dano de éter": "ether_dmg", "dano de eter": "ether_dmg", "dano éter": "ether_dmg", "dano eter": "ether_dmg", "éter": "ether_dmg", "eter": "ether_dmg",
     
     # HSR Específicos
-    "effect hit rate": "ehr", "ehr": "ehr", "taxa de acerto de efeito": "ehr",
-    "chance de acerto de efeito": "ehr", "chance de acerto de efeito%": "ehr", "chance de acerto": "ehr", "acerto de efeito": "ehr",
-    "effect res": "res", "res": "res", "resistência a efeito": "res", "resistencia a efeito": "res", "res_efeito": "res",
-    "res a efeito": "res", "res a efeito%": "res", "resistência a efeito%": "res", "resistencia a efeito%": "res",
+    "effect hit rate": "ehr", "ehr": "ehr", "taxa de acerto de efeito": "ehr", "chance de acerto de efeito": "ehr", "chance de acerto": "ehr", "acerto de efeito": "ehr", "acerto efeito": "ehr",
+    "effect res": "res", "res": "res", "resistência a efeito": "res", "resistencia a efeito": "res", "res_efeito": "res", "res a efeito": "res", "res efeito": "res",
     "outgoing healing": "healing_bonus", "outgoing_healing": "healing_bonus",
     
     # ZZZ Específicos
-    "pen flat": "pen_flat", "pen": "pen_flat", "pen flat bonus": "pen_flat", "perfuração": "pen_flat", "perfuracao": "pen_flat",
+    "pen flat": "pen_flat", "pen": "pen_flat", "pen flat bonus": "pen_flat", "perfuração": "pen_flat", "perfuracao": "pen_flat", "perfuração flat": "pen_flat", "perfuracao flat": "pen_flat",
     "pen ratio": "pen_pct", "pen_pct": "pen_pct", "taxa de perfuração": "pen_pct", "taxa de perfuracao": "pen_pct", "perfuração%": "pen_pct", "perfuracao%": "pen_pct", "perfuracao ratio": "pen_pct", "perfuração ratio": "pen_pct",
     "impacto": "impact", "impact": "impact", "impact_pct": "impact",
-    "taxa de controle de anomalia": "anomaly_mastery", "controle de anomalia": "anomaly_mastery", "anomaly mastery": "anomaly_mastery", "anomaly_mastery": "anomaly_mastery", "maestria de anomalia": "anomaly_mastery"
+    "taxa de controle de anomalia": "anomaly_mastery", "controle de anomalia": "anomaly_mastery", "anomaly mastery": "anomaly_mastery", "anomaly_mastery": "anomaly_mastery", "maestria de anomalia": "anomaly_mastery", "maest. anomalia": "anomaly_mastery", "maest anomalia": "anomaly_mastery"
 }
 
 _unaccented_map = {}
@@ -472,9 +480,9 @@ STAT_NAME_MAP = _unaccented_map
 # ==========================================
 VALID_SUBSTATS = frozenset({
     "spd", "crit_rate", "crit_dmg", "atk_pct", "hp_pct", "def_pct",
-    "break_effect", "ehr", "res", "em", "er",
+    "break_effect", "ehr", "res", "em", "er", "err",
     "atk_flat", "hp_flat", "def_flat",
-    "anomaly_prof", "pen_flat",
+    "anomaly_prof", "anomaly_mastery", "pen_flat", "pen_pct", "impact",
 })
 
 # Fallbacks genéricos por jogo, usados quando o parser não extrai substats válidos
@@ -485,15 +493,29 @@ DEFAULT_SUBSTATS_FALLBACK = {
 }
 
 def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
-    """Normaliza o nome do atributo para chaves padrão do motor de cálculo, ignorando acentos e case."""
-    name_clean = remove_accents(raw_name.strip().lower())
+    """Normaliza o nome do atributo para chaves padrão do motor de cálculo, ignorando acentos, case e pontuação."""
+    if not raw_name:
+        return ""
+    s = str(raw_name).strip()
     
-    if "%" in name_clean:
+    if "%" in s:
         has_percent = True
-        name_clean = name_clean.replace("%", "").strip()
+        s = s.replace("%", "")
         
-    mapped = STAT_NAME_MAP.get(name_clean, name_clean)
+    s = re.sub(r'\([^)]*\)', '', s)
+    if ":" in s:
+        s = s.split(":")[0]
+    s = s.strip()
     
+    clean = remove_accents(s.lower())
+    clean = re.sub(r'\s+', ' ', clean).strip()
+    
+    mapped = STAT_NAME_MAP.get(clean)
+    if not mapped:
+        clean_no_dots = clean.replace(".", "").strip()
+        clean_no_dots = re.sub(r'\s+', ' ', clean_no_dots)
+        mapped = STAT_NAME_MAP.get(clean_no_dots, clean)
+        
     if has_percent:
         if mapped == "atk_flat": return "atk_pct"
         if mapped == "hp_flat" or mapped == "pv": return "hp_pct"
