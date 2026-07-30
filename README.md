@@ -60,7 +60,7 @@ graph TD
 
 ---
 
-## 🧮 Motor de Pontuação Roll Value (RV)
+## 🧮 Motor de Pontuação Roll Value (RV) & Ponderação de Build
 
 A nota de cada peça de relíquia/artefato/disco é calculada avaliando o Roll Value (RV) dos substatus contra os rolls máximos de peças 5★/S-Rank:
 
@@ -68,9 +68,13 @@ $$RV_i = \frac{\text{Valor Real do Substatus}_i}{\text{Valor Máximo do Roll 5�
 
 $$\text{Score da Peça} = \sum_{i} \left( RV_i \times \text{Peso}_i \right)$$
 
-1. **Main Stat Forgiveness:** Se o atributo principal da peça for um dos recomendados no guia (ex: Botas de VEL), esse atributo é desconsiderado da busca de substatus para evitar dupla penalidade.
-2. **Flat Stat Fallback:** Substatus brutos (Ataque Flat, Vida Flat, Defesa Flat) recebem peso parcial automático (50% do peso da versão %) se a versão percentual for recomendada pelo guia.
-3. **Média Ponderada da Build:** A média dos scores de todas as peças equipadas define o grau geral do personagem (SSS, SS, S, A, B, C/D).
+$$\text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{Score da Peça}_k}{\text{Total de Slots do Jogo}}$$
+
+1. **Normalização Contextual de Slots (`normalize_slot_name`):** Converte posições numéricas do HoYoLAB (`1` a `5`/`6`) para as chaves exatas de cada jogo (ex: `flower`, `plume`, `sands`, `goblet`, `circlet` em Genshin; `head`, `hands`, `body`, `feet`, `planar_sphere`, `link_rope` em HSR; `slot_1` a `slot_6` em ZZZ), garantindo avaliação correta do Main Stat recomendado.
+2. **Main Stat Forgiveness:** Se o atributo principal da peça for um dos recomendados no guia (ex: Copo de ATQ% ou Botas de VEL), a peça recebe 40% de crédito base do Main Stat.
+3. **Flat Stat Fallback:** Substatus brutos (Ataque Flat, Vida Flat, Defesa Flat) recebem peso parcial automático (50% do peso da versão %) se a versão percentual for recomendada pelo guia.
+4. **Ponderação Proporcional por Slots Totais:** O divisor da Nota Geral é fixo no total de slots do jogo ($6$ para HSR/ZZZ, $5$ para Genshin). Slots vazios/não equipados pontuam $0.0$, penalizando builds incompletas proporcionalmente (evitando que 2/6 peças recebam nota S).
+5. **Patch Dinâmico de Enums (`patch_genshin_enums`):** Auto-registra novos elementos ou atributos retornado pela API do HoYoLAB (ex: `element_type=300` em ZZZ), prevenindo erros de validação do Pydantic em atualizações do jogo.
 
 ---
 

@@ -38,7 +38,7 @@ hoyo_app.db
 *.db-shm
 *.db-wal
 
-# Automatically generated reports and markdown files (avoid committing user data)
+# Automatically generated reports, meta JSONs, and markdown files
 hsr/
 zzz/
 genshin/
