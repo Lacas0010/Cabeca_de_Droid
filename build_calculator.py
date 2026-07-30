@@ -11,29 +11,51 @@ def remove_accents(input_str: str) -> str:
     nfkd_form = unicodedata.normalize('NFKD', input_str)
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 
-def normalize_slot_name(slot_str: str) -> str:
-    """Normaliza nomes de slots em português ou inglês para chaves padrão."""
-    s = remove_accents(slot_str.lower().strip())
+def normalize_slot_name(slot_str: str, game_id: str = "") -> str:
+    """Normaliza nomes de slots em português, inglês ou numéricos para chaves padrão do jogo."""
+    if not slot_str:
+        return ""
+    s = remove_accents(str(slot_str).lower().strip())
+    g = game_id.lower().strip() if game_id else ""
     
-    # 1. Slots numerados do ZZZ
-    for i in range(1, 7):
-        if f'disco {i}' in s or f'slot_{i}' in s or f'slot {i}' in s or f'disc {i}' in s or f'disco_{i}' in s or f'disc_{i}' in s or s == str(i):
-            return f'slot_{i}'
+    # 1. Normalização contextual por jogo para slots numéricos
+    if g == "genshin":
+        if s in ["1", "flor", "flower"]: return "flower"
+        if s in ["2", "pena", "plume", "feather"]: return "plume"
+        if s in ["3", "areia", "relogio", "sands"]: return "sands"
+        if s in ["4", "copo", "calice", "goblet"]: return "goblet"
+        if s in ["5", "tiara", "coroa", "circlet"]: return "circlet"
+    elif g == "hsr":
+        if s in ["1", "cabeca", "head"]: return "head"
+        if s in ["2", "mao", "maos", "hands"]: return "hands"
+        if s in ["3", "corpo", "body"]: return "body"
+        if s in ["4", "pe", "pes", "bota", "feet"]: return "feet"
+        if s in ["5", "esfera", "planar_sphere", "sphere"]: return "planar_sphere"
+        if s in ["6", "corda", "link_rope", "rope"]: return "link_rope"
+    elif g == "zzz":
+        for i in range(1, 7):
+            if f'disco {i}' in s or f'slot_{i}' in s or f'slot {i}' in s or f'disc {i}' in s or f'disco_{i}' in s or f'disc_{i}' in s or s == str(i):
+                return f'slot_{i}'
 
-    # 2. Ornamentos HSR (verificar antes de 'feet' para evitar que 'rope' dê match em 'pe')
-    if any(k in s for k in ['esfera', 'planar_sphere', 'sphere']): return 'planar_sphere'
-    if any(k in s for k in ['corda', 'link_rope', 'rope']): return 'link_rope'
-    
-    # 3. Peças Principais Genshin / HSR
+    # 2. Prioriza mapeamento por nome de slot
     if any(k in s for k in ['copo', 'calice', 'goblet']): return 'goblet'
     if any(k in s for k in ['areia', 'relogio', 'sands']): return 'sands'
     if any(k in s for k in ['tiara', 'coroa', 'circlet']): return 'circlet'
     if any(k in s for k in ['flor', 'flower']): return 'flower'
     if any(k in s for k in ['pena', 'plume', 'feather']): return 'plume'
+
+    if any(k in s for k in ['esfera', 'planar_sphere', 'sphere']): return 'planar_sphere'
+    if any(k in s for k in ['corda', 'link_rope', 'rope']): return 'link_rope'
     if any(k in s for k in ['cabeca', 'head']): return 'head'
     if any(k in s for k in ['mao', 'maos', 'hands']): return 'hands'
     if any(k in s for k in ['corpo', 'body']): return 'body'
     if any(k in s for k in ['bota', 'botas', 'feet']) or s in ['pe', 'pes', 'pés', 'pé']: return 'feet'
+    
+    # 3. Fallback genérico por número para ZZZ
+    for i in range(1, 7):
+        if f'disco {i}' in s or f'slot_{i}' in s or f'slot {i}' in s or f'disc {i}' in s or f'disco_{i}' in s or f'disc_{i}' in s or s == str(i):
+            return f'slot_{i}'
+
     return s
 
 # ==========================================
@@ -609,7 +631,7 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     char_meta = meta_db.get(str(char_id), {})
     
     main_clean = main_stat.lower()
-    norm_slot = normalize_slot_name(slot)
+    norm_slot = normalize_slot_name(slot, game_id)
     
     # 1. Identifica se o slot possui Main Stat Fixo
     is_fixed_main = False
@@ -629,7 +651,7 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
         guide_mains = char_meta.get("main_stats", {})
         slot_key = None
         for k in guide_mains:
-            norm_k = normalize_slot_name(k)
+            norm_k = normalize_slot_name(k, game_id)
             if norm_k == norm_slot or norm_k in norm_slot or norm_slot in norm_k:
                 slot_key = k
                 break
