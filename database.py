@@ -123,7 +123,7 @@ def save_game_account(uid: str, game_id: str, nickname: str, level: int, active_
 
 def save_character(uid: str, game_id: str, name: str, level: int, rarity: int, rank_str: str, 
                    element: str, icon: str, weapon_name: str, weapon_level: int, 
-                   weapon_rank: int, weapon_icon: str, raw_md: str):
+                   weapon_rank: int, weapon_icon: str, raw_md: str, char_id: str = None):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("""

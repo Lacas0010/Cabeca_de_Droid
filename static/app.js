@@ -756,12 +756,15 @@ async function inspectCharacter(gameId, char) {
         const overallGrade = (char.overall_grade || "D").toUpperCase();
         const overallScore = char.overall_score !== undefined ? char.overall_score : 0.0;
         const gradeClass = `badge-${overallGrade.toLowerCase()}`;
+        const equippedInfo = (char.equipped_pieces !== undefined && char.max_pieces !== undefined) 
+            ? ` (${char.equipped_pieces}/${char.max_pieces} peças equipadas)` 
+            : '';
         
         const banner = document.createElement("div");
         banner.className = "overall-build-banner";
         banner.innerHTML = `
             <div class="overall-build-title">
-                <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Nota Geral da Build
+                <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Nota Geral da Build${equippedInfo}
             </div>
             <div class="overall-badge ${gradeClass}">
                 ${overallGrade} (${overallScore} pts)
