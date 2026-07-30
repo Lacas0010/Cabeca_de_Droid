@@ -6,6 +6,35 @@ import asyncio
 import genshin
 import endgame_extractor
 
+def patch_genshin_enums():
+    """
+    Registra dinamicamente novos valores de enum no genshin.py para ZZZ/HSR/Genshin
+    evitando que Pydantic levante ValidationError quando a API do HoYoLAB adiciona novos elementos ou especialidades (ex: element_type=300).
+    """
+    try:
+        from genshin.models.zzz.character import ZZZElementType, ZZZSpecialty
+        for val in range(200, 350):
+            if val not in ZZZElementType._value2member_map_:
+                member_name = f"ELEMENT_{val}"
+                new_member = int.__new__(ZZZElementType, val)
+                new_member._name_ = member_name
+                new_member._value_ = val
+                ZZZElementType._member_map_[member_name] = new_member
+                ZZZElementType._value2member_map_[val] = new_member
+
+        for val in range(1, 30):
+            if val not in ZZZSpecialty._value2member_map_:
+                member_name = f"SPECIALTY_{val}"
+                new_member = int.__new__(ZZZSpecialty, val)
+                new_member._name_ = member_name
+                new_member._value_ = val
+                ZZZSpecialty._member_map_[member_name] = new_member
+                ZZZSpecialty._value2member_map_[val] = new_member
+    except Exception as err:
+        print(f"[AVISO] Falha ao aplicar patch nos enums do genshin.py: {err}")
+
+patch_genshin_enums()
+
 # Mapeamento de IDs de costumes (skins) para os nomes correspondentes de imagens de rosto no Enka.Network
 GENSHIN_SKIN_MAP = {
     200201: "UI_AvatarIcon_AyakaCostumeFruhling",
@@ -155,10 +184,13 @@ class HSRExtractor(BaseExtractor):
             user_data = await self.client.get_starrail_user(uid)
             characters_data = await self.client.get_starrail_characters(uid)
         except Exception as e:
-            raise Exception(
-                f"Não foi possível obter dados para o UID {uid}.\n"
-                f"Certifique-se de que o perfil no HoYoLAB ('Registro de Batalha') está público nas configurações de privacidade."
-            )
+            if isinstance(e, genshin.errors.DataNotPublic):
+                raise Exception(
+                    f"Não foi possível obter dados para o UID {uid}.\n"
+                    f"Certifique-se de que o perfil no HoYoLAB ('Registro de Batalha') está público nas configurações de privacidade."
+                )
+            else:
+                raise Exception(f"Não foi possível obter dados para o UID {uid}: {e}")
         
         # 2.5. Coleta e traduz os nomes dos conjuntos de relíquias via API do HoYoWiki
         wiki_ids = set()
@@ -462,10 +494,13 @@ class GenshinExtractor(BaseExtractor):
             detail = await self.client.get_genshin_detailed_characters(uid)
             chars = detail.characters
         except Exception as e:
-            raise Exception(
-                f"Não foi possível obter dados detalhados para o UID {uid}.\n"
-                f"Certifique-se de que o Registro de Batalha de Genshin está público nas configurações de privacidade."
-            )
+            if isinstance(e, genshin.errors.DataNotPublic):
+                raise Exception(
+                    f"Não foi possível obter dados detalhados para o UID {uid}.\n"
+                    f"Certifique-se de que o Registro de Batalha de Genshin está público nas configurações de privacidade."
+                )
+            else:
+                raise Exception(f"Não foi possível obter dados detalhados para o UID {uid}: {e}")
             
         lines = []
         lines.append("# Relatório de Personagens - Genshin Impact")
@@ -737,10 +772,13 @@ class ZZZExtractor(BaseExtractor):
             else:
                 agents = []
         except Exception as e:
-            raise Exception(
-                f"Não foi possível obter dados detalhados para o UID {uid}.\n"
-                f"Certifique-se de que o Registro de Batalha de ZZZ está público nas configurações de privacidade."
-            )
+            if isinstance(e, genshin.errors.DataNotPublic):
+                raise Exception(
+                    f"Não foi possível obter dados detalhados para o UID {uid}.\n"
+                    f"Certifique-se de que o Registro de Batalha de ZZZ está público nas configurações de privacidade."
+                )
+            else:
+                raise Exception(f"Não foi possível obter dados detalhados para o UID {uid}: {e}")
             
         lines = []
         lines.append("# Relatório de Agentes - Zenless Zone Zero")

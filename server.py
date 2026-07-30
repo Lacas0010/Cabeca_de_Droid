@@ -426,6 +426,7 @@ async def get_roster(game_id: str):
                 
     if data:
         # Pondera e calcula as notas de cada relíquia do roster e a nota geral da build
+        max_slots = 5 if game_id == "genshin" else 6
         for char in data:
             char_id_val = str(char.get("id") or char.get("character_id") or "")
             relic_scores = []
@@ -444,8 +445,11 @@ async def get_roster(game_id: str):
                 relic["score"] = score
                 relic_scores.append(score)
             
-            if relic_scores:
-                avg_score = round(sum(relic_scores) / len(relic_scores), 1)
+            # A nota geral da build é calculada dividindo a soma pelo total de slots do jogo (6 para HSR/ZZZ, 5 para Genshin).
+            # Peças não equipadas contam como 0 pontos, penalizando builds incompletas.
+            equipped_count = len(relic_scores)
+            if relic_scores and max_slots > 0:
+                avg_score = round(sum(relic_scores) / max_slots, 1)
             else:
                 avg_score = 0.0
 
@@ -459,6 +463,8 @@ async def get_roster(game_id: str):
 
             char["overall_score"] = avg_score
             char["overall_grade"] = overall_grade
+            char["equipped_pieces"] = equipped_count
+            char["max_pieces"] = max_slots
         return data
         
     return []
