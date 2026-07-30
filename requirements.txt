@@ -14,13 +14,8 @@ genshin==1.7.28
 # Playwright (Auto-login & Cookie extraction)
 playwright==1.61.0
 
-# Groq Cloud & Gemini IA Integration (RAG Local)
+# Groq Cloud API Integration (RAG Local)
 groq==1.5.0
-google-genai==2.12.1
-python-dotenv==1.2.2
-
-# Image Processing (Element & Avatar caching)
-pillow==12.3.0
 
 # Executable Packaging (PyInstaller Windows)
 pyinstaller==6.21.0
