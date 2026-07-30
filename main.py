@@ -1,16 +1,20 @@
 import os
 import sys
+import time
+import threading
 import subprocess
+import webbrowser
+import uvicorn
 
-def setup_playwright():
-    # Se estiver rodando compilado pelo PyInstaller, o Playwright tenta buscar o 
-    # navegador na pasta temporária extraída (_MEIPASS). Como não embutimos os 200MB+ 
-    # do Chromium no .exe, forçamos o Playwright a usar a pasta padrão do usuário.
+def setup_playwright() -> None:
+    """
+    Garante que o executável Chromium do Playwright esteja disponível no ambiente do usuário.
+    Se estiver rodando empacotado via PyInstaller, força a busca na pasta AppData/Local padrão.
+    """
     local_app_data = os.environ.get("LOCALAPPDATA", os.path.expanduser("~\\AppData\\Local"))
     pw_path = os.path.join(local_app_data, "ms-playwright")
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = pw_path
 
-    # Verifica se já existe um chromium baixado lá
     has_browser = False
     if os.path.exists(pw_path):
         for f in os.listdir(pw_path):
@@ -18,7 +22,6 @@ def setup_playwright():
                 has_browser = True
                 break
 
-    # Se não houver navegador, vamos invocar silenciosamente o CLI nativo do Playwright para instalar
     if not has_browser:
         try:
             from playwright._impl._driver import compute_driver_executable, get_driver_env
@@ -33,46 +36,40 @@ def setup_playwright():
             subprocess.run(
                 [driver_executable, driver_cli, "install", "chromium"], 
                 env=env,
-                creationflags=creationflags
+                creationflags=creationflags,
+                check=False
             )
         except Exception as e:
-            pass # Falha silenciosa, o usuário verá erro no login depois
-
-import threading
-import time
-import webbrowser
-import uvicorn
+            print(f"[WARN] Não foi possível verificar/instalar o Chromium do Playwright automaticamente: {e}")
 
 setup_playwright()
 
 from server import app
 
-def start_server():
+def start_server() -> None:
+    """Inicia o servidor web FastAPI usando Uvicorn."""
     uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
 
-def main():
+def main() -> None:
     """
-    Função principal que atua como ponto de entrada da aplicação.
-    Inicia o servidor FastAPI local e abre o navegador padrão do sistema.
+    Ponto de entrada unificado da aplicação.
+    Inicializa o servidor FastAPI local e abre a interface gráfica no navegador.
     """
-    # Cria a thread do uvicorn
     server_thread = threading.Thread(target=start_server, daemon=True)
     server_thread.start()
     
-    # Espera o servidor iniciar
+    # Aguarda o servidor aceitar conexões antes de abrir a aba no navegador
     time.sleep(3.5)
     
-    # Abre o navegador padrão na porta 8000
     print("[INFO] Iniciando Cabeça de Droid...")
-    print("[INFO] Abrindo navegador em: http://127.0.0.1:8000")
+    print("[INFO] Servidor rodando em: http://127.0.0.1:8000")
     webbrowser.open("http://127.0.0.1:8000")
     
-    # Mantém a thread principal ativa
     try:
         while server_thread.is_alive():
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\n[INFO] Servidor local encerrado pelo usuário.")
+        print("\n[INFO] Servidor encerrado com sucesso pelo usuário.")
 
 if __name__ == "__main__":
     main()

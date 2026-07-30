@@ -20,7 +20,6 @@ from scraper_prydwen import PrydwenScraper
 from scraper_zzz import PrydwenZZZScraper
 from scraper_meta import PrydwenMetaScraper
 from scraper_kqm import KQMScraper
-from scraper_genshin_meta import GenshinMetaScraper
 from groq_rag import GroqRAG
 import database
 from build_calculator import score_relic, calculate_ascension
