@@ -8,6 +8,7 @@ import datetime
 import time
 import genshin
 from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -25,6 +26,14 @@ import database
 from build_calculator import score_relic, calculate_ascension
 
 app = FastAPI(title="Cabeça de Droid API", version="3.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Estado global para progresso da sincronização
 sync_status = {
@@ -1676,4 +1685,4 @@ if __name__ == "__main__":
     # Inicia a thread para abrir o navegador em background
     threading.Thread(target=open_browser, daemon=True).start()
     
-    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=False)
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)

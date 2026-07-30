@@ -46,14 +46,27 @@ setup_playwright()
 
 from server import app
 
+import socket
+
+def get_local_ip() -> str:
+    """Obtém o IP local da máquina na rede Wi-Fi/Ethernet."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        return "127.0.0.1"
+
 def start_server() -> None:
     """Inicia o servidor web FastAPI usando Uvicorn."""
-    uvicorn.run(app, host="127.0.0.1", port=8000, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
 
 def main() -> None:
     """
     Ponto de entrada unificado da aplicação.
-    Inicializa o servidor FastAPI local e abre a interface gráfica no navegador.
+    Inicializa o servidor FastAPI e abre a interface gráfica no navegador.
     """
     server_thread = threading.Thread(target=start_server, daemon=True)
     server_thread.start()
@@ -61,8 +74,10 @@ def main() -> None:
     # Aguarda o servidor aceitar conexões antes de abrir a aba no navegador
     time.sleep(3.5)
     
+    local_ip = get_local_ip()
     print("[INFO] Iniciando Cabeça de Droid...")
-    print("[INFO] Servidor rodando em: http://127.0.0.1:8000")
+    print(f"[INFO] Servidor rodando localmente em: http://127.0.0.1:8000")
+    print(f"[INFO] Para acessar pelo celular ou outro dispositivo na mesma rede Wi-Fi, acesse: http://{local_ip}:8000")
     webbrowser.open("http://127.0.0.1:8000")
     
     try:
