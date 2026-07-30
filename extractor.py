@@ -3,6 +3,7 @@ import re
 import json
 import requests
 import asyncio
+import unicodedata
 import genshin
 import endgame_extractor
 
@@ -89,7 +90,9 @@ def get_zzz_prydwen_slug(agent_name: str) -> str:
     """Converte o nome de um Agente do ZZZ para o slug de imagem HD no Prydwen."""
     if not agent_name:
         return ""
-    clean = agent_name.lower().strip()
+    nfkd = unicodedata.normalize('NFKD', agent_name)
+    no_accents = ''.join([c for c in nfkd if not unicodedata.combining(c)])
+    clean = no_accents.lower().strip()
     special_cases = {
         "anby demara": "anby-demara",
         "anby": "anby-demara",
@@ -107,12 +110,41 @@ def get_zzz_prydwen_slug(agent_name: str) -> str:
         "koleda belobog": "koleda",
         "nicole demara": "nicole-demara",
         "nicole": "nicole-demara",
-        "orphie & magus": "orphie-magus",
+        "orphie & magus": "orphie-and-magus",
+        "orphie and magus": "orphie-and-magus",
+        "orfeu & magus": "orphie-and-magus",
+        "orfeu e magus": "orphie-and-magus",
         "piper wheel": "piper",
         "seth lowell": "seth",
         "soldier 11": "soldier-11",
+        "n. 11": "soldier-11",
+        "n.º 11": "soldier-11",
+        "n.o 11": "soldier-11",
         "von lycaon": "lycaon",
-        "zhu yuan": "zhu-yuan"
+        "zhu yuan": "zhu-yuan",
+
+        # Mapeamento PT-BR de ZZZ
+        "císsia": "cissia",
+        "cissia": "cissia",
+        "caesar": "caesar",
+        "caesar king": "caesar",
+        "luciana": "lucy",
+        "luciana de montefio": "lucy",
+        "lucy": "lucy",
+        "vovó": "lucy",
+        "vovo": "lucy",
+        "soukaku": "soukaku",
+        "burnice": "burnice",
+        "burnice white": "burnice",
+        "lighter": "lighter",
+        "yanagi": "yanagi",
+        "tsukishiro yanagi": "yanagi",
+        "miyabi": "miyabi",
+        "harumasa": "harumasa",
+        "evelyn": "evelyn",
+        "evelyn chevalier": "evelyn",
+        "pulchra": "pulchra",
+        "koleda": "koleda"
     }
     if clean in special_cases:
         return special_cases[clean]
@@ -1181,20 +1213,11 @@ class ZZZExtractor(BaseExtractor):
                         })
                 icon_url = getattr(agent, "square_icon", getattr(agent, "rectangle_icon", getattr(agent, "icon", "")))
                 hoyolab_splash = getattr(agent, "portrait", getattr(agent, "draw", getattr(agent, "art_url", getattr(agent, "banner_icon", getattr(agent, "rectangle_icon", getattr(agent, "full_icon", icon_url))))))
-                outfit_id = getattr(agent, "outfit_id", None)
-                has_skin = bool(outfit_id) or (bool(hoyolab_splash) and any(p.isdigit() and len(p) >= 7 for p in str(hoyolab_splash).split("_")))
                 
-                costumes = getattr(agent, "costumes", getattr(agent, "skins", getattr(agent, "outfits", None)))
-                if costumes:
-                    c_item = costumes[0]
-                    icon_url = getattr(c_item, "square_icon", getattr(c_item, "icon", icon_url))
-                    c_splash = getattr(c_item, "portrait", getattr(c_item, "draw", getattr(c_item, "art_url", getattr(c_item, "banner_icon", getattr(c_item, "vertical_painting", getattr(c_item, "full_icon", getattr(c_item, "gacha_art", getattr(c_item, "splash_art", getattr(c_item, "rectangle_icon", getattr(c_item, "icon", None))))))))))
-                    if c_splash:
-                        hoyolab_splash = c_splash
-                        has_skin = True
-
-                if has_skin and hoyolab_splash:
-                    splash_url = hoyolab_splash
+                check_str = str(icon_url) + " " + str(hoyolab_splash)
+                skin_match = re.search(r'(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png', check_str)
+                if skin_match:
+                    splash_url = f"https://act-webstatic.hoyoverse.com/game_record/zzzv2/role_vertical_painting/role_vertical_painting_{skin_match.group(1)}_{skin_match.group(2)}.png"
                 else:
                     zzz_slug = get_zzz_prydwen_slug(agent.name)
                     prydwen_splash = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{zzz_slug}_full.webp" if zzz_slug else ""
