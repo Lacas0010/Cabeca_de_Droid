@@ -75,6 +75,7 @@ def normalize_char_name(name: str) -> str:
     if not name:
         return ""
     name = name.lower()
+    name = re.sub(r'\s*\b(new|nova|novo)\b\s*', ' ', name, flags=re.IGNORECASE)
     name = name.replace("•", " ").replace("-", " ").replace("(", " ").replace(")", " ").replace(".", " ")
     return RE_MULTIPLE_SPACES.sub(' ', name).strip()
 
@@ -235,7 +236,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "dialyn": "1481",
             "cissia": "1521",
             "pyrois": "1551",
-            "velina": "1561"
+            "remielle": "1581",
+            "remielle new": "1581"
         }
     }
 
@@ -331,8 +333,22 @@ def get_meta_data(game_id: str) -> dict:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                META_DATA_CACHE[game_id] = data
-                return data
+                master = fetch_master_id_list(game_id)
+                indexed_data = dict(data)
+                for k, v in list(data.items()):
+                    if isinstance(v, dict):
+                        name = v.get("name", "")
+                        norm_name = normalize_char_name(name)
+                        norm_key = normalize_char_name(k)
+                        cid = master.get(norm_name) or master.get(norm_key) or master.get(k.lower())
+                        if cid:
+                            indexed_data[str(cid)] = v
+                        if norm_name:
+                            indexed_data[norm_name] = v
+                        if norm_key:
+                            indexed_data[norm_key] = v
+                META_DATA_CACHE[game_id] = indexed_data
+                return indexed_data
         except Exception as e:
             print(f"[WARN] Erro ao ler {path}: {e}")
     return {}

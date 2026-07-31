@@ -19,8 +19,27 @@ const ELEMENT_MAPPING = {
     "pyro": "el-pyro", "cryo": "el-cryo", "anemo": "el-anemo", "electro": "el-electric",
     "geo": "el-geo", "dendro": "el-dendro", "hydro": "el-hydro",
     // Zenless Zone Zero
-    "electric": "el-electric", "ether": "el-ether"
+    "electric": "el-electric", "ether": "el-ether", "lumiflux": "el-lumiflux",
+    // HoYoLAB API Enum Codes
+    "element_100": "el-physical", "element 100": "el-physical",
+    "element_200": "el-fire", "element 200": "el-fire",
+    "element_300": "el-lumiflux", "element 300": "el-lumiflux",
+    "element_400": "el-electric", "element 400": "el-electric",
+    "element_500": "el-ether", "element 500": "el-ether"
 };
+
+// Helper global para formatar o nome de exibição de elementos (ex: ELEMENT_300 -> Lumiflux)
+function formatElementDisplayName(rawElem) {
+    if (!rawElem) return "Físico";
+    const str = String(rawElem).trim();
+    const upper = str.toUpperCase();
+    if (upper === "ELEMENT_300" || upper === "ELEMENT 300") return "Lumiflux";
+    if (upper === "ELEMENT_100" || upper === "ELEMENT 100") return "Físico";
+    if (upper === "ELEMENT_200" || upper === "ELEMENT 200") return "Fogo";
+    if (upper === "ELEMENT_400" || upper === "ELEMENT 400") return "Elétrico";
+    if (upper === "ELEMENT_500" || upper === "ELEMENT 500") return "Éter";
+    return str;
+}
 
 // Dicionário de sanitização e abreviação inteligente de nomes de atributos (Stats / Substats)
 const STAT_SHORT_NAMES = {
@@ -109,6 +128,50 @@ const STAT_SHORT_NAMES = {
     "Geo DMG Bonus": "Dano Geo",
     "Dendro DMG Bonus": "Dano Dendro"
 };
+
+// Helper global para verificar se um atributo é recomendado dinamicamente para determinado personagem
+function isStatRecommendedForChar(statKey, char) {
+    if (!statKey || !char) return false;
+    const lowerKey = statKey.toLowerCase();
+    
+    let normKey = "";
+    if (lowerKey.includes("quebra") || lowerKey.includes("break")) normKey = "break_effect";
+    else if (lowerKey.includes("taxa crit") || lowerKey.includes("crit rate") || lowerKey.includes("taxa")) normKey = "crit_rate";
+    else if (lowerKey.includes("dano crit") || lowerKey.includes("crit dmg") || lowerKey.includes("dano")) normKey = "crit_dmg";
+    else if (lowerKey.includes("vel") || lowerKey.includes("spd") || lowerKey.includes("velocidade")) normKey = "spd";
+    else if (lowerKey.includes("prof") || lowerKey.includes("em") || lowerKey.includes("mastery")) normKey = "em";
+    else if (lowerKey.includes("recarga") || lowerKey.includes("recharge") || lowerKey.includes("er")) normKey = "er";
+    else if (lowerKey.includes("acerto") || lowerKey.includes("ehr")) normKey = "ehr";
+    else if (lowerKey.includes("res") || lowerKey.includes("resist")) normKey = "res";
+    else if (lowerKey.includes("atq") || lowerKey.includes("atk") || lowerKey.includes("ataque")) normKey = "atk_pct";
+    else if (lowerKey.includes("pv") || lowerKey.includes("hp") || lowerKey.includes("vida")) normKey = "hp_pct";
+    else if (lowerKey.includes("def")) normKey = "def_pct";
+    else if (lowerKey.includes("impact")) normKey = "impact";
+
+    const recWeights = char.recommended_weights || {};
+    const subPriorities = char.substats_priority || [];
+
+    // 1. Verificação via pesos dinâmicos do guia (recWeights)
+    if (Object.keys(recWeights).length > 0) {
+        const w = recWeights[normKey] || recWeights[normKey.replace("_pct", "_flat")];
+        if (w && w > 0.35) return true;
+    }
+
+    // 2. Verificação via lista substats_priority
+    if (subPriorities.length > 0) {
+        if (subPriorities.includes(normKey) || subPriorities.some(p => p.includes(normKey) || normKey.includes(p))) {
+            return true;
+        }
+    }
+
+    // 3. Fallbacks contextuais específicos por personagem
+    const cName = (char.name || "").toLowerCase();
+    if (cName.includes("vaga-lume") || cName.includes("firefly") || cName.includes("boothill") || cName.includes("rappa")) {
+        if (normKey === "break_effect" || normKey === "spd" || normKey === "atk_pct") return true;
+    }
+
+    return false;
+}
 
 function sanitizeStatName(statText) {
     if (!statText) return "";
@@ -697,7 +760,8 @@ async function inspectCharacter(gameId, char) {
     document.getElementById("ins-name").innerText = char.name;
     
     const elemKey = (char.element || "").toLowerCase();
-    const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${(char.element || 'N/A').toUpperCase()}`;
+    const displayElem = formatElementDisplayName(char.element);
+    const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
     document.getElementById("ins-meta").innerHTML = `${char.rank_str || 'C0'} • ${elemHtml} • Nível ${char.level}`;
     
     // Configura e limpa o card do Otimizador IA
@@ -858,26 +922,22 @@ async function inspectCharacter(gameId, char) {
         
         const statsKeys = Object.keys(build.stats || {});
         if (statsKeys.length > 0) {
-            // Define quais stats são "críticos" (destaque dourado/âmbar)
-            const criticalStats = ['Taxa CRIT', 'Dano CRIT', 'CRIT Rate', 'CRIT DMG', 'SPD', 'VEL', 'Velocidade'];
-            // Ordena: HP/ATK/DEF/SPD primeiro, depois CRIT, depois resto
-            const orderedPriority = ['HP', 'ATQ', 'ATK', 'DEF', 'SPD', 'VEL', 'Taxa CRIT', 'CRIT Rate', 'Dano CRIT', 'CRIT DMG'];
+            // Ordena os status para colocar os recomendados em primeiro lugar
             const sortedKeys = [...statsKeys].sort((a, b) => {
-                const ai = orderedPriority.findIndex(p => a.includes(p) || a === p);
-                const bi = orderedPriority.findIndex(p => b.includes(p) || b === p);
-                if (ai === -1 && bi === -1) return 0;
-                if (ai === -1) return 1;
-                if (bi === -1) return -1;
-                return ai - bi;
+                const aRec = isStatRecommendedForChar(a, char);
+                const bRec = isStatRecommendedForChar(b, char);
+                if (aRec && !bRec) return -1;
+                if (!aRec && bRec) return 1;
+                return 0;
             });
             
             sortedKeys.forEach(key => {
-                const isCrit = criticalStats.some(cs => key.includes(cs) || key === cs);
+                const isRec = isStatRecommendedForChar(key, char);
                 const statCard = document.createElement("div");
-                statCard.className = "stat-card" + (isCrit ? " stat-card--crit" : "");
+                statCard.className = "stat-card" + (isRec ? " stat-card--crit" : "");
                 statCard.innerHTML = `
                     <span class="stat-label">${sanitizeStatName(key)}</span>
-                    <span class="stat-value${isCrit ? ' stat-value--crit' : ''}">${build.stats[key]}</span>
+                    <span class="stat-value${isRec ? ' stat-value--crit' : ''}">${build.stats[key]}</span>
                 `;
                 statsGrid.appendChild(statCard);
             });
@@ -2557,7 +2617,7 @@ async function generateBuildCardCanvas(char, gameId) {
 
     ctx.font = "500 13px sans-serif";
     ctx.fillStyle = "#cbd5e1";
-    const elemName = (char.element || "Físico").toUpperCase();
+    const elemName = formatElementDisplayName(char.element || "Físico").toUpperCase();
     ctx.fillText(`Nv. ${char.level} • ${elemName}`, hx + 18, hy + 76);
 
     // Pill de Constelação / Eidolon em Vermelho Crimson (Red Badge)
@@ -2600,17 +2660,58 @@ async function generateBuildCardCanvas(char, gameId) {
         ctx.fillStyle = "#38bdf8";
         ctx.fillText("STATUS FINAIS DE COMBATE", statsPanelX + 14, statsPanelY + 20);
 
-        // Define os stats prioritários para exibir (máx. 8 no espaço disponível)
-        const priorityOrder = ['HP', 'ATQ', 'ATK', 'DEF', 'SPD', 'VEL', 'Taxa CRIT', 'CRIT Rate', 'Dano CRIT', 'CRIT DMG', 'Prof. Element.', 'Recarga', 'Impacto', 'Impact'];
-        const criticalStatNames = ['Taxa CRIT', 'CRIT Rate', 'Dano CRIT', 'CRIT DMG', 'SPD', 'VEL'];
+        // Helper para verificar se um status é recomendado dinamicamente para o personagem
+        const recWeights = char.recommended_weights || {};
+        const subPriorities = char.substats_priority || [];
 
+        function isStatRecommendedForChar(statKey) {
+            if (!statKey) return false;
+            const lowerKey = statKey.toLowerCase();
+            
+            // 1. Mapeamento de chaves exibidas na UI para as chaves internas
+            let normKey = "";
+            if (lowerKey.includes("quebra") || lowerKey.includes("break")) normKey = "break_effect";
+            else if (lowerKey.includes("taxa crit") || lowerKey.includes("crit rate") || lowerKey.includes("taxa")) normKey = "crit_rate";
+            else if (lowerKey.includes("dano crit") || lowerKey.includes("crit dmg") || lowerKey.includes("dano")) normKey = "crit_dmg";
+            else if (lowerKey.includes("vel") || lowerKey.includes("spd") || lowerKey.includes("velocidade")) normKey = "spd";
+            else if (lowerKey.includes("prof") || lowerKey.includes("em") || lowerKey.includes("mastery")) normKey = "em";
+            else if (lowerKey.includes("recarga") || lowerKey.includes("recharge") || lowerKey.includes("er")) normKey = "er";
+            else if (lowerKey.includes("acerto") || lowerKey.includes("ehr")) normKey = "ehr";
+            else if (lowerKey.includes("res") || lowerKey.includes("resist")) normKey = "res";
+            else if (lowerKey.includes("atq") || lowerKey.includes("atk") || lowerKey.includes("ataque")) normKey = "atk_pct";
+            else if (lowerKey.includes("pv") || lowerKey.includes("hp") || lowerKey.includes("vida")) normKey = "hp_pct";
+            else if (lowerKey.includes("def")) normKey = "def_pct";
+            else if (lowerKey.includes("impact")) normKey = "impact";
+
+            // 2. Verificação com base nos pesos recomendados (recWeights)
+            if (Object.keys(recWeights).length > 0) {
+                const w = recWeights[normKey] || recWeights[normKey.replace("_pct", "_flat")];
+                if (w && w > 0.35) return true;
+            }
+
+            // 3. Verificação com base na prioridade do guia (subPriorities)
+            if (subPriorities.length > 0) {
+                if (subPriorities.includes(normKey) || subPriorities.some(p => p.includes(normKey) || normKey.includes(p))) {
+                    return true;
+                }
+            }
+
+            // 4. Fallbacks contextual para personagens de Quebra/Suporte
+            const cName = (char.name || "").toLowerCase();
+            if (cName.includes("vaga-lume") || cName.includes("firefly") || cName.includes("boothill") || cName.includes("rappa")) {
+                if (normKey === "break_effect" || normKey === "spd" || normKey === "atk_pct") return true;
+            }
+
+            return false;
+        }
+
+        // Ordena para que os status recomendados apareçam primeiro no grid do Card
         const sortedStatKeys = [...statKeys].sort((a, b) => {
-            const ai = priorityOrder.findIndex(p => a.includes(p) || a === p);
-            const bi = priorityOrder.findIndex(p => b.includes(p) || b === p);
-            if (ai === -1 && bi === -1) return 0;
-            if (ai === -1) return 1;
-            if (bi === -1) return -1;
-            return ai - bi;
+            const aRec = isStatRecommendedForChar(a, char);
+            const bRec = isStatRecommendedForChar(b, char);
+            if (aRec && !bRec) return -1;
+            if (!aRec && bRec) return 1;
+            return 0;
         });
 
         const displayStats = sortedStatKeys.slice(0, 8);
@@ -2624,25 +2725,25 @@ async function generateBuildCardCanvas(char, gameId) {
             const row = Math.floor(idx / cols);
             const cx = statsPanelX + 14 + col * cellW;
             const cy = statsPanelY + 28 + row * cellH;
-            const isCritStat = criticalStatNames.some(cs => key.includes(cs) || key === cs);
+            const isRec = isStatRecommendedForChar(key, char);
             const val = charStats[key];
 
-            // Mini card glassmorphism
-            const cardBg = isCritStat ? "rgba(245, 158, 11, 0.10)" : "rgba(15, 23, 42, 0.55)";
-            const cardBorder = isCritStat ? "rgba(245, 158, 11, 0.30)" : "rgba(255,255,255,0.06)";
+            // Mini card glassmorphism com Highlight Dourado Dinâmico para atributos recomendados
+            const cardBg = isRec ? "rgba(245, 158, 11, 0.12)" : "rgba(15, 23, 42, 0.55)";
+            const cardBorder = isRec ? "rgba(245, 158, 11, 0.35)" : "rgba(255, 255, 255, 0.06)";
             drawRoundedRect(cx, cy, cellW - 4, cellH - 4, 5, cardBg, cardBorder, 1);
 
-            // Label
+            // Label do Atributo
             ctx.font = "500 9px sans-serif";
-            ctx.fillStyle = isCritStat ? "#d97706" : "#64748b";
+            ctx.fillStyle = isRec ? "#d97706" : "#64748b";
             ctx.textAlign = "left";
             const cleanKey = sanitizeStatName(key);
             const shortKey = cleanKey.length > 12 ? cleanKey.substring(0, 11) + "." : cleanKey;
             ctx.fillText(shortKey.toUpperCase(), cx + 5, cy + 13);
 
-            // Value
+            // Valor do Atributo
             ctx.font = "bold 12px sans-serif";
-            ctx.fillStyle = isCritStat ? "#fbbf24" : "#e2e8f0";
+            ctx.fillStyle = isRec ? "#fbbf24" : "#e2e8f0";
             ctx.fillText(val, cx + 5, cy + 29);
         });
     }

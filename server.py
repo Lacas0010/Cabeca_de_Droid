@@ -23,7 +23,7 @@ from scraper_meta import PrydwenMetaScraper
 from scraper_kqm import KQMScraper
 from groq_rag import GroqRAG
 import database
-from build_calculator import score_relic, calculate_ascension
+from build_calculator import score_relic, calculate_ascension, get_meta_data, extract_weights_from_guide
 
 app = FastAPI(title="Cabeça de Droid API", version="3.0")
 
@@ -514,6 +514,12 @@ async def get_roster(game_id: str):
                     char["gacha_art"] = f"https://enka.network/ui/{art_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
 
             char_id_val = str(char.get("id") or char.get("character_id") or "")
+            meta_db = get_meta_data(game_id)
+            char_meta = meta_db.get(char_id_val, {})
+            if char_meta:
+                char["substats_priority"] = char_meta.get("substats_priority", [])
+                char["recommended_weights"] = extract_weights_from_guide(game_id, char_id_val)
+
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
             for relic in relics:
