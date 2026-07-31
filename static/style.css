@@ -759,10 +759,10 @@ h1, h2, h3, h4, h5, h6 {
     border-color: rgba(234, 179, 8, 0.4);
 }
 
-.char-card.el-ether { border-bottom: 3px solid #ec4899; }
+.char-card.el-ether { border-bottom: 3px solid #db2777; }
 .char-card.el-ether:hover {
-    box-shadow: 0 10px 25px rgba(236, 72, 153, 0.18), 0 0 15px rgba(236, 72, 153, 0.12);
-    border-color: rgba(236, 72, 153, 0.4);
+    box-shadow: 0 10px 25px rgba(219, 39, 119, 0.25), 0 0 15px rgba(219, 39, 119, 0.18);
+    border-color: rgba(219, 39, 119, 0.5);
 }
 
 .char-card.el-lumiflux { border-bottom: 3px solid #f472b6; }
