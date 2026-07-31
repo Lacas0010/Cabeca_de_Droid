@@ -765,6 +765,12 @@ h1, h2, h3, h4, h5, h6 {
     border-color: rgba(236, 72, 153, 0.4);
 }
 
+.char-card.el-lumiflux { border-bottom: 3px solid #f472b6; }
+.char-card.el-lumiflux:hover {
+    box-shadow: 0 10px 25px rgba(244, 114, 182, 0.25), 0 0 15px rgba(244, 114, 182, 0.18);
+    border-color: rgba(244, 114, 182, 0.5);
+}
+
 .char-card.el-dendro { border-bottom: 3px solid #15803d; }
 .char-card.el-dendro:hover {
     box-shadow: 0 10px 25px rgba(21, 128, 61, 0.18), 0 0 15px rgba(21, 128, 61, 0.12);

@@ -144,7 +144,9 @@ def get_zzz_prydwen_slug(agent_name: str) -> str:
         "evelyn": "evelyn",
         "evelyn chevalier": "evelyn",
         "pulchra": "pulchra",
-        "koleda": "koleda"
+        "koleda": "koleda",
+        "remielle": "remielle",
+        "remielle new": "remielle"
     }
     if clean in special_cases:
         return special_cases[clean]
@@ -169,7 +171,21 @@ ELEMENT_MAP = {
     "Raio": "Raio",
     "Físico": "Físico",
     "Quântico": "Quântico",
-    "Imaginário": "Imaginário"
+    "Imaginário": "Imaginário",
+    "ELEMENT_100": "Físico",
+    "ELEMENT_200": "Fogo",
+    "ELEMENT_300": "Lumiflux",
+    "ELEMENT_400": "Elétrico",
+    "ELEMENT_500": "Éter",
+    "Element_100": "Físico",
+    "Element_200": "Fogo",
+    "Element_300": "Lumiflux",
+    "Element_400": "Elétrico",
+    "Element_500": "Éter",
+    "lumiflux": "Lumiflux",
+    "Lumiflux": "Lumiflux",
+    "Ether": "Éter",
+    "Electric": "Elétrico"
 }
 
 PATH_MAP = {
