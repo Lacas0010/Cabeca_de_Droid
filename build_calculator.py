@@ -426,7 +426,7 @@ STAT_NAME_MAP = {
     
     # Recarga de Energia / Taxa de Regeneração de Energia
     "recarga de energia": "er", "recarga": "er", "energy recharge": "er", "er": "er", "recharge": "er", "recarga de energia%": "er",
-    "taxa de regeneração de energia": "err", "taxa de regeneracao de energia": "err", "recuperação de energia": "err", "recuperacao de energia": "err", "regen. energia": "err", "regen energia": "err", "taxa de reg. de energia": "err", "recup. energia": "err", "recup energia": "err", "energy regen rate": "err", "energy regen": "err", "energy regeneration rate": "err", "err": "err",
+    "taxa de regeneração de energia": "err", "taxa de regeneracao de energia": "err", "taxa de regen. energia": "err", "taxa de regen energia": "err", "taxa de regen. de energia": "err", "taxa de regen de energia": "err", "recuperação de energia": "err", "recuperacao de energia": "err", "regen. energia": "err", "regen energia": "err", "taxa de reg. de energia": "err", "recup. energia": "err", "recup energia": "err", "energy regen rate": "err", "energy regen": "err", "energy regeneration rate": "err", "err": "err",
     
     # Bônus de Cura
     "bônus de cura": "healing_bonus", "bonus de cura": "healing_bonus", "cura bônus": "healing_bonus", "cura bonus": "healing_bonus", "bônus de cura%": "healing_bonus", "bonus de cura%": "healing_bonus", "healing bonus": "healing_bonus", "outgoing healing boost": "healing_bonus", "healing": "healing_bonus", "healing_bonus": "healing_bonus",
