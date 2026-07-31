@@ -711,27 +711,40 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     else:
         available_substats = sorted_priorities
         
-    ideal_substats = available_substats[:4]
+    # Substatus prioritários ativos (com peso > 0.30 pós-exclusão do Main Stat)
+    priority_substats = [s for s in available_substats if weights.get(s, 0.0) > 0.30]
+    num_priority = len(priority_substats)
     
-    # Distribuição calibrada para o limite teórico de 9 rolls úteis (4 base + 5 procs)
-    # Até 6 rolls no 1º atributo prioritário, 1 roll nos demais
-    roll_distribution = [6.0, 1.0, 1.0, 1.0]
-    if len(ideal_substats) < 4:
-        if len(ideal_substats) == 1:
-            roll_distribution = [9.0]
-        elif len(ideal_substats) == 2:
-            roll_distribution = [6.0, 3.0]
-        elif len(ideal_substats) == 3:
-            roll_distribution = [6.0, 2.0, 1.0]
-        elif len(ideal_substats) == 0:
-            roll_distribution = []
-
     max_possible_sub_score = 0.0
-    for i, sub in enumerate(ideal_substats):
-        w = weights.get(sub, 0.0)
-        dist = roll_distribution[i] if i < len(roll_distribution) else 1.0
-        max_possible_sub_score += w * dist
-        
+    
+    if num_priority == 1:
+        # Caso 1: Apenas 1 substatus prioritário pós-exclusão (ex: apenas ER)
+        # 4.0 rolagens nele + 5.0 rolagens no pool de "Outros Atributos" (peso base 0.30)
+        w1 = weights.get(priority_substats[0], 1.0)
+        max_possible_sub_score = (4.0 * w1) + (5.0 * 0.30)
+    elif num_priority == 2:
+        # Caso 2: Apenas 2 substatus prioritários pós-exclusão
+        # 4.0 rolagens no 1º, 3.0 no 2º + 2.0 rolagens no pool de "Outros Atributos" (peso base 0.30)
+        w1 = weights.get(priority_substats[0], 1.0)
+        w2 = weights.get(priority_substats[1], 0.85)
+        max_possible_sub_score = (4.0 * w1) + (3.0 * w2) + (2.0 * 0.30)
+    elif num_priority == 3:
+        # Caso 3: Apenas 3 substatus prioritários pós-exclusão
+        # 5.0 rolagens no 1º, 2.0 no 2º, 1.0 no 3º + 1.0 rolagem no pool de "Outros Atributos" (peso base 0.30)
+        w1 = weights.get(priority_substats[0], 1.0)
+        w2 = weights.get(priority_substats[1], 0.85)
+        w3 = weights.get(priority_substats[2], 0.70)
+        max_possible_sub_score = (5.0 * w1) + (2.0 * w2) + (1.0 * w3) + (1.0 * 0.30)
+    else:
+        # Caso 4: 4 ou mais substatus prioritários (ou fallback se 0)
+        # Distribuição padrão [6.0, 1.0, 1.0, 1.0] sem rolagens para "Outros Atributos"
+        ideal_substats = available_substats[:4]
+        roll_distribution = [6.0, 1.0, 1.0, 1.0]
+        for i, sub in enumerate(ideal_substats):
+            w = weights.get(sub, 0.0)
+            dist = roll_distribution[i] if i < len(roll_distribution) else 1.0
+            max_possible_sub_score += w * dist
+            
     if max_possible_sub_score <= 0:
         max_possible_sub_score = 3.5
         
