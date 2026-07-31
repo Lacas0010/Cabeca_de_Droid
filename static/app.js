@@ -139,8 +139,11 @@ function isStatRecommendedForChar(statKey, char) {
     else if (lowerKey.includes("taxa crit") || lowerKey.includes("crit rate") || lowerKey.includes("taxa")) normKey = "crit_rate";
     else if (lowerKey.includes("dano crit") || lowerKey.includes("crit dmg") || lowerKey.includes("dano")) normKey = "crit_dmg";
     else if (lowerKey.includes("vel") || lowerKey.includes("spd") || lowerKey.includes("velocidade")) normKey = "spd";
+    else if (lowerKey.includes("prof. anomalia") || lowerKey.includes("anomalia prof") || lowerKey.includes("anomaly prof") || lowerKey.includes("proficiência de anomalia") || lowerKey.includes("anomalia")) normKey = "anomaly_prof";
+    else if (lowerKey.includes("maest") || lowerKey.includes("anomaly mas")) normKey = "anomaly_mas";
     else if (lowerKey.includes("prof") || lowerKey.includes("em") || lowerKey.includes("mastery")) normKey = "em";
-    else if (lowerKey.includes("recarga") || lowerKey.includes("recharge") || lowerKey.includes("er")) normKey = "er";
+    else if (lowerKey.includes("perfura") || lowerKey.includes("pen")) normKey = "pen_flat";
+    else if (lowerKey.includes("recarga") || lowerKey.includes("recharge") || lowerKey.includes("er") || lowerKey.includes("recup")) normKey = "er";
     else if (lowerKey.includes("acerto") || lowerKey.includes("ehr")) normKey = "ehr";
     else if (lowerKey.includes("res") || lowerKey.includes("resist")) normKey = "res";
     else if (lowerKey.includes("atq") || lowerKey.includes("atk") || lowerKey.includes("ataque")) normKey = "atk_pct";
@@ -168,6 +171,9 @@ function isStatRecommendedForChar(statKey, char) {
     const cName = (char.name || "").toLowerCase();
     if (cName.includes("vaga-lume") || cName.includes("firefly") || cName.includes("boothill") || cName.includes("rappa")) {
         if (normKey === "break_effect" || normKey === "spd" || normKey === "atk_pct") return true;
+    }
+    if (cName.includes("remielle")) {
+        if (normKey === "anomaly_prof" || normKey === "atk_pct" || normKey === "pen_flat" || normKey === "er") return true;
     }
 
     return false;
@@ -2673,50 +2679,7 @@ async function generateBuildCardCanvas(char, gameId) {
         ctx.fillStyle = "#38bdf8";
         ctx.fillText("STATUS FINAIS DE COMBATE", statsPanelX + 14, statsPanelY + 20);
 
-        // Helper para verificar se um status é recomendado dinamicamente para o personagem
-        const recWeights = char.recommended_weights || {};
-        const subPriorities = char.substats_priority || [];
 
-        function isStatRecommendedForChar(statKey) {
-            if (!statKey) return false;
-            const lowerKey = statKey.toLowerCase();
-            
-            // 1. Mapeamento de chaves exibidas na UI para as chaves internas
-            let normKey = "";
-            if (lowerKey.includes("quebra") || lowerKey.includes("break")) normKey = "break_effect";
-            else if (lowerKey.includes("taxa crit") || lowerKey.includes("crit rate") || lowerKey.includes("taxa")) normKey = "crit_rate";
-            else if (lowerKey.includes("dano crit") || lowerKey.includes("crit dmg") || lowerKey.includes("dano")) normKey = "crit_dmg";
-            else if (lowerKey.includes("vel") || lowerKey.includes("spd") || lowerKey.includes("velocidade")) normKey = "spd";
-            else if (lowerKey.includes("prof") || lowerKey.includes("em") || lowerKey.includes("mastery")) normKey = "em";
-            else if (lowerKey.includes("recarga") || lowerKey.includes("recharge") || lowerKey.includes("er")) normKey = "er";
-            else if (lowerKey.includes("acerto") || lowerKey.includes("ehr")) normKey = "ehr";
-            else if (lowerKey.includes("res") || lowerKey.includes("resist")) normKey = "res";
-            else if (lowerKey.includes("atq") || lowerKey.includes("atk") || lowerKey.includes("ataque")) normKey = "atk_pct";
-            else if (lowerKey.includes("pv") || lowerKey.includes("hp") || lowerKey.includes("vida")) normKey = "hp_pct";
-            else if (lowerKey.includes("def")) normKey = "def_pct";
-            else if (lowerKey.includes("impact")) normKey = "impact";
-
-            // 2. Verificação com base nos pesos recomendados (recWeights)
-            if (Object.keys(recWeights).length > 0) {
-                const w = recWeights[normKey] || recWeights[normKey.replace("_pct", "_flat")];
-                if (w && w > 0.35) return true;
-            }
-
-            // 3. Verificação com base na prioridade do guia (subPriorities)
-            if (subPriorities.length > 0) {
-                if (subPriorities.includes(normKey) || subPriorities.some(p => p.includes(normKey) || normKey.includes(p))) {
-                    return true;
-                }
-            }
-
-            // 4. Fallbacks contextual para personagens de Quebra/Suporte
-            const cName = (char.name || "").toLowerCase();
-            if (cName.includes("vaga-lume") || cName.includes("firefly") || cName.includes("boothill") || cName.includes("rappa")) {
-                if (normKey === "break_effect" || normKey === "spd" || normKey === "atk_pct") return true;
-            }
-
-            return false;
-        }
 
         // Ordena para que os status recomendados apareçam primeiro no grid do Card
         const sortedStatKeys = [...statKeys].sort((a, b) => {

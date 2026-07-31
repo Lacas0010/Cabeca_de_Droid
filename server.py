@@ -515,7 +515,8 @@ async def get_roster(game_id: str):
 
             char_id_val = str(char.get("id") or char.get("character_id") or "")
             meta_db = get_meta_data(game_id)
-            char_meta = meta_db.get(char_id_val, {})
+            c_name = char.get("name") or ""
+            char_meta = meta_db.get(char_id_val) or meta_db.get(c_name.lower()) or meta_db.get(normalize_char_name(c_name)) or {}
             if char_meta:
                 char["substats_priority"] = char_meta.get("substats_priority", [])
                 char["recommended_weights"] = extract_weights_from_guide(game_id, char_id_val)
