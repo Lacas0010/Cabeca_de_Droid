@@ -608,8 +608,10 @@ async function loadRoster(gameId) {
             // Filtra a lista local baseado na busca de texto, elemento E raridade
             const filtered = roster.filter(char => {
                 const matchesSearch = char.name.toLowerCase().includes(searchQuery);
-                const matchesElement = activeElementFilter === "all" || 
-                    (char.element || "").toLowerCase() === activeElementFilter.toLowerCase();
+                const charElemLower = (char.element || "").toLowerCase();
+                const filterLower = activeElementFilter.toLowerCase();
+                const isLumifluxMatch = filterLower === "lumiflux" && (charElemLower === "lumiflux" || charElemLower === "element_300" || charElemLower === "element 300");
+                const matchesElement = activeElementFilter === "all" || charElemLower === filterLower || isLumifluxMatch;
                 
                 let matchesRarity = true;
                 if (activeRarityFilter !== "all") {
@@ -2060,7 +2062,10 @@ const ELEMENT_LABELS = {
         "fire": "Fogo",
         "ice": "Gelo",
         "physical": "Físico",
-        "wind": "Vento"
+        "wind": "Vento",
+        "lumiflux": "Lumiflux",
+        "element_300": "Lumiflux",
+        "element 300": "Lumiflux"
     },
     "hsr": {
         "fire": "Fogo",
@@ -2083,8 +2088,15 @@ const ELEMENT_LABELS = {
 };
 
 function getElementLabel(gameId, elementKey) {
+    if (!elementKey) return "Desconhecido";
+    const kLower = elementKey.toLowerCase().trim();
+    if (kLower === "element_300" || kLower === "element 300" || kLower === "lumiflux") return "Lumiflux";
+    if (kLower === "element_100" || kLower === "element 100") return "Físico";
+    if (kLower === "element_200" || kLower === "element 200") return "Fogo";
+    if (kLower === "element_400" || kLower === "element 400") return "Elétrico";
+    if (kLower === "element_500" || kLower === "element 500") return "Éter";
     const gameLabels = ELEMENT_LABELS[gameId] || {};
-    return gameLabels[elementKey] || elementKey.charAt(0).toUpperCase() + elementKey.slice(1);
+    return gameLabels[kLower] || elementKey.charAt(0).toUpperCase() + elementKey.slice(1);
 }
 
 function renderRosterCharts() {
@@ -2161,7 +2173,8 @@ function renderGameCharts(gameId) {
         "physical": "#9ca3af", "físico": "#9ca3af",
         "quantum": "#c084fc", "quântico": "#c084fc",
         "imaginary": "#fde047", "imaginário": "#fde047",
-        "ether": "#f472b6", "éter": "#f472b6"
+        "ether": "#db2777", "éter": "#db2777",
+        "lumiflux": "#f472b6", "element_300": "#f472b6", "element 300": "#f472b6"
     };
     
     const elementData = Object.keys(elements).map(el => {
