@@ -1,0 +1,82 @@
+# Python virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python cache and bytecode
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Playwright dependencies
+.playwright/
+*playwright*.log
+
+# Operating system files
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# IDE and Project configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Local application secrets, databases and configurations
+config.json
+cookies.json
+user_data_google/
+chave de api.txt
+hoyo_app.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Automatically generated reports, meta JSONs, and markdown files
+hsr/
+zzz/
+genshin/
+
+# Ignore remote avatars, weapons, relics, and element icons downloaded at runtime
+assets/avatars/
+assets/weapons/
+assets/relics/
+assets/elements/
+
+# Legacy generated files and temporary logs
+meus_personagens_hsr.md
+meta_e_tierlists_atual.md
+meta_endgame_report.md
+todos_os_guias_prydwen.md
+guias_prydwen/
+moc_payload_dump.txt
+*.log
+
+# Local environment variables
+.env
+.env.local
+.env.*
+
+# Python check/test scripts and scratch files
+check_*.py
+test_*.py
+scratch_*.py
+print_roster.py
+scratch/
+game8_temp.json
+*.tmp
+
+# PyInstaller build outputs and generated spec files
+dist/
+build/
+*.spec
+*.exe
+
+# Generated assets
+assets/logo.ico

@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabeça de Droid</title>
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Marked.js para renderizar Markdown do RAG -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- FontAwesome 6 Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- CSS Estilos Customizados -->
+    <link rel="stylesheet" href="style.css?v=3.3">
+    <link rel="icon" type="image/svg+xml" href="/assets/logo.svg">
+</head>
+<body>
+    <div class="background-glow">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+    <div class="app-container">
+        <!-- OVERLAY DO MENU MOBILE -->
+        <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+        <!-- SIDEBAR DE NAVEGAÇÃO -->
+        <aside id="sidebar" class="sidebar">
+            <div class="brand">
+                <div class="brand-icon">
+                    <img src="/assets/logo.svg" class="brand-logo" alt="Logo">
+                </div>
+                <div class="brand-text">
+                    <h1>Cabeça de Droid</h1>
+                    <span>Groq RAG Engine v3.0</span>
+                </div>
+                <button id="sidebar-close-btn" class="sidebar-close-btn" aria-label="Fechar Menu">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+                <button id="sidebar-toggle-desktop-btn" class="sidebar-toggle-desktop-btn" title="Alternar Menu">
+                    <i class="fa-solid fa-bars-staggered"></i>
+                </button>
+            </div>
+            
+            <nav class="nav-menu">
+                <button class="nav-btn active" data-tab="home">
+                    <img src="/assets/home_icon.png" class="tab-icon" alt="Home" style="filter: hue-rotate(220deg);">
+                    <span class="nav-text">Início</span>
+                </button>
+                <button class="nav-btn" data-tab="zzz">
+                    <img src="/assets/zzz_icon.png" class="tab-icon" alt="ZZZ">
+                    <span class="nav-text">ZZZ (Zenless Zone Zero)</span>
+                </button>
+                <button class="nav-btn" data-tab="genshin">
+                    <img src="/assets/genshin_icon.png" class="tab-icon" alt="Genshin">
+                    <span class="nav-text">Genshin Impact</span>
+                </button>
+                <button class="nav-btn" data-tab="hsr">
+                    <img src="/assets/hsr_icon.png" class="tab-icon" alt="HSR">
+                    <span class="nav-text">Honkai: Star Rail</span>
+                </button>
+                <button class="nav-btn" data-tab="chat">
+                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Chat">
+                    <span class="nav-text">Chat IA Meta</span>
+                </button>
+                <button class="nav-btn" data-tab="config">
+                    <img src="/assets/config_icon.png" class="tab-icon" alt="Config">
+                    <span class="nav-text">Configurações</span>
+                </button>
+                <button class="nav-btn" data-tab="help">
+                    <img src="/assets/chat_icon.png" class="tab-icon" alt="Help" style="filter: hue-rotate(140deg);">
+                    <span class="nav-text">Como Usar</span>
+                </button>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="btn-sync-all" class="sync-all-btn">
+                    <i class="fa-solid fa-rotate"></i>
+                    <span class="btn-text">Sincronização Global</span>
+                </button>
+                <div class="conn-status">
+                    <span id="api-status-dot" class="status-dot offline"></span>
+                    <span id="api-status-text" class="status-text">Buscando status...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- CONTEÚDO PRINCIPAL -->
+        <main class="main-content">
+            <!-- CABEÇALHO MOBILE -->
+            <header class="mobile-header">
+                <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Abrir Menu">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+                <div class="mobile-brand">
+                    <img src="/assets/logo.svg" class="mobile-logo" alt="Logo">
+                    <span class="mobile-brand-title">Cabeça de Droid</span>
+                </div>
+            </header>
+
+            <!-- ABA INÍCIO (DASHBOARD GLOBAL) -->
+            <section id="tab-home" class="tab-pane active">
+                <div class="game-banner home-banner">
+                    <div class="banner-overlay">
+                        <div class="banner-title-row">
+                            <img src="/assets/logo.svg" class="banner-logo" alt="Logo">
+                            <h2>Cabeça de Droid</h2>
+                        </div>
+                        <p>Visão geral unificada das suas contas da HoYoverse e otimização IA</p>
+                    </div>
+                </div>
+                
+                <div class="overview-grid">
+                    <!-- Card ZZZ -->
+                    <div class="overview-card game-card zzz-theme">
+                        <div class="overview-header">
+                            <img src="/assets/zzz_icon.png" class="game-logo" alt="ZZZ">
+                            <div>
+                                <h3>Zenless Zone Zero</h3>
+                                <span id="ov-zzz-uid" class="uid-label">Não sincronizado</span>
+                            </div>
+                        </div>
+                        <div class="overview-stats">
+                            <div class="stat-box">
+                                <span class="stat-title">Nível Conta</span>
+                                <strong id="ov-zzz-lvl" class="stat-number zzz-text">N/A</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-title">Agentes</span>
+                                <strong id="ov-zzz-chars" class="stat-number zzz-text">0</strong>
+                            </div>
+                        </div>
+                        <button onclick="document.querySelector('[data-tab=zzz]').click()" class="secondary-btn card-action-btn">Ir para Galeria ZZZ ➔</button>
+                    </div>
+
+                    <!-- Card Genshin -->
+                    <div class="overview-card game-card genshin-theme">
+                        <div class="overview-header">
+                            <img src="/assets/genshin_icon.png" class="game-logo" alt="Genshin">
+                            <div>
+                                <h3>Genshin Impact</h3>
+                                <span id="ov-genshin-uid" class="uid-label">Não sincronizado</span>
+                            </div>
+                        </div>
+                        <div class="overview-stats">
+                            <div class="stat-box">
+                                <span class="stat-title">Nível Conta</span>
+                                <strong id="ov-genshin-lvl" class="stat-number genshin-text">N/A</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-title">Personagens</span>
+                                <strong id="ov-genshin-chars" class="stat-number genshin-text">0</strong>
+                            </div>
+                        </div>
+                        <button onclick="document.querySelector('[data-tab=genshin]').click()" class="secondary-btn card-action-btn">Ir para Galeria Genshin ➔</button>
+                    </div>
+
+                    <!-- Card HSR -->
+                    <div class="overview-card game-card hsr-theme">
+                        <div class="overview-header">
+                            <img src="/assets/hsr_icon.png" class="game-logo" alt="HSR">
+                            <div>
+                                <h3>Honkai: Star Rail</h3>
+                                <span id="ov-hsr-uid" class="uid-label">Não sincronizado</span>
+                            </div>
+                        </div>
+                        <div class="overview-stats">
+                            <div class="stat-box">
+                                <span class="stat-title">Nível Conta</span>
+                                <strong id="ov-hsr-lvl" class="stat-number hsr-text">N/A</strong>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-title">Personagens</span>
+                                <strong id="ov-hsr-chars" class="stat-number hsr-text">0</strong>
+                            </div>
+                        </div>
+                        <button onclick="document.querySelector('[data-tab=hsr]').click()" class="secondary-btn card-action-btn">Ir para Galeria HSR ➔</button>
+                    </div>
+                </div>
+
+                <!-- NOVO: Monitor de Energia em Tempo Real -->
+                <div class="overview-card energy-monitor-card">
+                    <h3><i class="fa-solid fa-battery-three-quarters"></i> Monitor de Energia em Tempo Real</h3>
+                    <p class="section-desc">Poder, Resina e Bateria sincronizados da sua conta HoYoLAB</p>
+                    <div class="energy-grid">
+                        <div class="energy-box genshin-theme">
+                            <div class="energy-circle-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring__background" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+                                    <circle id="ring-genshin" class="progress-ring__circle" stroke="var(--color-genshin)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                                </svg>
+                                <div id="lbl-genshin-val" class="energy-value">0/200</div>
+                            </div>
+                            <span class="energy-label">Resina (Genshin)</span>
+                            <span id="lbl-genshin-time" class="energy-time">Aguardando...</span>
+                        </div>
+                        <div class="energy-box hsr-theme">
+                            <div class="energy-circle-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring__background" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+                                    <circle id="ring-hsr" class="progress-ring__circle" stroke="var(--color-hsr)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                                </svg>
+                                <div id="lbl-hsr-val" class="energy-value">0/240</div>
+                            </div>
+                            <span class="energy-label">Poder de Desbravamento</span>
+                            <span id="lbl-hsr-time" class="energy-time">Aguardando...</span>
+                        </div>
+                        <div class="energy-box zzz-theme">
+                            <div class="energy-circle-container">
+                                <svg class="progress-ring" width="80" height="80">
+                                    <circle class="progress-ring__background" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40"/>
+                                    <circle id="ring-zzz" class="progress-ring__circle" stroke="var(--color-zzz)" stroke-width="6" fill="transparent" r="34" cx="40" cy="40" stroke-dasharray="213.6" stroke-dashoffset="213.6"/>
+                                </svg>
+                                <div id="lbl-zzz-val" class="energy-value">0/240</div>
+                            </div>
+                            <span class="energy-label">Bateria (ZZZ)</span>
+                            <span id="lbl-zzz-time" class="energy-time">Aguardando...</span>
+                        </div>
+                    </div>
+                </div>
+
+
+
+                <div class="overview-card start-guide-card">
+                    <h3><i class="fa-solid fa-wand-magic-sparkles"></i> Começando com o Assistente de IA</h3>
+                    <p>
+                        O Cabeça de Droid consolidou suas contas locais. Vá na aba <strong>Chat IA Meta</strong> no menu lateral para conversar diretamente com o <strong>GPT-OSS 120B</strong>! Ele tem conhecimento de todos os personagens do seu roster e do metagame updated de builds.
+                    </p>
+                    <div class="button-group">
+                        <button onclick="document.querySelector('[data-tab=chat]').click()" class="primary-btn guide-btn"><i class="fa-solid fa-comments"></i> Abrir Chat com IA</button>
+                        <button onclick="document.querySelector('[data-tab=help]').click()" class="secondary-btn guide-btn"><i class="fa-solid fa-book-open"></i> Ver Tutorial de Uso</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA ZZZ -->
+            <section id="tab-zzz" class="tab-pane">
+                <div class="game-banner banner-zzz">
+                    <div class="banner-overlay">
+                        <h2>Zenless Zone Zero</h2>
+                        <p>Perfil de Agentes e análise de discos em tempo real</p>
+                    </div>
+                </div>
+                
+                <div class="control-panel">
+                    <div class="sync-config">
+                        <label><input type="checkbox" id="sync-roster-zzz" checked> Roster</label>
+                        <label><input type="checkbox" id="sync-guides-zzz" checked> Guias</label>
+                        <label><input type="checkbox" id="sync-meta-zzz" checked> Metagame</label>
+                        <button class="action-btn sync-game-btn" data-game="zzz">Sincronizar ZZZ</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="Buscar agente..." class="search-input" data-game="zzz">
+                    </div>
+                </div>
+
+                <div id="sync-logger-zzz" class="sync-logger" style="display: none;">
+                    <div class="logger-header">
+                        <span class="logger-title">Sincronizando ZZZ...</span>
+                        <span class="logger-percentage">0%</span>
+                    </div>
+                    <div class="logger-progress"><div class="logger-progress-bar"></div></div>
+                    <div class="logger-message">Aguardando...</div>
+                    <details class="logger-details">
+                        <summary>Ver logs de execução</summary>
+                        <pre class="logger-terminal"></pre>
+                    </details>
+                </div>
+
+                <!-- Estatísticas do Roster ZZZ -->
+                <div class="overview-card charts-card game-charts-card" id="charts-zzz" style="margin-bottom: 20px; display: none;">
+                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Zenless Zone Zero)</h3>
+                    <p class="section-desc">Distribuição de elementos e especialidades/raridade dos seus agentes ativos (Nv >= 50)</p>
+                    <div class="charts-container">
+                        <div class="chart-box">
+                            <h4>Atributos/Elementos (Agentes ZZZ)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-elements-zzz" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-elements-zzz" class="chart-legend"></div>
+                            </div>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Raridade/Classe (Classe S vs Classe A)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-rarity-zzz" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-rarity-zzz" class="chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gallery-container">
+                    <!-- Filtro de Elemento -->
+                    <div class="element-filters" data-game="zzz" style="margin-bottom: 8px;">
+                        <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
+                        <button class="filter-btn" data-filter="fire"><img src="/assets/elements/zzz_fire.png" class="filter-elem-icon"> Fogo</button>
+                        <button class="filter-btn" data-filter="electric"><img src="/assets/elements/zzz_electric.png" class="filter-elem-icon"> Elétrico</button>
+                        <button class="filter-btn" data-filter="ice"><img src="/assets/elements/zzz_ice.png" class="filter-elem-icon"> Gelo</button>
+                        <button class="filter-btn" data-filter="physical"><img src="/assets/elements/zzz_physical.png" class="filter-elem-icon"> Físico</button>
+                        <button class="filter-btn" data-filter="ether"><img src="/assets/elements/zzz_ether.png" class="filter-elem-icon"> Éter</button>
+                        <button class="filter-btn" data-filter="lumiflux"><img src="/assets/elements/zzz_lumiflux.png" class="filter-elem-icon" onerror="this.style.display='none';"> Lumiflux</button>
+                    </div>
+                    <div class="element-filters rarity-filters" data-game="zzz" style="margin-bottom: 16px;">
+                        <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
+                        <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Rank S</button>
+                        <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #a78bfa;"></i> Rank A</button>
+                    </div>
+                    <div id="gallery-zzz" class="character-gallery">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA GENSHIN -->
+            <section id="tab-genshin" class="tab-pane">
+                <div class="game-banner banner-genshin">
+                    <div class="banner-overlay">
+                        <h2>Genshin Impact</h2>
+                        <p>Visualização de artefatos e builds ativas da Enka Network</p>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="sync-config">
+                        <label><input type="checkbox" id="sync-roster-genshin" checked> Roster</label>
+                        <label><input type="checkbox" id="sync-guides-genshin" checked> Guias</label>
+                        <label><input type="checkbox" id="sync-meta-genshin" checked> Metagame</label>
+                        <button class="action-btn sync-game-btn" data-game="genshin">Sincronizar Genshin</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="Buscar personagem..." class="search-input" data-game="genshin">
+                    </div>
+                </div>
+
+                <div id="sync-logger-genshin" class="sync-logger" style="display: none;">
+                    <div class="logger-header">
+                        <span class="logger-title">Sincronizando Genshin...</span>
+                        <span class="logger-percentage">0%</span>
+                    </div>
+                    <div class="logger-progress"><div class="logger-progress-bar"></div></div>
+                    <div class="logger-message">Aguardando...</div>
+                    <details class="logger-details">
+                        <summary>Ver logs de execução</summary>
+                        <pre class="logger-terminal"></pre>
+                    </details>
+                </div>
+
+                <!-- Estatísticas do Roster Genshin -->
+                <div class="overview-card charts-card game-charts-card" id="charts-genshin" style="margin-bottom: 20px; display: none;">
+                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Genshin Impact)</h3>
+                    <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
+                    <div class="charts-container">
+                        <div class="chart-box">
+                            <h4>Elementos (Personagens Genshin)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-elements-genshin" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-elements-genshin" class="chart-legend"></div>
+                            </div>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Raridade (Personagens 5★ vs 4★)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-rarity-genshin" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-rarity-genshin" class="chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gallery-container">
+                    <!-- Filtro de Elemento -->
+                    <div class="element-filters" data-game="genshin" style="margin-bottom: 8px;">
+                        <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
+                        <button class="filter-btn" data-filter="pyro"><img src="/assets/elements/genshin_pyro.png" class="filter-elem-icon"> Pyro</button>
+                        <button class="filter-btn" data-filter="hydro"><img src="/assets/elements/genshin_hydro.png" class="filter-elem-icon"> Hydro</button>
+                        <button class="filter-btn" data-filter="anemo"><img src="/assets/elements/genshin_anemo.png" class="filter-elem-icon"> Anemo</button>
+                        <button class="filter-btn" data-filter="electro"><img src="/assets/elements/genshin_electro.png" class="filter-elem-icon"> Electro</button>
+                        <button class="filter-btn" data-filter="dendro"><img src="/assets/elements/genshin_dendro.png" class="filter-elem-icon"> Dendro</button>
+                        <button class="filter-btn" data-filter="cryo"><img src="/assets/elements/genshin_cryo.png" class="filter-elem-icon"> Cryo</button>
+                        <button class="filter-btn" data-filter="geo"><img src="/assets/elements/genshin_geo.png" class="filter-elem-icon"> Geo</button>
+                    </div>
+                    <div class="element-filters rarity-filters" data-game="genshin" style="margin-bottom: 16px;">
+                        <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
+                        <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> 5★ Lendário</button>
+                        <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> 4★ Épico</button>
+                    </div>
+                    <div id="gallery-genshin" class="character-gallery">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA HSR -->
+            <section id="tab-hsr" class="tab-pane">
+                <div class="game-banner banner-hsr">
+                    <div class="banner-overlay">
+                        <h2>Honkai: Star Rail</h2>
+                        <p>Metagame, Cones de Luz e status do Caos da Memória</p>
+                    </div>
+                </div>
+
+                <div class="control-panel">
+                    <div class="sync-config">
+                        <label><input type="checkbox" id="sync-roster-hsr" checked> Roster</label>
+                        <label><input type="checkbox" id="sync-guides-hsr" checked> Guias</label>
+                        <label><input type="checkbox" id="sync-meta-hsr" checked> Metagame</label>
+                        <button class="action-btn sync-game-btn" data-game="hsr">Sincronizar HSR</button>
+                    </div>
+                    <div class="search-box">
+                        <input type="text" placeholder="Buscar personagem..." class="search-input" data-game="hsr">
+                    </div>
+                </div>
+
+                <div id="sync-logger-hsr" class="sync-logger" style="display: none;">
+                    <div class="logger-header">
+                        <span class="logger-title">Sincronizando HSR...</span>
+                        <span class="logger-percentage">0%</span>
+                    </div>
+                    <div class="logger-progress"><div class="logger-progress-bar"></div></div>
+                    <div class="logger-message">Aguardando...</div>
+                    <details class="logger-details">
+                        <summary>Ver logs de execução</summary>
+                        <pre class="logger-terminal"></pre>
+                    </details>
+                </div>
+
+                <!-- Estatísticas do Roster HSR -->
+                <div class="overview-card charts-card game-charts-card" id="charts-hsr" style="margin-bottom: 20px; display: none;">
+                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Honkai: Star Rail)</h3>
+                    <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
+                    <div class="charts-container">
+                        <div class="chart-box">
+                            <h4>Elementos (Personagens HSR)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-elements-hsr" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-elements-hsr" class="chart-legend"></div>
+                            </div>
+                        </div>
+                        <div class="chart-box">
+                            <h4>Raridade (Personagens 5★ vs 4★)</h4>
+                            <div class="chart-visual-wrapper">
+                                <svg id="chart-rarity-hsr" viewBox="0 0 200 200" width="100%" height="150">
+                                    <!-- Desenhado via JS -->
+                                </svg>
+                                <div id="legend-rarity-hsr" class="chart-legend"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gallery-container">
+                    <!-- Filtro de Elemento -->
+                    <div class="element-filters" data-game="hsr" style="margin-bottom: 8px;">
+                        <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
+                        <button class="filter-btn" data-filter="fire"><img src="/assets/elements/hsr_fire.png" class="filter-elem-icon"> Fogo</button>
+                        <button class="filter-btn" data-filter="ice"><img src="/assets/elements/hsr_ice.png" class="filter-elem-icon"> Gelo</button>
+                        <button class="filter-btn" data-filter="physical"><img src="/assets/elements/hsr_physical.png" class="filter-elem-icon"> Físico</button>
+                        <button class="filter-btn" data-filter="wind"><img src="/assets/elements/hsr_wind.png" class="filter-elem-icon"> Vento</button>
+                        <button class="filter-btn" data-filter="lightning"><img src="/assets/elements/hsr_lightning.png" class="filter-elem-icon"> Raio</button>
+                        <button class="filter-btn" data-filter="quantum"><img src="/assets/elements/hsr_quantum.png" class="filter-elem-icon"> Quantum</button>
+                        <button class="filter-btn" data-filter="imaginary"><img src="/assets/elements/hsr_imaginary.png" class="filter-elem-icon"> Imaginário</button>
+                    </div>
+                    <div class="element-filters rarity-filters" data-game="hsr" style="margin-bottom: 16px;">
+                        <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
+                        <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> 5★ Lendário</button>
+                        <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> 4★ Épico</button>
+                    </div>
+                    <div id="gallery-hsr" class="character-gallery">
+                        <!-- Renderizado via JS -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA CHAT IA RAG -->
+            <section id="tab-chat" class="tab-pane">
+                <div class="chat-layout-wrapper" style="display: flex; gap: 15px; height: 100%;">
+                    <div class="chat-container" style="flex: 2; display: flex; flex-direction: column;">
+                        <div class="chat-header">
+                            <h2>Cabeça de Droid</h2>
+                            <div class="chat-context">
+                                <label for="chat-context-select">Contexto do RAG:</label>
+                                <select id="chat-context-select">
+                                    <option value="todos">Todos os Jogos (Global)</option>
+                                    <option value="zzz">Zenless Zone Zero</option>
+                                    <option value="genshin">Genshin Impact</option>
+                                    <option value="hsr">Honkai: Star Rail</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div id="chat-messages" class="chat-messages-area" style="flex: 1; overflow-y: auto;">
+                            <div class="chat-msg assistant">
+                                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                                <div class="msg-content">
+                                    <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
+                                    <ul>
+                                        <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
+                                        <li><em>"Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"</em></li>
+                                        <li><em>"Quais são os melhores discos para o agente que escolhi no ZZZ?"</em></li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-area">
+                            <textarea id="chat-input" placeholder="Pergunte sobre seus personagens, times ou builds..." rows="1"></textarea>
+                            <button id="chat-send-btn" class="chat-send-btn">Enviar ➔</button>
+                        </div>
+                    </div>
+                    
+                    <!-- PAINEL SELECIONADOR DE TIMES (TEAM BUILDER) -->
+                    <div class="team-builder-panel" style="flex: 1; min-width: 280px; max-width: 380px; display: flex; flex-direction: column; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 16px; backdrop-filter: blur(12px); padding: 16px;">
+                        <div class="panel-header" style="margin-bottom: 12px;">
+                            <h3 style="margin-top: 0; margin-bottom: 6px; font-size: 15px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;"><i class="fa-solid fa-users" style="color: #a78bfa;"></i> Montador de Times</h3>
+                            <p style="margin: 0; font-size: 11px; color: var(--text-secondary); line-height: 1.4;">Selecione o jogo e monte sua equipe abaixo para que a IA analise a sinergia e recomende melhorias de combate.</p>
+                        </div>
+                        
+                        <div class="panel-select-game" style="margin-bottom: 12px;">
+                            <select id="team-game-select" style="width: 100%; padding: 8px; font-size: 13px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">
+                                <option value="hsr">Honkai: Star Rail</option>
+                                <option value="genshin">Genshin Impact</option>
+                                <option value="zzz">Zenless Zone Zero</option>
+                            </select>
+                        </div>
+                        
+                        <div id="team-characters-grid" class="team-chars-grid" style="flex: 1; overflow-y: auto; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; background: rgba(0,0,0,0.15); padding: 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 12px;">
+                            <!-- Inserido via JS -->
+                        </div>
+                        
+                        <div class="panel-actions">
+                            <button id="team-analyze-btn" class="primary-btn" style="width: 100%; font-size: 13px; padding: 10px; border-radius: 8px; display: flex; justify-content: center; align-items: center; gap: 6px;" disabled><i class="fa-solid fa-brain"></i> Analisar Sinergia</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA CONFIGURAÇÕES -->
+            <section id="tab-config" class="tab-pane">
+                <div class="config-container">
+                    <h2>Configurações do Aplicativo</h2>
+                    <p class="config-desc">As chaves de API e credenciais de login são armazenadas localmente no seu computador e não são enviadas a servidores externos.</p>
+                    
+                    <div class="config-section">
+                        <h3><i class="fa-solid fa-key"></i> API Key do Groq</h3>
+                        <p class="section-desc">Insira a chave da API do Groq (começando com <code>gsk_</code>). Você pode obter uma gratuitamente no console oficial da Groq.</p>
+                        <div class="input-group">
+                            <input type="password" id="cfg-groq-key" placeholder="gsk_..." class="config-input">
+                        </div>
+                    </div>
+                    
+                    <div class="config-section">
+                        <h3><i class="fa-solid fa-cookie-bite"></i> Cookies de Sessão HoYoLAB</h3>
+                        <p class="section-desc">Insira os cookies da sua sessão HoYoLAB no formato <code>ltuid_v2=xxx; ltoken_v2=yyy;</code> ou utilize o login automático abaixo.</p>
+                        <div class="input-group">
+                            <textarea id="cfg-hoyolab-cookies" placeholder="Cole os cookies de sessão aqui..." class="config-input config-textarea"></textarea>
+                        </div>
+                        <div class="btn-row">
+                            <button id="btn-auto-login" class="secondary-btn"><i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright</button>
+                            <span class="btn-info">Isto abrirá uma janela do navegador temporária para você logar no site da HoYoLAB.</span>
+                        </div>
+                    </div>
+                    
+                    <div class="config-section">
+                        <h3><i class="fa-regular fa-calendar-check"></i> Resgate de Recompensas Diárias HoYoLAB</h3>
+                        <p class="section-desc">O aplicativo realiza automaticamente o resgate de recompensas diárias a cada 6 horas. Você também pode forçar o resgate manual abaixo.</p>
+                        <div class="btn-row">
+                            <button id="btn-manual-checkin" class="secondary-btn" style="border-color: var(--color-success); color: #4ade80;"><i class="fa-solid fa-gift"></i> Resgatar Recompensas Agora</button>
+                            <span class="btn-info">Executa o check-in diário para todas as contas vinculadas.</span>
+                        </div>
+                        <div id="checkin-logs-container" style="display: none; margin-top: 12px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid var(--border-color); font-size: 12px;">
+                            <strong style="display: block; margin-bottom: 6px;">Logs de check-in de hoje:</strong>
+                            <ul id="checkin-logs-list" style="margin-left: 16px; color: var(--text-secondary); line-height: 1.6; list-style: disc;">
+                                <!-- Preenchido via JS -->
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="config-actions">
+                        <button id="btn-save-config" class="primary-btn">Salvar Configurações</button>
+                        <span id="config-save-status" class="status-msg"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA COMO USAR -->
+            <section id="tab-help" class="tab-pane">
+                <div class="config-container">
+                    <h2><i class="fa-solid fa-book-open"></i> Como usar o Cabeça de Droid</h2>
+                    <p class="config-desc" style="margin-bottom: 20px;">O <strong>Cabeça de Droid v3.0</strong> foi desenvolvido para otimizar e acompanhar suas contas nos jogos da HoYoverse (<em>Zenless Zone Zero</em>, <em>Genshin Impact</em> e <em>Honkai: Star Rail</em>) combinando Inteligência Artificial (Groq RAG), Armazenamento Relacional (SQLite), Autenticação via Playwright e Cálculo Matemático de Builds via Roll Value (RV).</p>
+                    
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-key"></i> 1. Autenticação e Login Automático HoYoLAB</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Configurações</strong>, clique em <strong>Login Automático (Navegador)</strong>. O sistema abre uma janela do Chromium via Playwright para capturar com segurança os cookies de sessão (<code>ltuid_v2</code> e <code>ltoken_v2</code>), salvando-os localmente no arquivo <code>cookies.json</code>. Você também pode colar manualmente seus cookies ou chave da API Groq.</p>
+                    </div>
+                    
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #3b82f6; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-rotate"></i> 2. Sincronização em Segundo Plano & Raspagem de Metagame</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas de cada jogo (<strong>ZZZ</strong>, <strong>Genshin</strong> ou <strong>HSR</strong>), selecione os módulos desejados e clique em <strong>Sincronizar</strong>:</p>
+                        <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
+                            <li style="margin-bottom: 4px;"><strong>Roster & Equipamentos:</strong> Busca personagens obtidos, níveis, constelações/eidolons/cinemas, relíquias equipadas e recordes de Endgame (Abismo Espiral, MoC e Shiyu Defense). Suporta roupas cosméticas de Genshin via Enka.Network.</li>
+                            <li style="margin-bottom: 4px;"><strong>Guias e Metagame Automatizados:</strong> Extrai tier lists e builds recomendadas do <strong>Prydwen</strong> (HSR e ZZZ), <strong>Game8</strong> (Genshin) e bibliotecas de guias em texto do <strong>KeqingMains (KQM)</strong> para contextualizar a IA.</li>
+                            <li style="margin-bottom: 4px;"><strong>Motor de IDs Universais & Apelidos:</strong> O sistema normaliza automaticamente variações de nomes e apelidos (ex: <em>Himeko - Nova</em> &rarr; ID <code>1510</code>, <em>Tingyun - Fugue</em> &rarr; ID <code>1225</code>).</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> 3. Inspetor de Builds, Sistema de Notas RV & Exportação em Card</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 8px;">Ao clicar em qualquer personagem na galeria, o painel lateral exibe a análise profunda da build:</p>
+                        <ul class="section-desc" style="line-height: 1.5; font-size: 12px; margin-left: 20px;">
+                            <li style="margin-bottom: 6px;"><strong>Pontuação Roll Value (RV):</strong> Avalia o valor real dos substatus comparado aos rolagens máximas de peças 5★/S-Rank, com crédito base de 40% para Atributo Principal recomendado (<em>Main Stat Forgiveness</em>) e peso parcial para atributos brutos (Flat).
+                                <br><strong style="color: #10b981;">Benchmark Dinâmico:</strong> O limite de 9.0 rolagens teóricas ajusta-se dinamicamente conforme a quantidade de substatus prioritários que sobraram pós-exclusão do Atributo Principal (1, 2, 3 ou 4+), garantindo notas precisas e sem penalizações irreais para suportes (ex: peças de ER/EM).
+                                <br><strong style="color: #38bdf8;">Ponderação Proporcional por Slot:</strong> A nota final divide a pontuação pelo total de slots do jogo (6 em HSR/ZZZ, 5 em Genshin), atribuindo 0 pontos a peças vazias.
+                                <br><strong style="color: #f59e0b;">SSS (&ge;90%):</strong> Perfeita | <strong style="color: #ec4899;">SS (75-89%):</strong> Excelente | <strong style="color: #f59e0b;">S (60-74%):</strong> Muito Boa | <strong style="color: #8b5cf6;">A (45-59%):</strong> Boa | <strong style="color: #3b82f6;">B (30-44%):</strong> Mediana | <strong style="color: #6b7280;">C/D (&lt;30%):</strong> A Otimizar.
+                            </li>
+                            <li style="margin-bottom: 4px;"><strong>Comparador Meta Lado a Lado:</strong> Contrasta a arma e conjuntos equipados contra os benchmarks do metagame.</li>
+                            <li style="margin-bottom: 4px;"><strong>Gerador de Card Imagem:</strong> Clique no botão <em>Card Imagem</em> para exportar uma captura HD em imagem da build completa do personagem.</li>
+                        </ul>
+                    </div>
+
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #a78bfa; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wand-magic-sparkles"></i> 4. Otimizador IA & Calculadora de Ascensão</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Ferramentas inteligentes diretamente no painel do personagem:</p>
+                        <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
+                            <li style="margin-bottom: 4px;"><strong>Otimizador de Build IA:</strong> Botão <em>Analisar</em> aciona a IA Groq para gerar 3 sugestões imediatas e acionáveis de substituição de atributos ou relíquias.</li>
+                            <li style="margin-bottom: 4px;"><strong>Calculadora de Materiais de Ascensão:</strong> Escolha o nível atual e desejado (ex: Nv. 1 ao 90) para calcular exatamente a quantidade de Livros de XP, Mora/Créditos/Dennys e Materiais de Elevação necessários.</li>
+                        </ul>
+                    </div>
+
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-bolt"></i> 5. Daily Notes em Tempo Real & Auto-Check-in (6 horas)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">O topo de cada aba exibe em tempo real o status de Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR), com cronômetro de recarga completa e progresso de expedições.</p>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-top: 4px;"><strong>Auto-Check-in Diário:</strong> O servidor FastAPI executa o resgate das recompensas do HoYoLAB em segundo plano a cada 6 horas (além do disparo no arranque). O histórico é salvo no SQLite e pode ser consultado na aba Configurações.</p>
+                    </div>
+
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #38bdf8; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-comments"></i> 6. Analisador de Times & Chat Coach IA (Groq RAG Local)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas <strong>Times</strong> e <strong>Chat IA Meta</strong>, o assistente utiliza RAG local (Llama 3.3 70B Versatile via Groq) com gerenciamento de orçamento de tokens para responder com respostas em tempo real (Server-Sent Events streaming), analisando apenas seus personagens de nível alto (70+) e os guias locais do metagame.</p>
+                    </div>
+
+                    <div class="config-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
+                        <h3 style="font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-file-export"></i> Alternativa: Consulta via Google NotebookLM</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Se preferir não utilizar chaves da Groq, todos os dados sincronizados são salvos em arquivos Markdown estruturados nas pastas <code>genshin/</code>, <code>hsr/</code> e <code>zzz/</code> (ex: <code>roster_hsr.md</code> ou <code>todos_os_guias_hsr.md</code>). Você pode fazer upload desses arquivos diretamente no Google NotebookLM.</p>
+                        <button onclick="window.open('https://notebooklm.google.com/', '_blank')" class="secondary-btn">Abrir Google NotebookLM ➔</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- OVERLAY DO INSPECTOR MOBILE -->
+        <div id="inspector-overlay" class="sidebar-overlay inspector-overlay"></div>
+
+        <!-- COLLAPSIBLE BUILD INSPECTOR (INSPEÇÃO DE PERSONAGEM SIDEBAR) -->
+        <aside id="build-inspector" class="build-inspector">
+            <div class="inspector-header">
+                <div class="inspector-title">
+                    <img id="ins-avatar" src="" alt="Avatar" class="ins-char-avatar">
+                    <div>
+                        <h3 id="ins-name">Personagem</h3>
+                        <span id="ins-meta">Rank • Elemento • Nv. 90</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-export-card" title="Gerar Imagem da Build em alta resolução" style="padding: 6px 12px; font-size: 11px; font-weight: 600; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3)); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+                        <i class="fa-solid fa-camera"></i> Card Imagem
+                    </button>
+                    <button id="btn-close-inspector" class="close-inspector-btn">✕</button>
+                </div>
+            </div>
+            
+            <!-- Abas do Inspetor de Build -->
+            <div class="inspector-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.15); padding: 0 16px;">
+                <button id="ins-tab-build" class="ins-tab-btn active" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid var(--color-hsr); color: var(--text-primary); font-size: 13px; font-weight: 500; cursor: pointer;"><i class="fa-solid fa-shield-halved"></i> Sua Build</button>
+                <button id="ins-tab-compare" class="ins-tab-btn" style="flex: 1; padding: 10px 0; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-secondary); font-size: 13px; font-weight: 500; cursor: pointer;"><i class="fa-solid fa-scale-balanced"></i> Comparador Meta</button>
+            </div>
+            
+            <div class="inspector-body">
+                <!-- PAINEL 1: DETALHES DA SUA BUILD -->
+                <div id="panel-build" class="inspector-panel active">
+                    <!-- NOVO: Otimizador IA de Build -->
+                    <div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
+                        <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                            <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-brain"></i> Otimizador de Build IA</h4>
+                            <button id="btn-ai-optimize" class="action-btn" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
+                        </div>
+                        <div id="ins-ai-loading" class="ai-opt-loading" style="display: none; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
+                            <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
+                            <span>Avaliando Roster & Metagame...</span>
+                        </div>
+                        <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding-left: 20px;"></ul>
+                    </div>
+                    
+                    <!-- NOVO: Calculadora de Ascensão -->
+                    <div class="inspector-card ascension-calc-card" style="border: 1px solid rgba(14, 165, 233, 0.25); background: rgba(14, 165, 233, 0.03); border-radius: 12px; margin-bottom: 12px; padding: 12px;">
+                        <h4 style="margin-top: 0; margin-bottom: 8px; color: #38bdf8; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-calculator"></i> Calculadora de Ascensão</h4>
+                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                            <label for="ins-asc-target" style="font-size: 11px; color: var(--text-secondary);">Nível Alvo:</label>
+                            <select id="ins-asc-target" style="font-size: 11px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 2px 4px;">
+                                <option value="80">Nível 80</option>
+                                <option value="90">Nível 90</option>
+                                <option value="70">Nível 70</option>
+                                <option value="60">Nível 60</option>
+                            </select>
+                            <button id="btn-ins-asc-calculate" class="action-btn" style="padding: 3px 8px; font-size: 11px; background: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.3); color: #38bdf8; border-radius: 6px; cursor: pointer; margin-left: auto;">Calcular</button>
+                        </div>
+                        <div id="ins-asc-results" style="display: none; font-size: 11px; color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.05); line-height: 1.5;">
+                            <!-- Inserido dinamicamente via JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 1: Equipamento / Arma -->
+                    <div class="inspector-card">
+                        <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Equipamento / Arma</h4>
+                        <div class="weapon-detail">
+                            <img id="ins-weapon-icon" src="" alt="Arma" class="weapon-icon">
+                            <div>
+                                <strong id="ins-weapon-name">Nome do Equipamento</strong>
+                                <span id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 2: Conjuntos de Relíquias -->
+                    <div class="inspector-card">
+                        <h4><i class="fa-solid fa-gem"></i> Conjuntos de Relíquias / Artefatos</h4>
+                        <div id="ins-relic-sets" class="relic-sets-list">
+                            <!-- Inserido dinamicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 3: Status Finais de Combate (Combat Stats) -->
+                    <div class="inspector-card">
+                        <h4><i class="fa-solid fa-chart-simple"></i> Status Finais de Combate <span id="ins-stats-count" style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-left: 6px;"></span></h4>
+                        <div id="ins-stats-grid" class="stats-grid">
+                            <!-- Inserido dinamicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- NOVO: Comparador de Metas Gerais (Benchmarks) -->
+                    <div id="ins-benchmarks-card" class="inspector-card" style="display: none; border: 1px solid rgba(245, 158, 11, 0.25); background: rgba(245, 158, 11, 0.03); border-radius: 12px; margin-bottom: 12px; padding: 12px;">
+                        <h4 style="margin-top: 0; margin-bottom: 8px; color: #f59e0b; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-gauge-high"></i> Comparador de Metas Gerais</h4>
+                        <div id="ins-benchmarks-list" style="font-size: 11px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; line-height: 1.5;">
+                            <!-- Inserido dinamicamente via JS -->
+                        </div>
+                    </div>
+                    
+                    <!-- Seção 4: Detalhamento de Peças -->
+                    <div class="inspector-card">
+                        <h4><i class="fa-solid fa-compact-disc"></i> Detalhamento de Peças e Substatus</h4>
+                        <div id="ins-relic-pieces" class="relic-pieces-list">
+                            <!-- Inserido dinamicamente -->
+                        </div>
+                    </div>
+                </div>
+ 
+                <!-- PAINEL 2: COMPARADOR SIDE-BY-SIDE -->
+                <div id="panel-compare" class="inspector-panel" style="display: none;">
+                    <div class="inspector-card">
+                        <h4><i class="fa-solid fa-scale-balanced"></i> Comparação Lado a Lado</h4>
+                        <p class="section-desc" style="margin-bottom: 12px;">Seus equipamentos e atributos comparados com as recomendações de metagame.</p>
+                        <div class="comparison-table-wrapper">
+                            <table class="comparison-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                <thead>
+                                    <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-align: left;">
+                                        <th style="padding: 6px 0;">Item/Atributo</th>
+                                        <th style="padding: 6px 0;">Sua Build</th>
+                                        <th style="padding: 6px 0; text-align: right;">Meta Alvo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ins-comparison-rows">
+                                    <!-- Preenchido via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- MODAL DE EXPORTAÇÃO DA IMAGEM DA BUILD -->
+    <div id="modal-export-card" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-card-content" style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; width: 92%; max-width: 960px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);">
+            <div class="modal-card-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02);">
+                <h3 style="margin: 0; font-size: 16px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-camera" style="color: #f59e0b;"></i> Card da Build (Imagem Pronta para Compartilhar)
+                </h3>
+                <button id="btn-close-export-modal" style="background: none; border: none; color: var(--text-secondary); font-size: 18px; cursor: pointer;">✕</button>
+            </div>
+            
+            <div class="modal-card-body" style="padding: 20px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 16px; background: rgba(0,0,0,0.2);">
+                <div id="export-card-status" style="font-size: 12px; color: #a855f7; display: flex; align-items: center; gap: 8px;">
+                    <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
+                    <span>Gerando imagem em alta resolução...</span>
+                </div>
+                
+                <div class="export-preview-wrapper" style="width: 100%; display: flex; justify-content: center; overflow: hidden; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                    <img id="export-preview-img" src="" alt="Build Card Preview" style="width: 100%; height: auto; display: block; border-radius: 12px;">
+                </div>
+            </div>
+            
+            <div class="modal-card-footer" style="padding: 14px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02);">
+                <span style="font-size: 11px; color: var(--text-muted);">Dica: Você pode copiar a imagem e colar direto no Discord!</span>
+                <div style="display: flex; gap: 10px;">
+                    <button id="btn-copy-card-img" class="secondary-btn" style="padding: 8px 14px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-copy"></i> Copiar Imagem
+                    </button>
+                    <button id="btn-download-card-img" class="primary-btn" style="padding: 8px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">
+                        <i class="fa-solid fa-download"></i> Baixar PNG
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Lógica do Frontend -->
+    <script src="app.js?v=4.0"></script>
+</body>
+</html>
