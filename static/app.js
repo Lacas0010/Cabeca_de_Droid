@@ -1096,10 +1096,14 @@ function getSlotIcon(slotName) {
                 const safePieceFn = getSafeFileName(piece.name);
                 const cachedPiecePath = `/assets/relics/${gameId}/${safePieceFn}`;
                 
-                const hasValidUrl = equivalentLocalPiece && equivalentLocalPiece.icon && equivalentLocalPiece.icon.startsWith("http");
-                const iconSrc = hasValidUrl ? equivalentLocalPiece.icon : cachedPiecePath;
+                const rawIcon = (equivalentLocalPiece && equivalentLocalPiece.icon) ? equivalentLocalPiece.icon : (piece.icon || cachedPiecePath);
                 
-                const iconHtml = `<img class="relic-piece-icon" src="${iconSrc}" onerror="this.onerror=null; this.outerHTML='<div class=\\'relic-piece-icon-fallback\\' style=\\'width:36px; height:36px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;\\'>${slotIconHtml}</div>';" alt="${piece.slot}">`;
+                const iconHtml = `
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden; position: relative;">
+                        <img class="relic-piece-icon" src="${rawIcon}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width: 100%; height: 100%; object-fit: cover;" alt="${piece.slot || ''}">
+                        <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 16px;">${slotIconHtml}</div>
+                    </div>
+                `;
 
                 
                 // Formata os substatus em grid de 2 colunas para melhor legibilidade
