@@ -1,8 +1,11 @@
 import os
 import re
 import json
+import random
+import datetime
 import unicodedata
 from typing import Dict, List, Tuple, Optional, Any
+
 
 # Expressões regulares pré-compiladas para alta performance
 RE_MULTIPLE_SPACES = re.compile(r'\s+')
@@ -250,6 +253,19 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             norm_name = normalize_char_name(name)
             if norm_name not in master_map:
                 master_map[norm_name] = cid
+
+    if game_id == "genshin":
+        try:
+            from genshin.models.genshin.constants import CHARACTER_NAMES
+            for lang in ["en-us", "pt-pt"]:
+                if lang in CHARACTER_NAMES:
+                    for cid, db_char in CHARACTER_NAMES[lang].items():
+                        c_str = str(cid)
+                        n_lower = db_char.name.lower().strip()
+                        master_map[n_lower] = c_str
+                        master_map[normalize_char_name(n_lower)] = c_str
+        except Exception:
+            pass
 
     aliases_pt_to_en = {
         "cisne negro": "black swan",
@@ -703,21 +719,27 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
                 break
                 
         rec_mains = guide_mains.get(slot_key, []) if slot_key else []
+        elemental_stats = {
+            "pyro_dmg", "hydro_dmg", "electro_dmg", "cryo_dmg", "anemo_dmg", "geo_dmg", "dendro_dmg", "physical_dmg",
+            "fire_dmg", "ice_dmg", "lightning_dmg", "electric_dmg", "wind_dmg", "ether_dmg", "quantum_dmg", "imaginary_dmg"
+        }
+        
         if rec_mains:
             norm_rec = [normalize_stat_name(m) for m in rec_mains]
-            if "anything" in norm_rec or "any" in norm_rec or "qualquer" in norm_rec or any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec):
+            if "anything" in norm_rec or "any" in norm_rec or "qualquer" in norm_rec or any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec) or main_stat_norm in elemental_stats:
                 main_stat_tier = 1.0
             elif weights.get(main_stat_norm, 0.0) > 0.3:
                 main_stat_tier = 0.6
             else:
                 main_stat_tier = 0.0
         else:
-            if weights.get(main_stat_norm, 0.0) > 0.35:
+            if weights.get(main_stat_norm, 0.0) > 0.35 or main_stat_norm in elemental_stats:
                 main_stat_tier = 1.0
             elif weights.get(main_stat_norm, 0.0) > 0.0:
                 main_stat_tier = 0.6
             else:
                 main_stat_tier = 0.0
+
 
     # 3. Pontuação de Substatus (RV - Roll Value) com suporte a Procs
     sorted_priorities = [k for k, v in sorted(weights.items(), key=lambda item: item[1], reverse=True) if v > 0.0]
@@ -1102,3 +1124,348 @@ def calculate_ascension(game_id, current_lvl, target_lvl):
         "boss_items_needed": boss_diff,
         "boss_item_name": boss_item_name
     }
+
+
+# ==========================================
+# 1. SIMULADOR MONTE CARLO DE GACHA / WISH
+# ==========================================
+import random
+
+def simulate_gacha_probabilities(game_id: str, current_pity: int, is_guaranteed: bool, pulls_available: int, target_copies: int = 1, num_simulations: int = 10000) -> dict:
+    """
+    Executa uma Simulação Monte Carlo para calcular a chance real (%) de obter N cópias do personagem alvo
+    com base no Pity atual, Garantido (50/50) e Desejos/Tiros disponíveis.
+    """
+    game_id = (game_id or "genshin").lower().strip()
+    current_pity = max(0, min(current_pity, 89))
+    target_copies = max(1, min(target_copies, 7))  # C0/E0 até C6/E6
+    pulls_available = max(0, pulls_available)
+    
+    # Parâmetros por jogo
+    soft_pity_start = 74 if game_id in ["genshin", "hsr"] else 75
+    max_pity = 90
+    base_rate = 0.006  # 0.6%
+    soft_pity_increment = 0.06
+    
+    successful_runs = 0
+    total_pulls_spent_list = []
+    copies_obtained_distribution = {i: 0 for i in range(target_copies + 1)}
+    
+    for _ in range(num_simulations):
+        pity = current_pity
+        guaranteed = is_guaranteed
+        copies = 0
+        pulls_left = pulls_available
+        pulls_spent = 0
+        
+        while pulls_left > 0 and copies < target_copies:
+            pulls_left -= 1
+            pulls_spent += 1
+            pity += 1
+            
+            # Cálculo de probabilidade do tiro atual
+            if pity < soft_pity_start:
+                chance = base_rate
+            else:
+                chance = base_rate + (pity - soft_pity_start + 1) * soft_pity_increment
+            chance = min(1.0, chance)
+            
+            if random.random() < chance:
+                # Tirou um 5★ / Rank S
+                pity = 0
+                if guaranteed or random.random() < 0.5:
+                    copies += 1
+                    guaranteed = False
+                else:
+                    guaranteed = True
+                    
+        copies_obtained_distribution[copies] = copies_obtained_distribution.get(copies, 0) + 1
+        if copies >= target_copies:
+            successful_runs += 1
+            total_pulls_spent_list.append(pulls_spent)
+            
+    success_rate = (successful_runs / num_simulations) * 100.0
+    avg_pulls_needed = round(sum(total_pulls_spent_list) / len(total_pulls_spent_list), 1) if total_pulls_spent_list else None
+    
+    # Converter distribuição em porcentagens
+    dist_pct = {f"{k} cópia(s)": round((v / num_simulations) * 100, 1) for k, v in copies_obtained_distribution.items()}
+    
+    return {
+        "success_rate": round(success_rate, 1),
+        "target_copies": target_copies,
+        "pulls_available": pulls_available,
+        "current_pity": current_pity,
+        "is_guaranteed": is_guaranteed,
+        "avg_pulls_spent": avg_pulls_needed,
+        "distribution": dist_pct,
+        "num_simulations": num_simulations
+    }
+
+
+# ==========================================
+# 2. CENTRAL DE FARM INTELIGENTE DIÁRIO
+# ==========================================
+FARM_CALENDAR = {
+    "genshin": {
+        0: {"days": "Segunda-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro"]},
+        1: {"days": "Terça-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora"]},
+        2: {"days": "Quarta-feira", "talents": ["Balada", "Ouro", "Luz", "Justiça"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico"]},
+        3: {"days": "Quinta-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro"]},
+        4: {"days": "Sexta-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora"]},
+        5: {"days": "Sábado", "talents": ["Balada", "Ouro", "Luz", "Justiça"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico"]},
+        6: {"days": "Domingo", "talents": ["Todos os materiais abertos"], "weapons": ["Todos os materiais abertos"]}
+    },
+    "hsr": {
+        0: {"days": "Segunda-feira", "note": "Reset Semanal do Universo Simulado e Eco da Guerra (3x recompensas)."},
+        1: {"days": "Terça-feira", "note": "Calyx de Traço & Ascensão com drop normal."},
+        2: {"days": "Quarta-feira", "note": "Foco recomendado: Farm de Túnel de Relíquias."},
+        3: {"days": "Quinta-feira", "note": "Calyx de Traço & Ascensão."},
+        4: {"days": "Sexta-feira", "note": "Foco recomendado: Ornamentos Planares (Universo Divergente/Simulado)."},
+        5: {"days": "Sábado", "note": "Farm livre de Relíquias e Materiais de Ascensão."},
+        6: {"days": "Domingo", "note": "Preparação de Energia para o Reset de Segunda."}
+    },
+    "zzz": {
+        0: {"days": "Segunda-feira", "note": "Reset Semanal do Notorious Hunt (3x Caça aos Chefes de Dano)."},
+        1: {"days": "Terça-feira", "note": "Foco recomendado: HIA Club - Chips de Atributo de Especialidade."},
+        2: {"days": "Quarta-feira", "note": "Foco recomendado: HIA Club - Certificados de Promoção."},
+        3: {"days": "Quinta-feira", "note": "Foco recomendado: Drive Disc Tuning & Limpeza de Rótulo."},
+        4: {"days": "Sexta-feira", "note": "HIA Club - Materiais de Agente."},
+        5: {"days": "Sábado", "note": "Farm livre de Discos e Materiais na Cavidade Zero."},
+        6: {"days": "Domingo", "note": "Preparação de Bateria para o Reset Semanal."}
+    }
+}
+
+GAME_MAX_LEVELS = {
+    "genshin": 90,
+    "hsr": 80,
+    "zzz": 60
+}
+
+def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_week: int = None, selected_chars: list = None) -> dict:
+    """
+    Retorna o calendário de farm do dia atual e gera sugestões personalizadas de gasto de energia
+    com base nos personagens selecionados da conta que possuem RV < S ou níveis pendentes.
+    """
+    game_id = (game_id or "genshin").lower().strip()
+    max_level = GAME_MAX_LEVELS.get(game_id, 90)
+    
+    if day_of_week is None:
+        day_of_week = datetime.datetime.now().weekday()  # 0=Segunda, 6=Domingo
+        
+    game_calendar = FARM_CALENDAR.get(game_id, {}).get(day_of_week, {"days": "Hoje", "note": "Farm Livre"})
+    
+    recommendations = []
+    all_roster_names = []
+    
+    if roster:
+        # Lista de todos os nomes para o frontend alimentar a caixa de seleção
+        all_roster_names = [char.get("name") for char in roster if char.get("name")]
+        
+        # Se selected_chars for fornecido (não vazio), filtrar apenas os personagens selecionados pelo usuário
+        filtered_roster = roster
+        if selected_chars and isinstance(selected_chars, list) and len(selected_chars) > 0:
+            selected_set = set(selected_chars)
+            filtered_roster = [c for c in roster if c.get("name") in selected_set]
+            
+        for char in filtered_roster:
+            name = char.get("name", "Desconhecido")
+            grade = char.get("overall_grade", char.get("build_grade", "N/A"))
+            rv = char.get("overall_score", char.get("build_score", 0.0))
+            level = char.get("level", 1)
+            element = char.get("element", "")
+            icon = char.get("icon", "")
+            
+            if grade in ["B", "C", "D", "A"] or level < max_level:
+                reason = f"Build nota {grade} (RV: {rv:.1f}%)" if level >= max_level else f"Nível atual {level}/{max_level}"
+                
+                # Detalhamento de Itens Necessários
+                items_needed = {}
+                
+                # 1. Materiais de Ascensão de Nível (se nível atual < max_level)
+                if level < max_level:
+                    asc_calc = calculate_ascension(game_id, level, max_level)
+                    if asc_calc:
+                        items_needed["ascension"] = asc_calc
+                else:
+                    items_needed["ascension"] = None
+                    
+                # 2. Livros de Talento / Traços / Chips de Especialidade
+                if game_id == "genshin":
+                    talents_info = f"Domínio de Talento ({' / '.join(game_calendar.get('talents', []))})" if game_calendar.get('talents') else "Domínio de Livros de Talento"
+                elif game_id == "hsr":
+                    talents_info = "Calyx de Traço & Materiais de Ascensão de Caminho"
+                else:
+                    talents_info = "HIA Club: Chips de Atributo de Especialidade & Certificados de Promoção"
+                items_needed["talents"] = talents_info
+                
+                # 3. Relíquias / Artefatos / Discos
+                relic_info = f"Farm de Relíquias/Artefatos/Discos (Otimizar Nota de Build {grade})"
+                items_needed["relics"] = relic_info
+                
+                recommendations.append({
+                    "name": name,
+                    "level": level,
+                    "max_level": max_level,
+                    "grade": grade,
+                    "score": rv,
+                    "element": element,
+                    "icon": icon,
+                    "reason": reason,
+                    "items_needed": items_needed,
+                    "action": f"Gastar Resina/Stamina em materiais ou relíquias para {name}"
+                })
+                
+    return {
+        "game_id": game_id,
+        "max_level": max_level,
+        "day_of_week": day_of_week,
+        "calendar_info": game_calendar,
+        "all_roster_names": all_roster_names,
+        "priority_targets": recommendations
+    }
+
+
+# ==========================================
+# 3. ANALISADOR DE RELÍQUIAS LIXO (TRASH FINDER)
+# ==========================================
+def find_trash_relics(game_id: str, relics: list, meta_data: dict) -> dict:
+    """
+    Analisa a lista de relíquias do jogador contra todos os guias de meta.
+    Retorna relíquias que possuem combinação de Atributo Principal + Substatus que NENHUM personagem aproveita.
+    """
+    game_id = (game_id or "genshin").lower().strip()
+    trash_candidates = []
+    good_relics_count = 0
+    
+    # Coletar todas as combinações de Main Stat + Substats prioritários de TODOS os guias
+    all_useful_mains = set()
+    all_useful_subs = set()
+    
+    for char_key, guide in meta_data.items():
+        if isinstance(guide, dict):
+            mains = guide.get("main_stats", {})
+            for slot, m_list in mains.items():
+                if isinstance(m_list, list):
+                    for m in m_list:
+                        all_useful_mains.add(normalize_stat_name(m))
+            subs = guide.get("substats", [])
+            if isinstance(subs, list):
+                for s in subs:
+                    all_useful_subs.add(normalize_stat_name(s))
+                    
+    for relic in relics:
+        name = relic.get("name", "Relíquia Desconhecida")
+        slot = relic.get("slot", "")
+        main_stat = normalize_stat_name(relic.get("main_stat", ""))
+        substats = [normalize_stat_name(s.get("name", "")) for s in relic.get("substats", [])]
+        
+        # Quantos substatus dessa relíquia são úteis globalmente?
+        useful_subs_count = sum(1 for s in substats if s in all_useful_subs or "crit" in s)
+        
+        # Critério de Lixo: Main Stat irrelevante para o slot + 0 ou 1 substatus útil com rolls baixos
+        is_def_flat_heavy = any("def_flat" in s or "hp_flat" in s for s in substats)
+        
+        if (useful_subs_count == 0 and is_def_flat_heavy) or (useful_subs_count <= 1 and main_stat in ["def_pct", "hp_pct"] and "crit_rate" not in substats and "crit_dmg" not in substats):
+            trash_candidates.append({
+                "name": name,
+                "slot": slot,
+                "main_stat": relic.get("main_stat", ""),
+                "substats": [s.get("name", "") for s in relic.get("substats", [])],
+                "reason": "Substatus sem acertos de Crítico/Recarga e atributos irrelevantes para o meta atual.",
+                "recommendation": "Converter em EXP ou Reciclar no Sintetizador"
+            })
+        else:
+            good_relics_count += 1
+            
+    return {
+        "game_id": game_id,
+        "total_analyzed": len(relics),
+        "good_relics_count": good_relics_count,
+        "trash_count": len(trash_candidates),
+        "trash_relics": trash_candidates[:15]  # Top 15 candidatas a lixo
+    }
+
+
+# ==========================================
+# 4. CALCULADORA DE BREAKPOINTS DE STATUS
+# ==========================================
+def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dict:
+    """
+    Avalia se os status atuais de um personagem atingiram os limiares (breakpoints) vitais de combate.
+    """
+    game_id = (game_id or "hsr").lower().strip()
+    breakpoints = []
+    
+    speed = float(stats.get("speed", stats.get("spd", 0.0)))
+    ehr = float(stats.get("ehr", stats.get("effect_hit_rate", 0.0)))
+    er = float(stats.get("er", stats.get("energy_recharge", 0.0)))
+    crit_rate = float(stats.get("crit_rate", stats.get("crit_pct", 0.0)))
+    crit_dmg = float(stats.get("crit_dmg", stats.get("crit_dmg_pct", 0.0)))
+    
+    if game_id == "hsr":
+        # Check Breakpoints de SPD
+        spd_tiers = [
+            (134.0, "134 SPD (2 turnos no Ciclo 1 do MoC/PF)"),
+            (142.0, "142 SPD (5 turnos em 3 Ciclos)"),
+            (156.0, "156 SPD (3 turnos em 2 Ciclos)"),
+            (160.1, "160.1 SPD (4 turnos em 2 Ciclos - Ruan Mei / Sparkle Speed Tier)")
+        ]
+        reached_spd = "Abaixo de 134 (Sem turnos extras)"
+        next_spd = None
+        for tier_val, desc in spd_tiers:
+            if speed >= tier_val:
+                reached_spd = desc
+            elif next_spd is None:
+                next_spd = f"Faltam {tier_val - speed:.1f} de VEL para atingir {desc}"
+                
+        breakpoints.append({
+            "stat": "Velocidade (SPD)",
+            "current": f"{speed:.1f}",
+            "status": reached_spd,
+            "next_goal": next_spd or "Breakpoint Máximo atingido!"
+        })
+        
+        # Check EHR para Debuffers
+        if ehr > 0 or "silver" in char_name.lower() or "pela" in char_name.lower() or "jiaoqiu" in char_name.lower():
+            target_ehr = 67.0 if "silver" in char_name.lower() or "pela" in char_name.lower() else 140.0
+            status_ehr = "✅ 100% de Aplicação de Debuff garantida contra Inimigos Lvl 95" if ehr >= target_ehr else f"⚠️ Risco de Errar Debuff (Alvo: {target_ehr}%)"
+            breakpoints.append({
+                "stat": "Efetividade de Acerto (EHR)",
+                "current": f"{ehr:.1f}%",
+                "status": status_ehr,
+                "next_goal": f"Faltam {max(0.0, target_ehr - ehr):.1f}% de EHR" if ehr < target_ehr else "Meta atingida!"
+            })
+
+    elif game_id == "genshin":
+        # Check ER (Recarga de Energia)
+        target_er = 160.0  # Média global de suporte
+        if "xiangling" in char_name.lower() or "faruzan" in char_name.lower():
+            target_er = 200.0
+        elif "raiden" in char_name.lower() or "yelan" in char_name.lower():
+            target_er = 180.0
+            
+        status_er = "✅ Supremo disponível em todas as rotações sem atraso" if er >= target_er else f"⚠️ Recarga insuficiente para rotações perfeitas (Meta: {target_er}%)"
+        breakpoints.append({
+            "stat": "Recarga de Energia (ER)",
+            "current": f"{er:.1f}%",
+            "status": status_er,
+            "next_goal": f"Faltam {max(0.0, target_er - er):.1f}% de ER" if er < target_er else "Meta atingida!"
+        })
+        
+    # Razão de Crítico
+    if crit_rate > 0 and crit_dmg > 0:
+        ratio = crit_dmg / max(1.0, crit_rate)
+        ideal = "Proporção Ideal 1:2 mantida!" if 1.8 <= ratio <= 2.2 else f"Proporção atual 1:{ratio:.1f} (Ideal é 1:2)"
+        breakpoints.append({
+            "stat": "Taxa/Dano Crítico",
+            "current": f"{crit_rate:.1f}% / {crit_dmg:.1f}%",
+            "status": ideal,
+            "next_goal": "Ajustar capacete ou substatus para aproximação de 1:2" if not (1.8 <= ratio <= 2.2) else "Equilíbrio Perfeito"
+        })
+        
+    return {
+        "char_name": char_name,
+        "game_id": game_id,
+        "breakpoints": breakpoints
+    }
+

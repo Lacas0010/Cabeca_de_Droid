@@ -318,3 +318,12 @@ def get_overview_data() -> Dict[str, Dict[str, Any]]:
                 }
                 
         return overview
+
+def get_all_saved_accounts() -> List[Dict[str, Any]]:
+    """Retorna uma lista de todas as contas salvas no banco de dados."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT uid, game_id, nickname, level, active_days, updated_at FROM game_accounts ORDER BY updated_at DESC")
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+

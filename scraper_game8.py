@@ -8,16 +8,21 @@ from playwright.async_api import async_playwright
 # Importa as ferramentas do motor principal
 from build_calculator import fetch_master_id_list, sanitize_substats
 
-# URL Mestra de todos os personagens de Genshin no Game8
-GAME8_INDEX_URL = "https://game8.co/games/Genshin-Impact/archives/297496"
+# URL Mestra de todos os personagens de Genshin no Game8 (Tier List / Roster Completo)
+GAME8_INDEX_URL = "https://game8.co/games/Genshin-Impact/archives/297465"
 
 def clean_character_name(raw_name: str) -> str:
     """Limpa o nome do Game8 para cruzar com o nosso banco de IDs"""
     name = raw_name.lower().strip()
     
+    # Remove sufixos como " Build", " Guide", " Best Weapons", etc.
+    name = re.sub(r'\s+(build|guide|best|weapons?|artifacts?|teams?|materials?|rarity|tier\s+list).*$', '', name)
+    
     # Tratamentos específicos para aliases populares do Game8
     if "raiden" in name: return "raiden"
     if "tartaglia" in name or "childe" in name: return "tartaglia"
+    if "ayato" in name: return "kamisato ayato"
+    if "itto" in name: return "arataki itto"
     if "yae" in name: return "yae miko"
     if "hu tao" in name: return "hu tao"
     if "kokomi" in name: return "sangonomiya kokomi"
@@ -26,6 +31,8 @@ def clean_character_name(raw_name: str) -> str:
     if "sara" in name and "kujou" in name: return "kujou sara"
     if "yunjin" in name or "yun jin" in name: return "yun jin"
     if "mizuki" in name: return "yumemizuki mizuki"
+    if "wanderer" in name or "scaramouche" in name: return "wanderer"
+    if "traveler" in name or "viajante" in name: return "traveler"
     
     return name
 
@@ -168,7 +175,7 @@ async def get_all_character_urls(page, master_ids, logger_cb=None):
         # Filtra apenas links que vão para guias (archives) e têm nome
         if '/games/Genshin-Impact/archives/' in href and name_raw:
             # Ignora links genéricos que não são de personagens
-            if any(x in name_raw.lower() for x in ["tier list", "build", "guide", "update", "materials", "weapon", "artifact"]):
+            if any(x in name_raw.lower() for x in ["tier list", "build", "guide", "update", "materials", "weapon", "artifact", "map", "codes", "quest", "boss", "story", "comment", "livestream", "version"]):
                 continue
                 
             name_clean = clean_character_name(name_raw)
@@ -323,13 +330,18 @@ async def scrape_genshin_game8_builds(logger_cb=None):
 def run_genshin_game8_builds(logger_cb=None):
     """Invoca o scraper assíncrono em contexto síncrono para integração simples"""
     try:
-        loop = asyncio.get_event_loop()
-        if loop.is_running():
-            return asyncio.ensure_future(scrape_genshin_game8_builds(logger_cb=logger_cb))
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop and loop.is_running():
+            return loop.create_task(scrape_genshin_game8_builds(logger_cb=logger_cb))
         else:
-            return loop.run_until_complete(scrape_genshin_game8_builds(logger_cb=logger_cb))
-    except Exception:
-        return asyncio.run(scrape_genshin_game8_builds(logger_cb=logger_cb))
+            return asyncio.run(scrape_genshin_game8_builds(logger_cb=logger_cb))
+    except Exception as e:
+        print(f"[ERRO] Executando scraper do Game8: {e}")
+        return None
 
 if __name__ == "__main__":
     asyncio.run(scrape_genshin_game8_builds())

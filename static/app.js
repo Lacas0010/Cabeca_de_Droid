@@ -347,29 +347,41 @@ function setupSidebarToggle() {
     }
 }
 
+function closeInspector() {
+    try {
+        const drawer = document.getElementById("inspector-drawer") || document.getElementById("build-inspector");
+        if (drawer) drawer.style.display = "none";
+        const overlay = document.getElementById("inspector-overlay");
+        if (overlay) overlay.style.display = "none";
+    } catch (e) {}
+}
+
 // ==========================================================================
 // GERENCIAMENTO DE ABAS (TABS)
 // ==========================================================================
 function setupTabSwitching() {
     const navButtons = document.querySelectorAll(".nav-btn");
-    const tabPanes = document.querySelectorAll(".tab-pane");
     const sidebar = document.getElementById("sidebar");
     const sidebarOverlay = document.getElementById("sidebar-overlay");
 
     navButtons.forEach(btn => {
         btn.addEventListener("click", () => {
             const targetTab = btn.getAttribute("data-tab");
+            if (!targetTab) return;
             
             navButtons.forEach(b => b.classList.remove("active"));
-            tabPanes.forEach(pane => pane.classList.remove("active"));
+            document.querySelectorAll(".tab-pane").forEach(pane => pane.classList.remove("active"));
             
             btn.classList.add("active");
-            document.getElementById(`tab-${targetTab}`).classList.add("active");
+            const targetPane = document.getElementById(`tab-${targetTab}`);
+            if (targetPane) {
+                targetPane.classList.add("active");
+            } else {
+                console.warn("Aba não encontrada:", `tab-${targetTab}`);
+            }
             
-            // Fecha o inspetor de build ao mudar de aba
             closeInspector();
 
-            // No mobile, fecha a sidebar ao selecionar uma aba
             if (window.innerWidth <= 768) {
                 if (sidebar) sidebar.classList.remove("open");
                 if (sidebarOverlay) sidebarOverlay.classList.remove("active");
@@ -377,6 +389,7 @@ function setupTabSwitching() {
         });
     });
 }
+
 
 // ==========================================================================
 // SISTEMA DE CONFIGURAÇÃO (API KEYS & COOKIES)
@@ -652,15 +665,15 @@ async function loadRoster(gameId) {
                 card.className = `char-card ${elemClass}`;
                 
                 const safeFn = getSafeFileName(char.name);
-                const localAvatarPath = `/assets/avatars/${gameId}/${safeFn}`;
-                
-                // Estrutura o HTML do Card incluindo o ícone do Elemento ao lado do nome
+                const defaultFallback = `/assets/${gameId}_icon.png`;
+                const avatarSrc = char.icon || defaultFallback;
                 card.innerHTML = `
                     <div class="char-avatar-container">
                         ${char.overall_grade ? `<div class="char-grade-badge badge-${char.overall_grade.toLowerCase()}">${char.overall_grade}</div>` : ''}
-                        <img class="char-avatar" src="${localAvatarPath}" onerror="this.onerror=null; this.src='${char.icon || '/assets/config_icon.png'}';" alt="${char.name}">
+                        <img class="char-avatar" src="${avatarSrc}" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
                         <div class="char-rank-badge">${char.rank_str || 'C0'}</div>
                     </div>
+
                     <div class="char-info">
                         <div class="char-name" title="${char.name}">
                             <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" onerror="this.style.display='none';" alt="">
@@ -755,15 +768,18 @@ async function inspectCharacter(gameId, char) {
     const btnBuild = document.getElementById("ins-tab-build");
     if (btnBuild) btnBuild.click();
     
-    // Preenche cabeçalho básico instantaneamente
-    const safeAvatarFn = getSafeFileName(char.name);
-    document.getElementById("ins-avatar").src = `/assets/avatars/${gameId}/${safeAvatarFn}`;
+    const defaultFallback = `/assets/${gameId}_icon.png`;
+    const insAvatarEl = document.getElementById("ins-avatar");
+    if (insAvatarEl) {
+        insAvatarEl.src = char.icon || defaultFallback;
+        insAvatarEl.onerror = function() {
+            this.onerror = null;
+            this.src = defaultFallback;
+        };
+    }
     window.currentInspectorChar = char;
     window.currentInspectorGameId = gameId;
 
-    document.getElementById("ins-avatar").onerror = function() {
-        this.src = char.icon || '/assets/config_icon.png';
-    };
     
     document.getElementById("ins-name").innerText = char.name;
     
@@ -827,8 +843,11 @@ async function inspectCharacter(gameId, char) {
     ascResults.style.display = "none";
     ascResults.innerHTML = "";
     
-    // Configura opções do nível alvo baseadas no jogo (90 para Genshin, 80 para HSR/ZZZ)
-    ascTargetSelect.value = gameId === "genshin" ? "90" : "80";
+    // Configura opções do nível alvo baseadas no jogo (90 para Genshin, 80 para HSR, 60 para ZZZ)
+    const maxGameLvl = gameId === "genshin" ? 90 : (gameId === "hsr" ? 80 : 60);
+    const availableLvls = [90, 80, 70, 60, 50, 40, 30, 20].filter(l => l <= maxGameLvl);
+    ascTargetSelect.innerHTML = availableLvls.map(l => `<option value="${l}">Nível ${l}</option>`).join("");
+    ascTargetSelect.value = maxGameLvl.toString();
     
     btnCalculateAsc.onclick = async () => {
         const targetLvl = parseInt(ascTargetSelect.value);
@@ -1046,6 +1065,22 @@ async function inspectCharacter(gameId, char) {
         // As peças do roster extraído via HoYoLAB local (contêm URLs originais dos ícones de cada peça!)
         const localRelics = char.relics || char.artifacts || char.discs || [];
         
+function getSlotIcon(slotName) {
+    if (!slotName) return '<i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i>';
+    const s = String(slotName).toLowerCase();
+    if (s.includes("flor") || s.includes("bracer") || s.includes("head") || s.includes("cabeça") || s.includes("1"))
+        return '<i class="fa-solid fa-clover" style="color: #10b981;"></i>';
+    if (s.includes("pluma") || s.includes("necklace") || s.includes("mão") || s.includes("hands") || s.includes("2"))
+        return '<i class="fa-solid fa-feather-pointed" style="color: #3b82f6;"></i>';
+    if (s.includes("areia") || s.includes("shoes") || s.includes("corpo") || s.includes("body") || s.includes("3"))
+        return '<i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i>';
+    if (s.includes("cálice") || s.includes("calice") || s.includes("ring") || s.includes("esfera") || s.includes("feet") || s.includes("pés") || s.includes("4") || s.includes("5"))
+        return '<i class="fa-solid fa-wine-glass" style="color: #ec4899;"></i>';
+    if (s.includes("tiara") || s.includes("dress") || s.includes("corda") || s.includes("rope") || s.includes("6"))
+        return '<i class="fa-solid fa-crown" style="color: #a855f7;"></i>';
+    return '<i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i>';
+}
+
         if (build.pieces && build.pieces.length > 0) {
             build.pieces.forEach(piece => {
                 const row = document.createElement("div");
@@ -1057,13 +1092,15 @@ async function inspectCharacter(gameId, char) {
                     (p.name && piece.name && p.name.toLowerCase().includes(piece.name.toLowerCase()))
                 );
                 
-                const slotIcon = getSlotIcon(piece.slot);
+                const slotIconHtml = getSlotIcon(piece.slot);
                 const safePieceFn = getSafeFileName(piece.name);
                 const cachedPiecePath = `/assets/relics/${gameId}/${safePieceFn}`;
                 
-                const iconHtml = equivalentLocalPiece 
-                    ? `<img class="relic-piece-icon" src="${cachedPiecePath}" onerror="this.onerror=null; this.src='${equivalentLocalPiece.icon}';" alt="${piece.slot}">`
-                    : `<span class="relic-piece-icon" style="font-size:20px; display:flex; align-items:center; justify-content:center;">${slotIcon}</span>`;
+                const hasValidUrl = equivalentLocalPiece && equivalentLocalPiece.icon && equivalentLocalPiece.icon.startsWith("http");
+                const iconSrc = hasValidUrl ? equivalentLocalPiece.icon : cachedPiecePath;
+                
+                const iconHtml = `<img class="relic-piece-icon" src="${iconSrc}" onerror="this.onerror=null; this.outerHTML='<div class=\\'relic-piece-icon-fallback\\' style=\\'width:36px; height:36px; border-radius:8px; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;\\'>${slotIconHtml}</div>';" alt="${piece.slot}">`;
+
                 
                 // Formata os substatus em grid de 2 colunas para melhor legibilidade
                 const subsArray = (piece.sub || "").split(",")
@@ -1379,11 +1416,11 @@ function updateTeamBuilderGrid(gameId) {
     }
     
     grid.innerHTML = roster.map(char => {
-        const safeFn = getSafeFileName(char.name);
-        const localAvatarPath = `/assets/avatars/${gameId}/${safeFn}`;
+        const defaultFallback = `/assets/${gameId}_icon.png`;
+        const avatarSrc = char.icon || defaultFallback;
         return `
             <div class="team-char-select-card" data-name="${char.name}" style="position: relative; aspect-ratio: 1; cursor: pointer; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; background: rgba(0,0,0,0.3); transition: all 0.2s;" onclick="toggleCharacterInTeam(this, '${char.name.replace(/'/g, "\\'")}', '${gameId}')">
-                <img src="${localAvatarPath}" onerror="this.onerror=null; this.src='${char.icon || '/assets/config_icon.png'}';" style="width: 100%; height: 100%; object-fit: cover;" alt="${char.name}">
+                <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${defaultFallback}';" style="width: 100%; height: 100%; object-fit: cover;" alt="${char.name}">
                 <div class="char-select-overlay" style="position: absolute; inset: 0; background: rgba(167, 139, 250, 0.45); display: none; align-items: center; justify-content: center; font-size: 14px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
                     <i class="fa-solid fa-check"></i>
                 </div>
@@ -2472,25 +2509,26 @@ async function generateBuildCardCanvas(char, gameId) {
         }
     } else if (gameId === 'genshin') {
         const checkIcon = char.gacha_art || char.icon || splashUrl || "";
-        if (checkIcon.includes("UI_AvatarIcon_")) {
-            if (checkIcon.includes("Costume")) {
-                splashUrl = checkIcon.replace("UI_AvatarIcon_", "UI_Costume_");
+        let rawCheck = decodeURIComponent(checkIcon);
+        rawCheck = rawCheck.replace(/\.png\.png$/i, ".png").replace(/\/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_/, "/$1");
+        if (rawCheck.includes("UI_AvatarIcon_")) {
+            if (rawCheck.includes("Costume")) {
+                const costumeMatch = rawCheck.match(/(UI_AvatarIcon_[A-Za-z0-9_]+Costume[A-Za-z0-9_]*)/);
+                if (costumeMatch) {
+                    const costumeArt = costumeMatch[1].replace("UI_AvatarIcon_", "UI_Costume_");
+                    splashUrl = `/api/proxy_image?url=${encodeURIComponent(`https://enka.network/ui/${costumeArt}.png`)}`;
+                } else {
+                    splashUrl = rawCheck.replace("UI_AvatarIcon_", "UI_Costume_");
+                }
             } else {
-                splashUrl = checkIcon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_");
+                splashUrl = rawCheck.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_");
             }
-        } else if (checkIcon.includes("UI_Costume_")) {
-            splashUrl = checkIcon;
-        } else if (!splashUrl && char.icon && char.icon.includes("UI_AvatarIcon_")) {
-            if (char.icon.includes("Costume")) {
-                splashUrl = char.icon.replace("UI_AvatarIcon_", "UI_Costume_");
-            } else {
-                splashUrl = char.icon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_");
-            }
+        } else if (rawCheck.includes("UI_Costume_")) {
+            splashUrl = rawCheck;
         }
     }
 
-    const safeFn = getSafeFileName(char.name);
-    const localAvatarUrl = `/assets/avatars/${gameId}/${safeFn}`;
+    const defaultFallbackUrl = `/assets/${gameId}_icon.png`;
 
     let isAvatarFallback = false;
     let charImg = await loadImage(splashUrl);
@@ -2508,11 +2546,14 @@ async function generateBuildCardCanvas(char, gameId) {
 
     if (!charImg && gameId === 'genshin' && (char.icon || char.gacha_art)) {
         let enkaGacha = char.gacha_art || char.icon;
-        if (enkaGacha.includes("UI_AvatarIcon_")) {
-            if (enkaGacha.includes("Costume")) {
-                enkaGacha = enkaGacha.replace("UI_AvatarIcon_", "UI_Costume_");
-            } else {
-                enkaGacha = enkaGacha.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_");
+        let rawEnka = decodeURIComponent(enkaGacha);
+        if (rawEnka.includes("UI_AvatarIcon_")) {
+            if (rawEnka.includes("Costume")) {
+                const match = rawEnka.match(/(UI_AvatarIcon_[A-Za-z0-9_]+Costume[A-Za-z0-9_]*)/);
+                if (match) {
+                    const cArt = match[1].replace("UI_AvatarIcon_", "UI_Costume_");
+                    enkaGacha = `/api/proxy_image?url=${encodeURIComponent(`https://enka.network/ui/${cArt}.png`)}`;
+                }
             }
         }
         if (enkaGacha !== char.icon) {
@@ -2521,7 +2562,7 @@ async function generateBuildCardCanvas(char, gameId) {
     }
 
     if (!charImg) {
-        charImg = await loadImage(char.icon) || await loadImage(localAvatarUrl);
+        charImg = await loadImage(char.icon) || await loadImage(defaultFallbackUrl);
         isAvatarFallback = true;
     } else {
         const imgRatio = charImg.width / charImg.height;
@@ -3025,5 +3066,441 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }
     }
+
+    // ==========================================
+    // LOGICA DOS 8 NOVOS MÓDULOS AVANÇADOS
+    // ==========================================
+
+    // Solicitar permissão para Notificações Web
+    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
+        Notification.requestPermission();
+    }
+
+    // 1. SIMULADOR DE GACHA
+    const btnRunGacha = document.getElementById("btn-run-gacha-sim");
+    if (btnRunGacha) {
+        btnRunGacha.addEventListener("click", async () => {
+            const gameId = document.getElementById("gacha-game-select").value;
+            const currentPity = parseInt(document.getElementById("gacha-pity").value) || 0;
+            const isGuaranteed = document.getElementById("gacha-guaranteed").value === "true";
+            const pullsAvailable = parseInt(document.getElementById("gacha-pulls").value) || 0;
+            const targetCopies = parseInt(document.getElementById("gacha-target-copies").value) || 1;
+
+            btnRunGacha.innerText = "Simulando...";
+            btnRunGacha.disabled = true;
+
+            try {
+                const res = await fetch("/api/gacha/calculate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        game_id: gameId,
+                        current_pity: currentPity,
+                        is_guaranteed: isGuaranteed,
+                        pulls_available: pullsAvailable,
+                        target_copies: targetCopies
+                    })
+                });
+                const data = await res.json();
+                
+                document.getElementById("gacha-results-box").style.display = "block";
+                document.getElementById("gacha-chance-lbl").innerText = `Chance de Sucesso: ${data.success_rate}%`;
+                document.getElementById("gacha-avg-lbl").innerText = data.avg_pulls_spent 
+                    ? `Média de Tiros Gastos nas vitórias: ${data.avg_pulls_spent} tiros` 
+                    : "Quantidade de tiros insuficiente para garantir a meta com alta frequência.";
+
+                const distList = document.getElementById("gacha-dist-list");
+                distList.innerHTML = "";
+                for (const [k, v] of Object.entries(data.distribution || {})) {
+                    const row = document.createElement("div");
+                    row.style.display = "flex";
+                    row.style.justifyContent = "space-between";
+                    row.innerHTML = `<span>${k}:</span> <strong style="color:#f59e0b;">${v}%</strong>`;
+                    distList.appendChild(row);
+                }
+            } catch (err) {
+                showToast("Erro ao executar simulação de Gacha.");
+            } finally {
+                btnRunGacha.innerText = "Simular 10.000 Tentativas";
+                btnRunGacha.disabled = false;
+            }
+        });
+    }
+
+    // 2. CENTRAL DE FARM DIÁRIO
+    window.loadFarmData = async (gameId, targetContainerId = "farm-content-body") => {
+        const body = document.getElementById(targetContainerId);
+        if (!body) return;
+        body.innerHTML = "<div style='color:#94a3b8; padding: 20px; text-align: center;'><i class='fa-solid fa-spinner fa-spin'></i> Carregando calendário, lista de personagens e recomendações...</div>";
+        
+        try {
+            const storageKey = `hoyo_farm_selected_${gameId}`;
+            let savedSelected = null;
+            try {
+                const rawSaved = localStorage.getItem(storageKey);
+                if (rawSaved) savedSelected = JSON.parse(rawSaved);
+            } catch(e) {}
+
+            let apiUrl = `/api/farming/today/${gameId}`;
+            if (savedSelected && Array.isArray(savedSelected)) {
+                apiUrl += `?selected_chars=${encodeURIComponent(savedSelected.join(","))}`;
+            }
+
+            const res = await fetch(apiUrl);
+            const data = await res.json();
+            const cal = data.calendar_info || {};
+            const allRosterNames = data.all_roster_names || [];
+            const targets = data.priority_targets || [];
+            const maxLvl = data.max_level || (gameId === "genshin" ? 90 : (gameId === "hsr" ? 80 : 60));
+
+            let selectedSet;
+            if (savedSelected && Array.isArray(savedSelected)) {
+                selectedSet = new Set(savedSelected);
+            } else {
+                selectedSet = new Set(allRosterNames);
+            }
+
+            let html = `
+                <!-- CALENDÁRIO DO DIA -->
+                <div style="padding:14px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:16px; border:1px solid var(--border-color);">
+                    <h4 style="margin:0 0 6px 0; color:#10b981; font-size:15px; display:flex; align-items:center; gap:8px;">
+                        <i class="fa-solid fa-calendar-day"></i> Calendário do Dia (${cal.days || 'Hoje'})
+                        <span style="font-size:11px; background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:12px; margin-left:auto;">Nv. Máximo do Jogo: ${maxLvl}</span>
+                    </h4>
+            `;
+            if (cal.talents) html += `<div style="font-size:13px; color:#cbd5e1; margin-top:4px;"><strong>Livros de Talento / Mat.:</strong> ${cal.talents.join(", ")}</div>`;
+            if (cal.weapons) html += `<div style="font-size:13px; color:#cbd5e1; margin-top:4px;"><strong>Armas / Elevação:</strong> ${cal.weapons.join(", ")}</div>`;
+            if (cal.note) html += `<div style="font-size:13px; color:#f59e0b; margin-top:4px;"><strong>Nota Especial:</strong> ${cal.note}</div>`;
+            html += `</div>`;
+
+            <!-- PAINEL DE SELEÇÃO DE PERSONAGENS -->
+            html += `
+                <div style="padding:12px; background:rgba(15,23,42,0.7); border-radius:10px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.08);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="const el=document.getElementById('${targetContainerId}-char-selector'); el.style.display = el.style.display==='none'?'block':'none';">
+                        <strong style="color:#e2e8f0; font-size:13px; display:flex; align-items:center; gap:6px;">
+                            <i class="fa-solid fa-user-check" style="color:#38bdf8;"></i> Personagens Alvo do Farm (${selectedSet.size}/${allRosterNames.length})
+                        </strong>
+                        <span style="font-size:11px; color:#38bdf8; text-decoration:underline;">⚙️ Selecionar Personagens</span>
+                    </div>
+                    <div id="${targetContainerId}-char-selector" style="display:none; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
+                        <div style="display:flex; gap:10px; margin-bottom:10px;">
+                            <button id="${targetContainerId}-select-all" style="font-size:11px; padding:4px 8px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer;">Selecionar Todos</button>
+                            <button id="${targetContainerId}-deselect-all" style="font-size:11px; padding:4px 8px; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; cursor:pointer;">Desmarcar Todos</button>
+                        </div>
+                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:6px; max-height:160px; overflow-y:auto; padding-right:4px;">
+            `;
+
+            allRosterNames.forEach(cName => {
+                const isChecked = selectedSet.has(cName);
+                html += `
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px; cursor:pointer; user-select:none;">
+                        <input type="checkbox" class="${targetContainerId}-char-cb" data-char="${cName}" ${isChecked ? 'checked' : ''}>
+                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cName}</span>
+                    </label>
+                `;
+            });
+
+            html += `
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            <!-- RECOMENDAÇÕES E DETALHAMENTO DE ITENS -->
+            html += `<h4 style="margin:16px 0 10px 0; color:#f59e0b; font-size:15px; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bullseye"></i> Sugestões e Itens de Farm Detalhados</h4>`;
+
+            if (targets.length === 0) {
+                html += `<div style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; font-size:13px; color:#94a3b8; text-align:center;">Nenhum personagem selecionado precisa de ascensão ou otimização no momento! Todos os selecionados estão no nível máximo (${maxLvl}) e com ótimas notas de build.</div>`;
+            } else {
+                targets.forEach(t => {
+                    const gradeColors = { SSS: "#f59e0b", SS: "#ec4899", S: "#10b981", A: "#3b82f6", B: "#8b5cf6", C: "#6b7280", D: "#ef4444" };
+                    const gColor = gradeColors[t.grade] || "#94a3b8";
+
+                    html += `
+                        <div style="padding:14px; background:rgba(15,23,42,0.8); border-radius:10px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                            <!-- Cabeçalho do Personagem -->
+                            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px; margin-bottom:10px;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    ${t.icon ? `<img src="${t.icon}" style="width:36px; height:36px; border-radius:50%; background:rgba(0,0,0,0.4); object-fit:cover; border:1px solid rgba(255,255,255,0.1);">` : ''}
+                                    <div>
+                                        <strong style="color:#ffffff; font-size:14px;">${t.name}</strong>
+                                        <span style="font-size:11px; color:#94a3b8; margin-left:6px;">(Nv ${t.level}/${t.max_level})</span>
+                                    </div>
+                                </div>
+                                <div style="display:flex; gap:6px; align-items:center;">
+                                    <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:${t.level < t.max_level ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${t.level < t.max_level ? '#f87171' : '#34d399'}; font-weight:600;">
+                                        ${t.level < t.max_level ? `Ascensão Pendente (${t.level}/${t.max_level})` : `Nível Máximo OK (${t.max_level})`}
+                                    </span>
+                                    <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(255,255,255,0.05); color:${gColor}; font-weight:bold; border:1px solid ${gColor}44;">
+                                        Nota ${t.grade} (${t.score.toFixed(1)}%)
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Lista de Itens Detalhados -->
+                            <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
+                    `;
+
+                    if (t.items_needed && t.items_needed.ascension) {
+                        const asc = t.items_needed.ascension;
+                        html += `
+                            <div style="background:rgba(239,68,68,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #ef4444;">
+                                <strong style="color:#f87171; display:block; margin-bottom:3px;">📦 Materiais para Elevação ao Nv. ${t.max_level}:</strong>
+                                <div style="color:#cbd5e1; line-height:1.4;">
+                                    • <strong>XP:</strong> ${asc.xp_needed.toLocaleString()} EXP (~${asc.xp_books_purple} Livros Roxos / EXP)<br>
+                                    • <strong>${asc.currency_name}:</strong> ${asc.currency_needed.toLocaleString()}<br>
+                                    ${asc.boss_items_needed > 0 ? `• <strong>${asc.boss_item_name}:</strong> ${asc.boss_items_needed} unidades` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    if (t.items_needed && t.items_needed.talents) {
+                        html += `
+                            <div style="background:rgba(56,189,248,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #38bdf8;">
+                                <strong style="color:#38bdf8; display:block; margin-bottom:2px;">📚 Talentos & Habilidades (Foco do Dia):</strong>
+                                <div style="color:#cbd5e1;">${t.items_needed.talents}</div>
+                            </div>
+                        `;
+                    }
+
+                    if (t.items_needed && t.items_needed.relics) {
+                        html += `
+                            <div style="background:rgba(245,158,11,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #f59e0b;">
+                                <strong style="color:#f59e0b; display:block; margin-bottom:2px;">🛡️ Relíquias & Equipamentos:</strong>
+                                <div style="color:#cbd5e1;">${t.items_needed.relics}</div>
+                            </div>
+                        `;
+                    }
+
+                    html += `
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            body.innerHTML = html;
+
+            const saveAndReload = () => {
+                const checkedCbs = document.querySelectorAll(`.${targetContainerId}-char-cb:checked`);
+                const newSelected = Array.from(checkedCbs).map(cb => cb.dataset.char);
+                localStorage.setItem(storageKey, JSON.stringify(newSelected));
+                window.loadFarmData(gameId, targetContainerId);
+            };
+
+            document.querySelectorAll(`.${targetContainerId}-char-cb`).forEach(cb => {
+                cb.addEventListener("change", saveAndReload);
+            });
+
+            const btnSelAll = document.getElementById(`${targetContainerId}-select-all`);
+            if (btnSelAll) {
+                btnSelAll.onclick = () => {
+                    localStorage.setItem(storageKey, JSON.stringify(allRosterNames));
+                    window.loadFarmData(gameId, targetContainerId);
+                };
+            }
+
+            const btnDeselAll = document.getElementById(`${targetContainerId}-deselect-all`);
+            if (btnDeselAll) {
+                btnDeselAll.onclick = () => {
+                    localStorage.setItem(storageKey, JSON.stringify([]));
+                    window.loadFarmData(gameId, targetContainerId);
+                };
+            }
+
+        } catch (e) {
+            console.error(e);
+            body.innerHTML = "<div style='color:#ef4444; padding:16px;'>Erro ao carregar dados da Central de Farm.</div>";
+        }
+    };
+
+    document.querySelectorAll(".farm-game-tab, .tab-farm-game-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const containerClass = btn.classList.contains("tab-farm-game-btn") ? ".tab-farm-game-btn" : ".farm-game-tab";
+            const targetContainer = btn.classList.contains("tab-farm-game-btn") ? "tab-farm-content-body" : "farm-content-body";
+            document.querySelectorAll(containerClass).forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            window.loadFarmData(btn.dataset.game, targetContainer);
+        });
+    });
+
+    // 3. RELÍQUIAS LIXO (TRASH FINDER)
+    window.loadTrashRelics = async (gameId, targetContainerId = "trash-relics-body") => {
+        const body = document.getElementById(targetContainerId);
+        if (!body) return;
+        body.innerHTML = "<div style='color:#94a3b8;'>Analisando banco de relíquias contra o metagame...</div>";
+        try {
+            const res = await fetch(`/api/relics/trash/${gameId}`);
+            const data = await res.json();
+            
+            let html = `
+                <div style="padding:14px; background:rgba(239, 68, 68, 0.08); border-radius:10px; margin-bottom:16px; border:1px solid rgba(239, 68, 68, 0.3);">
+                    <div style="font-size:15px; font-weight:bold; color:#ef4444;">${data.trash_count} peça(s) lixo encontradas de ${data.total_analyzed} analisadas</div>
+                    <div style="font-size:12px; color:#94a3b8; margin-top:3px;">Estas peças possuem combinações de Atributos Principais e Substatus que nenhum personagem do meta aproveita.</div>
+                </div>
+            `;
+
+            const trashList = data.trash_relics || [];
+            if (trashList.length === 0) {
+                html += `<div style="font-size:13px; color:#10b981;">Nenhuma relíquia lixo detectada! Seu inventário está limpo.</div>`;
+            } else {
+                trashList.forEach(r => {
+                    html += `
+                        <div style="padding:12px; background:rgba(15,23,42,0.6); border-radius:8px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.06); font-size:13px;">
+                            <div style="display:flex; justify-content:space-between;">
+                                <strong style="color:#ffffff;">${r.name} (${r.slot})</strong>
+                                <span style="color:#ef4444; font-weight:bold; font-size:12px;">${r.main_stat}</span>
+                            </div>
+                            <div style="color:#94a3b8; font-size:12px; margin-top:4px;">Substatus: ${r.substats ? r.substats.join(", ") : "Nenhum"}</div>
+                            <div style="color:#f59e0b; font-size:12px; margin-top:3px;">Motivo: ${r.reason}</div>
+                        </div>
+                    `;
+                });
+            }
+            body.innerHTML = html;
+        } catch (e) {
+            body.innerHTML = "<div style='color:#ef4444;'>Erro ao analisar relíquias lixo.</div>";
+        }
+    };
+
+    document.querySelectorAll(".trash-game-tab, .tab-trash-game-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const containerClass = btn.classList.contains("tab-trash-game-btn") ? ".tab-trash-game-btn" : ".trash-game-tab";
+            const targetContainer = btn.classList.contains("tab-trash-game-btn") ? "tab-trash-relics-body" : "trash-relics-body";
+            document.querySelectorAll(containerClass).forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            window.loadTrashRelics(btn.dataset.game, targetContainer);
+        });
+    });
+
+    // 4. TIER LIST & AUDIT REPORT
+    window.loadAuditReport = async (gameId, targetContainerId = "audit-report-body") => {
+        const body = document.getElementById(targetContainerId);
+        if (!body) return;
+        body.innerHTML = "<div style='color:#94a3b8;'>Gerando relatório de auditoria e Tier List da conta...</div>";
+        try {
+            const res = await fetch(`/api/audit/${gameId}`);
+            const data = await res.json();
+            
+            let html = `
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
+                    <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; text-align:center; border:1px solid var(--border-color);">
+                        <span style="font-size:12px; color:#94a3b8;">Total Personagens</span>
+                        <h3 style="margin:4px 0 0 0; color:#38bdf8; font-size:20px;">${data.total_characters}</h3>
+                    </div>
+                    <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; text-align:center; border:1px solid var(--border-color);">
+                        <span style="font-size:12px; color:#94a3b8;">Média de Nota RV</span>
+                        <h3 style="margin:4px 0 0 0; color:#f59e0b; font-size:20px;">${data.avg_rv}%</h3>
+                    </div>
+                    <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; text-align:center; border:1px solid var(--border-color);">
+                        <span style="font-size:12px; color:#94a3b8;">Builds Nota S/SSS</span>
+                        <h3 style="margin:4px 0 0 0; color:#10b981; font-size:20px;">${data.s_count}</h3>
+                    </div>
+                </div>
+                <h4 style="margin:0 0 12px 0; color:#a855f7; font-size:16px;">🏆 Tier List dos seus Personagens por Nota RV</h4>
+            `;
+
+            const tierColors = { "S+": "#ef4444", "S": "#f59e0b", "A": "#10b981", "B": "#38bdf8", "C/D": "#94a3b8" };
+            const tierList = data.tier_list || {};
+
+            for (const [tier, chars] of Object.entries(tierList)) {
+                html += `
+                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; padding:8px; background:rgba(15,23,42,0.6); border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
+                        <div style="width:44px; height:44px; background:${tierColors[tier] || '#94a3b8'}; color:#000; font-weight:bold; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:16px;">${tier}</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:8px; flex:1;">
+                `;
+                if (!chars || chars.length === 0) {
+                    html += `<span style="font-size:12px; color:#64748b; font-style:italic;">Nenhum personagem</span>`;
+                } else {
+                    chars.forEach(c => {
+                        html += `
+                            <div style="display:flex; align-items:center; gap:6px; padding:6px 10px; background:rgba(255,255,255,0.05); border-radius:6px; font-size:12px;">
+                                <strong style="color:#ffffff;">${c.name}</strong>
+                                <span style="color:${tierColors[tier] || '#f59e0b'}; font-weight:bold;">(${c.score.toFixed(1)}%)</span>
+                            </div>
+                        `;
+                    });
+                }
+                html += `</div></div>`;
+            }
+            body.innerHTML = html;
+        } catch (e) {
+            body.innerHTML = "<div style='color:#ef4444;'>Erro ao gerar auditoria da conta.</div>";
+        }
+    };
+
+    document.querySelectorAll(".audit-game-tab, .tab-audit-game-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const containerClass = btn.classList.contains("tab-audit-game-btn") ? ".tab-audit-game-btn" : ".audit-game-tab";
+            const targetContainer = btn.classList.contains("tab-audit-game-btn") ? "tab-audit-report-body" : "audit-report-body";
+            document.querySelectorAll(containerClass).forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            window.loadAuditReport(btn.dataset.game, targetContainer);
+        });
+    });
+
+    // Conectar eventos dos botões do simulador de gacha na aba dedicada
+    const tabBtnRunGacha = document.getElementById("tab-btn-run-gacha-sim");
+    if (tabBtnRunGacha) {
+        tabBtnRunGacha.addEventListener("click", async () => {
+            const gameId = document.getElementById("tab-gacha-game-select").value;
+            const currentPity = parseInt(document.getElementById("tab-gacha-pity").value) || 0;
+            const isGuaranteed = document.getElementById("tab-gacha-guaranteed").value === "true";
+            const pullsAvailable = parseInt(document.getElementById("tab-gacha-pulls").value) || 0;
+            const targetCopies = parseInt(document.getElementById("tab-gacha-target-copies").value) || 1;
+
+            tabBtnRunGacha.innerText = "Simulando...";
+            tabBtnRunGacha.disabled = true;
+
+            try {
+                const res = await fetch("/api/gacha/calculate", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        game_id: gameId,
+                        current_pity: currentPity,
+                        is_guaranteed: isGuaranteed,
+                        pulls_available: pullsAvailable,
+                        target_copies: targetCopies
+                    })
+                });
+                const data = await res.json();
+                
+                document.getElementById("tab-gacha-results-box").style.display = "block";
+                document.getElementById("tab-gacha-chance-lbl").innerText = `Chance de Sucesso: ${data.success_rate}%`;
+                document.getElementById("tab-gacha-avg-lbl").innerText = data.avg_pulls_spent 
+                    ? `Média de Tiros Gastos nas vitórias: ${data.avg_pulls_spent} tiros` 
+                    : "Quantidade de tiros insuficiente para garantir a meta com alta frequência.";
+
+                const distList = document.getElementById("tab-gacha-dist-list");
+                distList.innerHTML = "";
+                for (const [k, v] of Object.entries(data.distribution || {})) {
+                    const row = document.createElement("div");
+                    row.style.display = "flex";
+                    row.style.justifyContent = "space-between";
+                    row.innerHTML = `<span>${k}:</span> <strong style="color:#f59e0b;">${v}%</strong>`;
+                    distList.appendChild(row);
+                }
+            } catch (err) {
+                showToast("Erro ao executar simulação de Gacha.");
+            } finally {
+                tabBtnRunGacha.innerText = "Executar Simulação de 10.000 Tiros";
+                tabBtnRunGacha.disabled = false;
+            }
+        });
+    }
+
+    // Auto-carregamento inicial de dados quando as abas são ativadas
+    document.querySelectorAll(".nav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const tab = btn.getAttribute("data-tab");
+            if (tab === "farm") window.loadFarmData("genshin", "tab-farm-content-body");
+            if (tab === "trash") window.loadTrashRelics("genshin", "tab-trash-relics-body");
+            if (tab === "audit") window.loadAuditReport("hsr", "tab-audit-report-body");
+        });
+    });
 });
+
+
 
