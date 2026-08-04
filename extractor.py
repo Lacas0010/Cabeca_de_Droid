@@ -86,6 +86,18 @@ def get_genshin_costume_info(costume_id):
         }
     return None
 
+def sanitize_genshin_url(url_str: str) -> str:
+    """Sanitiza URLs de ícones e splash art do Genshin eliminando .png.png e ide_ de URLs do Enka/Yatta."""
+    if not url_str:
+        return ""
+    clean = str(url_str).strip()
+    while clean.endswith(".png.png"):
+        clean = clean[:-4]
+    clean = re.sub(r'/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_', r'/\1', clean)
+    if "gi.yatta.moe/assets/UI/" in clean:
+        clean = clean.replace("https://gi.yatta.moe/assets/UI/", "https://enka.network/ui/")
+    return clean
+
 def get_zzz_prydwen_slug(agent_name: str) -> str:
     """Converte o nome de um Agente do ZZZ para o slug de imagem HD no Prydwen."""
     if not agent_name:
@@ -727,8 +739,38 @@ class GenshinExtractor(BaseExtractor):
         uid = genshin_acc.uid
         
         try:
-            detail = await self.client.get_genshin_detailed_characters(uid)
-            chars = detail.characters
+            try:
+                await genshin.utility.update_characters_any()
+            except Exception:
+                pass
+            basic_chars = await self.client.get_genshin_characters(uid)
+            basic_chars_map = {}
+            if basic_chars:
+                for b in basic_chars:
+                    if hasattr(b, "id"):
+                        try:
+                            b_n = b.name
+                            if b_n:
+                                basic_chars_map[b.id] = b_n
+                        except Exception:
+                            if hasattr(b, "dict"):
+                                try:
+                                    d = b.dict()
+                                    if d.get("name"):
+                                        basic_chars_map[b.id] = d["name"]
+                                except Exception:
+                                    pass
+
+            char_ids = [c.id for c in basic_chars]
+            if char_ids:
+                try:
+                    detail = await self.client.get_genshin_detailed_characters(uid, characters=char_ids)
+                    chars = detail.characters
+                except Exception as det_err:
+                    print(f"[AVISO] Falha ao obter detalhes completos dos personagens de Genshin: {det_err}")
+                    chars = basic_chars
+            else:
+                chars = basic_chars
         except Exception as e:
             if isinstance(e, genshin.errors.DataNotPublic):
                 raise Exception(
@@ -738,6 +780,40 @@ class GenshinExtractor(BaseExtractor):
             else:
                 raise Exception(f"Não foi possível obter dados detalhados para o UID {uid}: {e}")
             
+        def safe_char_name(c) -> str:
+            try:
+                name = c.name
+                if name:
+                    return name
+            except Exception:
+                pass
+            if hasattr(c, "id") and c.id in basic_chars_map and basic_chars_map[c.id]:
+                return basic_chars_map[c.id]
+            if hasattr(c, "dict"):
+                try:
+                    d = c.dict()
+                    if d.get("name"):
+                        return d["name"]
+                except Exception:
+                    pass
+            return f"Personagem_{getattr(c, 'id', 'Desconhecido')}"
+
+        def safe_char_element(c) -> str:
+            try:
+                el = c.element
+                if el:
+                    return str(el)
+            except Exception:
+                pass
+            if hasattr(c, "dict"):
+                try:
+                    d = c.dict()
+                    if d.get("element"):
+                        return str(d["element"])
+                except Exception:
+                    pass
+            return "Anemo"
+
         lines = []
         lines.append("# Relatório de Personagens - Genshin Impact")
         lines.append(f"**UID:** {uid}")
@@ -759,21 +835,29 @@ class GenshinExtractor(BaseExtractor):
         lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
         
         for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
-            stars = "⭐" * char.rarity
-            weapon = f"{char.weapon.name} (Nv. {char.weapon.level}, R{char.weapon.refinement})" if char.weapon else "Nenhuma"
-            
-            # Conta conjuntos de artefatos
-            art_sets = {}
-            for art in char.artifacts:
-                if hasattr(art, "set") and art.set:
-                    art_sets[art.set.name] = art_sets.get(art.set.name, 0) + 1
-                    
-            art_strings = []
-            for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
-                art_strings.append(f"{s_name} ({count} peças)")
-            art_str = " + ".join(art_strings) if art_strings else "Sem artefatos"
-            
-            lines.append(f"| {char.name} | Nv. {char.level} | {stars} | C{char.constellation} | {weapon} | {art_str} |")
+            try:
+                c_name = safe_char_name(char)
+                stars = "⭐" * getattr(char, "rarity", 4)
+                w_name = char.weapon.name if (hasattr(char, "weapon") and char.weapon and hasattr(char.weapon, "name")) else "Nenhuma"
+                w_lvl = getattr(char.weapon, "level", 90) if hasattr(char, "weapon") and char.weapon else 1
+                w_ref = getattr(char.weapon, "refinement", 1) if hasattr(char, "weapon") and char.weapon else 1
+                weapon = f"{w_name} (Nv. {w_lvl}, R{w_ref})" if hasattr(char, "weapon") and char.weapon else "Nenhuma"
+                
+                # Conta conjuntos de artefatos
+                art_sets = {}
+                for art in getattr(char, "artifacts", []):
+                    if hasattr(art, "set") and art.set:
+                        s_n = getattr(art.set, "name", "Desconhecido")
+                        art_sets[s_n] = art_sets.get(s_n, 0) + 1
+                        
+                art_strings = []
+                for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
+                    art_strings.append(f"{s_name} ({count} peças)")
+                art_str = " + ".join(art_strings) if art_strings else "Sem artefatos"
+                
+                lines.append(f"| {c_name} | Nv. {getattr(char, 'level', 1)} | {stars} | C{getattr(char, 'constellation', 0)} | {weapon} | {art_str} |")
+            except Exception as row_err:
+                print(f"[AVISO] Erro ao formatar linha markdown de personagem Genshin: {row_err}")
             
         # Seção de Builds para Personagens Nível 70 ou mais
         lines.append("")
@@ -781,81 +865,87 @@ class GenshinExtractor(BaseExtractor):
         lines.append("")
         
         for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
-            if char.level >= 70:
-                # 1. Arma
-                if char.weapon:
-                    refinement = getattr(char.weapon, "refinement", 1)
-                    weapon_text = f"{char.weapon.name} (Nv. {char.weapon.level}, R{refinement})"
-                else:
-                    weapon_text = "Nenhuma arma equipada"
-                
-                # 2. Artefatos
-                art_sets = {}
-                for art in char.artifacts:
-                    if hasattr(art, "set") and art.set:
-                        art_sets[art.set.name] = art_sets.get(art.set.name, 0) + 1
-                
-                set_strings = []
-                for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
-                    set_strings.append(f"{s_name} ({count} peças)")
-                artifacts_text = " + ".join(set_strings) if set_strings else "Nenhum artefato equipado"
-                
-                # 3. Status Finais
-                properties_list = []
-                if hasattr(char, "selected_properties") and char.selected_properties:
-                    for prop in char.selected_properties:
-                        name = prop.info.name if (hasattr(prop, "info") and prop.info and prop.info.name) else "Atributo"
-                        val = getattr(prop, "final", "")
-                        if name and val:
-                            properties_list.append(f"{name}: {val}")
-                properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
-                
-                # Escreve o bloco do personagem
-                constellation = f"C{char.constellation}"
-                lines.append(f"**Personagem:** {char.name} | **Nível:** {char.level} | **Constelação:** {constellation}")
-                lines.append(f"- **Arma:** {weapon_text}")
-                lines.append(f"- **Artefatos:** {artifacts_text}")
-                lines.append(f"- **Status Finais:** {properties_text}")
-                
-                if hasattr(char, "artifacts") and char.artifacts:
-                    lines.append("\n  **Detalhamento de Peças (Substatus):**")
-                    for art in char.artifacts:
-                        main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
-                        if main_prop:
-                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                            main_stat = f"{m_name} ({m_val})"
-                        else:
-                            main_stat = "Desconhecido"
+            if getattr(char, "level", 0) >= 70:
+                try:
+                    c_name = safe_char_name(char)
+                    # 1. Arma
+                    if hasattr(char, "weapon") and char.weapon:
+                        refinement = getattr(char.weapon, "refinement", 1)
+                        weapon_text = f"{char.weapon.name} (Nv. {char.weapon.level}, R{refinement})"
+                    else:
+                        weapon_text = "Nenhuma arma equipada"
+                    
+                    # 2. Artefatos
+                    art_sets = {}
+                    for art in getattr(char, "artifacts", []):
+                        if hasattr(art, "set") and art.set:
+                            s_n = getattr(art.set, "name", "Desconhecido")
+                            art_sets[s_n] = art_sets.get(s_n, 0) + 1
+                    
+                    set_strings = []
+                    for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
+                        set_strings.append(f"{s_name} ({count} peças)")
+                    artifacts_text = " + ".join(set_strings) if set_strings else "Nenhum artefato equipado"
+                    
+                    # 3. Status Finais
+                    properties_list = []
+                    if hasattr(char, "selected_properties") and char.selected_properties:
+                        for prop in char.selected_properties:
+                            name = prop.info.name if (hasattr(prop, "info") and prop.info and prop.info.name) else "Atributo"
+                            val = getattr(prop, "final", "")
+                            if name and val:
+                                properties_list.append(f"{name}: {val}")
+                    properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
+                    
+                    # Escreve o bloco do personagem
+                    constellation = f"C{getattr(char, 'constellation', 0)}"
+                    lines.append(f"**Personagem:** {c_name} | **Nível:** {getattr(char, 'level', 1)} | **Constelação:** {constellation}")
+                    lines.append(f"- **Arma:** {weapon_text}")
+                    lines.append(f"- **Artefatos:** {artifacts_text}")
+                    lines.append(f"- **Status Finais:** {properties_text}")
+                    
+                    if hasattr(char, "artifacts") and char.artifacts:
+                        lines.append("\n  **Detalhamento de Peças (Substatus):**")
+                        for art in char.artifacts:
+                            main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
+                            if main_prop:
+                                m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                                m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                                main_stat = f"{m_name} ({m_val})"
+                            else:
+                                main_stat = "Desconhecido"
+                                
+                            substats_str = "Sem substatus"
+                            sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
+                            if sub_props:
+                                subs = []
+                                for sub in sub_props:
+                                    s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                    s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                    subs.append(f"{s_name}: {s_val}")
+                                substats_str = ", ".join(subs)
                             
-                        substats_str = "Sem substatus"
-                        sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
-                        if sub_props:
-                            subs = []
-                            for sub in sub_props:
-                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                                subs.append(f"{s_name}: {s_val}")
-                            substats_str = ", ".join(subs)
-                        
-                        genshin_slot_map = {
-                            "EQUIP_BRACER": "Flor da Vida",
-                            "EQUIP_NECKLACE": "Pluma da Morte",
-                            "EQUIP_SHOES": "Areia do Tempo",
-                            "EQUIP_RING": "Cálice de Eonothem",
-                            "EQUIP_DRESS": "Tiara de Logos"
-                        }
-                        # Genshin usa equip_type, mas tem um formato de string as vezes
-                        pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
-                        if hasattr(pos, "name"): pos = pos.name # caso seja enum
-                        pos_name = genshin_slot_map.get(str(pos), str(pos))
-                        lines.append(f"  • [{pos_name}] {clean_relic_name(art.name)}")
-                        lines.append(f"    - Principal: {main_stat}")
-                        lines.append(f"    - Substatus: {substats_str}")
-                        
-                lines.append("")
-                lines.append("---")
-                lines.append("")
+                            genshin_slot_map = {
+                                "EQUIP_BRACER": "Flor da Vida",
+                                "EQUIP_NECKLACE": "Pluma da Morte",
+                                "EQUIP_SHOES": "Areia do Tempo",
+                                "EQUIP_RING": "Cálice de Eonothem",
+                                "EQUIP_DRESS": "Tiara de Logos"
+                            }
+                            # Genshin usa equip_type, mas tem um formato de string as vezes
+                            pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
+                            if hasattr(pos, "name"): pos = pos.name # caso seja enum
+                            pos_name = genshin_slot_map.get(str(pos), str(pos))
+                            art_name = getattr(art, "name", "Artefato")
+                            lines.append(f"  • [{pos_name}] {clean_relic_name(art_name)}")
+                            lines.append(f"    - Principal: {main_stat}")
+                            lines.append(f"    - Substatus: {substats_str}")
+                            
+                    lines.append("")
+                    lines.append("---")
+                    lines.append("")
+                except Exception as build_err:
+                    print(f"[AVISO] Erro ao formatar build do personagem Genshin ID {getattr(char, 'id', '?')}: {build_err}")
                 
         # Salva dados estruturados em JSON para a Galeria Visual da UI
         roster_json_path = "genshin/roster_data_genshin.json"
@@ -869,109 +959,115 @@ class GenshinExtractor(BaseExtractor):
                 "EQUIP_DRESS": "Tiara de Logos"
             }
             for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
-                w_info = {}
-                if hasattr(char, "weapon") and char.weapon:
-                    w_info = {
-                        "name": char.weapon.name,
-                        "level": getattr(char.weapon, "level", 90),
-                        "rank": getattr(char.weapon, "refinement", 1),
-                        "icon": getattr(char.weapon, "icon", "")
-                    }
-                artifacts_json = []
-                if hasattr(char, "artifacts") and char.artifacts:
-                    for art in char.artifacts:
-                        pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
-                        if hasattr(pos, "name"): pos = pos.name
-                        pos_name = genshin_slot_map.get(str(pos), str(pos))
-                        main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
-                        main_stat = "Desconhecido"
-                        if main_prop:
-                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                            main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
+                try:
+                    c_name = safe_char_name(char)
+                    w_info = {}
+                    if hasattr(char, "weapon") and char.weapon:
+                        w_info = {
+                            "name": getattr(char.weapon, "name", "Nenhuma"),
+                            "level": getattr(char.weapon, "level", 90),
+                            "rank": getattr(char.weapon, "refinement", 1),
+                            "icon": getattr(char.weapon, "icon", "")
+                        }
+                    artifacts_json = []
+                    if hasattr(char, "artifacts") and char.artifacts:
+                        for art in char.artifacts:
+                            pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
+                            if hasattr(pos, "name"): pos = pos.name
+                            pos_name = genshin_slot_map.get(str(pos), str(pos))
+                            main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
+                            main_stat = "Desconhecido"
+                            if main_prop:
+                                m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                                m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                                main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
+                                
+                            sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
+                            subs = []
+                            if sub_props:
+                                for sub in sub_props:
+                                    s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                    s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                    s_clean = sanitize_stat_name(s_name)
+                                    subs.append(f"{s_clean}: {s_val}")
+                            art_name = getattr(art, "name", "Artefato")
+                            artifacts_json.append({
+                                "name": clean_relic_name(art_name),
+                                "icon": getattr(art, "icon", ""),
+                                "slot": pos_name,
+                                "main": main_stat,
+                                "sub": ", ".join(subs) if subs else "Sem substatus"
+                            })
                             
-                        sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
-                        subs = []
-                        if sub_props:
-                            for sub in sub_props:
-                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                                s_clean = sanitize_stat_name(s_name)
-                                subs.append(f"{s_clean}: {s_val}")
-                        artifacts_json.append({
-                            "name": clean_relic_name(art.name),
-                            "icon": getattr(art, "icon", ""),
-                            "slot": pos_name,
-                            "main": main_stat,
-                            "sub": ", ".join(subs) if subs else "Sem substatus"
-                        })
-                        
-                char_icon = getattr(char, "icon", "")
-                genshin_splash = None
-                
-                if hasattr(char, "costumes") and char.costumes:
-                    costume = char.costumes[0]
-                    costume_id = getattr(costume, "id", None)
-                    c_info = get_genshin_costume_info(costume_id)
-                    if c_info:
-                        char_icon = f"https://enka.network/ui/{c_info['icon']}.png"
-                        genshin_splash = f"https://enka.network/ui/{c_info['art']}.png"
-                    elif hasattr(costume, "icon") and costume.icon:
-                        char_icon = costume.icon
-                        if "UI_AvatarIcon_" in costume.icon:
-                            if "Costume" in costume.icon:
-                                genshin_splash = costume.icon.replace("UI_AvatarIcon_", "UI_Costume_")
+                    char_icon = getattr(char, "icon", "")
+                    genshin_splash = None
+                    
+                    if hasattr(char, "costumes") and char.costumes:
+                        costume = char.costumes[0]
+                        costume_id = getattr(costume, "id", None)
+                        c_info = get_genshin_costume_info(costume_id)
+                        if c_info:
+                            char_icon = f"https://enka.network/ui/{c_info['icon']}.png"
+                            genshin_splash = f"https://enka.network/ui/{c_info['art']}.png"
+                        elif hasattr(costume, "icon") and costume.icon:
+                            c_icon_str = str(costume.icon)
+                            skin_match = re.search(r'(UI_AvatarIcon_[A-Za-z0-9_]+)', c_icon_str)
+                            if skin_match:
+                                skin_fn = skin_match.group(1)
+                                char_icon = f"https://enka.network/ui/{skin_fn}.png"
+                                genshin_splash = f"https://enka.network/ui/{skin_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
                             else:
-                                genshin_splash = costume.icon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_")
-                        else:
-                            genshin_splash = getattr(costume, "gacha_art", getattr(costume, "splash_art", costume.icon))
+                                char_icon = c_icon_str
+                                genshin_splash = getattr(costume, "gacha_art", getattr(costume, "splash_art", c_icon_str))
 
-                if not genshin_splash:
-                    genshin_splash = getattr(char, "gacha_card", getattr(char, "gacha_slice", getattr(char, "gacha_art", getattr(char, "splash_art", getattr(char, "display_image", getattr(char, "card_icon", char_icon))))))
-                    if not genshin_splash or "UI_AvatarIcon_" in genshin_splash:
-                        if "UI_AvatarIcon_" in char_icon:
-                            if "Costume" in char_icon:
-                                genshin_splash = char_icon.replace("UI_AvatarIcon_", "UI_Costume_")
-                            else:
-                                genshin_splash = char_icon.replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_")
+                    if not genshin_splash:
+                        genshin_splash = getattr(char, "gacha_card", getattr(char, "gacha_slice", getattr(char, "gacha_art", getattr(char, "splash_art", getattr(char, "display_image", getattr(char, "card_icon", char_icon))))))
+                        if not genshin_splash or "UI_AvatarIcon_" in str(genshin_splash):
+                            if "UI_AvatarIcon_" in str(char_icon):
+                                if "Costume" in str(char_icon):
+                                    genshin_splash = str(char_icon).replace("UI_AvatarIcon_", "UI_Costume_")
+                                else:
+                                    genshin_splash = str(char_icon).replace("UI_AvatarIcon_", "UI_Gacha_AvatarImg_")
 
-                # Extrai Status Finais (Final Stats) do personagem Genshin
-                genshin_stats = {}
-                props = getattr(char, "properties", getattr(char, "fight_props", None))
-                if props:
-                    for prop in (props or []):
-                        p_name = getattr(getattr(prop, "info", prop), "name", getattr(prop, "property_name", None))
-                        p_final = getattr(prop, "final", getattr(prop, "value", ""))
-                        if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
-                            label = sanitize_stat_name(p_name)
-                            genshin_stats[label] = str(p_final)
-                else:
-                    # Genshin API de Battle Chronicle não retorna fight_props diretamente;
-                    # Extraímos o que está disponível no objeto do personagem
-                    for attr_name in ['hp', 'max_hp', 'atk', 'base_atk', 'def_', 'base_def', 'crit_rate', 'crit_dmg', 'healing_bonus', 'elemental_mastery', 'energy_recharge']:
-                        v = getattr(char, attr_name, None)
-                        if v is not None and v not in (0, 0.0, '', None):
-                            label_map = {
-                                'hp': 'HP', 'max_hp': 'HP', 'atk': 'ATQ', 'base_atk': 'ATQ Base',
-                                'def_': 'DEF', 'base_def': 'DEF Base', 'crit_rate': 'Taxa CRIT',
-                                'crit_dmg': 'Dano CRIT', 'healing_bonus': 'Cura Bônus',
-                                'elemental_mastery': 'Prof. Element.', 'energy_recharge': 'Recarga'
-                            }
-                            genshin_stats[label_map.get(attr_name, attr_name)] = str(v)
+                    # Extrai Status Finais (Final Stats) do personagem Genshin
+                    genshin_stats = {}
+                    props = getattr(char, "properties", getattr(char, "fight_props", None))
+                    if props:
+                        for prop in (props or []):
+                            p_name = getattr(getattr(prop, "info", prop), "name", getattr(prop, "property_name", None))
+                            p_final = getattr(prop, "final", getattr(prop, "value", ""))
+                            if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
+                                label = sanitize_stat_name(p_name)
+                                genshin_stats[label] = str(p_final)
+                    else:
+                        # Genshin API de Battle Chronicle não retorna fight_props diretamente;
+                        # Extraímos o que está disponível no objeto do personagem
+                        for attr_name in ['hp', 'max_hp', 'atk', 'base_atk', 'def_', 'base_def', 'crit_rate', 'crit_dmg', 'healing_bonus', 'elemental_mastery', 'energy_recharge']:
+                            v = getattr(char, attr_name, None)
+                            if v is not None and v not in (0, 0.0, '', None):
+                                label_map = {
+                                    'hp': 'HP', 'max_hp': 'HP', 'atk': 'ATQ', 'base_atk': 'ATQ Base',
+                                    'def_': 'DEF', 'base_def': 'DEF Base', 'crit_rate': 'Taxa CRIT',
+                                    'crit_dmg': 'Dano CRIT', 'healing_bonus': 'Cura Bônus',
+                                    'elemental_mastery': 'Prof. Element.', 'energy_recharge': 'Recarga'
+                                }
+                                genshin_stats[label_map.get(attr_name, attr_name)] = str(v)
 
-                char_json_list.append({
-                    "id": str(char.id),
-                    "name": char.name,
-                    "level": char.level,
-                    "rarity": char.rarity,
-                    "rank_str": f"C{char.constellation}",
-                    "element": getattr(char, "element", "Anemo"),
-                    "icon": char_icon,
-                    "gacha_art": genshin_splash,
-                    "weapon": w_info,
-                    "relics": artifacts_json,
-                    "stats": genshin_stats
-                })
+                    char_json_list.append({
+                        "id": str(getattr(char, "id", "")),
+                        "name": c_name,
+                        "level": getattr(char, "level", 1),
+                        "rarity": getattr(char, "rarity", 4),
+                        "rank_str": f"C{getattr(char, 'constellation', 0)}",
+                        "element": safe_char_element(char),
+                        "icon": sanitize_genshin_url(char_icon),
+                        "gacha_art": sanitize_genshin_url(genshin_splash),
+                        "weapon": w_info,
+                        "relics": artifacts_json,
+                        "stats": genshin_stats
+                    })
+                except Exception as c_json_err:
+                    print(f"[AVISO] Erro ao extrair JSON do personagem Genshin ID {getattr(char, 'id', '?')}: {c_json_err}")
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
                 json.dump(char_json_list, jf, ensure_ascii=False, indent=2)

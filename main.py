@@ -75,10 +75,11 @@ def main() -> None:
     time.sleep(3.5)
     
     local_ip = get_local_ip()
-    print("[INFO] Iniciando Cabeça de Droid...")
-    print(f"[INFO] Servidor rodando localmente em: http://127.0.0.1:8000")
-    print(f"[INFO] Para acessar pelo celular ou outro dispositivo na mesma rede Wi-Fi, acesse: http://{local_ip}:8000")
-    webbrowser.open("http://127.0.0.1:8000")
+    print("[INFO] Iniciando Cabeça de Droid v4.0...")
+    print(f"[INFO] Servidor rodando localmente em: http://127.0.0.1:8000/?v=4.0")
+    print(f"[INFO] Para acessar pelo celular ou outro dispositivo na mesma rede Wi-Fi, acesse: http://{local_ip}:8000/?v=4.0")
+    webbrowser.open("http://127.0.0.1:8000/?v=4.0")
+
     
     try:
         while server_thread.is_alive():

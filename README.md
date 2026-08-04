@@ -28,12 +28,14 @@ O assistente sincroniza rosters de personagens, relíquias/artefatos/discos e re
 - **📷 Gerador de Card Imagem HD:** Botão no inspetor para capturar e exportar em imagem de alta definição o resumo da build completa do personagem.
 - **⚖️ Comparador Meta Lado a Lado (Sidebar):** Aba exclusiva no inspetor que contrasta a arma equipada, conjuntos de relíquias e status principais do jogador diretamente contra os benchmarks do metagame, destacando acertos (verde) e desvios (vermelho).
 - **🧠 Otimizador de Build IA:** Botão "Analisar" no painel do personagem que aciona a IA Groq para gerar 3 conselhos diretos e acionáveis de melhorias de build.
-- **📈 Calculadora de Materiais de Ascensão:** Estima em tempo real o custo total de Livros de XP, Mora/Créditos/Dennys e materiais de chefes necessários para evoluir um personagem do nível atual até o nível alvo (ex: 1 ao 90).
-- **👥 Analisador de Sinergia de Times:** Seleção interativa de 4 personagens para gerar um relatório completo de rotação de combate, ressonância elemental, otimização de armas e sugestões de trocas via streaming SSE.
-- **🌐 Dicionário de Tradução Inteligente Local (`traducoes.json`):** Traduz instantaneamente armas, artefatos, discos e atributos de Inglês para Português (PT-BR).
-- **🎭 Suporte a Skins/Costumes (Enka.Network):** Mapeamento automático de IDs de roupas cosméticas de Genshin Impact para avatares de rosto do Enka.Network, evitando distorções visuais na galeria.
-- **🤖 Assistente de Chat IA Meta (Groq RAG):** Chat interativo alimentado por RAG local (Llama 3.3 70B Versatile via Groq Cloud) com gerenciamento rigoroso do orçamento de tokens (máx. 6.000 tokens), lendo o Roster ativo (nível 70+) e guias de meta locais.
-- **🔑 Login Automático HoYoLAB (Playwright):** Disparo de janela isolada Chromium que captura os cookies de sessão (`ltuid_v2`, `ltoken_v2`) automaticamente.
+- **🌾 Central de Farm Inteligente Diário & Níveis Máximos por Jogo:**
+  - Respeita rigorosamente os níveis máximos de cada jogo (**Genshin Impact: Nv 90**, **Honkai: Star Rail: Nv 80**, **Zenless Zone Zero: Nv 60**).
+  - **Filtro de Personagens Alvo:** Permite selecionar individualmente quais personagens da sua conta você deseja evoluir e salvar suas preferências localmente via `localStorage`.
+  - **Detalhamento Completo de Itens:** Exibe a quantidade exata de XP necessária (~livros roxos), Moeda (Mora/Créditos/Dennys), Materiais de Chefes de Ascensão, Livros de Talentos/Chips do dia e recomendações de domínios de relíquias/discos.
+- **🎲 Simulador Monte Carlo de Gacha / Wishes:** Simulação estocástica de 10.000 tentativas para estimar a probabilidade matemática real de obter N cópias (C0 a C6) com base no Pity atual e 50/50.
+- **🗑️ Analisador de Relíquias Lixo (Trash Finder):** Identifica automaticamente no inventário do jogador peças com combinações de atributos principais e secundários que nenhum personagem do metagame atual aproveita.
+- **🏆 Tier List & Auditoria da Conta:** Relatório completo de saúde da conta e classificação dos seus personagens ativos.
+- **📈 Calculadora de Materiais de Ascensão:** Estima em tempo real o custo total de Livros de XP, Mora/Créditos/Dennys e materiais de chefes necessários para evoluir um personagem até o nível máximo do seu respectivo jogo.
 
 ---
 

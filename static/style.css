@@ -198,6 +198,8 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     gap: 8px;
     flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 
 .nav-btn {
@@ -234,9 +236,14 @@ h1, h2, h3, h4, h5, h6 {
 .nav-btn[data-tab="zzz"].active { border-left: 4px solid var(--color-zzz); }
 .nav-btn[data-tab="genshin"].active { border-left: 4px solid var(--color-genshin); }
 .nav-btn[data-tab="hsr"].active { border-left: 4px solid var(--color-hsr); }
+.nav-btn[data-tab="gacha"].active { border-left: 4px solid #f59e0b; }
+.nav-btn[data-tab="farm"].active { border-left: 4px solid #10b981; }
+.nav-btn[data-tab="trash"].active { border-left: 4px solid #ef4444; }
+.nav-btn[data-tab="audit"].active { border-left: 4px solid #a855f7; }
 .nav-btn[data-tab="chat"].active { border-left: 4px solid #3b82f6; }
 .nav-btn[data-tab="config"].active { border-left: 4px solid var(--text-muted); }
 .nav-btn[data-tab="help"].active { border-left: 4px solid var(--color-genshin); }
+
 
 .sidebar-footer {
     display: flex;

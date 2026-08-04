@@ -7,12 +7,15 @@ import traceback
 import datetime
 import time
 import genshin
+import urllib.parse
+
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
+
 
 # Importações dos módulos do projeto
 from auth import capturar_cookies_hoyolab
@@ -34,6 +37,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_no_cache_header(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+def get_raw_url(url_str: str) -> str:
+    """Extrai a URL original subjacente caso a string já esteja envelopada pelo proxy interno."""
+    if not url_str:
+        return ""
+    url_s = str(url_str)
+    while "/api/proxy_image?url=" in url_s:
+        raw = url_s.split("/api/proxy_image?url=")[-1]
+        url_s = urllib.parse.unquote(raw)
+    return url_s
 
 # Estado global para progresso da sincronização
 sync_status = {
@@ -445,6 +467,91 @@ async def proxy_image(url: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao processar proxy de imagem: {e}")
 
+def parse_roster_md_fallback(game_id: str) -> List[Dict[str, Any]]:
+    md_path = f"{game_id}/roster_{game_id}.md"
+    chars = []
+    if not os.path.exists(md_path):
+        return chars
+        
+    genshin_elements = {
+        "mavuika": "Pyro", "bennett": "Pyro", "xiangling": "Pyro", "hu tao": "Pyro", "gaming": "Pyro",
+        "arlecchino": "Pyro", "yoimiya": "Pyro", "diluc": "Pyro", "dehya": "Pyro", "klee": "Pyro",
+        "thoma": "Pyro", "yanfei": "Pyro", "xinyan": "Pyro", "chevreuse": "Pyro", "amber": "Pyro",
+        "furina": "Hydro", "yelan": "Hydro", "nefer": "Hydro", "sangonomiya kokomi": "Hydro",
+        "nilou": "Hydro", "tartaglia": "Hydro", "mona": "Hydro", "xingqiu": "Hydro", "barbara": "Hydro",
+        "candace": "Hydro", "aino": "Hydro", "dahlia": "Hydro",
+        "skirk": "Cryo", "citlali": "Cryo", "shenhe": "Cryo", "ganyu": "Cryo", "kamisato ayaka": "Cryo",
+        "eula": "Cryo", "rosaria": "Cryo", "charlotte": "Cryo", "layla": "Cryo", "diona": "Cryo",
+        "chongyun": "Cryo", "mika": "Cryo", "freminet": "Cryo", "aloy": "Cryo", "qiqi": "Cryo",
+        "yae miko": "Electro", "shogun raiden": "Electro", "keqing": "Electro", "kuki shinobu": "Electro",
+        "clorinde": "Electro", "sethos": "Electro", "ororon": "Electro", "iansan": "Electro", "fischl": "Electro",
+        "beidou": "Electro", "razor": "Electro", "kujou sara": "Electro", "dori": "Electro", "lisa": "Electro",
+        "zibai": "Geo", "xilonen": "Geo", "navia": "Geo", "zhongli": "Geo", "albedo": "Geo", "chiori": "Geo",
+        "arataki itto": "Geo", "ningguang": "Geo", "gorou": "Geo", "yunjin": "Geo", "noelle": "Geo", "kachina": "Geo",
+        "lauma": "Dendro", "nahida": "Dendro", "tighnari": "Dendro", "alhaitham": "Dendro", "baizhu": "Dendro",
+        "emilie": "Dendro", "kinich": "Dendro", "yaoyao": "Dendro", "kirara": "Dendro", "collei": "Dendro", "kaveh": "Dendro"
+    }
+
+    zzz_elements = {
+        "ellen": "ICE", "lycaon": "ICE", "soukaku": "ICE", "miyabi": "ICE",
+        "soldier 11": "FIRE", "koleda": "FIRE", "ben": "FIRE", "lucy": "FIRE", "burnice": "FIRE", "lighter": "FIRE",
+        "anby": "ELECTRIC", "anton": "ELECTRIC", "rina": "ELECTRIC", "grace": "ELECTRIC", "seth": "ELECTRIC", "yanagi": "ELECTRIC", "harumasa": "ELECTRIC", "qingyi": "ELECTRIC",
+        "billy": "PHYSICAL", "corin": "PHYSICAL", "nekomata": "PHYSICAL", "piper": "PHYSICAL", "caesar": "PHYSICAL",
+        "nicole": "ETHER", "zhu yuan": "ETHER", "astra yao": "ETHER", "jane": "PHYSICAL"
+    }
+
+    try:
+        with open(md_path, "r", encoding="utf-8") as f:
+            for line in f:
+                if line.startswith("|") and not line.startswith("| Personagem") and not line.startswith("| :---"):
+                    parts = [p.strip() for p in line.split("|")]
+                    if len(parts) >= 7:
+                        cname = parts[1].replace("**", "").strip()
+                        lvl_str = parts[2].replace("Nv.", "").strip()
+                        try:
+                            lvl = int(lvl_str)
+                        except Exception:
+                            lvl = 1
+                        stars = parts[3].count("⭐")
+                        if stars == 0:
+                            stars = 5 if "5" in parts[3] else 4
+                        c_str = parts[4].strip()
+                        w_str = parts[5].strip()
+                        w_name, w_lvl, w_rank = w_str, 90, 1
+                        w_m = re.search(r'^(.*?)\s*\(Nv\.\s*(\d+),\s*R(\d+)\)$', w_str)
+                        if w_m:
+                            w_name = w_m.group(1).strip()
+                            w_lvl = int(w_m.group(2))
+                            w_rank = int(w_m.group(3))
+
+                        elem = "Anemo"
+                        if game_id == "genshin":
+                            elem = genshin_elements.get(cname.lower(), "Anemo")
+                        elif game_id == "zzz":
+                            elem = zzz_elements.get(cname.lower(), "PHYSICAL")
+
+                        chars.append({
+                            "id": "",
+                            "uid": "",
+                            "name": cname,
+                            "level": lvl,
+                            "rarity": stars,
+                            "rank_str": c_str,
+                            "element": elem,
+                            "icon": f"/api/proxy_image?url=https%3A%2F%2Fenka.network%2Fui%2FUI_AvatarIcon_{cname}.png",
+                            "gacha_art": None,
+                            "weapon": {
+                                "name": w_name,
+                                "level": w_lvl,
+                                "rank": w_rank,
+                                "icon": ""
+                            } if w_name and w_name != "Nenhuma" else None,
+                            "relics": []
+                        })
+    except Exception as e:
+        print(f"Aviso ao realizar parse de fallback do MD para {game_id}: {e}")
+    return chars
+
 @app.get("/api/roster/{game_id}")
 async def get_roster(game_id: str):
     """Retorna os dados dos personagens salvos no roster local."""
@@ -468,6 +575,10 @@ async def get_roster(game_id: str):
                     data = json.load(jf)
             except Exception as e:
                 raise HTTPException(status_code=500, detail=f"Erro ao carregar banco de dados local: {e}")
+
+    # Fallback de emergência APENAS se SQLite e JSON estiverem totalmente vazios
+    if not data:
+        data = parse_roster_md_fallback(game_id)
                 
     if data:
         # Enriquece gacha_art do JSON se faltar no banco
@@ -492,8 +603,8 @@ async def get_roster(game_id: str):
             # Garante fallback de gacha_art em HD para ZZZ e skins do Genshin
             if game_id == "zzz":
                 from extractor import get_zzz_prydwen_slug
-                icon_str = str(char.get("icon") or "")
-                g_art_str = str(char.get("gacha_art") or "")
+                icon_str = get_raw_url(char.get("icon") or "")
+                g_art_str = get_raw_url(char.get("gacha_art") or "")
                 check_str = icon_str + " " + g_art_str
                 match = re.search(r'(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png', check_str)
                 if match:
@@ -504,14 +615,36 @@ async def get_roster(game_id: str):
                     if slug:
                         char["gacha_art"] = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{slug}_full.webp"
             elif game_id == "genshin":
-                g_art = char.get("gacha_art") or ""
-                c_icon = char.get("icon") or ""
-                if "UI_AvatarIcon_" in c_icon and "Costume" in c_icon:
-                    icon_fn = c_icon.split('/')[-1].replace('.png', '')
-                    char["gacha_art"] = f"https://enka.network/ui/{icon_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
-                elif "UI_AvatarIcon_" in g_art and "Costume" in g_art:
-                    art_fn = g_art.split('/')[-1].replace('.png', '')
-                    char["gacha_art"] = f"https://enka.network/ui/{art_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
+                from extractor import sanitize_genshin_url
+                if char.get("icon"):
+                    char["icon"] = sanitize_genshin_url(char["icon"])
+                if char.get("gacha_art"):
+                    char["gacha_art"] = sanitize_genshin_url(char["gacha_art"])
+
+                raw_g_art = get_raw_url(char.get("gacha_art") or "")
+                raw_c_icon = get_raw_url(char.get("icon") or "")
+                combined_check = raw_c_icon + " " + raw_g_art
+                
+                skin_match = re.search(r'(UI_AvatarIcon_[A-Za-z0-9_]+Costume[A-Za-z0-9_]*)', combined_check)
+                if skin_match:
+                    skin_fn = skin_match.group(1)
+                    char["gacha_art"] = f"https://enka.network/ui/{skin_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
+                    if not raw_c_icon or "UI_AvatarIcon_" not in raw_c_icon:
+                        char["icon"] = f"https://enka.network/ui/{skin_fn}.png"
+
+            # Garante proxy interno para URLs de imagem externas evitando 403 Forbidden e duplicação
+            if char.get("icon"):
+                raw_icon = get_raw_url(char["icon"])
+                if raw_icon.startswith("http"):
+                    char["icon"] = f"/api/proxy_image?url={urllib.parse.quote(raw_icon, safe='')}"
+            if char.get("gacha_art"):
+                raw_gacha = get_raw_url(char["gacha_art"])
+                if raw_gacha.startswith("http"):
+                    char["gacha_art"] = f"/api/proxy_image?url={urllib.parse.quote(raw_gacha, safe='')}"
+            if isinstance(char.get("weapon"), dict) and char["weapon"].get("icon"):
+                raw_w_icon = get_raw_url(char["weapon"]["icon"])
+                if raw_w_icon.startswith("http"):
+                    char["weapon"]["icon"] = f"/api/proxy_image?url={urllib.parse.quote(raw_w_icon, safe='')}"
 
             char_id_val = str(char.get("id") or char.get("character_id") or "")
             meta_db = get_meta_data(game_id)
@@ -531,6 +664,11 @@ async def get_roster(game_id: str):
                 if "sub" in relic and relic["sub"]:
                     subs_list = [sanitize_stat_name(s.strip()) for s in str(relic["sub"]).split(",") if s.strip()]
                     relic["sub"] = ", ".join(subs_list)
+                if relic.get("icon"):
+                    raw_r_icon = get_raw_url(relic["icon"])
+                    if raw_r_icon.startswith("http"):
+                        relic["icon"] = f"/api/proxy_image?url={urllib.parse.quote(raw_r_icon, safe='')}"
+
                 grade, score = score_relic(
                     game_id=game_id,
                     char_id=char_id_val,
@@ -1675,6 +1813,153 @@ def download_element_icons():
 download_element_icons()
 
 # ==========================================
+# NOVOS ENDPOINTS: GACHA, FARM, TRASH, BREAKPOINTS & AUDIT
+# ==========================================
+
+class GachaRequest(BaseModel):
+    game_id: Optional[str] = "genshin"
+    current_pity: Optional[int] = 0
+    is_guaranteed: Optional[bool] = False
+    pulls_available: Optional[int] = 0
+    target_copies: Optional[int] = 1
+
+@app.post("/api/gacha/calculate")
+async def calculate_gacha_sim(req: GachaRequest):
+    """Executa simulação Monte Carlo para probabilidade de obtenção em banners gacha."""
+    from build_calculator import simulate_gacha_probabilities
+    try:
+        res = simulate_gacha_probabilities(
+            game_id=req.game_id,
+            current_pity=req.current_pity,
+            is_guaranteed=req.is_guaranteed,
+            pulls_available=req.pulls_available,
+            target_copies=req.target_copies
+        )
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/farming/today/{game_id}")
+async def get_farming_today(game_id: str, selected_chars: Optional[str] = None):
+    """Retorna o calendário de farm do dia atual + sugestões com base nos seus personagens."""
+    from build_calculator import get_daily_farm_recommendations
+    try:
+        roster_data = await get_roster(game_id)
+        selected_list = [s.strip() for s in selected_chars.split(",") if s.strip()] if selected_chars else None
+        res = get_daily_farm_recommendations(game_id=game_id, roster=roster_data, selected_chars=selected_list)
+        return res
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/relics/trash/{game_id}")
+async def get_trash_relics(game_id: str):
+    """Analisa o inventário de relíquias salvas contra o metagame e identifica peças lixo."""
+    from build_calculator import find_trash_relics, get_meta_data
+    try:
+        roster = database.get_roster_data(game_id=game_id)
+        all_relics = []
+        for char in roster:
+            for r in char.get("relics", []):
+                all_relics.append({
+                    "name": r.get("name", ""),
+                    "slot": r.get("slot", ""),
+                    "main_stat": r.get("main", r.get("main_stat", "")),
+                    "substats": [{"name": s.strip()} for s in str(r.get("sub", "")).split(",") if s.strip()]
+                })
+        meta = get_meta_data(game_id)
+        res = find_trash_relics(game_id=game_id, relics=all_relics, meta_data=meta)
+        return res
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class BreakpointRequest(BaseModel):
+    game_id: Optional[str] = "hsr"
+    char_name: str
+    stats: Dict[str, Any]
+
+@app.post("/api/stats/breakpoints")
+async def check_breakpoints(req: BreakpointRequest):
+    """Verifica limiares de velocidade, EHR, Recarga e Crítico do personagem."""
+    from build_calculator import calculate_stat_breakpoints
+    try:
+        res = calculate_stat_breakpoints(game_id=req.game_id, char_name=req.char_name, stats=req.stats)
+        return res
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/audit/{game_id}")
+async def get_account_audit(game_id: str):
+    """Retorna relatório de auditoria de saúde da conta + Tier List dos seus personagens."""
+    try:
+        roster = await get_roster(game_id)
+        if not roster:
+            return {"total_characters": 0, "avg_rv": 0.0, "tier_list": {"S+": [], "S": [], "A": [], "B": [], "C/D": []}, "sss_count": 0, "s_count": 0}
+            
+        tier_list = {"S+": [], "S": [], "A": [], "B": [], "C/D": []}
+        scores = []
+        
+        for char in roster:
+            name = char.get("name")
+            icon = char.get("icon")
+            rarity = char.get("rarity", 4)
+            level = char.get("level", 1)
+            score = char.get("overall_score", 0.0)
+            grade = char.get("overall_grade", "D")
+            scores.append(score)
+            
+            char_entry = {
+                "name": name,
+                "icon": icon,
+                "rarity": rarity,
+                "level": level,
+                "score": score,
+                "grade": grade
+            }
+            
+            if score >= 85.0 or grade in ["SSS", "SS"]:
+                tier_list["S+"].append(char_entry)
+            elif score >= 65.0 or grade == "S":
+                tier_list["S"].append(char_entry)
+            elif score >= 45.0 or grade == "A":
+                tier_list["A"].append(char_entry)
+            elif score >= 30.0 or grade == "B":
+                tier_list["B"].append(char_entry)
+            else:
+                tier_list["C/D"].append(char_entry)
+                
+        avg_rv = round(sum(scores) / len(scores), 1) if scores else 0.0
+        
+        return {
+            "game_id": game_id,
+            "total_characters": len(roster),
+            "avg_rv": avg_rv,
+            "tier_list": tier_list,
+            "sss_count": sum(1 for s in scores if s >= 90.0),
+            "s_count": sum(1 for s in scores if s >= 60.0)
+        }
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.get("/api/accounts")
+async def get_saved_accounts():
+    """Retorna todas as contas salvas para alternância multi-conta."""
+    try:
+        return database.get_all_saved_accounts()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+
 
 static_dir = get_resource_path("static")
 assets_dir = get_resource_path("assets")
