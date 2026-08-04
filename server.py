@@ -23,7 +23,7 @@ from scraper_meta import PrydwenMetaScraper
 from scraper_kqm import KQMScraper
 from groq_rag import GroqRAG
 import database
-from build_calculator import score_relic, calculate_ascension, get_meta_data, extract_weights_from_guide
+from build_calculator import score_relic, calculate_ascension, get_meta_data, extract_weights_from_guide, normalize_char_name
 
 app = FastAPI(title="Cabeça de Droid API", version="3.0")
 
