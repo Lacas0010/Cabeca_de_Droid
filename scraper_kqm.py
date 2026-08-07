@@ -9,10 +9,12 @@ from urllib3.util import Retry
 class KQMScraper:
     def __init__(self, output_dir: str = "genshin/guias/"):
         """
-        Inicializa o raspador de guias do KeqingMains (KQM) com Sessão HTTP resiliente.
+        Inicializa o raspador de guias do KeqingMains (KQM) com Sessão HTTP resiliente
+        e suporte a fallback automático para o Game8.
         """
         self.base_url = "https://keqingmains.com"
         self.output_dir = output_dir
+        self.game8_url_map = None
         
         # Mapeamento especial de nomes de personagens do Genshin para a slug do KQM (Nome bruto PT-BR/EN -> Slug base)
         self.slug_map = {
@@ -95,10 +97,163 @@ class KQMScraper:
         # Aplica aliases secundários se houver
         return self.slug_aliases.get(slug, slug)
 
-    def html_to_markdown(self, element) -> str:
+    def _is_kqm_guide_valid(self, md_content: str) -> bool:
+        """
+        Verifica se o guia extraído do KQM é válido e completo,
+        rejeitando stubs/placeholders que avisam que o guia precisa de autor ou está em desenvolvimento.
+        """
+        if not md_content or len(md_content.strip()) < 400:
+            return False
+        md_lower = md_content.lower()
+        placeholder_phrases = [
+            "needs an author",
+            "guide is currently under development",
+            "coming soon",
+            "wip guide",
+            "work in progress",
+            "under construction"
+        ]
+        if len(md_content) < 1200 and any(phrase in md_lower for phrase in placeholder_phrases):
+            return False
+        return True
+
+    def _build_game8_url_map(self):
+        """
+        Coleta e mapeia dinamicamente as URLs de guias de personagens do Game8.
+        """
+        index_urls = [
+            "https://game8.co/games/Genshin-Impact/archives/297465",
+            "https://game8.co/games/Genshin-Impact/archives/297491",
+            "https://game8.co/games/Genshin-Impact/archives/530535"
+        ]
+        url_map = {}
+        excluded_kws = [
+            'tier', 'version', 'codes', 'update', 'weapon', 'artifact', 'map',
+            'quest', 'boss', 'story', 'comment', 'livestream', 'reroll', 'team comp',
+            'character', 'fishing', 'ore', 'walkthrough', 'banner', 'lore', 'profile',
+            'materials', 'quiz', 'survey'
+        ]
+        for idx_url in index_urls:
+            try:
+                r = self.session.get(idx_url, timeout=12)
+                if r.status_code != 200:
+                    continue
+                soup = BeautifulSoup(r.text, 'html.parser')
+                for a in soup.find_all('a', href=True):
+                    href = a['href']
+                    if '/games/Genshin-Impact/archives/' not in href:
+                        continue
+                    if href.startswith('/'):
+                        href = 'https://game8.co' + href
+                    
+                    texts = [a.get_text(strip=True)]
+                    img = a.find('img')
+                    if img and img.get('alt'):
+                        texts.append(img['alt'])
+                        
+                    for raw in texts:
+                        if not raw:
+                            continue
+                        clean_name = raw.lower().strip()
+                        clean_name = re.sub(r'genshin\s*-\s*', '', clean_name)
+                        clean_name = re.sub(r'\s+(dps|sub-dps|support|healer|shielder)\s+rank', '', clean_name)
+                        clean_name = re.sub(r'\s+(best\s+builds?|builds?|guides?|rating\s+and\s+info|tier\s+list|banner|lore|profile|materials).*$', '', clean_name)
+                        clean_name = clean_name.strip()
+                        
+                        if clean_name and len(clean_name) > 2:
+                            if not any(kw in clean_name for kw in excluded_kws):
+                                if clean_name not in url_map:
+                                    url_map[clean_name] = href
+            except Exception as e:
+                pass
+        self.game8_url_map = url_map
+        return url_map
+
+    def get_game8_guide(self, char_name: str, logger_cb=None) -> str:
+        """
+        Extrai o guia de um personagem do Game8 como fallback quando o KQM não estiver disponível.
+        """
+        if self.game8_url_map is None:
+            self._log("Carregando mapa de guias do Game8...", "DEBUG", logger_cb)
+            self._build_game8_url_map()
+
+        clean_name = char_name.lower().strip()
+        clean_name_short = re.sub(r'\s+(shogun|kamisato|sangonomiya|shikanoin|kujou|kuki)\s*', ' ', clean_name).strip()
+
+        target_url = None
+        # Busca por correspondência exata
+        for key, url in self.game8_url_map.items():
+            if key == clean_name or key == clean_name_short:
+                target_url = url
+                break
+        
+        if not target_url:
+            for key, url in self.game8_url_map.items():
+                if key in clean_name or clean_name in key:
+                    target_url = url
+                    break
+
+        if not target_url:
+            # Fallback de busca ativa no Game8
+            try:
+                search_url = f"https://game8.co/games/Genshin-Impact/search?keyword={requests.utils.quote(char_name)}"
+                r = self.session.get(search_url, timeout=10)
+                if r.status_code == 200:
+                    soup = BeautifulSoup(r.text, 'html.parser')
+                    for a in soup.find_all('a', href=True):
+                        href = a['href']
+                        if '/games/Genshin-Impact/archives/' in href and ('build' in href.lower() or 'guide' in href.lower() or char_name.lower() in href.lower()):
+                            if not any(x in href.lower() for x in ['banner', 'lore', 'profile', 'materials', 'quiz', 'survey']):
+                                target_url = href if href.startswith('http') else 'https://game8.co' + href
+                                break
+            except Exception:
+                pass
+
+        if not target_url:
+            raise FileNotFoundError(f"Guia do Game8 não encontrado para '{char_name}'.")
+
+        self._log(f"Buscando guia Game8 para {char_name}: {target_url}", "DEBUG", logger_cb)
+        r = self.session.get(target_url, timeout=15)
+        if r.status_code != 200:
+            raise FileNotFoundError(f"Status {r.status_code} ao acessar {target_url}")
+
+        soup = BeautifulSoup(r.text, 'html.parser')
+        container = (
+            soup.find('div', class_='p-archiveContent__container') or
+            soup.find('div', class_='p-archiveBody__main') or
+            soup.find('div', class_='archive-style-wrapper') or
+            soup.find('article')
+        )
+        if not container:
+            raise Exception(f"Não foi possível localizar o conteúdo principal da página no Game8 para {char_name}.")
+
+        import copy
+        clean_container = copy.copy(container)
+
+        for garbage in clean_container.find_all(class_=re.compile(r'a-ad|comment|share|social|p-archiveContent__side|p-archiveFeedback|p-membershipModal|l-breadcrumb|p-rootHeader', re.I)):
+            garbage.decompose()
+
+        for h in clean_container.find_all(['h2', 'div'], class_=re.compile(r'comment|author', re.I)):
+            h.decompose()
+
+        markdown_text = self.html_to_markdown(clean_container, base_url="https://game8.co")
+        markdown_text = re.sub(r'\n{3,}', '\n\n', markdown_text).strip()
+
+        final_md = []
+        final_md.append(f"# Guia de Build - {char_name.title()}")
+        final_md.append("Dados extraídos do site Game8 (Fallback - KQM não disponível).")
+        final_md.append(f"Link oficial: {target_url}")
+        final_md.append("")
+        final_md.append(markdown_text)
+
+        return "\n".join(final_md)
+
+    def html_to_markdown(self, element, base_url: str = None) -> str:
         """
         Converte recursivamente elementos do BeautifulSoup em Markdown limpo.
         """
+        effective_base_url = base_url if base_url else self.base_url
+
         if isinstance(element, Comment):
             return ""
         if isinstance(element, NavigableString):
@@ -106,13 +261,13 @@ class KQMScraper:
         
         tag_name = element.name.lower()
         
-        if tag_name in ['script', 'style', 'noscript', 'iframe']:
+        if tag_name in ['script', 'style', 'noscript', 'iframe', 'button', 'input']:
             return ""
             
         # Headers
         if tag_name in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
             level = int(tag_name[1])
-            header_text = "".join(self.html_to_markdown(c) for c in element.children).strip()
+            header_text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in element.children).strip()
             header_text = re.sub(r'\s+', ' ', header_text)
             if not header_text:
                 return ""
@@ -120,34 +275,34 @@ class KQMScraper:
             
         # Paragraphs
         if tag_name == 'p':
-            p_text = "".join(self.html_to_markdown(c) for c in element.children).strip()
+            p_text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in element.children).strip()
             if not p_text:
                 return ""
             return f"\n\n{p_text}\n\n"
             
         # Bold
         if tag_name in ['strong', 'b']:
-            text = "".join(self.html_to_markdown(c) for c in element.children).strip()
+            text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in element.children).strip()
             if not text:
                 return ""
             return f" **{text}** "
             
         # Italics
         if tag_name in ['em', 'i']:
-            text = "".join(self.html_to_markdown(c) for c in element.children).strip()
+            text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in element.children).strip()
             if not text:
                 return ""
             return f" *{text}* "
             
         # Links
         if tag_name == 'a':
-            text = "".join(self.html_to_markdown(c) for c in element.children).strip()
+            text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in element.children).strip()
             href = element.get('href', '').strip()
             if not href or href.startswith('#') or not text:
                 return text
             # Transforma caminhos relativos em absolutos
             if href.startswith('/'):
-                href = self.base_url + href
+                href = effective_base_url + href
             return f"[{text}]({href})"
             
         # Unordered Lists
@@ -155,7 +310,7 @@ class KQMScraper:
             items = []
             for child in element.children:
                 if child.name and child.name.lower() == 'li':
-                    li_text = "".join(self.html_to_markdown(c) for c in child.children).strip()
+                    li_text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in child.children).strip()
                     if li_text:
                         li_text = li_text.replace('\n', '\n  ')
                         items.append(f"- {li_text}")
@@ -167,7 +322,7 @@ class KQMScraper:
             count = 1
             for child in element.children:
                 if child.name and child.name.lower() == 'li':
-                    li_text = "".join(self.html_to_markdown(c) for c in child.children).strip()
+                    li_text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in child.children).strip()
                     if li_text:
                         li_text = li_text.replace('\n', '\n  ')
                         items.append(f"{count}. {li_text}")
@@ -188,22 +343,24 @@ class KQMScraper:
             header_row = rows[0]
             cols = header_row.find_all(['th', 'td'])
             header_names = []
-            for col in cols:
-                col_text = "".join(self.html_to_markdown(c) for c in col.children).strip()
+            for idx_col, col in enumerate(cols):
+                col_text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in col.children).strip()
                 col_text = re.sub(r'\s+', ' ', col_text)
+                if not col_text and idx_col == 0:
+                    col_text = "Rank"
                 header_names.append(col_text)
                 
             markdown_table.append("| " + " | ".join(header_names) + " |")
             markdown_table.append("| " + " | ".join(["---"] * len(header_names)) + " |")
             
             for row in rows[1:]:
-                cols = row.find_all('td')
+                cols = row.find_all(['th', 'td'])
                 row_data = []
                 for col in cols:
-                    col_text = "".join(self.html_to_markdown(c) for c in col.children).strip()
+                    col_text = "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in col.children).strip()
                     col_text = re.sub(r'\s+', ' ', col_text)
                     row_data.append(col_text)
-                if row_data:
+                if row_data and any(row_data):
                     while len(row_data) < len(header_names):
                         row_data.append("")
                     row_data = row_data[:len(header_names)]
@@ -212,12 +369,12 @@ class KQMScraper:
             return "\n\n" + "\n".join(markdown_table) + "\n\n"
             
         # Fallback para tags de agrupamento
-        return "".join(self.html_to_markdown(c) for c in element.children)
+        return "".join(self.html_to_markdown(c, base_url=effective_base_url) for c in element.children)
 
-    def get_character_guide(self, char_name: str, logger_cb=None) -> str:
+    def get_character_guide(self, char_name: str, logger_cb=None, use_fallback: bool = True) -> str:
         """
-        Extrai o guia de um personagem do KQM e retorna em formato Markdown limpo.
-        Tenta diferentes URLs candidatas (Full Guide e Quick Guide) como fallback dinâmico.
+        Extrai o guia de um personagem do KQM (Principal) e retorna em formato Markdown limpo.
+        Caso o guia no KQM não exista ou seja apenas um placeholder/stub, ativa automaticamente o fallback para o Game8.
         """
         slug = self._normalize_name(char_name)
         
@@ -235,10 +392,9 @@ class KQMScraper:
         
         for url in candidate_urls:
             try:
-                self._log(f"Testando URL para {char_name}: {url}", "DEBUG", logger_cb)
+                self._log(f"Testando URL KQM para {char_name}: {url}", "DEBUG", logger_cb)
                 r = self.session.get(url, timeout=12)
                 if r.status_code == 200:
-                    self._log(f"✅ Guia encontrado em: {url}", "SUCCESS", logger_cb)
                     response_text = r.text
                     final_url = url
                     break
@@ -246,47 +402,55 @@ class KQMScraper:
                 self._log(f"Erro na requisição para {url}: {req_err}", "DEBUG", logger_cb)
                 continue
                 
-        if not response_text:
-            raise FileNotFoundError(f"Guia para {char_name} (slug: {slug}) não encontrado em nenhuma das URLs candidatas do KQM.")
+        kqm_content = None
+        if response_text:
+            soup = BeautifulSoup(response_text, 'html.parser')
+            entry_content = soup.find('div', class_='entry-content') or soup.find('article')
             
-        soup = BeautifulSoup(response_text, 'html.parser')
-        
-        # Encontra a div de conteúdo padrão do WordPress
-        entry_content = soup.find('div', class_='entry-content')
-        if not entry_content:
-            # Tenta encontrar no article principal
-            entry_content = soup.find('article')
-            
-        if not entry_content:
-            raise Exception(f"Não foi possível localizar o conteúdo principal da página para {char_name}.")
-            
-        # Decompõe modais, propagandas, TOC e links sociais
-        toc = (entry_content.find('div', id='ftoc-wrapper') or 
-               entry_content.find('div', class_='toc') or 
-               entry_content.find('div', id='toc_container') or 
-               entry_content.find('div', class_='ftoc-wrapper'))
-        if toc:
-            toc.decompose()
-            
-        for trash in entry_content.find_all(class_=re.compile(r'share|social|ads|advertisement|sidebar|modal', re.I)):
-            trash.decompose()
-            
-        # Realiza a conversão
-        markdown_text = self.html_to_markdown(entry_content)
-        
-        # Limpa quebras de linhas redundantes
-        markdown_text = re.sub(r'\n{3,}', '\n\n', markdown_text)
-        markdown_text = markdown_text.strip()
-        
-        # Monta a estrutura final
-        final_md = []
-        final_md.append(f"# Guia de Build - {char_name.title()}")
-        final_md.append("Dados extraídos do site KeqingMains (KQM).")
-        final_md.append(f"Link oficial: {final_url}")
-        final_md.append("")
-        final_md.append(markdown_text)
-        
-        return "\n".join(final_md)
+            if entry_content:
+                toc = (entry_content.find('div', id='ftoc-wrapper') or 
+                       entry_content.find('div', class_='toc') or 
+                       entry_content.find('div', id='toc_container') or 
+                       entry_content.find('div', class_='ftoc-wrapper'))
+                if toc:
+                    toc.decompose()
+                    
+                for trash in entry_content.find_all(class_=re.compile(r'share|social|ads|advertisement|sidebar|modal', re.I)):
+                    trash.decompose()
+                    
+                markdown_text = self.html_to_markdown(entry_content)
+                markdown_text = re.sub(r'\n{3,}', '\n\n', markdown_text).strip()
+                
+                final_md = []
+                final_md.append(f"# Guia de Build - {char_name.title()}")
+                final_md.append("Dados extraídos do site KeqingMains (KQM).")
+                final_md.append(f"Link oficial: {final_url}")
+                final_md.append("")
+                final_md.append(markdown_text)
+                
+                kqm_content = "\n".join(final_md)
+
+        # Se encontrou um guia no KQM e ele é válido/completo, usa o KQM (Principal)
+        if kqm_content and self._is_kqm_guide_valid(kqm_content):
+            self._log(f"✅ Guia KQM encontrado com sucesso para {char_name}!", "SUCCESS", logger_cb)
+            return kqm_content
+
+        # Se o KQM falhou ou retornou um guia incompleto/stub, aciona o Fallback do Game8
+        if use_fallback:
+            self._log(f"⚠️ Guia do KQM para '{char_name}' indisponível ou incompleto. Acionando fallback no Game8...", "WARN", logger_cb)
+            try:
+                game8_content = self.get_game8_guide(char_name, logger_cb)
+                if game8_content:
+                    self._log(f"✅ Guia de {char_name} obtido com sucesso via Game8 (Fallback)!", "SUCCESS", logger_cb)
+                    return game8_content
+            except Exception as fallback_err:
+                self._log(f"Falha no fallback Game8 para '{char_name}': {fallback_err}", "WARN", logger_cb)
+
+        # Se tiver o conteúdo básico do KQM mesmo imperfeito e o fallback falhar, retorna ele como último recurso
+        if kqm_content:
+            return kqm_content
+
+        raise FileNotFoundError(f"Guia para {char_name} (slug: {slug}) não foi encontrado nem no KQM nem no Game8.")
 
     def save_to_markdown(self, char_name: str, content: str) -> str:
         """
@@ -300,12 +464,15 @@ class KQMScraper:
             f.write(content)
         return filepath
 
-    def scrape_all_guides(self, character_list: list, logger_cb=None):
+    def scrape_all_guides(self, character_list: list, logger_cb=None) -> dict:
         """
-        Executa a coleta em lote de uma lista de personagens com delays respeitosos e tratamento de erros.
+        Executa a coleta em lote de uma lista de personagens com delays respeitosos e tratamento de erros (KQM Principal + Game8 Fallback).
+        Retorna um dicionário com estatísticas dos guias baixados via KQM e Game8.
         """
-        self._log(f"Iniciando coleta em lote de {len(character_list)} personagens no KQM...", "INFO", logger_cb)
+        self._log(f"Iniciando coleta em lote de {len(character_list)} personagens no KQM (com Fallback no Game8)...", "INFO", logger_cb)
         success_count = 0
+        kqm_guides = []
+        game8_guides = []
         total = len(character_list)
         
         for idx, char_name in enumerate(character_list, 1):
@@ -318,16 +485,21 @@ class KQMScraper:
                     self._log(f"Pulado: {char_name} (NPC/Manequim detectado).", "WARN", logger_cb, progresso=progress_val)
                     continue
                     
-                md_content = self.get_character_guide(char_name, logger_cb)
+                md_content = self.get_character_guide(char_name, logger_cb, use_fallback=True)
                 if md_content:
                     filepath = self.save_to_markdown(char_name, md_content)
                     if filepath:
                         success_count += 1
-                        self._log(f"Guia de {char_name} obtido com sucesso!", "SUCCESS", logger_cb, progresso=progress_val)
+                        if "Game8 (Fallback" in md_content:
+                            game8_guides.append(char_name)
+                            self._log(f"Guia de {char_name} salvo com sucesso! (fonte: Game8 Fallback)", "SUCCESS", logger_cb, progresso=progress_val)
+                        else:
+                            kqm_guides.append(char_name)
+                            self._log(f"Guia de {char_name} salvo com sucesso! (fonte: KQM)", "SUCCESS", logger_cb, progresso=progress_val)
                     else:
                         self._log(f"Erro ao salvar arquivo de {char_name}.", "ERROR", logger_cb, progresso=progress_val)
                 else:
-                    self._log(f"Guia de {char_name} não encontrado no KQM.", "WARN", logger_cb, progresso=progress_val)
+                    self._log(f"Guia de {char_name} não encontrado.", "WARN", logger_cb, progresso=progress_val)
                     
             except FileNotFoundError as fnf:
                 self._log(f"⚠️ {fnf}", "WARN", logger_cb, progresso=progress_val)
@@ -337,3 +509,14 @@ class KQMScraper:
             time.sleep(1.0)
             
         self._log(f"Fim da coleta em lote. {success_count} guias obtidos em: {self.output_dir}", "SUCCESS", logger_cb, progresso=1.0)
+        
+        if kqm_guides:
+            self._log(f"✅ Guias obtidos via KQM ({len(kqm_guides)}): {', '.join(kqm_guides)}", "INFO", logger_cb)
+        if game8_guides:
+            self._log(f"🔄 Guias obtidos via Game8 (Fallback) ({len(game8_guides)}): {', '.join(game8_guides)}", "WARN", logger_cb)
+            
+        return {
+            "total": success_count,
+            "kqm": kqm_guides,
+            "game8": game8_guides
+        }

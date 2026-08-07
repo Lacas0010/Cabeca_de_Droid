@@ -30,6 +30,10 @@ from build_calculator import score_relic, calculate_ascension, get_meta_data, ex
 
 app = FastAPI(title="Cabeça de Droid API", version="3.0")
 
+@app.on_event("startup")
+def startup_event():
+    database.init_db()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -258,7 +262,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                         log_game(game_id, "Roster de Genshin não encontrado. Usando lista padrão de personagens populares.", "INFO", progresso=0.30)
                         extracted_characters = ["Keqing", "Hu Tao", "Raiden Shogun", "Furina", "Nahida", "Bennett", "Zhongli", "Kaedehara Kazuha", "Yelan", "Xingqiu"]
                         
-                    log_game(game_id, f"Buscando guias KQM para {len(extracted_characters)} personagens de Genshin...", "INFO", progresso=0.32)
+                    log_game(game_id, f"Buscando guias KQM (com fallback Game8) para {len(extracted_characters)} personagens de Genshin...", "INFO", progresso=0.32)
                     from scraper_kqm import KQMScraper
                     kqm = KQMScraper(output_dir="genshin/guias")
                     
@@ -267,8 +271,12 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                         p_val = 0.32 + 0.50 * (progresso if progresso is not None else 0.5)
                         log_game(game_id, msg, level, progresso=p_val)
                         
-                    kqm.scrape_all_guides(character_list=extracted_characters, logger_cb=kqm_callback)
-                    log_game(game_id, "Guias do KQM baixados com sucesso!", "SUCCESS", progresso=0.82)
+                    stats = kqm.scrape_all_guides(character_list=extracted_characters, logger_cb=kqm_callback)
+                    if stats and stats.get("game8"):
+                        game8_str = ", ".join(stats["game8"])
+                        log_game(game_id, f"🔄 Guias obtidos via Game8 (Fallback) [{len(stats['game8'])}]: {game8_str}", "WARN", progresso=0.82)
+                    else:
+                        log_game(game_id, "✅ Todos os guias de Genshin foram baixados diretamente do KQM!", "SUCCESS", progresso=0.82)
                     log_game(game_id, "Consolidando biblioteca de guias de Genshin...", "INFO", progresso=0.84)
                     bundle_guides("genshin/guias", "genshin/todos_os_guias_genshin.md", "Genshin Impact")
                 except Exception as scraper_err:
@@ -1691,7 +1699,7 @@ async def optimize_character_build(game_id: str, char_name: str):
         
     # Carrega o guia de metagame
     guide_context = ""
-    guides_dir = f"{game_id}/guias_prydwen" if game_id in ["hsr", "zzz"] else f"{game_id}/guias_kqm"
+    guides_dir = f"{game_id}/guias_prydwen" if game_id in ["hsr", "zzz"] else (f"{game_id}/guias" if os.path.exists(f"{game_id}/guias") else f"{game_id}/guias_kqm")
     if os.path.exists(guides_dir):
         safe_fn = char_name.lower().replace(" ", "_") + ".md"
         guide_path = os.path.join(guides_dir, safe_fn)
