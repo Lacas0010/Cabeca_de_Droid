@@ -452,7 +452,7 @@ STAT_NAME_MAP = {
     "efeito de quebra%": "break_effect", "break_effect%": "break_effect", "break": "break_effect",
     
     # Proficiência Elemental / Anomalia
-    "proficiência elemental": "em", "proficiencia elemental": "em", "proficiência": "em", "proficiencia": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "prof. eleme.": "em", "prof eleme": "em", "prof eleme.": "em", "prof. element.": "em", "prof element": "em", "prof element.": "em", "mastery": "em",
+    "proficiência elemental": "em", "proficiencia elemental": "em", "maestria elemental": "em", "maestria": "em", "maestria_elemental": "em", "proficiência": "em", "proficiencia": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "prof. eleme.": "em", "prof eleme": "em", "prof eleme.": "em", "prof. element.": "em", "prof element": "em", "prof element.": "em", "mastery": "em",
     "anomaly proficiency": "anomaly_prof", "proficiência em anomalia": "anomaly_prof", "proficiencia em anomalia": "anomaly_prof", "proficiência de anomalia": "anomaly_prof", "proficiencia de anomalia": "anomaly_prof", "prof. anomalia": "anomaly_prof", "prof anomalia": "anomaly_prof", "anomaly_prof": "anomaly_prof",
     "proficiência de anomalia%": "anomaly_prof", "proficiencia de anomalia%": "anomaly_prof", "anomalia": "anomaly_prof",
     
@@ -585,6 +585,7 @@ def sanitize_substats(raw_tokens: list, game_id: str) -> list:
     """
     Sanitiza uma lista de tokens brutos extraídos dos guias Markdown,
     filtrando por VALID_SUBSTATS para evitar poluição no meta_data.json.
+    Mapeia nomes de atributos base (ATK, HP, DEF) para suas versões percentuais %.
     """
     cleaned = []
     seen = set()
@@ -608,6 +609,10 @@ def sanitize_substats(raw_tokens: list, game_id: str) -> list:
                 continue
             
             norm = normalize_stat_name(st)
+            # Em guias de build, mencoes genéricas como "ATK", "HP", "DEF" representam os percentuais %
+            if norm == "atk_flat": norm = "atk_pct"
+            elif norm == "hp_flat": norm = "hp_pct"
+            elif norm == "def_flat": norm = "def_pct"
             
             if norm in VALID_SUBSTATS and norm not in seen:
                 seen.add(norm)

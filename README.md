@@ -1,4 +1,4 @@
-# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v3.0)
+# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v4.0)
 
 Uma ferramenta local moderna com interface gráfica **Web Premium** desenvolvida em **HTML5, CSS3 (Vanilla Glassmorphism), JavaScript ES6+** e backend em Python (**FastAPI + SQLite**).
 
@@ -25,7 +25,7 @@ O assistente sincroniza rosters de personagens, relíquias/artefatos/discos e re
   - Exibição de builds em gaveta deslizante em tela cheia no celular com overlay desfocado, botão proeminente de fechar e grade de status (`stats-grid`) adaptada em 2 colunas para leitura ideal sem rolagem horizontal.
   - Avaliação individual de cada peça via **Roll Value (RV)** com compensação de Main Stat (*Main Stat Forgiveness*) e peso parcial para atributos Flat.
   - Classificação de builds em **SSS** ($\ge 90\%$), **SS** ($\ge 75\%$), **S** ($\ge 60\%$), **A** ($\ge 45\%$), **B** ($\ge 30\%$) e **C/D** ($<30\%$).
-- **📷 Gerador de Card Imagem HD:** Botão no inspetor para capturar e exportar em imagem de alta definição o resumo da build completa do personagem.
+- **📷 Gerador de Card Imagem HD:** Botão no inspetor para capturar e exportar em imagem PNG de alta definição o resumo da build completa do personagem.
 - **⚖️ Comparador Meta Lado a Lado (Sidebar):** Aba exclusiva no inspetor que contrasta a arma equipada, conjuntos de relíquias e status principais do jogador diretamente contra os benchmarks do metagame, destacando acertos (verde) e desvios (vermelho).
 - **🧠 Otimizador de Build IA:** Botão "Analisar" no painel do personagem que aciona a IA Groq para gerar 3 conselhos diretos e acionáveis de melhorias de build.
 - **🌾 Central de Farm Inteligente Diário & Níveis Máximos por Jogo:**
@@ -63,8 +63,8 @@ graph TD
 - Fornece carregamento instantâneo da interface sem dependência contínua de requisições de rede.
 
 ### 3. Fontes de Raspagem de Metagame
-- **Honkai: Star Rail & ZZZ:** Extração de guias, tier lists e relatórios de endgame via **Prydwen Scraper** (`scraper_prydwen.py` / `scraper_zzz.py`).
-- **Genshin Impact:** Extração de tabelas estruturadas de slots/atributos via **Game8** (`scraper_game8.py`) combinada com a biblioteca textual completa de guias do **KeqingMains (KQM)** (`scraper_kqm.py`).
+- **Honkai: Star Rail & ZZZ:** Extração de guias, tier lists e relatórios de endgame via **Prydwen Scraper** ([scraper_prydwen.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_prydwen.py) / [scraper_zzz.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_zzz.py)).
+- **Genshin Impact:** Extração de tabelas estruturadas de slots/atributos via **Game8** ([scraper_game8.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_game8.py)) combinada com a biblioteca textual completa de guias do **KeqingMains (KQM)** ([scraper_kqm.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_kqm.py)).
 
 ---
 
@@ -199,4 +199,4 @@ O executável resultante estará localizado dentro do diretório `dist/main.exe`
 
 ## 🔒 Segurança e Privacidade
 
-Todos os cookies (`cookies.json`), chaves de API (`config.json`), banco de dados SQLite (`hoyo_app.db`) e arquivos markdown gerados são armazenados **exclusivamente no seu computador**. O app roda 100% no nível do usuário e não requer privilégios de Administrador. Todos os arquivos sensíveis estão incluídos por padrão no `.gitignore` para prevenir envios acidentais.
+Todos os cookies (`cookies.json`), chaves de API (`config.json`), banco de dados SQLite (`hoyo_app.db`) e arquivos markdown gerados são armazenados **exclusivamente no seu computador**. O app roda 100% no nível do usuário e não requer privilégios de Administrador. Todos os arquivos sensíveis estão incluídos por padrão no [.gitignore](file:///c:/Users/07049770108/Documents/hoyo-projetos/.gitignore) para prevenir envios acidentais.

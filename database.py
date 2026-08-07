@@ -1,10 +1,12 @@
+import os
 import sqlite3
 import json
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from extractor import clean_relic_name
 
-DATABASE_NAME = "hoyo_app.db"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATABASE_NAME = os.path.join(BASE_DIR, "hoyo_app.db")
 
 def get_connection() -> sqlite3.Connection:
     """Retorna uma conexão configurada com o banco de dados SQLite."""

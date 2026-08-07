@@ -1,22 +1,29 @@
 import os
 import json
 import asyncio
+import time
 import re
+import requests
 from bs4 import BeautifulSoup
-from playwright.async_api import async_playwright
 
 # Importa as ferramentas do motor principal
-from build_calculator import fetch_master_id_list, sanitize_substats
+from build_calculator import fetch_master_id_list, sanitize_substats, normalize_stat_name
 
 # URL Mestra de todos os personagens de Genshin no Game8 (Tier List / Roster Completo)
 GAME8_INDEX_URL = "https://game8.co/games/Genshin-Impact/archives/297465"
+
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+}
 
 def clean_character_name(raw_name: str) -> str:
     """Limpa o nome do Game8 para cruzar com o nosso banco de IDs"""
     name = raw_name.lower().strip()
     
     # Remove sufixos como " Build", " Guide", " Best Weapons", etc.
-    name = re.sub(r'\s+(build|guide|best|weapons?|artifacts?|teams?|materials?|rarity|tier\s+list).*$', '', name)
+    name = re.sub(r'\s+(build|guide|best|weapons?|artifacts?|teams?|materials?|rarity|tier\s+list|banner|lore|profile).*$', '', name)
     
     # Tratamentos específicos para aliases populares do Game8
     if "raiden" in name: return "raiden"
@@ -31,7 +38,7 @@ def clean_character_name(raw_name: str) -> str:
     if "sara" in name and "kujou" in name: return "kujou sara"
     if "yunjin" in name or "yun jin" in name: return "yun jin"
     if "mizuki" in name: return "yumemizuki mizuki"
-    if "wanderer" in name or "scaramouche" in name: return "wanderer"
+    if ("wanderer" in name or "scaramouche" in name) and "troupe" not in name: return "wanderer"
     if "traveler" in name or "viajante" in name: return "traveler"
     
     return name
@@ -156,15 +163,17 @@ def clean_and_normalize_genshin_stat(raw_text: str) -> list:
             
     return normalized_stats
 
-async def get_all_character_urls(page, master_ids, logger_cb=None):
+def get_all_character_urls_sync(session, master_ids, logger_cb=None):
     """Raspa o index do Game8 e retorna um dicionário {char_id: url_do_guia}"""
     msg = "[INFO] Acessando a lista mestre de personagens do Game8..."
     if logger_cb: logger_cb(msg)
     else: print(msg)
     
-    await page.goto(GAME8_INDEX_URL, wait_until="domcontentloaded", timeout=60000)
-    soup = BeautifulSoup(await page.content(), 'html.parser')
-    
+    r = session.get(GAME8_INDEX_URL, timeout=30)
+    if r.status_code != 200:
+        raise RuntimeError(f"Falha ao acessar index do Game8 (Status HTTP {r.status_code})")
+        
+    soup = BeautifulSoup(r.text, 'html.parser')
     char_urls = {}
     
     # Busca todos os links na página
@@ -174,13 +183,11 @@ async def get_all_character_urls(page, master_ids, logger_cb=None):
         
         # Filtra apenas links que vão para guias (archives) e têm nome
         if '/games/Genshin-Impact/archives/' in href and name_raw:
-            # Ignora links genéricos que não são de personagens
-            if any(x in name_raw.lower() for x in ["tier list", "build", "guide", "update", "materials", "weapon", "artifact", "map", "codes", "quest", "boss", "story", "comment", "livestream", "version"]):
+            if any(x in name_raw.lower() for x in ["tier list", "build", "guide", "update", "materials", "weapon", "artifact", "map", "codes", "quest", "boss", "story", "comment", "livestream", "version", "banner", "lore", "profile", "quiz", "survey", "tier maker", "troupe", "set"]):
                 continue
                 
             name_clean = clean_character_name(name_raw)
             
-            # Se o nome raspado existir no nosso banco de IDs (master_ids)
             if name_clean in master_ids:
                 char_id = master_ids[name_clean]
                 if href.startswith('/'):
@@ -192,76 +199,168 @@ async def get_all_character_urls(page, master_ids, logger_cb=None):
     else: print(msg)
     return char_urls
 
-async def scrape_game8_character(page, char_name, url, logger_cb=None):
-    """Raspa a tabela de Melhor Artefato e Substats de um personagem específico"""
+def parse_stat_priority_table(table):
+    """Extrai Main Stats e Substats de uma tabela de Stat Priority do Game8."""
+    main_stats = {"sands": [], "goblet": [], "circlet": []}
+    substats = []
+    
+    rows = table.find_all("tr")
+    expecting_main_stats = False
+    
+    for row in rows:
+        cells = [c.get_text(" ", strip=True) for c in row.find_all(["td", "th"]) if c.get_text(" ", strip=True)]
+        if not cells:
+            continue
+        
+        row_str = " ".join(cells)
+        row_lower = row_str.lower()
+        
+        if row_lower.startswith("summary"):
+            continue
+            
+        if expecting_main_stats:
+            if len(cells) >= 3:
+                main_stats["sands"] = clean_and_normalize_genshin_stat(cells[0])
+                main_stats["goblet"] = clean_and_normalize_genshin_stat(cells[1])
+                main_stats["circlet"] = clean_and_normalize_genshin_stat(cells[2])
+            expecting_main_stats = False
+            continue
+            
+        if "stat priority" in row_lower and len(cells) == 1:
+            expecting_main_stats = True
+            continue
+        elif "stat priority" in row_lower and len(cells) >= 4:
+            main_stats["sands"] = clean_and_normalize_genshin_stat(cells[1])
+            main_stats["goblet"] = clean_and_normalize_genshin_stat(cells[2])
+            main_stats["circlet"] = clean_and_normalize_genshin_stat(cells[3])
+            
+        # Suporte a Main Stats em layout vertical
+        for i, c in enumerate(cells):
+            cl = c.lower()
+            if "sands" in cl and not main_stats["sands"]:
+                val = cells[i+1] if i+1 < len(cells) else c
+                main_stats["sands"] = clean_and_normalize_genshin_stat(val)
+            elif "goblet" in cl and not main_stats["goblet"]:
+                val = cells[i+1] if i+1 < len(cells) else c
+                main_stats["goblet"] = clean_and_normalize_genshin_stat(val)
+            elif "circlet" in cl and not main_stats["circlet"]:
+                val = cells[i+1] if i+1 < len(cells) else c
+                main_stats["circlet"] = clean_and_normalize_genshin_stat(val)
+                
+        # Substats
+        if not substats and ("substat" in row_lower or "sub-stat" in row_lower or "sub stat" in row_lower):
+            val_text = row_str.split(":", 1)[1] if ":" in row_str else row_str
+            val_text_clean = re.sub(r'\b(artifact|substats?|sub-stats?|sub|stats?|priority)\b', '', val_text, flags=re.IGNORECASE)
+            raw_tokens = re.split(r'[>/|,\n]|\bor\b', val_text_clean)
+            cleaned = []
+            for tok in raw_tokens:
+                norm = normalize_stat_name(tok.strip())
+                if norm and norm not in cleaned:
+                    cleaned.append(norm)
+            substats = sanitize_substats(cleaned, "genshin")
+            
+    return main_stats, substats
+
+def scrape_game8_character_sync(session, char_name, url, logger_cb=None):
+    """Raspa as tabelas de Builds, Artefatos, Armas e Substats de um personagem específico via requests"""
     try:
-        await page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        soup = BeautifulSoup(await page.content(), 'html.parser')
+        r = session.get(url, timeout=20)
+        if r.status_code != 200:
+            if logger_cb: logger_cb(f"[AVISO] HTTP {r.status_code} para {url}", "WARN")
+            return None
+            
+        soup = BeautifulSoup(r.text, 'html.parser')
 
         build_data = {
             "main_stats": {"sands": [], "goblet": [], "circlet": []},
-            "substats_priority": []
+            "substats_priority": [],
+            "best_weapons": [],
+            "best_artifacts": []
         }
 
         tables = soup.find_all("table")
         for table in tables:
+            t_text = table.get_text(" ", strip=True)
+            t_lower = t_text.lower()
             rows = table.find_all("tr")
-            for row in rows:
-                cells = row.find_all(["th", "td"])
-                if not cells:
-                    continue
-                
-                for idx, cell in enumerate(cells):
-                    cell_text = cell.get_text(" ", strip=True)
-                    cell_text_lower = cell_text.lower()
-                    
-                    # Ignorar linhas de tabelas de armas ou outras seções indesejadas
-                    if "weapon" in cell_text_lower or "talents" in cell_text_lower:
+            if not rows:
+                continue
+            
+            first_row_text = rows[0].get_text(" ", strip=True).lower()
+
+            # 1. Tabela de Stat Priority / Artifact Main Stats
+            if "stat priority" in t_lower or "artifact main stats" in t_lower or "substats" in t_lower:
+                m_stats, s_priority = parse_stat_priority_table(table)
+                if m_stats["sands"] and not build_data["main_stats"]["sands"]:
+                    build_data["main_stats"]["sands"] = m_stats["sands"]
+                if m_stats["goblet"] and not build_data["main_stats"]["goblet"]:
+                    build_data["main_stats"]["goblet"] = m_stats["goblet"]
+                if m_stats["circlet"] and not build_data["main_stats"]["circlet"]:
+                    build_data["main_stats"]["circlet"] = m_stats["circlet"]
+                if s_priority and not build_data["substats_priority"]:
+                    build_data["substats_priority"] = s_priority
+
+            # 2. Tabela de Armas Recomendadas
+            if "recommended weapons" in first_row_text or "weapon information" in first_row_text:
+                for row in rows[1:]:
+                    cells = row.find_all(["td", "th"])
+                    if not cells:
                         continue
-                    
-                    # 1. Areias (Sands)
-                    if "sands of eon" in cell_text_lower or "sands:" in cell_text_lower or (cell_text_lower == "sands" and len(cells) > 1):
-                        if not build_data["main_stats"]["sands"]:
-                            val_part = ""
-                            if ":" in cell_text:
-                                val_part = cell_text.split(":", 1)[1]
-                            elif idx + 1 < len(cells):
-                                val_part = cells[idx + 1].get_text(" ", strip=True)
-                            if val_part:
-                                build_data["main_stats"]["sands"] = clean_and_normalize_genshin_stat(val_part)
-                                
-                    # 2. Cálice (Goblet)
-                    elif "goblet of eonothem" in cell_text_lower or "goblet:" in cell_text_lower or (cell_text_lower == "goblet" and len(cells) > 1):
-                        if not build_data["main_stats"]["goblet"]:
-                            val_part = ""
-                            if ":" in cell_text:
-                                val_part = cell_text.split(":", 1)[1]
-                            elif idx + 1 < len(cells):
-                                val_part = cells[idx + 1].get_text(" ", strip=True)
-                            if val_part:
-                                build_data["main_stats"]["goblet"] = clean_and_normalize_genshin_stat(val_part)
-                                
-                    # 3. Tiara (Circlet)
-                    elif "circlet of logos" in cell_text_lower or "circlet:" in cell_text_lower or (cell_text_lower == "circlet" and len(cells) > 1):
-                        if not build_data["main_stats"]["circlet"]:
-                            val_part = ""
-                            if ":" in cell_text:
-                                val_part = cell_text.split(":", 1)[1]
-                            elif idx + 1 < len(cells):
-                                val_part = cells[idx + 1].get_text(" ", strip=True)
-                            if val_part:
-                                build_data["main_stats"]["circlet"] = clean_and_normalize_genshin_stat(val_part)
-                                
-                    # 4. Substats
-                    elif "sub-stats" in cell_text_lower or "substats" in cell_text_lower or "sub stat" in cell_text_lower:
-                        if not build_data["substats_priority"]:
-                            val_part = ""
-                            if ":" in cell_text:
-                                val_part = cell_text.split(":", 1)[1]
-                            elif idx + 1 < len(cells):
-                                val_part = cells[idx + 1].get_text(" ", strip=True)
-                            if val_part:
-                                build_data["substats_priority"] = normalize_extracted_text(val_part)
+                    c0 = cells[0].get_text(" ", strip=True)
+                    c0_clean = re.sub(r'^\d+\.\s*', '', c0).strip()
+                    if c0_clean and len(c0_clean) > 2 and not any(x in c0_clean.lower() for x in ['recommended weapons', 'how to get', 'weapon', 'gacha', 'crafted', 'event', 'battle pass', '1st', '2nd', '3rd', 'replacement']):
+                        if c0_clean not in build_data["best_weapons"]:
+                            build_data["best_weapons"].append(c0_clean)
+
+            # 3. Tabela de Artefatos Recomendados
+            if "artifact bonuses" in first_row_text or "best artifact sets" in first_row_text or "alternate artifacts" in first_row_text:
+                for row in rows[1:]:
+                    cells = row.find_all(["td", "th"])
+                    if not cells:
+                        continue
+                    for c in cells:
+                        for b in c.find_all(["b", "strong", "a"]):
+                            b_text = b.get_text(strip=True)
+                            b_clean = re.sub(r'\s*x[24]', '', b_text, flags=re.IGNORECASE).strip()
+                            if len(b_clean) > 3 and not any(x in b_clean.lower() for x in ['best-in-slot', 'substitute', 'artifact', 'bonus', '2-pc', '4-pc', 'set', 'main', 'sub', 'stat', 'how to', 'guide', 'view', '1st', '2nd', '3rd', 'summary']):
+                                if b_clean not in build_data["best_artifacts"]:
+                                    build_data["best_artifacts"].append(b_clean)
+
+        # Fallback de células individuais caso os parsers de tabela não preencham tudo
+        if not build_data["main_stats"]["sands"] or not build_data["substats_priority"]:
+            for table in tables:
+                rows = table.find_all("tr")
+                for row in rows:
+                    cells = row.find_all(["th", "td"])
+                    if not cells:
+                        continue
+                    for idx, cell in enumerate(cells):
+                        cell_text = cell.get_text(" ", strip=True)
+                        cell_text_lower = cell_text.lower()
+                        
+                        if any(x in cell_text_lower for x in ["sands of eon", "sands:"]):
+                            if not build_data["main_stats"]["sands"]:
+                                val_part = cell_text.split(":", 1)[1] if ":" in cell_text else (cells[idx+1].get_text(" ", strip=True) if idx+1 < len(cells) else "")
+                                stats = clean_and_normalize_genshin_stat(val_part)
+                                if stats: build_data["main_stats"]["sands"] = stats
+
+                        if any(x in cell_text_lower for x in ["goblet of eonothem", "goblet:"]):
+                            if not build_data["main_stats"]["goblet"]:
+                                val_part = cell_text.split(":", 1)[1] if ":" in cell_text else (cells[idx+1].get_text(" ", strip=True) if idx+1 < len(cells) else "")
+                                stats = clean_and_normalize_genshin_stat(val_part)
+                                if stats: build_data["main_stats"]["goblet"] = stats
+
+                        if any(x in cell_text_lower for x in ["circlet of logos", "circlet:"]):
+                            if not build_data["main_stats"]["circlet"]:
+                                val_part = cell_text.split(":", 1)[1] if ":" in cell_text else (cells[idx+1].get_text(" ", strip=True) if idx+1 < len(cells) else "")
+                                stats = clean_and_normalize_genshin_stat(val_part)
+                                if stats: build_data["main_stats"]["circlet"] = stats
+
+                        if any(x in cell_text_lower for x in ["sub-stat", "substat"]):
+                            if not build_data["substats_priority"]:
+                                val_part = cell_text.split(":", 1)[1] if ":" in cell_text else (cells[idx+1].get_text(" ", strip=True) if idx+1 < len(cells) else "")
+                                subs = normalize_extracted_text(val_part)
+                                if subs: build_data["substats_priority"] = sanitize_substats(subs, "genshin")
 
         return build_data
     except Exception as e:
@@ -270,65 +369,62 @@ async def scrape_game8_character(page, char_name, url, logger_cb=None):
         else: print(msg)
         return None
 
+async def scrape_game8_character(page_or_dummy, char_name, url, logger_cb=None):
+    """Wrapper assíncrono para compatibilidade com assinaturas existentes"""
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    return await asyncio.to_thread(scrape_game8_character_sync, session, char_name, url, logger_cb)
+
 async def scrape_genshin_game8_builds(logger_cb=None):
     """Executa a raspagem automatizada dos guias do Game8 e atualiza genshin/meta_data_genshin.json"""
     master_ids = fetch_master_id_list("genshin")
     
-    async with async_playwright() as p:
-        # Iniciamos o navegador invisível
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-        )
-        page = await context.new_page()
+    session = requests.Session()
+    session.headers.update(HEADERS)
 
-        # Pegamos todas as URLs dos personagens de uma vez
-        characters_to_scrape = await get_all_character_urls(page, master_ids, logger_cb=logger_cb)
+    characters_to_scrape = await asyncio.to_thread(get_all_character_urls_sync, session, master_ids, logger_cb)
+    
+    meta_db = {}
+    total = len(characters_to_scrape)
+    count = 0
+
+    for char_id, info in characters_to_scrape.items():
+        count += 1
+        msg = f"[Scraping] Processando {info['name']} (ID: {char_id}) ({count}/{total})..."
+        prog_val = count / max(total, 1)
+        if logger_cb: logger_cb(msg, "INFO", prog_val)
+        else: print(msg)
         
-        meta_db = {}
-        total = len(characters_to_scrape)
-        count = 0
-
-        # Varremos cada URL
-        for char_id, info in characters_to_scrape.items():
-            count += 1
-            msg = f"[Scraping] Processando {info['name']} (ID: {char_id}) ({count}/{total})..."
-            prog_val = count / max(total, 1)
-            if logger_cb: logger_cb(msg, "INFO", prog_val)
-            else: print(msg)
-            
-            data = await scrape_game8_character(page, info['name'], info['url'], logger_cb=logger_cb)
-            
-            if data:
-                # Sanitiza os substats usando a whitelist estrita
-                clean_subs = sanitize_substats(data["substats_priority"], "genshin")
-                
-                meta_db[str(char_id)] = {
-                    "main_stats": data["main_stats"],
-                    "substats_priority": clean_subs,
-                    "general_benchmarks": {},
-                    "name": info['name']
-                }
-            
-            # Pausa de 1 segundo para não tomar block do Cloudflare do Game8
-            await asyncio.sleep(1)
-
-        await browser.close()
-
-        # Sobrescrevemos o meta_data_genshin.json diretamente!
-        output_path = "genshin/meta_data_genshin.json"
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        data = await asyncio.to_thread(scrape_game8_character_sync, session, info['name'], info['url'], logger_cb)
         
-        with open(output_path, "w", encoding="utf-8") as f:
-            json.dump(meta_db, f, indent=4, ensure_ascii=False)
+        if data:
+            clean_subs = sanitize_substats(data["substats_priority"], "genshin")
             
-        final_msg = f"[SUCESSO] Construção automatizada concluída! {len(meta_db)} personagens salvos em {output_path}!"
-        if logger_cb: logger_cb(final_msg, "SUCCESS", 1.0)
-        else: print(final_msg)
-        return meta_db
+            meta_db[str(char_id)] = {
+                "main_stats": data["main_stats"],
+                "substats_priority": clean_subs,
+                "best_weapons": data.get("best_weapons", []),
+                "best_artifacts": data.get("best_artifacts", []),
+                "general_benchmarks": {},
+                "name": info['name']
+            }
+        
+        # Pausa leve para respeitar o servidor do Game8
+        await asyncio.sleep(0.5)
+
+    output_path = "genshin/meta_data_genshin.json"
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(meta_db, f, indent=4, ensure_ascii=False)
+        
+    final_msg = f"[SUCESSO] Construção automatizada concluída! {len(meta_db)} personagens salvos em {output_path}!"
+    if logger_cb: logger_cb(final_msg, "SUCCESS", 1.0)
+    else: print(final_msg)
+    return meta_db
 
 def run_genshin_game8_builds(logger_cb=None):
-    """Invoca o scraper assíncrono em contexto síncrono para integração simples"""
+    """Invoca o scraper em contexto assíncrono ou síncrono"""
     try:
         try:
             loop = asyncio.get_running_loop()

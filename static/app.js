@@ -3177,7 +3177,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cal.note) html += `<div style="font-size:13px; color:#f59e0b; margin-top:4px;"><strong>Nota Especial:</strong> ${cal.note}</div>`;
             html += `</div>`;
 
-            <!-- PAINEL DE SELEÇÃO DE PERSONAGENS -->
+            // PAINEL DE SELEÇÃO DE PERSONAGENS
             html += `
                 <div style="padding:12px; background:rgba(15,23,42,0.7); border-radius:10px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.08);">
                     <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="const el=document.getElementById('${targetContainerId}-char-selector'); el.style.display = el.style.display==='none'?'block':'none';">
@@ -3210,7 +3210,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
 
-            <!-- RECOMENDAÇÕES E DETALHAMENTO DE ITENS -->
+            // RECOMENDAÇÕES E DETALHAMENTO DE ITENS
             html += `<h4 style="margin:16px 0 10px 0; color:#f59e0b; font-size:15px; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bullseye"></i> Sugestões e Itens de Farm Detalhados</h4>`;
 
             if (targets.length === 0) {
@@ -3338,17 +3338,26 @@ document.addEventListener("DOMContentLoaded", () => {
             const res = await fetch(`/api/relics/trash/${gameId}`);
             const data = await res.json();
             
-            let html = `
-                <div style="padding:14px; background:rgba(239, 68, 68, 0.08); border-radius:10px; margin-bottom:16px; border:1px solid rgba(239, 68, 68, 0.3);">
-                    <div style="font-size:15px; font-weight:bold; color:#ef4444;">${data.trash_count} peça(s) lixo encontradas de ${data.total_analyzed} analisadas</div>
-                    <div style="font-size:12px; color:#94a3b8; margin-top:3px;">Estas peças possuem combinações de Atributos Principais e Substatus que nenhum personagem do meta aproveita.</div>
-                </div>
-            `;
-
-            const trashList = data.trash_relics || [];
-            if (trashList.length === 0) {
-                html += `<div style="font-size:13px; color:#10b981;">Nenhuma relíquia lixo detectada! Seu inventário está limpo.</div>`;
+            let html = "";
+            if (!data.total_analyzed || data.total_analyzed === 0) {
+                html = `
+                    <div style="padding:16px; background:rgba(245, 158, 11, 0.08); border-radius:10px; border:1px solid rgba(245, 158, 11, 0.3); color:#f59e0b; font-size:13px; line-height:1.5;">
+                        <strong style="font-size:14px; display:block; margin-bottom:4px;">⚠️ Nenhum dado de relíquias/artefatos encontrado no banco de dados.</strong>
+                        Sincronize seu perfil e lista de personagens no painel principal via HoyoLab / UID para importar suas relíquias equipadas para análise.
+                    </div>
+                `;
             } else {
+                html = `
+                    <div style="padding:14px; background:rgba(239, 68, 68, 0.08); border-radius:10px; margin-bottom:16px; border:1px solid rgba(239, 68, 68, 0.3);">
+                        <div style="font-size:15px; font-weight:bold; color:#ef4444;">${data.trash_count} peça(s) lixo encontradas de ${data.total_analyzed} analisadas</div>
+                        <div style="font-size:12px; color:#94a3b8; margin-top:3px;">Estas peças possuem combinações de Atributos Principais e Substatus que nenhum personagem do meta aproveita.</div>
+                    </div>
+                `;
+
+                const trashList = data.trash_relics || [];
+                if (trashList.length === 0) {
+                    html += `<div style="font-size:13px; color:#10b981;">Nenhuma relíquia lixo detectada! Seu inventário está limpo.</div>`;
+                } else {
                 trashList.forEach(r => {
                     html += `
                         <div style="padding:12px; background:rgba(15,23,42,0.6); border-radius:8px; margin-bottom:10px; border:1px solid rgba(255,255,255,0.06); font-size:13px;">
@@ -3362,7 +3371,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     `;
                 });
             }
-            body.innerHTML = html;
+        }
+        body.innerHTML = html;
         } catch (e) {
             body.innerHTML = "<div style='color:#ef4444;'>Erro ao analisar relíquias lixo.</div>";
         }
