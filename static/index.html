@@ -291,6 +291,7 @@
                         <label><input type="checkbox" id="sync-guides-zzz" checked> Guias</label>
                         <label><input type="checkbox" id="sync-meta-zzz" checked> Metagame</label>
                         <button class="action-btn sync-game-btn" data-game="zzz">Sincronizar ZZZ</button>
+                        <a href="/api/download/guides-zip?game_id=zzz" download class="action-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 600;" title="Baixar todos os guias de ZZZ em .zip"><i class="fa-solid fa-file-zipper"></i> Baixar ZIP</a>
                     </div>
                     <div class="search-box">
                         <input type="text" placeholder="Buscar agente..." class="search-input" data-game="zzz">
@@ -373,6 +374,7 @@
                         <label><input type="checkbox" id="sync-guides-genshin" checked> Guias</label>
                         <label><input type="checkbox" id="sync-meta-genshin" checked> Metagame</label>
                         <button class="action-btn sync-game-btn" data-game="genshin">Sincronizar Genshin</button>
+                        <a href="/api/download/guides-zip?game_id=genshin" download class="action-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 600;" title="Baixar todos os guias de Genshin em .zip"><i class="fa-solid fa-file-zipper"></i> Baixar ZIP</a>
                     </div>
                     <div class="search-box">
                         <input type="text" placeholder="Buscar personagem..." class="search-input" data-game="genshin">
@@ -456,6 +458,7 @@
                         <label><input type="checkbox" id="sync-guides-hsr" checked> Guias</label>
                         <label><input type="checkbox" id="sync-meta-hsr" checked> Metagame</label>
                         <button class="action-btn sync-game-btn" data-game="hsr">Sincronizar HSR</button>
+                        <a href="/api/download/guides-zip?game_id=hsr" download class="action-btn" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 600;" title="Baixar todos os guias de HSR em .zip"><i class="fa-solid fa-file-zipper"></i> Baixar ZIP</a>
                     </div>
                     <div class="search-box">
                         <input type="text" placeholder="Buscar personagem..." class="search-input" data-game="hsr">
@@ -816,6 +819,25 @@
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
                         <h3 style="color: #06b6d4; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-network-wired"></i> 10. Acesso pela Rede Local (Wi-Fi / LAN)</h3>
                         <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Você pode acessar o Cabeça de Droid do seu celular, tablet ou outro computador conectado à mesma rede Wi-Fi/LAN acessando o endereço exibido no terminal ao iniciar a aplicação: <code>http://&lt;SEU_IP_LOCAL&gt;:8000</code>.</p>
+                    </div>
+
+                    <div class="config-section" style="margin-bottom: 18px; padding: 16px; background: rgba(16, 185, 129, 0.05); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
+                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 6px;"><i class="fa-solid fa-file-zipper"></i> Download de Guias em ZIP (.zip)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Faça o download direto do pacote comprimido em formato <code>.zip</code> contendo os guias completos em Markdown e relatórios de metagame das 3 pastas (<strong>Genshin Impact</strong>, <strong>Honkai: Star Rail</strong> e <strong>Zenless Zone Zero</strong>):</p>
+                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                            <a href="/api/download/guides-zip" download class="primary-btn" style="text-decoration: none; padding: 10px 18px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 8px; color: white; font-weight: 600;">
+                                <i class="fa-solid fa-file-arrow-down"></i> Baixar Todos os Guias (3 Jogos .ZIP)
+                            </a>
+                            <a href="/api/download/guides-zip?game_id=genshin" download class="secondary-btn" style="text-decoration: none; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-download"></i> ZIP Genshin
+                            </a>
+                            <a href="/api/download/guides-zip?game_id=hsr" download class="secondary-btn" style="text-decoration: none; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-download"></i> ZIP HSR
+                            </a>
+                            <a href="/api/download/guides-zip?game_id=zzz" download class="secondary-btn" style="text-decoration: none; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-download"></i> ZIP ZZZ
+                            </a>
+                        </div>
                     </div>
 
                     <div class="config-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">

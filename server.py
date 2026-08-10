@@ -1939,6 +1939,50 @@ async def get_saved_accounts():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@app.get("/api/download/guides-zip")
+async def download_guides_zip(game_id: Optional[str] = None):
+    """
+    Empacota as pastas de guias (genshin, hsr, zzz) ou uma pasta específica em um arquivo .zip
+    e retorna para download direto no navegador.
+    """
+    import io
+    import zipfile
+    try:
+        buffer = io.BytesIO()
+        valid_games = ["genshin", "hsr", "zzz"]
+        
+        if game_id and game_id.lower() in valid_games:
+            target_folders = [game_id.lower()]
+        else:
+            target_folders = valid_games
+
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for folder in target_folders:
+                folder_path = get_resource_path(folder)
+                if os.path.exists(folder_path):
+                    for root, _, files in os.walk(folder_path):
+                        for file in files:
+                            if file.endswith((".pyc", ".tmp", ".log", ".DS_Store")):
+                                continue
+                            full_path = os.path.join(root, file)
+                            rel_path = os.path.relpath(full_path, start=os.path.dirname(folder_path))
+                            zf.write(full_path, arcname=rel_path)
+
+        buffer.seek(0)
+        zip_filename = f"guias_{game_id.lower()}.zip" if game_id and game_id.lower() in valid_games else "guias_hoyoverse_todos.zip"
+        
+        return Response(
+            content=buffer.getvalue(),
+            media_type="application/zip",
+            headers={
+                "Content-Disposition": f'attachment; filename="{zip_filename}"'
+            }
+        )
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erro ao gerar arquivo zip de guias: {e}")
+
 # ==========================================
 
 

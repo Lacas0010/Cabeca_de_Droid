@@ -193,6 +193,7 @@ O executável resultante estará localizado dentro do diretório `dist/main.exe`
 | `POST` | `/api/chat` | Chat RAG local com a IA Groq (SSE Stream) |
 | `POST` | `/api/login/auto` | Inicia o navegador Playwright para captura de cookies |
 | `GET` / `POST` | `/api/config` | Leitura e salvamento das chaves de API e cookies |
+| `GET` | `/api/download/guides-zip` | Download empacotado em arquivo `.zip` das pastas de guias (`genshin/`, `hsr/`, `zzz/`) |
 
 ---
 
