@@ -9,7 +9,15 @@ class PrydwenScraper:
         Inicializa o raspador com headers realistas para evitar bloqueios.
         """
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
         }
         self.base_url = "https://www.prydwen.gg"
         
@@ -225,6 +233,7 @@ class PrydwenScraper:
             "stats_main": [],
             "stats_sub": "",
             "stats_info": "",
+            "talent_priority": "",
             "teams": []
         }
         
@@ -442,6 +451,17 @@ class PrydwenScraper:
                                 mapped_parts.append(mapped_val)
                                 
                             data["stats_sub"] = " > ".join(mapped_parts)
+                            
+                # Extrai HSR Skills priority
+                for el in soup.find_all(['div', 'span', 'p']):
+                    txt = el.get_text(separator=' ').strip()
+                    match = re.search(r'Skills?\s*priority\s*[:\=]?\s*([A-Za-z0-9\s\>\=\+\-]+)', txt, re.IGNORECASE)
+                    if match:
+                        tp = match.group(1).strip()
+                        tp = re.sub(r'\s*(Major|Traces|Stat|Note|Build).*', '', tp, flags=re.IGNORECASE).strip()
+                        if tp and len(tp) > 2:
+                            data["talent_priority"] = tp
+                            break
                             
                 info_div = stats_sec.find('div', class_='information')
                 if info_div:

@@ -5,7 +5,7 @@ Uma ferramenta local moderna com interface gráfica **Web Premium** desenvolvida
 > [!NOTE]
 > **Sobre o nome:** "Cabeça de Droid" é uma referência divertida a *Honkai: Star Rail* — especificamente à maneira carinhosa como a Herta chama o **Aeon Nous** (o Aeon da Erudição), um supercomputador astral gigante que ascendeu à divindade após desenvolver uma Inteligência Artificial Geral (ASI).
 
-O assistente sincroniza rosters de personagens, relíquias/artefatos/discos e recordes de Endgames via API do HoYoLAB, coleta guias analíticos de builds, tier lists e estatísticas do metagame (**KeqingMains**, **Prydwen**, **Game8**), realiza cálculo matemático de Roll Value (RV), otimização de builds com IA, exportação de cards HD de build, cálculo de materiais de ascensão, monitoramento de energia em tempo real (Daily Notes) e **Auto-Check-in Diário** automático a cada 6 horas em segundo plano.
+O assistente sincroniza rosters de personagens, relíquias/artefatos/discos e recordes de Endgames via API do HoYoLAB, coleta guias analíticos de builds, tier lists e estatísticas do metagame centralizadas no **Prydwen.gg** (**Honkai: Star Rail**, **Zenless Zone Zero** e **Genshin Impact**), realiza cálculo matemático de Roll Value (RV), otimização de builds com IA, exportação de cards HD de build, cálculo de materiais de ascensão, monitoramento de energia em tempo real (Daily Notes) e **Auto-Check-in Diário** automático a cada 6 horas em segundo plano.
 
 ---
 
@@ -47,7 +47,7 @@ graph TD
     B -->|Persistência| C[(SQLite hoyo_app.db)]
     B -->|Auto Check-in 6h| D[API HoYoLAB genshin.py]
     B -->|Auto Login| E[Playwright Chromium auth.py]
-    B -->|Extração de Metagame| F[Scrapers: Game8 / KQM / Prydwen]
+    B -->|Extração de Metagame| F[Scrapers Centralizados: Prydwen.gg]
     B -->|Calculadora & Roll Value| G[build_calculator.py]
     B -->|Chat & Otimizador IA| H[Groq Cloud RAG groq_rag.py]
     F -->|Caches Estruturados| I[meta_data_game.json & guias markdown]
@@ -63,8 +63,8 @@ graph TD
 - Fornece carregamento instantâneo da interface sem dependência contínua de requisições de rede.
 
 ### 3. Fontes de Raspagem de Metagame
-- **Honkai: Star Rail & ZZZ:** Extração de guias, tier lists e relatórios de endgame via **Prydwen Scraper** ([scraper_prydwen.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_prydwen.py) / [scraper_zzz.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_zzz.py)).
-- **Genshin Impact:** Extração de tabelas estruturadas de slots/atributos via **Game8** ([scraper_game8.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_game8.py)) combinada com a biblioteca textual completa de guias do **KeqingMains (KQM)** ([scraper_kqm.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_kqm.py)).
+- **Honkai: Star Rail, Zenless Zone Zero & Genshin Impact:** Extração centralizada de guias, tier lists, estatísticas de uso e relatórios de endgame via **Prydwen.gg** ([scraper_prydwen.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_prydwen.py), [scraper_zzz.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_zzz.py) e [scraper_genshin.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_genshin.py)).
+- **Raspagem Completa & Bypass Anti-Bot (403):** Utiliza cabeçalhos HTTP completos de navegadores modernos (`Accept`, `Accept-Language`, `Sec-Fetch-*`) para garantir o download de 100% dos guias da biblioteca de personagens (incluindo mais de 125 personagens em Genshin Impact), extraindo recomendações de armas, conjuntos de artefatos/discos, atributos principais, prioridade de substatus e prioridade de talentos.
 
 ---
 
@@ -113,8 +113,7 @@ hoyo-projetos/
 ├── auth.py                  # Captura automática de cookies via Playwright
 ├── extractor.py             # Extração de roster HoYoLAB com suporte a skins e IDs
 ├── endgame_extractor.py     # Extração de dados de endgame (MoC, Shiyu, Abismo)
-├── scraper_game8.py         # Raspador de meta e builds estruturadas de Genshin (Game8)
-├── scraper_kqm.py           # Raspador de guias analíticos de Genshin (KQM)
+├── scraper_genshin.py       # Raspador de meta e guias de Genshin Impact (Prydwen)
 ├── scraper_prydwen.py       # Raspador de meta e guias de HSR (Prydwen)
 ├── scraper_zzz.py           # Raspador de meta e guias de ZZZ (Prydwen ZZZ)
 ├── scraper_meta.py          # Agregador de meta para HSR

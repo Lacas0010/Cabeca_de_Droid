@@ -22,8 +22,8 @@ from auth import capturar_cookies_hoyolab
 from extractor import MultiGameExtractor, clean_relic_name, sanitize_stat_name
 from scraper_prydwen import PrydwenScraper
 from scraper_zzz import PrydwenZZZScraper
+from scraper_genshin import PrydwenGenshinScraper
 from scraper_meta import PrydwenMetaScraper
-from scraper_kqm import KQMScraper
 from groq_rag import GroqRAG
 import database
 from build_calculator import score_relic, calculate_ascension, get_meta_data, extract_weights_from_guide, normalize_char_name
@@ -243,40 +243,20 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                     
             elif game_id == "genshin":
                 try:
-                    extracted_characters = []
-                    roster_path = "genshin/roster_genshin.md"
-                    if os.path.exists(roster_path):
+                    log_game(game_id, "Buscando personagens Genshin Impact no Prydwen...", "INFO", progresso=0.30)
+                    scraper = PrydwenGenshinScraper()
+                    chars = scraper.get_character_list()
+                    log_game(game_id, f"Encontrados {len(chars)} personagens. Baixando guias...", "INFO", progresso=0.32)
+                    total_chars = len(chars)
+                    for idx, c in enumerate(chars, 1):
+                        p_val = 0.32 + 0.50 * (idx / total_chars if total_chars > 0 else 1.0)
+                        log_game(game_id, f"({idx}/{total_chars}) Coletando guia de {c['name']}...", "INFO", progresso=p_val)
                         try:
-                            with open(roster_path, "r", encoding="utf-8") as f:
-                                for line in f:
-                                    if line.startswith("|") and not line.startswith("| Personagem") and not line.startswith("| :---"):
-                                        parts = [p.strip() for p in line.split("|")]
-                                        if len(parts) > 2:
-                                            cname = parts[1].replace("**", "").strip()
-                                            if cname and cname not in extracted_characters:
-                                                extracted_characters.append(cname)
-                        except Exception as e:
-                            log_game(game_id, f"Erro ao carregar roster de Genshin: {e}", "WARN")
-                    
-                    if not extracted_characters:
-                        log_game(game_id, "Roster de Genshin não encontrado. Usando lista padrão de personagens populares.", "INFO", progresso=0.30)
-                        extracted_characters = ["Keqing", "Hu Tao", "Raiden Shogun", "Furina", "Nahida", "Bennett", "Zhongli", "Kaedehara Kazuha", "Yelan", "Xingqiu"]
-                        
-                    log_game(game_id, f"Buscando guias KQM (com fallback Game8) para {len(extracted_characters)} personagens de Genshin...", "INFO", progresso=0.32)
-                    from scraper_kqm import KQMScraper
-                    kqm = KQMScraper(output_dir="genshin/guias")
-                    
-                    # Como scrape_all_guides utiliza callbacks de log, criamos um callback local adequado
-                    def kqm_callback(msg, level="INFO", progresso=None):
-                        p_val = 0.32 + 0.50 * (progresso if progresso is not None else 0.5)
-                        log_game(game_id, msg, level, progresso=p_val)
-                        
-                    stats = kqm.scrape_all_guides(character_list=extracted_characters, logger_cb=kqm_callback)
-                    if stats and stats.get("game8"):
-                        game8_str = ", ".join(stats["game8"])
-                        log_game(game_id, f"🔄 Guias obtidos via Game8 (Fallback) [{len(stats['game8'])}]: {game8_str}", "WARN", progresso=0.82)
-                    else:
-                        log_game(game_id, "✅ Todos os guias de Genshin foram baixados diretamente do KQM!", "SUCCESS", progresso=0.82)
+                            data = scraper.scrape_character_guide(c["name"], c["url"])
+                            scraper.save_to_markdown(c["name"], data)
+                        except Exception as child_err:
+                            log_game(game_id, f"Aviso no guia de {c['name']}: {child_err}", "WARN", progresso=p_val)
+                    log_game(game_id, "Guias de Genshin baixados com sucesso!", "SUCCESS", progresso=0.82)
                     log_game(game_id, "Consolidando biblioteca de guias de Genshin...", "INFO", progresso=0.84)
                     bundle_guides("genshin/guias", "genshin/todos_os_guias_genshin.md", "Genshin Impact")
                 except Exception as scraper_err:
@@ -322,15 +302,10 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                     log_game(game_id, f"Falha ao obter meta ZZZ: {meta_err}", "ERROR")
             elif game_id == "genshin":
                 try:
-                    log_game(game_id, "Coletando meta e builds de Genshin do Game8...", "INFO", progresso=0.90)
-                    from scraper_game8 import run_genshin_game8_builds
-                    
-                    def genshin_meta_callback(msg, level="INFO", prog=None):
-                        p_val = 0.90 + 0.08 * (prog if prog is not None else 0.5)
-                        log_game(game_id, msg, level, progresso=p_val)
-                        
-                    run_genshin_game8_builds(logger_cb=genshin_meta_callback)
-                    log_game(game_id, "Meta e builds de Genshin do Game8 salvos com sucesso!", "SUCCESS", progresso=0.98)
+                    log_game(game_id, "Coletando meta e Tier List de Genshin do Prydwen...", "INFO", progresso=0.90)
+                    scraper = PrydwenGenshinScraper()
+                    filepath = scraper.save_meta_to_markdown()
+                    log_game(game_id, "Meta de Genshin do Prydwen salvo com sucesso!", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
                     log_game(game_id, f"Falha ao obter meta Genshin: {meta_err}", "ERROR")
@@ -1062,9 +1037,7 @@ def find_best_guide_file(game_id: str, char_name: str, element: str = "") -> str
     paths_to_check = [
         f"{game_id}/guias/{char_name.lower().replace(' ', '_').replace('•_', '')}.md",
         f"{game_id}/guias/{char_name.lower().replace(' ', '_')}.md",
-        f"{game_id}/guias/{char_name.lower()}.md",
-        f"{game_id}/guias_prydwen/{char_name.lower().replace(' ', '_')}.md",
-        f"{game_id}/guias_kqm/{char_name.lower().replace(' ', '_')}.md"
+        f"{game_id}/guias/{char_name.lower()}.md"
     ]
     for p in paths_to_check:
         if os.path.exists(p):
@@ -1699,7 +1672,7 @@ async def optimize_character_build(game_id: str, char_name: str):
         
     # Carrega o guia de metagame
     guide_context = ""
-    guides_dir = f"{game_id}/guias_prydwen" if game_id in ["hsr", "zzz"] else (f"{game_id}/guias" if os.path.exists(f"{game_id}/guias") else f"{game_id}/guias_kqm")
+    guides_dir = f"{game_id}/guias"
     if os.path.exists(guides_dir):
         safe_fn = char_name.lower().replace(" ", "_") + ".md"
         guide_path = os.path.join(guides_dir, safe_fn)

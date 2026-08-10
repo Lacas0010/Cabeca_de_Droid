@@ -10,7 +10,15 @@ class PrydwenZZZScraper:
         Inicializa o raspador de ZZZ do Prydwen com headers realistas para evitar bloqueios.
         """
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Sec-Fetch-Dest': 'document',
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-Site': 'none',
+            'Sec-Fetch-User': '?1',
         }
         self.base_url = "https://www.prydwen.gg/zenless"
         self.domain = "https://www.prydwen.gg"
@@ -152,12 +160,24 @@ class PrydwenZZZScraper:
             "skills_passives": [],
             "skills_mindscapes": [],
             "w_engines": [],
+            "discs": [],
             "disk_sets": [],
             "stats_main": [],
             "stats_sub": "",
+            "stats_info": "",
             "stats_endgame": [],
+            "talent_priority": "",
             "teams": []
         }
+
+        # Extrai ZZZ Skill Priority (skill-priority)
+        sp_div = soup.find('div', class_=lambda c: c and 'skill-priority' in c)
+        if sp_div:
+            items = [s.get_text().strip() for s in sp_div.find_all(['span', 'strong', 'div']) if s.get_text().strip() and len(s.get_text().strip()) < 30]
+            seen = set()
+            clean_items = [x for x in items if not (x in seen or seen.add(x))]
+            if clean_items:
+                data["talent_priority"] = " > ".join(clean_items)
         tabs_div = soup.find('div', class_='tabs')
         if not tabs_div:
             return data

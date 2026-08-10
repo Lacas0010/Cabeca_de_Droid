@@ -172,7 +172,7 @@ class GroqRAG:
                 print(f"[WARN] Erro ao ler roster de {game_id}: {e}")
                 
         # 2. Meta/Tier List
-        meta_filename = "meta_kqm_genshin.md" if game_id == "genshin" else f"meta_endgame_{game_id}.md"
+        meta_filename = f"meta_endgame_{game_id}.md"
         meta_path = f"{game_id}/{meta_filename}"
         if os.path.exists(meta_path):
             try:
