@@ -3654,19 +3654,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const tierList = data.tier_list || {};
 
             for (const [tier, chars] of Object.entries(tierList)) {
+                const color = tierColors[tier] || '#94a3b8';
                 html += `
-                    <div style="display:flex; align-items:center; gap:12px; margin-bottom:10px; padding:8px; background:rgba(15,23,42,0.6); border-radius:10px; border:1px solid rgba(255,255,255,0.05);">
-                        <div style="width:44px; height:44px; background:${tierColors[tier] || '#94a3b8'}; color:#000; font-weight:bold; display:flex; align-items:center; justify-content:center; border-radius:8px; font-size:16px;">${tier}</div>
-                        <div style="display:flex; flex-wrap:wrap; gap:8px; flex:1;">
+                    <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px; padding:12px; background:rgba(15,23,42,0.6); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
+                        <div style="width:54px; min-width:54px; height:54px; background:${color}; color:#000; font-weight:800; display:flex; align-items:center; justify-content:center; border-radius:10px; font-size:18px; box-shadow: 0 4px 12px ${color}44;">${tier}</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:10px; flex:1; align-items:center;">
                 `;
                 if (!chars || chars.length === 0) {
-                    html += `<span style="font-size:12px; color:#64748b; font-style:italic;">Nenhum personagem</span>`;
+                    html += `<span style="font-size:13px; color:#64748b; font-style:italic;">Nenhum personagem nesta categoria</span>`;
                 } else {
                     chars.forEach(c => {
+                        const iconSrc = c.icon || '';
+                        const iconHtml = iconSrc ? `<img src="${iconSrc}" alt="${c.name}" style="width:52px; height:52px; border-radius:10px; object-fit:cover; border:2px solid ${color}; background:rgba(0,0,0,0.5); flex-shrink:0;" onerror="this.style.display='none'">` : '';
                         html += `
-                            <div style="display:flex; align-items:center; gap:6px; padding:6px 10px; background:rgba(255,255,255,0.05); border-radius:6px; font-size:12px;">
-                                <strong style="color:#ffffff;">${c.name}</strong>
-                                <span style="color:${tierColors[tier] || '#f59e0b'}; font-weight:bold;">(${c.score.toFixed(1)}%)</span>
+                            <div style="display:flex; align-items:center; gap:10px; padding:8px 14px; background:rgba(255,255,255,0.06); border-radius:10px; border:1px solid rgba(255,255,255,0.1); min-height:64px; transition:all 0.2s ease;" onmouseover="this.style.borderColor='${color}'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.transform='none'">
+                                ${iconHtml}
+                                <div style="display:flex; flex-direction:column; justify-content:center;">
+                                    <strong style="color:#ffffff; font-size:13px; font-weight:600; line-height:1.2;">${c.name}</strong>
+                                    <div style="display:flex; align-items:center; gap:6px; margin-top:3px;">
+                                        <span style="color:${color}; font-weight:700; font-size:12px;">${c.score.toFixed(1)}%</span>
+                                        <span style="font-size:10px; color:#ffffff; font-weight:bold; background:rgba(255,255,255,0.12); padding:1px 6px; border-radius:4px;">${c.grade}</span>
+                                    </div>
+                                </div>
                             </div>
                         `;
                     });
