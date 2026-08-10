@@ -3211,31 +3211,86 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
 
             // RECOMENDAÇÕES E DETALHAMENTO DE ITENS
-            html += `<h4 style="margin:16px 0 10px 0; color:#f59e0b; font-size:15px; display:flex; align-items:center; gap:6px;"><i class="fa-solid fa-bullseye"></i> Sugestões e Itens de Farm Detalhados</h4>`;
+            let farmableOnlyKey = `hoyo_farmable_only_${gameId}`;
+            let isFarmableOnly = localStorage.getItem(farmableOnlyKey) === "true";
 
-            if (targets.length === 0) {
-                html += `<div style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; font-size:13px; color:#94a3b8; text-align:center;">Nenhum personagem selecionado precisa de ascensão ou otimização no momento! Todos os selecionados estão no nível máximo (${maxLvl}) e com ótimas notas de build.</div>`;
+            html += `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 10px 0;">
+                    <h4 style="margin:0; color:#f59e0b; font-size:15px; display:flex; align-items:center; gap:6px;">
+                        <i class="fa-solid fa-bullseye"></i> Sugestões e Itens de Farm Detalhados
+                    </h4>
+                    ${gameId === "genshin" ? `
+                        <label style="font-size:12px; color:#38bdf8; display:flex; align-items:center; gap:6px; background:rgba(56,189,248,0.1); padding:4px 10px; border-radius:8px; cursor:pointer; border:1px solid rgba(56,189,248,0.25);">
+                            <input type="checkbox" id="${targetContainerId}-farmable-only" ${isFarmableOnly ? 'checked' : ''}>
+                            <span>📅 Apenas Materiais Abertos Hoje</span>
+                        </label>
+                    ` : ''}
+                </div>
+            `;
+
+            let displayTargets = targets;
+            if (gameId === "genshin" && isFarmableOnly) {
+                displayTargets = targets.filter(t => t.farmable_today !== false);
+            }
+
+            if (displayTargets.length === 0) {
+                html += `<div style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; font-size:13px; color:#94a3b8; text-align:center;">Nenhum personagem selecionado precisa de ascensão no momento ou tem materiais abertos hoje! Todos os selecionados estão no nível máximo (${maxLvl}) com talentos e armas atualizados.</div>`;
             } else {
-                targets.forEach(t => {
+                const elementGlows = {
+                    pyro: { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)" },
+                    fire: { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)" },
+                    hydro: { color: "#38bdf8", bg: "rgba(56,189,248,0.08)", border: "rgba(56,189,248,0.3)" },
+                    ice: { color: "#06b6d4", bg: "rgba(6,182,212,0.08)", border: "rgba(6,182,212,0.3)" },
+                    cryo: { color: "#06b6d4", bg: "rgba(6,182,212,0.08)", border: "rgba(6,182,212,0.3)" },
+                    electro: { color: "#a855f7", bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.3)" },
+                    anemo: { color: "#10b981", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.3)" },
+                    geo: { color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)" },
+                    physical: { color: "#94a3b8", bg: "rgba(148,163,184,0.08)", border: "rgba(148,163,184,0.3)" },
+                    dendro: { color: "#84cc16", bg: "rgba(132,204,22,0.08)", border: "rgba(132,204,22,0.3)" },
+                    quantum: { color: "#6366f1", bg: "rgba(99,102,241,0.08)", border: "rgba(99,102,241,0.3)" },
+                    imaginary: { color: "#eab308", bg: "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.3)" },
+                    ether: { color: "#eab308", bg: "rgba(234,179,8,0.08)", border: "rgba(234,179,8,0.3)" }
+                };
+
+                displayTargets.forEach(t => {
                     const gradeColors = { SSS: "#f59e0b", SS: "#ec4899", S: "#10b981", A: "#3b82f6", B: "#8b5cf6", C: "#6b7280", D: "#ef4444" };
                     const gColor = gradeColors[t.grade] || "#94a3b8";
+                    const elemKey = (t.element || "").toLowerCase().trim();
+                    const elemTheme = elementGlows[elemKey] || { color: "#38bdf8", bg: "rgba(15,23,42,0.8)", border: "rgba(255,255,255,0.1)" };
+                    const pct = Math.min(100, Math.round((t.level / t.max_level) * 100));
 
                     html += `
-                        <div style="padding:14px; background:rgba(15,23,42,0.8); border-radius:10px; margin-bottom:14px; border:1px solid rgba(255,255,255,0.08); box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                            <!-- Cabeçalho do Personagem -->
-                            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:8px; margin-bottom:10px;">
-                                <div style="display:flex; align-items:center; gap:10px;">
-                                    ${t.icon ? `<img src="${t.icon}" style="width:36px; height:36px; border-radius:50%; background:rgba(0,0,0,0.4); object-fit:cover; border:1px solid rgba(255,255,255,0.1);">` : ''}
+                        <div style="padding:14px; background:${elemTheme.bg}; border-radius:12px; margin-bottom:16px; border:1px solid ${elemTheme.border}; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                            <!-- Cabeçalho do Personagem com Tema Elemental -->
+                            <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    ${t.icon ? `<img src="${t.icon}" style="width:44px; height:44px; border-radius:50%; background:rgba(0,0,0,0.5); object-fit:cover; border:2px solid ${elemTheme.color}; box-shadow:0 0 10px ${elemTheme.color}66;">` : ''}
                                     <div>
-                                        <strong style="color:#ffffff; font-size:14px;">${t.name}</strong>
-                                        <span style="font-size:11px; color:#94a3b8; margin-left:6px;">(Nv ${t.level}/${t.max_level})</span>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <strong style="color:#ffffff; font-size:16px;">${t.name}</strong>
+                                            <span style="font-size:11px; padding:2px 8px; border-radius:10px; background:${elemTheme.color}22; color:${elemTheme.color}; font-weight:700; border:1px solid ${elemTheme.color}44;">
+                                                ${t.element || 'Elemento'}
+                                            </span>
+                                        </div>
+                                        <div style="font-size:12px; color:#cbd5e1; margin-top:3px; display:flex; align-items:center; gap:8px;">
+                                            <span>Nv. ${t.level}/${t.max_level}</span>
+                                            <div style="width:80px; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
+                                                <div style="width:${pct}%; height:100%; background:${elemTheme.color};"></div>
+                                            </div>
+                                            <span style="font-size:11px; color:#94a3b8;">${pct}%</span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div style="display:flex; gap:6px; align-items:center;">
-                                    <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:${t.level < t.max_level ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${t.level < t.max_level ? '#f87171' : '#34d399'}; font-weight:600;">
-                                        ${t.level < t.max_level ? `Ascensão Pendente (${t.level}/${t.max_level})` : `Nível Máximo OK (${t.max_level})`}
+                                <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+                                    ${t.talent_priority ? `
+                                        <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:rgba(168,85,247,0.15); color:#c084fc; font-weight:600; border:1px solid rgba(168,85,247,0.3);">
+                                            ⚡ Prioridade Prydwen: ${t.talent_priority}
+                                        </span>
+                                    ` : ''}
+                                    <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:${t.level < t.max_level ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${t.level < t.max_level ? '#f87171' : '#34d399'}; font-weight:600;">
+                                        ${t.level < t.max_level ? `Ascensão Nv. ${t.level}/${t.max_level}` : `Nível ${t.max_level} OK`}
                                     </span>
-                                    <span style="font-size:11px; padding:2px 8px; border-radius:12px; background:rgba(255,255,255,0.05); color:${gColor}; font-weight:bold; border:1px solid ${gColor}44;">
+                                    <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:rgba(255,255,255,0.05); color:${gColor}; font-weight:bold; border:1px solid ${gColor}44;">
                                         Nota ${t.grade} (${t.score.toFixed(1)}%)
                                     </span>
                                 </div>
@@ -3245,29 +3300,200 @@ document.addEventListener("DOMContentLoaded", () => {
                             <div style="display:flex; flex-direction:column; gap:8px; font-size:12px;">
                     `;
 
+                    const gameIdStr = (t.game_id || gameId || "genshin").toLowerCase().trim();
+                    const ic = (t.items_needed && t.items_needed.icons) || {};
+
+                    const defaultTermsByGame = {
+                        genshin: {
+                            currency_name: "Mora",
+                            xp_book_name: "EXP do Herói",
+                            talent_category: "Talentos",
+                            green_book: "Ensinamentos (2★)",
+                            blue_book: "Guia (3★)",
+                            purple_book: "Filosofias (4★)",
+                            enemy_t1: "Drop Inimigo Comum (1★)",
+                            enemy_t2: "Drop Inimigo Incomum (2★)",
+                            enemy_t3: "Drop Inimigo Raro (3★)",
+                            boss_mat: "Material de Chefe de Campo",
+                            weekly_boss_mat: "Material de Chefe Semanal",
+                            crown_mat: "Coroa da Sabedoria",
+                            ore_name: "Minério de Amplificação Místico",
+                            w_mat_green: "Material de Domínio de Arma (2★)",
+                            w_mat_blue: "Material de Domínio de Arma (3★)",
+                            w_mat_purple: "Material de Domínio de Arma (4★)",
+                            w_mat_gold: "Material de Domínio de Arma (5★)"
+                        },
+                        hsr: {
+                            currency_name: "Créditos",
+                            xp_book_name: "Guia do Mochileiro",
+                            talent_category: "Rastros",
+                            green_book: "Esboço / Mat. de Traço (2★)",
+                            blue_book: "Dinâmica / Mat. de Traço (3★)",
+                            purple_book: "Conhecimento / Mat. de Traço (4★)",
+                            enemy_t1: "Componente de Inimigo (1★)",
+                            enemy_t2: "Núcleo de Inimigo (2★)",
+                            enemy_t3: "Essência de Inimigo (3★)",
+                            boss_mat: "Material de Sombra Estagnada",
+                            weekly_boss_mat: "Material do Eco da Guerra",
+                            crown_mat: "Rastro do Destino",
+                            ore_name: "Éter Refinado",
+                            w_mat_green: "Componente de Cone de Luz (2★)",
+                            w_mat_blue: "Módulo de Cone de Luz (3★)",
+                            w_mat_purple: "Núcleo de Cone de Luz (4★)",
+                            w_mat_gold: "Matriz de Cone de Luz (5★)"
+                        },
+                        zzz: {
+                            currency_name: "Dennys",
+                            xp_book_name: "Registro Oficial de Investigador",
+                            talent_category: "Habilidades",
+                            green_book: "Chip Básico de Habilidade (2★)",
+                            blue_book: "Chip Avançado de Habilidade (3★)",
+                            purple_book: "Chip Especializado de Habilidade (4★)",
+                            enemy_t1: "Sinalizador Básico (1★)",
+                            enemy_t2: "Sinalizador Avançado (2★)",
+                            enemy_t3: "Sinalizador Especializado (3★)",
+                            boss_mat: "Dado de Alta Dimensão",
+                            weekly_boss_mat: "Material de Caça Notória",
+                            crown_mat: "Passaporte da Gaiola de Hamster",
+                            ore_name: "Fonte de Alimentação de W-Engine",
+                            w_mat_green: "Componente Básico de W-Engine (2★)",
+                            w_mat_blue: "Componente Avançado de W-Engine (3★)",
+                            w_mat_purple: "Componente Especializado (4★)",
+                            w_mat_gold: "Componente Mestre (5★)"
+                        }
+                    };
+
+                    const terms = Object.assign({}, defaultTermsByGame[gameIdStr] || defaultTermsByGame.genshin, (t.items_needed && t.items_needed.terms) || {});
+
+                    const defaultIconsByGame = {
+                        genshin: {
+                            mora: "https://enka.network/ui/UI_ItemIcon_202.png",
+                            xp: "https://enka.network/ui/UI_ItemIcon_104003.png",
+                            talent_book: "https://enka.network/ui/UI_ItemIcon_104303.png",
+                            boss: "https://enka.network/ui/UI_ItemIcon_113001.png",
+                            weekly_boss: "https://enka.network/ui/UI_ItemIcon_113021.png",
+                            crown: "https://enka.network/ui/UI_ItemIcon_104319.png",
+                            weapon_ore: "https://enka.network/ui/UI_ItemIcon_104013.png"
+                        },
+                        hsr: {
+                            mora: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/2.png",
+                            xp: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/22.png",
+                            talent_book: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+                            boss: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/201.png",
+                            weekly_boss: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/3.png",
+                            crown: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/11.png",
+                            weapon_ore: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/102.png"
+                        },
+                        zzz: {
+                            mora: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_202.png",
+                            xp: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104003.png",
+                            talent_book: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104303.png",
+                            boss: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113001.png",
+                            weekly_boss: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113021.png",
+                            crown: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104319.png",
+                            weapon_ore: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104013.png"
+                        }
+                    };
+
+                    const finalIcons = Object.assign({}, defaultIconsByGame[gameIdStr] || defaultIconsByGame.genshin, ic);
+
+                    const moraIcon = `<img src="${finalIcons.mora}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='💰 ';">`;
+                    const xpIcon = `<img src="${finalIcons.xp}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='📘 ';">`;
+                    const talentIcon = `<img src="${finalIcons.talent_book}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='📚 ';">`;
+                    const bossIcon = `<img src="${finalIcons.boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='📦 ';">`;
+                    const weeklyIcon = `<img src="${finalIcons.weekly_boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='🐲 ';">`;
+                    const crownIcon = `<img src="${finalIcons.crown}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='👑 ';">`;
+                    const oreIcon = `<img src="${finalIcons.weapon_ore}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='⛏️ ';">`;
+
+                    // 1. Ascensão de Personagem
                     if (t.items_needed && t.items_needed.ascension) {
                         const asc = t.items_needed.ascension;
                         html += `
-                            <div style="background:rgba(239,68,68,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #ef4444;">
-                                <strong style="color:#f87171; display:block; margin-bottom:3px;">📦 Materiais para Elevação ao Nv. ${t.max_level}:</strong>
-                                <div style="color:#cbd5e1; line-height:1.4;">
-                                    • <strong>XP:</strong> ${asc.xp_needed.toLocaleString()} EXP (~${asc.xp_books_purple} Livros Roxos / EXP)<br>
-                                    • <strong>${asc.currency_name}:</strong> ${asc.currency_needed.toLocaleString()}<br>
-                                    ${asc.boss_items_needed > 0 ? `• <strong>${asc.boss_item_name}:</strong> ${asc.boss_items_needed} unidades` : ''}
+                            <div style="background:rgba(239,68,68,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #ef4444;">
+                                <strong style="color:#f87171; display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:13px;">
+                                    👤 Elevação de Nível & Ascensão do Personagem (Nv. ${t.level} ➔ Nv. ${t.max_level})
+                                </strong>
+                                <div style="color:#cbd5e1; line-height:1.6; font-size:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:6px;">
+                                    <div>${xpIcon} <strong>${terms.xp_book_name}:</strong> ${asc.xp_needed.toLocaleString()} EXP (~${asc.xp_books_purple} un. Roxos)</div>
+                                    <div>${moraIcon} <strong>${terms.currency_name}:</strong> ${asc.currency_needed.toLocaleString()}</div>
+                                    ${asc.boss_items_needed > 0 ? `<div>${bossIcon} <strong>${asc.boss_item_name}:</strong> ${asc.boss_items_needed} un.</div>` : ''}
                                 </div>
                             </div>
                         `;
                     }
 
-                    if (t.items_needed && t.items_needed.talents) {
+                    // 2. Talentos / Habilidades
+                    if (t.items_needed && t.items_needed.talent_upgrade_details && t.items_needed.talent_upgrade_details.length > 0) {
                         html += `
-                            <div style="background:rgba(56,189,248,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #38bdf8;">
-                                <strong style="color:#38bdf8; display:block; margin-bottom:2px;">📚 Talentos & Habilidades (Foco do Dia):</strong>
-                                <div style="color:#cbd5e1;">${t.items_needed.talents}</div>
+                            <div style="background:rgba(56,189,248,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #38bdf8;">
+                                <strong style="color:#38bdf8; display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:13px;">
+                                    📜 Elevação de ${terms.talent_category} Detalhada por Habilidade:
+                                </strong>
+                                <div style="display:flex; flex-direction:column; gap:6px;">
+                        `;
+                        t.items_needed.talent_upgrade_details.forEach(td => {
+                            let matsList = [];
+                            if (td.green_books > 0) matsList.push(`${talentIcon} ${td.green_books}x ${terms.green_book}`);
+                            if (td.blue_books > 0) matsList.push(`${talentIcon} ${td.blue_books}x ${terms.blue_book}`);
+                            if (td.purple_books > 0) matsList.push(`${talentIcon} ${td.purple_books}x ${terms.purple_book}`);
+                            if (td.enemy_tier1 > 0) matsList.push(`${bossIcon} ${td.enemy_tier1}x ${terms.enemy_t1 || 'Drop Inimigo (1★)'}`);
+                            if (td.enemy_tier2 > 0) matsList.push(`${bossIcon} ${td.enemy_tier2}x ${terms.enemy_t2 || 'Drop Inimigo (2★)'}`);
+                            if (td.enemy_tier3 > 0) matsList.push(`${bossIcon} ${td.enemy_tier3}x ${terms.enemy_t3 || 'Drop Inimigo (3★)'}`);
+                            if (td.weekly_boss_mats > 0) matsList.push(`${weeklyIcon} ${td.weekly_boss_mats}x ${terms.weekly_boss_mat}`);
+                            if (td.crowns_needed > 0) matsList.push(`${crownIcon} ${td.crowns_needed}x ${terms.crown_mat}`);
+
+                            const skillIconHtml = td.skill_icon ? `<img src="${td.skill_icon}" style="width:20px; height:20px; vertical-align:middle; margin-right:6px; object-fit:contain; border-radius:4px; background:rgba(0,0,0,0.3); padding:2px;">` : talentIcon;
+
+                            html += `
+                                <div style="background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+                                    <div style="font-weight:600; color:#f1f5f9; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
+                                        <span style="display:flex; align-items:center; gap:4px;">${skillIconHtml} ${td.skill_name}</span>
+                                        <span style="font-size:11px; color:#38bdf8; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:12px; font-weight:600;">
+                                            Nv. ${td.current_level} ➔ Nv. ${td.target_level}
+                                        </span>
+                                    </div>
+                                    <div style="font-size:11px; color:#cbd5e1; margin-top:5px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
+                                        <span>${moraIcon} <strong>${terms.currency_name}:</strong> ${td.currency_needed.toLocaleString()}</span>
+                                        ${matsList.length > 0 ? `<span style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">${matsList.join(" • ")}</span>` : ''}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += `
+                                </div>
                             </div>
                         `;
                     }
 
+                    // 3. Arma / W-Engine Equipado
+                    if (t.items_needed && t.items_needed.weapon_upgrade_details) {
+                        const wd = t.items_needed.weapon_upgrade_details;
+                        const wIconImg = wd.weapon_icon ? `<img src="${wd.weapon_icon}" style="width:24px; height:24px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:4px; padding:2px; border:1px solid rgba(255,255,255,0.1);">` : '🗡️';
+
+                        let wMats = [];
+                        if (wd.ores_needed > 0) wMats.push(`<div>${oreIcon} <strong>${terms.ore_name}:</strong> ~${wd.ores_needed} un.</div>`);
+                        if (wd.w_mat_green > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_green || 'Mat. Domínio Arma (2★)'}:</strong> ${wd.w_mat_green} un.</div>`);
+                        if (wd.w_mat_blue > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_blue || 'Mat. Domínio Arma (3★)'}:</strong> ${wd.w_mat_blue} un.</div>`);
+                        if (wd.w_mat_purple > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_purple || 'Mat. Domínio Arma (4★)'}:</strong> ${wd.w_mat_purple} un.</div>`);
+                        if (wd.w_mat_gold > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_gold || 'Mat. Domínio Arma (5★)'}:</strong> ${wd.w_mat_gold} un.</div>`);
+                        if (wd.w_enemy_t1 > 0) wMats.push(`<div>${bossIcon} <strong>${terms.enemy_t1 || 'Drop Inimigo (1★)'}:</strong> ${wd.w_enemy_t1} un.</div>`);
+                        if (wd.w_enemy_t2 > 0) wMats.push(`<div>${bossIcon} <strong>${terms.enemy_t2 || 'Drop Inimigo (2★)'}:</strong> ${wd.w_enemy_t2} un.</div>`);
+                        if (wd.w_enemy_t3 > 0) wMats.push(`<div>${bossIcon} <strong>${terms.enemy_t3 || 'Drop Inimigo (3★)'}:</strong> ${wd.w_enemy_t3} un.</div>`);
+                        if (wd.currency_needed > 0) wMats.push(`<div>${moraIcon} <strong>${terms.currency_name}:</strong> ${wd.currency_needed.toLocaleString()}</div>`);
+
+                        html += `
+                            <div style="background:rgba(16,185,129,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #10b981;">
+                                <strong style="color:#34d399; display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;">
+                                    ${wIconImg} Elevação da Arma Equipada (${wd.weapon_name}) - Nv. ${wd.current_level} ➔ Nv. ${wd.target_level}
+                                </strong>
+                                <div style="color:#cbd5e1; line-height:1.6; font-size:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:6px;">
+                                    ${wMats.join("")}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    // 4. Relíquias / Discos
                     if (t.items_needed && t.items_needed.relics) {
                         html += `
                             <div style="background:rgba(245,158,11,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #f59e0b;">
@@ -3285,6 +3511,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             body.innerHTML = html;
+
+            // Event Listener para Filtro do Dia Genshin
+            const cbFarmable = document.getElementById(`${targetContainerId}-farmable-only`);
+            if (cbFarmable) {
+                cbFarmable.addEventListener("change", (e) => {
+                    localStorage.setItem(farmableOnlyKey, e.target.checked ? "true" : "false");
+                    window.loadFarmData(gameId, targetContainerId);
+                });
+            }
 
             const saveAndReload = () => {
                 const checkedCbs = document.querySelectorAll(`.${targetContainerId}-char-cb:checked`);

@@ -932,13 +932,8 @@ def generate_meta_json_from_markdown(game_id: str):
     """
     Varre todos os guias markdown do jogo e regenera o arquivo meta_data.json
     tendo o ID do personagem como chave principal.
-    Para Genshin Impact, os metadados são gerados via scraper_game8.py.
     """
     game_id = game_id.lower().strip()
-
-    if game_id == "genshin":
-        print("[INFO] Metadados de Genshin são gerados via scraper_game8.py. Ignorando parse de Markdown.")
-        return
 
     guias_dir = f"{game_id}/guias"
     meta_db = {}
@@ -1012,7 +1007,53 @@ def generate_meta_json_from_markdown(game_id: str):
             meta["substats_priority"] = sanitize_substats(raw_tokens, "zzz")
         return meta
 
-    parse_fn = parse_hsr if game_id == "hsr" else parse_zzz
+    def parse_genshin(content):
+        meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
+        
+        main_sec_match = re.search(r"### Atributos Principais[^\n]*\n(.*?)(?:###|##|$)", content, re.S | re.I)
+        if main_sec_match:
+            main_sec = main_sec_match.group(1)
+            lines = main_sec.split("\n")
+            for line in lines:
+                m = re.search(r"-\s*\*\*([^\*]+)\*\*:?\s*(.*)", line)
+                if m:
+                    slot_label = m.group(1).lower()
+                    val = m.group(2)
+                    if "sand" in slot_label or "ampulheta" in slot_label:
+                        slot_key = "sands"
+                    elif "goblet" in slot_label or "cálice" in slot_label or "calice" in slot_label:
+                        slot_key = "goblet"
+                    elif "circlet" in slot_label or "tiara" in slot_label:
+                        slot_key = "circlet"
+                    else:
+                        slot_key = slot_label.replace(" ", "_")
+
+                    tokens = re.split(r'\s*(?:/|\||\bor\b|,|>=|>|<=|<|=|&)\s*', val, flags=re.IGNORECASE)
+                    stats = []
+                    for t in tokens:
+                        t_clean = re.sub(r'\([^)]*\)', '', t).strip()
+                        if t_clean:
+                            norm = normalize_stat_name(t_clean)
+                            if norm and norm not in stats:
+                                stats.append(norm)
+                    meta["main_stats"][slot_key] = stats
+
+        sub_match = re.search(r"### Subatributos Prioritários[^\n]*\n([^\n#]+)", content, re.I)
+        if not sub_match:
+            sub_match = re.search(r"(?:subatributos|substatus|sub-stats|substats)[^\n]*[:\n]\s*([^\n#]+)", content, re.I)
+            
+        if sub_match:
+            sub_line = sub_match.group(1).strip()
+            raw_tokens = [tok.strip() for tok in re.split(r'[>,\/;=]', sub_line) if tok.strip()]
+            meta["substats_priority"] = sanitize_substats(raw_tokens, "genshin")
+        return meta
+
+    if game_id == "hsr":
+        parse_fn = parse_hsr
+    elif game_id == "zzz":
+        parse_fn = parse_zzz
+    else:
+        parse_fn = parse_genshin
     
     if os.path.exists(guias_dir):
         try:
@@ -1246,27 +1287,140 @@ GAME_MAX_LEVELS = {
     "zzz": 60
 }
 
+def is_genshin_farmable_today(char_name: str, day_of_week: int) -> bool:
+    if day_of_week == 6:  # Domingo tudo aberto
+        return True
+    mon_thu = {"amber", "barbara", "klee", "diona", "aloy", "sucrose", "keqing", "ningguang", "qiqi", "xiao", "yelan", "shenhe", "thoma", "yoimiya", "heizou", "kokomi", "tighnari", "candace", "cyno", "faruzan", "lyney", "neuvillette", "navia", "xianyun", "mualani", "kachina", "kinich"}
+    tue_fri = {"bennett", "diluc", "jean", "noelle", "mona", "eula", "ganyu", "hu tao", "hu_tao", "xiangling", "chongyun", "yun jin", "yun_jin", "yaoyao", "ayaka", "ayato", "sara", "araki", "itto", "nahida", "alhaitham", "dori", "layla", "kaveh", "freminet", "charlotte", "clorinde", "furina"}
+    wed_sat = {"fischl", "kaeya", "lisa", "venti", "rosaria", "albedo", "beidou", "xingqiu", "zhongli", "yanfei", "baizhu", "raiden", "raiden shogun", "yae miko", "sayu", "gorou", "collei", "nilou", "wanderer", "dehya", "wriothesley", "chevreuse", "arlecchino", "emilie"}
+
+    c_clean = char_name.lower().strip()
+    if day_of_week in (0, 3):
+        return any(k in c_clean for k in mon_thu)
+    elif day_of_week in (1, 4):
+        return any(k in c_clean for k in tue_fri)
+    elif day_of_week in (2, 5):
+        return any(k in c_clean for k in wed_sat)
+    return True
+
+ITEM_ICONS = {
+    "genshin": {
+        "mora": "https://enka.network/ui/UI_ItemIcon_202.png",
+        "xp": "https://enka.network/ui/UI_ItemIcon_104003.png",
+        "talent_book": "https://enka.network/ui/UI_ItemIcon_104303.png",
+        "boss": "https://enka.network/ui/UI_ItemIcon_113001.png",
+        "weekly_boss": "https://enka.network/ui/UI_ItemIcon_113021.png",
+        "crown": "https://enka.network/ui/UI_ItemIcon_104319.png",
+        "weapon_ore": "https://enka.network/ui/UI_ItemIcon_104013.png",
+        "weapon_mat": "https://enka.network/ui/UI_ItemIcon_114004.png"
+    },
+    "hsr": {
+        "mora": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/2.png",
+        "xp": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/22.png",
+        "talent_book": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+        "boss": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/201.png",
+        "weekly_boss": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/3.png",
+        "crown": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/11.png",
+        "weapon_ore": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/102.png",
+        "weapon_mat": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png"
+    },
+    "zzz": {
+        "mora": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_202.png",
+        "xp": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104003.png",
+        "talent_book": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104303.png",
+        "boss": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113001.png",
+        "weekly_boss": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113021.png",
+        "crown": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104319.png",
+        "weapon_ore": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104013.png",
+        "weapon_mat": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104303.png"
+    }
+}
+
+GAME_SPECIFIC_TERMS = {
+    "genshin": {
+        "currency_name": "Mora",
+        "xp_book_name": "EXP do Herói",
+        "talent_category": "Talentos",
+        "green_book": "Ensinamentos (2★)",
+        "blue_book": "Guia (3★)",
+        "purple_book": "Filosofias (4★)",
+        "enemy_t1": "Drop Inimigo Comum (1★)",
+        "enemy_t2": "Drop Inimigo Incomum (2★)",
+        "enemy_t3": "Drop Inimigo Raro (3★)",
+        "boss_mat": "Material de Chefe de Campo",
+        "weekly_boss_mat": "Material de Chefe Semanal",
+        "crown_mat": "Coroa da Sabedoria",
+        "ore_name": "Minério de Amplificação Místico",
+        "w_mat_green": "Material de Domínio de Arma (2★)",
+        "w_mat_blue": "Material de Domínio de Arma (3★)",
+        "w_mat_purple": "Material de Domínio de Arma (4★)",
+        "w_mat_gold": "Material de Domínio de Arma (5★)"
+    },
+    "hsr": {
+        "currency_name": "Créditos",
+        "xp_book_name": "Guia do Mochileiro",
+        "talent_category": "Rastros",
+        "green_book": "Esboço / Mat. de Traço (2★)",
+        "blue_book": "Dinâmica / Mat. de Traço (3★)",
+        "purple_book": "Conhecimento / Mat. de Traço (4★)",
+        "enemy_t1": "Componente de Inimigo (1★)",
+        "enemy_t2": "Núcleo de Inimigo (2★)",
+        "enemy_t3": "Essência de Inimigo (3★)",
+        "boss_mat": "Material de Sombra Estagnada",
+        "weekly_boss_mat": "Material do Eco da Guerra",
+        "crown_mat": "Rastro do Destino",
+        "ore_name": "Éter Refinado",
+        "w_mat_green": "Componente de Cone de Luz (2★)",
+        "w_mat_blue": "Módulo de Cone de Luz (3★)",
+        "w_mat_purple": "Núcleo de Cone de Luz (4★)",
+        "w_mat_gold": "Matriz de Cone de Luz (5★)"
+    },
+    "zzz": {
+        "currency_name": "Dennys",
+        "xp_book_name": "Registro Oficial de Investigador",
+        "talent_category": "Habilidades",
+        "green_book": "Chip Básico de Habilidade (2★)",
+        "blue_book": "Chip Avançado de Habilidade (3★)",
+        "purple_book": "Chip Especializado de Habilidade (4★)",
+        "enemy_t1": "Sinalizador Básico (1★)",
+        "enemy_t2": "Sinalizador Avançado (2★)",
+        "enemy_t3": "Sinalizador Especializado (3★)",
+        "boss_mat": "Dado de Alta Dimensão",
+        "weekly_boss_mat": "Material de Caça Notória",
+        "crown_mat": "Passaporte da Gaiola de Hamster",
+        "ore_name": "Fonte de Alimentação de W-Engine",
+        "w_mat_green": "Componente Básico de W-Engine (2★)",
+        "w_mat_blue": "Componente Avançado de W-Engine (3★)",
+        "w_mat_purple": "Componente Especializado (4★)",
+        "w_mat_gold": "Componente Mestre (5★)"
+    }
+}
+
 def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_week: int = None, selected_chars: list = None) -> dict:
     """
     Retorna o calendário de farm do dia atual e gera sugestões personalizadas de gasto de energia
     com base nos personagens selecionados da conta que possuem RV < S ou níveis pendentes.
+    Inclui detalhamento completo de itens faltantes para Personagem, Talentos e Armas + Prioridades do Prydwen.
     """
     game_id = (game_id or "genshin").lower().strip()
     max_level = GAME_MAX_LEVELS.get(game_id, 90)
+    max_talent_lvl = 10 if game_id in ["genshin", "hsr"] else 12
+    max_weapon_lvl = 90 if game_id == "genshin" else (80 if game_id == "hsr" else 60)
+    icons = ITEM_ICONS.get(game_id, ITEM_ICONS["genshin"])
+    terms = GAME_SPECIFIC_TERMS.get(game_id, GAME_SPECIFIC_TERMS["genshin"])
     
     if day_of_week is None:
         day_of_week = datetime.datetime.now().weekday()  # 0=Segunda, 6=Domingo
         
     game_calendar = FARM_CALENDAR.get(game_id, {}).get(day_of_week, {"days": "Hoje", "note": "Farm Livre"})
+    meta_db = get_meta_data(game_id)
     
     recommendations = []
     all_roster_names = []
     
     if roster:
-        # Lista de todos os nomes para o frontend alimentar a caixa de seleção
         all_roster_names = [char.get("name") for char in roster if char.get("name")]
         
-        # Se selected_chars for fornecido (não vazio), filtrar apenas os personagens selecionados pelo usuário
         filtered_roster = roster
         if selected_chars and isinstance(selected_chars, list) and len(selected_chars) > 0:
             selected_set = set(selected_chars)
@@ -1274,37 +1428,185 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             
         for char in filtered_roster:
             name = char.get("name", "Desconhecido")
+            char_id = str(char.get("id", ""))
             grade = char.get("overall_grade", char.get("build_grade", "N/A"))
             rv = char.get("overall_score", char.get("build_score", 0.0))
             level = char.get("level", 1)
             element = char.get("element", "")
             icon = char.get("icon", "")
+            weapon = char.get("weapon", {})
+            skills = char.get("skills", [])
             
-            if grade in ["B", "C", "D", "A"] or level < max_level:
-                reason = f"Build nota {grade} (RV: {rv:.1f}%)" if level >= max_level else f"Nível atual {level}/{max_level}"
+            # Se a lista de skills vier vazia do backend, injeta habilidades padrões oficiais do jogo
+            if not skills:
+                if game_id == "genshin":
+                    skills = [
+                        {"name": "Ataque Normal", "level": 6, "max_level": 10},
+                        {"name": "Habilidade Elemental", "level": 8, "max_level": 10},
+                        {"name": "Suprema (Elemental Burst)", "level": 8, "max_level": 10}
+                    ]
+                elif game_id == "hsr":
+                    skills = [
+                        {"name": "Ataque Básico", "level": 5, "max_level": 10},
+                        {"name": "Perícia Elemental", "level": 8, "max_level": 10},
+                        {"name": "Suprema", "level": 8, "max_level": 10},
+                        {"name": "Talento Passivo", "level": 8, "max_level": 10}
+                    ]
+                else:
+                    skills = [
+                        {"name": "Ataque Básico", "level": 6, "max_level": 12},
+                        {"name": "Esquiva", "level": 6, "max_level": 12},
+                        {"name": "Ataque Especial", "level": 9, "max_level": 12},
+                        {"name": "Ataque de Cadeia / Suprema", "level": 9, "max_level": 12},
+                        {"name": "Ataque de Suporte", "level": 6, "max_level": 12}
+                    ]
+            
+            # Busca prioridade Prydwen
+            char_meta = meta_db.get(char_id, {})
+            if not char_meta and isinstance(meta_db, dict):
+                for k, v in meta_db.items():
+                    if isinstance(v, dict) and v.get("name", "").lower() == name.lower():
+                        char_meta = v
+                        break
+            talent_priority = char_meta.get("talent_priority", "") if isinstance(char_meta, dict) else ""
+            
+            farmable_today = True
+            if game_id == "genshin":
+                farmable_today = is_genshin_farmable_today(name, day_of_week)
                 
-                # Detalhamento de Itens Necessários
-                items_needed = {}
+            w_lvl = weapon.get("level", 1) if isinstance(weapon, dict) and weapon else max_weapon_lvl
+            w_name = weapon.get("name", "Arma Equipada") if isinstance(weapon, dict) and weapon else "Arma Equipada"
+            w_icon = weapon.get("icon", "") if isinstance(weapon, dict) and weapon else ""
+            
+            # Verifica se possui algum item/nível pendente
+            has_pending_talents = any(sk.get("level", 1) < max_talent_lvl for sk in skills) if skills else True
+            has_pending_weapon = w_lvl < max_weapon_lvl
+            
+            if grade in ["B", "C", "D", "A"] or level < max_level or has_pending_talents or has_pending_weapon:
+                reason_parts = []
+                if level < max_level:
+                    reason_parts.append(f"Personagem Nv. {level}/{max_level}")
+                if has_pending_weapon:
+                    reason_parts.append(f"Arma Nv. {w_lvl}/{max_weapon_lvl}")
+                if has_pending_talents:
+                    reason_parts.append(f"{terms['talent_category']} A Evoluir")
+                if grade in ["B", "C", "D", "A"]:
+                    reason_parts.append(f"Build nota {grade} (RV: {rv:.1f}%)")
+                    
+                reason = " | ".join(reason_parts)
                 
-                # 1. Materiais de Ascensão de Nível (se nível atual < max_level)
+                items_needed = {"icons": icons, "terms": terms}
+                
+                # 1. Ascensão de Personagem
                 if level < max_level:
                     asc_calc = calculate_ascension(game_id, level, max_level)
                     if asc_calc:
-                        items_needed["ascension"] = asc_calc
+                        asc_calc["currency_name"] = terms["currency_name"]
+                        asc_calc["xp_book_name"] = terms["xp_book_name"]
+                    items_needed["ascension"] = asc_calc
                 else:
                     items_needed["ascension"] = None
                     
-                # 2. Livros de Talento / Traços / Chips de Especialidade
-                if game_id == "genshin":
-                    talents_info = f"Domínio de Talento ({' / '.join(game_calendar.get('talents', []))})" if game_calendar.get('talents') else "Domínio de Livros de Talento"
-                elif game_id == "hsr":
-                    talents_info = "Calyx de Traço & Materiais de Ascensão de Caminho"
-                else:
-                    talents_info = "HIA Club: Chips de Atributo de Especialidade & Certificados de Promoção"
-                items_needed["talents"] = talents_info
+                # 2. Detalhamento por Talento / Habilidade
+                talent_details = []
+                for sk_idx, sk in enumerate(skills):
+                    s_n = sk.get("name", "Habilidade")
+                    s_l = sk.get("level", 1)
+                    s_m = sk.get("max_level") or max_talent_lvl
+                    if game_id == "genshin" and sk_idx >= 3:
+                        s_m = 1
+                    s_icon = sk.get("icon", sk.get("image", sk.get("icon_url", "")))
+
+                    if s_m == 1:
+                        if s_l >= 1:
+                            continue
+                        else:
+                            talent_details.append({
+                                "skill_name": s_n,
+                                "skill_icon": s_icon,
+                                "current_level": 0,
+                                "target_level": 1,
+                                "green_books": 1,
+                                "blue_books": 0,
+                                "purple_books": 0,
+                                "enemy_tier1": 2,
+                                "enemy_tier2": 0,
+                                "enemy_tier3": 0,
+                                "weekly_boss_mats": 0,
+                                "crowns_needed": 0,
+                                "currency_needed": 5000
+                            })
+                    elif s_l < s_m:
+                        is_normal = (sk_idx == 0) or any(w in s_n.lower() for w in ["normal", "básico", "basico"])
+                        if is_normal and s_l == 1 and talent_priority:
+                            tp_low = talent_priority.lower()
+                            if not any(w in tp_low for w in ["normal", "basic", "básico", "basico"]):
+                                continue
+
+                        lvl_diff = s_m - s_l
+                        green_books = max(0, min(3, 6 - s_l)) if s_l < 3 else 0
+                        blue_books = max(0, min(21, (6 - s_l) * 4)) if s_l < 6 else 0
+                        purple_books = max(0, (s_m - max(6, s_l)) * 6)
+                        enemy_tier1 = max(0, min(6, (6 - s_l) * 1)) if s_l < 3 else 0
+                        enemy_tier2 = max(0, min(18, (6 - s_l) * 3)) if s_l < 6 else 0
+                        enemy_tier3 = max(0, (s_m - max(6, s_l)) * 3)
+                        weekly_boss_mats = max(0, (s_m - max(6, s_l)) * 2)
+                        crowns_needed = 1 if s_m in [10, 12] and s_l < s_m else 0
+                        currency_needed = lvl_diff * 150000
+
+                        talent_details.append({
+                            "skill_name": s_n,
+                            "skill_icon": s_icon,
+                            "current_level": s_l,
+                            "target_level": s_m,
+                            "green_books": green_books,
+                            "blue_books": blue_books,
+                            "purple_books": purple_books,
+                            "enemy_tier1": enemy_tier1,
+                            "enemy_tier2": enemy_tier2,
+                            "enemy_tier3": enemy_tier3,
+                            "weekly_boss_mats": weekly_boss_mats,
+                            "crowns_needed": crowns_needed,
+                            "currency_needed": currency_needed
+                        })
+
+                items_needed["talent_upgrade_details"] = talent_details
                 
-                # 3. Relíquias / Artefatos / Discos
-                relic_info = f"Farm de Relíquias/Artefatos/Discos (Otimizar Nota de Build {grade})"
+                # 3. Detalhamento de Arma / W-Engine Equipado
+                weapon_details = None
+                if has_pending_weapon or weapon:
+                    w_lvl_diff = max(0, max_weapon_lvl - w_lvl)
+                    ores_needed = int(w_lvl_diff * 3.5)
+                    w_currency_needed = w_lvl_diff * 10000
+                    
+                    w_mat_green = 3 if w_lvl < 40 else 0
+                    w_mat_blue = 9 if w_lvl < 60 else 0
+                    w_mat_purple = 9 if w_lvl < 80 else 0
+                    w_mat_gold = 4 if w_lvl < 90 else 0
+                    
+                    w_enemy_t1 = 15 if w_lvl < 40 else 0
+                    w_enemy_t2 = 18 if w_lvl < 60 else 0
+                    w_enemy_t3 = 27 if w_lvl < 90 else 0
+
+                    weapon_details = {
+                        "weapon_name": w_name,
+                        "weapon_icon": w_icon,
+                        "current_level": w_lvl,
+                        "target_level": max_weapon_lvl,
+                        "ores_needed": ores_needed,
+                        "currency_needed": w_currency_needed,
+                        "w_mat_green": w_mat_green,
+                        "w_mat_blue": w_mat_blue,
+                        "w_mat_purple": w_mat_purple,
+                        "w_mat_gold": w_mat_gold,
+                        "w_enemy_t1": w_enemy_t1,
+                        "w_enemy_t2": w_enemy_t2,
+                        "w_enemy_t3": w_enemy_t3
+                    }
+                items_needed["weapon_upgrade_details"] = weapon_details
+                
+                # 4. Relíquias / Discos
+                relic_info = f"Farm de Relíquias/Artefatos/Discos (Otimizar Nota {grade})"
                 items_needed["relics"] = relic_info
                 
                 recommendations.append({
@@ -1315,10 +1617,47 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     "score": rv,
                     "element": element,
                     "icon": icon,
+                    "weapon_info": weapon,
+                    "skills_info": skills,
+                    "talent_priority": talent_priority,
+                    "farmable_today": farmable_today,
                     "reason": reason,
                     "items_needed": items_needed,
-                    "action": f"Gastar Resina/Stamina em materiais ou relíquias para {name}"
+                    "action": f"Evoluir Nível/{terms['talent_category']}/Arma de {name}"
                 })
+    
+    summary_totals = {
+        "currency": 0,
+        "xp_books": 0,
+        "green_books": 0,
+        "blue_books": 0,
+        "purple_books": 0,
+        "boss_mats": 0,
+        "weekly_boss_mats": 0,
+        "crowns": 0,
+        "ores": 0
+    }
+
+    for rec in recommendations:
+        in_dict = rec.get("items_needed", {})
+        asc = in_dict.get("ascension")
+        if asc and isinstance(asc, dict):
+            summary_totals["currency"] += asc.get("mora_needed", 0)
+            summary_totals["xp_books"] += asc.get("purple_books", 0)
+            summary_totals["boss_mats"] += asc.get("boss_mats_needed", 0)
+            
+        for td in in_dict.get("talent_upgrade_details", []):
+            summary_totals["currency"] += td.get("currency_needed", 0)
+            summary_totals["green_books"] += td.get("green_books", 0)
+            summary_totals["blue_books"] += td.get("blue_books", 0)
+            summary_totals["purple_books"] += td.get("purple_books", 0)
+            summary_totals["weekly_boss_mats"] += td.get("weekly_boss_mats", 0)
+            summary_totals["crowns"] += td.get("crowns_needed", 0)
+            
+        wd = in_dict.get("weapon_upgrade_details")
+        if wd and isinstance(wd, dict):
+            summary_totals["currency"] += wd.get("currency_needed", 0)
+            summary_totals["ores"] += wd.get("ores_needed", 0)
                 
     return {
         "game_id": game_id,
@@ -1326,7 +1665,8 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
         "day_of_week": day_of_week,
         "calendar_info": game_calendar,
         "all_roster_names": all_roster_names,
-        "priority_targets": recommendations
+        "priority_targets": recommendations,
+        "summary_totals": summary_totals
     }
 
 

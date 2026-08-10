@@ -63,6 +63,11 @@ def init_db() -> None:
             cursor.execute("ALTER TABLE characters ADD COLUMN char_id TEXT")
         except sqlite3.OperationalError:
             pass
+            
+        try:
+            cursor.execute("ALTER TABLE characters ADD COLUMN skills_json TEXT")
+        except sqlite3.OperationalError:
+            pass
         
         # 3. Tabela de Relíquias / Artefatos / Discos
         cursor.execute("""
@@ -142,7 +147,7 @@ def save_character(
     uid: str, game_id: str, name: str, level: int, rarity: int, rank_str: str, 
     element: str, icon: str, weapon_name: str, weapon_level: int, 
     weapon_rank: int, weapon_icon: str, raw_md: str, char_id: Optional[str] = None, 
-    gacha_art: Optional[str] = None
+    gacha_art: Optional[str] = None, skills_json: Optional[str] = None
 ) -> None:
     """Salva ou atualiza as informações de um personagem no SQLite."""
     with get_connection() as conn:
@@ -150,10 +155,10 @@ def save_character(
         cursor.execute("""
         INSERT OR REPLACE INTO characters (
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
-            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
-              weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id))
+              weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json))
 
 def clear_character_relics(uid: str, character_name: str) -> None:
     """Remove todas as relíquias/artefatos cadastrados de um personagem para atualização."""
@@ -197,6 +202,13 @@ def get_roster_data(game_id: str) -> List[Dict[str, Any]]:
                     r_dict["name"] = clean_relic_name(r_dict["name"])
                 relics_list.append(r_dict)
             
+            skills_list = []
+            if "skills_json" in r_keys and r["skills_json"]:
+                try:
+                    skills_list = json.loads(r["skills_json"])
+                except Exception:
+                    skills_list = []
+            
             char_dict = {
                 "id": r["char_id"] if "char_id" in r_keys and r["char_id"] else "",
                 "uid": r["uid"],
@@ -213,7 +225,8 @@ def get_roster_data(game_id: str) -> List[Dict[str, Any]]:
                     "rank": r["weapon_rank"],
                     "icon": r["weapon_icon"]
                 } if r["weapon_name"] else None,
-                "relics": relics_list
+                "relics": relics_list,
+                "skills": skills_list
             }
             roster.append(char_dict)
             

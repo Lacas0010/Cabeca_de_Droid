@@ -51,13 +51,11 @@ hoyo_app.db
 hsr/
 zzz/
 genshin/
-meus_personagens_hsr.md
-meta_e_tierlists_atual.md
+meta_data_*.json
+meus_personagens_*.md
+meta_e_tierlists_*.md
 meta_endgame_report.md
-todos_os_guias_prydwen.md
-guias_prydwen/
 moc_payload_dump.txt
-game8_temp.json
 
 # Asset Cache (Downloaded dynamically at runtime)
 assets/avatars/
