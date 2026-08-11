@@ -1,7 +1,7 @@
 import os
 import re
 import json
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 class PrydwenGenshinScraper:
@@ -32,7 +32,7 @@ class PrydwenGenshinScraper:
         """
         url = f"{self.base_url}/characters"
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except Exception as e:
             raise Exception(f"Falha de conexão ao carregar lista de personagens de Genshin: {e}")
@@ -143,7 +143,7 @@ class PrydwenGenshinScraper:
         Raspa a página de guia de um personagem de Genshin e extrai dados estruturados.
         """
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except requests.HTTPError as he:
             raise Exception(f"Erro HTTP {he.response.status_code} ao acessar guia de {character_name}")
@@ -423,7 +423,7 @@ class PrydwenGenshinScraper:
         """
         url = f"{self.base_url}/tier-list"
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except Exception as e:
             raise Exception(f"Falha de conexão ao carregar Tier List de Genshin: {e}")

@@ -1,7 +1,7 @@
 import os
 import re
 import json
-import requests
+from curl_cffi import requests
 import asyncio
 import unicodedata
 import genshin
