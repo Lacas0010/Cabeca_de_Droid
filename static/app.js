@@ -3749,6 +3749,35 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    // Event listener para o botão de apagar pastas e banco de dados (Zona de Perigo)
+    const btnResetData = document.getElementById("btn-reset-data");
+    if (btnResetData) {
+        btnResetData.addEventListener("click", async () => {
+            const confirmed = confirm("ATENÇÃO: Deseja realmente apagar as 3 pastas (zzz, hsr, genshin) e todo o banco de dados? Esta ação não pode ser desfeita.");
+            if (!confirmed) return;
+
+            btnResetData.disabled = true;
+            btnResetData.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Apagando dados...';
+
+            try {
+                const res = await fetch("/api/reset-data", { method: "POST" });
+                const data = await res.json();
+                if (res.ok) {
+                    alert(data.message || "Pastas e banco de dados apagados com sucesso!");
+                    window.location.reload();
+                } else {
+                    alert("Erro ao apagar dados: " + (data.detail || "Erro desconhecido."));
+                }
+            } catch (err) {
+                console.error("Erro ao apagar dados:", err);
+                alert("Falha na comunicação com o servidor ao tentar apagar os dados.");
+            } finally {
+                btnResetData.disabled = false;
+                btnResetData.innerHTML = '<i class="fa-solid fa-trash-can"></i> Apagar Pastas e Banco de Dados';
+            }
+        });
+    }
+
     // Auto-carregamento inicial de dados quando as abas são ativadas
     document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.addEventListener("click", () => {

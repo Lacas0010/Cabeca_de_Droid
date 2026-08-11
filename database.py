@@ -342,3 +342,15 @@ def get_all_saved_accounts() -> List[Dict[str, Any]]:
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
 
+def reset_database() -> None:
+    """Remove todas as tabelas e recria a estrutura limpa do banco de dados SQLite."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DROP TABLE IF EXISTS character_relics")
+        cursor.execute("DROP TABLE IF EXISTS characters")
+        cursor.execute("DROP TABLE IF EXISTS game_accounts")
+        cursor.execute("DROP TABLE IF EXISTS daily_notes_cache")
+        cursor.execute("DROP TABLE IF EXISTS daily_checkin_logs")
+    init_db()
+
+
