@@ -1,7 +1,7 @@
 import os
 import re
 import json
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 class PrydwenMetaScraper:
@@ -10,7 +10,7 @@ class PrydwenMetaScraper:
         Inicializa o raspador de meta, tier list e relatórios de endgame da Prydwen.
         """
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
         }
         self.url = "https://www.prydwen.gg/star-rail/tier-list"
         self.rating_map = {
@@ -87,7 +87,7 @@ class PrydwenMetaScraper:
         2. Lista de personagens e seus ratings de tier para cada modo do JSON do payload.
         """
         try:
-            r = requests.get(self.url, headers=self.headers, timeout=15)
+            r = requests.get(self.url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except requests.HTTPError as he:
             raise Exception(f"Erro HTTP {he.response.status_code} ao acessar a Tier List")
@@ -192,7 +192,7 @@ class PrydwenMetaScraper:
         
         for key, (url, mode_key, mode_title, metric_name) in urls.items():
             try:
-                r = requests.get(url, headers=self.headers, timeout=15)
+                r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
                 r.raise_for_status()
             except Exception as e:
                 print(f"Erro ao carregar dados de endgame para {mode_title}: {e}")

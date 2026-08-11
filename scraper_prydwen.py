@@ -1,6 +1,6 @@
 import os
 import re
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 class PrydwenScraper:
@@ -30,7 +30,7 @@ class PrydwenScraper:
         """
         url = f"{self.base_url}/star-rail/characters"
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except requests.HTTPError as he:
             raise Exception(f"Erro HTTP ao buscar lista de personagens: Código {he.response.status_code}")
@@ -210,7 +210,7 @@ class PrydwenScraper:
         em linguagem natural (Kit de Habilidades, Justificativa de Builds, Review e Times).
         """
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except requests.HTTPError as he:
             raise Exception(f"Erro HTTP {he.response.status_code} ao acessar o guia de {character_name}")

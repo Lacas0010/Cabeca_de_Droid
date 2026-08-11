@@ -1,7 +1,7 @@
 import os
 import re
 import json
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 class PrydwenZZZScraper:
@@ -32,7 +32,7 @@ class PrydwenZZZScraper:
         """
         url = f"{self.base_url}/characters"
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except Exception as e:
             raise Exception(f"Falha de conexão ao carregar lista de agentes ZZZ: {e}")
@@ -146,7 +146,7 @@ class PrydwenZZZScraper:
         Raspa a página de guia de um Agente do ZZZ e estrutura os dados.
         """
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except Exception as e:
             raise Exception(f"Falha ao acessar o guia de {agent_name}: {e}")
@@ -424,7 +424,7 @@ class PrydwenZZZScraper:
         """
         url = f"{self.domain}/zenless/tier-list"
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except Exception as e:
             raise Exception(f"Falha ao carregar Tier List de ZZZ: {e}")
@@ -491,7 +491,7 @@ class PrydwenZZZScraper:
     def _parse_endgame_page(self, page_name: str) -> dict:
         url = f"{self.domain}/zenless/{page_name}"
         try:
-            r = requests.get(url, headers=self.headers, timeout=15)
+            r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=30)
             r.raise_for_status()
         except Exception as e:
             print(f"Aviso: Não foi possível obter dados de {page_name}: {e}")

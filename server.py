@@ -427,9 +427,9 @@ async def proxy_image(url: str):
     }
     
     try:
-        import requests
+        from curl_cffi import requests
         def fetch():
-            return requests.get(url, headers=headers, timeout=12)
+            return requests.get(url, headers=headers, impersonate="chrome", timeout=30)
             
         resp = await asyncio.to_thread(fetch)
         
@@ -1774,16 +1774,16 @@ def get_resource_path(relative_path):
 
 def download_element_icons():
     """Garante que todos os ícones oficiais de elementos dos 3 jogos estejam em cache local."""
-    import requests
+    from curl_cffi import requests
     target_dir = get_resource_path(os.path.join("assets", "elements"))
     os.makedirs(target_dir, exist_ok=True)
-    headers = {"User-Agent": "Mozilla/5.0"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"}
     for game, elements in ELEMENT_ICONS_MAP.items():
         for elem_name, url in elements.items():
             path = os.path.join(target_dir, f"{game}_{elem_name}.png")
             if not os.path.exists(path):
                 try:
-                    res = requests.get(url, headers=headers, timeout=10)
+                    res = requests.get(url, headers=headers, impersonate="chrome", timeout=30)
                     if res.status_code == 200:
                         with open(path, "wb") as f:
                             f.write(res.content)
