@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import shutil
 import asyncio
 import threading
 import traceback
@@ -1982,6 +1983,27 @@ async def download_guides_zip(game_id: Optional[str] = None):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro ao gerar arquivo zip de guias: {e}")
+
+
+@app.api_route("/api/reset-data", methods=["GET", "POST"])
+async def reset_all_data():
+    """Apaga as 3 pastas (zzz, hsr, genshin) e limpa todo o banco de dados SQLite."""
+    try:
+        folders = ["zzz", "hsr", "genshin"]
+        for folder in folders:
+            folder_path = get_resource_path(folder)
+            if os.path.exists(folder_path):
+                shutil.rmtree(folder_path, ignore_errors=True)
+
+        database.reset_database()
+
+        return JSONResponse({
+            "status": "success",
+            "message": "Pastas zzz, hsr, genshin e banco de dados foram apagados com sucesso!"
+        })
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Erro ao apagar dados: {str(e)}")
 
 # ==========================================
 
