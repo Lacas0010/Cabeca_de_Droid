@@ -2966,6 +2966,253 @@ async function generateBuildCardCanvas(char, gameId) {
     return canvas;
 }
 
+// Função para gerar Canvas HD da Tier List da Conta
+window.generateTierListCardCanvas = async (gameId, auditData) => {
+    const gameNames = { hsr: "HONKAI: STAR RAIL", genshin: "GENSHIN IMPACT", zzz: "ZENLESS ZONE ZERO" };
+    const themeColors = { hsr: "#ec4899", genshin: "#38bdf8", zzz: "#f59e0b" };
+    const themeColor = themeColors[gameId] || "#a855f7";
+    const tierList = (auditData && auditData.tier_list) || {};
+    const tierKeys = ["S+", "S", "A", "B", "C/D"];
+    const tierColors = { "S+": "#ef4444", "S": "#f59e0b", "A": "#10b981", "B": "#38bdf8", "C/D": "#94a3b8" };
+
+    function loadImage(url) {
+        return new Promise((resolve) => {
+            if (!url) return resolve(null);
+            let finalUrl = url;
+            if (url.startsWith("http://") || url.startsWith("https://")) {
+                finalUrl = `/api/proxy_image?url=${encodeURIComponent(url)}`;
+            }
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = finalUrl;
+        });
+    }
+
+    function drawRoundedRect(ctx, x, y, w, h, r, fillStyle, strokeStyle, lineWidth = 1) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        if (fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.fill();
+        }
+        if (strokeStyle) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+    }
+
+    const logoImg = (await loadImage(`/assets/${gameId}_icon.png`)) || (await loadImage("/assets/logo.svg"));
+
+    const avatarPromises = [];
+    const charImgMap = {};
+
+    tierKeys.forEach((tier) => {
+        const chars = tierList[tier] || [];
+        chars.forEach((c) => {
+            if (c.icon) {
+                avatarPromises.push(
+                    loadImage(c.icon).then((img) => {
+                        if (img) charImgMap[c.icon] = img;
+                    })
+                );
+            }
+        });
+    });
+
+    await Promise.all(avatarPromises);
+
+    const width = 1200;
+    const charsPerRow = 5;
+    const charW = 202;
+    const charH = 58;
+
+    let totalTierRowsH = 0;
+    const tierRowHeights = {};
+
+    tierKeys.forEach((tier) => {
+        const chars = tierList[tier] || [];
+        const rowCount = Math.max(1, Math.ceil(chars.length / charsPerRow));
+        const rH = Math.max(76, rowCount * (charH + 8) + 14);
+        tierRowHeights[tier] = rH;
+        totalTierRowsH += rH + 14;
+    });
+
+    const headerH = 150;
+    const footerH = 50;
+    const height = Math.max(620, headerH + totalTierRowsH + footerH);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0, "#080c16");
+    bgGrad.addColorStop(0.5, "#0e1626");
+    bgGrad.addColorStop(1, "#060810");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    drawRoundedRect(ctx, 10, 10, width - 20, height - 20, 16, "transparent", "rgba(255, 255, 255, 0.1)", 1.5);
+
+    let titleX = 30;
+    if (logoImg) {
+        ctx.drawImage(logoImg, 30, 28, 30, 30);
+        titleX = 70;
+    }
+
+    ctx.font = "bold 12px sans-serif";
+    ctx.fillStyle = themeColor;
+    ctx.fillText(`${gameNames[gameId] || gameId.toUpperCase()} • CABEÇA DE DROID v4.0`, titleX, 42);
+
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText("Tier List de Builds (Roll Value)", 30, 80);
+
+    ctx.font = "500 12px sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText("Classificação dos seus personagens baseada no score matemático das relíquias", 30, 100);
+
+    const kpis = [
+        { label: "TOTAL PERSONAGENS", val: `${auditData.total_characters || 0}`, color: "#38bdf8" },
+        { label: "MÉDIA DE NOTA (RV)", val: `${auditData.avg_rv || 0}%`, color: "#f59e0b" },
+        { label: "BUILDS S / SSS", val: `${auditData.s_count || 0}`, color: "#10b981" }
+    ];
+
+    const kpiW = 125;
+    const kpiH = 56;
+    const kpiY = 28;
+    kpis.forEach((kpi, idx) => {
+        const kpiX = width - 30 - (3 - idx) * (kpiW + 10);
+        drawRoundedRect(ctx, kpiX, kpiY, kpiW, kpiH, 10, "rgba(15, 23, 42, 0.8)", "rgba(255, 255, 255, 0.08)", 1);
+
+        ctx.font = "bold 9px sans-serif";
+        ctx.fillStyle = "#94a3b8";
+        ctx.textAlign = "center";
+        ctx.fillText(kpi.label, kpiX + kpiW / 2, kpiY + 18);
+
+        ctx.font = "bold 17px sans-serif";
+        ctx.fillStyle = kpi.color;
+        ctx.fillText(kpi.val, kpiX + kpiW / 2, kpiY + 41);
+        ctx.textAlign = "left";
+    });
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(30, 122);
+    ctx.lineTo(width - 30, 122);
+    ctx.stroke();
+
+    let currentY = 138;
+
+    tierKeys.forEach((tier) => {
+        const chars = tierList[tier] || [];
+        const color = tierColors[tier] || "#94a3b8";
+        const rowH = tierRowHeights[tier];
+
+        drawRoundedRect(ctx, 30, currentY, width - 60, rowH, 12, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.06)", 1);
+
+        const badgeW = 58;
+        const badgeH = rowH - 16;
+        const badgeX = 38;
+        const badgeY = currentY + 8;
+
+        drawRoundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 10, color, "transparent", 0);
+
+        ctx.font = "bold 22px sans-serif";
+        ctx.fillStyle = "#000000";
+        ctx.textAlign = "center";
+        ctx.fillText(tier, badgeX + badgeW / 2, badgeY + badgeH / 2 + 7);
+        ctx.textAlign = "left";
+
+        const charStartX = badgeX + badgeW + 14;
+
+        if (chars.length === 0) {
+            ctx.font = "italic 13px sans-serif";
+            ctx.fillStyle = "#64748b";
+            ctx.fillText("Nenhum personagem nesta categoria", charStartX, currentY + rowH / 2 + 4);
+        } else {
+            chars.forEach((c, idx) => {
+                const col = idx % charsPerRow;
+                const row = Math.floor(idx / charsPerRow);
+
+                const cx = charStartX + col * (charW + 10);
+                const cy = currentY + 9 + row * (charH + 8);
+
+                drawRoundedRect(ctx, cx, cy, charW, charH, 10, "rgba(255, 255, 255, 0.05)", "rgba(255, 255, 255, 0.09)", 1);
+
+                const avatarSize = 42;
+                const avatarX = cx + 8;
+                const avatarY = cy + (charH - avatarSize) / 2;
+                const cImg = charImgMap[c.icon];
+
+                if (cImg) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+                    ctx.clip();
+                    ctx.drawImage(cImg, avatarX, avatarY, avatarSize, avatarSize);
+                    ctx.restore();
+
+                    ctx.beginPath();
+                    ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+                    ctx.strokeStyle = color;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+
+                const textX = avatarX + avatarSize + 10;
+                ctx.font = "bold 12px sans-serif";
+                ctx.fillStyle = "#ffffff";
+                const cName = c.name.length > 14 ? c.name.substring(0, 13) + "." : c.name;
+                ctx.fillText(cName, textX, cy + 23);
+
+                ctx.font = "bold 11px sans-serif";
+                ctx.fillStyle = color;
+                const scoreStr = `${c.score.toFixed(1)}%`;
+                ctx.fillText(scoreStr, textX, cy + 42);
+
+                const gradeStr = c.grade || "D";
+                const gradeBadgeX = textX + ctx.measureText(scoreStr).width + 6;
+                drawRoundedRect(ctx, gradeBadgeX, cy + 30, 30, 16, 4, "rgba(255, 255, 255, 0.12)", "transparent", 0);
+                ctx.font = "bold 10px sans-serif";
+                ctx.fillStyle = "#ffffff";
+                ctx.textAlign = "center";
+                ctx.fillText(gradeStr, gradeBadgeX + 15, cy + 42);
+                ctx.textAlign = "left";
+            });
+        }
+
+        currentY += rowH + 14;
+    });
+
+    const nowStr = new Date().toLocaleDateString("pt-BR") + " " + new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillStyle = themeColor;
+    ctx.fillText("CABEÇA DE DROID v4.0", 30, height - 20);
+
+    ctx.font = "500 11px sans-serif";
+    ctx.fillStyle = "#64748b";
+    ctx.textAlign = "right";
+    ctx.fillText(`Gerado em ${nowStr}`, width - 30, height - 20);
+    ctx.textAlign = "left";
+
+    return canvas;
+};
+
 // Configuração dos eventos do Modal de Exportação de Card
 document.addEventListener("DOMContentLoaded", () => {
     const btnExportCard = document.getElementById("btn-export-card");
@@ -2985,8 +3232,10 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
 
+        window.currentExportCardName = `Build_${getSafeFileName(window.currentInspectorChar.name)}_${(window.currentInspectorGameId || "hoyo").toUpperCase()}`;
         modalExportCard.style.display = "flex";
         exportCardStatus.style.display = "flex";
+        exportCardStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Gerando card HD da build...</span>`;
         exportPreviewImg.style.display = "none";
         btnDownloadCardImg.disabled = true;
         btnCopyCardImg.disabled = true;
@@ -3006,6 +3255,34 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     };
 
+    const openExportTierListModalHandler = async (targetGameId) => {
+        const activeTabBtn = document.querySelector(".tab-audit-game-btn.active") || document.querySelector(".audit-game-tab.active");
+        const gameId = targetGameId || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || window.activeGameTab || "hsr";
+        window.currentExportCardName = `TierList_${gameId.toUpperCase()}`;
+        modalExportCard.style.display = "flex";
+        exportCardStatus.style.display = "flex";
+        exportCardStatus.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>Gerando imagem HD da Tier List (${gameId.toUpperCase()})...</span>`;
+        exportPreviewImg.style.display = "none";
+        btnDownloadCardImg.disabled = true;
+        btnCopyCardImg.disabled = true;
+
+        try {
+            const res = await fetch(`/api/audit/${gameId}`);
+            const auditData = await res.json();
+            currentGeneratedCanvas = await window.generateTierListCardCanvas(gameId, auditData);
+            currentGeneratedBlob = await new Promise(resolve => currentGeneratedCanvas.toBlob(resolve, "image/png"));
+            const dataUrl = currentGeneratedCanvas.toDataURL("image/png");
+            exportPreviewImg.src = dataUrl;
+            exportPreviewImg.style.display = "block";
+            exportCardStatus.style.display = "none";
+            btnDownloadCardImg.disabled = false;
+            btnCopyCardImg.disabled = false;
+        } catch (err) {
+            console.error("Erro ao gerar imagem da Tier List:", err);
+            exportCardStatus.innerHTML = `<span style="color: var(--color-danger);">Erro ao gerar imagem da Tier List: ${err.message}</span>`;
+        }
+    };
+
     if (modalExportCard) {
         if (btnExportCard) {
             btnExportCard.addEventListener("click", openExportModalHandler);
@@ -3014,6 +3291,12 @@ document.addEventListener("DOMContentLoaded", () => {
         document.addEventListener("click", (e) => {
             if (e.target && e.target.closest(".trigger-export-card")) {
                 openExportModalHandler();
+            }
+            if (e.target && e.target.closest(".trigger-export-tierlist")) {
+                const btn = e.target.closest(".trigger-export-tierlist");
+                const activeTabBtn = document.querySelector(".tab-audit-game-btn.active") || document.querySelector(".audit-game-tab.active");
+                const gId = btn.dataset.game || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || "hsr";
+                openExportTierListModalHandler(gId);
             }
         });
 
@@ -3034,8 +3317,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (!currentGeneratedCanvas) return;
                 const charName = window.currentInspectorChar ? window.currentInspectorChar.name : "Personagem";
                 const gameId = window.currentInspectorGameId || "hoyo";
+                const fileName = window.currentExportCardName ? window.currentExportCardName : `Build_${getSafeFileName(charName)}_${gameId.toUpperCase()}`;
                 const link = document.createElement("a");
-                link.download = `Build_${getSafeFileName(charName)}_${gameId.toUpperCase()}.png`;
+                link.download = `${fileName}.png`;
                 link.href = currentGeneratedCanvas.toDataURL("image/png");
                 link.click();
                 showToast("Download da imagem iniciado!");
@@ -3625,6 +3909,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // 4. TIER LIST & AUDIT REPORT
     window.loadAuditReport = async (gameId, targetContainerId = "audit-report-body") => {
+        window.currentAuditGameId = gameId;
         const body = document.getElementById(targetContainerId);
         if (!body) return;
         body.innerHTML = "<div style='color:#94a3b8;'>Gerando relatório de auditoria e Tier List da conta...</div>";

@@ -637,10 +637,15 @@
                     </div>
                 </div>
                 <div style="margin-top: 20px;">
-                    <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                        <button class="filter-btn active tab-audit-game-btn" data-game="hsr">Honkai: Star Rail</button>
-                        <button class="filter-btn tab-audit-game-btn" data-game="genshin">Genshin Impact</button>
-                        <button class="filter-btn tab-audit-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="filter-btn active tab-audit-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                            <button class="filter-btn tab-audit-game-btn" data-game="genshin">Genshin Impact</button>
+                            <button class="filter-btn tab-audit-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                        </div>
+                        <button id="btn-export-tierlist-card" class="primary-btn trigger-export-tierlist" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; cursor: pointer; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-camera"></i> Gerar Imagem HD da Tier List
+                        </button>
                     </div>
                     <div id="tab-audit-report-body" class="overview-card">
                         <!-- Preenchido via JS -->
@@ -1221,9 +1226,14 @@
     <!-- MODAL 4: AUDIT REPORT & TIER LIST DA CONTA -->
     <div id="modal-audit-report" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
         <div class="modal-card-content" style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; width: 92%; max-width: 800px; padding: 20px; max-height: 85vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                 <h3 style="margin: 0; color: #a855f7; font-size: 18px;"><i class="fa-solid fa-trophy"></i> Tier List & Relatório da Conta</h3>
-                <button onclick="document.getElementById('modal-audit-report').style.display='none'" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button class="primary-btn trigger-export-tierlist" style="padding: 6px 12px; font-size: 11px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; cursor: pointer; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
+                        <i class="fa-solid fa-camera"></i> Gerar Imagem
+                    </button>
+                    <button onclick="document.getElementById('modal-audit-report').style.display='none'" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
+                </div>
             </div>
             <div style="display: flex; gap: 10px; margin-bottom: 14px;">
                 <button class="filter-btn active audit-game-tab" data-game="hsr">HSR</button>
