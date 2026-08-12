@@ -59,31 +59,66 @@ def get_local_ip() -> str:
     except Exception:
         return "127.0.0.1"
 
-def start_server() -> None:
-    """Inicia o servidor web FastAPI usando Uvicorn."""
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="info")
+def find_available_port(start_port: int = 8000, max_attempts: int = 20) -> int:
+    """Encontra uma porta TCP disponível a partir da porta inicial informada."""
+    for port in range(start_port, start_port + max_attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(("0.0.0.0", port))
+                return port
+            except OSError:
+                continue
+    return start_port
+
+def wait_for_server(port: int, timeout: float = 10.0) -> bool:
+    """Realiza polling ativamente até a API aceitar conexões TCP na porta especificada."""
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.settimeout(0.5)
+                if s.connect_ex(("127.0.0.1", port)) == 0:
+                    return True
+        except Exception:
+            pass
+        time.sleep(0.1)
+    return False
+
+def start_server(port: int) -> None:
+    """Inicia o servidor web FastAPI usando Uvicorn na porta alocada."""
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
+    server = uvicorn.Server(config)
+    server.run()
 
 def main() -> None:
     """
     Ponto de entrada unificado da aplicação.
     Inicializa o servidor FastAPI e abre a interface gráfica no navegador.
     """
-    server_thread = threading.Thread(target=start_server, daemon=True)
+    port = find_available_port(8000)
+    
+    server_thread = threading.Thread(target=start_server, args=(port,), daemon=True)
     server_thread.start()
     
-    # Aguarda o servidor aceitar conexões antes de abrir a aba no navegador
-    time.sleep(3.5)
+    # Aguarda ativamente o servidor responder no socket antes de abrir o navegador
+    ready = wait_for_server(port)
     
     local_ip = get_local_ip()
-    print("[INFO] Iniciando Cabeça de Droid v4.0...")
-    print(f"[INFO] Servidor rodando localmente em: http://127.0.0.1:8000/?v=4.0")
-    print(f"[INFO] Para acessar pelo celular ou outro dispositivo na mesma rede Wi-Fi, acesse: http://{local_ip}:8000/?v=4.0")
-    webbrowser.open("http://127.0.0.1:8000/?v=4.0")
-
+    url_local = f"http://127.0.0.1:{port}/?v=4.0"
+    url_rede = f"http://{local_ip}:{port}/?v=4.0"
     
+    print("[INFO] Iniciando Cabeça de Droid v4.0...")
+    print(f"[INFO] Servidor rodando localmente em: {url_local}")
+    print(f"[INFO] Para acessar pelo celular ou outro dispositivo na mesma rede Wi-Fi, acesse: {url_rede}")
+    
+    if ready:
+        webbrowser.open(url_local)
+    else:
+        print("[WARN] Servidor demorou mais que o esperado para responder, mas o processo continua rodando.")
+
     try:
         while server_thread.is_alive():
-            time.sleep(1)
+            time.sleep(0.5)
     except KeyboardInterrupt:
         print("\n[INFO] Servidor encerrado com sucesso pelo usuário.")
 

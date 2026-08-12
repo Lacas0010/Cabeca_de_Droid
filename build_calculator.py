@@ -70,17 +70,403 @@ def normalize_slot_name(slot_str: str, game_id: str = "") -> str:
 # ==========================================
 # FONTE MESTRE DE IDS DE PERSONAGENS
 # ==========================================
+CHAR_ALIASES = {
+    # Trailblazer / Desbravador
+    "desbravador": "trailblazer_harmony",
+    "desbravadora": "trailblazer_harmony",
+    "trailblazer": "trailblazer_harmony",
+    "desbravador harmonia": "trailblazer_harmony",
+    "desbravador a harmonia": "trailblazer_harmony",
+    "desbravadora harmonia": "trailblazer_harmony",
+    "desbravadora a harmonia": "trailblazer_harmony",
+    "trailblazer harmony": "trailblazer_harmony",
+    "desbravador remembranca": "trailblazer_remembrance",
+    "desbravador a remembranca": "trailblazer_remembrance",
+    "desbravador rememoracao": "trailblazer_remembrance",
+    "desbravador a rememoracao": "trailblazer_remembrance",
+    "desbravadora remembranca": "trailblazer_remembrance",
+    "trailblazer remembrance": "trailblazer_remembrance",
+    "desbravador preservacao": "trailblazer_preservation",
+    "desbravador a preservacao": "trailblazer_preservation",
+    "desbravadora preservacao": "trailblazer_preservation",
+    "trailblazer preservation": "trailblazer_preservation",
+    "desbravador destruicao": "trailblazer_destruction",
+    "desbravador a destruicao": "trailblazer_destruction",
+    "desbravadora destruicao": "trailblazer_destruction",
+    "trailblazer destruction": "trailblazer_destruction",
+    "desbravador jubilo": "trailblazer_elation",
+    "desbravador o jubilo": "trailblazer_elation",
+    "trailblazer elation": "trailblazer_elation",
+
+    # March 7th / 7 de Março
+    "7 de marco": "march_7th",
+    "7 de marco preservacao": "march_7th",
+    "march 7th": "march_7th",
+    "march 7th preservation": "march_7th",
+    "7 de marco a caca": "march_7th_hunt",
+    "7 de marco caca": "march_7th_hunt",
+    "march 7th the hunt": "march_7th_hunt",
+    "march 7th hunt": "march_7th_hunt",
+    "march 7th caca": "march_7th_hunt",
+    "7 de marco noite eterna": "march_7th_evernight",
+    "7 de marco a noite eterna": "march_7th_evernight",
+    "march 7th evernight": "march_7th_evernight",
+    "noite eterna": "march_7th_evernight",
+
+    # Black Swan / Cisne Negro
+    "cisne negro": "black_swan",
+    "black swan": "black_swan",
+
+    # Firefly / Vagalume
+    "vagalume": "firefly",
+    "vaga lume": "firefly",
+    "firefly": "firefly",
+
+    # Silver Wolf / Loba Prateada
+    "loba prateada": "silver_wolf",
+    "silver wolf": "silver_wolf",
+    "loba prateada nv 999": "silver_wolf_999",
+    "loba prateada 999": "silver_wolf_999",
+    "silver wolf lv 999": "silver_wolf_999",
+    "silver wolf 999": "silver_wolf_999",
+
+    # Tingyun / Fugue
+    "tingyun": "tingyun",
+    "tingyun fuga": "tingyun_fugue",
+    "tingyun a fuga": "tingyun_fugue",
+    "tingyun fugue": "tingyun_fugue",
+    "fuga": "tingyun_fugue",
+    "fugue": "tingyun_fugue",
+
+    # Dan Heng
+    "dan heng": "dan_heng",
+    "dan heng imbibitor lunae": "dan_heng_imbibitor_lunae",
+    "dan heng embibitor lunae": "dan_heng_imbibitor_lunae",
+    "imbibitor lunae": "dan_heng_imbibitor_lunae",
+    "dhil": "dan_heng_imbibitor_lunae",
+    "dan heng permansor terrae": "dan_heng_permansor_terrae",
+    "permansor terrae": "dan_heng_permansor_terrae",
+
+    # Himeko
+    "himeko": "himeko",
+    "himeko nova": "himeko_nova",
+
+    # Hertas
+    "herta": "herta",
+    "a herta": "the_herta",
+    "the herta": "the_herta",
+
+    # Dahlia
+    "a dalia": "the_dahlia",
+    "the dahlia": "the_dahlia",
+    "dalia": "the_dahlia",
+    "dahlia": "the_dahlia",
+
+    # Topaz
+    "topaz": "topaz",
+    "topaz e dinheirinho": "topaz",
+    "topaz numby": "topaz",
+    "topaz & numby": "topaz",
+
+    # Dr. Ratio
+    "dr ratio": "dr_ratio",
+    "dr. ratio": "dr_ratio",
+    "doctor ratio": "dr_ratio",
+    "doutor ratio": "dr_ratio",
+
+    # Genshin Aliases
+    "raiden": "raiden_shogun",
+    "raiden shogun": "raiden_shogun",
+    "shogun raiden": "raiden_shogun",
+    "kaedehara kazuha": "kazuha",
+    "kazuha": "kazuha",
+    "sangonomiya kokomi": "kokomi",
+    "kokomi": "kokomi",
+    "kamisato ayaka": "ayaka",
+    "ayaka": "ayaka",
+    "kamisato ayato": "ayato",
+    "ayato": "ayato",
+    "arataki itto": "itto",
+    "itto": "itto",
+    "tartaglia": "childe",
+    "childe": "childe",
+    "kuki shinobu": "kuki_shinobu",
+    "shinobu": "kuki_shinobu",
+    "yae miko": "yae_miko",
+    "miko": "yae_miko",
+    "hu tao": "hu_tao",
+    "hutao": "hu_tao",
+    "mochileiro": "wanderer",
+    "wanderer": "wanderer",
+
+    # ZZZ Aliases
+    "von lycaon": "lycaon",
+    "lycaon": "lycaon",
+    "soldado 11": "soldier_11",
+    "soldier 11": "soldier_11",
+    "anby": "anby",
+    "soldier 0 anby": "soldier_0_anby",
+    "anby soldado 0": "soldier_0_anby",
+    "astra": "astra",
+    "astra yao": "astra",
+    "ellen": "ellen",
+    "ellen joe": "ellen",
+    "jane": "jane",
+    "jane doe": "jane",
+    "zhu yuan": "zhu_yuan",
+    "hoshimi miyabi": "miyabi",
+    "miyabi": "miyabi",
+    "asaba harumasa": "harumasa",
+    "harumasa": "harumasa",
+    "corin": "corin",
+    "corin wickes": "corin",
+    "anton": "anton",
+    "anton ivanov": "anton",
+    "billy": "billy",
+    "billy kid": "billy",
+    "koleda": "koleda",
+    "koleda belobog": "koleda",
+    "ben": "ben",
+    "ben bigger": "ben",
+    "alexandrina": "rina",
+    "rina": "rina",
+    "caesar": "caesar",
+    "caesar king": "caesar",
+    "piper": "piper",
+    "piper wheel": "piper",
+    "burnice": "burnice",
+    "burnice white": "burnice",
+    "nicole": "nicole",
+    "nicole demara": "nicole",
+    "seth": "seth",
+    "seth lowell": "seth",
+    "grace": "grace",
+    "grace howard": "grace"
+}
+
+CHAR_DISPLAY_NAMES_PT = {
+    # HSR
+    "trailblazer": "Desbravador (Harmonia)",
+    "trailblazer_harmony": "Desbravador (Harmonia)",
+    "trailblazer_remembrance": "Desbravador (Rememoração)",
+    "trailblazer_preservation": "Desbravador (Preservação)",
+    "trailblazer_destruction": "Desbravador (Destruição)",
+    "trailblazer_elation": "Desbravador (Júbilo)",
+    "march_7th": "7 de Março",
+    "march_7th_hunt": "7 de Março (A Caça)",
+    "march_7th_evernight": "7 de Março (Noite Eterna)",
+    "dan_heng": "Dan Heng",
+    "dan_heng_imbibitor_lunae": "Dan Heng • Imbibitor Lunae",
+    "dan_heng_permansor_terrae": "Dan Heng • Permansor Terrae",
+    "himeko": "Himeko",
+    "himeko_nova": "Himeko Nova",
+    "the_herta": "A Herta",
+    "herta": "Herta",
+    "the_dahlia": "A Dália",
+    "silver_wolf": "Loba Prateada",
+    "silver_wolf_999": "Loba Prateada (Nv. 999)",
+    "black_swan": "Cisne Negro",
+    "firefly": "Vagalume",
+    "tingyun": "Tingyun",
+    "tingyun_fugue": "Tingyun • Fuga",
+    "topaz": "Topaz & Dinheirinho",
+    "topaz_numby": "Topaz & Dinheirinho",
+    "dr_ratio": "Dr. Ratio",
+    "ruan_mei": "Ruan Mei",
+    "kafka": "Kafka",
+    "acheron": "Acheron",
+    "feixiao": "Feixiao",
+    "castorice": "Castorice",
+    "cyrene": "Cyrene",
+    "hyacine": "Hyacine",
+    "aventurine": "Aventurine",
+    "sparkle": "Sparkle",
+    "robin": "Robin",
+    "huohuo": "Huohuo",
+    "lingsha": "Lingsha",
+    "jiaoqiu": "Jiaoqiu",
+    "gallagher": "Gallagher",
+    "pela": "Pela",
+    "bronya": "Bronya",
+    "jingliu": "Jingliu",
+    "jing_yuan": "Jing Yuan",
+    "blade": "Blade",
+    "seele": "Seele",
+    "boothill": "Boothill",
+    "yunli": "Yunli",
+    "clara": "Clara",
+    "argenti": "Argenti",
+    "gepard": "Gepard",
+    "fu_xuan": "Fu Xuan",
+    "bailu": "Bailu",
+    "lynx": "Lynx",
+    "natasha": "Natasha",
+    "luocha": "Luocha",
+    "sampo": "Sampo",
+    "guinaifen": "Guinaifen",
+    "luka": "Luka",
+    "xueyi": "Xueyi",
+    "qingque": "Qingque",
+    "asta": "Asta",
+    "hanya": "Hanya",
+    "yukong": "Yukong",
+    "moze": "Moze",
+    "jade": "Jade",
+    "misha": "Misha",
+    "sushang": "Sushang",
+    "hook": "Hook",
+    "arlan": "Arlan",
+    "yanqing": "Yanqing",
+    "sunday": "Sunday",
+    "tribbie": "Tribbie",
+    "sparxie": "Sparxie",
+    "yao_guang": "Yao Guang",
+    "rin_tohsaka": "Rin Tohsaka",
+    "archer": "Archer",
+    "aglaea": "Aglaea",
+    "anaxa": "Anaxa",
+    "cerydra": "Cerydra",
+    "evanescia": "Evanescia",
+    "hysilens": "Hysilens",
+    "mydei": "Mydei",
+    "phainon": "Phainon",
+
+    # Genshin Impact
+    "neuvillette": "Neuvillette",
+    "arlecchino": "Arlecchino",
+    "furina": "Furina",
+    "kazuha": "Kaedehara Kazuha",
+    "raiden_shogun": "Raiden Shogun",
+    "bennett": "Bennett",
+    "xiangling": "Xiangling",
+    "xingqiu": "Xingqiu",
+    "yelan": "Yelan",
+    "nahida": "Nahida",
+    "kuki_shinobu": "Kuki Shinobu",
+    "zhongli": "Zhongli",
+    "baizhu": "Baizhu",
+    "alhaitham": "Alhaitham",
+    "ayaka": "Kamisato Ayaka",
+    "shenhe": "Shenhe",
+    "kokomi": "Sangonomiya Kokomi",
+    "fischl": "Fischl",
+    "hu_tao": "Hu Tao",
+    "childe": "Tartaglia",
+    "yoimiya": "Yoimiya",
+    "clorinde": "Clorinde",
+    "tighnari": "Tighnari",
+    "xiao": "Xiao",
+    "wanderer": "Mochileiro (Wanderer)",
+    "itto": "Arataki Itto",
+    "navia": "Navia",
+    "cyno": "Cyno",
+    "eula": "Eula",
+    "diluc": "Diluc",
+    "mualani": "Mualani",
+    "kinich": "Kinich",
+    "wriothesley": "Wriothesley",
+    "lyney": "Lyney",
+    "gaming": "Gaming",
+    "razor": "Razor",
+    "chasca": "Chasca",
+    "yae_miko": "Yae Miko",
+    "rosaria": "Rosaria",
+    "chiori": "Chiori",
+    "emilie": "Emilie",
+    "albedo": "Albedo",
+    "ororon": "Ororon",
+    "sucrose": "Sucrose",
+    "faruzan": "Faruzan",
+    "mona": "Mona",
+    "gorou": "Gorou",
+    "kujou_sara": "Kujou Sara",
+    "chevreuse": "Chevreuse",
+    "xianyun": "Xianyun",
+    "xilonen": "Xilonen",
+    "citlali": "Citlali",
+    "iansan": "Iansan",
+    "lan_yan": "Lan Yan",
+    "venti": "Venti",
+    "diona": "Diona",
+    "charlotte": "Charlotte",
+    "layla": "Layla",
+    "kirara": "Kirara",
+    "barbara": "Bárbara",
+    "noelle": "Noelle",
+    "sigewinne": "Sigewinne",
+    "mika": "Mika",
+    "jean": "Jean",
+    "dehya": "Dehya",
+
+    # ZZZ
+    "ellen": "Ellen Joe",
+    "lycaon": "Von Lycaon",
+    "soukaku": "Soukaku",
+    "jane": "Jane Doe",
+    "seth": "Seth Lowell",
+    "grace": "Grace Howard",
+    "zhu_yuan": "Zhu Yuan",
+    "qingyi": "Qingyi",
+    "nicole": "Nicole Demara",
+    "burnice": "Burnice White",
+    "piper": "Piper Wheel",
+    "lucy": "Lucy",
+    "anby": "Anby Demara",
+    "soldier_0_anby": "Anby (Soldado 0)",
+    "soldier_11": "Soldado 11",
+    "corin": "Corin Wickes",
+    "anton": "Anton Ivanov",
+    "billy": "Billy Kid",
+    "nekomata": "Nekomata",
+    "miyabi": "Hoshimi Miyabi",
+    "harumasa": "Asaba Harumasa",
+    "koleda": "Koleda Belobog",
+    "ben": "Ben Bigger",
+    "rina": "Alexandrina (Rina)",
+    "caesar": "Caesar King",
+    "lighter": "Lighter",
+    "astra": "Astra Yao",
+    "yuzuha": "Yuzuha",
+    "lucia": "Lucia",
+    "sunna": "Sunna",
+    "velina": "Velina",
+    "remielle": "Remielle",
+    "promeia": "Promeia",
+    "aria": "Aria",
+    "alice": "Alice",
+    "vivian": "Vivian",
+    "dialyn": "Dialyn"
+}
+
+def get_char_display_name(norm_name: str, fallback: str = "") -> str:
+    """Retorna o nome em português limpo e traduzido para exibição na interface."""
+    norm = normalize_char_name(norm_name)
+    if norm in CHAR_DISPLAY_NAMES_PT:
+        return CHAR_DISPLAY_NAMES_PT[norm]
+    if fallback:
+        return fallback
+    return norm.replace("_", " ").title()
+
 def normalize_char_name(name: str) -> str:
     """
-    Normaliza o nome do personagem para facilitar o cruzamento de IDs,
-    removendo hifens, bullets, parênteses e múltiplos espaços.
+    Normaliza o nome do personagem resolvendo tradução Português <-> Inglês,
+    removendo acentos, hifens, bullets, parênteses e múltiplos espaços. Preserva qualificadores como 'Nova'.
     """
     if not name:
         return ""
-    name = name.lower()
-    name = re.sub(r'\s*\b(new|nova|novo)\b\s*', ' ', name, flags=re.IGNORECASE)
-    name = name.replace("•", " ").replace("-", " ").replace("(", " ").replace(")", " ").replace(".", " ")
-    return RE_MULTIPLE_SPACES.sub(' ', name).strip()
+    clean = str(name).lower()
+    clean = clean.replace("•", " ").replace("-", " ").replace("(", " ").replace(")", " ").replace(".", " ").replace(",", " ").replace(":", " ").replace("#", " ")
+    clean = remove_accents(clean)
+    clean = RE_MULTIPLE_SPACES.sub(' ', clean).strip()
+
+    if clean in CHAR_ALIASES:
+        return CHAR_ALIASES[clean]
+
+    clean_underscore = clean.replace(" ", "_")
+    if clean_underscore in CHAR_ALIASES:
+        return CHAR_ALIASES[clean_underscore]
+        
+    return clean_underscore
 
 def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     """
@@ -1162,13 +1548,89 @@ def calculate_ascension(game_id, current_lvl, target_lvl):
     currency_name = "Mora" if game_id == "genshin" else ("Créditos" if game_id == "hsr" else "Dennys")
     boss_item_name = "Materiais de Chefe"
     
+    daily_energy = 180 if game_id == "genshin" else 240
+    boss_cost_per_run = 40 if game_id in ["genshin", "zzz"] else 30
+    energy_factor = 16 if game_id == "genshin" else (6 if game_id == "hsr" else 8)
+    total_energy_needed = int(boss_diff * energy_factor)
+    estimated_days = round(total_energy_needed / daily_energy, 1) if daily_energy > 0 else 0.0
+
     return {
         "xp_needed": xp_diff,
         "xp_books_purple": xp_books if xp_books > 0 else 1,
         "currency_needed": currency_diff,
         "currency_name": currency_name,
         "boss_items_needed": boss_diff,
-        "boss_item_name": boss_item_name
+        "boss_item_name": boss_item_name,
+        "energy_needed": total_energy_needed,
+        "daily_energy_limit": daily_energy,
+        "estimated_farming_days": estimated_days
+    }
+
+def optimize_character_relics(game_id: str, char_id: str, relics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Analisa o inventário de relíquias fornecido e determina a combinação ótima (BiS do inventário)
+    para o personagem especificado, selecionando a peça de maior pontuação para cada slot.
+    """
+    game_id = game_id.lower().strip()
+    if not relics_list:
+        return {"best_pieces": {}, "overall_score": 0.0, "overall_grade": "D", "recommendations": ["Nenhuma relíquia encontrada no inventário."]}
+
+    best_by_slot = {}
+    for r in relics_list:
+        slot = r.get("slot", "")
+        norm_slot = normalize_slot_name(slot, game_id)
+        if not norm_slot:
+            continue
+
+        main_stat = r.get("main_stat") or r.get("main") or ""
+        sub_stats = r.get("sub_stats") or r.get("substats") or r.get("sub") or ""
+        if isinstance(sub_stats, list):
+            sub_stats_str = ", ".join([f"{s.get('name','')}: {s.get('val','')}" if isinstance(s, dict) else str(s) for s in sub_stats])
+        else:
+            sub_stats_str = str(sub_stats)
+
+        grade, score = score_relic(game_id, char_id, norm_slot, main_stat, sub_stats_str)
+
+        piece_entry = {
+            "name": r.get("name", "Relíquia"),
+            "slot": norm_slot,
+            "raw_slot": slot,
+            "main_stat": main_stat,
+            "sub_stats": sub_stats_str,
+            "grade": grade,
+            "score": score,
+            "icon": r.get("icon", ""),
+            "character_equipped": r.get("character_name", "")
+        }
+
+        if norm_slot not in best_by_slot or score > best_by_slot[norm_slot]["score"]:
+            best_by_slot[norm_slot] = piece_entry
+
+    if not best_by_slot:
+        return {"best_pieces": {}, "overall_score": 0.0, "overall_grade": "D", "recommendations": ["Nenhuma relíquia válida foi avaliada."]}
+
+    scores = [p["score"] for p in best_by_slot.values()]
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+
+    if avg_score >= 90: overall_grade = "SS"
+    elif avg_score >= 80: overall_grade = "S+"
+    elif avg_score >= 70: overall_grade = "S"
+    elif avg_score >= 60: overall_grade = "A"
+    elif avg_score >= 50: overall_grade = "B"
+    elif avg_score >= 40: overall_grade = "C"
+    else: overall_grade = "D"
+
+    recommendations = []
+    for slot, piece in best_by_slot.items():
+        if piece["score"] < 60:
+            recommendations.append(f"Slot {slot.upper()}: A melhor peça no inventário possui nota {piece['grade']} ({piece['score']}%). Recomendado buscar upgrades.")
+
+    return {
+        "character": char_id,
+        "best_pieces": best_by_slot,
+        "overall_score": avg_score,
+        "overall_grade": overall_grade,
+        "recommendations": recommendations if recommendations else ["Sua build ótima de inventário está muito bem estruturada!"]
     }
 
 
@@ -1813,4 +2275,32 @@ def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dic
         "game_id": game_id,
         "breakpoints": breakpoints
     }
+
+
+
+
+
+# ==========================================
+# 6. GERENCIADOR DE CÓDIGOS PROMOCIONAIS
+# ==========================================
+ACTIVE_PROMO_CODES = {
+    "hsr": [
+        {"code": "STARRAILGIFT", "rewards": "50 Stellar Jades, 10,000 Credits", "status": "Ativo permanente"},
+        {"code": "HSR3RDANNIVERSARY", "rewards": "100 Stellar Jades", "status": "Ativo em evento"},
+        {"code": "HSRSPECIAL2026", "rewards": "60 Stellar Jades, 5 Refined Aether", "status": "Ativo de transmissão"}
+    ],
+    "genshin": [
+        {"code": "GENSHINGIFT", "rewards": "50 Primogems, 3 Hero's Wit", "status": "Ativo permanente"},
+        {"code": "NATLANLIVE2026", "rewards": "100 Primogems, 50,000 Mora", "status": "Ativo de evento"}
+    ],
+    "zzz": [
+        {"code": "ZZZFREE100", "rewards": "300 Polychromes, 30,000 Dennies", "status": "Ativo lançamento/evento"},
+        {"code": "ZENLESSGIFT", "rewards": "50 Polychromes, 2 Official Investigator Log", "status": "Ativo permanente"}
+    ]
+}
+
+def fetch_active_promo_codes(game_id: str) -> List[Dict[str, Any]]:
+    """Retorna os códigos promocionais ativos para o jogo solicitado."""
+    g = game_id.lower().strip()
+    return ACTIVE_PROMO_CODES.get(g, [])
 

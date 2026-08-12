@@ -85,6 +85,15 @@
                     <img src="/assets/chat_icon.png" class="tab-icon" alt="Chat">
                     <span class="nav-text">Chat IA Meta</span>
                 </button>
+
+                <button class="nav-btn" data-tab="history">
+                    <i class="fa-solid fa-chart-line tab-icon" style="color: #ec4899; font-size: 16px;"></i>
+                    <span class="nav-text">Linha do Tempo (Evolução)</span>
+                </button>
+                <button class="nav-btn" data-tab="codes">
+                    <i class="fa-solid fa-gift tab-icon" style="color: #f59e0b; font-size: 16px;"></i>
+                    <span class="nav-text">Códigos Promocionais</span>
+                </button>
                 <button class="nav-btn" data-tab="config">
                     <img src="/assets/config_icon.png" class="tab-icon" alt="Config">
                     <span class="nav-text">Configurações</span>
@@ -719,7 +728,7 @@
                     
                     <div class="config-section">
                         <h3><i class="fa-solid fa-cookie-bite"></i> Cookies de Sessão HoYoLAB</h3>
-                        <p class="section-desc">Insira os cookies da sua sessão HoYoLAB no formato <code>ltuid_v2=xxx; ltoken_v2=yyy;</code> ou utilize o login automático abaixo.</p>
+                        <p class="section-desc">Insira os cookies da sua sessão HoYoLAB no formato <code>ltuid_v2=xxx; ltoken_v2=yyy; cookie_token_v2=zzz;</code> (ou utilize o login automático abaixo).</p>
                         <div class="input-group">
                             <textarea id="cfg-hoyolab-cookies" placeholder="Cole os cookies de sessão aqui..." class="config-input config-textarea"></textarea>
                         </div>
@@ -758,6 +767,58 @@
                     <div class="config-actions">
                         <button id="btn-save-config" class="primary-btn">Salvar Configurações</button>
                         <span id="config-save-status" class="status-msg"></span>
+                    </div>
+                </div>
+            </section>
+
+
+
+            <!-- ABA TIMELINE DE EVOLUÇÃO -->
+            <section id="tab-history" class="tab-pane">
+                <div class="game-banner" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.25), rgba(15, 23, 42, 0.95)); border-bottom: 1px solid rgba(236, 72, 153, 0.4);">
+                    <div class="banner-overlay" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h2><i class="fa-solid fa-chart-line" style="color: #ec4899;"></i> Linha do Tempo (Evolução da Conta)</h2>
+                            <p>Snapshots periódicos com histórico de métricas, evolução de atributos e novos personagens obtidos</p>
+                        </div>
+                        <button id="btn-create-snapshot-now" class="primary-btn" style="padding: 10px 18px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; cursor: pointer; box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4);">
+                            <i class="fa-solid fa-camera-retro"></i> Criar Novo Snapshot Agora
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="filter-btn active tab-history-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                        <button class="filter-btn tab-history-game-btn" data-game="genshin">Genshin Impact</button>
+                        <button class="filter-btn tab-history-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                    </div>
+                    <div id="tab-history-body" style="padding: 0;">
+                        <!-- Preenchido via JS com Timeline Stepper e Grids de Cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- ABA CÓDIGOS PROMOCIONAIS -->
+            <section id="tab-codes" class="tab-pane">
+                <div class="game-banner" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
+                    <div class="banner-overlay">
+                        <h2><i class="fa-solid fa-gift" style="color: #f59e0b;"></i> Gerenciador e Resgate de Códigos Promocionais</h2>
+                        <p>Busca e resgate de códigos de Gemas, Jades Estelares e Polychromes via API da HoYoverse</p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                        <div style="display: flex; gap: 10px;">
+                            <button class="filter-btn active tab-codes-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                            <button class="filter-btn tab-codes-game-btn" data-game="genshin">Genshin Impact</button>
+                            <button class="filter-btn tab-codes-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                        </div>
+                        <button id="btn-redeem-all-codes" class="primary-btn" style="padding: 10px 18px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Resgatar Todos os Códigos
+                        </button>
+                    </div>
+                    <div id="tab-codes-body" class="overview-card" style="padding: 20px;">
+                        <!-- Preenchido via JS -->
                     </div>
                 </div>
             </section>

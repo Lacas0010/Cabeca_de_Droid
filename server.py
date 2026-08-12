@@ -191,6 +191,12 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                 filename = loop.run_until_complete(extractor.extrair_jogo(game_id))
                 loop.close()
                 log_game(game_id, f"Roster extraído e salvo com sucesso em {filename}!", "SUCCESS", progresso=0.25)
+                
+                roster_data = database.get_roster_data(game_id)
+                if roster_data:
+                    first_uid = roster_data[0].get("uid", "000000000") if isinstance(roster_data, list) and roster_data else "000000000"
+                    database.save_account_snapshot(uid=first_uid, game_id=game_id, roster_data=roster_data)
+                    log_game(game_id, "Snapshot de evolução da conta registrado no histórico!", "INFO", progresso=0.26)
             except Exception as roster_err:
                 traceback.print_exc()
                 log_game(game_id, f"Falha ao extrair Roster: {roster_err}", "ERROR")
@@ -1875,6 +1881,46 @@ async def check_breakpoints(req: BreakpointRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+class ManualCookieRequest(BaseModel):
+    cookie_string: str
+
+@app.post("/api/auth/manual_cookies")
+async def save_manual_cookies(req: ManualCookieRequest):
+    """Permite salvar cookies colados manualmente pelo usuário."""
+    try:
+        parsed = parse_cookie_string(req.cookie_string)
+        if not parsed or not any(k in parsed for k in ["ltuid_v2", "ltoken_v2", "ltuid", "ltoken", "cookie_token_v2", "cookie_token"]):
+            raise HTTPException(status_code=400, detail="String de cookie inválida ou sem os parâmetros de autenticação HoYoLAB.")
+            
+        with open("cookies.json", "w", encoding="utf-8") as f:
+            json.dump(parsed, f, indent=4)
+            
+        return {"status": "success", "message": "Cookies salvos com sucesso em cookies.json!", "keys": list(parsed.keys())}
+    except HTTPException:
+        raise
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/relics/optimize/{game_id}/{char_name}")
+async def optimize_relics_for_character(game_id: str, char_name: str):
+    """Encontra a melhor combinação possível de relíquias no inventário do usuário para um personagem."""
+    from build_calculator import optimize_character_relics
+    try:
+        roster = database.get_roster_data(game_id=game_id)
+        all_relics = []
+        for char in roster:
+            for r in char.get("relics", []):
+                r_copy = dict(r)
+                r_copy["character_name"] = char.get("name", "")
+                all_relics.append(r_copy)
+                
+        res = optimize_character_relics(game_id=game_id, char_id=char_name, relics_list=all_relics)
+        return res
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/api/audit/{game_id}")
 async def get_account_audit(game_id: str):
@@ -2004,6 +2050,64 @@ async def reset_all_data():
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro ao apagar dados: {str(e)}")
+
+# ==========================================
+# ==========================================
+# NOVOS ENDPOINTS: HISTÓRICO E CÓDIGOS
+# ==========================================
+
+@app.get("/api/history/{game_id}")
+async def get_account_history_endpoint(game_id: str):
+    """Retorna a timeline de evolução da conta com métricas salvas em snapshots."""
+    try:
+        history = database.get_account_history(game_id=game_id)
+        return {"game_id": game_id, "history": history}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/codes/{game_id}")
+async def get_promo_codes_endpoint(game_id: str):
+    """Retorna os códigos promocionais ativos para o jogo selecionado."""
+    from build_calculator import fetch_active_promo_codes
+    try:
+        codes = fetch_active_promo_codes(game_id=game_id)
+        return {"game_id": game_id, "codes": codes}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+class RedeemCodeRequest(BaseModel):
+    game_id: str
+    code: Optional[str] = None
+
+@app.post("/api/codes/redeem")
+async def redeem_promo_code_endpoint(req: RedeemCodeRequest):
+    """Resgata um ou todos os códigos promocionais ativos usando os cookies da conta."""
+    from build_calculator import fetch_active_promo_codes
+    from extractor import redeem_promo_code
+    
+    cookies = get_cookies()
+    if not cookies:
+        raise HTTPException(status_code=400, detail="Cookies da HoYoLAB ausentes. Configure-os na aba de Configurações.")
+        
+    codes_to_redeem = []
+    if req.code:
+        codes_to_redeem.append(req.code)
+    else:
+        active = fetch_active_promo_codes(req.game_id)
+        codes_to_redeem = [c["code"] for c in active]
+        
+    if not codes_to_redeem:
+        return {"status": "info", "message": "Nenhum código para resgatar.", "results": []}
+        
+    results = []
+    for code in codes_to_redeem:
+        res = await redeem_promo_code(cookies=cookies, game_id=req.game_id, code=code)
+        results.append(res)
+        await asyncio.sleep(5.0)
+        
+    return {"game_id": req.game_id, "results": results}
 
 # ==========================================
 
