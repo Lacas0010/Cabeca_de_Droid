@@ -116,13 +116,22 @@ def get_cookies() -> dict:
 
 def get_config() -> dict:
     config_file = "config.json"
+    defaults = {
+        "auto_sync_enabled": True,
+        "auto_sync_time": "04:00",
+        "auto_sync_roster": True,
+        "auto_sync_guides": True,
+        "last_auto_sync_date": ""
+    }
     if os.path.exists(config_file):
         try:
             with open(config_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                data = json.load(f)
+                defaults.update(data)
+                return defaults
         except Exception:
             pass
-    return {}
+    return defaults
 
 def parse_cookie_string(raw_cookie: str) -> dict:
     cookies = {}
@@ -145,6 +154,10 @@ class SyncRequest(BaseModel):
 class ConfigSaveRequest(BaseModel):
     groq_api_key: Optional[str] = None
     cookies_raw: Optional[str] = None
+    auto_sync_enabled: Optional[bool] = None
+    auto_sync_time: Optional[str] = None
+    auto_sync_roster: Optional[bool] = None
+    auto_sync_guides: Optional[bool] = None
 
 class ChatMessage(BaseModel):
     role: str
@@ -415,6 +428,54 @@ def startup_checkin_scheduler():
             time.sleep(21600)
             
     threading.Thread(target=checkin_loop, daemon=True).start()
+
+@app.on_event("startup")
+def startup_auto_sync_scheduler():
+    def auto_sync_loop():
+        # Aguarda 15 segundos antes da primeira verificação
+        time.sleep(15)
+        while True:
+            try:
+                config = get_config()
+                if config.get("auto_sync_enabled", True):
+                    scheduled_time = config.get("auto_sync_time", "04:00").strip()
+                    now = datetime.datetime.now()
+                    current_time_str = now.strftime("%H:%M")
+                    current_date_str = now.strftime("%Y-%m-%d")
+                    last_run_date = config.get("last_auto_sync_date", "")
+
+                    if current_time_str == scheduled_time and last_run_date != current_date_str:
+                        print(f"[AUTO-SYNC] Horário programado ({scheduled_time}) atingido! Iniciando atualização automática diária de Rosters e Guias...")
+                        
+                        run_roster = config.get("auto_sync_roster", True)
+                        run_guides = config.get("auto_sync_guides", True)
+                        cookies = get_cookies()
+
+                        if cookies:
+                            for game_id in ["hsr", "genshin", "zzz"]:
+                                try:
+                                    print(f"[AUTO-SYNC] Sincronizando {game_id.upper()} em segundo plano...")
+                                    _bg_sync_thread(game_id, run_roster=run_roster, run_guides=run_guides, run_meta=False)
+                                except Exception as game_err:
+                                    print(f"[AUTO-SYNC] Erro ao sincronizar {game_id}: {game_err}")
+
+                            config["last_auto_sync_date"] = current_date_str
+                            try:
+                                with open("config.json", "w", encoding="utf-8") as f:
+                                    json.dump(config, f, indent=4)
+                            except Exception:
+                                pass
+                            
+                            print(f"[AUTO-SYNC] Sincronização automática diária concluída para a data {current_date_str}!")
+                        else:
+                            print(f"[AUTO-SYNC] Cookies HoYoLAB não configurados. Sincronização automática em espera.")
+
+            except Exception as sched_err:
+                print(f"[AUTO-SYNC] Erro no loop do agendador: {sched_err}")
+
+            time.sleep(30)
+
+    threading.Thread(target=auto_sync_loop, daemon=True).start()
 
 # ==========================================
 # ROTAS DA API REST
@@ -746,18 +807,40 @@ async def get_configuration():
         "groq_api_key": config_dict.get("groq_api_key") or config_dict.get("gemini_api_key") or "",
         "cookies_raw": cookies_raw,
         "has_cookies": len(cookies_dict) > 0,
-        "has_api_key": bool(config_dict.get("groq_api_key") or config_dict.get("gemini_api_key"))
+        "has_api_key": bool(config_dict.get("groq_api_key") or config_dict.get("gemini_api_key")),
+        "auto_sync_enabled": config_dict.get("auto_sync_enabled", True),
+        "auto_sync_time": config_dict.get("auto_sync_time", "04:00"),
+        "auto_sync_roster": config_dict.get("auto_sync_roster", True),
+        "auto_sync_guides": config_dict.get("auto_sync_guides", True),
+        "last_auto_sync_date": config_dict.get("last_auto_sync_date", "")
     }
 
 @app.post("/api/config")
 async def save_configuration(req: ConfigSaveRequest):
-    """Salva a chave API do Groq e/ou os cookies HoYoLAB no formato JSON."""
+    """Salva a chave API, cookies e configurações de agendamento no formato JSON."""
     config_file = "config.json"
     cookie_file = "cookies.json"
     
+    config = get_config()
+    changed = False
+
     if req.groq_api_key is not None:
-        config = get_config()
         config["groq_api_key"] = req.groq_api_key.strip()
+        changed = True
+    if req.auto_sync_enabled is not None:
+        config["auto_sync_enabled"] = req.auto_sync_enabled
+        changed = True
+    if req.auto_sync_time is not None:
+        config["auto_sync_time"] = req.auto_sync_time.strip()
+        changed = True
+    if req.auto_sync_roster is not None:
+        config["auto_sync_roster"] = req.auto_sync_roster
+        changed = True
+    if req.auto_sync_guides is not None:
+        config["auto_sync_guides"] = req.auto_sync_guides
+        changed = True
+
+    if changed:
         try:
             with open(config_file, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=4)
@@ -2062,6 +2145,20 @@ async def get_account_history_endpoint(game_id: str):
     try:
         history = database.get_account_history(game_id=game_id)
         return {"game_id": game_id, "history": history}
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/history/{game_id}/compare/{snap_id_a}/{snap_id_b}")
+async def compare_snapshots_endpoint(game_id: str, snap_id_a: int, snap_id_b: int):
+    """Retorna a comparação rica entre quaisquer dois snapshots selecionados pelo usuário."""
+    try:
+        res = database.compare_two_snapshots(game_id=game_id, snap_id_a=snap_id_a, snap_id_b=snap_id_b)
+        if not res:
+            raise HTTPException(status_code=404, detail="Um ou ambos os snapshots selecionados não foram encontrados.")
+        return res
+    except HTTPException:
+        raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
