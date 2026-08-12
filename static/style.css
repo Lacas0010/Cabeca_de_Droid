@@ -2291,6 +2291,7 @@ h1, h2, h3, h4, h5, h6 {
     .modal-card-content {
         width: 96% !important;
         max-height: 94vh !important;
+        box-sizing: border-box;
     }
 
     .modal-card-footer {
@@ -2302,6 +2303,208 @@ h1, h2, h3, h4, h5, h6 {
     .modal-card-footer div {
         flex-direction: column;
         width: 100%;
+    }
+
+    /* BANNERS DE JOGO E TIMELINE NO MOBILE */
+    .game-banner {
+        height: auto !important;
+        min-height: 120px !important;
+        padding: 0 !important;
+    }
+
+    .banner-overlay {
+        position: relative !important;
+        inset: auto !important;
+        padding: 16px !important;
+        height: auto !important;
+    }
+
+    .banner-overlay h2 {
+        font-size: 18px !important;
+    }
+
+    .banner-overlay p {
+        font-size: 12px !important;
+    }
+
+    #btn-create-snapshot-now {
+        width: 100% !important;
+        justify-content: center !important;
+        margin-top: 8px;
+    }
+
+    /* AJUSTES RESPONSIVOS DA ABA LINHA DO TEMPO (TIMELINE) */
+    .timeline-stepper {
+        padding-left: 18px !important;
+        border-left-width: 2px !important;
+        gap: 18px !important;
+        margin-left: 4px !important;
+    }
+
+    .timeline-bullet {
+        left: -25px !important;
+        top: 16px !important;
+        width: 12px !important;
+        height: 12px !important;
+        border-width: 2px !important;
+    }
+
+    .timeline-card {
+        padding: 12px 14px !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+
+    .timeline-card-header {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 12px !important;
+    }
+
+    .timeline-stats-boxes {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        box-sizing: border-box !important;
+    }
+
+    .timeline-stat-box {
+        padding: 6px 4px !important;
+        min-width: 0 !important;
+        flex: 1 1 0 !important;
+        box-sizing: border-box !important;
+    }
+
+    .timeline-stat-box strong {
+        font-size: 13px !important;
+    }
+
+    .timeline-stat-box span {
+        font-size: 9px !important;
+    }
+
+    /* PAINEL E REGISTRO DE COMPARATIVO DE SNAPSHOTS NO MOBILE */
+    .history-compare-card {
+        padding: 12px 14px !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+        overflow: hidden !important;
+    }
+
+    .history-compare-row {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 12px !important;
+        width: 100% !important;
+    }
+
+    .history-selects-group {
+        flex-direction: column;
+        align-items: stretch !important;
+        gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .snap-select-item {
+        flex-direction: column;
+        align-items: stretch !important;
+        width: 100% !important;
+        gap: 4px !important;
+        box-sizing: border-box !important;
+    }
+
+    .snap-arrow-icon {
+        display: none !important;
+    }
+
+    .snap-select {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        font-size: 11px !important;
+        padding: 8px 10px !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+    }
+
+    .history-compare-btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .history-status-badge {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+    }
+
+    .timeline-diff-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .diff-card-clickable {
+        padding: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    /* MODAL DE COMPARATIVO DE PERSONAGEM NO MOBILE */
+    #modal-character-diff-detail .modal-card-content {
+        padding: 14px 12px !important;
+        width: 96% !important;
+        max-height: 92vh !important;
+        border-radius: 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    .diff-modal-kpi-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .diff-modal-kpi-grid > div {
+        padding: 8px 4px !important;
+        min-width: 0 !important;
+    }
+
+    .diff-modal-kpi-grid strong {
+        font-size: 12px !important;
+    }
+
+    .diff-modal-weapon-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .diff-modal-weapon-grid > div {
+        border-right: none !important;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        padding-right: 0 !important;
+        padding-bottom: 10px !important;
+    }
+
+    .diff-modal-weapon-grid > div:last-child {
+        border-bottom: none !important;
+        padding-bottom: 0 !important;
+    }
+
+    .diff-modal-relics-grid {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 }
 
@@ -2317,6 +2520,8 @@ h1, h2, h3, h4, h5, h6 {
     outline: none;
     cursor: pointer;
     transition: all 0.2s ease;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 .snap-select:focus {
     border-color: #ec4899;

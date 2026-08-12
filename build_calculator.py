@@ -2235,7 +2235,7 @@ def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dic
         # Check EHR para Debuffers
         if ehr > 0 or "silver" in char_name.lower() or "pela" in char_name.lower() or "jiaoqiu" in char_name.lower():
             target_ehr = 67.0 if "silver" in char_name.lower() or "pela" in char_name.lower() else 140.0
-            status_ehr = "✅ 100% de Aplicação de Debuff garantida contra Inimigos Lvl 95" if ehr >= target_ehr else f"⚠️ Risco de Errar Debuff (Alvo: {target_ehr}%)"
+            status_ehr = " 100% de Aplicação de Debuff garantida contra Inimigos Lvl 95" if ehr >= target_ehr else f" Risco de Errar Debuff (Alvo: {target_ehr}%)"
             breakpoints.append({
                 "stat": "Efetividade de Acerto (EHR)",
                 "current": f"{ehr:.1f}%",
@@ -2251,7 +2251,7 @@ def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dic
         elif "raiden" in char_name.lower() or "yelan" in char_name.lower():
             target_er = 180.0
             
-        status_er = "✅ Supremo disponível em todas as rotações sem atraso" if er >= target_er else f"⚠️ Recarga insuficiente para rotações perfeitas (Meta: {target_er}%)"
+        status_er = " Supremo disponível em todas as rotações sem atraso" if er >= target_er else f" Recarga insuficiente para rotações perfeitas (Meta: {target_er}%)"
         breakpoints.append({
             "stat": "Recarga de Energia (ER)",
             "current": f"{er:.1f}%",

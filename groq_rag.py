@@ -353,13 +353,13 @@ class GroqRAG:
                         reasoning_text = getattr(msg, "reasoning", None) or getattr(msg, "reasoning_content", None)
                         if reasoning_text:
                             model_display = "GPT-OSS 120B" if "gpt-oss" in model else model.split("/")[-1].upper()
-                            response_text = f"<details class='think-details'><summary>🧠 Ver Processo de Pensamento ({model_display})</summary><div class='think-content'>{reasoning_text}</div></details>\n\n" + response_text
+                            response_text = f"<details class='think-details'><summary> Ver Processo de Pensamento ({model_display})</summary><div class='think-content'>{reasoning_text}</div></details>\n\n" + response_text
                         
                         # Fallback para tags de pensamento embutidas no texto (ex: DeepSeek se reativado)
                         elif "<think>" in response_text and "</think>" in response_text:
                             response_text = response_text.replace(
                                 "<think>", 
-                                "<details class='think-details'><summary>🧠 Ver Processo de Pensamento</summary><div class='think-content'>"
+                                "<details class='think-details'><summary> Ver Processo de Pensamento</summary><div class='think-content'>"
                             ).replace(
                                 "</think>", 
                                 "</div></details>"

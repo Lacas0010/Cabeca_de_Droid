@@ -877,7 +877,7 @@ async function inspectCharacter(gameId, char) {
             if (mData && mData.xp_needed !== undefined) {
                 ascResults.innerHTML = `
                     <div style="margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 4px; font-weight: 600; color: var(--text-primary);">
-                        📋 Custos Estimados (${char.level} ➔ ${targetLvl})
+                         Custos Estimados (${char.level} ➔ ${targetLvl})
                     </div>
                     <div style="display: flex; flex-direction: column; gap: 4px; padding-left: 4px;">
                         <div>• <strong>XP necessária:</strong> ${mData.xp_needed.toLocaleString()} (~${mData.xp_books_purple} livros roxos)</div>
@@ -3184,7 +3184,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <strong style="color:#e2e8f0; font-size:13px; display:flex; align-items:center; gap:6px;">
                             <i class="fa-solid fa-user-check" style="color:#38bdf8;"></i> Personagens Alvo do Farm (${selectedSet.size}/${allRosterNames.length})
                         </strong>
-                        <span style="font-size:11px; color:#38bdf8; text-decoration:underline;">⚙️ Selecionar Personagens</span>
+                        <span style="font-size:11px; color:#38bdf8; text-decoration:underline;"> Selecionar Personagens</span>
                     </div>
                     <div id="${targetContainerId}-char-selector" style="display:none; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
                         <div style="display:flex; gap:10px; margin-bottom:10px;">
@@ -3222,7 +3222,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     ${gameId === "genshin" ? `
                         <label style="font-size:12px; color:#38bdf8; display:flex; align-items:center; gap:6px; background:rgba(56,189,248,0.1); padding:4px 10px; border-radius:8px; cursor:pointer; border:1px solid rgba(56,189,248,0.25);">
                             <input type="checkbox" id="${targetContainerId}-farmable-only" ${isFarmableOnly ? 'checked' : ''}>
-                            <span>📅 Apenas Materiais Abertos Hoje</span>
+                            <span> Apenas Materiais Abertos Hoje</span>
                         </label>
                     ` : ''}
                 </div>
@@ -3284,7 +3284,7 @@ document.addEventListener("DOMContentLoaded", () => {
                                 <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                                     ${t.talent_priority ? `
                                         <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:rgba(168,85,247,0.15); color:#c084fc; font-weight:600; border:1px solid rgba(168,85,247,0.3);">
-                                            ⚡ Prioridade Prydwen: ${t.talent_priority}
+                                             Prioridade Prydwen: ${t.talent_priority}
                                         </span>
                                     ` : ''}
                                     <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:${t.level < t.max_level ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${t.level < t.max_level ? '#f87171' : '#34d399'}; font-weight:600;">
@@ -3397,13 +3397,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     const finalIcons = Object.assign({}, defaultIconsByGame[gameIdStr] || defaultIconsByGame.genshin, ic);
 
-                    const moraIcon = `<img src="${finalIcons.mora}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='💰 ';">`;
-                    const xpIcon = `<img src="${finalIcons.xp}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='📘 ';">`;
-                    const talentIcon = `<img src="${finalIcons.talent_book}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='📚 ';">`;
-                    const bossIcon = `<img src="${finalIcons.boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='📦 ';">`;
-                    const weeklyIcon = `<img src="${finalIcons.weekly_boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='🐲 ';">`;
-                    const crownIcon = `<img src="${finalIcons.crown}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='👑 ';">`;
-                    const oreIcon = `<img src="${finalIcons.weapon_ore}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML='⛏️ ';">`;
+                    const moraIcon = `<img src="${finalIcons.mora}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const xpIcon = `<img src="${finalIcons.xp}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const talentIcon = `<img src="${finalIcons.talent_book}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const bossIcon = `<img src="${finalIcons.boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const weeklyIcon = `<img src="${finalIcons.weekly_boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const crownIcon = `<img src="${finalIcons.crown}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const oreIcon = `<img src="${finalIcons.weapon_ore}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
 
                     // 1. Ascensão de Personagem
                     if (t.items_needed && t.items_needed.ascension) {
@@ -3411,7 +3411,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         html += `
                             <div style="background:rgba(239,68,68,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #ef4444;">
                                 <strong style="color:#f87171; display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:13px;">
-                                    👤 Elevação de Nível & Ascensão do Personagem (Nv. ${t.level} ➔ Nv. ${t.max_level})
+                                     Elevação de Nível & Ascensão do Personagem (Nv. ${t.level} ➔ Nv. ${t.max_level})
                                 </strong>
                                 <div style="color:#cbd5e1; line-height:1.6; font-size:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:6px;">
                                     <div>${xpIcon} <strong>${terms.xp_book_name}:</strong> ${asc.xp_needed.toLocaleString()} EXP (~${asc.xp_books_purple} un. Roxos)</div>
@@ -3427,7 +3427,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         html += `
                             <div style="background:rgba(56,189,248,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #38bdf8;">
                                 <strong style="color:#38bdf8; display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:13px;">
-                                    📜 Elevação de ${terms.talent_category} Detalhada por Habilidade:
+                                     Elevação de ${terms.talent_category} Detalhada por Habilidade:
                                 </strong>
                                 <div style="display:flex; flex-direction:column; gap:6px;">
                         `;
@@ -3468,7 +3468,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     // 3. Arma / W-Engine Equipado
                     if (t.items_needed && t.items_needed.weapon_upgrade_details) {
                         const wd = t.items_needed.weapon_upgrade_details;
-                        const wIconImg = wd.weapon_icon ? `<img src="${wd.weapon_icon}" style="width:24px; height:24px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:4px; padding:2px; border:1px solid rgba(255,255,255,0.1);">` : '🗡️';
+                        const wIconImg = wd.weapon_icon ? `<img src="${wd.weapon_icon}" style="width:24px; height:24px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:4px; padding:2px; border:1px solid rgba(255,255,255,0.1);">` : '';
 
                         let wMats = [];
                         if (wd.ores_needed > 0) wMats.push(`<div>${oreIcon} <strong>${terms.ore_name}:</strong> ~${wd.ores_needed} un.</div>`);
@@ -3497,7 +3497,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (t.items_needed && t.items_needed.relics) {
                         html += `
                             <div style="background:rgba(245,158,11,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #f59e0b;">
-                                <strong style="color:#f59e0b; display:block; margin-bottom:2px;">🛡️ Relíquias & Equipamentos:</strong>
+                                <strong style="color:#f59e0b; display:block; margin-bottom:2px;"> Relíquias & Equipamentos:</strong>
                                 <div style="color:#cbd5e1;">${t.items_needed.relics}</div>
                             </div>
                         `;
@@ -3577,7 +3577,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!data.total_analyzed || data.total_analyzed === 0) {
                 html = `
                     <div style="padding:16px; background:rgba(245, 158, 11, 0.08); border-radius:10px; border:1px solid rgba(245, 158, 11, 0.3); color:#f59e0b; font-size:13px; line-height:1.5;">
-                        <strong style="font-size:14px; display:block; margin-bottom:4px;">⚠️ Nenhum dado de relíquias/artefatos encontrado no banco de dados.</strong>
+                        <strong style="font-size:14px; display:block; margin-bottom:4px;"> Nenhum dado de relíquias/artefatos encontrado no banco de dados.</strong>
                         Sincronize seu perfil e lista de personagens no painel principal via HoyoLab / UID para importar suas relíquias equipadas para análise.
                     </div>
                 `;
@@ -3647,7 +3647,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         <h3 style="margin:4px 0 0 0; color:#10b981; font-size:20px;">${data.s_count}</h3>
                     </div>
                 </div>
-                <h4 style="margin:0 0 12px 0; color:#a855f7; font-size:16px;">🏆 Tier List dos seus Personagens por Nota RV</h4>
+                <h4 style="margin:0 0 12px 0; color:#a855f7; font-size:16px;"> Tier List dos seus Personagens por Nota RV</h4>
             `;
 
             const tierColors = { "S+": "#ef4444", "S": "#f59e0b", "A": "#10b981", "B": "#38bdf8", "C/D": "#94a3b8" };
@@ -4146,14 +4146,14 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
         // Renderiza Barra Superior de Comparativo Customizado
         let compareHeaderHtml = `
-            <div class="overview-card" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(236, 72, 153, 0.35); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; backdrop-filter: blur(10px);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
-                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                        <span style="font-size: 14px; font-weight: 700; color: #ec4899; display: flex; align-items: center; gap: 6px;">
+            <div class="overview-card history-compare-card" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(236, 72, 153, 0.35); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; backdrop-filter: blur(10px);">
+                <div class="history-compare-row" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                    <div class="history-selects-group" style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%;">
+                        <span style="font-size: 14px; font-weight: 700; color: #ec4899; display: flex; align-items: center; gap: 6px; white-space: nowrap;">
                             <i class="fa-solid fa-sliders"></i> Seleção de Comparativos:
                         </span>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 12px; color: var(--text-secondary);">Base:</label>
+                        <div class="snap-select-item" style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 12px; color: var(--text-secondary); white-space: nowrap;">Base:</label>
                             <select id="select-snap-base" class="snap-select">
                                 ${rawHistory.map((s, i) => `
                                     <option value="${s.id}" ${i === Math.max(0, rawHistory.length - 2) ? 'selected' : ''}>
@@ -4162,22 +4162,22 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                 `).join('')}
                             </select>
                         </div>
-                        <span style="color: var(--text-muted);">➔</span>
-                        <div style="display: flex; align-items: center; gap: 6px;">
-                            <label style="font-size: 12px; color: var(--text-secondary);">Comparado:</label>
+                        <span style="color: var(--text-muted);" class="snap-arrow-icon">➔</span>
+                        <div class="snap-select-item" style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 12px; color: var(--text-secondary); white-space: nowrap;">Comparado:</label>
                             <select id="select-snap-target" class="snap-select">
                                 ${rawHistory.map((s, i) => `
                                     <option value="${s.id}" ${i === rawHistory.length - 1 ? 'selected' : ''}>
-                                        Snapshot #${i + 1} (${s.created_at}) ${i === rawHistory.length - 1 ? '🔥 (Mais Recente)' : ''}
+                                        Snapshot #${i + 1} (${s.created_at}) ${i === rawHistory.length - 1 ? ' (Mais Recente)' : ''}
                                     </option>
                                 `).join('')}
                             </select>
                         </div>
-                        <button id="btn-run-snap-compare" class="primary-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; cursor: pointer; border-radius: 8px; font-weight: 600;">
+                        <button id="btn-run-snap-compare" class="primary-btn history-compare-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; cursor: pointer; border-radius: 8px; font-weight: 600;">
                             <i class="fa-solid fa-code-compare"></i> Comparar Diffs
                         </button>
                     </div>
-                    <div id="snap-compare-status-badge" class="diff-badge-gain" style="font-size: 11px; padding: 4px 10px;">
+                    <div id="snap-compare-status-badge" class="diff-badge-gain history-status-badge" style="font-size: 11px; padding: 4px 10px; white-space: nowrap;">
                         <i class="fa-solid fa-check"></i> Comparando Snapshots Selecionados
                     </div>
                 </div>
@@ -4201,15 +4201,15 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
                     return `
                         <div class="timeline-item" style="position: relative;">
-                            <div style="position: absolute; left: -33px; top: 18px; width: 16px; height: 16px; border-radius: 50%; background: ${isLatest ? '#ec4899' : '#38bdf8'}; border: 3px solid #0f172a; box-shadow: 0 0 12px ${isLatest ? 'rgba(236, 72, 153, 0.8)' : 'rgba(56, 189, 248, 0.8)'};"></div>
+                            <div class="timeline-bullet" style="position: absolute; left: -33px; top: 18px; width: 16px; height: 16px; border-radius: 50%; background: ${isLatest ? '#ec4899' : '#38bdf8'}; border: 3px solid #0f172a; box-shadow: 0 0 12px ${isLatest ? 'rgba(236, 72, 153, 0.8)' : 'rgba(56, 189, 248, 0.8)'};"></div>
 
-                            <div class="overview-card" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-top: 3px solid ${isLatest ? '#ec4899' : 'rgba(56, 189, 248, 0.6)'}; border-radius: 14px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
+                            <div class="overview-card timeline-card" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-top: 3px solid ${isLatest ? '#ec4899' : 'rgba(56, 189, 248, 0.6)'}; border-radius: 14px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
                                 
-                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 16px; margin-bottom: 16px;">
+                                <div class="timeline-card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 16px; margin-bottom: 16px;">
                                     <div>
-                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                                             <span style="font-size: 11px; font-weight: 700; background: ${isLatest ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' : 'rgba(255,255,255,0.1)'}; color: #fff; padding: 3px 10px; border-radius: 12px;">
-                                                Snapshot #${snapshotNum} ${isLatest ? '🔥 (Mais Recente)' : ''}
+                                                Snapshot #${snapshotNum} ${isLatest ? ' (Mais Recente)' : ''}
                                             </span>
                                             <span style="font-size: 12px; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> ${item.created_at}</span>
                                         </div>
@@ -4218,19 +4218,19 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                         </h3>
                                     </div>
 
-                                    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
-                                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; min-width: 100px;">
+                                    <div class="timeline-stats-boxes" style="display: flex; gap: 14px; flex-wrap: wrap;">
+                                        <div class="timeline-stat-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; flex: 1; min-width: 90px;">
                                             <span style="display: block; font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Personagens</span>
                                             <strong style="font-size: 15px; color: #38bdf8;">${item.character_count}</strong>
-                                            <span style="font-size: 10px; color: var(--text-muted);"> (${details.five_stars || 0}★ 5★ / ${details.four_stars || 0}★ 4★)</span>
+                                            <span style="font-size: 10px; color: var(--text-muted); display: block;"> (${details.five_stars || 0}★ 5★ / ${details.four_stars || 0}★ 4★)</span>
                                             ${item.delta_chars > 0 ? `<span style="font-size: 10px; color: #10b981; font-weight: 700; display: block;">+${item.delta_chars} novos</span>` : ''}
                                         </div>
-                                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; min-width: 100px;">
+                                        <div class="timeline-stat-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; flex: 1; min-width: 90px;">
                                             <span style="display: block; font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Média Build (RV)</span>
                                             <strong style="font-size: 15px; color: #10b981;">${item.average_build_score}%</strong>
                                             ${item.delta_avg_score > 0 ? `<span style="font-size: 10px; color: #10b981; font-weight: 700; display: block;">+${item.delta_avg_score}%</span>` : (item.delta_avg_score < 0 ? `<span style="font-size: 10px; color: #ef4444; font-weight: 700; display: block;">${item.delta_avg_score}%</span>` : '')}
                                         </div>
-                                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; min-width: 100px;">
+                                        <div class="timeline-stat-box" style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; flex: 1; min-width: 90px;">
                                             <span style="display: block; font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Prontidão Endgame</span>
                                             <strong style="font-size: 15px; color: #f59e0b;">${readiness}%</strong>
                                             <span style="font-size: 10px; color: var(--text-muted); display: block;">${details.endgame_ready_count || 0} prontos</span>
@@ -4240,14 +4240,14 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
                                 ${diffs.length > 0 ? `
                                     <div style="background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 12px;">
                                             <span style="font-size: 13px; font-weight: 700; color: #ec4899; display: flex; align-items: center; gap: 6px;">
                                                 <i class="fa-solid fa-chart-line"></i> Alterações e Evoluções Detectadas (${diffs.length})
                                             </span>
                                             <span style="font-size: 11px; color: var(--text-muted);">Clique no card para expandir a build completa</span>
                                         </div>
 
-                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                                        <div class="timeline-diff-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px;">
                                             ${diffs.map((d, dIdx) => {
                                                 const dJson = JSON.stringify(d).replace(/"/g, '&quot;');
                                                 return `
@@ -4297,11 +4297,11 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                     <summary style="font-size: 12px; font-weight: 600; color: #38bdf8; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;">
                                         <i class="fa-solid fa-users"></i> Ver Todos os ${allChars.length} Personagens do Snapshot #${snapshotNum}
                                     </summary>
-                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 14px;">
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 10px; margin-top: 14px;">
                                         ${allChars.map(c => `
                                             <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 10px;">
                                                 <img src="${c.icon || '/assets/logo.svg'}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid ${c.rarity >= 5 ? '#f59e0b' : '#a855f7'};" onerror="this.src='/assets/logo.svg'">
-                                                <div style="overflow: hidden; flex: 1;">
+                                                <div style="overflow: hidden; flex: 1; min-width: 0;">
                                                     <strong style="display: block; font-size: 12px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.name}</strong>
                                                     <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-top: 2px;">
                                                         <span>Nv. ${c.level} • ${c.rank_str || 'E0/C0'}</span>
@@ -4347,38 +4347,38 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
                 let resHtml = `
                     <div style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 14px; padding: 18px; margin-bottom: 24px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
-                            <h3 style="margin: 0; font-size: 16px; color: #ec4899; display: flex; align-items: center; gap: 8px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
+                            <h3 style="margin: 0; font-size: 15px; color: #ec4899; display: flex; align-items: center; gap: 8px; word-break: break-word;">
                                 <i class="fa-solid fa-code-compare"></i> Resultado da Comparação (Snapshot #${cData.snap_a.id} ➔ Snapshot #${cData.snap_b.id})
                             </h3>
-                            <span style="font-size: 12px; color: var(--text-muted);">${cData.snap_a.created_at} ➔ ${cData.snap_b.created_at}</span>
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">${cData.snap_a.created_at} ➔ ${cData.snap_b.created_at}</span>
                         </div>
 
                         <!-- KPIs Comparativos -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px;">
-                            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center;">
-                                <span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">Personagens</span>
-                                <strong style="display: block; font-size: 15px; color: #38bdf8;">${cData.snap_a.character_count} ➔ ${cData.snap_b.character_count}</strong>
-                                ${sumDiff.delta_chars > 0 ? `<span class="diff-badge-gain">+${sumDiff.delta_chars} novos</span>` : ''}
+                        <div class="diff-modal-kpi-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 130px), 1fr)); gap: 10px; margin-bottom: 16px;">
+                            <div style="background: rgba(0,0,0,0.3); padding: 10px 6px; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 9px; color: var(--text-secondary); text-transform: uppercase; display: block;">Personagens</span>
+                                <strong style="display: block; font-size: 13px; color: #38bdf8;">${cData.snap_a.character_count} ➔ ${cData.snap_b.character_count}</strong>
+                                ${sumDiff.delta_chars > 0 ? `<span class="diff-badge-gain" style="font-size: 9px;">+${sumDiff.delta_chars} novos</span>` : ''}
                             </div>
-                            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center;">
-                                <span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">Score Médio (RV)</span>
-                                <strong style="display: block; font-size: 15px; color: #10b981;">${cData.snap_a.average_build_score}% ➔ ${cData.snap_b.average_build_score}%</strong>
-                                ${sumDiff.delta_avg_score > 0 ? `<span class="diff-badge-gain">+${sumDiff.delta_avg_score}%</span>` : (sumDiff.delta_avg_score < 0 ? `<span class="diff-badge-loss">${sumDiff.delta_avg_score}%</span>` : '')}
+                            <div style="background: rgba(0,0,0,0.3); padding: 10px 6px; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 9px; color: var(--text-secondary); text-transform: uppercase; display: block;">Score Médio (RV)</span>
+                                <strong style="display: block; font-size: 13px; color: #10b981;">${cData.snap_a.average_build_score}% ➔ ${cData.snap_b.average_build_score}%</strong>
+                                ${sumDiff.delta_avg_score > 0 ? `<span class="diff-badge-gain" style="font-size: 9px;">+${sumDiff.delta_avg_score}%</span>` : (sumDiff.delta_avg_score < 0 ? `<span class="diff-badge-loss" style="font-size: 9px;">${sumDiff.delta_avg_score}%</span>` : '')}
                             </div>
-                            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center;">
-                                <span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">Prontidão Endgame</span>
-                                <strong style="display: block; font-size: 15px; color: #f59e0b;">${cData.snap_a.endgame_readiness_pct}% ➔ ${cData.snap_b.endgame_readiness_pct}%</strong>
-                                ${sumDiff.delta_readiness > 0 ? `<span class="diff-badge-gain">+${sumDiff.delta_readiness}%</span>` : ''}
+                            <div style="background: rgba(0,0,0,0.3); padding: 10px 6px; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 9px; color: var(--text-secondary); text-transform: uppercase; display: block;">Prontidão Endgame</span>
+                                <strong style="display: block; font-size: 13px; color: #f59e0b;">${cData.snap_a.endgame_readiness_pct}% ➔ ${cData.snap_b.endgame_readiness_pct}%</strong>
+                                ${sumDiff.delta_readiness > 0 ? `<span class="diff-badge-gain" style="font-size: 9px;">+${sumDiff.delta_readiness}%</span>` : ''}
                             </div>
                         </div>
 
                         <!-- Lista de Cards de Personagens para Abrir Modal -->
-                        <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                        <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; display: flex; flex-direction: column; gap: 4px;">
                             <span><i class="fa-solid fa-users-gear"></i> Todos os Personagens no Período (${cDiffs.length})</span>
                             <span style="font-size: 11px; color: #ec4899; font-weight: 400;">★ Clique em qualquer card para expandir a build completa</span>
                         </div>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                        <div class="timeline-diff-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px;">
                             ${cDiffs.map(d => {
                                 const dJson = JSON.stringify(d).replace(/"/g, '&quot;');
                                 const scoreD = d.diffs ? d.diffs.score_diff : 0;
@@ -4394,7 +4394,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                                 <span>•</span>
                                                 <span style="color: #f59e0b;">${(d.target || d.base || {}).rank_str || 'E0/C0'}</span>
                                             </div>
-                                            <div style="margin-top: 4px; display: flex; gap: 6px;">
+                                            <div style="margin-top: 4px; display: flex; flex-wrap: wrap; gap: 4px;">
                                                 ${d.is_new ? `<span class="diff-badge-gain">Novo!</span>` : ''}
                                                 ${scoreD > 0 ? `<span class="diff-badge-gain">+${scoreD}% RV</span>` : ''}
                                                 ${rankChg ? `<span class="diff-badge-gain">Constelação+</span>` : ''}
@@ -4451,7 +4451,7 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                     <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                         <div>
                             <code style="font-size: 16px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">${c.code}</code>
-                            <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;">🎁 Recompensas: ${c.rewards}</span>
+                            <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;"> Recompensas: ${c.rewards}</span>
                             <span style="display: block; font-size: 10px; color: #10b981; margin-top: 2px;">• ${c.status}</span>
                         </div>
                         <button class="action-btn btn-redeem-single" data-game="${gameId}" data-code="${c.code}" style="padding: 8px 14px; font-size: 12px; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 6px; cursor: pointer;">

@@ -1,10 +1,10 @@
-# 🛡️ Política de Segurança e Proteção de Dados
+#  Política de Segurança e Proteção de Dados
 
 Este documento descreve as práticas de segurança, gestão de credenciais e privacidade de dados no aplicativo **Cabeça de Droid (v3.0)**. Como o sistema processa dados pessoais da sua conta HoYoLAB e integrações com APIs de Inteligência Artificial, é essencial entender como essas informações são tratadas localmente.
 
 ---
 
-## 🔑 1. Gerenciamento e Armazenamento de Credenciais
+##  1. Gerenciamento e Armazenamento de Credenciais
 
 ### 1.1 Chaves de API de Inteligência Artificial (Groq / Gemini)
 Para alimentar o **Assistente de Chat IA**, o **Otimizador de Builds IA** e o **Analisador de Sinergia de Times**, o aplicativo necessita de uma chave de API para os modelos de linguagem (Groq Cloud ou Google Gemini).
@@ -44,7 +44,7 @@ Para consultar seu roster de personagens, status de energia em tempo real (Daily
 
 ---
 
-## 🗄️ 2. Persistência de Dados Local (`hoyo_app.db` & SQLite)
+##  2. Persistência de Dados Local (`hoyo_app.db` & SQLite)
 
 - **Execução 100% Local:** O servidor backend roda exclusivamente na interface de loopback (`127.0.0.1:8000`). Nenhum dado de conta ou build é enviado para servidores externos além das chamadas oficiais da API da HoYoLAB e da API de IA configurada.
 - **Banco de Dados SQLite (`hoyo_app.db`):** Armazena localmente o histórico das contas, builds de personagens, cache de notas diárias e logs de check-in efetuados.
@@ -52,7 +52,7 @@ Para consultar seu roster de personagens, status de energia em tempo real (Daily
 
 ---
 
-## ⚠️ 3. Proteção do `.gitignore`
+##  3. Proteção do `.gitignore`
 
 Os arquivos a seguir contêm dados confidenciais ou cacheados e **DEVEM PERMANECER IGNORADOS** pelo controle de versão:
 
@@ -66,7 +66,7 @@ Os arquivos a seguir contêm dados confidenciais ou cacheados e **DEVEM PERMANEC
 
 ---
 
-## 🚨 4. O que fazer em caso de vazamento de credenciais?
+##  4. O que fazer em caso de vazamento de credenciais?
 
 Se você suspeitar que suas chaves de API ou cookies foram expostos:
 

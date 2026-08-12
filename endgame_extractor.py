@@ -57,7 +57,7 @@ async def extrair_endgame_hsr(client: genshin.Client, uid: int) -> str:
             has_node_3 = hasattr(floor, 'node_3') and floor.node_3 is not None
             max_stars = 4 if has_node_3 else 3
             
-            text += f"🏆 **Caos da Memória (MoC)** - {floor.name}\n"
+            text += f" **Caos da Memória (MoC)** - {floor.name}\n"
             text += f"  • Estrelas: {getattr(floor, 'star_num', getattr(floor, 'stars', '?'))}/{max_stars} | Rodadas Utilizadas: {floor.round_num}\n"
             text += format_team_node("Lado 1", getattr(floor.node_1, "avatars", []), getattr(floor.node_1, "monsters", []), char_map) + "\n"
             text += format_team_node("Lado 2", getattr(floor.node_2, "avatars", []), getattr(floor.node_2, "monsters", []), char_map) + "\n"
@@ -75,7 +75,7 @@ async def extrair_endgame_hsr(client: genshin.Client, uid: int) -> str:
             has_node_3 = hasattr(floor, 'node_3') and floor.node_3 is not None
             max_stars = 4 if has_node_3 else 3
             
-            text += f"🎭 **Ficção Pura** - {floor.name}\n"
+            text += f" **Ficção Pura** - {floor.name}\n"
             text += f"  • Estrelas: {getattr(floor, 'star_num', getattr(floor, 'stars', '?'))}/{max_stars} | Pontuação: {floor.score}\n"
             text += format_team_node("Lado 1", getattr(floor.node_1, "avatars", []), getattr(floor.node_1, "monsters", []), char_map) + "\n"
             text += format_team_node("Lado 2", getattr(floor.node_2, "avatars", []), getattr(floor.node_2, "monsters", []), char_map) + "\n"
@@ -93,7 +93,7 @@ async def extrair_endgame_hsr(client: genshin.Client, uid: int) -> str:
             has_node_3 = hasattr(floor, 'node_3') and floor.node_3 is not None
             max_stars = 4 if has_node_3 else 3
             
-            text += f"🌑 **Sombra Apocalíptica** - {floor.name}\n"
+            text += f" **Sombra Apocalíptica** - {floor.name}\n"
             text += f"  • Estrelas: {getattr(floor, 'star_num', getattr(floor, 'stars', '?'))}/{max_stars} | Pontuação: {floor.score}\n"
             text += format_team_node("Lado 1", getattr(floor.node_1, "avatars", []), getattr(floor.node_1, "monsters", []), char_map) + "\n"
             text += format_team_node("Lado 2", getattr(floor.node_2, "avatars", []), getattr(floor.node_2, "monsters", []), char_map) + "\n"
@@ -117,7 +117,7 @@ async def extrair_endgame_genshin(client: genshin.Client, uid: int) -> str:
             floor = abyss.floors[-1]
             chamber = floor.chambers[-1] if floor.chambers else None
             
-            text += f"🌌 **Abismo Espiral** - Piso {floor.floor} (Câmara {chamber.chamber if chamber else '?'})\n"
+            text += f" **Abismo Espiral** - Piso {floor.floor} (Câmara {chamber.chamber if chamber else '?'})\n"
             text += f"  • Estrelas do Piso: {floor.stars}/{floor.max_stars}\n"
             if chamber and chamber.battles:
                 for b in chamber.battles:
@@ -141,7 +141,7 @@ async def extrair_endgame_genshin(client: genshin.Client, uid: int) -> str:
             # Pega a temporada atual/mais recente
             current = it.datas[0]
             has_data = True
-            text += f"🎭 **Teatro Imaginário**\n"
+            text += f" **Teatro Imaginário**\n"
             text += f"  • Medalhas: {getattr(current, 'medal_num', '?')} | Atos Concluídos: {getattr(current, 'max_round_id', '?')}\n"
             # O Teatro tem muitos atos, pegamos apenas o lineup geral ou os favoritos se disponíveis
             favs = getattr(current, "favorite_characters", [])
@@ -171,7 +171,7 @@ async def extrair_endgame_zzz(client: genshin.Client, uid: int) -> str:
             has_data = True
             node = nodes[-1] 
             level = getattr(node, "level", getattr(node, "layer", "?"))
-            text += f"📺 **Defesa Shiyu** - Nó/Andar {level}\n"
+            text += f" **Defesa Shiyu** - Nó/Andar {level}\n"
             rating = getattr(node, "rating", "Concluído")
             text += f"  • Classificação: {rating}\n"
             

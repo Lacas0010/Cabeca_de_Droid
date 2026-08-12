@@ -638,7 +638,7 @@ class PrydwenZZZScraper:
                 lines.append("")
                 
         except Exception as e:
-            lines.append(f"⚠️ Erro ao carregar a Tier List: {e}")
+            lines.append(f" Erro ao carregar a Tier List: {e}")
             lines.append("")
             
         # 2. ENDGAME REPORT

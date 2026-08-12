@@ -76,7 +76,7 @@ def log_game(game_id: str, msg: str, level: str = "INFO", progresso: float = Non
     
     status = sync_status[game_id]
     status["logs"].append(formatted_msg)
-    status["message"] = f"{level == 'ERROR' and '❌ ' or ''}{msg}"
+    status["message"] = f"{level == 'ERROR' and ' ' or ''}{msg}"
     if progresso is not None:
         status["progress"] = progresso
 
