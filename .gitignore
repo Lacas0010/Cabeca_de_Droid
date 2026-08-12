@@ -64,9 +64,12 @@ assets/relics/
 assets/elements/
 assets/logo.ico
 
-# Logs & Temporary Files
+# Logs, Compressed Archives & Temporary Files
 *.log
 *.tmp
+*.zip
+*.tar.gz
+*.bak
 check_*.py
 test_*.py
 scratch_*.py
@@ -78,4 +81,5 @@ dist/
 build/
 *.spec
 *.exe
+
 

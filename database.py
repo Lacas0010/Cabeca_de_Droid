@@ -193,7 +193,17 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
         if lvl >= max_lvl - 10 and char_score >= 50.0:
             endgame_ready_count += 1
 
+        weapon_data = c.get("weapon") or {}
+        if not weapon_data and c.get("weapon_name"):
+            weapon_data = {
+                "name": c.get("weapon_name", ""),
+                "level": c.get("weapon_level", 1),
+                "rank": c.get("weapon_rank", 1),
+                "icon": c.get("weapon_icon", "")
+            }
+
         all_chars_data.append({
+            "id": str(c.get("id", "")),
             "name": char_name,
             "norm": norm,
             "level": lvl,
@@ -201,8 +211,13 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
             "rank_str": rank_str,
             "element": c.get("element", ""),
             "icon": c.get("icon", ""),
-            "weapon_name": c.get("weapon_name", ""),
-            "weapon_level": c.get("weapon_level", 1),
+            "gacha_art": c.get("gacha_art", ""),
+            "weapon": weapon_data,
+            "weapon_name": weapon_data.get("name", ""),
+            "weapon_level": weapon_data.get("level", 1),
+            "relics": relics,
+            "skills": c.get("skills", []),
+            "stats": c.get("stats", {}),
             "score": char_score,
             "grade": grade,
             "relics_count": len(relics)
@@ -229,10 +244,201 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
 
     with get_connection() as conn:
         cursor = conn.cursor()
+
+        # Verifica se já existe um snapshot gravado para este UID e jogo
+        cursor.execute("""
+            SELECT id, snapshot_json, character_count, five_star_count, average_build_score 
+            FROM account_snapshots 
+            WHERE game_id = ? AND uid = ? 
+            ORDER BY id DESC LIMIT 1
+        """, (game_id_clean, uid))
+        latest_row = cursor.fetchone()
+
+        if latest_row:
+            latest_json_str = latest_row["snapshot_json"]
+            try:
+                latest_data = json.loads(latest_json_str or "{}")
+                latest_chars = latest_data.get("all_characters") or []
+                
+                same_counts = (latest_row["character_count"] == char_count and 
+                               latest_row["five_star_count"] == five_star_count and 
+                               abs(latest_row["average_build_score"] - avg_score) < 0.01)
+
+                if same_counts and len(latest_chars) == len(all_chars_data):
+                    latest_map = { (c.get("norm") or c.get("name", "").lower().strip()): c for c in latest_chars }
+                    has_changes = False
+
+                    for cur_c in all_chars_data:
+                        norm = cur_c.get("norm") or cur_c.get("name", "").lower().strip()
+                        prev_c = latest_map.get(norm)
+                        if not prev_c:
+                            has_changes = True
+                            break
+                        
+                        if (cur_c.get("level") != prev_c.get("level") or
+                            cur_c.get("rank_str") != prev_c.get("rank_str") or
+                            cur_c.get("score") != prev_c.get("score") or
+                            json.dumps(cur_c.get("weapon"), sort_keys=True) != json.dumps(prev_c.get("weapon"), sort_keys=True) or
+                            json.dumps(cur_c.get("relics"), sort_keys=True) != json.dumps(prev_c.get("relics"), sort_keys=True) or
+                            json.dumps(cur_c.get("skills"), sort_keys=True) != json.dumps(prev_c.get("skills"), sort_keys=True)):
+                            has_changes = True
+                            break
+                    
+                    if not has_changes:
+                        print(f"[INFO] Roster de {game_id_clean.upper()} (UID {uid}) não sofreu nenhuma alteração. Nulo o salvamento de snapshot duplicado.")
+                        return
+            except Exception as check_err:
+                print(f"[AVISO] Falha ao comparar com o último snapshot: {check_err}")
+
         cursor.execute("""
         INSERT INTO account_snapshots (uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (uid, game_id_clean, char_count, five_star_count, avg_score, summary_json, now_str))
+
+def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[str, Any]:
+    """Compara minuciosamente dois snapshots quaisquer pelo ID para exibir diffs de personagens, atributos, armas e relíquias."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM account_snapshots WHERE id IN (?, ?)", (snap_id_a, snap_id_b))
+        rows = {r["id"]: dict(r) for r in cursor.fetchall()}
+        
+        if snap_id_a not in rows or snap_id_b not in rows:
+            return {}
+
+        snap_a = rows[snap_id_a]
+        snap_b = rows[snap_id_b]
+
+        # Garantir que A é o snapshot mais antigo e B é o mais recente
+        if snap_a["created_at"] > snap_b["created_at"] or (snap_a["created_at"] == snap_b["created_at"] and snap_a["id"] > snap_b["id"]):
+            snap_a, snap_b = snap_b, snap_a
+
+        details_a = json.loads(snap_a.get("snapshot_json") or "{}") if snap_a.get("snapshot_json") else {}
+        details_b = json.loads(snap_b.get("snapshot_json") or "{}") if snap_b.get("snapshot_json") else {}
+
+        chars_a = details_a.get("all_characters") or details_a.get("top_built_characters") or []
+        chars_b = details_b.get("all_characters") or details_b.get("top_built_characters") or []
+
+        map_a = { (c.get("norm") or c.get("name", "").lower().strip()): c for c in chars_a }
+        map_b = { (c.get("norm") or c.get("name", "").lower().strip()): c for c in chars_b }
+
+        delta_chars = snap_b.get("character_count", 0) - snap_a.get("character_count", 0)
+        delta_5star = snap_b.get("five_star_count", 0) - snap_a.get("five_star_count", 0)
+        delta_avg_score = round(snap_b.get("average_build_score", 0.0) - snap_a.get("average_build_score", 0.0), 1)
+
+        readiness_a = details_a.get("endgame_readiness_pct", 0.0)
+        readiness_b = details_b.get("endgame_readiness_pct", 0.0)
+        delta_readiness = round(readiness_b - readiness_a, 1)
+
+        all_norms = list(dict.fromkeys(list(map_b.keys()) + list(map_a.keys())))
+        char_diffs = []
+
+        for norm in all_norms:
+            ca = map_a.get(norm)
+            cb = map_b.get(norm)
+
+            if not ca and cb:
+                char_diffs.append({
+                    "name": cb.get("name"),
+                    "norm": norm,
+                    "icon": cb.get("icon"),
+                    "rarity": cb.get("rarity", 4),
+                    "element": cb.get("element", ""),
+                    "is_new": True,
+                    "is_modified": True,
+                    "base": None,
+                    "target": cb,
+                    "diffs": {
+                        "level_diff": cb.get("level", 1),
+                        "score_diff": cb.get("score", 0.0),
+                        "rank_changed": False,
+                        "weapon_changed": False
+                    }
+                })
+            elif ca and not cb:
+                char_diffs.append({
+                    "name": ca.get("name"),
+                    "norm": norm,
+                    "icon": ca.get("icon"),
+                    "rarity": ca.get("rarity", 4),
+                    "element": ca.get("element", ""),
+                    "is_new": False,
+                    "is_removed": True,
+                    "base": ca,
+                    "target": None,
+                    "diffs": {}
+                })
+            else:
+                lvl_diff = cb.get("level", 0) - ca.get("level", 0)
+                score_diff = round(cb.get("score", 0.0) - ca.get("score", 0.0), 1)
+                rank_changed = ca.get("rank_str") != cb.get("rank_str")
+
+                w_a = ca.get("weapon") or {"name": ca.get("weapon_name", ""), "level": ca.get("weapon_level", 1)}
+                w_b = cb.get("weapon") or {"name": cb.get("weapon_name", ""), "level": cb.get("weapon_level", 1)}
+                weapon_changed = w_a.get("name") != w_b.get("name")
+                weapon_upgraded = w_a.get("level") != w_b.get("level") or w_a.get("rank") != w_b.get("rank")
+
+                relics_a = ca.get("relics", [])
+                relics_b = cb.get("relics", [])
+                relics_changed = json.dumps(relics_a, sort_keys=True) != json.dumps(relics_b, sort_keys=True)
+
+                skills_a = ca.get("skills", [])
+                skills_b = cb.get("skills", [])
+                skills_changed = json.dumps(skills_a, sort_keys=True) != json.dumps(skills_b, sort_keys=True)
+
+                stats_a = ca.get("stats", {})
+                stats_b = cb.get("stats", {})
+                stats_changed = json.dumps(stats_a, sort_keys=True) != json.dumps(stats_b, sort_keys=True)
+
+                is_modified = (lvl_diff != 0 or score_diff != 0.0 or rank_changed or weapon_changed or weapon_upgraded or relics_changed or skills_changed or stats_changed)
+
+                char_diffs.append({
+                    "name": cb.get("name") or ca.get("name"),
+                    "norm": norm,
+                    "icon": cb.get("icon") or ca.get("icon"),
+                    "rarity": cb.get("rarity") or ca.get("rarity", 4),
+                    "element": cb.get("element") or ca.get("element", ""),
+                    "is_new": False,
+                    "is_modified": is_modified,
+                    "base": ca,
+                    "target": cb,
+                    "diffs": {
+                        "level_diff": lvl_diff,
+                        "score_diff": score_diff,
+                        "rank_changed": rank_changed,
+                        "weapon_changed": weapon_changed,
+                        "weapon_upgraded": weapon_upgraded,
+                        "relics_changed": relics_changed,
+                        "skills_changed": skills_changed,
+                        "stats_changed": stats_changed
+                    }
+                })
+
+        return {
+            "game_id": game_id,
+            "snap_a": {
+                "id": snap_a["id"],
+                "created_at": snap_a["created_at"],
+                "character_count": snap_a["character_count"],
+                "five_star_count": snap_a["five_star_count"],
+                "average_build_score": snap_a["average_build_score"],
+                "endgame_readiness_pct": readiness_a
+            },
+            "snap_b": {
+                "id": snap_b["id"],
+                "created_at": snap_b["created_at"],
+                "character_count": snap_b["character_count"],
+                "five_star_count": snap_b["five_star_count"],
+                "average_build_score": snap_b["average_build_score"],
+                "endgame_readiness_pct": readiness_b
+            },
+            "summary_diff": {
+                "delta_chars": delta_chars,
+                "delta_5star": delta_5star,
+                "delta_avg_score": delta_avg_score,
+                "delta_readiness": delta_readiness
+            },
+            "char_diffs": char_diffs
+        }
 
 def get_account_history(game_id: str, uid: Optional[str] = None) -> List[Dict[str, Any]]:
     """Retorna o histórico de snapshots comparando o snapshot atual com o anterior para gerar o diff de cada personagem."""

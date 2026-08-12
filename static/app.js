@@ -3837,19 +3837,259 @@ document.addEventListener("DOMContentLoaded", () => {
             if (tab === "audit") window.loadAuditReport("hsr", "tab-audit-report-body");
             if (tab === "history") window.loadAccountHistory("hsr");
             if (tab === "codes") window.loadPromoCodes("hsr");
+            if (tab === "config") window.loadAppConfiguration();
         });
     });
+
+    // Eventos de auto-salvamento para a tela de configurações
+    ["cfg-groq-key", "cfg-hoyolab-cookies", "cfg-auto-sync-time"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("change", () => window.saveAppConfiguration());
+        }
+    });
+
+    ["cfg-auto-sync-enabled", "cfg-auto-sync-roster", "cfg-auto-sync-guides"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener("change", () => window.saveAppConfiguration());
+        }
+    });
+
+    // Carrega configurações iniciais
+    window.loadAppConfiguration();
 });
 
 // ==========================================
-// FUNÇÕES GLOBAIS: HISTÓRICO E CÓDIGOS
-// ==========================================
+window.openCharacterDiffModal = (cData) => {
+    const modal = document.getElementById("modal-character-diff-detail");
+    const iconEl = document.getElementById("diff-modal-char-icon");
+    const nameEl = document.getElementById("diff-modal-char-name");
+    const subEl = document.getElementById("diff-modal-char-sub");
+    const bodyEl = document.getElementById("character-diff-detail-body");
+
+    if (!modal || !bodyEl) return;
+
+    const name = cData.name || "Personagem";
+    iconEl.src = cData.icon || "/assets/logo.svg";
+    nameEl.textContent = name;
+
+    const base = cData.base || {};
+    const target = cData.target || {};
+    const diffs = cData.diffs || {};
+
+    if (cData.is_new) {
+        subEl.innerHTML = `<span style="color: #f59e0b; font-weight: 700;">★ Novo Personagem Adquirido!</span>`;
+    } else {
+        subEl.innerHTML = `Comparativo de Evolução de Build (${cData.rarity || 4}★ ${cData.element || ''})`;
+    }
+
+    let html = '';
+
+    // KPI Header Cards
+    const levelPrev = base.level || 0;
+    const levelCurr = target.level || 0;
+    const levelDiff = diffs.level_diff !== undefined ? diffs.level_diff : (levelCurr - levelPrev);
+
+    const rankPrev = base.rank_str || 'E0/C0';
+    const rankCurr = target.rank_str || 'E0/C0';
+
+    const scorePrev = base.score || 0.0;
+    const scoreCurr = target.score || 0.0;
+    const scoreDiff = diffs.score_diff !== undefined ? diffs.score_diff : (scoreCurr - scorePrev).toFixed(1);
+
+    html += `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px;">
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 10px; text-align: center;">
+                <span style="font-size: 11px; color: var(--text-secondary); display: block; font-weight: 600; text-transform: uppercase;">Nível</span>
+                <strong style="font-size: 16px; color: #fff;">${levelPrev ? `Nv. ${levelPrev} ➔ ` : ''}Nv. ${levelCurr}</strong>
+                ${levelDiff > 0 ? `<span class="diff-badge-gain" style="display: inline-block; margin-top: 4px;">+${levelDiff} Níveis</span>` : ''}
+            </div>
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 10px; text-align: center;">
+                <span style="font-size: 11px; color: var(--text-secondary); display: block; font-weight: 600; text-transform: uppercase;">Constelação / Rank</span>
+                <strong style="font-size: 16px; color: #f59e0b;">${rankPrev !== rankCurr ? `${rankPrev} ➔ ${rankCurr}` : rankCurr}</strong>
+                ${diffs.rank_changed ? `<span class="diff-badge-gain" style="display: inline-block; margin-top: 4px;">Evoluiu!</span>` : ''}
+            </div>
+            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 10px; text-align: center;">
+                <span style="font-size: 11px; color: var(--text-secondary); display: block; font-weight: 600; text-transform: uppercase;">Build Score (RV)</span>
+                <strong style="font-size: 16px; color: #10b981;">${scorePrev ? `${scorePrev}% ➔ ` : ''}${scoreCurr}%</strong>
+                ${scoreDiff > 0 ? `<span class="diff-badge-gain" style="display: inline-block; margin-top: 4px;">+${scoreDiff}%</span>` : (scoreDiff < 0 ? `<span class="diff-badge-loss" style="display: inline-block; margin-top: 4px;">${scoreDiff}%</span>` : '')}
+            </div>
+        </div>
+    `;
+
+    // 1. ARMA / CONE DE LUZ / W-ENGINE
+    const wBase = base.weapon || (base.weapon_name ? { name: base.weapon_name, level: base.weapon_level } : null);
+    const wTarget = target.weapon || (target.weapon_name ? { name: target.weapon_name, level: target.weapon_level } : null);
+
+    html += `<div class="diff-section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Arma / Cone de Luz / W-Engine Equipado</div>`;
+    if (wBase || wTarget) {
+        html += `
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                <div style="border-right: 1px solid rgba(255,255,255,0.08); padding-right: 10px;">
+                    <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">Snapshot Base (Anterior)</span>
+                    ${wBase ? `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            ${wBase.icon ? `<img src="${wBase.icon}" style="width: 36px; height: 36px; border-radius: 6px;" onerror="this.style.display='none'">` : ''}
+                            <div>
+                                <strong style="font-size: 13px; color: var(--text-primary); display: block;">${wBase.name || 'Desconhecida'}</strong>
+                                <span style="font-size: 11px; color: var(--text-secondary);">Nv. ${wBase.level || 1} ${wBase.rank ? `• R${wBase.rank}` : ''}</span>
+                            </div>
+                        </div>
+                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Nenhuma arma registrada</span>`}
+                </div>
+                <div>
+                    <span style="font-size: 11px; color: #ec4899; display: block; margin-bottom: 6px; font-weight: 600;">Snapshot Comparado (Atual)</span>
+                    ${wTarget ? `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            ${wTarget.icon ? `<img src="${wTarget.icon}" style="width: 36px; height: 36px; border-radius: 6px;" onerror="this.style.display='none'">` : ''}
+                            <div>
+                                <strong style="font-size: 13px; color: var(--text-primary); display: block;">${wTarget.name || 'Desconhecida'}</strong>
+                                <span style="font-size: 11px; color: #10b981; font-weight: 600;">Nv. ${wTarget.level || 1} ${wTarget.rank ? `• R${wTarget.rank}` : ''}</span>
+                            </div>
+                        </div>
+                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Nenhuma arma registrada</span>`}
+                </div>
+            </div>
+        `;
+    } else {
+        html += `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">Informações de arma não disponíveis.</p>`;
+    }
+
+    // 2. TALENTOS E HABILIDADES
+    const skillsBase = base.skills || [];
+    const skillsTarget = target.skills || [];
+    if (skillsTarget.length > 0 || skillsBase.length > 0) {
+        html += `<div class="diff-section-title"><i class="fa-solid fa-bolt"></i> Evolução de Habilidades e Talentos</div>`;
+        html += `<div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px;">`;
+
+        const allSkillNames = listUniqueSkillKeys(skillsBase, skillsTarget);
+        html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px;">`;
+        allSkillNames.forEach(sName => {
+            const sb = skillsBase.find(x => (x.name || x.skill_name) === sName);
+            const st = skillsTarget.find(x => (x.name || x.skill_name) === sName);
+            const lvlB = sb ? (sb.level || sb.lvl || 0) : 0;
+            const lvlT = st ? (st.level || st.lvl || 0) : 0;
+            const diff = lvlT - lvlB;
+
+            html += `
+                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: var(--text-primary); font-weight: 500;">${sName}</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 12px; color: var(--text-secondary);">${lvlB ? `Nv. ${lvlB} ➔ ` : ''}Nv. ${lvlT}</span>
+                        ${diff > 0 ? `<span class="diff-badge-gain">+${diff}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+    }
+
+    // 3. STATUS / ATRIBUTOS FINAIS
+    const statsBase = base.stats || {};
+    const statsTarget = target.stats || {};
+    const allStatKeys = listUniqueDictKeys(statsBase, statsTarget);
+
+    if (allStatKeys.length > 0) {
+        html += `<div class="diff-section-title"><i class="fa-solid fa-chart-simple"></i> Atributos Finais Consolidados</div>`;
+        html += `<div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px;">`;
+        html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">`;
+
+        allStatKeys.forEach(key => {
+            const valB = statsBase[key] !== undefined ? String(statsBase[key]) : 'N/A';
+            const valT = statsTarget[key] !== undefined ? String(statsTarget[key]) : 'N/A';
+            
+            let diffBadge = '';
+            const numB = parseFloat(valB.replace(/[^0-9.-]/g, ''));
+            const numT = parseFloat(valT.replace(/[^0-9.-]/g, ''));
+
+            if (!isNaN(numB) && !isNaN(numT) && numB !== numT) {
+                const diffVal = (numT - numB).toFixed(1);
+                const isPct = valT.includes('%');
+                if (parseFloat(diffVal) > 0) {
+                    diffBadge = `<span class="diff-badge-gain">+${diffVal}${isPct ? '%' : ''}</span>`;
+                } else if (parseFloat(diffVal) < 0) {
+                    diffBadge = `<span class="diff-badge-loss">${diffVal}${isPct ? '%' : ''}</span>`;
+                }
+            }
+
+            html += `
+                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
+                    <span style="font-size: 11px; color: var(--text-secondary); display: block;">${key}</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
+                        <span style="font-size: 13px; font-weight: 700; color: #fff;">${valB !== 'N/A' && valB !== valT ? `${valB} ➔ ` : ''}${valT}</span>
+                        ${diffBadge}
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+    }
+
+    // 4. RELÍQUIAS / ARTEFATOS / DISCOS
+    const relicsBase = base.relics || [];
+    const relicsTarget = target.relics || [];
+
+    html += `<div class="diff-section-title"><i class="fa-solid fa-gem"></i> Relíquias / Artefatos / Discos Equipados</div>`;
+    if (relicsTarget.length > 0 || relicsBase.length > 0) {
+        html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px;">`;
+
+        const maxSlotCount = Math.max(relicsBase.length, relicsTarget.length);
+        for (let i = 0; i < maxSlotCount; i++) {
+            const rb = relicsBase[i] || {};
+            const rt = relicsTarget[i] || {};
+
+            const nameB = rb.name || 'Vazio';
+            const mainB = rb.main || rb.main_stat || '';
+            const subB = typeof rb.sub === 'string' ? rb.sub : (Array.isArray(rb.sub) ? rb.sub.map(s => typeof s === 'object' ? `${s.name}: ${s.val}` : s).join(', ') : '');
+
+            const nameT = rt.name || 'Vazio';
+            const mainT = rt.main || rt.main_stat || '';
+            const subT = typeof rt.sub === 'string' ? rt.sub : (Array.isArray(rt.sub) ? rt.sub.map(s => typeof s === 'object' ? `${s.name}: ${s.val}` : s).join(', ') : '');
+
+            const isReplaced = nameB !== nameT || mainB !== mainT;
+
+            html += `
+                <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid ${isReplaced ? 'rgba(236, 72, 153, 0.4)' : 'rgba(255,255,255,0.06)'}; border-radius: 10px; padding: 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 700; color: #38bdf8;">${rt.slot || rb.slot || `Slot #${i+1}`}</span>
+                        ${isReplaced ? `<span class="diff-badge-gain" style="background: rgba(236,72,153,0.2); color: #ec4899; border-color: rgba(236,72,153,0.4);">Peça Trocada</span>` : `<span class="diff-badge-same">Mantida</span>`}
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
+                        ${isReplaced && rb.name ? `<div style="color: var(--text-muted); text-decoration: line-through; margin-bottom: 2px;">Anterior: ${nameB} (${mainB})</div>` : ''}
+                        <strong style="color: #fff; font-size: 12px;">${nameT}</strong> ${mainT ? `<span style="color: #f59e0b; font-weight: 600;">(${mainT})</span>` : ''}
+                        ${subT ? `<div style="color: var(--text-muted); font-size: 10px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis;">${subT}</div>` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        html += `</div>`;
+    } else {
+        html += `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">Detalhes de relíquias não salvos no snapshot base/comparado.</p>`;
+    }
+
+    bodyEl.innerHTML = html;
+    modal.style.display = "flex";
+};
+
+function listUniqueSkillKeys(arrA, arrB) {
+    const set = new Set();
+    (arrA || []).forEach(x => { if (x && (x.name || x.skill_name)) set.add(x.name || x.skill_name); });
+    (arrB || []).forEach(x => { if (x && (x.name || x.skill_name)) set.add(x.name || x.skill_name); });
+    return Array.from(set);
+}
+
+function listUniqueDictKeys(dictA, dictB) {
+    const set = new Set();
+    Object.keys(dictA || {}).forEach(k => set.add(k));
+    Object.keys(dictB || {}).forEach(k => set.add(k));
+    return Array.from(set);
+}
 
 window.loadAccountHistory = async (gameId = "hsr") => {
     const container = document.getElementById("tab-history-body");
     if (!container) return;
 
-    // Vincula botão de criar snapshot se presente na aba
     const btnSnapshot = document.getElementById("btn-create-snapshot-now");
     if (btnSnapshot && !btnSnapshot.dataset.bound) {
         btnSnapshot.dataset.bound = "true";
@@ -3899,11 +4139,56 @@ window.loadAccountHistory = async (gameId = "hsr") => {
             return;
         }
 
-        // Inverte o histórico para exibir o snapshot mais recente no topo da página
         const totalSnapshots = rawHistory.length;
+        // Inverte para cronológico reverso
         const history = rawHistory.slice().reverse();
+        window.historySnapshotsCache = history;
 
-        let html = `
+        // Renderiza Barra Superior de Comparativo Customizado
+        let compareHeaderHtml = `
+            <div class="overview-card" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(236, 72, 153, 0.35); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; backdrop-filter: blur(10px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 14px; font-weight: 700; color: #ec4899; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-sliders"></i> Seleção de Comparativos:
+                        </span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 12px; color: var(--text-secondary);">Base:</label>
+                            <select id="select-snap-base" class="snap-select">
+                                ${rawHistory.map((s, i) => `
+                                    <option value="${s.id}" ${i === Math.max(0, rawHistory.length - 2) ? 'selected' : ''}>
+                                        Snapshot #${i + 1} (${s.created_at})
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <span style="color: var(--text-muted);">➔</span>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <label style="font-size: 12px; color: var(--text-secondary);">Comparado:</label>
+                            <select id="select-snap-target" class="snap-select">
+                                ${rawHistory.map((s, i) => `
+                                    <option value="${s.id}" ${i === rawHistory.length - 1 ? 'selected' : ''}>
+                                        Snapshot #${i + 1} (${s.created_at}) ${i === rawHistory.length - 1 ? '🔥 (Mais Recente)' : ''}
+                                    </option>
+                                `).join('')}
+                            </select>
+                        </div>
+                        <button id="btn-run-snap-compare" class="primary-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; cursor: pointer; border-radius: 8px; font-weight: 600;">
+                            <i class="fa-solid fa-code-compare"></i> Comparar Diffs
+                        </button>
+                    </div>
+                    <div id="snap-compare-status-badge" class="diff-badge-gain" style="font-size: 11px; padding: 4px 10px;">
+                        <i class="fa-solid fa-check"></i> Comparando Snapshots Selecionados
+                    </div>
+                </div>
+            </div>
+            <div id="custom-compare-results-container"></div>
+        `;
+
+        let timelineHtml = `
+            <div style="margin-top: 10px; margin-bottom: 14px; font-size: 14px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-clock-rotate-left" style="color: #38bdf8;"></i> Histórico Completo de Snapshots (${totalSnapshots})
+            </div>
             <div class="timeline-stepper" style="position: relative; padding-left: 24px; border-left: 3px solid rgba(236, 72, 153, 0.3); display: flex; flex-direction: column; gap: 28px; margin-left: 10px;">
                 ${history.map((item, idx) => {
                     const details = item.details || {};
@@ -3916,12 +4201,10 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
                     return `
                         <div class="timeline-item" style="position: relative;">
-                            <!-- Nó indicador na linha vertical -->
                             <div style="position: absolute; left: -33px; top: 18px; width: 16px; height: 16px; border-radius: 50%; background: ${isLatest ? '#ec4899' : '#38bdf8'}; border: 3px solid #0f172a; box-shadow: 0 0 12px ${isLatest ? 'rgba(236, 72, 153, 0.8)' : 'rgba(56, 189, 248, 0.8)'};"></div>
 
                             <div class="overview-card" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-top: 3px solid ${isLatest ? '#ec4899' : 'rgba(56, 189, 248, 0.6)'}; border-radius: 14px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
                                 
-                                <!-- Cabeçalho do Snapshot -->
                                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 16px; margin-bottom: 16px;">
                                     <div>
                                         <div style="display: flex; align-items: center; gap: 8px;">
@@ -3935,7 +4218,6 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                         </h3>
                                     </div>
 
-                                    <!-- KPIs Resumo do Snapshot -->
                                     <div style="display: flex; gap: 14px; flex-wrap: wrap;">
                                         <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; min-width: 100px;">
                                             <span style="display: block; font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Personagens</span>
@@ -3956,78 +4238,64 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                     </div>
                                 </div>
 
-                                <!-- Barra de Prontidão Endgame -->
-                                <div style="margin-bottom: 18px;">
-                                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
-                                        <span><i class="fa-solid fa-trophy" style="color: #f59e0b; margin-right: 4px;"></i> Taxa de Prontidão para o Endgame</span>
-                                        <span style="font-weight: 700; color: #f59e0b;">${readiness}%</span>
-                                    </div>
-                                    <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
-                                        <div style="width: ${readiness}%; height: 100%; background: linear-gradient(90deg, #ec4899, #f59e0b, #10b981); border-radius: 4px; transition: width 0.8s ease;"></div>
-                                    </div>
-                                </div>
-
-                                <!-- Seção de Diff / Evoluções Detectadas (GRID VISUAL DE CARDS) -->
                                 ${diffs.length > 0 ? `
                                     <div style="background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
                                             <span style="font-size: 13px; font-weight: 700; color: #ec4899; display: flex; align-items: center; gap: 6px;">
                                                 <i class="fa-solid fa-chart-line"></i> Alterações e Evoluções Detectadas (${diffs.length})
                                             </span>
-                                            <span style="font-size: 11px; color: var(--text-muted);">Comparado com o snapshot anterior</span>
+                                            <span style="font-size: 11px; color: var(--text-muted);">Clique no card para expandir a build completa</span>
                                         </div>
 
-                                        <!-- GRID VISUAL COMPACTO DE EVOLUÇÕES -->
                                         <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
-                                            ${diffs.map(d => `
-                                                <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid ${d.is_new ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
-                                                    
-                                                    <!-- Avatar com Moldura de Raridade -->
-                                                    <div style="position: relative; flex-shrink: 0;">
-                                                        <img src="${d.icon || '/assets/logo.svg'}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'}; box-shadow: 0 0 10px ${d.is_new ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.3)'};" onerror="this.src='/assets/logo.svg'">
-                                                        ${d.is_new ? `<span style="position: absolute; bottom: -4px; right: -4px; background: #f59e0b; color: #000; font-size: 9px; font-weight: 900; padding: 1px 5px; border-radius: 6px;">NEW</span>` : ''}
-                                                    </div>
-
-                                                    <!-- Informações do Personagem -->
-                                                    <div style="flex: 1; min-width: 0;">
-                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                                                            <strong style="display: block; font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.name}</strong>
+                                            ${diffs.map((d, dIdx) => {
+                                                const dJson = JSON.stringify(d).replace(/"/g, '&quot;');
+                                                return `
+                                                    <div onclick="window.openCharacterDiffModal(JSON.parse(this.dataset.cdiff))" data-cdiff="${dJson}" class="diff-card-clickable" style="background: rgba(15, 23, 42, 0.9); border: 1px solid ${d.is_new ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                                                        <div style="position: relative; flex-shrink: 0;">
+                                                            <img src="${d.icon || '/assets/logo.svg'}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'}; box-shadow: 0 0 10px ${d.is_new ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.3)'};" onerror="this.src='/assets/logo.svg'">
+                                                            ${d.is_new ? `<span style="position: absolute; bottom: -4px; right: -4px; background: #f59e0b; color: #000; font-size: 9px; font-weight: 900; padding: 1px 5px; border-radius: 6px;">NEW</span>` : ''}
                                                         </div>
 
-                                                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
-                                                            <span>Nv. ${d.level_curr}</span>
-                                                            <span>•</span>
-                                                            <span style="color: #f59e0b; font-weight: 600;">${d.rank_curr || 'E0/C0'}</span>
-                                                        </div>
+                                                        <div style="flex: 1; min-width: 0;">
+                                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                                <strong style="display: block; font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.name}</strong>
+                                                            </div>
 
-                                                        <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
-                                                            ${d.is_new ? `
-                                                                <span style="font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
-                                                                    Score: ${d.score_curr}% (${d.grade_curr})
-                                                                </span>
-                                                            ` : `
-                                                                ${d.score_diff > 0 ? `
+                                                            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                                                <span>Nv. ${d.level_curr || d.level_prev || '?'}</span>
+                                                                <span>•</span>
+                                                                <span style="color: #f59e0b; font-weight: 600;">${d.rank_curr || 'E0/C0'}</span>
+                                                            </div>
+
+                                                            <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                                                ${d.is_new ? `
                                                                     <span style="font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
-                                                                        Score +${d.score_diff}% ➔ ${d.score_curr}%
-                                                                    </span>
-                                                                ` : `
-                                                                    <span style="font-size: 10px; font-weight: 600; color: var(--text-muted);">
                                                                         Score: ${d.score_curr}% (${d.grade_curr})
                                                                     </span>
+                                                                ` : `
+                                                                    ${d.score_diff > 0 ? `
+                                                                        <span style="font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                                                            Score +${d.score_diff}% ➔ ${d.score_curr}%
+                                                                        </span>
+                                                                    ` : `
+                                                                        <span style="font-size: 10px; font-weight: 600; color: var(--text-muted);">
+                                                                            Score: ${d.score_curr}% (${d.grade_curr})
+                                                                        </span>
+                                                                    `}
                                                                 `}
-                                                            `}
+                                                            </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                            `).join('')}
+                                                `;
+                                            }).join('')}
                                         </div>
                                     </div>
                                 ` : (idx > 0 ? `<p style="font-size: 12px; color: var(--text-muted); font-style: italic; margin-bottom: 12px;"><i class="fa-solid fa-check-circle" style="color: #10b981;"></i> Nenhuma alteração de atributos ou novos personagens detectados em relação ao snapshot anterior.</p>` : '')}
 
-                                <!-- Sanfona para Todos os Personagens -->
                                 <details style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 14px;">
                                     <summary style="font-size: 12px; font-weight: 600; color: #38bdf8; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-users"></i> Ver Todos os ${allChars.length} Personagens do Snapshot #${idx + 1}
+                                        <i class="fa-solid fa-users"></i> Ver Todos os ${allChars.length} Personagens do Snapshot #${snapshotNum}
                                     </summary>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 14px;">
                                         ${allChars.map(c => `
@@ -4050,7 +4318,112 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                 }).join('')}
             </div>
         `;
-        container.innerHTML = html;
+
+        container.innerHTML = compareHeaderHtml + timelineHtml;
+
+        // Função interna para executar comparativo customizado entre quaisquer dois snapshots
+        const runCustomCompare = async () => {
+            const selBase = document.getElementById("select-snap-base");
+            const selTarget = document.getElementById("select-snap-target");
+            const resContainer = document.getElementById("custom-compare-results-container");
+
+            if (!selBase || !selTarget || !resContainer) return;
+
+            const idA = selBase.value;
+            const idB = selTarget.value;
+
+            if (idA === idB) {
+                resContainer.innerHTML = `<div style="padding: 14px; border-radius: 10px; background: rgba(245,158,11,0.1); border: 1px solid #f59e0b; color: #f59e0b; font-size: 13px; margin-bottom: 20px;"><i class="fa-solid fa-triangle-exclamation"></i> Selecione dois snapshots diferentes para visualizar as diferenças.</div>`;
+                return;
+            }
+
+            resContainer.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Calculando diff minuciosa dos snapshots...</div>`;
+
+            try {
+                const cRes = await fetch(`/api/history/${gameId}/compare/${idA}/${idB}`);
+                const cData = await cRes.json();
+                const sumDiff = cData.summary_diff || {};
+                const cDiffs = cData.char_diffs || [];
+
+                let resHtml = `
+                    <div style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 14px; padding: 18px; margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px;">
+                            <h3 style="margin: 0; font-size: 16px; color: #ec4899; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-code-compare"></i> Resultado da Comparação (Snapshot #${cData.snap_a.id} ➔ Snapshot #${cData.snap_b.id})
+                            </h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">${cData.snap_a.created_at} ➔ ${cData.snap_b.created_at}</span>
+                        </div>
+
+                        <!-- KPIs Comparativos -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">Personagens</span>
+                                <strong style="display: block; font-size: 15px; color: #38bdf8;">${cData.snap_a.character_count} ➔ ${cData.snap_b.character_count}</strong>
+                                ${sumDiff.delta_chars > 0 ? `<span class="diff-badge-gain">+${sumDiff.delta_chars} novos</span>` : ''}
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">Score Médio (RV)</span>
+                                <strong style="display: block; font-size: 15px; color: #10b981;">${cData.snap_a.average_build_score}% ➔ ${cData.snap_b.average_build_score}%</strong>
+                                ${sumDiff.delta_avg_score > 0 ? `<span class="diff-badge-gain">+${sumDiff.delta_avg_score}%</span>` : (sumDiff.delta_avg_score < 0 ? `<span class="diff-badge-loss">${sumDiff.delta_avg_score}%</span>` : '')}
+                            </div>
+                            <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; text-align: center;">
+                                <span style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase;">Prontidão Endgame</span>
+                                <strong style="display: block; font-size: 15px; color: #f59e0b;">${cData.snap_a.endgame_readiness_pct}% ➔ ${cData.snap_b.endgame_readiness_pct}%</strong>
+                                ${sumDiff.delta_readiness > 0 ? `<span class="diff-badge-gain">+${sumDiff.delta_readiness}%</span>` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Lista de Cards de Personagens para Abrir Modal -->
+                        <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                            <span><i class="fa-solid fa-users-gear"></i> Todos os Personagens no Período (${cDiffs.length})</span>
+                            <span style="font-size: 11px; color: #ec4899; font-weight: 400;">★ Clique em qualquer card para expandir a build completa</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                            ${cDiffs.map(d => {
+                                const dJson = JSON.stringify(d).replace(/"/g, '&quot;');
+                                const scoreD = d.diffs ? d.diffs.score_diff : 0;
+                                const lvlD = d.diffs ? d.diffs.level_diff : 0;
+                                const rankChg = d.diffs ? d.diffs.rank_changed : false;
+                                return `
+                                    <div onclick="window.openCharacterDiffModal(JSON.parse(this.dataset.cdiff))" data-cdiff="${dJson}" class="diff-card-clickable" style="background: rgba(15, 23, 42, 0.95); border: 1px solid ${d.is_new ? 'rgba(245, 158, 11, 0.6)' : (d.is_modified ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.06)')}; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center;">
+                                        <img src="${d.icon || '/assets/logo.svg'}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'};" onerror="this.src='/assets/logo.svg'">
+                                        <div style="flex: 1; min-width: 0;">
+                                            <strong style="display: block; font-size: 13px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.name}</strong>
+                                            <div style="display: flex; gap: 6px; font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                                <span>Nv. ${(d.target || d.base || {}).level || '?'}</span>
+                                                <span>•</span>
+                                                <span style="color: #f59e0b;">${(d.target || d.base || {}).rank_str || 'E0/C0'}</span>
+                                            </div>
+                                            <div style="margin-top: 4px; display: flex; gap: 6px;">
+                                                ${d.is_new ? `<span class="diff-badge-gain">Novo!</span>` : ''}
+                                                ${scoreD > 0 ? `<span class="diff-badge-gain">+${scoreD}% RV</span>` : ''}
+                                                ${rankChg ? `<span class="diff-badge-gain">Constelação+</span>` : ''}
+                                                ${!d.is_new && !scoreD && !rankChg ? `<span class="diff-badge-same">Sem alterações</span>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+
+                resContainer.innerHTML = resHtml;
+            } catch (err) {
+                console.error("Erro ao executar comparativo:", err);
+                resContainer.innerHTML = `<div style="padding: 14px; color: #ef4444;">Erro ao comparar os snapshots selecionados.</div>`;
+            }
+        };
+
+        // Vincula evento no botão de comparar
+        const btnCompare = document.getElementById("btn-run-snap-compare");
+        if (btnCompare) {
+            btnCompare.addEventListener("click", runCustomCompare);
+        }
+
+        // Executa comparativo inicial com os selecionados por padrão
+        runCustomCompare();
+
     } catch (err) {
         console.error("Erro ao carregar histórico:", err);
         container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Falha ao carregar o histórico de evolução da conta.</div>`;
@@ -4121,6 +4494,79 @@ window.loadPromoCodes = async (gameId = "hsr") => {
     } catch (err) {
         console.error("Erro ao carregar códigos:", err);
         container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Falha ao carregar códigos promocionais.</div>`;
+    }
+};
+
+window.loadAppConfiguration = async () => {
+    try {
+        const res = await fetch("/api/config");
+        const data = await res.json();
+
+        const groqKeyInput = document.getElementById("cfg-groq-key");
+        if (groqKeyInput && data.groq_api_key) {
+            groqKeyInput.value = data.groq_api_key;
+        }
+
+        const cookiesInput = document.getElementById("cfg-hoyolab-cookies");
+        if (cookiesInput && data.cookies_raw) {
+            cookiesInput.value = data.cookies_raw;
+        }
+
+        const cbEnabled = document.getElementById("cfg-auto-sync-enabled");
+        if (cbEnabled) {
+            cbEnabled.checked = data.auto_sync_enabled !== false;
+        }
+
+        const inputTime = document.getElementById("cfg-auto-sync-time");
+        if (inputTime) {
+            inputTime.value = data.auto_sync_time || "04:00";
+        }
+
+        const cbRoster = document.getElementById("cfg-auto-sync-roster");
+        if (cbRoster) {
+            cbRoster.checked = data.auto_sync_roster !== false;
+        }
+
+        const cbGuides = document.getElementById("cfg-auto-sync-guides");
+        if (cbGuides) {
+            cbGuides.checked = data.auto_sync_guides !== false;
+        }
+
+        const statusEl = document.getElementById("cfg-auto-sync-status");
+        if (statusEl) {
+            const lastDate = data.last_auto_sync_date;
+            statusEl.innerHTML = `<i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> Agendado diariamente para o horário <strong>${data.auto_sync_time || "04:00"}</strong>. ${lastDate ? `Última atualização executada em: <strong>${lastDate}</strong>.` : 'Ainda não executado hoje.'}`;
+        }
+    } catch (err) {
+        console.error("Erro ao carregar configurações:", err);
+    }
+};
+
+window.saveAppConfiguration = async () => {
+    const groqKey = document.getElementById("cfg-groq-key")?.value || "";
+    const cookiesRaw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
+    const autoSyncEnabled = document.getElementById("cfg-auto-sync-enabled")?.checked ?? true;
+    const autoSyncTime = document.getElementById("cfg-auto-sync-time")?.value || "04:00";
+    const autoSyncRoster = document.getElementById("cfg-auto-sync-roster")?.checked ?? true;
+    const autoSyncGuides = document.getElementById("cfg-auto-sync-guides")?.checked ?? true;
+
+    try {
+        const res = await fetch("/api/config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                groq_api_key: groqKey,
+                cookies_raw: cookiesRaw,
+                auto_sync_enabled: autoSyncEnabled,
+                auto_sync_time: autoSyncTime,
+                auto_sync_roster: autoSyncRoster,
+                auto_sync_guides: autoSyncGuides
+            })
+        });
+        const data = await res.json();
+        showToast("Configurações atualizadas!", "success");
+    } catch (e) {
+        showToast("Erro ao salvar configurações.");
     }
 };
 

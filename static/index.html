@@ -739,6 +739,35 @@
                     </div>
                     
                     <div class="config-section">
+                        <h3><i class="fa-solid fa-clock-rotate-left" style="color: #ec4899;"></i> Sincronização Diária Programada (Roster & Guias)</h3>
+                        <p class="section-desc">Agende um horário fixo diário para atualizar automaticamente os personagens do roster e guias de metagame dos 3 jogos. Snapshots só serão gravados se houver alterações.</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer;">
+                                <input type="checkbox" id="cfg-auto-sync-enabled" checked style="width: 16px; height: 16px; accent-color: #ec4899;">
+                                Ativar Atualização Automática Diária
+                            </label>
+                            
+                            <div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <label style="font-size: 12px; color: var(--text-secondary);">Horário de Execução:</label>
+                                    <input type="time" id="cfg-auto-sync-time" value="04:00" class="snap-select" style="padding: 4px 10px; border-color: rgba(236,72,153,0.4);">
+                                </div>
+                                <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" id="cfg-auto-sync-roster" checked style="accent-color: #ec4899;"> Atualizar Rosters
+                                </label>
+                                <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                                    <input type="checkbox" id="cfg-auto-sync-guides" checked style="accent-color: #ec4899;"> Atualizar Guias
+                                </label>
+                            </div>
+                            
+                            <div id="cfg-auto-sync-status" style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">
+                                <i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> Agendado diariamente para o horário configurado.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="config-section">
                         <h3><i class="fa-regular fa-calendar-check"></i> Resgate de Recompensas Diárias HoYoLAB</h3>
                         <p class="section-desc">O aplicativo realiza automaticamente o resgate de recompensas diárias a cada 6 horas. Você também pode forçar o resgate manual abaixo.</p>
                         <div class="btn-row">
@@ -831,7 +860,7 @@
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
                         <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-key"></i> 1. Autenticação e Login Automático HoYoLAB</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Configurações</strong>, clique no botão <strong>Login Automático via Playwright</strong>. O sistema abrirá uma janela segura do Chromium para você realizar o login oficial na HoYoLAB. Os cookies de sessão (<code>ltuid_v2</code> e <code>ltoken_v2</code>) são capturados e salvos localmente em <code>cookies.json</code>. Você também pode colar manualmente seus cookies ou sua chave de API Groq (<code>gsk_...</code>).</p>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Configurações</strong>, clique no botão <strong>Login Automático via Playwright</strong>. O sistema abrirá uma janela segura do Chromium para você realizar o login oficial na HoYoLAB. Os cookies de sessão (<code>ltuid_v2</code>, <code>ltoken_v2</code> e <code>cookie_token_v2</code>) são capturados automaticamente e salvos localmente em <code>cookies.json</code>. Se preferir, também é possível colar manualmente seus cookies ou sua chave de API Groq (<code>gsk_...</code>).</p>
                     </div>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
@@ -845,7 +874,7 @@
                     </div>
                     
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> 3. Inspetor de Builds, Sistema de Notas RV & Exportação em Card</h3>
+                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> 3. Inspetor de Builds, Sistema de Notas RV & Otimizador IA</h3>
                         <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 8px;">Ao clicar em qualquer personagem da galeria, o painel lateral exibe a auditoria completa da build:</p>
                         <ul class="section-desc" style="line-height: 1.5; font-size: 12px; margin-left: 20px;">
                             <li style="margin-bottom: 6px;"><strong>Pontuação Roll Value (RV):</strong> Compara os substatus contra rolagens máximas de peças 5★/S-Rank, aplicando crédito de 40% para Main Stat prioritário e pesos parciais para status Flat.
@@ -854,47 +883,62 @@
                                 <br><strong style="color: #f59e0b;">SSS (&ge;90%):</strong> Perfeita | <strong style="color: #ec4899;">SS (75-89%):</strong> Excelente | <strong style="color: #f59e0b;">S (60-74%):</strong> Muito Boa | <strong style="color: #8b5cf6;">A (45-59%):</strong> Boa | <strong style="color: #3b82f6;">B (30-44%):</strong> Mediana | <strong style="color: #6b7280;">C/D (&lt;30%):</strong> A Otimizar.
                             </li>
                             <li style="margin-bottom: 4px;"><strong>Comparador Meta Lado a Lado:</strong> Contrasta a arma e conjuntos equipados com as recomendações atuais do metagame.</li>
-                            <li style="margin-bottom: 4px;"><strong>Gerador de Card Imagem:</strong> Clique no botão <em>Card Imagem</em> para gerar e baixar uma imagem PNG em HD da build para compartilhar no Discord.</li>
+                            <li style="margin-bottom: 4px;"><strong>Otimizador IA Groq:</strong> Botão no painel que analisa o contexto do personagem e fornece 3 conselhos diretos de evolução.</li>
                         </ul>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wand-magic-sparkles"></i> 4. Simulador de Tiros & Gacha (Monte Carlo)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba ou modal <strong>Simulador de Tiros</strong>, simule o resultado de 10.000 invocações estatísticas considerando seu Pity atual (0-89), status do 50/50 e meta de cópias (C0/E0 a C6/E6). O sistema fornece a porcentagem exata de chance de sucesso e a distribuição detalhada de tiros necessários.</p>
+                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-camera"></i> 4. Gerador & Exportação de Card Imagem HD</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">No Inspetor de Builds, clique no botão <strong>Card Imagem</strong> para gerar instantaneamente uma imagem em PNG de alta resolução com o resumo visual da build do seu personagem, pronta para ser baixada ou copiada diretamente para o Discord.</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wheat-awn"></i> 5. Central de Farm Inteligente & Calculadora de Níveis</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Central de Farm</strong>, acompanhe a rotação diária de domínios e a lista de materiais necessários para elevar os personagens selecionados da sua conta. Respeita o limite de nível máximo de cada jogo (<strong>Genshin: Nv 90</strong>, <strong>HSR: Nv 80</strong>, <strong>ZZZ: Nv 60</strong>).</p>
+                        <h3 style="color: #ec4899; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-chart-line"></i> 5. Linha do Tempo & Evolução da Conta (Timeline Snapshots)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Linha do Tempo</strong>, crie ou consulte snapshots históricos da sua conta para acompanhar graficamente o crescimento no número de personagens 5★/Rank S, evolução da nota média das builds e novos personagens obtidos ao longo do tempo.</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #ef4444; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-trash-can"></i> 6. Analisador de Relíquias Lixo (Trash Finder)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Analisa o inventário de artefatos/relíquias e identifica automaticamente peças com substatus conflitantes ou irrelevantes para o metagame, indicando quais podem ser destruídas ou recicladas com segurança no Sintetizador.</p>
+                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-gift"></i> 6. Resgate e Gerenciador de Códigos Promocionais</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Códigos Promocionais</strong>, consulte códigos ativos de Gemas Essenciais, Jades Estelares e Polychromes. Clique em <strong>Resgatar Todos os Códigos</strong> para que o sistema efetue a ativação automática na API da HoYoverse.</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #a855f7; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-trophy"></i> 7. Tier List & Relatório de Auditoria da Conta</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Organiza seu Roster em uma Tier List visual (Tiers S+, S, A, B, C) de acordo com o poder no metagame atual e gera um diagnóstico com nota geral da conta e sugestões de investimento prioritário.</p>
+                        <h3 style="color: #a855f7; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wand-magic-sparkles"></i> 7. Simulador Monte Carlo de Gacha / Tiros</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba ou modal <strong>Simulador de Tiros</strong>, execute a simulação estocástica de 10.000 invocações estatísticas considerando seu Pity atual (0-89), status do 50/50 e meta de cópias (C0/E0 a C6/E6). O sistema fornece a porcentagem exata de chance de sucesso e a curva de probabilidade acumulada.</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-battery-three-quarters"></i> 8. Monitor de Energia em Tempo Real & Auto-Check-in</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Acompanhe o valor exato de Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR) com anéis de progresso e tempo para carga cheia. O servidor FastAPI executa o resgate de recompensas diárias da HoYoLAB automaticamente a cada 6 horas.</p>
+                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wheat-awn"></i> 8. Central de Farm Inteligente Diário & Níveis Máximos</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Central de Farm</strong>, selecione os personagens alvo para ver a rotação diária de domínios e a lista exata de materiais necessários, respeitando o limite de nível máximo de cada jogo (<strong>Genshin: Nv 90</strong>, <strong>HSR: Nv 80</strong>, <strong>ZZZ: Nv 60</strong>).</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #38bdf8; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-comments"></i> 9. Chat IA Meta & Montador de Times (Groq RAG)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Converse com a IA Groq (Llama 3.3 70B) informada em tempo real com os dados da sua conta e os guias do metagame. Utilize o <strong>Montador de Times</strong> para selecionar 4 personagens e receber análises de sinergia de combate, rotações e sugestões de suportes.</p>
+                        <h3 style="color: #ef4444; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-trash-can"></i> 9. Analisador de Relíquias Lixo (Trash Finder)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Varre o inventário de artefatos/relíquias e detecta automaticamente peças com substatus conflitantes ou inúteis no metagame, indicando quais podem ser destruídas ou recicladas com segurança no Sintetizador.</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #06b6d4; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-network-wired"></i> 10. Acesso pela Rede Local (Wi-Fi / LAN)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Você pode acessar o Cabeça de Droid do seu celular, tablet ou outro computador conectado à mesma rede Wi-Fi/LAN acessando o endereço exibido no terminal ao iniciar a aplicação: <code>http://&lt;SEU_IP_LOCAL&gt;:8000</code>.</p>
+                        <h3 style="color: #a855f7; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-trophy"></i> 10. Tier List & Relatório de Auditoria da Conta</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Classifica seu Roster em uma Tier List visual (Tiers S+, S, A, B, C) com base no poder e uso no metagame atual e gera um diagnóstico com nota de saúde da conta e orientações de investimento.</p>
+                    </div>
+
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-battery-three-quarters"></i> 11. Monitor de Energia em Tempo Real & Auto-Check-in</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Acompanhe o valor de Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR) com anéis de progresso e tempo para recarga completa. O servidor FastAPI executa o resgate de recompensas diárias da HoYoLAB automaticamente a cada 6 horas.</p>
+                    </div>
+
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #38bdf8; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-comments"></i> 12. Chat IA Meta & Montador de Times (Groq RAG)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Converse com a IA Groq (Llama 3.3 70B) munida dos dados da sua conta e dos guias do metagame. Utilize o <strong>Montador de Times</strong> para selecionar 4 personagens e receber análises em tempo real sobre sinergia de combate, rotações e sugestões de suportes.</p>
+                    </div>
+
+                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
+                        <h3 style="color: #06b6d4; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-network-wired"></i> 13. Acesso pela Rede Local (Wi-Fi / LAN)</h3>
+                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Acesse o Cabeça de Droid no celular, tablet ou outro PC na mesma rede Wi-Fi/LAN abrindo o endereço exibido no terminal: <code>http://&lt;SEU_IP_LOCAL&gt;:8000</code>.</p>
                     </div>
 
                     <div class="config-section" style="margin-bottom: 18px; padding: 16px; background: rgba(16, 185, 129, 0.05); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 6px;"><i class="fa-solid fa-file-zipper"></i> Download de Guias em ZIP (.zip)</h3>
+                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 6px;"><i class="fa-solid fa-file-zipper"></i> 14. Download de Guias em ZIP (.zip)</h3>
                         <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Faça o download direto do pacote comprimido em formato <code>.zip</code> contendo os guias completos em Markdown e relatórios de metagame das 3 pastas (<strong>Genshin Impact</strong>, <strong>Honkai: Star Rail</strong> e <strong>Zenless Zone Zero</strong>):</p>
                         <div style="display: flex; flex-wrap: wrap; gap: 10px;">
                             <a href="/api/download/guides-zip" download class="primary-btn" style="text-decoration: none; padding: 10px 18px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 8px; color: white; font-weight: 600;">
@@ -1188,6 +1232,25 @@
             </div>
             <div id="audit-report-body">
                 <!-- Preenchido via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: COMPARATIVO DETALHADO DE BUILD DO PERSONAGEM -->
+    <div id="modal-character-diff-detail" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-card-content" style="background: #0f172a; border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 16px; width: 94%; max-width: 900px; padding: 22px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <img id="diff-modal-char-icon" src="" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ec4899; object-fit: cover;" onerror="this.src='/assets/logo.svg'">
+                    <div>
+                        <h3 id="diff-modal-char-name" style="margin: 0; color: #fff; font-size: 19px; font-weight: 700;">Nome do Personagem</h3>
+                        <span id="diff-modal-char-sub" style="font-size: 12px; color: var(--text-secondary);">Análise de Evolução de Build</span>
+                    </div>
+                </div>
+                <button onclick="document.getElementById('modal-character-diff-detail').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            </div>
+            <div id="character-diff-detail-body">
+                <!-- Preenchido dinamicamente via JS -->
             </div>
         </div>
     </div>
