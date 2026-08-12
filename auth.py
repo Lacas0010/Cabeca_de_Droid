@@ -34,12 +34,22 @@ async def capturar_cookies_hoyolab() -> Dict[str, str]:
                     break
                 
                 for cookie in cookies:
-                    if cookie['name'] in ('ltuid_v2', 'ltoken_v2', 'ltuid', 'ltoken'):
+                    if cookie['name'] in ('ltuid_v2', 'ltoken_v2', 'ltuid', 'ltoken', 'cookie_token_v2', 'cookie_token', 'account_id_v2', 'account_id'):
                         cookies_dict[cookie['name']] = cookie['value']
                 
                 has_v2 = 'ltuid_v2' in cookies_dict and 'ltoken_v2' in cookies_dict
                 has_v1 = 'ltuid' in cookies_dict and 'ltoken' in cookies_dict
-                if has_v2 or has_v1:
+                has_token = 'cookie_token_v2' in cookies_dict or 'cookie_token' in cookies_dict
+                
+                if (has_v2 or has_v1) and (has_token or len(cookies_dict) >= 3):
+                    break
+                elif has_v2 or has_v1:
+                    # Aguarda 2 segundos extras para garantir que cookie_token_v2 seja gravado após o login
+                    await asyncio.sleep(2)
+                    cookies = await context.cookies()
+                    for cookie in cookies:
+                        if cookie['name'] in ('ltuid_v2', 'ltoken_v2', 'ltuid', 'ltoken', 'cookie_token_v2', 'cookie_token', 'account_id_v2', 'account_id'):
+                            cookies_dict[cookie['name']] = cookie['value']
                     break
                 
                 await asyncio.sleep(1)

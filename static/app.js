@@ -3778,6 +3778,56 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+
+
+    document.querySelectorAll(".tab-history-game-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".tab-history-game-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            window.loadAccountHistory(btn.dataset.game);
+        });
+    });
+
+    document.querySelectorAll(".tab-codes-game-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            document.querySelectorAll(".tab-codes-game-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            window.loadPromoCodes(btn.dataset.game);
+        });
+    });
+
+    const btnRedeemAllCodes = document.getElementById("btn-redeem-all-codes");
+    if (btnRedeemAllCodes) {
+        btnRedeemAllCodes.addEventListener("click", async () => {
+            const activeBtn = document.querySelector(".tab-codes-game-btn.active");
+            const gameId = activeBtn ? activeBtn.dataset.game : "hsr";
+            btnRedeemAllCodes.disabled = true;
+            btnRedeemAllCodes.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Resgatando Lote...`;
+            try {
+                const res = await fetch("/api/codes/redeem", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ game_id: gameId })
+                });
+                const data = await res.json();
+                const statusBox = document.getElementById("codes-redeem-status");
+                if (data.results && data.results.length) {
+                    statusBox.innerHTML = `<div style="padding: 12px; border-radius: 8px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; color: #4ade80;">
+                        <strong>Resultados do Resgate (${gameId.toUpperCase()}):</strong>
+                        <ul style="margin-left: 16px; margin-top: 6px;">
+                            ${data.results.map(r => `<li>${r.code}: ${r.message}</li>`).join('')}
+                        </ul>
+                    </div>`;
+                }
+            } catch (e) {
+                showToast("Erro ao resgatar lote de códigos.");
+            } finally {
+                btnRedeemAllCodes.disabled = false;
+                btnRedeemAllCodes.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Resgatar Todos os Códigos`;
+            }
+        });
+    }
+
     // Auto-carregamento inicial de dados quando as abas são ativadas
     document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -3785,9 +3835,294 @@ document.addEventListener("DOMContentLoaded", () => {
             if (tab === "farm") window.loadFarmData("genshin", "tab-farm-content-body");
             if (tab === "trash") window.loadTrashRelics("genshin", "tab-trash-relics-body");
             if (tab === "audit") window.loadAuditReport("hsr", "tab-audit-report-body");
+            if (tab === "history") window.loadAccountHistory("hsr");
+            if (tab === "codes") window.loadPromoCodes("hsr");
         });
     });
 });
+
+// ==========================================
+// FUNÇÕES GLOBAIS: HISTÓRICO E CÓDIGOS
+// ==========================================
+
+window.loadAccountHistory = async (gameId = "hsr") => {
+    const container = document.getElementById("tab-history-body");
+    if (!container) return;
+
+    // Vincula botão de criar snapshot se presente na aba
+    const btnSnapshot = document.getElementById("btn-create-snapshot-now");
+    if (btnSnapshot && !btnSnapshot.dataset.bound) {
+        btnSnapshot.dataset.bound = "true";
+        btnSnapshot.addEventListener("click", async () => {
+            btnSnapshot.disabled = true;
+            btnSnapshot.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Gerando Snapshot...`;
+            try {
+                const res = await fetch("/api/sync/global", { method: "POST" });
+                const resData = await res.json();
+                if (resData.success) {
+                    showToast("Snapshot de evolução criado com sucesso!", "success");
+                    window.loadAccountHistory(currentGameIdHistory || gameId);
+                } else {
+                    showToast("Erro ao criar snapshot: " + (resData.message || "Erro desconhecido"));
+                }
+            } catch (e) {
+                showToast("Erro de rede ao criar snapshot.");
+            } finally {
+                btnSnapshot.disabled = false;
+                btnSnapshot.innerHTML = `<i class="fa-solid fa-camera-retro"></i> Criar Novo Snapshot Agora`;
+            }
+        });
+    }
+
+    container.innerHTML = `
+        <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
+            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #ec4899;"></i>
+            <p style="margin-top: 12px; font-weight: 500;">Buscando linha do tempo e realizando comparativo de evolução...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`/api/history/${gameId}`);
+        const data = await res.json();
+        const rawHistory = data.history || [];
+
+        if (!rawHistory.length) {
+            container.innerHTML = `
+                <div class="overview-card" style="padding: 40px; text-align: center; color: var(--text-secondary); border-left: 4px solid #ec4899;">
+                    <i class="fa-solid fa-clock-rotate-left fa-3x" style="color: #ec4899; margin-bottom: 14px;"></i>
+                    <h3 style="color: var(--text-primary); font-size: 18px; margin-bottom: 8px;">Nenhum Snapshot de Evolução Registrado</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 18px auto; line-height: 1.5;">
+                        Faça uma sincronização global de conta ou clique no botão acima para registrar a primeira fotografia (snapshot) dos seus personagens e acompanhar a sua progressão ao longo do tempo!
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        // Inverte o histórico para exibir o snapshot mais recente no topo da página
+        const totalSnapshots = rawHistory.length;
+        const history = rawHistory.slice().reverse();
+
+        let html = `
+            <div class="timeline-stepper" style="position: relative; padding-left: 24px; border-left: 3px solid rgba(236, 72, 153, 0.3); display: flex; flex-direction: column; gap: 28px; margin-left: 10px;">
+                ${history.map((item, idx) => {
+                    const details = item.details || {};
+                    const topBuilt = details.top_built_characters || [];
+                    const allChars = details.all_characters || topBuilt;
+                    const readiness = details.endgame_readiness_pct || 0.0;
+                    const diffs = item.char_diffs || [];
+                    const isLatest = idx === 0;
+                    const snapshotNum = totalSnapshots - idx;
+
+                    return `
+                        <div class="timeline-item" style="position: relative;">
+                            <!-- Nó indicador na linha vertical -->
+                            <div style="position: absolute; left: -33px; top: 18px; width: 16px; height: 16px; border-radius: 50%; background: ${isLatest ? '#ec4899' : '#38bdf8'}; border: 3px solid #0f172a; box-shadow: 0 0 12px ${isLatest ? 'rgba(236, 72, 153, 0.8)' : 'rgba(56, 189, 248, 0.8)'};"></div>
+
+                            <div class="overview-card" style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-top: 3px solid ${isLatest ? '#ec4899' : 'rgba(56, 189, 248, 0.6)'}; border-radius: 14px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); backdrop-filter: blur(10px);">
+                                
+                                <!-- Cabeçalho do Snapshot -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 16px; margin-bottom: 16px;">
+                                    <div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="font-size: 11px; font-weight: 700; background: ${isLatest ? 'linear-gradient(135deg, #ec4899, #8b5cf6)' : 'rgba(255,255,255,0.1)'}; color: #fff; padding: 3px 10px; border-radius: 12px;">
+                                                Snapshot #${snapshotNum} ${isLatest ? '🔥 (Mais Recente)' : ''}
+                                            </span>
+                                            <span style="font-size: 12px; color: var(--text-muted);"><i class="fa-regular fa-clock"></i> ${item.created_at}</span>
+                                        </div>
+                                        <h3 style="margin: 8px 0 0 0; color: var(--text-primary); font-size: 17px; font-weight: 700;">
+                                            Progresso da Conta <span style="font-size: 13px; color: var(--text-secondary); font-weight: 400;">(UID: ${item.uid})</span>
+                                        </h3>
+                                    </div>
+
+                                    <!-- KPIs Resumo do Snapshot -->
+                                    <div style="display: flex; gap: 14px; flex-wrap: wrap;">
+                                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; min-width: 100px;">
+                                            <span style="display: block; font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Personagens</span>
+                                            <strong style="font-size: 15px; color: #38bdf8;">${item.character_count}</strong>
+                                            <span style="font-size: 10px; color: var(--text-muted);"> (${details.five_stars || 0}★ 5★ / ${details.four_stars || 0}★ 4★)</span>
+                                            ${item.delta_chars > 0 ? `<span style="font-size: 10px; color: #10b981; font-weight: 700; display: block;">+${item.delta_chars} novos</span>` : ''}
+                                        </div>
+                                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; min-width: 100px;">
+                                            <span style="display: block; font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Média Build (RV)</span>
+                                            <strong style="font-size: 15px; color: #10b981;">${item.average_build_score}%</strong>
+                                            ${item.delta_avg_score > 0 ? `<span style="font-size: 10px; color: #10b981; font-weight: 700; display: block;">+${item.delta_avg_score}%</span>` : (item.delta_avg_score < 0 ? `<span style="font-size: 10px; color: #ef4444; font-weight: 700; display: block;">${item.delta_avg_score}%</span>` : '')}
+                                        </div>
+                                        <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); padding: 8px 14px; border-radius: 10px; text-align: center; min-width: 100px;">
+                                            <span style="display: block; font-size: 10px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase;">Prontidão Endgame</span>
+                                            <strong style="font-size: 15px; color: #f59e0b;">${readiness}%</strong>
+                                            <span style="font-size: 10px; color: var(--text-muted); display: block;">${details.endgame_ready_count || 0} prontos</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Barra de Prontidão Endgame -->
+                                <div style="margin-bottom: 18px;">
+                                    <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">
+                                        <span><i class="fa-solid fa-trophy" style="color: #f59e0b; margin-right: 4px;"></i> Taxa de Prontidão para o Endgame</span>
+                                        <span style="font-weight: 700; color: #f59e0b;">${readiness}%</span>
+                                    </div>
+                                    <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
+                                        <div style="width: ${readiness}%; height: 100%; background: linear-gradient(90deg, #ec4899, #f59e0b, #10b981); border-radius: 4px; transition: width 0.8s ease;"></div>
+                                    </div>
+                                </div>
+
+                                <!-- Seção de Diff / Evoluções Detectadas (GRID VISUAL DE CARDS) -->
+                                ${diffs.length > 0 ? `
+                                    <div style="background: rgba(236, 72, 153, 0.05); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                            <span style="font-size: 13px; font-weight: 700; color: #ec4899; display: flex; align-items: center; gap: 6px;">
+                                                <i class="fa-solid fa-chart-line"></i> Alterações e Evoluções Detectadas (${diffs.length})
+                                            </span>
+                                            <span style="font-size: 11px; color: var(--text-muted);">Comparado com o snapshot anterior</span>
+                                        </div>
+
+                                        <!-- GRID VISUAL COMPACTO DE EVOLUÇÕES -->
+                                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;">
+                                            ${diffs.map(d => `
+                                                <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid ${d.is_new ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+                                                    
+                                                    <!-- Avatar com Moldura de Raridade -->
+                                                    <div style="position: relative; flex-shrink: 0;">
+                                                        <img src="${d.icon || '/assets/logo.svg'}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'}; box-shadow: 0 0 10px ${d.is_new ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.3)'};" onerror="this.src='/assets/logo.svg'">
+                                                        ${d.is_new ? `<span style="position: absolute; bottom: -4px; right: -4px; background: #f59e0b; color: #000; font-size: 9px; font-weight: 900; padding: 1px 5px; border-radius: 6px;">NEW</span>` : ''}
+                                                    </div>
+
+                                                    <!-- Informações do Personagem -->
+                                                    <div style="flex: 1; min-width: 0;">
+                                                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                            <strong style="display: block; font-size: 13px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.name}</strong>
+                                                        </div>
+
+                                                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
+                                                            <span>Nv. ${d.level_curr}</span>
+                                                            <span>•</span>
+                                                            <span style="color: #f59e0b; font-weight: 600;">${d.rank_curr || 'E0/C0'}</span>
+                                                        </div>
+
+                                                        <div style="margin-top: 4px; display: flex; align-items: center; gap: 6px;">
+                                                            ${d.is_new ? `
+                                                                <span style="font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                                                    Score: ${d.score_curr}% (${d.grade_curr})
+                                                                </span>
+                                                            ` : `
+                                                                ${d.score_diff > 0 ? `
+                                                                    <span style="font-size: 10px; font-weight: 700; background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(16, 185, 129, 0.4);">
+                                                                        Score +${d.score_diff}% ➔ ${d.score_curr}%
+                                                                    </span>
+                                                                ` : `
+                                                                    <span style="font-size: 10px; font-weight: 600; color: var(--text-muted);">
+                                                                        Score: ${d.score_curr}% (${d.grade_curr})
+                                                                    </span>
+                                                                `}
+                                                            `}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                ` : (idx > 0 ? `<p style="font-size: 12px; color: var(--text-muted); font-style: italic; margin-bottom: 12px;"><i class="fa-solid fa-check-circle" style="color: #10b981;"></i> Nenhuma alteração de atributos ou novos personagens detectados em relação ao snapshot anterior.</p>` : '')}
+
+                                <!-- Sanfona para Todos os Personagens -->
+                                <details style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 14px;">
+                                    <summary style="font-size: 12px; font-weight: 600; color: #38bdf8; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-users"></i> Ver Todos os ${allChars.length} Personagens do Snapshot #${idx + 1}
+                                    </summary>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 14px;">
+                                        ${allChars.map(c => `
+                                            <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 10px;">
+                                                <img src="${c.icon || '/assets/logo.svg'}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid ${c.rarity >= 5 ? '#f59e0b' : '#a855f7'};" onerror="this.src='/assets/logo.svg'">
+                                                <div style="overflow: hidden; flex: 1;">
+                                                    <strong style="display: block; font-size: 12px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.name}</strong>
+                                                    <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-top: 2px;">
+                                                        <span>Nv. ${c.level} • ${c.rank_str || 'E0/C0'}</span>
+                                                        <span style="color: #10b981; font-weight: 700;">${c.score || 0}% (${c.grade || 'D'})</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+        container.innerHTML = html;
+    } catch (err) {
+        console.error("Erro ao carregar histórico:", err);
+        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Falha ao carregar o histórico de evolução da conta.</div>`;
+    }
+};
+
+window.loadPromoCodes = async (gameId = "hsr") => {
+    const container = document.getElementById("tab-codes-body");
+    if (!container) return;
+    container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Buscando códigos promocionais ativos...</p></div>`;
+
+    try {
+        const res = await fetch(`/api/codes/${gameId}`);
+        const data = await res.json();
+        const codes = data.codes || [];
+
+        if (!codes.length) {
+            container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><p>Nenhum código ativo encontrado para ${gameId.toUpperCase()}.</p></div>`;
+            return;
+        }
+
+        let html = `
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                ${codes.map(c => `
+                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <code style="font-size: 16px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">${c.code}</code>
+                            <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;">🎁 Recompensas: ${c.rewards}</span>
+                            <span style="display: block; font-size: 10px; color: #10b981; margin-top: 2px;">• ${c.status}</span>
+                        </div>
+                        <button class="action-btn btn-redeem-single" data-game="${gameId}" data-code="${c.code}" style="padding: 8px 14px; font-size: 12px; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 6px; cursor: pointer;">
+                            <i class="fa-solid fa-gift"></i> Resgatar Este
+                        </button>
+                    </div>
+                `).join('')}
+            </div>
+            <div id="codes-redeem-status" style="margin-top: 16px; font-size: 12px;"></div>
+        `;
+        container.innerHTML = html;
+
+        document.querySelectorAll(".btn-redeem-single").forEach(btn => {
+            btn.addEventListener("click", async () => {
+                const code = btn.getAttribute("data-code");
+                const game = btn.getAttribute("data-game");
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Resgatando...`;
+                try {
+                    const r = await fetch("/api/codes/redeem", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ game_id: game, code: code })
+                    });
+                    const resData = await r.json();
+                    const statusBox = document.getElementById("codes-redeem-status");
+                    if (resData.results && resData.results.length) {
+                        const item = resData.results[0];
+                        statusBox.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; color: #4ade80;">${item.message}</div>`;
+                    }
+                } catch (e) {
+                    showToast("Erro ao resgatar código.");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="fa-solid fa-gift"></i> Resgatar Este`;
+                }
+            });
+        });
+
+    } catch (err) {
+        console.error("Erro ao carregar códigos:", err);
+        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Falha ao carregar códigos promocionais.</div>`;
+    }
+};
 
 
 

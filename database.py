@@ -10,8 +10,13 @@ DATABASE_NAME = os.path.join(BASE_DIR, "hoyo_app.db")
 
 def get_connection() -> sqlite3.Connection:
     """Retorna uma conexão configurada com o banco de dados SQLite."""
-    conn = sqlite3.connect(DATABASE_NAME)
+    conn = sqlite3.connect(DATABASE_NAME, timeout=30.0)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA journal_mode=WAL;")
+        conn.execute("PRAGMA synchronous=NORMAL;")
+    except Exception:
+        pass
     return conn
 
 def init_db() -> None:
@@ -112,15 +117,215 @@ def init_db() -> None:
         )
         """)
         
+        # 6. Tabela de Snapshots da Conta para Timeline de Evolução
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS account_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid TEXT NOT NULL,
+            game_id TEXT NOT NULL,
+            character_count INTEGER,
+            five_star_count INTEGER,
+            average_build_score REAL,
+            snapshot_json TEXT,
+            created_at TEXT NOT NULL
+        )
+        """)
+        
         # Criação de índices para acelerar consultas frequentes do Roster e de Relíquias
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_characters_game_uid ON characters(game_id, uid)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_relics_uid_char ON character_relics(uid, character_name)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_checkin_date ON daily_checkin_logs(date)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_uid ON account_snapshots(game_id, uid)")
         
     print("[INFO] Banco de dados SQLite inicializado com sucesso.")
 
 # Inicializa o banco ao carregar o módulo
 init_db()
+
+def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, Any]]) -> None:
+    """Calcula métricas agregadas ricas da conta e salva um snapshot completo com todos os personagens."""
+    if not roster_data:
+        return
+    
+    from build_calculator import score_relic, normalize_char_name
+
+    game_id_clean = (game_id or "hsr").lower().strip()
+    max_lvl = 90 if game_id_clean == "genshin" else (80 if game_id_clean == "hsr" else 60)
+
+    char_count = len(roster_data)
+    five_star_count = sum(1 for c in roster_data if str(c.get("rarity", "")).startswith("5") or c.get("rarity") in [5, "5"])
+    four_star_count = char_count - five_star_count
+    max_lvl_count = sum(1 for c in roster_data if c.get("level", 0) >= max_lvl)
+
+    scores = []
+    all_chars_data = []
+    endgame_ready_count = 0
+    total_relics = 0
+
+    for c in roster_data:
+        char_name = c.get("name", "")
+        norm = normalize_char_name(char_name)
+        lvl = c.get("level", 1)
+        rarity = c.get("rarity", 4)
+        rank_str = c.get("rank_str", "") or (f"C{c.get('constellation', 0)}" if "constellation" in c else f"E{c.get('rank', 0)}")
+        relics = c.get("relics", [])
+        total_relics += len(relics)
+
+        relic_scores = []
+        for r in relics:
+            slot = r.get("slot", "")
+            main_stat = r.get("main") or r.get("main_stat") or ""
+            sub_stats = r.get("sub") or r.get("sub_stats") or ""
+            if isinstance(sub_stats, list):
+                sub_stats_str = ", ".join([f"{s.get('name','')}: {s.get('val','')}" if isinstance(s, dict) else str(s) for s in sub_stats])
+            else:
+                sub_stats_str = str(sub_stats)
+            g, sc = score_relic(game_id_clean, char_name, slot, main_stat, sub_stats_str)
+            if sc > 0:
+                relic_scores.append(sc)
+
+        char_score = round(sum(relic_scores) / len(relic_scores), 1) if relic_scores else 0.0
+        if char_score > 0:
+            scores.append(char_score)
+
+        grade = "SS" if char_score >= 85 else ("S+" if char_score >= 75 else ("S" if char_score >= 60 else ("A" if char_score >= 45 else ("B" if char_score >= 30 else "C"))))
+        
+        if lvl >= max_lvl - 10 and char_score >= 50.0:
+            endgame_ready_count += 1
+
+        all_chars_data.append({
+            "name": char_name,
+            "norm": norm,
+            "level": lvl,
+            "rarity": rarity,
+            "rank_str": rank_str,
+            "element": c.get("element", ""),
+            "icon": c.get("icon", ""),
+            "weapon_name": c.get("weapon_name", ""),
+            "weapon_level": c.get("weapon_level", 1),
+            "score": char_score,
+            "grade": grade,
+            "relics_count": len(relics)
+        })
+
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+    endgame_readiness_pct = min(100.0, round((endgame_ready_count / 8.0) * 100, 1))
+    top_built = sorted(all_chars_data, key=lambda x: x["score"], reverse=True)[:5]
+
+    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    summary_json = json.dumps({
+        "total_chars": char_count,
+        "five_stars": five_star_count,
+        "four_stars": four_star_count,
+        "max_level_count": max_lvl_count,
+        "avg_score": avg_score,
+        "endgame_readiness_pct": endgame_readiness_pct,
+        "endgame_ready_count": endgame_ready_count,
+        "total_relics_analyzed": total_relics,
+        "top_built_characters": top_built,
+        "all_characters": all_chars_data
+    })
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT INTO account_snapshots (uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (uid, game_id_clean, char_count, five_star_count, avg_score, summary_json, now_str))
+
+def get_account_history(game_id: str, uid: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Retorna o histórico de snapshots comparando o snapshot atual com o anterior para gerar o diff de cada personagem."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if uid:
+            cursor.execute("""
+            SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
+            FROM account_snapshots WHERE game_id = ? AND uid = ? ORDER BY created_at ASC
+            """, (game_id, uid))
+        else:
+            cursor.execute("""
+            SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
+            FROM account_snapshots WHERE game_id = ? ORDER BY created_at ASC
+            """, (game_id,))
+        rows = cursor.fetchall()
+        
+        result = []
+        prev_chars_map = {}
+        prev_total_chars = 0
+        prev_five_stars = 0
+        prev_avg_score = 0.0
+
+        for idx, r in enumerate(rows):
+            snap = dict(r)
+            details = {}
+            if snap.get("snapshot_json"):
+                try:
+                    details = json.loads(snap["snapshot_json"])
+                except Exception:
+                    details = {}
+            
+            snap["details"] = details
+            current_chars = details.get("all_characters") or details.get("top_built_characters") or []
+            
+            char_diffs = []
+            if idx > 0:
+                snap["delta_chars"] = snap["character_count"] - prev_total_chars
+                snap["delta_5star"] = snap["five_star_count"] - prev_five_stars
+                snap["delta_avg_score"] = round(snap["average_build_score"] - prev_avg_score, 1)
+
+                for c in current_chars:
+                    norm = c.get("norm") or c.get("name", "").lower()
+                    prev_c = prev_chars_map.get(norm)
+
+                    if not prev_c:
+                        char_diffs.append({
+                            "name": c.get("name"),
+                            "icon": c.get("icon"),
+                            "is_new": True,
+                            "level_curr": c.get("level"),
+                            "rank_curr": c.get("rank_str"),
+                            "score_curr": c.get("score"),
+                            "grade_curr": c.get("grade"),
+                            "weapon_curr": c.get("weapon_name")
+                        })
+                    else:
+                        lvl_diff = c.get("level", 0) - prev_c.get("level", 0)
+                        score_diff = round(c.get("score", 0.0) - prev_c.get("score", 0.0), 1)
+                        rank_changed = c.get("rank_str") != prev_c.get("rank_str")
+                        weapon_changed = c.get("weapon_name") != prev_c.get("weapon_name")
+
+                        if lvl_diff != 0 or score_diff != 0.0 or rank_changed or weapon_changed:
+                            char_diffs.append({
+                                "name": c.get("name"),
+                                "icon": c.get("icon"),
+                                "is_new": False,
+                                "level_prev": prev_c.get("level"),
+                                "level_curr": c.get("level"),
+                                "level_diff": lvl_diff,
+                                "rank_prev": prev_c.get("rank_str"),
+                                "rank_curr": c.get("rank_str"),
+                                "score_prev": prev_c.get("score"),
+                                "score_curr": c.get("score"),
+                                "score_diff": score_diff,
+                                "grade_curr": c.get("grade"),
+                                "weapon_curr": c.get("weapon_name")
+                            })
+            else:
+                snap["delta_chars"] = 0
+                snap["delta_5star"] = 0
+                snap["delta_avg_score"] = 0.0
+
+            snap["char_diffs"] = char_diffs
+
+            prev_chars_map = { (c.get("norm") or c.get("name", "").lower()): c for c in current_chars }
+            prev_total_chars = snap["character_count"]
+            prev_five_stars = snap["five_star_count"]
+            prev_avg_score = snap["average_build_score"]
+
+            result.append(snap)
+
+        return result
 
 # ==========================================================================
 # FUNÇÕES DE PERSISTÊNCIA E LEITURA DE DADOS

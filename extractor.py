@@ -1591,3 +1591,34 @@ class MultiGameExtractor:
             return await extractor.extrair_e_salvar(output_file or "zzz/roster_zzz.md")
         else:
             raise ValueError(f"Jogo não suportado: {game}")
+
+
+async def redeem_promo_code(cookies: dict, game_id: str, code: str) -> dict:
+    """
+    Tenta resgatar um código promocional usando o cliente da biblioteca genshin com os cookies do HoYoLAB.
+    """
+    g = game_id.lower().strip()
+    game_enum = genshin.Game.GENSHIN
+    if g == "hsr":
+        game_enum = genshin.Game.STARRAIL
+    elif g == "zzz":
+        game_enum = genshin.Game.ZZZ
+        
+    client = genshin.Client(cookies=cookies)
+    for attempt in range(2):
+        try:
+            await client.redeem_code(code, game=game_enum)
+            return {"code": code, "status": "success", "message": f"Código {code} resgatado com sucesso!"}
+        except genshin.RedemptionClaimed:
+            return {"code": code, "status": "claimed", "message": f"O código {code} já foi resgatado anteriormente nesta conta."}
+        except genshin.RedemptionInvalid:
+            return {"code": code, "status": "invalid", "message": f"O código {code} é inválido ou expirou."}
+        except genshin.RedemptionCooldown:
+            if attempt == 0:
+                await asyncio.sleep(5.0)
+                continue
+            return {"code": code, "status": "cooldown", "message": f"A HoYoLAB solicitou aguardar (cooldown). Tente novamente em instantes."}
+        except genshin.GenshinException as ge:
+            return {"code": code, "status": "error", "message": str(ge)}
+        except Exception as e:
+            return {"code": code, "status": "error", "message": f"Falha ao resgatar {code}: {str(e)}"}
