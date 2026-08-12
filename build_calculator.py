@@ -4,6 +4,9 @@ import json
 import random
 import datetime
 import unicodedata
+import time
+import requests
+from bs4 import BeautifulSoup
 from typing import Dict, List, Tuple, Optional, Any
 
 
@@ -2281,26 +2284,118 @@ def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dic
 
 
 # ==========================================
-# 6. GERENCIADOR DE CÓDIGOS PROMOCIONAIS
+# 6. GERENCIADOR DE CÓDIGOS PROMOCIONAIS (DINÂMICO AO VIVO)
 # ==========================================
-ACTIVE_PROMO_CODES = {
+PROMO_CODES_CACHE: Dict[str, Dict[str, Any]] = {}
+CACHE_TTL_SECONDS = 1800  # Cache de 30 minutos
+
+FALLBACK_PROMO_CODES = {
     "hsr": [
-        {"code": "STARRAILGIFT", "rewards": "50 Stellar Jades, 10,000 Credits", "status": "Ativo permanente"},
-        {"code": "HSR3RDANNIVERSARY", "rewards": "100 Stellar Jades", "status": "Ativo em evento"},
-        {"code": "HSRSPECIAL2026", "rewards": "60 Stellar Jades, 5 Refined Aether", "status": "Ativo de transmissão"}
+        {"code": "STARRAILGIFT", "rewards": "50 Stellar Jade, 10,000 Credit", "status": "Ativo permanente"},
+        {"code": "OMEGA", "rewards": "60 Stellar Jade, 1 Fuel", "status": "Ativo de versão"}
     ],
     "genshin": [
-        {"code": "GENSHINGIFT", "rewards": "50 Primogems, 3 Hero's Wit", "status": "Ativo permanente"},
-        {"code": "NATLANLIVE2026", "rewards": "100 Primogems, 50,000 Mora", "status": "Ativo de evento"}
+        {"code": "GENSHINGIFT", "rewards": "50 Primogem, 3 Hero's Wit", "status": "Ativo permanente"},
+        {"code": "2BJ64QRZ7RT8", "rewards": "60 Primogem, 5 Adventurer's Experience", "status": "Ativo de versão"}
     ],
     "zzz": [
-        {"code": "ZZZFREE100", "rewards": "300 Polychromes, 30,000 Dennies", "status": "Ativo lançamento/evento"},
-        {"code": "ZENLESSGIFT", "rewards": "50 Polychromes, 2 Official Investigator Log", "status": "Ativo permanente"}
+        {"code": "ZENLESSGIFT", "rewards": "50 Polychrome, 2 Official Investigator Log", "status": "Ativo permanente"},
+        {"code": "ZZZMEIJI", "rewards": "30,000 Denny, 3 Senior Investigator Log", "status": "Ativo de evento"}
     ]
 }
 
-def fetch_active_promo_codes(game_id: str) -> List[Dict[str, Any]]:
-    """Retorna os códigos promocionais ativos para o jogo solicitado."""
+def fetch_live_promo_codes(game_id: str) -> List[Dict[str, Any]]:
+    """Realiza raspagem em tempo real via MediaWiki API dos códigos de resgate ativos."""
+    wiki_map = {
+        'genshin': ('genshin-impact', 'Promotional_Code'),
+        'hsr': ('honkai-star-rail', 'Redemption_Code'),
+        'zzz': ('zenless-zone-zero', 'Redemption_Code')
+    }
     g = game_id.lower().strip()
-    return ACTIVE_PROMO_CODES.get(g, [])
+    if g not in wiki_map:
+        return []
+    
+    wiki_name, page_name = wiki_map[g]
+    url = f"https://{wiki_name}.fandom.com/api.php?action=parse&page={page_name}&format=json"
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+    
+    try:
+        r = requests.get(url, headers=headers, timeout=6)
+        if r.status_code != 200:
+            return []
+        
+        html = r.json().get('parse', {}).get('text', {}).get('*', '')
+        soup = BeautifulSoup(html, 'html.parser')
+        tables = soup.find_all('table', class_='wikitable')
+        
+        codes = []
+        seen = set()
+        
+        for t in tables[:2]:
+            for tr in t.find_all('tr'):
+                cols = [td.text.strip().replace('\n', ' ') for td in tr.find_all(['td', 'th'])]
+                if len(cols) >= 3:
+                    raw_code_col = cols[0]
+                    raw_rewards_col = cols[2] if len(cols) >= 3 else cols[1]
+                    raw_duration_col = cols[3] if len(cols) >= 4 else ''
+                    
+                    raw_code_clean = re.sub(r'(Quick|Redeem|\[\d+\])', '', raw_code_col, flags=re.IGNORECASE).strip()
+                    code_match = re.search(r'[A-Za-z0-9]{5,30}', raw_code_clean)
+                    if not code_match:
+                        continue
+                    
+                    code = code_match.group(0).upper()
+                    
+                    if code in ('CODE', 'SERVER', 'REWARDS', 'DURATION', 'EXPIRED') or code in seen:
+                        continue
+                    
+                    if 'expired:' in raw_duration_col.lower():
+                        continue
+                    
+                    rewards = re.sub(r'\[\d+\]', '', raw_rewards_col).replace('×', 'x').replace('Ã—', 'x').strip()
+                    rewards = ' '.join(rewards.split())
+                    
+                    status = 'Ativo (Ao vivo)'
+                    if 'valid until:' in raw_duration_col.lower():
+                        valid_match = re.search(r'valid until:\s*([^V\n\r]+)', raw_duration_col, re.IGNORECASE)
+                        if valid_match:
+                            val_str = valid_match.group(1).strip()
+                            val_str = re.sub(r'([A-Za-z]+\s+\d+,\s+\d{4}).*', r'\1', val_str)
+                            status = f'Ativo até {val_str}'
+                    elif 'indefinite' in raw_duration_col.lower():
+                        status = 'Ativo Permanente'
+                    
+                    seen.add(code)
+                    codes.append({
+                        'code': code,
+                        'rewards': rewards if rewards else 'Recompensas de Evento',
+                        'status': status
+                    })
+        return codes
+    except Exception as e:
+        print(f"Erro ao buscar códigos promocionais ao vivo para {game_id}: {e}")
+        return []
+
+def fetch_active_promo_codes(game_id: str) -> List[Dict[str, Any]]:
+    """Busca dinamicamente os códigos promocionais ativos para o jogo solicitado, com suporte a cache e fallback."""
+    g = game_id.lower().strip()
+    now = time.time()
+    
+    # Verifica cache em memória
+    if g in PROMO_CODES_CACHE:
+        entry = PROMO_CODES_CACHE[g]
+        if (now - entry["timestamp"]) < CACHE_TTL_SECONDS and entry["codes"]:
+            return entry["codes"]
+            
+    # Busca ao vivo via MediaWiki API
+    live_codes = fetch_live_promo_codes(g)
+    if live_codes:
+        PROMO_CODES_CACHE[g] = {
+            "timestamp": now,
+            "codes": live_codes
+        }
+        return live_codes
+        
+    # Fallback caso a busca ao vivo falhe ou dê timeout
+    return FALLBACK_PROMO_CODES.get(g, [])
 
