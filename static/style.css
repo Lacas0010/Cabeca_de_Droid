@@ -2577,4 +2577,208 @@ h1, h2, h3, h4, h5, h6 {
     padding-bottom: 6px;
 }
 
+/* ==========================================
+   ESTILOS VISUAIS PARA COMPARATIVO DE ARTEFATOS (DE -> PARA)
+   ========================================== */
+.diff-relic-card {
+    background: rgba(15, 23, 42, 0.95);
+    border-radius: 12px;
+    padding: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+}
+
+.diff-relic-card.state-replaced {
+    border-color: rgba(236, 72, 153, 0.4);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(236, 72, 153, 0.05));
+}
+
+.diff-relic-card.state-new {
+    border-color: rgba(245, 158, 11, 0.5);
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(245, 158, 11, 0.05));
+}
+
+.diff-relic-card.state-kept {
+    border-color: rgba(56, 189, 248, 0.2);
+}
+
+.diff-relic-transition-grid {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+@media (max-width: 640px) {
+    .diff-relic-transition-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    .diff-arrow-indicator {
+        transform: rotate(90deg);
+        margin: 4px auto;
+    }
+}
+
+.diff-relic-box {
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 10px;
+    padding: 10px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    height: 100%;
+}
+
+.diff-relic-box.box-anterior {
+    border-color: rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.03);
+}
+
+.diff-relic-box.box-atual {
+    border-color: rgba(16, 185, 129, 0.3);
+    background: rgba(16, 185, 129, 0.03);
+}
+
+.diff-relic-box-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.diff-relic-box.box-anterior .diff-relic-box-header {
+    color: #ef4444;
+}
+
+.diff-relic-box.box-atual .diff-relic-box-header {
+    color: #10b981;
+}
+
+.diff-relic-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.diff-relic-thumb {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    flex-shrink: 0;
+}
+
+.diff-relic-thumb.thumb-active {
+    border-color: #ec4899;
+    box-shadow: 0 0 10px rgba(236, 72, 153, 0.3);
+}
+
+.diff-relic-name-text {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.diff-relic-mainstat-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #f59e0b;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 2px;
+}
+
+.diff-relic-substats-list {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.diff-substat-pill {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.diff-substat-pill.is-crit {
+    background: rgba(236, 72, 153, 0.12);
+    color: #f472b6;
+    border-color: rgba(236, 72, 153, 0.3);
+    font-weight: 600;
+}
+
+.diff-arrow-indicator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #ec4899;
+    font-size: 16px;
+    padding: 0 4px;
+}
+
+.diff-arrow-badge {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    background: rgba(236, 72, 153, 0.2);
+    color: #ec4899;
+    padding: 2px 6px;
+    border-radius: 10px;
+    border: 1px solid rgba(236, 72, 153, 0.4);
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+/* Status Gerais Grid */
+.diff-stats-category-card {
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.diff-stats-category-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.diff-stat-row-item {
+    background: rgba(15, 23, 42, 0.8);
+    border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 8px;
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+
 
