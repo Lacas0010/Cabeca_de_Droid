@@ -19,6 +19,78 @@ def get_connection() -> sqlite3.Connection:
         pass
     return conn
 
+def parse_stats_from_raw_md(raw_md: str) -> Dict[str, str]:
+    """Extrai o dicionário de status finais a partir do texto markdown do personagem."""
+    if not raw_md:
+        return {}
+    import re
+    match = re.search(r'\*\*(?:Status Finais|Status|Atributos Finais):\*\*\s*(.*?)(?=\n\n|\n  |\Z)', raw_md, re.DOTALL | re.I)
+    if not match:
+        return {}
+    res = {}
+    for part in match.group(1).replace('\n', ' ').split(','):
+        if ':' in part:
+            k, v = part.split(':', 1)
+            k_clean, v_clean = k.strip(), v.strip()
+            if k_clean and v_clean:
+                res[k_clean] = v_clean
+    return res
+
+def backfill_snapshot_stats() -> None:
+    """Preenche retroativamente os status dos personagens em snapshots históricos existentes."""
+    try:
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT uid, name, raw_md, stats_json FROM characters")
+            char_map = {}
+            for r in cur.fetchall():
+                r_keys = r.keys()
+                st = {}
+                if "stats_json" in r_keys and r["stats_json"]:
+                    try:
+                        st = json.loads(r["stats_json"])
+                    except Exception:
+                        st = {}
+                if not st and r["raw_md"]:
+                    st = parse_stats_from_raw_md(r["raw_md"])
+                if st:
+                    c_name = r["name"].lower().strip()
+                    c_uid = r["uid"]
+                    char_map[(c_uid, c_name)] = st
+                    char_map[c_name] = st
+
+            cur.execute("SELECT id, snapshot_json FROM account_snapshots")
+            snaps = cur.fetchall()
+            for s in snaps:
+                snap_id = s["id"]
+                s_json_str = s["snapshot_json"]
+                if not s_json_str:
+                    continue
+                try:
+                    s_json = json.loads(s_json_str)
+                except Exception:
+                    continue
+                
+                all_c = s_json.get("all_characters") or []
+                top_c = s_json.get("top_built_characters") or []
+                changed = False
+
+                for c_list in [all_c, top_c]:
+                    for c in c_list:
+                        if not c.get("stats"):
+                            c_name = (c.get("name") or "").lower().strip()
+                            c_uid = c.get("uid")
+                            st = char_map.get((c_uid, c_name)) or char_map.get(c_name)
+                            if st:
+                                c["stats"] = st
+                                changed = True
+                
+                if changed:
+                    cur.execute("UPDATE account_snapshots SET snapshot_json = ? WHERE id = ?", (json.dumps(s_json, ensure_ascii=False), snap_id))
+    except Exception as err:
+        print(f"[AVISO] Falha na migração automática de stats em snapshots: {err}")
+
+
 def init_db() -> None:
     """Inicializa as tabelas e índices do banco de dados SQLite se não existirem."""
     with get_connection() as conn:
@@ -71,6 +143,11 @@ def init_db() -> None:
             
         try:
             cursor.execute("ALTER TABLE characters ADD COLUMN skills_json TEXT")
+        except sqlite3.OperationalError:
+            pass
+            
+        try:
+            cursor.execute("ALTER TABLE characters ADD COLUMN stats_json TEXT")
         except sqlite3.OperationalError:
             pass
         
@@ -138,6 +215,7 @@ def init_db() -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_uid ON account_snapshots(game_id, uid)")
         
     print("[INFO] Banco de dados SQLite inicializado com sucesso.")
+    backfill_snapshot_stats()
 
 # Inicializa o banco ao carregar o módulo
 init_db()
@@ -329,6 +407,21 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
         readiness_b = details_b.get("endgame_readiness_pct", 0.0)
         delta_readiness = round(readiness_b - readiness_a, 1)
 
+        cursor.execute("SELECT name, raw_md, stats_json FROM characters")
+        char_db_map = {}
+        for r in cursor.fetchall():
+            r_keys = r.keys()
+            st = {}
+            if "stats_json" in r_keys and r["stats_json"]:
+                try:
+                    st = json.loads(r["stats_json"])
+                except Exception:
+                    st = {}
+            if not st and r["raw_md"]:
+                st = parse_stats_from_raw_md(r["raw_md"])
+            if st:
+                char_db_map[r["name"].lower().strip()] = st
+
         all_norms = list(dict.fromkeys(list(map_b.keys()) + list(map_a.keys())))
         char_diffs = []
 
@@ -337,6 +430,8 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
             cb = map_b.get(norm)
 
             if not ca and cb:
+                if not cb.get("stats"):
+                    cb["stats"] = char_db_map.get((cb.get("name") or "").lower().strip(), {})
                 char_diffs.append({
                     "name": cb.get("name"),
                     "norm": norm,
@@ -355,6 +450,8 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
                     }
                 })
             elif ca and not cb:
+                if not ca.get("stats"):
+                    ca["stats"] = char_db_map.get((ca.get("name") or "").lower().strip(), {})
                 char_diffs.append({
                     "name": ca.get("name"),
                     "norm": norm,
@@ -385,8 +482,10 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
                 skills_b = cb.get("skills", [])
                 skills_changed = json.dumps(skills_a, sort_keys=True) != json.dumps(skills_b, sort_keys=True)
 
-                stats_a = ca.get("stats", {})
-                stats_b = cb.get("stats", {})
+                stats_a = ca.get("stats") or parse_stats_from_raw_md(ca.get("raw_md", "")) or char_db_map.get((ca.get("name") or "").lower().strip(), {})
+                stats_b = cb.get("stats") or parse_stats_from_raw_md(cb.get("raw_md", "")) or char_db_map.get((cb.get("name") or "").lower().strip(), {})
+                ca["stats"] = stats_a
+                cb["stats"] = stats_b
                 stats_changed = json.dumps(stats_a, sort_keys=True) != json.dumps(stats_b, sort_keys=True)
 
                 is_modified = (lvl_diff != 0 or score_diff != 0.0 or rank_changed or weapon_changed or weapon_upgraded or relics_changed or skills_changed or stats_changed)
@@ -558,7 +657,8 @@ def save_character(
     uid: str, game_id: str, name: str, level: int, rarity: int, rank_str: str, 
     element: str, icon: str, weapon_name: str, weapon_level: int, 
     weapon_rank: int, weapon_icon: str, raw_md: str, char_id: Optional[str] = None, 
-    gacha_art: Optional[str] = None, skills_json: Optional[str] = None
+    gacha_art: Optional[str] = None, skills_json: Optional[str] = None,
+    stats_json: Optional[str] = None
 ) -> None:
     """Salva ou atualiza as informações de um personagem no SQLite."""
     with get_connection() as conn:
@@ -566,10 +666,10 @@ def save_character(
         cursor.execute("""
         INSERT OR REPLACE INTO characters (
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
-            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
-              weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json))
+              weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json))
 
 def clear_character_relics(uid: str, character_name: str) -> None:
     """Remove todas as relíquias/artefatos cadastrados de um personagem para atualização."""
@@ -620,6 +720,15 @@ def get_roster_data(game_id: str) -> List[Dict[str, Any]]:
                 except Exception:
                     skills_list = []
             
+            stats_dict = {}
+            if "stats_json" in r_keys and r["stats_json"]:
+                try:
+                    stats_dict = json.loads(r["stats_json"])
+                except Exception:
+                    stats_dict = {}
+            if not stats_dict and r["raw_md"]:
+                stats_dict = parse_stats_from_raw_md(r["raw_md"])
+            
             char_dict = {
                 "id": r["char_id"] if "char_id" in r_keys and r["char_id"] else "",
                 "uid": r["uid"],
@@ -637,7 +746,8 @@ def get_roster_data(game_id: str) -> List[Dict[str, Any]]:
                     "icon": r["weapon_icon"]
                 } if r["weapon_name"] else None,
                 "relics": relics_list,
-                "skills": skills_list
+                "skills": skills_list,
+                "stats": stats_dict
             }
             roster.append(char_dict)
             

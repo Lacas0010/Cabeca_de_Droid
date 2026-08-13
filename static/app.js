@@ -4121,32 +4121,16 @@ document.addEventListener("DOMContentLoaded", () => {
             if (tab === "trash") window.loadTrashRelics("genshin", "tab-trash-relics-body");
             if (tab === "audit") window.loadAuditReport("hsr", "tab-audit-report-body");
             if (tab === "history") window.loadAccountHistory("hsr");
-            if (tab === "codes") window.loadPromoCodes("hsr");
-            if (tab === "config") window.loadAppConfiguration();
         });
     });
-
-    // Eventos de auto-salvamento para a tela de configurações
-    ["cfg-groq-key", "cfg-hoyolab-cookies", "cfg-auto-sync-time"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener("change", () => window.saveAppConfiguration());
-        }
-    });
-
-    ["cfg-auto-sync-enabled", "cfg-auto-sync-roster", "cfg-auto-sync-guides"].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) {
-            el.addEventListener("change", () => window.saveAppConfiguration());
-        }
-    });
-
-    // Carrega configurações iniciais
-    window.loadAppConfiguration();
 });
 
-// ==========================================
-window.openCharacterDiffModal = (cData) => {
+window.currentDiffDataCache = null;
+
+window.openCharacterDiffModal = function(cData) {
+    if (!cData) return;
+    window.currentDiffDataCache = cData;
+
     const modal = document.getElementById("modal-character-diff-detail");
     const iconEl = document.getElementById("diff-modal-char-icon");
     const nameEl = document.getElementById("diff-modal-char-name");
@@ -4204,33 +4188,39 @@ window.openCharacterDiffModal = (cData) => {
     `;
 
     // 1. ARMA / CONE DE LUZ / W-ENGINE
-    const wBase = base.weapon || (base.weapon_name ? { name: base.weapon_name, level: base.weapon_level } : null);
-    const wTarget = target.weapon || (target.weapon_name ? { name: target.weapon_name, level: target.weapon_level } : null);
+    const wBase = base.weapon || (base.weapon_name ? { name: base.weapon_name, level: base.weapon_level, rank: base.weapon_rank, icon: base.weapon_icon } : null);
+    const wTarget = target.weapon || (target.weapon_name ? { name: target.weapon_name, level: target.weapon_level, rank: target.weapon_rank, icon: target.weapon_icon } : null);
 
     html += `<div class="diff-section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Arma / Cone de Luz / W-Engine Equipado</div>`;
     if (wBase || wTarget) {
+        const weaponSwapped = (wBase?.name || '') !== (wTarget?.name || '');
+        const weaponLeveled = (wBase?.level || 0) !== (wTarget?.level || 0) || (wBase?.rank || 1) !== (wTarget?.rank || 1);
+
         html += `
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; background: rgba(0,0,0,0.25); padding: 14px; border-radius: 12px; border: 1px solid ${weaponSwapped ? 'rgba(236,72,153,0.4)' : 'rgba(255,255,255,0.06)'};">
                 <div style="border-right: 1px solid rgba(255,255,255,0.08); padding-right: 10px;">
-                    <span style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 6px;">Snapshot Base (Anterior)</span>
-                    ${wBase ? `
+                    <span style="font-size: 11px; color: #ef4444; display: block; margin-bottom: 6px; font-weight: 700;">SNAPSHOT ANTERIOR (BASE)</span>
+                    ${wBase && wBase.name ? `
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            ${wBase.icon ? `<img src="${wBase.icon}" style="width: 36px; height: 36px; border-radius: 6px;" onerror="this.style.display='none'">` : ''}
+                            <img src="${wBase.icon || '/assets/logo.svg'}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" onerror="this.src='/assets/logo.svg'">
                             <div>
-                                <strong style="font-size: 13px; color: var(--text-primary); display: block;">${wBase.name || 'Desconhecida'}</strong>
-                                <span style="font-size: 11px; color: var(--text-secondary);">Nv. ${wBase.level || 1} ${wBase.rank ? `• R${wBase.rank}` : ''}</span>
+                                <strong style="font-size: 13px; color: var(--text-primary); display: block;">${wBase.name}</strong>
+                                <span style="font-size: 11px; color: var(--text-secondary);">Nv. ${wBase.level || 1} ${wBase.rank ? `• Refinamento R${wBase.rank}` : ''}</span>
                             </div>
                         </div>
-                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Nenhuma arma registrada</span>`}
+                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Nenhuma arma no snapshot anterior</span>`}
                 </div>
                 <div>
-                    <span style="font-size: 11px; color: #ec4899; display: block; margin-bottom: 6px; font-weight: 600;">Snapshot Comparado (Atual)</span>
-                    ${wTarget ? `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 11px; color: #10b981; font-weight: 700;">SNAPSHOT ATUAL (COMPARADO)</span>
+                        ${weaponSwapped ? `<span class="diff-arrow-badge">Arma Trocada</span>` : (weaponLeveled ? `<span class="diff-badge-gain">Evoluída</span>` : '')}
+                    </div>
+                    ${wTarget && wTarget.name ? `
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            ${wTarget.icon ? `<img src="${wTarget.icon}" style="width: 36px; height: 36px; border-radius: 6px;" onerror="this.style.display='none'">` : ''}
+                            <img src="${wTarget.icon || '/assets/logo.svg'}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 2px solid ${weaponSwapped ? '#ec4899' : '#10b981'}; box-shadow: 0 0 10px ${weaponSwapped ? 'rgba(236,72,153,0.3)' : 'rgba(16,185,129,0.3)'};" onerror="this.src='/assets/logo.svg'">
                             <div>
-                                <strong style="font-size: 13px; color: var(--text-primary); display: block;">${wTarget.name || 'Desconhecida'}</strong>
-                                <span style="font-size: 11px; color: #10b981; font-weight: 600;">Nv. ${wTarget.level || 1} ${wTarget.rank ? `• R${wTarget.rank}` : ''}</span>
+                                <strong style="font-size: 13px; color: #fff; display: block;">${wTarget.name}</strong>
+                                <span style="font-size: 11px; color: #10b981; font-weight: 600;">Nv. ${wTarget.level || 1} ${wTarget.rank ? `• Refinamento R${wTarget.rank}` : ''}</span>
                             </div>
                         </div>
                     ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Nenhuma arma registrada</span>`}
@@ -4256,10 +4246,14 @@ window.openCharacterDiffModal = (cData) => {
             const lvlB = sb ? (sb.level || sb.lvl || 0) : 0;
             const lvlT = st ? (st.level || st.lvl || 0) : 0;
             const diff = lvlT - lvlB;
+            const icon = (st || sb || {}).icon || "";
 
             html += `
                 <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; color: var(--text-primary); font-weight: 500;">${sName}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        ${icon ? `<img src="${icon}" style="width: 24px; height: 24px; border-radius: 50%;" onerror="this.style.display='none'">` : ''}
+                        <span style="font-size: 12px; color: var(--text-primary); font-weight: 500;">${sName}</span>
+                    </div>
                     <div style="display: flex; align-items: center; gap: 6px;">
                         <span style="font-size: 12px; color: var(--text-secondary);">${lvlB ? `Nv. ${lvlB} ➔ ` : ''}Nv. ${lvlT}</span>
                         ${diff > 0 ? `<span class="diff-badge-gain">+${diff}</span>` : ''}
@@ -4270,15 +4264,15 @@ window.openCharacterDiffModal = (cData) => {
         html += `</div></div>`;
     }
 
-    // 3. STATUS / ATRIBUTOS FINAIS
+    // 3. STATUS GERAIS DO PERSONAGEM (DETALHADO E CATEGORIZADO)
     const statsBase = base.stats || {};
     const statsTarget = target.stats || {};
     const allStatKeys = listUniqueDictKeys(statsBase, statsTarget);
 
     if (allStatKeys.length > 0) {
-        html += `<div class="diff-section-title"><i class="fa-solid fa-chart-simple"></i> Atributos Finais Consolidados</div>`;
-        html += `<div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px;">`;
-        html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;">`;
+        html += `<div class="diff-section-title"><i class="fa-solid fa-chart-line"></i> Status Gerais do Personagem (Atributos Finais)</div>`;
+        html += `<div class="diff-stats-category-card">`;
+        html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;">`;
 
         allStatKeys.forEach(key => {
             const valB = statsBase[key] !== undefined ? String(statsBase[key]) : 'N/A';
@@ -4296,13 +4290,30 @@ window.openCharacterDiffModal = (cData) => {
                 } else if (parseFloat(diffVal) < 0) {
                     diffBadge = `<span class="diff-badge-loss">${diffVal}${isPct ? '%' : ''}</span>`;
                 }
+            } else if (valB === valT && valT !== 'N/A') {
+                diffBadge = `<span class="diff-badge-same">Inalterado</span>`;
             }
 
+            // Define ícone para cada status
+            let statIcon = 'fa-chart-simple';
+            const kLower = key.toLowerCase();
+            if (kLower.includes('hp') || kLower.includes('vida')) statIcon = 'fa-heart';
+            else if (kLower.includes('atq') || kLower.includes('atk') || kLower.includes('ataque')) statIcon = 'fa-hand-fist';
+            else if (kLower.includes('def') || kLower.includes('defesa')) statIcon = 'fa-shield-halved';
+            else if (kLower.includes('taxa') || kLower.includes('crit_rate')) statIcon = 'fa-crosshair';
+            else if (kLower.includes('dano crit') || kLower.includes('crit_dmg')) statIcon = 'fa-burst';
+            else if (kLower.includes('recarga') || kLower.includes('energy')) statIcon = 'fa-bolt';
+            else if (kLower.includes('prof') || kLower.includes('mastery')) statIcon = 'fa-wand-magic-sparkles';
+            else if (kLower.includes('cura') || kLower.includes('heal')) statIcon = 'fa-notes-medical';
+
             html += `
-                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px;">
-                    <span style="font-size: 11px; color: var(--text-secondary); display: block;">${key}</span>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px;">
-                        <span style="font-size: 13px; font-weight: 700; color: #fff;">${valB !== 'N/A' && valB !== valT ? `${valB} ➔ ` : ''}${valT}</span>
+                <div class="diff-stat-row-item">
+                    <div style="display: flex; align-items: center; gap: 8px; min-width: 0;">
+                        <i class="fa-solid ${statIcon}" style="color: #38bdf8; font-size: 13px; width: 16px; text-align: center;"></i>
+                        <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${key}</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
+                        <span style="font-size: 12px; font-weight: 700; color: #fff;">${valB !== 'N/A' && valB !== valT ? `${valB} ➔ ` : ''}${valT}</span>
                         ${diffBadge}
                     </div>
                 </div>
@@ -4311,43 +4322,146 @@ window.openCharacterDiffModal = (cData) => {
         html += `</div></div>`;
     }
 
-    // 4. RELÍQUIAS / ARTEFATOS / DISCOS
+    // 4. RELÍQUIAS / ARTEFATOS / DISCOS ("FOI DESSE PRA ESSE")
     const relicsBase = base.relics || [];
     const relicsTarget = target.relics || [];
 
-    html += `<div class="diff-section-title"><i class="fa-solid fa-gem"></i> Relíquias / Artefatos / Discos Equipados</div>`;
-    if (relicsTarget.length > 0 || relicsBase.length > 0) {
-        html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 12px;">`;
+    html += `<div class="diff-section-title"><i class="fa-solid fa-gem"></i> Comparativo de Artefatos & Relíquias Equipados</div>`;
+    
+    // Mapeia todas as peças por Slot
+    const slotPairs = buildRelicSlotPairs(relicsBase, relicsTarget);
 
-        const maxSlotCount = Math.max(relicsBase.length, relicsTarget.length);
-        for (let i = 0; i < maxSlotCount; i++) {
-            const rb = relicsBase[i] || {};
-            const rt = relicsTarget[i] || {};
+    if (slotPairs.length > 0) {
+        html += `<div style="display: flex; flex-direction: column; gap: 14px;">`;
 
-            const nameB = rb.name || 'Vazio';
+        slotPairs.forEach((pair, pIdx) => {
+            const rb = pair.base || {};
+            const rt = pair.target || {};
+            const slotName = pair.slot || `Slot #${pIdx + 1}`;
+
+            const nameB = rb.name || '';
             const mainB = rb.main || rb.main_stat || '';
-            const subB = typeof rb.sub === 'string' ? rb.sub : (Array.isArray(rb.sub) ? rb.sub.map(s => typeof s === 'object' ? `${s.name}: ${s.val}` : s).join(', ') : '');
+            const subListB = parseSubstats(rb.sub);
 
-            const nameT = rt.name || 'Vazio';
+            const nameT = rt.name || '';
             const mainT = rt.main || rt.main_stat || '';
-            const subT = typeof rt.sub === 'string' ? rt.sub : (Array.isArray(rt.sub) ? rt.sub.map(s => typeof s === 'object' ? `${s.name}: ${s.val}` : s).join(', ') : '');
+            const subListT = parseSubstats(rt.sub);
 
-            const isReplaced = nameB !== nameT || mainB !== mainT;
+            const isReplaced = nameB && nameT && (nameB !== nameT || mainB !== mainT);
+            const isNew = !nameB && nameT;
+            const isRemoved = nameB && !nameT;
+
+            let cardStateClass = 'state-kept';
+            let badgeHtml = `<span class="diff-badge-same">Mantida</span>`;
+
+            if (isReplaced) {
+                cardStateClass = 'state-replaced';
+                badgeHtml = `<span class="diff-arrow-badge"><i class="fa-solid fa-rotate"></i> Peça Trocada</span>`;
+            } else if (isNew) {
+                cardStateClass = 'state-new';
+                badgeHtml = `<span class="diff-badge-gain" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b; border-color: rgba(245, 158, 11, 0.4);">★ Nova Peça</span>`;
+            } else if (isRemoved) {
+                cardStateClass = 'state-replaced';
+                badgeHtml = `<span class="diff-badge-loss">Removida</span>`;
+            }
 
             html += `
-                <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid ${isReplaced ? 'rgba(236, 72, 153, 0.4)' : 'rgba(255,255,255,0.06)'}; border-radius: 10px; padding: 12px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                        <span style="font-size: 12px; font-weight: 700; color: #38bdf8;">${rt.slot || rb.slot || `Slot #${i+1}`}</span>
-                        ${isReplaced ? `<span class="diff-badge-gain" style="background: rgba(236,72,153,0.2); color: #ec4899; border-color: rgba(236,72,153,0.4);">Peça Trocada</span>` : `<span class="diff-badge-same">Mantida</span>`}
+                <div class="diff-relic-card ${cardStateClass}">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 8px;">
+                        <span style="font-size: 12px; font-weight: 800; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px;">
+                            <i class="fa-regular fa-square-minus" style="margin-right: 4px;"></i> ${slotName}
+                        </span>
+                        ${badgeHtml}
                     </div>
-                    <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;">
-                        ${isReplaced && rb.name ? `<div style="color: var(--text-muted); text-decoration: line-through; margin-bottom: 2px;">Anterior: ${nameB} (${mainB})</div>` : ''}
-                        <strong style="color: #fff; font-size: 12px;">${nameT}</strong> ${mainT ? `<span style="color: #f59e0b; font-weight: 600;">(${mainT})</span>` : ''}
-                        ${subT ? `<div style="color: var(--text-muted); font-size: 10px; margin-top: 4px; overflow: hidden; text-overflow: ellipsis;">${subT}</div>` : ''}
-                    </div>
+
+                    ${isReplaced ? `
+                        <!-- VISUALIZADOR DE TRANSIÇÃO: FOI DESSE PRA ESSE -->
+                        <div class="diff-relic-transition-grid">
+                            <!-- ANTERIOR (BASE) -->
+                            <div class="diff-relic-box box-anterior">
+                                <div class="diff-relic-box-header">
+                                    <span><i class="fa-solid fa-clock-rotate-left"></i> Anterior (Base)</span>
+                                </div>
+                                <div class="diff-relic-item-header">
+                                    <img src="${rb.icon || '/assets/logo.svg'}" class="diff-relic-thumb" onerror="this.src='/assets/logo.svg'">
+                                    <div>
+                                        <div class="diff-relic-name-text" style="color: var(--text-muted); text-decoration: line-through;">${nameB}</div>
+                                        <span class="diff-relic-mainstat-pill" style="opacity: 0.8;">${mainB || 'Sem Main'}</span>
+                                    </div>
+                                </div>
+                                ${subListB.length ? `
+                                    <div class="diff-relic-substats-list">
+                                        ${subListB.map(s => `<span class="diff-substat-pill ${s.isCrit ? 'is-crit' : ''}">${s.text}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+
+                            <!-- ÍCONE DE TRANSIÇÃO DA TROCA -->
+                            <div class="diff-arrow-indicator">
+                                <i class="fa-solid fa-right-long" style="font-size: 20px;"></i>
+                                <span class="diff-arrow-badge">TROCADO POR</span>
+                            </div>
+
+                            <!-- ATUAL (COMPARADO) -->
+                            <div class="diff-relic-box box-atual">
+                                <div class="diff-relic-box-header">
+                                    <span><i class="fa-solid fa-sparkles"></i> Atual (Comparado)</span>
+                                </div>
+                                <div class="diff-relic-item-header">
+                                    <img src="${rt.icon || '/assets/logo.svg'}" class="diff-relic-thumb thumb-active" onerror="this.src='/assets/logo.svg'">
+                                    <div>
+                                        <div class="diff-relic-name-text">${nameT}</div>
+                                        <span class="diff-relic-mainstat-pill">${mainT}</span>
+                                    </div>
+                                </div>
+                                ${subListT.length ? `
+                                    <div class="diff-relic-substats-list">
+                                        ${subListT.map(s => `<span class="diff-substat-pill ${s.isCrit ? 'is-crit' : ''}">${s.text}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : (isNew ? `
+                        <div class="diff-relic-transition-grid">
+                            <div class="diff-relic-box box-anterior" style="justify-content: center; align-items: center; min-height: 80px;">
+                                <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum artefato neste slot</span>
+                            </div>
+                            <div class="diff-arrow-indicator">
+                                <i class="fa-solid fa-right-long" style="font-size: 18px;"></i>
+                            </div>
+                            <div class="diff-relic-box box-atual">
+                                <div class="diff-relic-item-header">
+                                    <img src="${rt.icon || '/assets/logo.svg'}" class="diff-relic-thumb thumb-active" onerror="this.src='/assets/logo.svg'">
+                                    <div>
+                                        <div class="diff-relic-name-text">${nameT}</div>
+                                        <span class="diff-relic-mainstat-pill">${mainT}</span>
+                                    </div>
+                                </div>
+                                ${subListT.length ? `
+                                    <div class="diff-relic-substats-list">
+                                        ${subListT.map(s => `<span class="diff-substat-pill ${s.isCrit ? 'is-crit' : ''}">${s.text}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    ` : `
+                        <!-- ARTEFATO MANTIDO (EXIBE DETALHADO DO ATUAL) -->
+                        <div style="display: flex; gap: 12px; align-items: flex-start; margin-top: 4px;">
+                            <img src="${rt.icon || rb.icon || '/assets/logo.svg'}" class="diff-relic-thumb" onerror="this.src='/assets/logo.svg'">
+                            <div style="flex: 1; min-width: 0;">
+                                <strong style="font-size: 13px; color: #fff; display: block;">${nameT || nameB}</strong>
+                                <span class="diff-relic-mainstat-pill" style="margin-top: 4px;">${mainT || mainB}</span>
+                                ${subListT.length ? `
+                                    <div class="diff-relic-substats-list" style="margin-top: 6px;">
+                                        ${subListT.map(s => `<span class="diff-substat-pill ${s.isCrit ? 'is-crit' : ''}">${s.text}</span>`).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `)}
                 </div>
             `;
-        }
+        });
         html += `</div>`;
     } else {
         html += `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">Detalhes de relíquias não salvos no snapshot base/comparado.</p>`;
@@ -4356,6 +4470,520 @@ window.openCharacterDiffModal = (cData) => {
     bodyEl.innerHTML = html;
     modal.style.display = "flex";
 };
+
+function buildRelicSlotPairs(relicsBase, relicsTarget) {
+    const pairs = [];
+    const maxLen = Math.max((relicsBase || []).length, (relicsTarget || []).length);
+    for (let i = 0; i < maxLen; i++) {
+        const rb = (relicsBase || [])[i] || null;
+        const rt = (relicsTarget || [])[i] || null;
+        const slotName = (rt && rt.slot) || (rb && rb.slot) || `Slot #${i + 1}`;
+        pairs.push({ slot: slotName, base: rb, target: rt });
+    }
+    return pairs;
+}
+
+function parseSubstats(subData) {
+    if (!subData) return [];
+    let items = [];
+    if (typeof subData === 'string') {
+        items = subData.split(',').map(s => s.trim()).filter(Boolean);
+    } else if (Array.isArray(subData)) {
+        items = subData.map(s => {
+            if (typeof s === 'object' && s !== null) {
+                return `${s.name || s.prop || ''}: ${s.val || s.value || ''}`;
+            }
+            return String(s);
+        }).filter(Boolean);
+    }
+    return items.map(str => {
+        const sLower = str.toLowerCase();
+        const isCrit = sLower.includes('crit') || sLower.includes('taxa') || sLower.includes('dano');
+        return { text: str, isCrit };
+    });
+}
+
+// ==========================================
+// GERADOR DE CARD DE COMPARATIVO DE BUILD (PNG)
+// ==========================================
+
+window.generateAndOpenDiffCardModal = async function() {
+    const cData = window.currentDiffDataCache;
+    if (!cData) {
+        showToast("Nenhum comparativo selecionado para gerar card.");
+        return;
+    }
+
+    const modal = document.getElementById("modal-export-diff-card");
+    const container = document.getElementById("diff-card-preview-container");
+    const downloadBtn = document.getElementById("btn-download-diff-card-png");
+    const copyBtn = document.getElementById("btn-copy-diff-card-png");
+
+    if (!modal || !container) return;
+
+    modal.style.display = "flex";
+    container.innerHTML = `<p style="color: var(--text-muted); padding: 40px; font-size: 14px;"><i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #ec4899; margin-bottom: 12px; display: block;"></i> Renderizando Card em Alta Resolução...</p>`;
+
+    try {
+        const canvas = await generateDiffCardCanvas(cData);
+        container.innerHTML = "";
+        
+        const img = document.createElement("img");
+        img.src = canvas.toDataURL("image/png");
+        img.style.maxWidth = "100%";
+        img.style.maxHeight = "60vh";
+        img.style.borderRadius = "10px";
+        img.style.boxShadow = "0 10px 30px rgba(0,0,0,0.5)";
+        container.appendChild(img);
+
+        if (downloadBtn) {
+            downloadBtn.href = img.src;
+            downloadBtn.download = `comparativo_${(cData.name || 'personagem').toLowerCase().replace(/\s+/g, '_')}.png`;
+        }
+
+        if (copyBtn) {
+            copyBtn.onclick = async () => {
+                try {
+                    canvas.toBlob(async (blob) => {
+                        if (!blob) throw new Error("Falha ao criar blob.");
+                        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                        showToast("Card de comparativo copiado para a área de transferência!", "success");
+                    });
+                } catch (err) {
+                    showToast("Erro ao copiar imagem: " + err.message);
+                }
+            };
+        }
+    } catch (err) {
+        console.error("Erro ao gerar card:", err);
+        container.innerHTML = `<p style="color: #ef4444; padding: 20px;"><i class="fa-solid fa-triangle-exclamation"></i> Ocorreu um erro ao gerar o card da comparação: ${err.message}</p>`;
+    }
+};
+
+async function generateDiffCardCanvas(cData) {
+    const canvas = document.createElement("canvas");
+    const width = 1200;
+    const height = 860;
+    canvas.width = width * 2;
+    canvas.height = height * 2;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(2, 2);
+
+    // Helpers de desenho no Canvas
+    function drawRoundedRect(x, y, w, h, r, fillStyle, strokeStyle, lineWidth = 1) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+        if (fillStyle) {
+            ctx.fillStyle = fillStyle;
+            ctx.fill();
+        }
+        if (strokeStyle) {
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.stroke();
+        }
+    }
+
+    function loadImage(url) {
+        return new Promise((resolve) => {
+            if (!url) return resolve(null);
+            let finalUrl = url;
+            if (url.startsWith("http://") || url.startsWith("https://")) {
+                finalUrl = `/api/proxy_image?url=${encodeURIComponent(url)}`;
+            }
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            img.src = finalUrl;
+        });
+    }
+
+    // Fundo Gradiente Escuro Elegante
+    const bgGrad = ctx.createLinearGradient(0, 0, width, height);
+    bgGrad.addColorStop(0, "#0b0f19");
+    bgGrad.addColorStop(0.5, "#0f172a");
+    bgGrad.addColorStop(1, "#180a22");
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Glow de Destaque Rosa/Violeta
+    const glowGrad = ctx.createRadialGradient(200, 150, 20, 200, 150, 600);
+    glowGrad.addColorStop(0, "rgba(236, 72, 153, 0.18)");
+    glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+    ctx.fillStyle = glowGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    // Carrega Imagem do Personagem
+    const charImg = await loadImage(cData.icon);
+
+    const base = cData.base || {};
+    const target = cData.target || {};
+    const diffs = cData.diffs || {};
+
+    // 1. CABEÇALHO DO CARD
+    drawRoundedRect(30, 24, width - 60, 110, 16, "rgba(15, 23, 42, 0.8)", "rgba(236, 72, 153, 0.4)", 1.5);
+
+    if (charImg) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(85, 79, 40, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(charImg, 45, 39, 80, 80);
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(85, 79, 40, 0, Math.PI * 2);
+        ctx.strokeStyle = "#ec4899";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    }
+
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 24px sans-serif";
+    ctx.fillText(cData.name || "Personagem", 145, 62);
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.font = "14px sans-serif";
+    ctx.fillText(`EVOLUÇÃO DE BUILD • ${cData.rarity || 5}★ ${cData.element || ''}`, 145, 86);
+
+    const scorePrev = base.score || 0.0;
+    const scoreCurr = target.score || 0.0;
+    const scoreDiff = diffs.score_diff !== undefined ? diffs.score_diff : (scoreCurr - scorePrev).toFixed(1);
+
+    // KPI Badge no Canto do Cabeçalho
+    drawRoundedRect(width - 240, 42, 190, 74, 12, "rgba(236, 72, 153, 0.15)", "rgba(236, 72, 153, 0.4)");
+    ctx.fillStyle = "#ec4899";
+    ctx.font = "bold 11px sans-serif";
+    ctx.fillText("EVOLUÇÃO RV (BUILD SCORE)", width - 225, 62);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 20px sans-serif";
+    ctx.fillText(`${scorePrev ? scorePrev + '% ➔ ' : ''}${scoreCurr}%`, width - 225, 90);
+    if (parseFloat(scoreDiff) > 0) {
+        ctx.fillStyle = "#10b981";
+        ctx.font = "bold 13px sans-serif";
+        ctx.fillText(`+${scoreDiff}%`, width - 85, 90);
+    }
+
+    // 2. SEÇÃO DA ARMA
+    drawRoundedRect(30, 150, 560, 95, 12, "rgba(0, 0, 0, 0.4)", "rgba(255, 255, 255, 0.1)");
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText("ARMA / CONE DE LUZ / W-ENGINE", 45, 170);
+
+    const wBase = base.weapon || (base.weapon_name ? { name: base.weapon_name, level: base.weapon_level, icon: base.weapon_icon } : null);
+    const wTarget = target.weapon || (target.weapon_name ? { name: target.weapon_name, level: target.weapon_level, icon: target.weapon_icon } : null);
+
+    const wBaseImg = await loadImage(wBase?.icon);
+    const wTargetImg = await loadImage(wTarget?.icon);
+
+    if (wBaseImg) ctx.drawImage(wBaseImg, 45, 180, 42, 42);
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "12px sans-serif";
+    ctx.fillText(wBase?.name || "Nenhuma", 98, 197);
+    ctx.font = "11px sans-serif";
+    ctx.fillText(`Nv. ${wBase?.level || 1}`, 98, 213);
+
+    ctx.fillStyle = "#ec4899";
+    ctx.font = "bold 16px sans-serif";
+    ctx.fillText("➔", 285, 205);
+
+    if (wTargetImg) ctx.drawImage(wTargetImg, 315, 180, 42, 42);
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText(wTarget?.name || "Nenhuma", 368, 197);
+    ctx.fillStyle = "#10b981";
+    ctx.font = "11px sans-serif";
+    ctx.fillText(`Nv. ${wTarget?.level || 1}`, 368, 213);
+
+    // 2.5. SEÇÃO DE HABILIDADES E TALENTOS
+    drawRoundedRect(30, 255, 560, 130, 12, "rgba(0, 0, 0, 0.4)", "rgba(255, 255, 255, 0.1)");
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText("EVOLUÇÃO DE HABILIDADES & TALENTOS", 45, 275);
+
+    const skillsBase = base.skills || [];
+    const skillsTarget = target.skills || [];
+    const allSkillNames = listUniqueSkillKeys(skillsBase, skillsTarget).slice(0, 6);
+
+    // Carrega em paralelo os ícones de todas as habilidades para desenhar no card
+    const skillImgMap = {};
+    await Promise.all(allSkillNames.map(async sName => {
+        const sb = skillsBase.find(x => (x.name || x.skill_name) === sName);
+        const st = skillsTarget.find(x => (x.name || x.skill_name) === sName);
+        const iconUrl = (st || sb || {}).icon;
+        if (iconUrl) {
+            const img = await loadImage(iconUrl);
+            if (img) skillImgMap[sName] = img;
+        }
+    }));
+
+    if (allSkillNames.length === 0) {
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "italic 11px sans-serif";
+        ctx.fillText("Sem dados de habilidades para comparar", 60, 315);
+    } else {
+        for (let idx = 0; idx < allSkillNames.length; idx++) {
+            const sName = allSkillNames[idx];
+            const sb = skillsBase.find(x => (x.name || x.skill_name) === sName);
+            const st = skillsTarget.find(x => (x.name || x.skill_name) === sName);
+            const lvlB = sb ? (sb.level || sb.lvl || 0) : 0;
+            const lvlT = st ? (st.level || st.lvl || 0) : 0;
+            const diff = lvlT - lvlB;
+
+            const col = idx % 2;
+            const row = Math.floor(idx / 2);
+
+            const xPill = col === 0 ? 45 : 315;
+            const yPill = 287 + row * 28;
+
+            drawRoundedRect(xPill, yPill, 255, 24, 6, "rgba(15, 23, 42, 0.8)", "rgba(255, 255, 255, 0.05)");
+
+            const sImg = skillImgMap[sName];
+            let xText = xPill + 10;
+            if (sImg) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(xPill + 16, yPill + 12, 9, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.clip();
+                ctx.drawImage(sImg, xPill + 7, yPill + 3, 18, 18);
+                ctx.restore();
+                xText = xPill + 30;
+            }
+
+            const maxNameLen = sImg ? 14 : 17;
+            const displayName = sName.length > maxNameLen ? sName.substring(0, maxNameLen - 2) + '...' : sName;
+            ctx.fillStyle = "#cbd5e1";
+            ctx.font = "11px sans-serif";
+            ctx.fillText(displayName, xText, yPill + 16);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 11px sans-serif";
+            const lvlText = `${lvlB ? lvlB + ' ➔ ' : ''}Nv. ${lvlT}`;
+            ctx.fillText(lvlText, xPill + 160, yPill + 16);
+
+            if (diff > 0) {
+                ctx.fillStyle = "#10b981";
+                ctx.font = "bold 10px sans-serif";
+                ctx.fillText(`+${diff}`, xPill + 232, yPill + 16);
+            }
+        }
+    }
+
+    // 3. ATRIBUTOS GERAIS
+    drawRoundedRect(30, 395, 560, 435, 12, "rgba(0, 0, 0, 0.4)", "rgba(255, 255, 255, 0.1)");
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText("ATRIBUTOS FINAIS COMPARADOS", 45, 417);
+
+    const statsBase = base.stats || {};
+    const statsTarget = target.stats || {};
+    const keys = listUniqueDictKeys(statsBase, statsTarget).slice(0, 10);
+
+    let yStat = 432;
+    if (keys.length === 0) {
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "italic 12px sans-serif";
+        ctx.fillText("Sem atributos comparativos registrados", 60, yStat + 20);
+    } else {
+        keys.forEach(k => {
+            const valB = statsBase[k] !== undefined ? String(statsBase[k]) : 'N/A';
+            const valT = statsTarget[k] !== undefined ? String(statsTarget[k]) : 'N/A';
+
+            drawRoundedRect(45, yStat, 530, 34, 8, "rgba(15, 23, 42, 0.8)", "rgba(255,255,255,0.05)");
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "11px sans-serif";
+            ctx.fillText(k, 60, yStat + 21);
+
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 11px sans-serif";
+            const valStr = `${valB !== 'N/A' && valB !== valT ? valB + ' ➔ ' : ''}${valT}`;
+            ctx.fillText(valStr, 320, yStat + 21);
+
+            const numB = parseFloat(valB.replace(/[^0-9.-]/g, ''));
+            const numT = parseFloat(valT.replace(/[^0-9.-]/g, ''));
+            if (!isNaN(numB) && !isNaN(numT) && numB !== numT) {
+                const diffVal = (numT - numB).toFixed(1);
+                const isPct = valT.includes('%');
+                ctx.fillStyle = parseFloat(diffVal) > 0 ? "#10b981" : "#ef4444";
+                ctx.font = "bold 11px sans-serif";
+                ctx.fillText(`${parseFloat(diffVal) > 0 ? '+' : ''}${diffVal}${isPct ? '%' : ''}`, 490, yStat + 21);
+            } else if (valB === valT && valT !== 'N/A') {
+                ctx.fillStyle = "#64748b";
+                ctx.font = "10px sans-serif";
+                ctx.fillText("Mantido", 495, yStat + 21);
+            }
+
+            yStat += 38;
+        });
+    }
+
+    // 4. COMPARATIVO DE ARTEFATOS (PAINEL DIREITO "FOI DESSE PRA ESSE" COM SUBSTATUS)
+    drawRoundedRect(610, 150, 560, 680, 12, "rgba(0, 0, 0, 0.4)", "rgba(255, 255, 255, 0.1)");
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillText("ARTEFATOS & RELÍQUIAS (DE ➔ PARA)", 625, 175);
+
+    const relicsBase = base.relics || [];
+    const relicsTarget = target.relics || [];
+    const pairs = buildRelicSlotPairs(relicsBase, relicsTarget).slice(0, 6);
+
+    let yRelic = 192;
+    for (let i = 0; i < pairs.length; i++) {
+        const p = pairs[i];
+        const rb = p.base || {};
+        const rt = p.target || {};
+        const isReplaced = rb.name && rt.name && (rb.name !== rt.name || rb.main !== rt.main);
+
+        const subListB = parseSubstats(rb.sub);
+        const subListT = parseSubstats(rt.sub);
+
+        drawRoundedRect(625, yRelic, 530, 98, 10, isReplaced ? "rgba(236, 72, 153, 0.08)" : "rgba(15, 23, 42, 0.8)", isReplaced ? "rgba(236, 72, 153, 0.3)" : "rgba(255, 255, 255, 0.06)");
+
+        ctx.fillStyle = isReplaced ? "#ec4899" : "#38bdf8";
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillText(`${p.slot.toUpperCase()} ${isReplaced ? '• PEÇA TROCADA' : '• MANTIDA'}`, 638, yRelic + 16);
+
+        const rBaseImg = await loadImage(rb.icon);
+        const rTargetImg = await loadImage(rt.icon);
+
+        if (isReplaced) {
+            // EXIBE COMPARATIVO ANTERIOR (BASE) ➔ ATUAL (TARGET)
+            if (rBaseImg) ctx.drawImage(rBaseImg, 638, yRelic + 22, 34, 34);
+            ctx.fillStyle = "#94a3b8";
+            ctx.font = "10px sans-serif";
+            const nameB = (rb.name || "Vazio");
+            ctx.fillText(nameB.length > 22 ? nameB.substring(0, 20) + '...' : nameB, 678, yRelic + 34);
+            ctx.fillStyle = "#f59e0b";
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText(rb.main || "", 678, yRelic + 48);
+
+            // Substats Base
+            if (subListB.length > 0) {
+                let subY = yRelic + 62;
+                ctx.font = "9px sans-serif";
+                const line1 = subListB.slice(0, 2);
+                const line2 = subListB.slice(2, 4);
+
+                if (line1.length > 0) {
+                    let offX = 678;
+                    line1.forEach(s => {
+                        ctx.fillStyle = s.isCrit ? "#f59e0b" : "#94a3b8";
+                        ctx.fillText(s.text, offX, subY);
+                        offX += ctx.measureText(s.text).width + 8;
+                    });
+                }
+                if (line2.length > 0) {
+                    subY += 12;
+                    let offX = 678;
+                    line2.forEach(s => {
+                        ctx.fillStyle = s.isCrit ? "#f59e0b" : "#94a3b8";
+                        ctx.fillText(s.text, offX, subY);
+                        offX += ctx.measureText(s.text).width + 8;
+                    });
+                }
+            }
+
+            // Seta Central de Troca
+            ctx.fillStyle = "#ec4899";
+            ctx.font = "bold 15px sans-serif";
+            ctx.fillText("➔", 876, yRelic + 42);
+
+            // Item Atual (Target)
+            if (rTargetImg) ctx.drawImage(rTargetImg, 898, yRelic + 22, 34, 34);
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 10px sans-serif";
+            const nameT = (rt.name || "Vazio");
+            ctx.fillText(nameT.length > 22 ? nameT.substring(0, 20) + '...' : nameT, 938, yRelic + 34);
+            ctx.fillStyle = "#10b981";
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText(rt.main || "", 938, yRelic + 48);
+
+            // Substats Target
+            if (subListT.length > 0) {
+                let subY = yRelic + 62;
+                ctx.font = "9px sans-serif";
+                const line1 = subListT.slice(0, 2);
+                const line2 = subListT.slice(2, 4);
+
+                if (line1.length > 0) {
+                    let offX = 938;
+                    line1.forEach(s => {
+                        ctx.fillStyle = s.isCrit ? "#f59e0b" : "#cbd5e1";
+                        ctx.fillText(s.text, offX, subY);
+                        offX += ctx.measureText(s.text).width + 8;
+                    });
+                }
+                if (line2.length > 0) {
+                    subY += 12;
+                    let offX = 938;
+                    line2.forEach(s => {
+                        ctx.fillStyle = s.isCrit ? "#f59e0b" : "#cbd5e1";
+                        ctx.fillText(s.text, offX, subY);
+                        offX += ctx.measureText(s.text).width + 8;
+                    });
+                }
+            }
+        } else {
+            // ARTEFATO MANTIDO (EXIBE DETALHADO DO ATUAL OU BASE)
+            const itemObj = rt.name ? rt : rb;
+            const rImg = rTargetImg || rBaseImg;
+            const subList = subListT.length > 0 ? subListT : subListB;
+
+            if (rImg) ctx.drawImage(rImg, 638, yRelic + 22, 38, 38);
+            ctx.fillStyle = "#fff";
+            ctx.font = "bold 11px sans-serif";
+            ctx.fillText(itemObj.name || "Vazio", 684, yRelic + 34);
+            ctx.fillStyle = "#10b981";
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillText(itemObj.main || "", 684, yRelic + 48);
+
+            // Substats Mantidos (Dispostos em 2 linhas horizontais organizadas)
+            if (subList.length > 0) {
+                ctx.font = "10px sans-serif";
+                const line1 = subList.slice(0, 2);
+                const line2 = subList.slice(2, 4);
+
+                if (line1.length > 0) {
+                    let offX = 684;
+                    line1.forEach(s => {
+                        ctx.fillStyle = s.isCrit ? "#f59e0b" : "#94a3b8";
+                        ctx.fillText(s.text, offX, yRelic + 64);
+                        offX += ctx.measureText(s.text).width + 16;
+                    });
+                }
+                if (line2.length > 0) {
+                    let offX = 684;
+                    line2.forEach(s => {
+                        ctx.fillStyle = s.isCrit ? "#f59e0b" : "#94a3b8";
+                        ctx.fillText(s.text, offX, yRelic + 80);
+                        offX += ctx.measureText(s.text).width + 16;
+                    });
+                }
+            }
+        }
+
+        yRelic += 105;
+    }
+
+    // Rodapé Marca D'água
+    ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+    ctx.font = "11px sans-serif";
+    ctx.fillText("Gerado via HoYo Hub • Comparativo Automático de Snapshots de Evolução", 30, height - 12);
+
+    return canvas;
+}
 
 function listUniqueSkillKeys(arrA, arrB) {
     const set = new Set();

@@ -655,53 +655,42 @@ class HSRExtractor(BaseExtractor):
                 skills_json = []
                 raw_skills = getattr(char, "skills", getattr(char, "traces", getattr(char, "skill_trees", [])))
                 if raw_skills:
-                    seen_types = set()
-                    seen_names = set()
-                    for sk in raw_skills:
-                        pt_type = getattr(sk, "point_type", getattr(sk, "type", None))
-                        if hasattr(pt_type, "value"):
-                            pt_type = pt_type.value
-                        try:
-                            pt_type = int(pt_type) if pt_type is not None else None
-                        except Exception:
-                            pass
+                    anchor_type_map = {
+                        "Point01": (1, "Ataque Básico", 6),
+                        "Point02": (2, "Perícia Elemental", 10),
+                        "Point03": (3, "Suprema", 10),
+                        "Point04": (4, "Talento Passivo", 10),
+                    }
+                    res = {}
+                    main_skills = [s for s in raw_skills if hasattr(s, "skill_stages") and len(s.skill_stages) > 0]
+                    for idx, s in enumerate(main_skills):
+                        anchor = getattr(s, "anchor", "") or ""
+                        order = idx + 1
+                        default_name = "Habilidade"
+                        max_lvl = 10
 
-                        # Filtrar apenas habilidades principais (1=Básico, 2=Perícia, 3=Suprema, 4=Talento, 6=Rastro A2/A4/A6)
-                        if pt_type not in (1, 2, 3, 4, 6):
-                            continue
+                        if anchor in anchor_type_map:
+                            order, default_name, max_lvl = anchor_type_map[anchor]
+                        elif idx == 0:
+                            order, default_name, max_lvl = (1, "Ataque Básico", 6)
+                        elif idx == 1:
+                            order, default_name, max_lvl = (2, "Perícia Elemental", 10)
+                        elif idx == 2:
+                            order, default_name, max_lvl = (3, "Suprema", 10)
+                        elif idx == 3:
+                            order, default_name, max_lvl = (4, "Talento Passivo", 10)
 
-                        if pt_type in (1, 2, 3, 4) and pt_type in seen_types:
-                            continue
-                        if pt_type in (1, 2, 3, 4):
-                            seen_types.add(pt_type)
+                        s_name = s.skill_stages[0].name if s.skill_stages else default_name
+                        s_icon = s.skill_stages[0].item_url if s.skill_stages else getattr(s, "icon", "")
 
-                        pt_map = {
-                            1: "Ataque Básico",
-                            2: "Perícia Elemental",
-                            3: "Suprema",
-                            4: "Talento Passivo",
-                            6: "Rastro Principal (Ascensão)"
-                        }
-                        s_name = getattr(sk, "name", getattr(sk, "point_name", getattr(sk, "title", None)))
-                        if not s_name and pt_type in pt_map:
-                            s_name = pt_map[pt_type]
-                        elif not s_name:
-                            s_name = f"Rastro_{pt_type}"
-
-                        if s_name in seen_names:
-                            continue
-                        seen_names.add(s_name)
-
-                        s_lvl = getattr(sk, "level", 1)
-                        s_max = 6 if pt_type == 1 else (1 if pt_type == 6 else 10)
-                        s_icon = getattr(sk, "item_url", getattr(sk, "icon", getattr(sk, "image", "")))
-                        skills_json.append({
+                        res[order] = {
                             "name": str(s_name),
-                            "level": int(s_lvl),
-                            "max_level": int(s_max),
-                            "type": str(pt_type if pt_type else ""),
+                            "level": int(s.level),
+                            "max_level": int(max_lvl),
+                            "type": str(order),
                             "icon": str(s_icon)
-                        })
+                        }
+                    skills_json = [res[k] for k in sorted(res.keys())]
 
                 char_json_list.append({
                     "id": str(char.id),
@@ -732,7 +721,10 @@ class HSRExtractor(BaseExtractor):
         # Salva no SQLite
         try:
             import database
-            database.save_game_account(uid, "hsr", info.nickname, info.level, stats.active_days)
+            nickname = getattr(info, "nickname", "Desbravador") if info else "Desbravador"
+            acc_level = getattr(info, "level", 70) if info else 70
+            act_days = getattr(stats, "active_days", 0) if stats else 0
+            database.save_game_account(uid, "hsr", nickname, acc_level, act_days)
             for c in char_json_list:
                 char_md = ""
                 pattern = rf'(\*\*(?:Personagem):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)'
@@ -756,7 +748,8 @@ class HSRExtractor(BaseExtractor):
                     weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
                     weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
                     raw_md=char_md,
-                    skills_json=json.dumps(c.get("skills", []))
+                    skills_json=json.dumps(c.get("skills", [])),
+                    stats_json=json.dumps(c.get("stats", {}))
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1195,7 +1188,8 @@ class GenshinExtractor(BaseExtractor):
                     weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
                     weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
                     raw_md=char_md,
-                    skills_json=json.dumps(c.get("skills", []))
+                    skills_json=json.dumps(c.get("skills", [])),
+                    stats_json=json.dumps(c.get("stats", {}))
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1544,7 +1538,8 @@ class ZZZExtractor(BaseExtractor):
                     weapon_rank=c["weapon"].get("rank") if c["weapon"] else None,
                     weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
                     raw_md=char_md,
-                    skills_json=json.dumps(c.get("skills", []))
+                    skills_json=json.dumps(c.get("skills", [])),
+                    stats_json=json.dumps(c.get("stats", {}))
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:

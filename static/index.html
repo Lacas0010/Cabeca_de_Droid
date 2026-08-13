@@ -1248,8 +1248,8 @@
 
     <!-- MODAL 5: COMPARATIVO DETALHADO DE BUILD DO PERSONAGEM -->
     <div id="modal-character-diff-detail" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
-        <div class="modal-card-content" style="background: #0f172a; border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 16px; width: 94%; max-width: 900px; padding: 22px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+        <div class="modal-card-content" style="background: #0f172a; border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 16px; width: 94%; max-width: 960px; padding: 22px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <img id="diff-modal-char-icon" src="" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ec4899; object-fit: cover;" onerror="this.src='/assets/logo.svg'">
                     <div>
@@ -1257,10 +1257,40 @@
                         <span id="diff-modal-char-sub" style="font-size: 12px; color: var(--text-secondary);">Análise de Evolução de Build</span>
                     </div>
                 </div>
-                <button onclick="document.getElementById('modal-character-diff-detail').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-export-diff-card-trigger" onclick="window.generateAndOpenDiffCardModal()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(236, 72, 153, 0.4); transition: transform 0.2s ease;">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Card da Comparação
+                    </button>
+                    <button onclick="document.getElementById('modal-character-diff-detail').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                </div>
             </div>
             <div id="character-diff-detail-body">
                 <!-- Preenchido dinamicamente via JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE EXPORTAÇÃO DO CARD DE COMPARATIVO -->
+    <div id="modal-export-diff-card" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); z-index: 10000; justify-content: center; align-items: center;">
+        <div class="modal-card-content" style="background: #0f172a; border: 1px solid rgba(236, 72, 153, 0.5); border-radius: 16px; width: 94%; max-width: 980px; padding: 22px; max-height: 92vh; overflow-y: auto; box-shadow: 0 25px 60px rgba(0,0,0,0.7); text-align: center;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px;">
+                <h3 style="margin: 0; color: #fff; font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-id-card" style="color: #ec4899;"></i> Card de Comparação de Build Gerado
+                </h3>
+                <button onclick="document.getElementById('modal-export-diff-card').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+            </div>
+            
+            <div id="diff-card-preview-container" style="margin-bottom: 20px; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 12px; border: 1px dashed rgba(255,255,255,0.15); min-height: 340px;">
+                <p style="color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Gerando imagem do card de comparação...</p>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 14px; flex-wrap: wrap;">
+                <a id="btn-download-diff-card-png" download="comparativo_build.png" class="primary-btn" style="padding: 10px 22px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border-radius: 8px; text-decoration: none; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+                    <i class="fa-solid fa-download"></i> Baixar Imagem PNG (Alta Resolução)
+                </a>
+                <button id="btn-copy-diff-card-png" class="secondary-btn" style="padding: 10px 20px; background: rgba(255,255,255,0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; font-weight: 700; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <i class="fa-solid fa-copy"></i> Copiar para Área de Transferência
+                </button>
             </div>
         </div>
     </div>
