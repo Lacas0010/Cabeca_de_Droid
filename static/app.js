@@ -5483,5 +5483,72 @@ window.saveAppConfiguration = async () => {
     }
 };
 
+/* ==========================================================================
+   HELP HUB INTERACTIVE LOGIC (SEARCH & FILTER & ACCORDION TOGGLE)
+   ========================================================================== */
+window.initHelpHubHandlers = () => {
+    const searchInput = document.getElementById("help-search-input");
+    const pills = document.querySelectorAll(".help-pill");
+    const cards = document.querySelectorAll(".help-card");
+
+    if (!searchInput && pills.length === 0) return;
+
+    let activeCategory = "all";
+
+    const filterCards = () => {
+        const query = (searchInput?.value || "").toLowerCase().trim();
+
+        cards.forEach(card => {
+            const categoryMatch = activeCategory === "all" || card.dataset.category === activeCategory;
+            const cardText = card.textContent.toLowerCase();
+            const searchMatch = !query || cardText.includes(query);
+
+            if (categoryMatch && searchMatch) {
+                card.style.display = "flex";
+            } else {
+                card.style.display = "none";
+            }
+        });
+    };
+
+    if (searchInput) {
+        searchInput.addEventListener("input", filterCards);
+    }
+
+    pills.forEach(pill => {
+        pill.addEventListener("click", () => {
+            pills.forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            activeCategory = pill.dataset.category || "all";
+            filterCards();
+        });
+    });
+
+    document.addEventListener("click", (e) => {
+        const toggleBtn = e.target.closest(".help-toggle-details-btn");
+        if (toggleBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const card = toggleBtn.closest(".help-card");
+            const details = card?.querySelector(".help-card-details");
+            if (details) {
+                const isOpen = details.classList.contains("open");
+                if (isOpen) {
+                    details.classList.remove("open");
+                    toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Detalhes`;
+                } else {
+                    details.classList.add("open");
+                    toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Recolher`;
+                }
+            }
+        }
+    });
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+    window.initHelpHubHandlers();
+});
+
+
 
 

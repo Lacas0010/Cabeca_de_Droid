@@ -1,25 +1,23 @@
-# Backend Web Server & Framework
+# Backend Web Server & Framework (FastAPI REST API & SSE Streaming)
 fastapi>=0.109.0
 uvicorn>=0.27.0
 pydantic>=2.6.0
 
-# HTTP Requests & Web Scraping (curl_cffi com perfil anti-403)
+# HTTP Requests & Web Scraping (curl_cffi com perfil de navegador anti-403)
 requests>=2.31.0
 curl_cffi>=0.7.0
 urllib3>=2.0.0
 beautifulsoup4>=4.12.0
 brotli>=1.1.0
 
-# HoYoLAB API Integration (Genshin Impact, HSR & ZZZ)
+# HoYoLAB API Integration (Genshin Impact, Honkai: Star Rail & Zenless Zone Zero)
 genshin>=1.7.0
 
-# Playwright (Auto-login e captura de cookies em Chromium)
+# Playwright (Auto-login e captura automatizada de cookies de sessão em Chromium)
 playwright>=1.41.0
 
-# Groq Cloud API Integration (RAG Engine Llama 3.3 70B)
+# Groq Cloud API Integration (Motor RAG contextualizado com Llama 3.3 70B Versatile)
 groq>=0.4.0
 
-# Executable Packaging (PyInstaller para Windows .exe)
+# Executable Packaging (Compilação para executável portable .exe no Windows)
 pyinstaller>=6.3.0
-
-

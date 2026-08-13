@@ -857,114 +857,452 @@
                 </div>
             </section>
 
-            <!-- ABA COMO USAR -->
+            <!-- ABA COMO USAR (HELP HUB & KNOWLEDGE BASE V4.5) -->
             <section id="tab-help" class="tab-pane">
-                <div class="config-container">
-                    <h2><i class="fa-solid fa-book-open"></i> Como usar o Cabeça de Droid v4.0</h2>
-                    <p class="config-desc" style="margin-bottom: 20px;">O <strong>Cabeça de Droid v4.0</strong> é uma suíte completa de otimização e gerenciamento de contas para os principais jogos da HoYoverse (<em>Zenless Zone Zero</em>, <em>Genshin Impact</em> e <em>Honkai: Star Rail</em>). O aplicativo combina Inteligência Artificial em tempo real (Groq RAG Llama 3.3 70B), Banco de Dados Relacional (SQLite), Autenticação via Playwright Chromium, Raspagem Automática de Metagame Centralizada no <strong>Prydwen.gg</strong> e Algoritmos Matemáticos de Roll Value (RV) e Monte Carlo.</p>
-                    
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: var(--color-genshin); font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-key"></i> 1. Autenticação e Login Automático HoYoLAB</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Configurações</strong>, clique no botão <strong>Login Automático via Playwright</strong>. O sistema abrirá uma janela segura do Chromium para você realizar o login oficial na HoYoLAB. Os cookies de sessão (<code>ltuid_v2</code>, <code>ltoken_v2</code> e <code>cookie_token_v2</code>) são capturados automaticamente e salvos localmente em <code>cookies.json</code>. Se preferir, também é possível colar manualmente seus cookies ou sua chave de API Groq (<code>gsk_...</code>).</p>
-                    </div>
-                    
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #3b82f6; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-rotate"></i> 2. Sincronização em Segundo Plano & Raspagem de Metagame</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Nas abas individuais de cada jogo (<strong>ZZZ</strong>, <strong>Genshin</strong> ou <strong>HSR</strong>), selecione os módulos desejados e clique em <strong>Sincronizar</strong>:</p>
-                        <ul class="section-desc" style="line-height: 1.5; font-size: 13px; margin-left: 20px; margin-top: 6px;">
-                            <li style="margin-bottom: 4px;"><strong>Roster & Equipamentos:</strong> Extrai personagens obtidos, níveis, constelações/eidolons/cinemas, relíquias/discos equipados e históricos de Endgame (Abismo Espiral, MoC e Shiyu Defense). Suporta skins cosméticas de Genshin via Enka.Network.</li>
-                            <li style="margin-bottom: 4px;"><strong>Guias e Metagame Centralizados (Prydwen.gg):</strong> Baixa a biblioteca completa de guias analíticos, estatísticas de uso, recomendação de armas/artefatos, prioridade de substatus e prioridade de talentos diretamente do <strong>Prydwen.gg</strong> para os 3 jogos (HSR, ZZZ e a lista completa com mais de 125 personagens de Genshin Impact). Conta com perfil de cabeçalhos de navegador (anti-403) para garantia de integridade.</li>
-                            <li style="margin-bottom: 4px;"><strong>Normalização de IDs e Apelidos:</strong> O motor resolve automaticamente aliases e nomes alternativos (ex: <em>Himeko - Nova</em> &rarr; ID <code>1510</code>, <em>Tingyun - Fugue</em> &rarr; ID <code>1225</code>).</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-shield-halved"></i> 3. Inspetor de Builds, Sistema de Notas RV & Otimizador IA</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 8px;">Ao clicar em qualquer personagem da galeria, o painel lateral exibe a auditoria completa da build:</p>
-                        <ul class="section-desc" style="line-height: 1.5; font-size: 12px; margin-left: 20px;">
-                            <li style="margin-bottom: 6px;"><strong>Pontuação Roll Value (RV):</strong> Compara os substatus contra rolagens máximas de peças 5★/S-Rank, aplicando crédito de 40% para Main Stat prioritário e pesos parciais para status Flat.
-                                <br><strong style="color: #10b981;">Benchmark Dinâmico:</strong> Adapta-se dinamicamente conforme os substatus relevantes da peça, evitando penalizações em suportes (ex: peças de ER/EM).
-                                <br><strong style="color: #38bdf8;">Divisão por Slots:</strong> A nota é calculada proporcionalmente ao número de slots do jogo (6 em HSR/ZZZ, 5 em Genshin).
-                                <br><strong style="color: #f59e0b;">SSS (&ge;90%):</strong> Perfeita | <strong style="color: #ec4899;">SS (75-89%):</strong> Excelente | <strong style="color: #f59e0b;">S (60-74%):</strong> Muito Boa | <strong style="color: #8b5cf6;">A (45-59%):</strong> Boa | <strong style="color: #3b82f6;">B (30-44%):</strong> Mediana | <strong style="color: #6b7280;">C/D (&lt;30%):</strong> A Otimizar.
-                            </li>
-                            <li style="margin-bottom: 4px;"><strong>Comparador Meta Lado a Lado:</strong> Contrasta a arma e conjuntos equipados com as recomendações atuais do metagame.</li>
-                            <li style="margin-bottom: 4px;"><strong>Otimizador IA Groq:</strong> Botão no painel que analisa o contexto do personagem e fornece 3 conselhos diretos de evolução.</li>
-                        </ul>
-                    </div>
+                <div class="help-hub-container">
+                    <!-- HERO BANNER -->
+                    <div class="help-hero-banner">
+                        <div class="help-hero-header">
+                            <div class="help-title-group">
+                                <h2><i class="fa-solid fa-graduation-cap" style="color: #6366f1;"></i> Central de Ajuda & Guia de Recursos</h2>
+                                <p>Explore os 16+ módulos inteligentes do Cabeça de Droid v4.5. Utilize os filtros por categoria ou a busca em tempo real para encontrar tutoriais e atalhos rápidos.</p>
+                            </div>
+                            <div class="help-search-box">
+                                <i class="fa-solid fa-magnifying-glass help-search-icon"></i>
+                                <input type="text" id="help-search-input" placeholder="Buscar recurso, comando ou guia..." class="help-search-input">
+                            </div>
+                        </div>
 
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-camera"></i> 4. Gerador & Exportação de Card Imagem HD</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">No Inspetor de Builds, clique no botão <strong>Card Imagem</strong> para gerar instantaneamente uma imagem em PNG de alta resolução com o resumo visual da build do seu personagem, pronta para ser baixada ou copiada diretamente para o Discord.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #ec4899; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-chart-line"></i> 5. Linha do Tempo & Evolução da Conta (Timeline Snapshots)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Linha do Tempo</strong>, crie ou consulte snapshots históricos da sua conta para acompanhar graficamente o crescimento no número de personagens 5★/Rank S, evolução da nota média das builds e novos personagens obtidos ao longo do tempo.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-gift"></i> 6. Resgate e Gerenciador de Códigos Promocionais</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Códigos Promocionais</strong>, consulte códigos ativos de Gemas Essenciais, Jades Estelares e Polychromes. Clique em <strong>Resgatar Todos os Códigos</strong> para que o sistema efetue a ativação automática na API da HoYoverse.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #a855f7; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wand-magic-sparkles"></i> 7. Simulador Monte Carlo de Gacha / Tiros</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba ou modal <strong>Simulador de Tiros</strong>, execute a simulação estocástica de 10.000 invocações estatísticas considerando seu Pity atual (0-89), status do 50/50 e meta de cópias (C0/E0 a C6/E6). O sistema fornece a porcentagem exata de chance de sucesso e a curva de probabilidade acumulada.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-wheat-awn"></i> 8. Central de Farm Inteligente Diário & Níveis Máximos</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Na aba <strong>Central de Farm</strong>, selecione os personagens alvo para ver a rotação diária de domínios e a lista exata de materiais necessários, respeitando o limite de nível máximo de cada jogo (<strong>Genshin: Nv 90</strong>, <strong>HSR: Nv 80</strong>, <strong>ZZZ: Nv 60</strong>).</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #ef4444; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-trash-can"></i> 9. Analisador de Relíquias Lixo (Trash Finder)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Varre o inventário de artefatos/relíquias e detecta automaticamente peças com substatus conflitantes ou inúteis no metagame, indicando quais podem ser destruídas ou recicladas com segurança no Sintetizador.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #a855f7; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-trophy"></i> 10. Tier List & Relatório de Auditoria da Conta</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Classifica seu Roster em uma Tier List visual (Tiers S+, S, A, B, C) com base no poder e uso no metagame atual e gera um diagnóstico com nota de saúde da conta e orientações de investimento.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #f59e0b; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-battery-three-quarters"></i> 11. Monitor de Energia em Tempo Real & Auto-Check-in</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Acompanhe o valor de Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR) com anéis de progresso e tempo para recarga completa. O servidor FastAPI executa o resgate de recompensas diárias da HoYoLAB automaticamente a cada 6 horas.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #38bdf8; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-comments"></i> 12. Chat IA Meta & Montador de Times (Groq RAG)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Converse com a IA Groq (Llama 3.3 70B) munida dos dados da sua conta e dos guias do metagame. Utilize o <strong>Montador de Times</strong> para selecionar 4 personagens e receber análises em tempo real sobre sinergia de combate, rotações e sugestões de suportes.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding-bottom: 14px;">
-                        <h3 style="color: #06b6d4; font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-network-wired"></i> 13. Acesso pela Rede Local (Wi-Fi / LAN)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px;">Acesse o Cabeça de Droid no celular, tablet ou outro PC na mesma rede Wi-Fi/LAN abrindo o endereço exibido no terminal: <code>http://&lt;SEU_IP_LOCAL&gt;:8000</code>.</p>
-                    </div>
-
-                    <div class="config-section" style="margin-bottom: 18px; padding: 16px; background: rgba(16, 185, 129, 0.05); border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.2);">
-                        <h3 style="color: #10b981; font-size: 15px; margin-bottom: 6px;"><i class="fa-solid fa-file-zipper"></i> 14. Download de Guias em ZIP (.zip)</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Faça o download direto do pacote comprimido em formato <code>.zip</code> contendo os guias completos em Markdown e relatórios de metagame das 3 pastas (<strong>Genshin Impact</strong>, <strong>Honkai: Star Rail</strong> e <strong>Zenless Zone Zero</strong>):</p>
-                        <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                            <a href="/api/download/guides-zip" download class="primary-btn" style="text-decoration: none; padding: 10px 18px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 8px; color: white; font-weight: 600;">
-                                <i class="fa-solid fa-file-arrow-down"></i> Baixar Todos os Guias (3 Jogos .ZIP)
-                            </a>
-                            <a href="/api/download/guides-zip?game_id=genshin" download class="secondary-btn" style="text-decoration: none; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-download"></i> ZIP Genshin
-                            </a>
-                            <a href="/api/download/guides-zip?game_id=hsr" download class="secondary-btn" style="text-decoration: none; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-download"></i> ZIP HSR
-                            </a>
-                            <a href="/api/download/guides-zip?game_id=zzz" download class="secondary-btn" style="text-decoration: none; padding: 9px 14px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-download"></i> ZIP ZZZ
-                            </a>
+                        <!-- CATEGORY PILLS FILTER -->
+                        <div class="help-category-pills">
+                            <button class="help-pill active" data-category="all"><i class="fa-solid fa-border-all"></i> Todos os Recursos (16)</button>
+                            <button class="help-pill" data-category="auth"><i class="fa-solid fa-key" style="color: #10b981;"></i> Conta & Autenticação</button>
+                            <button class="help-pill" data-category="builds"><i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i> Roster, Builds & RV</button>
+                            <button class="help-pill" data-category="tools"><i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Simuladores & Inventário</button>
+                            <button class="help-pill" data-category="ia"><i class="fa-solid fa-brain" style="color: #a855f7;"></i> IA & Montador de Times</button>
+                            <button class="help-pill" data-category="export"><i class="fa-solid fa-file-zipper" style="color: #ec4899;"></i> Rede & Exportações</button>
                         </div>
                     </div>
 
-                    <div class="config-section" style="border-bottom: none; margin-bottom: 0; padding-bottom: 0;">
-                        <h3 style="font-size: 15px; margin-bottom: 4px;"><i class="fa-solid fa-file-export"></i> Alternativa: Google NotebookLM</h3>
-                        <p class="section-desc" style="line-height: 1.5; font-size: 13px; margin-bottom: 12px;">Todos os dados sincronizados são exportados em arquivos Markdown limpos nas pastas <code>genshin/</code>, <code>hsr/</code> e <code>zzz/</code> (ex: <code>roster_hsr.md</code> ou <code>todos_os_guias_hsr.md</code>), podendo ser importados no Google NotebookLM.</p>
-                        <button onclick="window.open('https://notebooklm.google.com/', '_blank')" class="secondary-btn">Abrir Google NotebookLM ➔</button>
+                    <!-- CARDS GRID -->
+                    <div id="help-cards-grid" class="help-cards-grid">
+                        
+                        <!-- CARD 1: LOGIN AUTOMÁTICO -->
+                        <div class="help-card" data-category="auth">
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">CONTA</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                                        <i class="fa-solid fa-key"></i>
+                                    </div>
+                                    <div class="help-card-title">1. Autenticação & Playwright</div>
+                                </div>
+                                <div class="help-card-desc">Login automático com Chromium headless para captura segura de cookies de sessão (`ltuid_v2`, `ltoken_v2`).</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Cookies</span>
+                                    <span class="help-tag">Chromium</span>
+                                    <span class="help-tag">Segurança</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Acesse a aba <strong>Configurações</strong> e clique em <strong>Login Automático via Playwright</strong>. Uma janela segura do Chromium será aberta para você logar no site da HoYoLAB. Os cookies são salvos localmente em `cookies.json`. Chaves de API Groq (`gsk_...`) também são configuradas aqui.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=config]').click()" class="help-action-btn"><i class="fa-solid fa-gear"></i> Abrir Configurações</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 2: AUTO SYNC & SCRAPING -->
+                        <div class="help-card" data-category="auth">
+                            <span class="help-card-badge" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);">SINCRONIZAÇÃO</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                                        <i class="fa-solid fa-rotate"></i>
+                                    </div>
+                                    <div class="help-card-title">2. Sincronização & Agendamento</div>
+                                </div>
+                                <div class="help-card-desc">Raspagem inteligente no Prydwen.gg anti-403 e agendamento diário automático de roster e guias.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Prydwen</span>
+                                    <span class="help-tag">Auto-Sync 04:00</span>
+                                    <span class="help-tag">Bypass 403</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Nas abas de cada jogo (<strong>ZZZ</strong>, <strong>Genshin</strong> ou <strong>HSR</strong>), selecione os módulos e sincronize em tempo real. Você pode agendar na aba Configurações um horário diário fixo (ex: 04:00 AM) para execução automática. O sistema normaliza apelidos (ex: <em>Himeko - Nova</em> &rarr; ID 1510).
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-rotate"></i> Ir para Sincronização</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 3: ROLL VALUE & INSPETOR -->
+                        <div class="help-card" data-category="builds">
+                            <span class="help-card-badge" style="color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">BUILDS</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+                                        <i class="fa-solid fa-shield-halved"></i>
+                                    </div>
+                                    <div class="help-card-title">3. Roll Value (RV) & Notas</div>
+                                </div>
+                                <div class="help-card-desc">Avaliação de peças de relíquias com Main Stat Forgiveness, Flat Fallback e classificação SSS a D.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Roll Value</span>
+                                    <span class="help-tag">Notas SSS-D</span>
+                                    <span class="help-tag">Comparador Meta</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Clique em qualquer personagem para abrir a gaveta do Inspetor. O cálculo de Roll Value avalia substatus contra rolagens 5★ máximas. main stats corretos recebem 40% de bônus base, e status Flat ganham 50% de crédito parcial. Grades: <strong>SSS</strong> (&ge;90%), <strong>SS</strong> (75-89%), <strong>S</strong> (60-74%), <strong>A</strong> (45-59%), <strong>B</strong> (30-44%), <strong>C/D</strong> (&lt;30%).
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-user-ninja"></i> Ver Personagens</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 4: BREAKPOINTS & ASCENSÃO -->
+                        <div class="help-card" data-category="builds">
+                            <span class="help-card-badge" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">METAS</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                    </div>
+                                    <div class="help-card-title">4. Breakpoints & Ascensão</div>
+                                </div>
+                                <div class="help-card-desc">Comparador de metas de combate (Vida, ATQ, Taxa/Dano Crítico, VEL) e cálculo de materiais para níveis 60-90.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Breakpoints</span>
+                                    <span class="help-tag">Calculadora XP</span>
+                                    <span class="help-tag">Materiais Nv 90</span>
+                                </div>
+                                <div class="help-card-details">
+                                    No Inspetor de Builds, a aba <strong>Comparador de Metas Gerais</strong> indica se o seu personagem atingiu os patamares de status recomendados no metagame (destacando acertos em verde e desvios em vermelho). A <strong>Calculadora de Ascensão</strong> estima com precisão a quantidade de Mora/Créditos, Livros de XP e itens de chefe para alcançar o nível selecionado.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=genshin]').click()" class="help-action-btn"><i class="fa-solid fa-calculator"></i> Inspetor de Builds</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 5: CARD IMAGEM HD & OTIMIZADOR IA -->
+                        <div class="help-card" data-category="builds">
+                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">EXPORTAR</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </div>
+                                    <div class="help-card-title">5. Card Imagem HD & IA</div>
+                                </div>
+                                <div class="help-card-desc">Gerador de imagem PNG em alta resolução da build para Discord e botão Otimizador IA com 3 conselhos diretos.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Card PNG</span>
+                                    <span class="help-tag">Discord Share</span>
+                                    <span class="help-tag">Otimizador IA</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Clique no botão <strong>Card Imagem</strong> no Inspetor para renderizar uma imagem completa da build com avatares, notas e equipamentos. O botão traz opção de download direto e cópia de imagem para a área de transferência. O botão <strong>Analisar</strong> executa a IA Groq para apontar os 3 pontos fracos da build.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-image"></i> Gerar Card</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 6: SIMULADOR GACHA -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">SIMULADOR</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    </div>
+                                    <div class="help-card-title">6. Monte Carlo Gacha / Tiros</div>
+                                </div>
+                                <div class="help-card-desc">Simulação estocástica de 10.000 invocações com base no seu Pity atual, 50/50 e meta de cópias (C0 a C6).</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">10.000 Tiros</span>
+                                    <span class="help-tag">Pity & 50/50</span>
+                                    <span class="help-tag">Curva de Chance</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Acesse a aba <strong>Simulador de Tiros</strong> no menu lateral. Defina o jogo alvo, Pity acumulado (0 a 89), se o 50/50 está garantido e a meta de constelações/cópias (C0/E0 a C6/E6). O algoritmo Monte Carlo calcula a chance matemática exata de sucesso e a média de tiros necessária.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=gacha]').click()" class="help-action-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Testar Simulador</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 7: CENTRAL DE FARM -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">FARM</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                                        <i class="fa-solid fa-wheat-awn"></i>
+                                    </div>
+                                    <div class="help-card-title">7. Central de Farm Inteligente</div>
+                                </div>
+                                <div class="help-card-desc">Rotação diária de domínios com recomendação de gasto de energia e limites de nível (Genshin Nv 90, HSR Nv 80, ZZZ Nv 60).</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Domínios do Dia</span>
+                                    <span class="help-tag">Filtro de Personagens</span>
+                                    <span class="help-tag">Limites Max Nv</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Central de Farm</strong>, você seleciona quais personagens da sua conta deseja focar. O aplicativo calcula os materiais do dia (livros, relíquias, ascensão) e otimiza a alocação de energia diária respeitando as travas de nível originais de cada jogo.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=farm]').click()" class="help-action-btn"><i class="fa-solid fa-wheat-awn"></i> Central de Farm</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 8: TRASH FINDER -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">INVENTÁRIO</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </div>
+                                    <div class="help-card-title">8. Analisador de Relíquias Lixo</div>
+                                </div>
+                                <div class="help-card-desc">Identificador automático de peças de artefatos/relíquias do inventário com substatus incompatíveis com o metagame.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Trash Finder</span>
+                                    <span class="help-tag">Limpeza Inventário</span>
+                                    <span class="help-tag">Sintetizador</span>
+                                </div>
+                                <div class="help-card-details">
+                                    A ferramenta <strong>Relíquias Lixo</strong> compara os status de cada peça guardada no seu inventário contra o banco de recomendações de todos os personagens ativos do jogo, apontando relíquias sem utilidade prática que podem ser destruídas ou recicladas.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=trash]').click()" class="help-action-btn"><i class="fa-solid fa-trash-can"></i> Ver Relíquias Lixo</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 9: TIER LIST & AUDITORIA -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">AUDITORIA</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
+                                        <i class="fa-solid fa-trophy"></i>
+                                    </div>
+                                    <div class="help-card-title">9. Tier List & Auditoria da Conta</div>
+                                </div>
+                                <div class="help-card-desc">Matriz visual de classificação dos personagens por Tiers (S+ a C), nota global de saúde da conta e exportação de Imagem HD.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Tier List S+</span>
+                                    <span class="help-tag">Saúde da Conta</span>
+                                    <span class="help-tag">Export PNG HD</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Tier List & Audit</strong>, a aplicação analisa os seus personagens evoluídos e projeta uma matriz gráfica dividida por tiers. Clique no botão <strong>Gerar Imagem HD da Tier List</strong> no topo para exportar o quadro completo em formato de imagem PNG.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=audit]').click()" class="help-action-btn"><i class="fa-solid fa-trophy"></i> Abrir Tier List</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 10: TIMELINE & SNAPSHOTS -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">EVOLUÇÃO</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+                                        <i class="fa-solid fa-chart-line"></i>
+                                    </div>
+                                    <div class="help-card-title">10. Linha do Tempo & Snapshots</div>
+                                </div>
+                                <div class="help-card-desc">Histórico gráfico de crescimento da conta com métricas acumuladas, novos 5★ obtidos e curva de notas de build.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Timeline Stepper</span>
+                                    <span class="help-tag">Histórico 5★</span>
+                                    <span class="help-tag">Comparação</span>
+                                </div>
+                                <div class="help-card-details">
+                                    A aba <strong>Linha do Tempo</strong> registra snapshots periódicos da sua conta. Você pode criar um snapshot manualmente com 1 clique no botão <strong>Criar Novo Snapshot Agora</strong> ou deixar que o agendamento automático crie registros conforme sua conta progride.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=history]').click()" class="help-action-btn"><i class="fa-solid fa-chart-line"></i> Ver Linha do Tempo</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 11: CÓDIGOS PROMOCIONAIS -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">CÓDIGOS</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                        <i class="fa-solid fa-gift"></i>
+                                    </div>
+                                    <div class="help-card-title">11. Códigos Promocionais</div>
+                                </div>
+                                <div class="help-card-desc">Busca automática de códigos de Gemas Essenciais, Jades Estelares e Polychromes com resgate em 1 clique.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Gemas & Jades</span>
+                                    <span class="help-tag">Auto-Redeem</span>
+                                    <span class="help-tag">HoYoverse API</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Códigos Promocionais</strong>, a aplicação consulta periodicamente códigos ativos para Genshin, HSR e ZZZ. Clique no botão <strong>Resgatar Todos os Códigos</strong> para efetuar a ativação direta na sua conta sem precisar copiar e colar no site.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=codes]').click()" class="help-action-btn"><i class="fa-solid fa-gift"></i> Ver Códigos</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 12: DAILY NOTES & AUTO CHECKIN -->
+                        <div class="help-card" data-category="auth">
+                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">ENERGIA</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                        <i class="fa-solid fa-battery-three-quarters"></i>
+                                    </div>
+                                    <div class="help-card-title">12. Energia & Auto-Check-in 6h</div>
+                                </div>
+                                <div class="help-card-desc">Monitor de Resina, Poder de Desbravamento e Bateria com anéis de progresso SVG e check-in diário a cada 6h.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Daily Notes</span>
+                                    <span class="help-tag">Anéis SVG</span>
+                                    <span class="help-tag">Auto Check-in 6h</span>
+                                </div>
+                                <div class="help-card-details">
+                                    No topo da aba <strong>Início</strong>, o monitor exibe o tempo restante exato para recuperação de energia dos 3 jogos. Em segundo plano, o servidor FastAPI executa o auto check-in diário a cada 6 horas registrando os logs no banco SQLite.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=home]').click()" class="help-action-btn"><i class="fa-solid fa-house"></i> Ir para Dashboard</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 13: CHAT IA & MONTADOR DE TIMES -->
+                        <div class="help-card" data-category="ia">
+                            <span class="help-card-badge" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">INTELIGÊNCIA ARTIFICIAL</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
+                                        <i class="fa-solid fa-comments"></i>
+                                    </div>
+                                    <div class="help-card-title">13. Chat IA & Montador de Times</div>
+                                </div>
+                                <div class="help-card-desc">Chat conversacional RAG com Groq Llama 3.3 70B e analisador de sinergia de equipes de 4 personagens via SSE.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Groq RAG 70B</span>
+                                    <span class="help-tag">Team Builder</span>
+                                    <span class="help-tag">SSE Streaming</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Chat IA Meta</strong>, tire dúvidas com o assistente RAG local alimentado pelos guias e pelo seu Roster. No painel <strong>Montador de Times</strong> à direita, selecione 4 personagens para receber uma análise completa de rotação e sinergia de combate em tempo real.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=chat]').click()" class="help-action-btn"><i class="fa-solid fa-comments"></i> Abrir Chat IA</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 14: REDE LOCAL WI-FI -->
+                        <div class="help-card" data-category="export">
+                            <span class="help-card-badge" style="color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">REDE LOCAL</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
+                                        <i class="fa-solid fa-network-wired"></i>
+                                    </div>
+                                    <div class="help-card-title">14. Acesso Wi-Fi / Rede Local (LAN)</div>
+                                </div>
+                                <div class="help-card-desc">Binding em `0.0.0.0:8000` permitindo usar toda a aplicação no Smartphone ou Tablet conectado na mesma rede local.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Mobile Responsive</span>
+                                    <span class="help-tag">LAN 0.0.0.0</span>
+                                    <span class="help-tag">Off-Canvas Menu</span>
+                                </div>
+                                <div class="help-card-details">
+                                    O servidor FastAPI escuta em todas as interfaces da rede local. Abra o navegador do seu celular ou tablet e acesse `http://<IP_DO_SEU_PC>:8000`. O IP da sua máquina é exibido automaticamente no terminal do Python ao iniciar a aplicação.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="showToast('Acesse http://' + window.location.hostname + ':8000 no celular!')" class="help-action-btn"><i class="fa-solid fa-mobile-screen"></i> Ver IP Local</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 15: DOWNLOAD ZIP & NOTEBOOKLM -->
+                        <div class="help-card" data-category="export">
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">DOWNLOAD</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                                        <i class="fa-solid fa-file-zipper"></i>
+                                    </div>
+                                    <div class="help-card-title">15. Download ZIP & NotebookLM</div>
+                                </div>
+                                <div class="help-card-desc">Download empacotado em `.zip` de todos os guias em Markdown para leitura offline ou uso no Google NotebookLM.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Download .ZIP</span>
+                                    <span class="help-tag">Markdown Guias</span>
+                                    <span class="help-tag">NotebookLM</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Você pode fazer o download empacotado dos guias em formato `.zip` através do botão na barra superior de cada jogo ou diretamente via endpoint `/api/download/guides-zip`. Os arquivos Markdown são ideais para alimentar cadernos de estudo no Google NotebookLM.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <a href="/api/download/guides-zip" download class="help-action-btn" style="text-decoration: none;"><i class="fa-solid fa-download"></i> Baixar ZIP</a>
+                            </div>
+                        </div>
+
+                        <!-- CARD 16: LIMPEZA DE DADOS -->
+                        <div class="help-card" data-category="export">
+                            <span class="help-card-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">ZONA DE PERIGO</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                                        <i class="fa-solid fa-triangle-exclamation"></i>
+                                    </div>
+                                    <div class="help-card-title">16. Reset & Limpeza de Dados</div>
+                                </div>
+                                <div class="help-card-desc">Procedimento seguro para apagar permanentemente as pastas de guias e resetar o banco de dados SQLite local.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Reset DB</span>
+                                    <span class="help-tag">Purge Pastas</span>
+                                    <span class="help-tag">SQLite</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Configurações</strong>, a opção <strong>Apagar Pastas e Banco de Dados</strong> reseta permanentemente a aplicação, excluindo as pastas de guias (`genshin`, `hsr`, `zzz`) e recriando a estrutura limpa do banco SQLite (`hoyo_app.db`).
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=config]').click()" class="help-action-btn" style="color: #f87171;"><i class="fa-solid fa-trash-can"></i> Ver Reset</button>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
             </section>

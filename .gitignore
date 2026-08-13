@@ -1,4 +1,4 @@
-# Virtual Environments
+# Virtual Environments & Packages
 .venv/
 venv/
 ENV/
@@ -6,6 +6,8 @@ env/
 .env
 .env.local
 .env.*
+node_modules/
+*.egg-info/
 
 # Python Cache & Bytecode
 __pycache__/
@@ -14,17 +16,20 @@ __pycache__/
 *.pyd
 .cache/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
 
-# Playwright & Browsers
+# Playwright & Browser Sessions
 .playwright/
 *playwright*.log
+user_data_google/
 
-# Operating System Files
+# Operating System & Editor Files
 Thumbs.db
 desktop.ini
 .DS_Store
-
-# IDEs & Editor Configuration
 .vscode/
 .idea/
 *.suo
@@ -33,11 +38,12 @@ desktop.ini
 *.sln
 *.swp
 .antigravityignore
+.gemini/
+.agents/
 
 # Local Credentials, Databases & Secrets
 config.json
 cookies.json
-user_data_google/
 chave de api.txt
 hoyo_app.db
 *.db
@@ -47,7 +53,7 @@ hoyo_app.db
 *.sqlite
 *.sqlite3
 
-# Markdown & Data Exports (Generated)
+# Markdown, Data Exports & Caches (Generated)
 hsr/
 zzz/
 genshin/
@@ -76,10 +82,8 @@ scratch_*.py
 print_roster.py
 scratch/
 
-# Build & Executable Packaging
+# Build & Executable Packaging (PyInstaller)
 dist/
 build/
 *.spec
 *.exe
-
-
