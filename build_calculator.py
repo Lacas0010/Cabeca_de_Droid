@@ -1944,7 +1944,22 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             w_icon = weapon.get("icon", "") if isinstance(weapon, dict) and weapon else ""
             
             # Verifica se possui algum item/nível pendente
-            has_pending_talents = any(sk.get("level", 1) < max_talent_lvl for sk in skills) if skills else True
+            has_pending_talents = False
+            if skills:
+                for sk_idx, sk in enumerate(skills):
+                    s_l = sk.get("level", 1)
+                    if game_id == "hsr":
+                        s_m = 1 if sk_idx >= 4 else (sk.get("max_level") or (6 if sk_idx == 0 else 10))
+                    elif game_id == "genshin":
+                        s_m = 1 if sk_idx >= 3 else (sk.get("max_level") or 10)
+                    else:
+                        s_m = 1 if sk_idx >= 5 else (sk.get("max_level") or 12)
+                    if s_l < s_m:
+                        has_pending_talents = True
+                        break
+            else:
+                has_pending_talents = True
+
             has_pending_weapon = w_lvl < max_weapon_lvl
             
             if grade in ["B", "C", "D", "A"] or level < max_level or has_pending_talents or has_pending_weapon:
@@ -1977,9 +1992,12 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                 for sk_idx, sk in enumerate(skills):
                     s_n = sk.get("name", "Habilidade")
                     s_l = sk.get("level", 1)
-                    s_m = sk.get("max_level") or max_talent_lvl
-                    if game_id == "genshin" and sk_idx >= 3:
-                        s_m = 1
+                    if game_id == "hsr":
+                        s_m = 1 if sk_idx >= 4 else (sk.get("max_level") or (6 if sk_idx == 0 else 10))
+                    elif game_id == "genshin":
+                        s_m = 1 if sk_idx >= 3 else (sk.get("max_level") or 10)
+                    else:
+                        s_m = 1 if sk_idx >= 5 else (sk.get("max_level") or 12)
                     s_icon = sk.get("icon", sk.get("image", sk.get("icon_url", "")))
 
                     if s_m == 1:

@@ -215,7 +215,42 @@ def init_db() -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_uid ON account_snapshots(game_id, uid)")
         
     print("[INFO] Banco de dados SQLite inicializado com sucesso.")
+    fix_skills_json_max_levels()
     backfill_snapshot_stats()
+
+def fix_skills_json_max_levels():
+    """Garante que os níveis máximos das habilidades/rastros estejam corretos no banco de dados."""
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT uid, name, game_id, skills_json FROM characters WHERE skills_json IS NOT NULL AND skills_json != ''")
+            rows = cursor.fetchall()
+            for r in rows:
+                s_json = r["skills_json"]
+                if not s_json:
+                    continue
+                skills = json.loads(s_json)
+                changed = False
+                g_clean = (r["game_id"] or "hsr").lower().strip()
+                for idx, sk in enumerate(skills):
+                    if g_clean == "hsr":
+                        target_max = 6 if idx == 0 else (10 if idx < 4 else 1)
+                    elif g_clean == "genshin":
+                        target_max = 10 if idx < 3 else 1
+                    else:
+                        target_max = 12 if idx < 5 else 1
+                    
+                    if sk.get("max_level") != target_max:
+                        sk["max_level"] = target_max
+                        changed = True
+                
+                if changed:
+                    cursor.execute(
+                        "UPDATE characters SET skills_json = ? WHERE uid = ? AND name = ? AND game_id = ?",
+                        (json.dumps(skills, ensure_ascii=False), r["uid"], r["name"], r["game_id"])
+                    )
+    except Exception as e:
+        print(f"[Aviso] Erro ao atualizar max_level das habilidades: {e}")
 
 # Inicializa o banco ao carregar o módulo
 init_db()

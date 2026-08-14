@@ -667,7 +667,7 @@ class HSRExtractor(BaseExtractor):
                         anchor = getattr(s, "anchor", "") or ""
                         order = idx + 1
                         default_name = "Habilidade"
-                        max_lvl = 10
+                        max_lvl = 1
 
                         if anchor in anchor_type_map:
                             order, default_name, max_lvl = anchor_type_map[anchor]
