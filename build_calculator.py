@@ -1642,25 +1642,90 @@ def optimize_character_relics(game_id: str, char_id: str, relics_list: List[Dict
 # ==========================================
 import random
 
-def simulate_gacha_probabilities(game_id: str, current_pity: int, is_guaranteed: bool, pulls_available: int, target_copies: int = 1, num_simulations: int = 10000) -> dict:
+def simulate_gacha_probabilities(
+    game_id: str,
+    current_pity: int,
+    is_guaranteed: bool,
+    pulls_available: int,
+    target_copies: int = 1,
+    current_copies: int = 0,
+    current_rank: Optional[int] = None,
+    target_rank: Optional[int] = None,
+    num_simulations: int = 10000
+) -> dict:
     """
     Executa uma Simulação Monte Carlo para calcular a chance real (%) de obter N cópias do personagem alvo
-    com base no Pity atual, Garantido (50/50) e Desejos/Tiros disponíveis.
+    com base no Pity atual, Garantido (50/50), Desejos/Tiros disponíveis e o nível de Constelação/Eidolon/Mindscape já possuído.
     """
     game_id = (game_id or "genshin").lower().strip()
     current_pity = max(0, min(current_pity, 89))
-    target_copies = max(1, min(target_copies, 7))  # C0/E0 até C6/E6
     pulls_available = max(0, pulls_available)
     
-    # Parâmetros por jogo
+    # Determina o prefixo e terminologia de acordo com o jogo
+    if game_id == "genshin":
+        prefix = "C"
+        term = "Constelação"
+    elif game_id == "hsr":
+        prefix = "E"
+        term = "Eidolon"
+    else: # zzz
+        prefix = "M"
+        term = "Mindscape Cinema"
+        
+    # Converter current_rank e target_rank com suporte a fallback de current_copies / target_copies
+    if current_rank is not None:
+        curr_r = max(-1, min(current_rank, 6))
+    elif current_copies > 0:
+        curr_r = max(-1, min(current_copies - 1, 6))
+    else:
+        curr_r = -1
+
+    if target_rank is not None:
+        tgt_r = max(0, min(target_rank, 6))
+    elif target_copies > 0:
+        tgt_r = max(0, min(target_copies - 1, 6))
+    else:
+        tgt_r = 0
+
+    # Total de cópias do personagem já possuídas vs total necessário para a meta
+    owned_pulls = 0 if curr_r < 0 else (curr_r + 1)
+    target_pulls = tgt_r + 1
+    needed_new_copies = max(0, target_pulls - owned_pulls)
+
+    curr_rank_label = "Não Possui" if curr_r < 0 else f"{prefix}{curr_r}"
+    target_rank_label = f"{prefix}{tgt_r}"
+
+    # Se a meta já foi alcançada ou superada
+    if needed_new_copies == 0:
+        dist_meta = {
+            f"Já possui {curr_rank_label} (Meta {target_rank_label} já alcançada)": 100.0
+        }
+        return {
+            "success_rate": 100.0,
+            "target_copies": 0,
+            "needed_new_copies": 0,
+            "current_rank": curr_r,
+            "target_rank": tgt_r,
+            "current_rank_str": curr_rank_label,
+            "target_rank_str": target_rank_label,
+            "term": term,
+            "pulls_available": pulls_available,
+            "current_pity": current_pity,
+            "is_guaranteed": is_guaranteed,
+            "avg_pulls_spent": 0,
+            "distribution": dist_meta,
+            "num_simulations": num_simulations,
+            "game_id": game_id
+        }
+    
+    # Parâmetros da mecânica de Gacha por jogo
     soft_pity_start = 74 if game_id in ["genshin", "hsr"] else 75
-    max_pity = 90
     base_rate = 0.006  # 0.6%
     soft_pity_increment = 0.06
     
     successful_runs = 0
     total_pulls_spent_list = []
-    copies_obtained_distribution = {i: 0 for i in range(target_copies + 1)}
+    copies_obtained_distribution = {i: 0 for i in range(needed_new_copies + 1)}
     
     for _ in range(num_simulations):
         pity = current_pity
@@ -1669,12 +1734,12 @@ def simulate_gacha_probabilities(game_id: str, current_pity: int, is_guaranteed:
         pulls_left = pulls_available
         pulls_spent = 0
         
-        while pulls_left > 0 and copies < target_copies:
+        while pulls_left > 0 and copies < needed_new_copies:
             pulls_left -= 1
             pulls_spent += 1
             pity += 1
             
-            # Cálculo de probabilidade do tiro atual
+            # Cálculo de probabilidade do tiro atual com soft pity
             if pity < soft_pity_start:
                 chance = base_rate
             else:
@@ -1691,25 +1756,49 @@ def simulate_gacha_probabilities(game_id: str, current_pity: int, is_guaranteed:
                     guaranteed = True
                     
         copies_obtained_distribution[copies] = copies_obtained_distribution.get(copies, 0) + 1
-        if copies >= target_copies:
+        if copies >= needed_new_copies:
             successful_runs += 1
             total_pulls_spent_list.append(pulls_spent)
             
     success_rate = (successful_runs / num_simulations) * 100.0
     avg_pulls_needed = round(sum(total_pulls_spent_list) / len(total_pulls_spent_list), 1) if total_pulls_spent_list else None
     
-    # Converter distribuição em porcentagens
-    dist_pct = {f"{k} cópia(s)": round((v / num_simulations) * 100, 1) for k, v in copies_obtained_distribution.items()}
-    
+    # Converter distribuição em porcentagens com nomenclaturas reais dos jogos
+    dist_pct = {}
+    for k in range(needed_new_copies + 1):
+        count = copies_obtained_distribution.get(k, 0)
+        pct = round((count / num_simulations) * 100.0, 1)
+        
+        if k == 0:
+            if curr_r < 0:
+                lbl = "0 cópias (Não obtém o personagem)"
+            else:
+                lbl = f"0 novas cópias (Mantém {prefix}{curr_r})"
+        else:
+            final_r = (curr_r if curr_r >= 0 else -1) + k
+            final_str = f"{prefix}{final_r}"
+            if final_r >= tgt_r:
+                lbl = f"+{k} cópia(s) (Alcança {final_str} - Meta Batida! 🎉)"
+            else:
+                lbl = f"+{k} cópia(s) (Alcança {final_str})"
+        dist_pct[lbl] = pct
+
     return {
         "success_rate": round(success_rate, 1),
-        "target_copies": target_copies,
+        "target_copies": needed_new_copies,
+        "needed_new_copies": needed_new_copies,
+        "current_rank": curr_r,
+        "target_rank": tgt_r,
+        "current_rank_str": curr_rank_label,
+        "target_rank_str": target_rank_label,
+        "term": term,
         "pulls_available": pulls_available,
         "current_pity": current_pity,
         "is_guaranteed": is_guaranteed,
         "avg_pulls_spent": avg_pulls_needed,
         "distribution": dist_pct,
-        "num_simulations": num_simulations
+        "num_simulations": num_simulations,
+        "game_id": game_id
     }
 
 

@@ -376,6 +376,9 @@ function setupTabSwitching() {
             const targetPane = document.getElementById(`tab-${targetTab}`);
             if (targetPane) {
                 targetPane.classList.add("active");
+                if (targetTab === 'gacha' && window.initGachaSimulator) {
+                    window.initGachaSimulator();
+                }
             } else {
                 console.warn("Aba não encontrada:", `tab-${targetTab}`);
             }
@@ -3983,55 +3986,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Conectar eventos dos botões do simulador de gacha na aba dedicada
-    const tabBtnRunGacha = document.getElementById("tab-btn-run-gacha-sim");
-    if (tabBtnRunGacha) {
-        tabBtnRunGacha.addEventListener("click", async () => {
-            const gameId = document.getElementById("tab-gacha-game-select").value;
-            const currentPity = parseInt(document.getElementById("tab-gacha-pity").value) || 0;
-            const isGuaranteed = document.getElementById("tab-gacha-guaranteed").value === "true";
-            const pullsAvailable = parseInt(document.getElementById("tab-gacha-pulls").value) || 0;
-            const targetCopies = parseInt(document.getElementById("tab-gacha-target-copies").value) || 1;
-
-            tabBtnRunGacha.innerText = "Simulando...";
-            tabBtnRunGacha.disabled = true;
-
-            try {
-                const res = await fetch("/api/gacha/calculate", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        game_id: gameId,
-                        current_pity: currentPity,
-                        is_guaranteed: isGuaranteed,
-                        pulls_available: pullsAvailable,
-                        target_copies: targetCopies
-                    })
-                });
-                const data = await res.json();
-                
-                document.getElementById("tab-gacha-results-box").style.display = "block";
-                document.getElementById("tab-gacha-chance-lbl").innerText = `Chance de Sucesso: ${data.success_rate}%`;
-                document.getElementById("tab-gacha-avg-lbl").innerText = data.avg_pulls_spent 
-                    ? `Média de Tiros Gastos nas vitórias: ${data.avg_pulls_spent} tiros` 
-                    : "Quantidade de tiros insuficiente para garantir a meta com alta frequência.";
-
-                const distList = document.getElementById("tab-gacha-dist-list");
-                distList.innerHTML = "";
-                for (const [k, v] of Object.entries(data.distribution || {})) {
-                    const row = document.createElement("div");
-                    row.style.display = "flex";
-                    row.style.justifyContent = "space-between";
-                    row.innerHTML = `<span>${k}:</span> <strong style="color:#f59e0b;">${v}%</strong>`;
-                    distList.appendChild(row);
-                }
-            } catch (err) {
-                showToast("Erro ao executar simulação de Gacha.");
-            } finally {
-                tabBtnRunGacha.innerText = "Executar Simulação de 10.000 Tiros";
-                tabBtnRunGacha.disabled = false;
-            }
-        });
+    // Initialize upgraded Gacha Simulator handlers
+    if (window.initGachaSimulator) {
+        window.initGachaSimulator();
     }
 
     // Event listener para o botão de apagar pastas e banco de dados (Zona de Perigo)
@@ -5547,7 +5504,437 @@ window.initHelpHubHandlers = () => {
 
 document.addEventListener("DOMContentLoaded", () => {
     window.initHelpHubHandlers();
+    if (window.initGachaSimulator) {
+        window.initGachaSimulator();
+    }
 });
+
+// ==========================================
+// SIMULADOR DE GACHA ULTRA PREMIUM LOGIC
+// ==========================================
+
+window.GACHA_TERMS = {
+    genshin: {
+        gameName: "Genshin Impact",
+        term: "Constelação",
+        termPlural: "Constelações",
+        prefix: "C",
+        currency: "Gemas",
+        gemCostPerPull: 160,
+        unownedLabel: "Não possui (0 cópias)",
+        ranks: [
+            { val: 0, label: "C0 (Personagem Base)" },
+            { val: 1, label: "C1 (1ª Constelação)" },
+            { val: 2, label: "C2 (2ª Constelação)" },
+            { val: 3, label: "C3 (3ª Constelação)" },
+            { val: 4, label: "C4 (4ª Constelação)" },
+            { val: 5, label: "C5 (5ª Constelação)" },
+            { val: 6, label: "C6 (Constelação Máxima)" }
+        ]
+    },
+    hsr: {
+        gameName: "Honkai: Star Rail",
+        term: "Eidolon",
+        termPlural: "Eidolons",
+        prefix: "E",
+        currency: "Jades",
+        gemCostPerPull: 160,
+        unownedLabel: "Não possui (0 cópias)",
+        ranks: [
+            { val: 0, label: "E0 (Personagem Base)" },
+            { val: 1, label: "E1 (1º Eidolon)" },
+            { val: 2, label: "E2 (2º Eidolon)" },
+            { val: 3, label: "E3 (3º Eidolon)" },
+            { val: 4, label: "E4 (4º Eidolon)" },
+            { val: 5, label: "E5 (5º Eidolon)" },
+            { val: 6, label: "E6 (Eidolon Máximo)" }
+        ]
+    },
+    zzz: {
+        gameName: "Zenless Zone Zero",
+        term: "Mindscape Cinema",
+        termPlural: "Mindscapes",
+        prefix: "M",
+        currency: "Policromos",
+        gemCostPerPull: 160,
+        unownedLabel: "Não possui (0 cópias)",
+        ranks: [
+            { val: 0, label: "M0 (Agente Base)" },
+            { val: 1, label: "M1 (1º Cinema)" },
+            { val: 2, label: "M2 (2º Cinema)" },
+            { val: 3, label: "M3 (3º Cinema)" },
+            { val: 4, label: "M4 (4º Cinema)" },
+            { val: 5, label: "M5 (5º Cinema)" },
+            { val: 6, label: "M6 (Mindscape Máximo)" }
+        ]
+    }
+};
+
+window.gachaState = {
+    gameId: "genshin",
+    charList: [],
+    selectedChar: null
+};
+
+window.addGachaPulls = function(amount) {
+    const pullInput = document.getElementById("tab-gacha-pulls");
+    if (!pullInput) return;
+    const current = parseInt(pullInput.value) || 0;
+    pullInput.value = current + amount;
+    window.updateGachaGemConversion();
+};
+
+window.updateGachaGemConversion = function() {
+    const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
+    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const pulls = parseInt(document.getElementById("tab-gacha-pulls")?.value) || 0;
+    const gems = pulls * terms.gemCostPerPull;
+    const convertLbl = document.getElementById("gacha-gems-convert-lbl");
+    if (convertLbl) {
+        convertLbl.innerText = `(Equivale a ${gems.toLocaleString()} ${terms.currency})`;
+    }
+};
+
+window.initGachaSimulator = async function() {
+    const gamePills = document.querySelectorAll("#gacha-game-pills .gacha-game-pill");
+    const gameSelectHidden = document.getElementById("tab-gacha-game-select");
+    const charSelect = document.getElementById("tab-gacha-char-select");
+    const currentRankSelect = document.getElementById("tab-gacha-current-rank");
+    const pullsInput = document.getElementById("tab-gacha-pulls");
+    const runBtn = document.getElementById("tab-btn-run-gacha-sim");
+
+    if (pullsInput) {
+        pullsInput.addEventListener("input", window.updateGachaGemConversion);
+    }
+
+    gamePills.forEach(pill => {
+        pill.addEventListener("click", async () => {
+            gamePills.forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            const gameId = pill.dataset.game;
+            if (gameSelectHidden) gameSelectHidden.value = gameId;
+            window.gachaState.gameId = gameId;
+            window.updateGachaLabels(gameId);
+            await window.loadGachaCharacters(gameId);
+            window.updateGachaGemConversion();
+        });
+    });
+
+    if (charSelect) {
+        charSelect.addEventListener("change", () => {
+            const charName = charSelect.value;
+            window.updateGachaCharPreview(charName);
+        });
+    }
+
+    if (currentRankSelect) {
+        currentRankSelect.addEventListener("change", () => {
+            window.updateTargetRankOptions();
+        });
+    }
+
+    if (runBtn) {
+        runBtn.onclick = window.runGachaSimulation;
+    }
+
+    window.updateGachaLabels("genshin");
+    await window.loadGachaCharacters("genshin");
+    window.updateGachaGemConversion();
+};
+
+window.updateGachaLabels = function(gameId) {
+    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    
+    const lblCurrent = document.getElementById("lbl-gacha-current-rank");
+    const lblTarget = document.getElementById("lbl-gacha-target-rank");
+    if (lblCurrent) lblCurrent.innerText = `${terms.term} Atual:`;
+    if (lblTarget) lblTarget.innerText = `Meta de ${terms.term}:`;
+
+    const currentRankSelect = document.getElementById("tab-gacha-current-rank");
+    if (currentRankSelect) {
+        currentRankSelect.innerHTML = `<option value="-1">${terms.unownedLabel}</option>`;
+        terms.ranks.forEach(r => {
+            const opt = document.createElement("option");
+            opt.value = r.val;
+            opt.innerText = r.label;
+            currentRankSelect.appendChild(opt);
+        });
+    }
+
+    window.updateTargetRankOptions();
+};
+
+window.updateTargetRankOptions = function() {
+    const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
+    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const currentRank = parseInt(document.getElementById("tab-gacha-current-rank")?.value ?? -1);
+    const targetRankSelect = document.getElementById("tab-gacha-target-rank");
+
+    if (!targetRankSelect) return;
+    const prevTargetVal = parseInt(targetRankSelect.value ?? 6);
+
+    targetRankSelect.innerHTML = "";
+    terms.ranks.forEach(r => {
+        if (r.val > currentRank || (currentRank === -1 && r.val >= 0)) {
+            const opt = document.createElement("option");
+            opt.value = r.val;
+            
+            let extraStr = "";
+            if (currentRank < 0) {
+                extraStr = r.val === 0 ? " (Garantir 1º Personagem)" : ` (+${r.val + 1} cópias)`;
+            } else {
+                const needed = r.val - currentRank;
+                extraStr = needed === 1 ? " (+1 cópia adicional)" : ` (+${needed} cópias adicionais)`;
+            }
+            opt.innerText = `${terms.prefix}${r.val}${extraStr}`;
+            targetRankSelect.appendChild(opt);
+        }
+    });
+
+    if (prevTargetVal > currentRank) {
+        targetRankSelect.value = prevTargetVal;
+    } else {
+        const lastOpt = targetRankSelect.options[targetRankSelect.options.length - 1];
+        if (lastOpt) targetRankSelect.value = lastOpt.value;
+    }
+};
+
+window.loadGachaCharacters = async function(gameId) {
+    const charSelect = document.getElementById("tab-gacha-char-select");
+    if (!charSelect) return;
+
+    charSelect.innerHTML = `<option value="">Carregando lista de personagens 5★...</option>`;
+
+    try {
+        const res = await fetch(`/api/gacha/characters/${gameId}`);
+        const data = await res.json();
+        const chars = data.characters || [];
+        window.gachaState.charList = chars;
+
+        charSelect.innerHTML = "";
+
+        const genericOpt = document.createElement("option");
+        genericOpt.value = "";
+        genericOpt.innerText = "✨ Personagem 5★ Genérico / Qualquer Banner";
+        charSelect.appendChild(genericOpt);
+
+        const ownedChars = chars.filter(c => c.owned);
+        const unownedChars = chars.filter(c => !c.owned);
+
+        if (ownedChars.length > 0) {
+            const grpOwned = document.createElement("optgroup");
+            grpOwned.label = "🟢 Seus Personagens 5★ (no Roster)";
+            ownedChars.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.name;
+                opt.innerText = `✓ ${c.name} (Nv. ${c.level} • ${c.rank_str || 'C0'})`;
+                grpOwned.appendChild(opt);
+            });
+            charSelect.appendChild(grpOwned);
+        }
+
+        if (unownedChars.length > 0) {
+            const grpUnowned = document.createElement("optgroup");
+            grpUnowned.label = "⚪ Outros Personagens 5★ do Jogo";
+            unownedChars.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.name;
+                opt.innerText = `${c.name} (Não Obtido)`;
+                grpUnowned.appendChild(opt);
+            });
+            charSelect.appendChild(grpUnowned);
+        }
+
+        if (ownedChars.length > 0) {
+            charSelect.value = ownedChars[0].name;
+            window.updateGachaCharPreview(ownedChars[0].name);
+        } else {
+            charSelect.value = "";
+            window.updateGachaCharPreview("");
+        }
+
+    } catch (e) {
+        console.error("Erro ao carregar lista de personagens gacha:", e);
+        charSelect.innerHTML = `<option value="">Erro ao carregar personagens</option>`;
+    }
+};
+
+window.updateGachaCharPreview = function(charName) {
+    const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
+    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const chars = window.gachaState.charList || [];
+    const char = chars.find(c => c.name === charName);
+
+    const nameLbl = document.getElementById("gacha-hero-name");
+    const starsLbl = document.getElementById("gacha-hero-stars");
+    const badgeEl = document.getElementById("gacha-hero-badge");
+    const bgEl = document.getElementById("gacha-hero-bg");
+    const avatarImg = document.getElementById("gacha-hero-avatar-img");
+    const avatarFallback = document.getElementById("gacha-hero-avatar-fallback");
+    const currentRankSelect = document.getElementById("tab-gacha-current-rank");
+
+    if (!char) {
+        if (nameLbl) nameLbl.innerText = "Personagem 5★ Genérico";
+        if (starsLbl) starsLbl.innerText = "★★★★★";
+        if (badgeEl) {
+            badgeEl.className = "gacha-char-badge-unowned";
+            badgeEl.innerHTML = `<i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)`;
+        }
+        if (bgEl) bgEl.style.backgroundImage = "none";
+        if (avatarImg) avatarImg.style.display = "none";
+        if (avatarFallback) avatarFallback.style.display = "flex";
+        if (currentRankSelect) currentRankSelect.value = "-1";
+        window.updateTargetRankOptions();
+        return;
+    }
+
+    if (nameLbl) nameLbl.innerText = char.name;
+    if (starsLbl) starsLbl.innerText = "★".repeat(char.rarity || 5);
+
+    const splash = char.gacha_art || char.icon || "";
+    const avatar = char.icon || char.gacha_art || "";
+
+    if (bgEl && splash) {
+        bgEl.style.backgroundImage = `url('${splash}')`;
+    } else if (bgEl) {
+        bgEl.style.backgroundImage = "none";
+    }
+
+    if (avatarImg && avatar) {
+        avatarImg.onerror = () => {
+            avatarImg.style.display = "none";
+            if (avatarFallback) avatarFallback.style.display = "flex";
+        };
+        avatarImg.src = avatar;
+        avatarImg.style.display = "block";
+        if (avatarFallback) avatarFallback.style.display = "none";
+    } else {
+        if (avatarImg) avatarImg.style.display = "none";
+        if (avatarFallback) avatarFallback.style.display = "flex";
+    }
+
+    if (char.owned) {
+        const rankNum = char.current_rank >= 0 ? char.current_rank : 0;
+        const rankStr = char.rank_str || `${terms.prefix}${rankNum}`;
+        if (badgeEl) {
+            badgeEl.className = "gacha-char-badge-owned";
+            badgeEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> No seu Roster: ${rankStr} (Nível ${char.level})`;
+        }
+        if (currentRankSelect) currentRankSelect.value = String(rankNum);
+    } else {
+        if (badgeEl) {
+            badgeEl.className = "gacha-char-badge-unowned";
+            badgeEl.innerHTML = `<i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)`;
+        }
+        if (currentRankSelect) currentRankSelect.value = "-1";
+    }
+
+    window.updateTargetRankOptions();
+};
+
+window.runGachaSimulation = async function() {
+    const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
+    const charSelect = document.getElementById("tab-gacha-char-select");
+    const charName = charSelect ? charSelect.value : "";
+    const currentRank = parseInt(document.getElementById("tab-gacha-current-rank")?.value ?? -1);
+    const targetRank = parseInt(document.getElementById("tab-gacha-target-rank")?.value ?? 6);
+    const currentPity = parseInt(document.getElementById("tab-gacha-pity")?.value) || 0;
+    const isGuaranteed = document.getElementById("tab-gacha-guaranteed")?.value === "true";
+    const pullsAvailable = parseInt(document.getElementById("tab-gacha-pulls")?.value) || 0;
+
+    const runBtn = document.getElementById("tab-btn-run-gacha-sim");
+    if (runBtn) {
+        runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Simulando 10.000 iterações...`;
+        runBtn.disabled = true;
+    }
+
+    try {
+        const res = await fetch("/api/gacha/calculate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                game_id: gameId,
+                current_pity: currentPity,
+                is_guaranteed: isGuaranteed,
+                pulls_available: pullsAvailable,
+                current_rank: currentRank,
+                target_rank: targetRank,
+                char_name: charName
+            })
+        });
+        const data = await res.json();
+        
+        const resultsBox = document.getElementById("tab-gacha-results-box");
+        if (resultsBox) resultsBox.style.display = "block";
+
+        const chanceLbl = document.getElementById("tab-gacha-chance-lbl");
+        if (chanceLbl) {
+            chanceLbl.innerText = `${data.success_rate}%`;
+            chanceLbl.className = "gacha-gauge-val " + (
+                data.success_rate >= 80 ? "success-high" :
+                (data.success_rate >= 50 ? "success-med" : "success-low")
+            );
+        }
+
+        const summaryEl = document.getElementById("tab-gacha-target-summary");
+        const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+        const charTitle = charName ? `<b>${charName}</b>` : "Personagem Alvo";
+        if (summaryEl) {
+            if (data.needed_new_copies === 0) {
+                summaryEl.innerHTML = `🎉 Você já possui a meta <b>${data.target_rank_str}</b>!`;
+            } else {
+                summaryEl.innerHTML = `Probabilidade de evoluir ${charTitle} de <b>${data.current_rank_str}</b> até <b>${data.target_rank_str}</b> (+${data.needed_new_copies} cópias) com <b>${pullsAvailable} tiros</b>.`;
+            }
+        }
+
+        const avgLbl = document.getElementById("tab-gacha-avg-lbl");
+        if (avgLbl) {
+            avgLbl.innerText = data.avg_pulls_spent 
+                ? `${data.avg_pulls_spent} tiros` 
+                : "Tiros insuficientes";
+        }
+
+        const gemsSpentLbl = document.getElementById("tab-gacha-gems-spent-lbl");
+        if (gemsSpentLbl) {
+            if (data.avg_pulls_spent) {
+                const gemsAvg = Math.round(data.avg_pulls_spent * terms.gemCostPerPull);
+                gemsSpentLbl.innerText = `~${gemsAvg.toLocaleString()} ${terms.currency}`;
+            } else {
+                gemsSpentLbl.innerText = "N/A";
+            }
+        }
+
+        const distList = document.getElementById("tab-gacha-dist-list");
+        if (distList) {
+            distList.innerHTML = "";
+            for (const [k, v] of Object.entries(data.distribution || {})) {
+                const item = document.createElement("div");
+                item.className = "gacha-dist-item";
+                
+                const isGoal = k.includes("Meta") || k.includes("Batida") || k.includes("alcançada");
+                
+                item.innerHTML = `
+                    <div class="gacha-dist-header">
+                        <span>${k}</span>
+                        <strong style="color: ${isGoal ? '#34d399' : '#fbbf24'};">${v}%</strong>
+                    </div>
+                    <div class="gacha-dist-bar-track">
+                        <div class="gacha-dist-bar-fill ${isGoal ? 'target-reached' : ''}" style="width: ${v}%;"></div>
+                    </div>
+                `;
+                distList.appendChild(item);
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        if (typeof showToast === "function") showToast("Erro ao executar simulação de Gacha.");
+    } finally {
+        if (runBtn) {
+            runBtn.innerHTML = `<i class="fa-solid fa-play"></i> Executar Simulação Monte Carlo (10.000 Tiros)`;
+            runBtn.disabled = false;
+        }
+    }
+};
 
 
 
