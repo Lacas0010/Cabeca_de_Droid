@@ -1255,6 +1255,284 @@ def estimate_relic_procs(game_id: str, substats_str: str) -> Dict[str, Dict[str,
     return result
 
 # ==========================================
+# MOTOR DE ÍNDICE DE SORTE E EFICIÊNCIA DE ROLAGENS (LUCK SCORE)
+# ==========================================
+def calculate_relic_luck_index(game_id: str, char_id: str, slot: str, main_stat: str, substats_str: str) -> Dict[str, Any]:
+    """
+    Calcula a Eficiência de Rolagens e o Índice de Sorte (Luck Score) de uma relíquia individual.
+    Retorna métricas detalhadas com análise visual de cada substatus (bom vs ruim).
+    """
+    game_id = game_id.lower().strip()
+    if not substats_str or substats_str.strip() in ["Sem substatus", "Status não disponíveis", ""]:
+        return {
+            "luck_score": 0.0,
+            "rv_pct": 0.0,
+            "total_rv": 0.0,
+            "luck_grade": "D",
+            "luck_badge": "💀 Amaldiçoado",
+            "luck_title": "Amaldiçoado pelo RNG",
+            "procs": {},
+            "substats_analyzed": [],
+            "useful_procs": 0,
+            "wasted_procs": 0
+        }
+        
+    procs = estimate_relic_procs(game_id, substats_str)
+    weights = extract_weights_from_guide(game_id, str(char_id))
+    
+    total_rv = sum(p["roll_value"] for p in procs.values())
+    
+    useful_procs = 0
+    wasted_procs = 0
+    useful_weight_sum = 0.0
+    substats_analyzed = []
+    
+    parts = [s.strip() for s in substats_str.split(",") if s.strip()]
+    for p in parts:
+        if ":" in p:
+            name, val_str = p.split(":", 1)
+            val, has_p = clean_value(val_str)
+            sub_name_norm = normalize_stat_name(name, has_percent=has_p)
+            
+            pdata = procs.get(sub_name_norm, {})
+            est_p = pdata.get("estimated_procs", 1)
+            rv_val = pdata.get("roll_value", 0.0)
+            w = weights.get(sub_name_norm, 0.0)
+            
+            if w >= 0.70:
+                if est_p >= 3:
+                    status = "god"
+                    badge = f"🔥 Perfeito (+{est_p})"
+                    color = "#34d399"
+                else:
+                    status = "good"
+                    badge = f"✅ Ótimo (+{est_p})"
+                    color = "#10b981"
+                useful_procs += est_p
+                useful_weight_sum += rv_val * w
+            elif w >= 0.40:
+                status = "useful"
+                badge = f"👍 Útil (+{est_p})"
+                color = "#fbbf24"
+                useful_procs += est_p
+                useful_weight_sum += rv_val * w
+            else:
+                status = "bad"
+                badge = f"💀 Desperdício" if est_p <= 1 else f"💀 Lixo (+{est_p})"
+                color = "#f87171"
+                wasted_procs += est_p
+                
+            substats_analyzed.append({
+                "raw_text": p,
+                "stat_name": sub_name_norm,
+                "display_name": name.strip(),
+                "value_str": val_str.strip(),
+                "procs": est_p,
+                "roll_value": rv_val,
+                "weight": round(w, 2),
+                "status": status,
+                "status_badge": badge,
+                "status_color": color
+            })
+            
+    # Max RV teórico para 5-6 rolagens de 5★ é cerca de 5.0 a 6.0 RV
+    rv_pct = round(min(100.0, (total_rv / 5.0) * 100.0), 1) if total_rv > 0 else 0.0
+    
+    # Synergistic Roll Ratio: % do valor que caiu em status úteis
+    useful_ratio = (useful_weight_sum / total_rv) if total_rv > 0 else 0.0
+    useful_ratio = min(1.0, useful_ratio)
+    
+    # Pontuação de Sorte (0.0 a 100.0)
+    luck_score = round((useful_ratio * 65.0) + (rv_pct * 0.35), 1)
+    luck_score = min(100.0, max(0.0, luck_score))
+    
+    if luck_score >= 93.0:
+        grade, badge, title = "SSS+", "🦄 Deus do RNG", "Top 0.1% God-tier"
+    elif luck_score >= 85.0:
+        grade, badge, title = "SS", "⚡ Abençoado", "Top 1% Excepcional"
+    elif luck_score >= 74.0:
+        grade, badge, title = "S", "🔥 Sortudo", "Top 5% Excelente"
+    elif luck_score >= 60.0:
+        grade, badge, title = "A", "👍 Boa Peça", "Sorte Acima da Média"
+    elif luck_score >= 45.0:
+        grade, badge, title = "B", "⚖️ Mediana", "Sorte Mediana"
+    elif luck_score >= 30.0:
+        grade, badge, title = "C", "🌧️ Azarado", "Rolagens Ruins"
+    else:
+        grade, badge, title = "D", "💀 Amaldiçoado", "Lixo de RNG"
+
+    return {
+        "luck_score": luck_score,
+        "rv_pct": rv_pct,
+        "total_rv": round(total_rv, 2),
+        "luck_grade": grade,
+        "luck_badge": badge,
+        "luck_title": title,
+        "procs": procs,
+        "substats_analyzed": substats_analyzed,
+        "useful_procs": useful_procs,
+        "wasted_procs": wasted_procs
+    }
+
+
+def format_slot_display_name(slot_str: str, game_id: str = "") -> str:
+    """Formatador de nome de exibição de slot de relíquia/artefato por jogo."""
+    norm = normalize_slot_name(slot_str, game_id)
+    g = game_id.lower().strip()
+    
+    if g == "genshin":
+        mapping = {
+            "flower": "🌸 Flor da Vida",
+            "plume": "🪶 Pluma da Morte",
+            "sands": "⏳ Ampulheta",
+            "goblet": "🍷 Cálice",
+            "circlet": "👑 Tiara"
+        }
+        return mapping.get(norm, f"Slot {slot_str}")
+    elif g == "hsr":
+        mapping = {
+            "head": "🪖 Cabeça",
+            "hands": "🧤 Mãos",
+            "body": "🛡️ Corpo",
+            "feet": "👢 Botas",
+            "planar_sphere": "🔮 Esfera Plana",
+            "link_rope": "🪢 Corda de Ligação"
+        }
+        return mapping.get(norm, f"Slot {slot_str}")
+    elif g == "zzz":
+        mapping = {
+            "slot_1": "💿 Disco Slot 1 (HP)",
+            "slot_2": "💿 Disco Slot 2 (ATK)",
+            "slot_3": "💿 Disco Slot 3 (DEF)",
+            "slot_4": "💿 Disco Slot 4",
+            "slot_5": "💿 Disco Slot 5",
+            "slot_6": "💿 Disco Slot 6"
+        }
+        return mapping.get(norm, f"Disco Slot {slot_str}")
+        
+    return f"Slot {slot_str}"
+
+
+def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """
+    Analisa todas as relíquias equipadas no Roster do usuário e calcula o Índice de Sorte Global da Conta.
+    Identifica: Peça God Roll, Peça Cursed Roll, Personagem mais sortudo e menos sortudo.
+    """
+    game_id = game_id.lower().strip()
+    total_relics = 0
+    all_relic_entries = []
+    char_luck_map = {}
+    
+    for char in roster_data:
+        char_name = char.get("name", "Desconhecido")
+        char_id = str(char.get("id") or char.get("character_id") or char_name)
+        relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
+        
+        char_scores = []
+        for relic in relics:
+            slot = str(relic.get("slot", ""))
+            main_stat = relic.get("main") or relic.get("main_stat") or ""
+            substats_str = relic.get("sub", "")
+            if not substats_str:
+                continue
+                
+            luck_data = calculate_relic_luck_index(game_id, char_id, slot, main_stat, substats_str)
+            if luck_data["luck_score"] > 0 or luck_data["total_rv"] > 0:
+                total_relics += 1
+                slot_disp = format_slot_display_name(slot, game_id)
+                entry = {
+                    "character_name": char_name,
+                    "character_icon": char.get("icon", ""),
+                    "relic_name": relic.get("name", "Relíquia"),
+                    "relic_icon": relic.get("icon", ""),
+                    "slot": slot,
+                    "slot_display": slot_disp,
+                    "main_stat": main_stat,
+                    "substats_str": substats_str,
+                    "substats_analyzed": luck_data["substats_analyzed"],
+                    "luck_score": luck_data["luck_score"],
+                    "rv_pct": luck_data["rv_pct"],
+                    "total_rv": luck_data["total_rv"],
+                    "luck_grade": luck_data["luck_grade"],
+                    "luck_badge": luck_data["luck_badge"],
+                    "luck_title": luck_data["luck_title"],
+                    "useful_procs": luck_data["useful_procs"],
+                    "wasted_procs": luck_data["wasted_procs"]
+                }
+                all_relic_entries.append(entry)
+                char_scores.append(luck_data["luck_score"])
+                
+        if char_scores:
+            avg_char_luck = round(sum(char_scores) / len(char_scores), 1)
+            char_luck_map[char_name] = {
+                "character_name": char_name,
+                "character_icon": char.get("icon", ""),
+                "rank_str": char.get("rank_str", "C0"),
+                "level": char.get("level", 1),
+                "avg_luck": avg_char_luck,
+                "relic_count": len(char_scores)
+            }
+
+    if not all_relic_entries:
+        return {
+            "game_id": game_id,
+            "overall_account_luck": 0.0,
+            "luck_title": "Sem Relíquias Equipadas",
+            "luck_badge": "❓ Indefinido",
+            "total_relics_analyzed": 0,
+            "god_roll": None,
+            "cursed_roll": None,
+            "luckiest_character": None,
+            "cursed_character": None,
+            "character_breakdown": []
+        }
+
+    all_relic_entries.sort(key=lambda x: x["luck_score"], reverse=True)
+    god_roll = all_relic_entries[0]
+    cursed_roll = all_relic_entries[-1]
+    
+    account_luck_avg = round(sum(r["luck_score"] for r in all_relic_entries) / len(all_relic_entries), 1)
+    
+    if account_luck_avg >= 85.0:
+        account_title = "👑 Rei da Sorte do Servidor (Top 1%)"
+        account_badge = "SSS Luck Account"
+    elif account_luck_avg >= 75.0:
+        account_title = "⚡ Abençoado pelo RNG"
+        account_badge = "SS Luck Account"
+    elif account_luck_avg >= 65.0:
+        account_title = "✨ Conta Sortuda"
+        account_badge = "S Luck Account"
+    elif account_luck_avg >= 50.0:
+        account_title = "⚖️ Equilibrado (Sorte Média)"
+        account_badge = "A Luck Account"
+    elif account_luck_avg >= 35.0:
+        account_title = "🌧️ Conta Azarada"
+        account_badge = "B Luck Account"
+    else:
+        account_title = "💀 Amaldiçoada pela HoYoverse"
+        account_badge = "Cursed Account"
+
+    char_list = list(char_luck_map.values())
+    char_list.sort(key=lambda x: x["avg_luck"], reverse=True)
+    
+    luckiest_char = char_list[0] if char_list else None
+    cursed_char = char_list[-1] if char_list else None
+
+    return {
+        "game_id": game_id,
+        "overall_account_luck": account_luck_avg,
+        "luck_title": account_title,
+        "luck_badge": account_badge,
+        "total_relics_analyzed": len(all_relic_entries),
+        "god_roll": god_roll,
+        "cursed_roll": cursed_roll,
+        "luckiest_character": luckiest_char,
+        "cursed_character": cursed_char,
+        "character_breakdown": char_list,
+        "all_relics": all_relic_entries[:30]
+    }
+
+# ==========================================
 # AVALIADOR DE STATUS GERAIS DO PERSONAGEM
 # ==========================================
 def evaluate_general_stats(game_id: str, char_id: str, final_stats: Dict[str, str]) -> List[Dict[str, str]]:

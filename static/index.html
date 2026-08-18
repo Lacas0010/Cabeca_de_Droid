@@ -77,6 +77,10 @@
                     <i class="fa-solid fa-trash-can tab-icon" style="color: #ef4444; font-size: 16px;"></i>
                     <span class="nav-text">Relíquias Lixo</span>
                 </button>
+                <button class="nav-btn" data-tab="luck">
+                    <i class="fa-solid fa-clover tab-icon" style="color: #10b981; font-size: 16px;"></i>
+                    <span class="nav-text">Índice de Sorte</span>
+                </button>
                 <button class="nav-btn" data-tab="audit">
                     <i class="fa-solid fa-trophy tab-icon" style="color: #a855f7; font-size: 16px;"></i>
                     <span class="nav-text">Tier List & Audit</span>
@@ -734,6 +738,33 @@
                 </div>
             </section>
 
+            <!-- ABA ÍNDICE DE SORTE & EFICIÊNCIA -->
+            <section id="tab-luck" class="tab-pane">
+                <div class="game-banner" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(15, 23, 42, 0.95)); border-bottom: 1px solid rgba(16, 185, 129, 0.35);">
+                    <div class="banner-overlay">
+                        <h2><i class="fa-solid fa-clover" style="color: #10b981;"></i> Índice de Sorte & Eficiência de Rolagens</h2>
+                        <p>Análise estatística avançada das rolagens (Roll Value & Substat Synergy) de todas as relíquias equipadas na sua conta</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <!-- Game Filter Pills -->
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <button class="filter-btn active tab-luck-game-btn" data-game="genshin">Genshin Impact</button>
+                        <button class="filter-btn tab-luck-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                        <button class="filter-btn tab-luck-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                    </div>
+
+                    <!-- Main Luck Dashboard Body -->
+                    <div id="tab-luck-body">
+                        <div style="text-align: center; padding: 60px 20px;">
+                            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #10b981; margin-bottom: 16px;"></i>
+                            <p style="color: #94a3b8; font-size: 15px;">Analisando estatísticas de sorte das relíquias...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- ABA TIER LIST & AUDIT -->
             <section id="tab-audit" class="tab-pane">
                 <div class="game-banner" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(168, 85, 247, 0.3);">
@@ -927,10 +958,15 @@
                     </div>
                 </div>
                 <div style="margin-top: 20px;">
-                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                        <button class="filter-btn active tab-history-game-btn" data-game="hsr">Honkai: Star Rail</button>
-                        <button class="filter-btn tab-history-game-btn" data-game="genshin">Genshin Impact</button>
-                        <button class="filter-btn tab-history-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 20px;">
+                        <div style="display: flex; gap: 10px;">
+                            <button class="filter-btn active tab-history-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                            <button class="filter-btn tab-history-game-btn" data-game="genshin">Genshin Impact</button>
+                            <button class="filter-btn tab-history-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                        </div>
+                        <button id="btn-toggle-changed-only" class="filter-btn" style="border: 1px solid #ec4899; color: #f472b6; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+                            <i class="fa-solid fa-filter"></i> Apenas Personagens com Alterações
+                        </button>
                     </div>
                     <div id="tab-history-body" style="padding: 0;">
                         <!-- Preenchido via JS com Timeline Stepper e Grids de Cards -->
@@ -1131,16 +1167,16 @@
                                     <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
                                         <i class="fa-solid fa-wand-magic-sparkles"></i>
                                     </div>
-                                    <div class="help-card-title">6. Monte Carlo Gacha / Tiros</div>
+                                    <div class="help-card-title">6. Monte Carlo Gacha & Simulador de Tiros</div>
                                 </div>
-                                <div class="help-card-desc">Simulação estocástica de 10.000 invocações com base no seu Pity atual, 50/50 e meta de cópias (C0 a C6).</div>
+                                <div class="help-card-desc">Simulação estocástica de 10.000 invocações com seleção de personagem do banner, reconhecimento de cópias do Roster e Soft Pity.</div>
                                 <div class="help-card-tags">
-                                    <span class="help-tag">10.000 Tiros</span>
-                                    <span class="help-tag">Pity & 50/50</span>
-                                    <span class="help-tag">Curva de Chance</span>
+                                    <span class="help-tag">Selection 4★/5★</span>
+                                    <span class="help-tag">Soft Pity 74+</span>
+                                    <span class="help-tag">Desconto Roster</span>
                                 </div>
                                 <div class="help-card-details">
-                                    Acesse a aba <strong>Simulador de Tiros</strong> no menu lateral. Defina o jogo alvo, Pity acumulado (0 a 89), se o 50/50 está garantido e a meta de constelações/cópias (C0/E0 a C6/E6). O algoritmo Monte Carlo calcula a chance matemática exata de sucesso e a média de tiros necessária.
+                                    Acesse a aba <strong>Simulador de Tiros</strong> no menu lateral. Escolha o personagem desejado (5★ / Rank S ou 4★ / Rank A) — o sistema reconhece automaticamente as cópias que você já possui no Roster e calcula as próximas. Inclui modelo real de <strong>Soft Pity</strong> (crescimento de 6% por tiro a partir do 74º/75º até 100% no 90º) e nomenclatura própria por jogo (<strong>Constelação</strong> no Genshin, <strong>Eidolon</strong> no HSR e <strong>Mindscape Cinema</strong> no ZZZ).
                                 </div>
                             </div>
                             <div class="help-card-footer">
@@ -1155,23 +1191,23 @@
                             <div>
                                 <div class="help-card-header">
                                     <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-                                        <i class="fa-solid fa-wheat-awn"></i>
+                                        <i class="fa-solid fa-seedling"></i>
                                     </div>
-                                    <div class="help-card-title">7. Central de Farm Inteligente</div>
+                                    <div class="help-card-title">7. Central de Farm Inteligente Diário</div>
                                 </div>
-                                <div class="help-card-desc">Rotação diária de domínios com recomendação de gasto de energia e limites de nível (Genshin Nv 90, HSR Nv 80, ZZZ Nv 60).</div>
+                                <div class="help-card-desc">Rotação diária de domínios, materiais de ascensão e planejamento inteligente de gasto de energia/resina.</div>
                                 <div class="help-card-tags">
-                                    <span class="help-tag">Domínios do Dia</span>
-                                    <span class="help-tag">Filtro de Personagens</span>
-                                    <span class="help-tag">Limites Max Nv</span>
+                                    <span class="help-tag">Rotação Diária</span>
+                                    <span class="help-tag">Prioridade Roster</span>
+                                    <span class="help-tag">Nível Máximo Real</span>
                                 </div>
                                 <div class="help-card-details">
-                                    Na aba <strong>Central de Farm</strong>, você seleciona quais personagens da sua conta deseja focar. O aplicativo calcula os materiais do dia (livros, relíquias, ascensão) e otimiza a alocação de energia diária respeitando as travas de nível originais de cada jogo.
+                                    A <strong>Central de Farm</strong> identifica automaticamente quais livros de talento, materiais de chefes e domínios de relíquias estão abertos hoje para os personagens do seu Roster (respeitando o nível máximo de 90 no Genshin, 80 no HSR e 60 no ZZZ).
                                 </div>
                             </div>
                             <div class="help-card-footer">
                                 <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=farm]').click()" class="help-action-btn"><i class="fa-solid fa-wheat-awn"></i> Central de Farm</button>
+                                <button onclick="document.querySelector('[data-tab=farm]').click()" class="help-action-btn"><i class="fa-solid fa-seedling"></i> Ver Farm Diário</button>
                             </div>
                         </div>
 
@@ -1235,16 +1271,16 @@
                                     <div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
                                         <i class="fa-solid fa-chart-line"></i>
                                     </div>
-                                    <div class="help-card-title">10. Linha do Tempo & Snapshots</div>
+                                    <div class="help-card-title">10. Linha do Tempo & Snapshots (Com Filtro de Alterações)</div>
                                 </div>
-                                <div class="help-card-desc">Histórico gráfico de crescimento da conta com métricas acumuladas, novos 5★ obtidos e curva de notas de build.</div>
+                                <div class="help-card-desc">Histórico gráfico de crescimento da conta com métricas acumuladas, novos 5★ e botão de filtro para exibir apenas evoluções.</div>
                                 <div class="help-card-tags">
                                     <span class="help-tag">Timeline Stepper</span>
-                                    <span class="help-tag">Histórico 5★</span>
-                                    <span class="help-tag">Comparação</span>
+                                    <span class="help-tag">Filtro Alterações</span>
+                                    <span class="help-tag">Comparação Diffs</span>
                                 </div>
                                 <div class="help-card-details">
-                                    A aba <strong>Linha do Tempo</strong> registra snapshots periódicos da sua conta. Você pode criar um snapshot manualmente com 1 clique no botão <strong>Criar Novo Snapshot Agora</strong> ou deixar que o agendamento automático crie registros conforme sua conta progride.
+                                    A aba <strong>Linha do Tempo</strong> registra snapshots periódicos da sua conta. Você pode criar um snapshot manualmente ou usar o botão <strong>Apenas Personagens com Alterações</strong> para ocultar unidades estáticas e focar 100% nas evoluções, novos 5★ e mudanças de build.
                                 </div>
                             </div>
                             <div class="help-card-footer">
@@ -1383,7 +1419,33 @@
                             </div>
                         </div>
 
-                        <!-- CARD 16: LIMPEZA DE DADOS -->
+                        <!-- CARD 16: ÍNDICE DE SORTE DA CONTA -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SORTE & RELÍQUIAS</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                                        <i class="fa-solid fa-clover"></i>
+                                    </div>
+                                    <div class="help-card-title">16. Índice de Sorte & Eficiência de Rolagens</div>
+                                </div>
+                                <div class="help-card-desc">Análise estatística da sorte de relíquias da conta (Luck Score, God Roll #1, Cursed Roll e substatus analisados).</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Luck Score %</span>
+                                    <span class="help-tag">God Roll vs Cursed</span>
+                                    <span class="help-tag">Ícones Oficiais</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Índice de Sorte</strong>, a aplicação calcula o valor de rolagem (Roll Value & Substat Synergy) de todas as relíquias/artefatos equipados. Exibe o medidor de sorte da conta (ex: <i>SSS+ Deus do RNG</i>), destaca o <strong>God Roll #1</strong> e a peça <strong>Cursed Roll</strong> com ícones reais dos itens e avalia substatus por substatus (ex: <i>Perfeito +4</i>, <i>Ótimo +2</i>, <i>Desperdício</i>).
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=luck]').click()" class="help-action-btn"><i class="fa-solid fa-clover"></i> Ver Índice de Sorte</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 17: LIMPEZA DE DADOS -->
                         <div class="help-card" data-category="export">
                             <span class="help-card-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">ZONA DE PERIGO</span>
                             <div>
