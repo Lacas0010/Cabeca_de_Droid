@@ -541,49 +541,155 @@
                 <div class="game-banner" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
                     <div class="banner-overlay">
                         <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Simulador de Tiros & Gacha</h2>
-                        <p>Simulação estatística Monte Carlo (10.000 iterações) para probabilidade de Pity e Banners</p>
+                        <p>Simulação estatística Monte Carlo (10.000 iterações) com sincronização direta do seu Roster</p>
                     </div>
                 </div>
-                <div class="overview-card" style="margin-top: 20px; max-width: 700px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px;">
-                        <div>
-                            <label style="font-size: 12px; color: #94a3b8;">Jogo Alvo:</label>
-                            <select id="tab-gacha-game-select" class="search-input" style="width: 100%; margin-top: 4px;">
-                                <option value="genshin">Genshin Impact</option>
-                                <option value="hsr">Honkai: Star Rail</option>
-                                <option value="zzz">Zenless Zone Zero</option>
+
+                <div class="gacha-dashboard-grid">
+                    <!-- COLUNA ESQUERDA: CONFIGURAÇÕES E SELEÇÃO DE PERSONAGEM -->
+                    <div class="overview-card" style="margin-top: 0;">
+                        <!-- Selector Pill de Jogo -->
+                        <label style="font-size: 12px; color: #94a3b8; margin-bottom: 6px; display: block; font-weight: 600;">Selecione o Jogo Alvo:</label>
+                        <div class="gacha-game-pill-container" id="gacha-game-pills">
+                            <button type="button" class="gacha-game-pill active" data-game="genshin">
+                                <i class="fa-solid fa-wind"></i> Genshin Impact
+                            </button>
+                            <button type="button" class="gacha-game-pill" data-game="hsr">
+                                <i class="fa-solid fa-star"></i> Honkai: Star Rail
+                            </button>
+                            <button type="button" class="gacha-game-pill" data-game="zzz">
+                                <i class="fa-solid fa-bolt"></i> Zenless Zone Zero
+                            </button>
+                        </div>
+                        <input type="hidden" id="tab-gacha-game-select" value="genshin">
+
+                        <!-- Seleção de Personagem -->
+                        <div style="margin-bottom: 16px;">
+                            <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Personagem Alvo:</label>
+                            <select id="tab-gacha-char-select" class="search-input" style="width: 100%; margin-top: 4px; padding: 10px;">
+                                <option value="">Carregando lista de personagens...</option>
                             </select>
                         </div>
-                        <div>
-                            <label style="font-size: 12px; color: #94a3b8;">Pity Atual (0-89):</label>
-                            <input type="number" id="tab-gacha-pity" value="35" min="0" max="89" class="search-input" style="width: 100%; margin-top: 4px;">
+
+                        <!-- Card Hero de Previsualização do Personagem Selecionado -->
+                        <div id="gacha-char-hero-preview" class="gacha-char-hero-card">
+                            <div class="gacha-char-hero-bg" id="gacha-hero-bg"></div>
+                            <div class="gacha-char-avatar-frame" id="gacha-hero-avatar-frame">
+                                <img id="gacha-hero-avatar-img" src="" alt="Avatar" style="display: none;">
+                                <div id="gacha-hero-avatar-fallback" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:24px;">
+                                    <i class="fa-solid fa-user-astronaut"></i>
+                                </div>
+                            </div>
+                            <div class="gacha-char-info">
+                                <div class="gacha-char-name" id="gacha-hero-name">Personagem Genérico 5★</div>
+                                <div class="gacha-rarity-stars" id="gacha-hero-stars">★★★★★</div>
+                                <div id="gacha-hero-badge" class="gacha-char-badge-unowned">
+                                    <i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)
+                                </div>
+                            </div>
                         </div>
-                        <div>
-                            <label style="font-size: 12px; color: #94a3b8;">Estado do 50/50:</label>
-                            <select id="tab-gacha-guaranteed" class="search-input" style="width: 100%; margin-top: 4px;">
-                                <option value="false">50/50 Ativo (Normal)</option>
-                                <option value="true">Garantido (Perdeu o 50/50 anterior)</option>
-                            </select>
+
+                        <!-- Grid de Controles de Rank/Constelação/Eidolon/Mindscape -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div>
+                                <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-current-rank">Constelação Atual:</label>
+                                <select id="tab-gacha-current-rank" class="search-input" style="width: 100%; margin-top: 4px;">
+                                    <option value="-1">Não possui (0 cópias)</option>
+                                    <option value="0">C0 (Personagem Base)</option>
+                                    <option value="1">C1</option>
+                                    <option value="2">C2</option>
+                                    <option value="3">C3</option>
+                                    <option value="4">C4</option>
+                                    <option value="5">C5</option>
+                                    <option value="6">C6 (Máximo)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-target-rank">Meta Desejada:</label>
+                                <select id="tab-gacha-target-rank" class="search-input" style="width: 100%; margin-top: 4px;">
+                                    <option value="0">C0 (Garantir 1º Personagem)</option>
+                                    <option value="1">C1</option>
+                                    <option value="2">C2</option>
+                                    <option value="3">C3</option>
+                                    <option value="4">C4</option>
+                                    <option value="5">C5</option>
+                                    <option value="6" selected>C6 (Máximo)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div>
-                            <label style="font-size: 12px; color: #94a3b8;">Tiros/Gemas Disponíveis:</label>
+
+                        <!-- Estado do Pity e 50/50 -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                            <div>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <label style="font-size: 12px; color: #94a3b8;">Pity Atual (0-89):</label>
+                                </div>
+                                <input type="number" id="tab-gacha-pity" value="35" min="0" max="89" class="search-input" style="width: 100%; margin-top: 4px;">
+                            </div>
+                            <div>
+                                <label style="font-size: 12px; color: #94a3b8;">Estado do 50/50:</label>
+                                <select id="tab-gacha-guaranteed" class="search-input" style="width: 100%; margin-top: 4px;">
+                                    <option value="false">50/50 Ativo (Normal)</option>
+                                    <option value="true">Garantido (Perdeu 50/50 anterior)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Tiros e Gemas Disponíveis com Botões de Ajuste Rápido -->
+                        <div style="margin-bottom: 20px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <label style="font-size: 12px; color: #94a3b8;">Tiros/Desejos Disponíveis:</label>
+                                <span id="gacha-gems-convert-lbl" style="font-size: 11px; color: #a78bfa;">(Equivale a 14.400 Gemas)</span>
+                            </div>
                             <input type="number" id="tab-gacha-pulls" value="90" min="1" class="search-input" style="width: 100%; margin-top: 4px;">
+                            <div class="gacha-quick-pulls">
+                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(10)">+10 Tiros</button>
+                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(50)">+50 Tiros</button>
+                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(90)">+90 Tiros</button>
+                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(180)">+180 Tiros</button>
+                            </div>
                         </div>
-                        <div style="grid-column: span 2;">
-                            <label style="font-size: 12px; color: #94a3b8;">Meta de Cópias (C0/E0 a C6/E6):</label>
-                            <select id="tab-gacha-target-copies" class="search-input" style="width: 100%; margin-top: 4px;">
-                                <option value="1">1 Cópia (C0 / E0)</option>
-                                <option value="2">2 Cópias (C1 / E1)</option>
-                                <option value="3">3 Cópias (C2 / E2)</option>
-                                <option value="7">7 Cópias (C6 / E6 Max)</option>
-                            </select>
-                        </div>
+
+                        <button id="tab-btn-run-gacha-sim" class="primary-btn" style="width: 100%; padding: 14px; font-weight: bold; font-size: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
+                            <i class="fa-solid fa-play"></i> Executar Simulação Monte Carlo (10.000 Tiros)
+                        </button>
                     </div>
-                    <button id="tab-btn-run-gacha-sim" class="primary-btn" style="width: 100%; padding: 12px; font-weight: bold; background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">Executar Simulação de 10.000 Tiros</button>
-                    <div id="tab-gacha-results-box" style="margin-top: 16px; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-color); display: none;">
-                        <div style="font-size: 16px; font-weight: bold; color: #10b981; margin-bottom: 6px;" id="tab-gacha-chance-lbl">Chance de Sucesso: 0%</div>
-                        <div style="font-size: 13px; color: #94a3b8;" id="tab-gacha-avg-lbl">Média de Tiros Gastos: N/A</div>
-                        <div id="tab-gacha-dist-list" style="margin-top: 12px; font-size: 12px; color: #cbd5e1; display: flex; flex-direction: column; gap: 6px;"></div>
+
+                    <!-- COLUNA DIREITA: RESULTADOS E PAINEL ESTATÍSTICO -->
+                    <div id="tab-gacha-results-box" class="overview-card" style="margin-top: 0; display: block;">
+                        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i> Resultado da Simulação
+                        </h3>
+
+                        <!-- Card de Gauge/Chance de Sucesso -->
+                        <div class="gacha-result-gauge-card">
+                            <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Chance de Alcançar a Meta</div>
+                            <div class="gacha-gauge-val success-high" id="tab-gacha-chance-lbl">0.0%</div>
+                            <div id="tab-gacha-target-summary" style="font-size: 13px; color: #cbd5e1; font-weight: 500;">
+                                Simule para calcular a probabilidade real
+                            </div>
+                        </div>
+
+                        <!-- Métricas Secundárias -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0;">
+                            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                                <div style="font-size: 11px; color: #94a3b8;">Média de Tiros Gastos:</div>
+                                <div style="font-size: 14px; font-weight: bold; color: #f8fafc; margin-top: 2px;" id="tab-gacha-avg-lbl">N/A</div>
+                            </div>
+                            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                                <div style="font-size: 11px; color: #94a3b8;">Custo Estimado em Gemas:</div>
+                                <div style="font-size: 14px; font-weight: bold; color: #a78bfa; margin-top: 2px;" id="tab-gacha-gems-spent-lbl">N/A</div>
+                            </div>
+                        </div>
+
+                        <!-- Lista Visual de Distribuição de Resultados -->
+                        <div style="margin-top: 16px;">
+                            <div style="font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                                <span>Distribuição Probabilística de Resultados:</span>
+                                <span style="font-size: 11px; color: #94a3b8;">10.000 Iterações</span>
+                            </div>
+                            <div id="tab-gacha-dist-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                        </div>
                     </div>
                 </div>
             </section>
