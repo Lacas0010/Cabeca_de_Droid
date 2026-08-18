@@ -379,6 +379,9 @@ function setupTabSwitching() {
                 if (targetTab === 'gacha' && window.initGachaSimulator) {
                     window.initGachaSimulator();
                 }
+                if (targetTab === 'luck' && window.initLuckDashboard) {
+                    window.initLuckDashboard();
+                }
             } else {
                 console.warn("Aba não encontrada:", `tab-${targetTab}`);
             }
@@ -1671,87 +1674,11 @@ async function loadBuildComparison() {
         const build = data.player_build;
         const target = data.meta_target;
         
-        // Dicionário de tradução Português <-> Inglês para itens/sets comuns de Genshin, Star Rail e ZZZ
+        // Dicionário de tradução Português <-> Inglês estendido para itens/sets comuns de Genshin, Star Rail e ZZZ
         const translationDict = {
-            // ZZZ Sets
-            "salão sibilante": "wuthering salon",
-            "ode ao cavaleiro lunar": "ode to moonlight",
-            "voz astral": "astral voice",
-            "rei do monte": "woodpecker electro",
-            "techno pica-pau": "woodpecker electro",
-            "canção das ondas": "water ballad",
-            "canção da espada de ramo": "branch sword",
-            "metal infernal": "infernal metal",
-            "metal polar": "polar metal",
-            "jazz com swing": "swing jazz",
-            "disco estrelante": "starlight engine",
-            "punk hormonal": "hormone punk",
-            "harmonia das sombras": "shockstar disco",
-            // ZZZ Weapons
-            "eco rítmico": "rhythmic wave",
-            "perfuratriz - eixo vermelho": "red axis",
-            "engrenagens infernais": "hellfire gears",
-            "radiância das nuvens": "cloudcleave radiance",
-            "caldeirão da lucidez": "lucid cauldron",
-            "transmorfo original": "original transmuter",
-            "motor da constelação": "constellation engine",
-            "baú da fortuna": "lucky chest",
-            "o restrito": "the restrained",
-            "cozido a vapor": "steam oven",
-            "rugido das chamas": "blazing roar",
-            "gourmet tropical": "tropical gourmet",
-            "exúvia solar": "solar exuvia",
-            "núcleo sísmico": "seismic core",
-            "canhão cabum": "kaboom cannon",
-            "demônio bisonho": "bashful demon",
-            "bateria da demara - tipo ii": "demara battery mark ii",
-            "plenilúnio": "full moon",
-            "tempestade magnética": "magnetic storm",
-            // HSR Sets
-            "como o navegador isee vê": "as navigator isee sees it",
-            "ancoradouro da estrela caída": "fallen star anchorage",
-            "lushaka, os mares afundados": "lushaka's waterside",
-            "desfiladeiro aquático de lushaka": "lushaka's waterside",
-            "pistas duplas de lushaka": "lushaka's waterside",
-            "profeta de alcance distante": "scholar lost in erudition",
-            "menina mágica sempre gloriosa": "pioneer diver of dead waters",
-            "estágio zero de punklorde": "stage zero of punklorde",
-            "grinalda do campeonato do herói": "hero of canyons",
-            "braçadeiras douradas do herói": "hero of canyons",
-            "armadura dourada galante do herói": "hero of canyons",
-            "caneleiras perseguidoras das chamas do herói": "hero of canyons",
-            "cidade do arco-íris de punklorde": "talia: kingdom of banditry",
-            "fluxo de dados de punklorde": "talia: kingdom of banditry",
-            // HSR Weapons
-            "antes do amanhecer": "before dawn",
-            "noite sobre a via láctea": "night on the milky way",
-            "repouso dos gênios": "geniuses' repose",
-            "cálculo eterno": "eternal calculus",
-            "hoje também é um dia pacífico": "today is another peaceful day",
-            "o dia em que o cosmos caiu": "the day the cosmos fell",
-            "a seriedade do café da manhã": "the seriousness of breakfast",
-            "ao véu inalcançável": "earthly escapade",
-            "as aventuras do cogumelinho fofinho": "the adventure of mollusc",
-            // Genshin Sets
-            "sombra verde": "viridescent venerer",
-            "millelith firmes": "tenacity of the millelith",
-            "selo da insulação": "emblem of severed fate",
-            "herói invernal": "blizzard strayer",
-            "caçador das sombras": "marechaussee hunter",
-            "trupe dourada": "golden troupe",
-            "memórias da floresta": "deepwood memories",
-            "sonhos dourados": "gilded dreams",
-            "antigo ritual real": "noblesse oblige",
-            "pergaminho do herói da cidade incandescente": "scroll of the hero of the cinder city",
-            "códice de obsidiana": "obsidian codex",
-            "dádiva celestial": "song of days past",
-            "serenata das estrelas e da lua": "serenade of stars and moon",
-            "noite da revelação do céu": "night of the sky's unveiling",
-            "juramento da noite eterna": "oath of the eternal night",
-            "pedra arcaica": "archaic petra",
-            "último juramento do gladiador": "gladiator's finale",
-            "ascensão zéfira": "a day carved from rising winds",
             // Genshin Weapons
+            "os sete éditos da poeira e luz": "angelos' heptades",
+            "angelos' heptades": "os sete éditos da poeira e luz",
             "cortadora da neblina reforjada": "mistsplitter reforged",
             "luz lunar de xiphos": "xiphos' moonlight",
             "espinha dorsal da serpente": "serpent spine",
@@ -1768,7 +1695,62 @@ async function loadBuildComparison() {
             "lâmina amenoma kageuchi": "amenoma kageuchi",
             "amenoma kageuchi": "amenoma kageuchi",
             "prenúncio do alvorecer": "harbinger of dawn",
-            "falcão": "aquila favonia"
+            "falcão": "aquila favonia",
+            "elegia do suspiro final": "elegy for the end",
+            "báculo de goma": "staff of homa",
+            "báculo de homa": "staff of homa",
+
+            // Genshin Sets
+            "dádiva celestial": "song of days past",
+            "song of days past": "dádiva celestial",
+            "pergaminho do herói da cidade incandescente": "scroll of the hero of the cinder city",
+            "scroll of the hero of the cinder city": "pergaminho do herói da cidade incandescente",
+            "códice de obsidiana": "obsidian codex",
+            "obsidian codex": "códice de obsidiana",
+            "sombra verde": "viridescent venerer",
+            "viridescent venerer": "sombra verde",
+            "millelith firmes": "tenacity of the millelith",
+            "selo da insulação": "emblem of severed fate",
+            "herói invernal": "blizzard strayer",
+            "caçador das sombras": "marechaussee hunter",
+            "trupe dourada": "golden troupe",
+            "memórias da floresta": "deepwood memories",
+            "sonhos dourados": "gilded dreams",
+            "antigo ritual real": "noblesse oblige",
+            "noblesse oblige": "antigo ritual real",
+            "serenata das estrelas e da lua": "serenade of stars and moon",
+            "noite da revelação do céu": "night of the sky's unveiling",
+            "juramento da noite eterna": "oath of the eternal night",
+            "pedra arcaica": "archaic petra",
+            "último juramento do gladiador": "gladiator's finale",
+            "ascensão zéfira": "a day carved from rising winds",
+
+            // HSR Sets & Weapons
+            "como o navegador isee vê": "as navigator isee sees it",
+            "ancoradouro da estrela caída": "fallen star anchorage",
+            "lushaka, os mares afundados": "lushaka's waterside",
+            "profeta de alcance distante": "scholar lost in erudition",
+            "menina mágica sempre gloriosa": "pioneer diver of dead waters",
+            "antes do amanhecer": "before dawn",
+            "noite sobre a via láctea": "night on the milky way",
+            "repouso dos gênios": "geniuses' repose",
+            "cálculo eterno": "eternal calculus",
+            "hoje também é um dia pacífico": "today is another peaceful day",
+
+            // ZZZ Sets & Weapons
+            "salão sibilante": "wuthering salon",
+            "ode ao cavaleiro lunar": "ode to moonlight",
+            "voz astral": "astral voice",
+            "rei do monte": "woodpecker electro",
+            "techno pica-pau": "woodpecker electro",
+            "canção das ondas": "water ballad",
+            "canção da espada de ramo": "branch sword",
+            "metal infernal": "infernal metal",
+            "metal polar": "polar metal",
+            "jazz com swing": "swing jazz",
+            "disco estrelante": "starlight engine",
+            "punk hormonal": "hormone punk",
+            "harmonia das sombras": "shockstar disco"
         };
         
         function translateToEnglish(name) {
@@ -1783,93 +1765,18 @@ async function loadBuildComparison() {
         }
         
         const wordMappings = {
-            "ferro": "iron",
-            "cavalaria": "cavalry",
-            "praga": "scourge",
-            "ninjutsu": "ninjutsu",
-            "inscrição": "inscription",
-            "deslumbrante": "dazzling",
-            "mal": "evil",
-            "destruição": "destruição",
-            "reino": "kingdom",
-            "banditismo": "banditry",
-            "duke": "duque",
-            "ashblazing": "cinzas",
-            "amanhecer": "dawn",
-            "antes": "before",
-            "luz": "light",
-            "estrelas": "stars",
-            "lua": "moon",
-            "sombra": "shadow",
-            "verde": "green",
-            "venerer": "venerer",
-            "millelith": "millelith",
-            "firmes": "tenacity",
-            "insulação": "severed",
-            "selo": "emblem",
-            "invernal": "blizzard",
-            "herói": "hero",
-            "caçador": "hunter",
-            "sombras": "shadows",
-            "dourada": "golden",
-            "trupe": "troupe",
-            "floresta": "deepwood",
-            "memórias": "memories",
-            "sonhos": "dreams",
-            "dourados": "gilded",
-            "ritual": "noblesse",
-            "real": "oblige",
-            "incandescente": "cinder",
-            "cidade": "city",
-            "pergaminho": "scroll",
-            "obsidiana": "obsidian",
-            "códice": "codex",
-            "dádiva": "gift",
-            "celestial": "song",
-            "revelação": "unveiling",
-            "céu": "sky",
-            "noite": "night",
-            "eterna": "eternal",
-            "juramento": "oath",
-            "pedra": "stone",
-            "arcaica": "archaic",
-            "gladiador": "gladiator",
-            "último": "finale",
-            "zéfira": "winds",
-            "ascensão": "carved",
-            "neblina": "mistsplitter",
-            "reforjada": "reforged",
-            "cortadora": "reforged",
-            "xiphos": "xiphos",
-            "serpente": "serpent",
-            "espinha": "spine",
-            "águas": "waters",
-            "silenciosas": "silent",
-            "esplendor": "splendor",
-            "sacrifício": "sacrificial",
-            "hierofania": "khaj",
-            "calamidades": "calamity",
-            "subjugadora": "queller",
-            "oração": "prayer",
-            "sagrados": "sacred",
-            "ventos": "winds",
-            "dragões": "dragon",
-            "caçadores": "slayers",
-            "fisgada": "catch",
-            "lâmina": "blade",
-            "alvorecer": "dawn",
-            "falcão": "aquila",
-            "navegador": "navigator",
-            "vejo": "sees",
-            "vê": "sees",
-            "estrela": "star",
-            "caída": "anchorage",
-            "afundados": "waterside",
-            "profeta": "scholar",
-            "alcance": "erudition",
-            "distante": "erudition",
-            "menina": "pioneer",
-            "mágica": "diver"
+            "ferro": "iron", "cavalaria": "cavalry", "praga": "scourge", "ninjutsu": "ninjutsu",
+            "inscrição": "inscription", "deslumbrante": "dazzling", "mal": "evil", "reino": "kingdom",
+            "banditismo": "banditry", "duke": "duque", "amanhecer": "dawn", "antes": "before",
+            "luz": "light", "estrelas": "stars", "lua": "moon", "sombra": "shadow", "verde": "green",
+            "venerer": "venerer", "millelith": "millelith", "firmes": "tenacity", "insulação": "severed",
+            "selo": "emblem", "invernal": "blizzard", "herói": "hero", "caçador": "hunter",
+            "sombras": "shadows", "dourada": "golden", "trupe": "troupe", "floresta": "deepwood",
+            "memórias": "memories", "sonhos": "dreams", "dourados": "gilded", "ritual": "noblesse",
+            "real": "oblige", "incandescente": "cinder", "cidade": "city", "pergaminho": "scroll",
+            "obsidiana": "obsidian", "códice": "codex", "dádiva": "gift", "celestial": "song",
+            "revelação": "unveiling", "céu": "sky", "noite": "night", "eterna": "eternal",
+            "juramento": "oath", "pedra": "stone", "arcaica": "archaic", "gladiador": "gladiator"
         };
         
         function checkFuzzyMatch(name1, name2) {
@@ -1891,19 +1798,80 @@ async function loadBuildComparison() {
             const sig2 = mapped2.filter(w => w.length > 3);
             
             const intersection = sig1.filter(w => sig2.includes(w));
-            if (intersection.length >= 2) {
+            if (intersection.length >= 1) {
                 return true;
             }
             return false;
+        }
+
+        function getUnifiedSlotKey(slotStr) {
+            if (!slotStr) return "";
+            const s = String(slotStr).toLowerCase().replace(/[^a-z0-9]/g, "").trim();
+            if (s === "1" || s.includes("flor") || s.includes("flower")) return "flower";
+            if (s === "2" || s.includes("pena") || s.includes("plume") || s.includes("feather")) return "plume";
+            if (s === "3" || s.includes("areia") || s.includes("relogio") || s.includes("ampulheta") || s.includes("sands")) return "sands";
+            if (s === "4" || s.includes("copo") || s.includes("calice") || s.includes("goblet")) return "goblet";
+            if (s === "5" || s.includes("tiara") || s.includes("coroa") || s.includes("circlet")) return "circlet";
+
+            if (s === "1" || s.includes("cabeca") || s.includes("head")) return "head";
+            if (s === "2" || s.includes("mao") || s.includes("maos") || s.includes("hands")) return "hands";
+            if (s === "3" || s.includes("corpo") || s.includes("body")) return "body";
+            if (s === "4" || s.includes("pe") || s.includes("pes") || s.includes("bota") || s.includes("feet")) return "feet";
+            if (s === "5" || s.includes("esfera") || s.includes("sphere")) return "planar_sphere";
+            if (s === "6" || s.includes("corda") || s.includes("rope")) return "link_rope";
+
+            if (s === "1" || s.includes("disco1") || s.includes("slot1")) return "slot_1";
+            if (s === "2" || s.includes("disco2") || s.includes("slot2")) return "slot_2";
+            if (s === "3" || s.includes("disco3") || s.includes("slot3")) return "slot_3";
+            if (s === "4" || s.includes("disco4") || s.includes("slot4")) return "slot_4";
+            if (s === "5" || s.includes("disco5") || s.includes("slot5")) return "slot_5";
+            if (s === "6" || s.includes("disco6") || s.includes("slot6")) return "slot_6";
+
+            return s;
+        }
+
+        function normalizeStatTerm(str) {
+            if (!str) return "";
+            let s = String(str).toLowerCase()
+                .replace(/\([^)]*\)/g, "") // Remove números entre parênteses ex: (46.6%)
+                .replace(/[0-9.,%+]/g, "")
+                .trim();
+                
+            if (s.includes("quebra") || s.includes("break")) return "break";
+            if (s.includes("taxa") || s.includes("rate")) return "crit_rate";
+            if (s.includes("dano crit") || s.includes("crit dmg") || s.includes("dano crt")) return "crit_dmg";
+            if (s.includes("crit")) return "crit";
+            if (s.includes("recarga") || s.includes("recharge") || s.includes("regen") || s.includes("er")) return "er";
+            if (s.includes("prof") || s.includes("mastery") || s.includes("em") || s.includes("anomalia")) return "em";
+            if (s.includes("atq") || s.includes("atk") || s.includes("ataque")) return "atk";
+            if (s.includes("pv") || s.includes("hp") || s.includes("vida")) return "hp";
+            if (s.includes("def") || s.includes("defesa")) return "def";
+            if (s.includes("vel") || s.includes("spd") || s.includes("velocidade")) return "speed";
+            if (s.includes("cura") || s.includes("healing")) return "healing";
+            if (s.includes("dano") || s.includes("bonus") || s.includes("dmg")) return "elemental_dmg";
+            if (s.includes("perfura") || s.includes("pen")) return "pen";
+
+            return s;
         }
         
         let html = "";
         
         // 1. Arma (com verificação de múltiplos substitutos e tradução)
+        const cleanPlayerWeapon = (build.weapon || "").replace(/\(Nv\..*?\)/gi, "").replace(/\(R[1-5]\)/gi, "").trim();
         const recommendedWeapons = target.weapons && target.weapons.length > 0 ? target.weapons : [target.weapon];
-        const hasWeaponMatch = recommendedWeapons.some(w => checkFuzzyMatch(build.weapon, w));
+        const hasWeaponMatch = recommendedWeapons.some(w => checkFuzzyMatch(cleanPlayerWeapon, w));
         
-        const weaponClass = target.weapon === "Não informado" ? "comparison-neutral" : (hasWeaponMatch ? "comparison-match" : "comparison-mismatch");
+        let weaponClass = "comparison-neutral";
+        if (target.weapon !== "Não informado") {
+            if (hasWeaponMatch) {
+                weaponClass = "comparison-match";
+            } else if (cleanPlayerWeapon && cleanPlayerWeapon !== "Não informado") {
+                // Marca como alternativa viável para evitar falso-positivo em vermelho
+                weaponClass = "comparison-warning";
+            } else {
+                weaponClass = "comparison-mismatch";
+            }
+        }
         
         html += `
             <tr>
@@ -1923,7 +1891,13 @@ async function loadBuildComparison() {
             const hasSetMatch = build.sets.some(bSet => 
                 recommendedSets.some(tSet => checkFuzzyMatch(bSet, tSet))
             );
-            setsClass = hasSetMatch ? "comparison-match" : "comparison-mismatch";
+            if (hasSetMatch) {
+                setsClass = "comparison-match";
+            } else if (build.sets.some(s => s.includes("4 peças") || s.includes("4p") || s.includes("2 peças"))) {
+                setsClass = "comparison-warning";
+            } else {
+                setsClass = "comparison-mismatch";
+            }
         }
         
         html += `
@@ -1937,37 +1911,16 @@ async function loadBuildComparison() {
         // 3. Status Alvo (Sands, Goblet, Circlet / Discos 4, 5, 6 / Corpo, Pés, Esfera, Corda)
         const targetStatsKeys = Object.keys(target.stats);
         
-        function normalizeStatTerm(str) {
-            if (!str) return "";
-            return str.toLowerCase()
-                .replace(/%/g, "")
-                .replace(/\batk\b/g, "ataque")
-                .replace(/\batq\b/g, "ataque")
-                .replace(/\bhp\b/g, "vida")
-                .replace(/\bpv\b/g, "vida")
-                .replace(/\bdef\b/g, "defesa")
-                .replace(/crítico/g, "crit")
-                .replace(/crít/g, "crit")
-                .replace(/crítica/g, "crit")
-                .replace(/recharge/g, "recarga")
-                .replace(/regen/g, "recarga")
-                .replace(/recuperação de energia/g, "recarga")
-                .replace(/recarga de energia/g, "recarga")
-                .replace(/perfuração ratio/g, "perfuração")
-                .replace(/taxa de perfuração/g, "perfuração")
-                .trim();
-        }
-        
         if (targetStatsKeys.length > 0) {
             targetStatsKeys.forEach(key => {
                 let playerVal = "Não equipado";
                 let statClass = "comparison-mismatch";
                 
-                // Tenta encontrar a peça correspondente ao slot (rótulos agora são padronizados exatamente)
+                // Tenta encontrar a peça correspondente ao slot normalizado
                 const matchedPiece = (build.pieces || []).find(p => {
-                    const slotLower = p.slot.toLowerCase().trim();
-                    const keyLower = key.toLowerCase().trim();
-                    return slotLower === keyLower || slotLower.includes(keyLower) || keyLower.includes(slotLower);
+                    const pKey = getUnifiedSlotKey(p.slot);
+                    const tKey = getUnifiedSlotKey(key);
+                    return (pKey && tKey && pKey === tKey) || p.slot.toLowerCase().trim().includes(key.toLowerCase().trim()) || key.toLowerCase().trim().includes(p.slot.toLowerCase().trim());
                 });
                 
                 if (matchedPiece) {
@@ -1979,10 +1932,10 @@ async function loadBuildComparison() {
                         if (!opt) return false;
                         const optNorm = normalizeStatTerm(opt);
                         const mainNorm = normalizeStatTerm(matchedPiece.main);
-                        return mainNorm.includes(optNorm) || optNorm.includes(mainNorm);
+                        return mainNorm === optNorm || mainNorm.includes(optNorm) || optNorm.includes(mainNorm);
                     });
                     
-                    statClass = isMatch ? "comparison-match" : "comparison-mismatch";
+                    statClass = isMatch ? "comparison-match" : "comparison-warning";
                 } else {
                     // Fallback para buscar nas estatísticas gerais do jogador
                     playerVal = "Não encontrado";
@@ -1995,7 +1948,7 @@ async function loadBuildComparison() {
                         const matchedKey = playerStatsKeys.find(pK => {
                             const pKNorm = normalizeStatTerm(pK);
                             const optNorm = normalizeStatTerm(opt);
-                            return pKNorm.includes(optNorm) || optNorm.includes(pKNorm);
+                            return pKNorm === optNorm || pKNorm.includes(optNorm) || optNorm.includes(pKNorm);
                         });
                         
                         if (matchedKey) {
@@ -4030,6 +3983,26 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    const btnToggleChanged = document.getElementById("btn-toggle-changed-only");
+    if (btnToggleChanged && !btnToggleChanged.dataset.bound) {
+        btnToggleChanged.dataset.bound = "true";
+        btnToggleChanged.addEventListener("click", () => {
+            window.historyOnlyChanged = !window.historyOnlyChanged;
+            if (window.historyOnlyChanged) {
+                btnToggleChanged.classList.add("active");
+                btnToggleChanged.style.background = "#ec4899";
+                btnToggleChanged.style.color = "#fff";
+            } else {
+                btnToggleChanged.classList.remove("active");
+                btnToggleChanged.style.background = "";
+                btnToggleChanged.style.color = "#f472b6";
+            }
+            const activeBtn = document.querySelector(".tab-history-game-btn.active");
+            const gameId = activeBtn ? activeBtn.dataset.game : "hsr";
+            window.loadAccountHistory(gameId);
+        });
+    }
+
     document.querySelectorAll(".tab-codes-game-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             document.querySelectorAll(".tab-codes-game-btn").forEach(b => b.classList.remove("active"));
@@ -5065,7 +5038,18 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                     const topBuilt = details.top_built_characters || [];
                     const allChars = details.all_characters || topBuilt;
                     const readiness = details.endgame_readiness_pct || 0.0;
-                    const diffs = item.char_diffs || [];
+                    const rawDiffs = item.char_diffs || [];
+                    const onlyChanged = window.historyOnlyChanged || false;
+
+                    const diffs = onlyChanged 
+                        ? rawDiffs.filter(d => d.is_new || d.is_modified || (d.score_diff && d.score_diff !== 0) || (d.diffs && (d.diffs.score_diff !== 0 || d.diffs.level_diff > 0 || d.diffs.rank_changed)))
+                        : rawDiffs;
+
+                    const changedCharNames = new Set(rawDiffs.map(d => d.name));
+                    const filteredChars = onlyChanged
+                        ? allChars.filter(c => changedCharNames.has(c.name) || c.is_new || c.has_changes)
+                        : allChars;
+
                     const isLatest = idx === 0;
                     const snapshotNum = totalSnapshots - idx;
 
@@ -5165,10 +5149,10 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
                                 <details style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 14px;">
                                     <summary style="font-size: 12px; font-weight: 600; color: #38bdf8; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-users"></i> Ver Todos os ${allChars.length} Personagens do Snapshot #${snapshotNum}
+                                        <i class="fa-solid fa-users"></i> ${onlyChanged ? `Ver ${filteredChars.length} Personagem(ns) Alterado(s)` : `Ver Todos os ${allChars.length} Personagens`} do Snapshot #${snapshotNum}
                                     </summary>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 10px; margin-top: 14px;">
-                                        ${allChars.map(c => `
+                                        ${filteredChars.map(c => `
                                             <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 10px;">
                                                 <img src="${c.icon || '/assets/logo.svg'}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid ${c.rarity >= 5 ? '#f59e0b' : '#a855f7'};" onerror="this.src='/assets/logo.svg'">
                                                 <div style="overflow: hidden; flex: 1; min-width: 0;">
@@ -5213,7 +5197,10 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                 const cRes = await fetch(`/api/history/${gameId}/compare/${idA}/${idB}`);
                 const cData = await cRes.json();
                 const sumDiff = cData.summary_diff || {};
-                const cDiffs = cData.char_diffs || [];
+                const rawCDiffs = cData.char_diffs || [];
+                const cDiffs = window.historyOnlyChanged
+                    ? rawCDiffs.filter(d => d.is_new || d.is_modified || (d.diffs && (d.diffs.score_diff !== 0 || d.diffs.level_diff > 0 || d.diffs.rank_changed)))
+                    : rawCDiffs;
 
                 let resHtml = `
                     <div style="background: rgba(236, 72, 153, 0.08); border: 1px solid rgba(236, 72, 153, 0.3); border-radius: 14px; padding: 18px; margin-bottom: 24px;">
@@ -5935,6 +5922,265 @@ window.runGachaSimulation = async function() {
         }
     }
 };
+
+// ==========================================================================
+// CONTROLADOR DO ÍNDICE DE SORTE & EFICIÊNCIA DE ROLAGENS (LUCK DASHBOARD)
+// ==========================================================================
+window.initLuckDashboard = function() {
+    const btns = document.querySelectorAll(".tab-luck-game-btn");
+    btns.forEach(btn => {
+        btn.onclick = () => {
+            btns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const gameId = btn.getAttribute("data-game");
+            window.loadLuckDashboard(gameId);
+        };
+    });
+
+    const activeBtn = document.querySelector(".tab-luck-game-btn.active");
+    const gameId = activeBtn ? activeBtn.getAttribute("data-game") : "genshin";
+    window.loadLuckDashboard(gameId);
+};
+
+window.loadLuckDashboard = async function(gameId) {
+    const bodyEl = document.getElementById("tab-luck-body");
+    if (!bodyEl) return;
+
+    bodyEl.innerHTML = `
+        <div style="text-align: center; padding: 60px 20px;">
+            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #10b981; margin-bottom: 16px;"></i>
+            <p style="color: #94a3b8; font-size: 15px;">Analisando qualidade das rolagens das relíquias do ${gameId.toUpperCase()}...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`/api/luck-index/${gameId}`);
+        const data = await res.json();
+        window.renderLuckDashboard(data);
+    } catch (e) {
+        console.error("Erro ao carregar dashboard de sorte:", e);
+        bodyEl.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #ef4444;">
+                <i class="fa-solid fa-triangle-exclamation" style="font-size: 32px; margin-bottom: 12px;"></i>
+                <p>Erro ao carregar dados do Índice de Sorte.</p>
+            </div>
+        `;
+    }
+};
+
+function renderSubstatsPillList(substatsAnalyzed, rawFallbackStr) {
+    if (substatsAnalyzed && substatsAnalyzed.length > 0) {
+        return `
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+                ${substatsAnalyzed.map(sub => `
+                    <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid ${sub.status_color}55; border-radius: 8px; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="color: #f8fafc; font-weight: 600;">${sub.raw_text}</span>
+                        <span style="color: ${sub.status_color}; font-weight: 700; background: ${sub.status_color}22; padding: 2px 6px; border-radius: 4px; font-size: 10px; border: 1px solid ${sub.status_color}44;">
+                            ${sub.status_badge}
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    }
+    return `<div style="font-size: 11px; color: #cbd5e1; margin-top: 4px;">${rawFallbackStr}</div>`;
+}
+
+window.renderLuckDashboard = function(data) {
+    const bodyEl = document.getElementById("tab-luck-body");
+    if (!bodyEl) return;
+
+    if (!data || data.total_relics_analyzed === 0) {
+        bodyEl.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px;" class="overview-card">
+                <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #64748b; margin-bottom: 16px;"></i>
+                <h3 style="color: #f8fafc; margin-bottom: 8px;">Nenhuma Relíquia Encontrada</h3>
+                <p style="color: #94a3b8; max-width: 500px; margin: 0 auto 20px auto;">
+                    Sincronize seu Roster com o HoYoLAB para analisar a sorte e a eficiência das rolagens de atributos dos seus equipamentos.
+                </p>
+            </div>
+        `;
+        return;
+    }
+
+    const god = data.god_roll;
+    const cursed = data.cursed_roll;
+
+    let html = `
+        <!-- HERO CARDS (3 COLUNAS) -->
+        <div class="luck-hero-grid">
+            <!-- CARD 1: SORTE GERAL DA CONTA -->
+            <div class="luck-overview-card">
+                <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                    <span>Pontuação de Sorte da Conta</span>
+                    <i class="fa-solid fa-clover" style="color: #10b981;"></i>
+                </div>
+                <div class="luck-gauge-box">
+                    <div class="luck-gauge-value">${data.overall_account_luck}%</div>
+                    <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;">${data.luck_title}</div>
+                    <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 8px;">
+                        ${data.luck_badge}
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #64748b; text-align: center;">
+                    Baseado em ${data.total_relics_analyzed} relíquias equipadas
+                </div>
+            </div>
+
+            <!-- CARD 2: GOD ROLL DA CONTA -->
+            <div class="luck-overview-card god-roll-card">
+                <div style="font-size: 12px; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🏆 A Peça Mais Sortuda (God Roll)</span>
+                    <span style="font-size: 11px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 8px; border-radius: 12px;">Top #1</span>
+                </div>
+                ${god ? `
+                <div style="display: flex; align-items: center; gap: 14px; margin: 12px 0;">
+                    <img src="${god.character_icon || '/assets/logo.svg'}" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid #f59e0b; object-fit: cover; flex-shrink: 0;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 16px; font-weight: bold; color: #f8fafc;">${god.character_name}</div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap;">
+                            ${god.relic_icon ? `<img src="${god.relic_icon}" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px;">` : ''}
+                            <span style="font-size: 12px; font-weight: 800; color: #fbbf24; background: rgba(245, 158, 11, 0.2); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; gap: 4px;">
+                                ${god.slot_display || god.slot}
+                            </span>
+                            <span style="font-size: 12px; color: #e2e8f0; font-weight: 500;">${god.relic_name}</span>
+                        </div>
+                        <div style="font-size: 11px; color: #cbd5e1;">Atributo Principal: <strong style="color: #38bdf8;">${god.main_stat}</strong></div>
+                    </div>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 10px; font-size: 11px; color: #e2e8f0; margin-bottom: 10px;">
+                    <div style="font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Avaliação de Substatus & Rolagens:</div>
+                    ${renderSubstatsPillList(god.substats_analyzed, god.substats_str)}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #34d399; font-weight: bold;">Sorte: ${god.luck_score}% (${god.luck_badge})</span>
+                    <span style="font-size: 11px; color: #94a3b8;">Roll Value (RV): ${god.total_rv}</span>
+                </div>
+                ` : '<div style="color:#94a3b8;">Nenhuma peça encontrada</div>'}
+            </div>
+
+            <!-- CARD 3: CURSED ROLL DA CONTA -->
+            <div class="luck-overview-card cursed-roll-card">
+                <div style="font-size: 12px; color: #f87171; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                    <span>💀 A Peça Mais Amaldiçoada</span>
+                    <span style="font-size: 11px; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 8px; border-radius: 12px;">Cursed</span>
+                </div>
+                ${cursed ? `
+                <div style="display: flex; align-items: center; gap: 14px; margin: 12px 0;">
+                    <img src="${cursed.character_icon || '/assets/logo.svg'}" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid #ef4444; object-fit: cover; flex-shrink: 0;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 16px; font-weight: bold; color: #f8fafc;">${cursed.character_name}</div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap;">
+                            ${cursed.relic_icon ? `<img src="${cursed.relic_icon}" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px;">` : ''}
+                            <span style="font-size: 12px; font-weight: 800; color: #f87171; background: rgba(239, 68, 68, 0.2); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); display: inline-flex; align-items: center; gap: 4px;">
+                                ${cursed.slot_display || cursed.slot}
+                            </span>
+                            <span style="font-size: 12px; color: #e2e8f0; font-weight: 500;">${cursed.relic_name}</span>
+                        </div>
+                        <div style="font-size: 11px; color: #cbd5e1;">Atributo Principal: <strong style="color: #f87171;">${cursed.main_stat}</strong></div>
+                    </div>
+                </div>
+                <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 10px; font-size: 11px; color: #e2e8f0; margin-bottom: 10px;">
+                    <div style="font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Avaliação de Substatus & Rolagens:</div>
+                    ${renderSubstatsPillList(cursed.substats_analyzed, cursed.substats_str)}
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 12px; color: #ef4444; font-weight: bold;">Sorte: ${cursed.luck_score}% (${cursed.luck_badge})</span>
+                    <span style="font-size: 11px; color: #94a3b8;">Roll Value (RV): ${cursed.total_rv}</span>
+                </div>
+                ` : '<div style="color:#94a3b8;">Nenhuma peça encontrada</div>'}
+            </div>
+        </div>
+
+        <!-- PERSONAGENS MAIS SORTUDOS E MENOS SORTUDOS -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+            ${data.luckiest_character ? `
+            <div class="overview-card" style="border-left: 4px solid #10b981; margin:0;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <img src="${data.luckiest_character.character_icon || '/assets/logo.svg'}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #10b981; object-fit: cover;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 11px; color: #34d399; font-weight: 700; text-transform: uppercase;">🌟 Personagem Mais Sortudo</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #fff;">${data.luckiest_character.character_name}</div>
+                        <div style="font-size: 12px; color: #94a3b8;">Média de Sorte: <strong style="color: #34d399;">${data.luckiest_character.avg_luck}%</strong> (${data.luckiest_character.relic_count} relíquias)</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            ${data.cursed_character ? `
+            <div class="overview-card" style="border-left: 4px solid #ef4444; margin:0;">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <img src="${data.cursed_character.character_icon || '/assets/logo.svg'}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ef4444; object-fit: cover;">
+                    <div style="flex: 1;">
+                        <div style="font-size: 11px; color: #f87171; font-weight: 700; text-transform: uppercase;">🌧️ Personagem Mais Azarado</div>
+                        <div style="font-size: 16px; font-weight: bold; color: #fff;">${data.cursed_character.character_name}</div>
+                        <div style="font-size: 12px; color: #94a3b8;">Média de Sorte: <strong style="color: #f87171;">${data.cursed_character.avg_luck}%</strong> (${data.cursed_character.relic_count} relíquias)</div>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+        </div>
+
+        <!-- LISTA DE SORTE POR PERSONAGEM -->
+        <div class="overview-card" style="margin-bottom: 24px;">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-users-gear" style="color: #10b981;"></i> Ranking de Sorte dos Personagens do Roster
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                ${(data.character_breakdown || []).map(c => {
+                    const luckClass = c.avg_luck >= 75 ? 'high' : (c.avg_luck >= 50 ? 'mid' : 'low');
+                    const color = c.avg_luck >= 75 ? '#34d399' : (c.avg_luck >= 50 ? '#fbbf24' : '#f87171');
+                    return `
+                    <div class="luck-char-row">
+                        <img src="${c.character_icon || '/assets/logo.svg'}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid ${color};">
+                        <div style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                <span style="font-weight: 600; color: #f8fafc; font-size: 14px;">${c.character_name} <small style="color: #94a3b8; font-weight: normal;">(Nv. ${c.level} • ${c.rank_str})</small></span>
+                                <strong style="color: ${color}; font-size: 14px;">${c.avg_luck}%</strong>
+                            </div>
+                            <div class="luck-bar-bg">
+                                <div class="luck-bar-fill ${luckClass}" style="width: ${c.avg_luck}%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('')}
+            </div>
+        </div>
+
+        <!-- TABELA DAS MELHORES RELÍQUIAS DO INVENTÁRIO -->
+        <div class="overview-card">
+            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-gem" style="color: #fbbf24;"></i> Top Relíquias mais Sortudas do Inventário (Roll Value)
+            </h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                ${(data.all_relics || []).map((r, idx) => `
+                <div style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
+                    <div style="font-weight: 900; font-size: 16px; color: ${idx < 3 ? '#fbbf24' : '#64748b'}; width: 28px; text-align: center;">#${idx + 1}</div>
+                    <img src="${r.character_icon || '/assets/logo.svg'}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                    <div style="flex: 1; min-width: 0;">
+                        <div style="font-size: 13px; font-weight: bold; color: #f8fafc; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            ${r.relic_icon ? `<img src="${r.relic_icon}" style="width: 28px; height: 28px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); padding: 2px;">` : ''}
+                            <span style="color: #fbbf24; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                                ${r.slot_display || r.slot}
+                            </span>
+                            <span>${r.relic_name}</span>
+                            <span style="font-weight: normal; color: #94a3b8;">(${r.character_name})</span>
+                        </div>
+                        ${renderSubstatsPillList(r.substats_analyzed, r.substats_str)}
+                    </div>
+                    <div style="text-align: right; flex-shrink: 0;">
+                        <div style="font-size: 15px; font-weight: bold; color: ${r.luck_score >= 75 ? '#34d399' : '#fbbf24'};">${r.luck_score}%</div>
+                        <div style="font-size: 10px; color: #94a3b8;">${r.luck_badge}</div>
+                    </div>
+                </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+
+    bodyEl.innerHTML = html;
+};;
 
 
 

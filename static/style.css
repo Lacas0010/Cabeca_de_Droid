@@ -1787,6 +1787,9 @@ h1, h2, h3, h4, h5, h6 {
 .comparison-match {
     color: var(--color-success) !important;
 }
+.comparison-warning {
+    color: #fbbf24 !important; /* gold / amber */
+}
 .comparison-mismatch {
     color: #fca5a5 !important; /* light red */
 }
@@ -3304,6 +3307,201 @@ h1, h2, h3, h4, h5, h6 {
 
 .gacha-dist-bar-fill {
     height: 100%;
+.gacha-game-pill.active[data-game="zzz"] {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(8, 145, 178, 0.15));
+    border-color: rgba(6, 182, 212, 0.5);
+    color: #22d3ee;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+}
+
+/* Card do Personagem Selecionado */
+.gacha-char-hero-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(245, 158, 11, 0.25);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(12px);
+    transition: all 0.3s ease;
+}
+
+.gacha-char-hero-bg {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 65%;
+    height: 100%;
+    background-size: cover;
+    background-position: center top;
+    opacity: 0.28;
+    mask-image: linear-gradient(to left, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%);
+    -webkit-mask-image: linear-gradient(to left, rgba(0,0,0,1) 30%, rgba(0,0,0,0) 100%);
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+}
+
+.gacha-char-avatar-frame {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 2px solid #f59e0b;
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
+    flex-shrink: 0;
+}
+
+.gacha-char-avatar-frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.gacha-char-info {
+    flex: 1;
+    z-index: 2;
+}
+
+.gacha-char-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0 0 4px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gacha-rarity-stars {
+    color: #fbbf24;
+    font-size: 12px;
+    letter-spacing: 2px;
+}
+
+.gacha-char-badge-owned {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    margin-top: 6px;
+}
+
+.gacha-char-badge-unowned {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(148, 163, 184, 0.15);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    margin-top: 6px;
+}
+
+/* Quick Add Buttons */
+.gacha-quick-pulls {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.gacha-quick-btn {
+    flex: 1;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    color: #cbd5e1;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gacha-quick-btn:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+}
+
+/* Results Display Cards */
+.gacha-result-gauge-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+}
+
+.gacha-gauge-val {
+    font-size: 44px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    margin: 8px 0;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+}
+
+.gacha-gauge-val.success-high {
+    color: #34d399;
+    text-shadow: 0 0 25px rgba(52, 211, 153, 0.4);
+}
+
+.gacha-gauge-val.success-med {
+    color: #fbbf24;
+    text-shadow: 0 0 25px rgba(251, 191, 36, 0.4);
+}
+
+.gacha-gauge-val.success-low {
+    color: #f87171;
+    text-shadow: 0 0 25px rgba(248, 113, 113, 0.4);
+}
+
+/* Distribution Bars */
+.gacha-dist-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: 8px;
+}
+
+.gacha-dist-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #e2e8f0;
+}
+
+.gacha-dist-bar-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.gacha-dist-bar-fill {
+    height: 100%;
     background: linear-gradient(90deg, #f59e0b, #fbbf24);
     border-radius: 4px;
     transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
@@ -3312,4 +3510,97 @@ h1, h2, h3, h4, h5, h6 {
 .gacha-dist-bar-fill.target-reached {
     background: linear-gradient(90deg, #10b981, #34d399);
     box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+}
+
+/* ==========================================
+   PAINEL DE ÍNDICE DE SORTE & ROLL EFFICIENCY
+   ========================================== */
+.luck-hero-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media (max-width: 1024px) {
+    .luck-hero-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.luck-overview-card {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 20px;
+    backdrop-filter: blur(12px);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.god-roll-card {
+    border-color: rgba(245, 158, 11, 0.4);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(15, 23, 42, 0.8));
+    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.15);
+}
+
+.cursed-roll-card {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.06), rgba(15, 23, 42, 0.8));
+}
+
+.luck-gauge-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 10px 0;
+}
+
+.luck-gauge-value {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: -1px;
+    background: linear-gradient(135deg, #34d399, #10b981);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.luck-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.luck-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.8s ease;
+}
+
+.luck-bar-fill.high { background: linear-gradient(90deg, #10b981, #34d399); }
+.luck-bar-fill.mid  { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.luck-bar-fill.low  { background: linear-gradient(90deg, #ef4444, #f87171); }
+
+.luck-char-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 12px;
+    margin-bottom: 8px;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.luck-char-row:hover {
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-2px);
 }

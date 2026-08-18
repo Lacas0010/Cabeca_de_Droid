@@ -2124,6 +2124,26 @@ async def get_gacha_characters(game_id: str):
     return {"game_id": game_id, "characters": chars_list}
 
 
+@app.get("/api/luck-index/{game_id}")
+async def get_luck_index(game_id: str):
+    """Retorna a análise consolidada do Índice de Sorte da Conta (Luck Score & Substat Efficiency)."""
+    game_id = game_id.lower().strip()
+    if game_id not in ["genshin", "hsr", "zzz"]:
+        raise HTTPException(status_code=400, detail="Jogo inválido.")
+        
+    try:
+        from build_calculator import analyze_account_luck
+        roster_data = await get_roster(game_id)
+        if not isinstance(roster_data, list):
+            roster_data = []
+            
+        res = analyze_account_luck(game_id, roster_data)
+        return res
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/farming/today/{game_id}")
 async def get_farming_today(game_id: str, selected_chars: Optional[str] = None):
     """Retorna o calendário de farm do dia atual + sugestões com base nos seus personagens."""

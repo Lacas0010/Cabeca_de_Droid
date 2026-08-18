@@ -32,14 +32,16 @@ O assistente sincroniza rosters de personagens, relíquias/artefatos/discos, ní
 - **📊 Comparador de Metas Gerais (Stat Breakpoints):** Comparação em tempo real dos status de combate finais do personagem (Vida, Ataque, Defesa, Taxa Crítica, Dano Crítico, Velocidade, Recarga de Energia, etc.) contra as metas recomendadas de metagame.
 - **🧮 Calculadora de Ascensão de Personagens:** Inserida no inspetor de build, calcula o montante exato de XP, Moeda (Mora/Créditos/Dennys), Materiais de Chefes e Livros/Chips de Talentos necessários para elevar o personagem ao nível alvo (60, 70, 80 ou 90).
 - **🧠 Otimizador de Build IA (Groq):** Botão "Analisar" no painel do personagem que aciona a IA Groq para gerar 3 conselhos diretos e acionáveis de melhorias de build.
-- **🎲 Simulador Monte Carlo de Gacha / Tiros:** Simulação estocástica de 10.000 invocações estatísticas para estimar a probabilidade matemática real de obter N cópias (C0/E0 a C6/E6) com base no Pity atual (0-89), estado do 50/50 e tiros/gemas disponíveis.
+- **🍀 Índice de Sorte & Eficiência de Rolagens (Luck Score Module):** Módulo estatístico avançado inspirado no Akasha e Prydwen que avalia a sorte das relíquias equipadas na conta através do Roll Value (RV%) e sinergia de substatus. Exibe o medidor de sorte radial da conta (ex: *SSS+ Deus do RNG*, *SS Abençoado*), destaca a peça **God Roll #1** e **Cursed Roll** com ícones reais oficiais e classifica cada rolagem de substatus (*Perfeito +4*, *Ótimo +2*, *Útil +1*, *Desperdício*).
+- **🎲 Simulador Monte Carlo de Gacha & Tiros:** Simulação estocástica de 10.000 invocações para banners de 4★ e 5★ / Ranks A e S. Permite selecionar qualquer personagem do jogo, desconta automaticamente as cópias já obtidas no Roster (C0 a C6 / E0 a E6 / M0 a M6), inclui modelo real de **Soft Pity** (+6% por tiro do 74º/75º até 100% no 90º) e utiliza a nomenclatura oficial de cada jogo (Constelação, Eidolon, Mindscape Cinema).
 - **🌾 Central de Farm Inteligente Diário & Limites Máximos de Nível:**
   - Respeita rigorosamente os níveis máximos de cada jogo (**Genshin Impact: Nv 90**, **Honkai: Star Rail: Nv 80**, **Zenless Zone Zero: Nv 60**).
   - **Filtro de Personagens Alvo:** Seleção personalizada de personagens prioritários.
   - Exibe a rotação diária de domínios (Livros de Talento, Materiais de Ascensão de Arma, Domínios de Artefatos) e recomendações de gasto de energia.
 - **🗑️ Analisador de Relíquias Lixo (Trash Finder):** Identifica automaticamente no inventário do jogador peças com combinações de atributos principais e secundários que nenhum personagem do metagame atual aproveita, sugerindo reciclagem segura.
 - **🏆 Tier List & Auditoria da Conta:** Classificação visual dos personagens ativos por Tiers (S+, S, A, B, C), acompanhada de nota global de saúde da conta e diagnóstico de investimento, com exportador de imagem HD da Tier List.
-- **📈 Linha do Tempo & Evolução da Conta (Timeline Snapshots):** Registro de snapshots periódicos da conta para acompanhamento gráfico de novos 5★/Rank S obtidos, evolução da nota média das builds e métricas acumuladas, com botão manual e disparo automático na sincronização diária.
+- **📈 Linha do Tempo & Evolução da Conta (Timeline Snapshots):** Registro de snapshots periódicos da conta para acompanhamento gráfico de novos 5★/Rank S obtidos, evolução da nota média das builds e métricas acumuladas, com botão manual, comparador de diffs customizado e **Filtro de Exibição Apenas para Personagens Alterados**.
+- **⚖️ Comparador Meta Lado a Lado Aprimorado:** Contrasta a arma equipada, conjuntos e status principais contra os benchmarks do metagame. Inclui higienização de termos numéricos, mapeamento unificado de slots e destaque em tom Ouro/Amarelo para **Armas e Conjuntos Alternativos Viáveis**.
 - **🎁 Resgate de Códigos Promocionais:** Busca e ativação em 1 clique de códigos promocionais ativos de Gemas Essenciais, Jades Estelares e Polychromes via API da HoYoverse.
 - **💬 Chat IA Meta & Montador de Times (Groq RAG + SSE Stream):** Chat conversacional com RAG de guias atualizados e ferramenta visual para composição e análise de sinergia de times de 4 personagens via Server-Sent Events (SSE).
 - **📦 Download de Guias em ZIP (.zip):** Endpoint dedicado (`/api/download/guides-zip`) para download empacotado em arquivo `.zip` dos guias em Markdown das 3 pastas de jogos para uso offline ou no Google NotebookLM.
@@ -212,6 +214,7 @@ O executável resultante estará localizado dentro do diretório `dist/main.exe`
 | `GET` | `/api/relics/trash/{game_id}` | Identifica relíquias e artefatos sem utilidade no metagame (Trash Finder) |
 | `POST` | `/api/stats/breakpoints` | Avalia os breakpoints e metas de status de um personagem |
 | `GET` | `/api/audit/{game_id}` | Retorna a Tier List visual e relatório de auditoria de saúde da conta |
+| `GET` | `/api/luck-index/{game_id}` | Retorna o medidor de sorte da conta, relíquia God Roll #1, Cursed Roll e análise por substatus |
 | `GET` | `/api/history/{game_id}` | Retorna os snapshots de histórico de evolução da conta |
 | `GET` | `/api/history/{game_id}/compare/{snap_a}/{snap_b}` | Compara dois snapshots históricos da conta |
 | `GET` | `/api/codes/{game_id}` | Lista códigos promocionais ativos por jogo |
