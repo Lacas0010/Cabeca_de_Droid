@@ -2757,6 +2757,15 @@ async function generateBuildCardCanvas(char, gameId) {
         ctx.fillText("Nenhuma arma equipada", wx + 14, wy + 55);
     }
 
+    const charSkills = char.skills || [];
+    if (charSkills.length > 0) {
+        const skillsSummary = charSkills.map(s => `${s.level || 1}`).join(" / ");
+        const textX = (weapon && weapon.name) ? wx + 92 : wx + 14;
+        ctx.font = "bold 11px sans-serif";
+        ctx.fillStyle = "#a855f7";
+        ctx.fillText(`Habilidades: ${skillsSummary}`, textX, wy + 94);
+    }
+
     // ==========================================
     // 3. REDESIGN DO GRID DE ARTEFATOS (LINHAS HORIZONTAIS EMPILHADAS)
     // ==========================================
@@ -5624,6 +5633,14 @@ window.initGachaSimulator = async function() {
         runBtn.onclick = window.runGachaSimulation;
     }
 
+    const wishBtn = document.getElementById("tab-btn-open-wish-anim");
+    if (wishBtn) {
+        wishBtn.onclick = (e) => {
+            if (e) e.preventDefault();
+            window.startWishAnimation(1);
+        };
+    }
+
     window.updateGachaLabels("genshin");
     await window.loadGachaCharacters("genshin");
     window.updateGachaGemConversion();
@@ -6180,7 +6197,495 @@ window.renderLuckDashboard = function(data) {
     `;
 
     bodyEl.innerHTML = html;
-};;
+};
+
+// ==========================================================================
+// MOTOR DE ANIMAÇÃO INTERATIVA E SINTETIZADOR DE WISH / GACHA
+// ==========================================================================
+
+let wishAudioCtx = null;
+let wishAnimId = null;
+let wishAnimRunning = false;
+let wishAnimTimeout = null;
+
+// 1. Sintetizador de Áudio da Web Audio API
+function playWishSound(type, rarity) {
+    try {
+        if (!wishAudioCtx) {
+            wishAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (wishAudioCtx.state === 'suspended') {
+            wishAudioCtx.resume();
+        }
+
+        const now = wishAudioCtx.currentTime;
+        if (type === 'launch') {
+            const osc = wishAudioCtx.createOscillator();
+            const gain = wishAudioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(wishAudioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.exponentialRampToValueAtTime(800, now + 1.2);
+            gain.gain.setValueAtTime(0.05, now);
+            gain.gain.linearRampToValueAtTime(0.2, now + 0.8);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 1.5);
+            osc.start(now);
+            osc.stop(now + 1.5);
+        } else if (type === 'reveal') {
+            const freqMap = {
+                5: [523.25, 659.25, 783.99, 1046.50],
+                4: [440.00, 554.37, 659.25],
+                3: [329.63, 392.00]
+            };
+            const freqs = freqMap[rarity] || freqMap[3];
+            
+            freqs.forEach((f, idx) => {
+                const subOsc = wishAudioCtx.createOscillator();
+                const subGain = wishAudioCtx.createGain();
+                subOsc.type = rarity === 5 ? 'triangle' : 'sine';
+                subOsc.frequency.setValueAtTime(f, now + idx * 0.08);
+                subGain.connect(wishAudioCtx.destination);
+                subOsc.connect(subGain);
+
+                subGain.gain.setValueAtTime(0.01, now + idx * 0.08);
+                subGain.gain.linearRampToValueAtTime(rarity === 5 ? 0.25 : 0.15, now + idx * 0.08 + 0.1);
+                subGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.08 + 1.8);
+
+                subOsc.start(now + idx * 0.08);
+                subOsc.stop(now + idx * 0.08 + 1.8);
+            });
+        }
+    } catch (e) {
+        console.warn("[Wish Sound] AudioContext não disponível:", e);
+    }
+}
+
+// Helper para gerar URL de Splash Art / Card do Personagem via Proxy
+function getWishCharacterSplash(gameId, charName) {
+    if (!charName) return "/assets/logo.svg";
+    let clean = charName.replace(/\s*\(.*?\)/g, '').trim();
+    
+    let slug = clean.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+        
+    const slugFixes = {
+        "yumemizuki-mizuki": "mizuki",
+        "yumemizukimizuki": "mizuki",
+        "mizuki": "mizuki",
+        "dan-heng-imbibitor-lunae": "imbibitor-lunae",
+        "march-7th": "march-7th",
+        "trailblazer": "trailblazer-physical",
+        "nekoma": "nekomata",
+        "nekomata": "nekomata",
+        "soldier-11": "soldier-11",
+        "soldier11": "soldier-11",
+        "lycaon": "von-lycaon",
+        "von-lycaon": "von-lycaon"
+    };
+    if (slugFixes[slug]) slug = slugFixes[slug];
+
+    if (gameId === "genshin") {
+        return `/api/proxy_image?url=${encodeURIComponent('https://cdn.prydwen.gg/images/genshin-impact/characters/' + slug + '_card.webp')}`;
+    } else if (gameId === "hsr") {
+        return `/api/proxy_image?url=${encodeURIComponent('https://cdn.prydwen.gg/images/star-rail/characters/' + slug + '_card.webp')}`;
+    } else if (gameId === "zzz") {
+        return `/api/proxy_image?url=${encodeURIComponent('https://cdn.prydwen.gg/images/zenless-zone-zero/characters/' + slug + '_full.webp')}`;
+    }
+    return "/assets/logo.svg";
+}
+
+// 2. Lógica do Sorteio Individual com Soft Pity e 50/50 Real
+function rollSingleWishItem(gameId, pity, isGuaranteed, targetCharName) {
+    pity = parseInt(pity) || 0;
+    pity += 1;
+
+    let base5StarChance = 0.006;
+    if (pity >= 74) {
+        base5StarChance += (pity - 73) * 0.06;
+    }
+    base5StarChance = Math.min(1.0, base5StarChance);
+
+    const rand5Star = Math.random();
+    if (rand5Star <= base5StarChance) {
+        let won5050 = true;
+        let cleanTarget = (targetCharName || "Personagem 5★ Limitado").replace(/\s*\(.*?\)/g, '').trim();
+        let charName = cleanTarget;
+
+        if (!isGuaranteed && Math.random() > 0.5) {
+            won5050 = false;
+            const standards = {
+                genshin: ["Jean", "Keqing", "Qiqi", "Dehya", "Diluc", "Mona", "Tighnari", "Yumemizuki Mizuki"],
+                hsr: ["Himeko", "Welt", "Bronya", "Gepard", "Clara", "Yanqing", "Bailu"],
+                zzz: ["Nekomata", "Lycaon", "Soldier 11", "Koleda", "Grace", "Rina"]
+            };
+            const stdList = standards[gameId] || standards.genshin;
+            charName = stdList[Math.floor(Math.random() * stdList.length)];
+        } else {
+            charName = cleanTarget;
+        }
+
+        return {
+            rarity: 5,
+            name: charName,
+            pitySpent: pity,
+            won5050: won5050,
+            isGuaranteedNext: !won5050,
+            newPity: 0,
+            splashArt: getWishCharacterSplash(gameId, charName)
+        };
+    }
+
+    const rand4Star = Math.random();
+    if (rand4Star <= 0.051 || pity % 10 === 0) {
+        const pool4Star = {
+            genshin: [
+                "Bennett", "Xingqiu", "Xiangling", "Fischl", "Sucrose", "Noelle", "Barbara", "Razor", 
+                "Beidou", "Ningguang", "Chongyun", "Diona", "Xinyan", "Rosaria", "Yanfei", "Sayu", 
+                "Kujou Sara", "Thoma", "Gorou", "Yunjin", "Kuki Shinobu", "Heizou", "Collei", "Dori", 
+                "Candace", "Layla", "Faruzan", "Yaoyao", "Mika", "Kaveh", "Kirara", "Freminet", 
+                "Charlotte", "Chevreuse", "Gaming", "Sethos", "Kachina", "Ororun", "Lanyan"
+            ],
+            hsr: [
+                "March 7th", "Dan Heng", "Arlan", "Asta", "Herta", "Serval", "Natasha", "Pela", 
+                "Sampo", "Hook", "Qingque", "Tingyun", "Sushang", "Yukong", "Luka", "Lynx", 
+                "Guinaifen", "Hanya", "Xueyi", "Misha", "Gallagher", "Moze"
+            ],
+            zzz: [
+                "Anby", "Billy", "Nicole", "Corin", "Anton", "Ben", "Soukaku", "Seth", "Lucy", "Piper", "Pulchra"
+            ]
+        };
+        const list4 = pool4Star[gameId] || pool4Star.genshin;
+        const char4Name = list4[Math.floor(Math.random() * list4.length)];
+
+        return {
+            rarity: 4,
+            name: char4Name,
+            pitySpent: pity,
+            won5050: true,
+            isGuaranteedNext: isGuaranteed,
+            newPity: pity,
+            splashArt: getWishCharacterSplash(gameId, char4Name)
+        };
+    }
+
+    return {
+        rarity: 3,
+        name: "Arma 3★ (Mochileiro)",
+        pitySpent: pity,
+        won5050: true,
+        isGuaranteedNext: isGuaranteed,
+        newPity: pity,
+        splashArt: "/assets/logo.svg"
+    };
+}
+
+// 3. Controlador da Animação Pure CSS FX por Jogo (Genshin Meteoro, HSR Warp, ZZZ Signal Glitch)
+function animateWishCSS(gameId, maxRarity, onComplete) {
+    if (window.wishAnimTimeout) {
+        clearTimeout(window.wishAnimTimeout);
+        window.wishAnimTimeout = null;
+    }
+
+    const modal = document.getElementById("wish-animation-modal");
+    const revealContainer = document.getElementById("wish-reveal-container");
+
+    const fxGenshin = document.getElementById("wish-fx-genshin");
+    const fxHsr = document.getElementById("wish-fx-hsr");
+    const fxZzz = document.getElementById("wish-fx-zzz");
+
+    if (modal) {
+        modal.style.display = "flex";
+        modal.style.opacity = "1";
+        modal.style.visibility = "visible";
+        modal.style.zIndex = "999999";
+    }
+
+    if (revealContainer) revealContainer.style.display = "none";
+
+    if (fxGenshin) fxGenshin.style.display = "none";
+    if (fxHsr) fxHsr.style.display = "none";
+    if (fxZzz) fxZzz.style.display = "none";
+
+    const rarityClass = maxRarity === 5 ? "gold" : (maxRarity === 4 ? "purple" : "blue");
+
+    if (gameId === "genshin") {
+        if (fxGenshin) fxGenshin.style.display = "block";
+        const meteor = document.getElementById("wish-fx-meteor");
+        const shockwave = document.getElementById("wish-fx-shockwave");
+        if (meteor && shockwave) {
+            meteor.className = "wish-fx-meteor";
+            shockwave.className = "wish-fx-shockwave";
+            void meteor.offsetWidth;
+            meteor.className = `wish-fx-meteor animating ${rarityClass}`;
+            shockwave.className = `wish-fx-shockwave animating ${rarityClass}`;
+        }
+    } else if (gameId === "hsr") {
+        if (fxHsr) fxHsr.style.display = "block";
+        const warpStar = document.getElementById("hsr-warp-star");
+        if (warpStar) {
+            warpStar.className = "hsr-warp-star-trail";
+            void warpStar.offsetWidth;
+            warpStar.className = `hsr-warp-star-trail animating ${rarityClass}`;
+        }
+    } else {
+        if (fxZzz) fxZzz.style.display = "block";
+        const signalBox = document.getElementById("zzz-signal-box");
+        if (signalBox) {
+            signalBox.className = "zzz-signal-box";
+            void signalBox.offsetWidth;
+            signalBox.className = `zzz-signal-box animating ${rarityClass}`;
+        }
+    }
+
+    try { playWishSound('launch', maxRarity); } catch (e) {}
+
+    window.wishAnimTimeout = setTimeout(() => {
+        if (fxGenshin) fxGenshin.style.display = "none";
+        if (fxHsr) fxHsr.style.display = "none";
+        if (fxZzz) fxZzz.style.display = "none";
+
+        if (onComplete) onComplete();
+    }, 1200);
+}
+
+let wishCurrentResults = [];
+window.wishCurrentIndex = 0;
+let wishIsMultiPull = false;
+let wishGameId = "genshin";
+
+// 4. Controlador Principal da Animação do Wish
+window.startWishAnimation = function(pullsCount = 1) {
+    try {
+        const activePill = document.querySelector("#gacha-game-pills .gacha-game-pill.active");
+        const gameIdHidden = document.getElementById("tab-gacha-game-select")?.value;
+        wishGameId = (activePill ? activePill.dataset.game : (gameIdHidden || "genshin")).toLowerCase();
+
+        const pityInput = document.getElementById("tab-gacha-pity");
+        const guatSelect = document.getElementById("tab-gacha-guaranteed");
+        const charSelect = document.getElementById("tab-gacha-char-select");
+
+        const currentPity = parseInt(pityInput?.value || 35);
+        const isGuaranteed = guatSelect?.value === "true";
+        
+        let selectedCharName = "Personagem 5★ Limitado";
+        if (charSelect && charSelect.selectedIndex >= 0 && charSelect.options[charSelect.selectedIndex]) {
+            selectedCharName = charSelect.options[charSelect.selectedIndex].text;
+        }
+
+        wishCurrentResults = [];
+        let curPity = currentPity;
+        let curGuat = isGuaranteed;
+
+        for (let i = 0; i < pullsCount; i++) {
+            const item = rollSingleWishItem(wishGameId, curPity, curGuat, selectedCharName);
+            wishCurrentResults.push(item);
+            curPity = item.newPity;
+            curGuat = item.isGuaranteedNext;
+        }
+
+        if (pityInput) pityInput.value = curPity;
+        if (guatSelect) guatSelect.value = curGuat ? "true" : "false";
+
+        window.wishCurrentIndex = 0;
+        wishIsMultiPull = pullsCount > 1;
+        const maxRarity = Math.max(...wishCurrentResults.map(r => r.rarity));
+
+        animateWishCSS(wishGameId, maxRarity, () => {
+            showWishItemAtIndex(0);
+        });
+    } catch (err) {
+        console.error("[Wish Animation Error]", err);
+    }
+};
+
+// 5. Exibe Item Individual por Índice (Sequência Item por Item)
+window.showWishItemAtIndex = function(index) {
+    if (index >= wishCurrentResults.length) {
+        showWishSummaryGrid();
+        return;
+    }
+
+    window.wishCurrentIndex = index;
+    const item = wishCurrentResults[index];
+    const maxRarity = item.rarity;
+
+    const revealContainer = document.getElementById("wish-reveal-container");
+    const summaryContainer = document.getElementById("wish-summary-container");
+
+    if (summaryContainer) summaryContainer.style.display = "none";
+
+    if (revealContainer) {
+        revealContainer.style.display = "flex";
+        revealContainer.style.animation = 'none';
+        void revealContainer.offsetWidth;
+        revealContainer.style.animation = 'wishCardPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+    }
+
+    try { playWishSound('reveal', maxRarity); } catch (e) {}
+
+    const glow = document.getElementById("wish-card-glow");
+    if (glow) {
+        if (maxRarity === 5) {
+            glow.style.background = "radial-gradient(circle, #f59e0b 0%, #fbbf24 45%, rgba(245, 158, 11, 0) 75%)";
+        } else if (maxRarity === 4) {
+            glow.style.background = "radial-gradient(circle, #a855f7 0%, #c084fc 45%, rgba(168, 85, 247, 0) 75%)";
+        } else {
+            glow.style.background = "radial-gradient(circle, #0284c7 0%, #38bdf8 45%, rgba(56, 189, 248, 0) 75%)";
+        }
+    }
+
+    const gameBadge = document.getElementById("wish-card-game-badge");
+    if (gameBadge) {
+        const titles = { genshin: "Genshin Impact", hsr: "Honkai: Star Rail", zzz: "Zenless Zone Zero" };
+        gameBadge.innerText = titles[wishGameId] || "Gacha Wish";
+        if (maxRarity === 5) {
+            gameBadge.style.color = "#fbbf24";
+            gameBadge.style.borderColor = "rgba(245, 158, 11, 0.4)";
+            gameBadge.style.background = "rgba(245, 158, 11, 0.2)";
+        } else if (maxRarity === 4) {
+            gameBadge.style.color = "#c084fc";
+            gameBadge.style.borderColor = "rgba(168, 85, 247, 0.4)";
+            gameBadge.style.background = "rgba(168, 85, 247, 0.2)";
+        } else {
+            gameBadge.style.color = "#38bdf8";
+            gameBadge.style.borderColor = "rgba(56, 189, 248, 0.4)";
+            gameBadge.style.background = "rgba(56, 189, 248, 0.2)";
+        }
+    }
+
+    const cardArt = document.getElementById("wish-card-art");
+    if (cardArt) {
+        if (item.rarity >= 4) {
+            cardArt.src = item.splashArt || getWishCharacterSplash(wishGameId, item.name);
+        } else {
+            cardArt.src = "/assets/logo.svg";
+        }
+    }
+
+    const cardName = document.getElementById("wish-card-name");
+    if (cardName) cardName.innerText = item.name;
+
+    const cardStars = document.getElementById("wish-card-stars");
+    if (cardStars) {
+        cardStars.innerText = "★".repeat(item.rarity);
+        cardStars.style.color = maxRarity === 5 ? "#fbbf24" : (maxRarity === 4 ? "#c084fc" : "#38bdf8");
+    }
+
+    const cardBadge = document.getElementById("wish-card-status-badge");
+    if (cardBadge) {
+        if (maxRarity === 5) {
+            cardBadge.style.color = "#34d399";
+            cardBadge.style.borderColor = "rgba(52, 211, 153, 0.35)";
+            cardBadge.style.background = "rgba(52, 211, 153, 0.15)";
+            cardBadge.innerHTML = `<i class="fa-solid fa-trophy" style="color: #fbbf24;"></i> ${item.won5050 ? '5★ LIMITADO ADQUIRIDO!' : '5★ MOCHILEIRO (Perdeu 50/50)'}`;
+        } else if (maxRarity === 4) {
+            cardBadge.style.color = "#c084fc";
+            cardBadge.style.borderColor = "rgba(168, 85, 247, 0.35)";
+            cardBadge.style.background = "rgba(168, 85, 247, 0.15)";
+            cardBadge.innerHTML = `<i class="fa-solid fa-sparkles" style="color: #c084fc;"></i> PERSONAGEM 4★ ADQUIRIDO!`;
+        } else {
+            cardBadge.style.color = "#38bdf8";
+            cardBadge.style.borderColor = "rgba(56, 189, 248, 0.35)";
+            cardBadge.style.background = "rgba(56, 189, 248, 0.15)";
+            cardBadge.innerHTML = `<i class="fa-solid fa-shield" style="color: #38bdf8;"></i> Item 3★ Adquirido`;
+        }
+    }
+
+    const cardPity = document.getElementById("wish-card-pity-text");
+    if (cardPity) {
+        if (wishIsMultiPull) {
+            cardPity.innerText = `Item ${index + 1} de ${wishCurrentResults.length} • Tiro nº ${item.pitySpent}`;
+        } else {
+            cardPity.innerText = `Tiro nº ${item.pitySpent} • ${item.pitySpent >= 74 ? 'Soft Pity Ativo' : 'Pity Normal'}`;
+        }
+    }
+
+    const nextBtn = document.getElementById("wish-next-item-btn");
+    const normalActions = document.getElementById("wish-single-actions-bar");
+
+    if (wishIsMultiPull && wishCurrentResults.length > 1) {
+        if (nextBtn) nextBtn.style.display = "flex";
+        if (normalActions) normalActions.style.display = "none";
+        
+        const nextBtnLabel = document.getElementById("wish-next-btn-label");
+        if (nextBtnLabel) {
+            nextBtnLabel.innerText = index === wishCurrentResults.length - 1 ? "Ver Resumo dos 10 Tiros ➔" : `Próximo Item (${index + 1}/${wishCurrentResults.length}) ➔`;
+        }
+    } else {
+        if (nextBtn) nextBtn.style.display = "none";
+        if (normalActions) normalActions.style.display = "flex";
+    }
+};
+
+// 6. Exibe a Tela de Resumo Final dos 10 Tiros (Lado a Lado)
+window.showWishSummaryGrid = function() {
+    const revealContainer = document.getElementById("wish-reveal-container");
+    const summaryContainer = document.getElementById("wish-summary-container");
+    const gridBox = document.getElementById("wish-summary-grid-box");
+
+    if (revealContainer) revealContainer.style.display = "none";
+    if (summaryContainer) {
+        summaryContainer.style.display = "flex";
+        summaryContainer.style.animation = 'none';
+        void summaryContainer.offsetWidth;
+        summaryContainer.style.animation = 'wishCardPop 0.4s ease-out forwards';
+    }
+
+    if (gridBox) {
+        gridBox.innerHTML = wishCurrentResults.map((r, idx) => {
+            const borderCol = r.rarity === 5 ? '#fbbf24' : (r.rarity === 4 ? '#a855f7' : '#38bdf8');
+            const bgGradient = r.rarity === 5 
+                ? 'linear-gradient(180deg, rgba(251, 191, 36, 0.3) 0%, rgba(15, 23, 42, 0.95) 100%)' 
+                : (r.rarity === 4 
+                    ? 'linear-gradient(180deg, rgba(168, 85, 247, 0.3) 0%, rgba(15, 23, 42, 0.95) 100%)' 
+                    : 'linear-gradient(180deg, rgba(56, 189, 248, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%)');
+
+            const artUrl = r.rarity >= 4 ? (r.splashArt || getWishCharacterSplash(wishGameId, r.name)) : '/assets/logo.svg';
+
+            return `
+                <div style="position: relative; background: ${bgGradient}; border: 2px solid ${borderCol}; border-radius: 16px; padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: transform 0.2s;">
+                    <div style="width: 72px; height: 92px; border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                        <img src="${artUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/logo.svg'">
+                    </div>
+                    <span style="font-size: 11px; font-weight: 800; color: #ffffff; line-height: 1.2; margin-bottom: 4px; max-width: 95px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${r.name}</span>
+                    <div style="font-size: 12px; color: ${borderCol}; font-weight: bold;">${'★'.repeat(r.rarity)}</div>
+                </div>
+            `;
+        }).join('');
+    }
+};
+
+window.skipWishAnimation = function() {
+    if (window.wishAnimTimeout) {
+        clearTimeout(window.wishAnimTimeout);
+        window.wishAnimTimeout = null;
+    }
+
+    const fxGenshin = document.getElementById("wish-fx-genshin");
+    const fxHsr = document.getElementById("wish-fx-hsr");
+    const fxZzz = document.getElementById("wish-fx-zzz");
+    if (fxGenshin) fxGenshin.style.display = "none";
+    if (fxHsr) fxHsr.style.display = "none";
+    if (fxZzz) fxZzz.style.display = "none";
+
+    if (wishIsMultiPull && wishCurrentResults.length > 1) {
+        showWishSummaryGrid();
+    } else {
+        showWishItemAtIndex(0);
+    }
+};
+
+window.closeWishModal = function() {
+    if (window.wishAnimTimeout) {
+        clearTimeout(window.wishAnimTimeout);
+        window.wishAnimTimeout = null;
+    }
+    const modal = document.getElementById("wish-animation-modal");
+    if (modal) modal.style.display = "none";
+};
 
 
 

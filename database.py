@@ -36,6 +36,39 @@ def parse_stats_from_raw_md(raw_md: str) -> Dict[str, str]:
                 res[k_clean] = v_clean
     return res
 
+def parse_skills_from_raw_md(raw_md: str) -> List[Dict[str, Any]]:
+    """Extrai a lista de habilidades/rastros a partir do texto markdown do personagem como fallback."""
+    if not raw_md:
+        return []
+    import re
+    match = re.search(r'\*\*(?:Rastros / Habilidades|Talentos / Habilidades|Habilidades / Talentos|Habilidades|Talentos):\*\*\s*(.*?)(?=\n|\Z)', raw_md, re.I)
+    if not match:
+        return []
+    res = []
+    parts = match.group(1).split('|')
+    for part in parts:
+        part_str = part.strip()
+        if ':' in part_str:
+            name, val_part = part_str.split(':', 1)
+            name_clean = name.strip()
+            val_clean = val_part.strip()
+            lvl_match = re.search(r'Nv\.\s*(\d+)(?:/(\d+))?', val_clean, re.I)
+            if lvl_match:
+                lvl = int(lvl_match.group(1))
+                max_lvl = int(lvl_match.group(2)) if lvl_match.group(2) else 10
+                res.append({
+                    "name": name_clean,
+                    "level": lvl,
+                    "max_level": max_lvl
+                })
+            elif "desbloqueado" in val_clean.lower():
+                res.append({
+                    "name": name_clean,
+                    "level": 1,
+                    "max_level": 1
+                })
+    return res
+
 def backfill_snapshot_stats() -> None:
     """Preenche retroativamente os status dos personagens em snapshots históricos existentes."""
     try:
@@ -754,6 +787,8 @@ def get_roster_data(game_id: str) -> List[Dict[str, Any]]:
                     skills_list = json.loads(r["skills_json"])
                 except Exception:
                     skills_list = []
+            if not skills_list and r["raw_md"]:
+                skills_list = parse_skills_from_raw_md(r["raw_md"])
             
             stats_dict = {}
             if "stats_json" in r_keys and r["stats_json"]:

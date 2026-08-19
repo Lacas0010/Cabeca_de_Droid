@@ -359,6 +359,146 @@ def sanitize_stat_name(stat_text: str) -> str:
     return s
 
 
+def extract_hsr_character_skills(char) -> list:
+    """Extrai todas as habilidades e rastros do personagem HSR com seus níveis atuais e máximos."""
+    skills_json = []
+    raw_skills = getattr(char, "skills", getattr(char, "traces", getattr(char, "skill_trees", [])))
+    if not raw_skills:
+        return skills_json
+    anchor_type_map = {
+        "Point01": (1, "Ataque Básico", 6),
+        "Point02": (2, "Perícia Elemental", 10),
+        "Point03": (3, "Suprema", 10),
+        "Point04": (4, "Talento Passivo", 10),
+        "Point05": (5, "Técnica", 1),
+    }
+    res = {}
+    main_skills = [s for s in raw_skills if hasattr(s, "skill_stages") and len(s.skill_stages) > 0]
+    for idx, s in enumerate(main_skills):
+        anchor = getattr(s, "anchor", "") or ""
+        order = idx + 1
+        default_name = "Habilidade"
+        max_lvl = 1
+
+        if anchor in anchor_type_map:
+            order, default_name, max_lvl = anchor_type_map[anchor]
+        elif idx == 0:
+            order, default_name, max_lvl = (1, "Ataque Básico", 6)
+        elif idx == 1:
+            order, default_name, max_lvl = (2, "Perícia Elemental", 10)
+        elif idx == 2:
+            order, default_name, max_lvl = (3, "Suprema", 10)
+        elif idx == 3:
+            order, default_name, max_lvl = (4, "Talento Passivo", 10)
+
+        s_name = s.skill_stages[0].name if s.skill_stages else default_name
+        s_icon = s.skill_stages[0].item_url if s.skill_stages else getattr(s, "icon", "")
+
+        res[order] = {
+            "name": str(s_name),
+            "level": int(getattr(s, "level", 1)),
+            "max_level": int(max_lvl),
+            "type": str(order),
+            "icon": str(s_icon)
+        }
+    skills_json = [res[k] for k in sorted(res.keys())]
+    return skills_json
+
+
+def extract_genshin_character_skills(char) -> list:
+    """Extrai todos os talentos e habilidades do personagem Genshin com seus níveis atuais e máximos."""
+    skills_json = []
+    raw_skills = getattr(char, "skills", getattr(char, "talents", []))
+    if not raw_skills:
+        return skills_json
+    seen_names = set()
+    for idx, sk in enumerate(raw_skills):
+        s_name = getattr(sk, "name", getattr(sk, "title", "Habilidade"))
+        if s_name in seen_names:
+            continue
+        seen_names.add(s_name)
+
+        s_lvl = getattr(sk, "level", 1)
+        s_type = getattr(sk, "skill_type", getattr(sk, "type", getattr(sk, "point_type", "")))
+        if hasattr(s_type, "name"):
+            s_type = s_type.name
+
+        is_passive = False
+        if isinstance(s_type, int) and s_type == 2:
+            is_passive = True
+        elif str(s_type).lower() in ("passive", "2"):
+            is_passive = True
+        elif idx >= 3:
+            is_passive = True
+
+        s_max = 1 if is_passive else getattr(sk, "max_level", 10)
+        s_icon = getattr(sk, "icon", getattr(sk, "image", getattr(sk, "icon_url", "")))
+        skills_json.append({
+            "name": str(s_name),
+            "level": int(s_lvl),
+            "max_level": int(s_max) if s_max else (1 if is_passive else 10),
+            "type": str(s_type),
+            "icon": str(s_icon)
+        })
+    return skills_json
+
+
+def extract_zzz_agent_skills(agent) -> list:
+    """Extrai todas as habilidades e talentos do agente ZZZ com seus níveis atuais e máximos."""
+    skills_json = []
+    raw_skills = getattr(agent, "skills", getattr(agent, "talents", []))
+    if not raw_skills:
+        return skills_json
+    seen_types = set()
+    seen_names = set()
+    for sk in raw_skills:
+        t_type = getattr(sk, "type", None)
+        if hasattr(t_type, "value"):
+            t_type = t_type.value
+        try:
+            t_type = int(t_type) if t_type is not None else None
+        except Exception:
+            pass
+
+        if t_type in (1, 2, 3, 4, 5, 6) and t_type in seen_types:
+            continue
+        if t_type in (1, 2, 3, 4, 5, 6):
+            seen_types.add(t_type)
+
+        t_map = {
+            1: "Ataque Básico",
+            2: "Esquiva",
+            3: "Ataque de Suporte",
+            4: "Ataque Especial",
+            5: "Ataque de Cadeia / Suprema",
+            6: "Habilidade Passiva Central"
+        }
+        s_name = getattr(sk, "title", getattr(sk, "name", None))
+        if not s_name and hasattr(sk, "items") and sk.items:
+            s_name = getattr(sk.items[0], "title", None)
+        if not s_name and t_type in t_map:
+            s_name = t_map[t_type]
+        elif not s_name:
+            s_name = "Habilidade do Agente"
+
+        if s_name in seen_names:
+            continue
+        seen_names.add(s_name)
+
+        s_lvl = getattr(sk, "level", 1)
+        s_max = 6 if t_type == 6 else 12
+        s_icon = getattr(sk, "icon", getattr(sk, "item_url", getattr(sk, "image", "")))
+        skills_json.append({
+            "name": str(s_name),
+            "level": int(s_lvl),
+            "max_level": int(s_max),
+            "type": str(t_type if t_type else ""),
+            "icon": str(s_icon)
+        })
+    return skills_json
+
+
+
 
 class BaseExtractor:
     def __init__(self, cookies: dict):
@@ -547,9 +687,14 @@ class HSRExtractor(BaseExtractor):
                 
                 # Escreve o bloco do personagem em linguagem natural para LLMs
                 eidolon = f"E{char.rank}"
+                char_skills = extract_hsr_character_skills(char)
+                skills_str_list = [f"{s['name']}: Nv. {s['level']}/{s['max_level']}" for s in char_skills]
+                skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de rastros"
+
                 lines.append(f"**Personagem:** {char.name} | **Nível:** {char.level} | **Eidolon:** {eidolon}")
                 lines.append(f"- **Cone de Luz:** {equip_text}")
                 lines.append(f"- **Relíquias:** {relics_text}")
+                lines.append(f"- **Rastros / Habilidades:** {skills_text}")
                 lines.append(f"- **Status Finais:** {properties_text}")
                 
                 if relics_list:
@@ -652,45 +797,7 @@ class HSRExtractor(BaseExtractor):
                         label = sanitize_stat_name(p_name)
                         hsr_stats[label] = str(p_final)
 
-                skills_json = []
-                raw_skills = getattr(char, "skills", getattr(char, "traces", getattr(char, "skill_trees", [])))
-                if raw_skills:
-                    anchor_type_map = {
-                        "Point01": (1, "Ataque Básico", 6),
-                        "Point02": (2, "Perícia Elemental", 10),
-                        "Point03": (3, "Suprema", 10),
-                        "Point04": (4, "Talento Passivo", 10),
-                    }
-                    res = {}
-                    main_skills = [s for s in raw_skills if hasattr(s, "skill_stages") and len(s.skill_stages) > 0]
-                    for idx, s in enumerate(main_skills):
-                        anchor = getattr(s, "anchor", "") or ""
-                        order = idx + 1
-                        default_name = "Habilidade"
-                        max_lvl = 1
-
-                        if anchor in anchor_type_map:
-                            order, default_name, max_lvl = anchor_type_map[anchor]
-                        elif idx == 0:
-                            order, default_name, max_lvl = (1, "Ataque Básico", 6)
-                        elif idx == 1:
-                            order, default_name, max_lvl = (2, "Perícia Elemental", 10)
-                        elif idx == 2:
-                            order, default_name, max_lvl = (3, "Suprema", 10)
-                        elif idx == 3:
-                            order, default_name, max_lvl = (4, "Talento Passivo", 10)
-
-                        s_name = s.skill_stages[0].name if s.skill_stages else default_name
-                        s_icon = s.skill_stages[0].item_url if s.skill_stages else getattr(s, "icon", "")
-
-                        res[order] = {
-                            "name": str(s_name),
-                            "level": int(s.level),
-                            "max_level": int(max_lvl),
-                            "type": str(order),
-                            "icon": str(s_icon)
-                        }
-                    skills_json = [res[k] for k in sorted(res.keys())]
+                skills_json = extract_hsr_character_skills(char)
 
                 char_json_list.append({
                     "id": str(char.id),
@@ -945,9 +1052,19 @@ class GenshinExtractor(BaseExtractor):
                     
                     # Escreve o bloco do personagem
                     constellation = f"C{getattr(char, 'constellation', 0)}"
+                    char_skills = extract_genshin_character_skills(char)
+                    skills_str_list = []
+                    for s in char_skills:
+                        if s.get("max_level", 10) > 1:
+                            skills_str_list.append(f"{s['name']}: Nv. {s['level']}/{s['max_level']}")
+                        else:
+                            skills_str_list.append(f"{s['name']}: Desbloqueado" if s.get("level", 1) > 0 else f"{s['name']}: Bloqueado")
+                    skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de talentos"
+
                     lines.append(f"**Personagem:** {c_name} | **Nível:** {getattr(char, 'level', 1)} | **Constelação:** {constellation}")
                     lines.append(f"- **Arma:** {weapon_text}")
                     lines.append(f"- **Artefatos:** {artifacts_text}")
+                    lines.append(f"- **Talentos / Habilidades:** {skills_text}")
                     lines.append(f"- **Status Finais:** {properties_text}")
                     
                     if hasattr(char, "artifacts") and char.artifacts:
@@ -1099,39 +1216,7 @@ class GenshinExtractor(BaseExtractor):
                                 }
                                 genshin_stats[label_map.get(attr_name, attr_name)] = str(v)
 
-                    skills_json = []
-                    raw_skills = getattr(char, "skills", getattr(char, "talents", []))
-                    if raw_skills:
-                        seen_names = set()
-                        for idx, sk in enumerate(raw_skills):
-                            s_name = getattr(sk, "name", getattr(sk, "title", "Habilidade"))
-                            if s_name in seen_names:
-                                continue
-                            seen_names.add(s_name)
-
-                            s_lvl = getattr(sk, "level", 1)
-                            s_type = getattr(sk, "skill_type", getattr(sk, "type", getattr(sk, "point_type", "")))
-                            if hasattr(s_type, "name"): s_type = s_type.name
-
-                            # Em Genshin, apenas as 3 primeiras habilidades (Normal, Elemental, Suprema) sobem até Nv 10.
-                            # Talentos passivos (A1, A4, Utilitário) possuem nível máximo 1.
-                            is_passive = False
-                            if isinstance(s_type, int) and s_type == 2:
-                                is_passive = True
-                            elif str(s_type).lower() in ("passive", "2"):
-                                is_passive = True
-                            elif idx >= 3:
-                                is_passive = True
-
-                            s_max = 1 if is_passive else getattr(sk, "max_level", 10)
-                            s_icon = getattr(sk, "icon", getattr(sk, "image", getattr(sk, "icon_url", "")))
-                            skills_json.append({
-                                "name": str(s_name),
-                                "level": int(s_lvl),
-                                "max_level": int(s_max) if s_max else (1 if is_passive else 10),
-                                "type": str(s_type),
-                                "icon": str(s_icon)
-                            })
+                    skills_json = extract_genshin_character_skills(char)
 
                     char_json_list.append({
                         "id": str(getattr(char, "id", "")),
@@ -1326,9 +1411,14 @@ class ZZZExtractor(BaseExtractor):
                 
                 # Escreve o bloco do agente
                 cinema = f"M{agent.rank}"
+                agent_skills = extract_zzz_agent_skills(agent)
+                skills_str_list = [f"{s['name']}: Nv. {s['level']}/{s['max_level']}" for s in agent_skills]
+                skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de habilidades"
+
                 lines.append(f"**Agente:** {agent.name} | **Nível:** {agent.level} | **Cinema:** {cinema}")
                 lines.append(f"- **W-Engine:** {w_engine_text}")
                 lines.append(f"- **Discos:** {discs_text}")
+                lines.append(f"- **Habilidades / Talentos:** {skills_text}")
                 lines.append(f"- **Status Finais:** {properties_text}")
                 
                 if hasattr(agent, "discs") and agent.discs:
@@ -1435,55 +1525,7 @@ class ZZZExtractor(BaseExtractor):
                 except Exception:
                     pass
 
-                skills_json = []
-                raw_skills = getattr(agent, "skills", getattr(agent, "talents", []))
-                if raw_skills:
-                    seen_types = set()
-                    seen_names = set()
-                    for sk in raw_skills:
-                        t_type = getattr(sk, "type", None)
-                        if hasattr(t_type, "value"):
-                            t_type = t_type.value
-                        try:
-                            t_type = int(t_type) if t_type is not None else None
-                        except Exception:
-                            pass
-
-                        if t_type in (1, 2, 3, 4, 5, 6) and t_type in seen_types:
-                            continue
-                        if t_type in (1, 2, 3, 4, 5, 6):
-                            seen_types.add(t_type)
-
-                        t_map = {
-                            1: "Ataque Básico",
-                            2: "Esquiva",
-                            3: "Ataque de Suporte",
-                            4: "Ataque Especial",
-                            5: "Ataque de Cadeia / Suprema",
-                            6: "Habilidade Passiva Central"
-                        }
-                        s_name = getattr(sk, "title", getattr(sk, "name", None))
-                        if not s_name and hasattr(sk, "items") and sk.items:
-                            s_name = getattr(sk.items[0], "title", None)
-                        if not s_name and t_type in t_map:
-                            s_name = t_map[t_type]
-                        elif not s_name:
-                            s_name = "Habilidade do Agente"
-
-                        if s_name in seen_names:
-                            continue
-                        seen_names.add(s_name)
-
-                        s_lvl = getattr(sk, "level", 1)
-                        s_max = 6 if t_type == 6 else 12
-                        s_icon = getattr(sk, "icon", getattr(sk, "item_url", getattr(sk, "image", "")))
-                        skills_json.append({
-                            "name": str(s_name),
-                            "level": int(s_lvl),
-                            "max_level": int(s_max),
-                            "type": str(t_type if t_type else ""),
-                            "icon": str(s_icon)
-                        })
+                skills_json = extract_zzz_agent_skills(agent)
 
                 char_json_list.append({
                     "id": str(agent.id),
