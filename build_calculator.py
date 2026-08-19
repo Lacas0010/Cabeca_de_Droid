@@ -244,7 +244,10 @@ CHAR_ALIASES = {
     "seth": "seth",
     "seth lowell": "seth",
     "grace": "grace",
-    "grace howard": "grace"
+    "grace howard": "grace",
+    "sigrid": "sigrid",
+    "sigridnew": "sigrid",
+    "sigrid new": "sigrid"
 }
 
 CHAR_DISPLAY_NAMES_PT = {
@@ -438,7 +441,8 @@ CHAR_DISPLAY_NAMES_PT = {
     "aria": "Aria",
     "alice": "Alice",
     "vivian": "Vivian",
-    "dialyn": "Dialyn"
+    "dialyn": "Dialyn",
+    "sigrid": "Sigrid"
 }
 
 def get_char_display_name(norm_name: str, fallback: str = "") -> str:
@@ -629,7 +633,11 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "cissia": "1521",
             "pyrois": "1551",
             "remielle": "1581",
-            "remielle new": "1581"
+            "remielle new": "1581",
+            "sigrid": "1591",
+            "sigridnew": "1591",
+            "sigrid_new": "1591",
+            "sigrid new": "1591"
         }
     }
 
