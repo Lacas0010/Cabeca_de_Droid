@@ -13,7 +13,204 @@
     <!-- FontAwesome 6 Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- CSS Estilos Customizados -->
-    <link rel="stylesheet" href="style.css?v=4.5">
+    <link rel="stylesheet" href="style.css?v=14.0">
+
+    <style id="wish-inline-fx-styles">
+        /* ANIMAÇÃO DO METEORO (GENSHIN IMPACT) */
+        .wish-fx-meteor {
+            position: absolute;
+            top: -150px;
+            right: -150px;
+            width: 400px;
+            height: 12px;
+            border-radius: 10px;
+            transform: rotate(-35deg);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .wish-fx-meteor.animating.gold {
+            background: linear-gradient(90deg, rgba(251, 191, 36, 0) 0%, #fbbf24 60%, #ffffff 100%);
+            box-shadow: 0 0 45px #fbbf24, 0 0 90px #f59e0b, 0 0 140px #d97706;
+            animation: meteorShootFX 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .wish-fx-meteor.animating.purple {
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0) 0%, #a855f7 60%, #ffffff 100%);
+            box-shadow: 0 0 45px #a855f7, 0 0 90px #c084fc, 0 0 140px #7e22ce;
+            animation: meteorShootFX 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        .wish-fx-meteor.animating.blue {
+            background: linear-gradient(90deg, rgba(56, 189, 248, 0) 0%, #38bdf8 60%, #ffffff 100%);
+            box-shadow: 0 0 45px #38bdf8, 0 0 90px #60a5fa, 0 0 140px #1d4ed8;
+            animation: meteorShootFX 1.1s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes meteorShootFX {
+            0% { top: -150px; right: -150px; width: 150px; opacity: 0; }
+            20% { opacity: 1; width: 600px; }
+            100% { top: 75vh; right: 85vw; width: 950px; opacity: 0; }
+        }
+
+        /* ONDA DE CHOQUE RADIAL */
+        .wish-fx-shockwave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .wish-fx-shockwave.animating.gold {
+            background: radial-gradient(circle, #ffffff 0%, #fbbf24 35%, rgba(245, 158, 11, 0.8) 65%, rgba(245, 158, 11, 0) 100%);
+            animation: shockwaveExpandFX 0.85s 0.85s ease-out forwards;
+        }
+
+        .wish-fx-shockwave.animating.purple {
+            background: radial-gradient(circle, #ffffff 0%, #a855f7 35%, rgba(168, 85, 247, 0.8) 65%, rgba(168, 85, 247, 0) 100%);
+            animation: shockwaveExpandFX 0.85s 0.85s ease-out forwards;
+        }
+
+        .wish-fx-shockwave.animating.blue {
+            background: radial-gradient(circle, #ffffff 0%, #38bdf8 35%, rgba(56, 189, 248, 0.8) 65%, rgba(56, 189, 248, 0) 100%);
+            animation: shockwaveExpandFX 0.85s 0.85s ease-out forwards;
+        }
+
+        @keyframes shockwaveExpandFX {
+            0% { transform: translate(-50%, -50%) scale(0.1); opacity: 1; }
+            50% { opacity: 0.95; }
+            100% { transform: translate(-50%, -50%) scale(200); opacity: 0; }
+        }
+
+        /* HSR WARP PASSAGEM ESTELAR */
+        .hsr-warp-tunnel {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 200vw;
+            height: 200vh;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle at center, transparent 0%, rgba(3, 7, 18, 0.95) 80%),
+                        repeating-radial-gradient(circle at center, rgba(168, 85, 247, 0.15) 0, rgba(168, 85, 247, 0.15) 2px, transparent 2px, transparent 20px);
+            animation: hsrWarpSpin 12s linear infinite;
+        }
+
+        @keyframes hsrWarpSpin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .hsr-warp-star-trail {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .hsr-warp-star-trail.animating.gold {
+            background: radial-gradient(circle, #ffffff 0%, #fbbf24 40%, rgba(245, 158, 11, 0) 70%);
+            box-shadow: 0 0 60px #fbbf24, 0 0 120px #f59e0b, 0 0 180px #d97706;
+            animation: hsrWarpExpand 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        }
+
+        .hsr-warp-star-trail.animating.purple {
+            background: radial-gradient(circle, #ffffff 0%, #a855f7 40%, rgba(168, 85, 247, 0) 70%);
+            box-shadow: 0 0 60px #a855f7, 0 0 120px #c084fc, 0 0 180px #7e22ce;
+            animation: hsrWarpExpand 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        }
+
+        .hsr-warp-star-trail.animating.blue {
+            background: radial-gradient(circle, #ffffff 0%, #38bdf8 40%, rgba(56, 189, 248, 0) 70%);
+            box-shadow: 0 0 60px #38bdf8, 0 0 120px #60a5fa, 0 0 180px #1d4ed8;
+            animation: hsrWarpExpand 1.2s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        }
+
+        @keyframes hsrWarpExpand {
+            0% { transform: translate(-50%, -50%) scale(0.1); opacity: 0.2; }
+            50% { opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(150); opacity: 0; }
+        }
+
+        /* ZZZ CRT SIGNAL GLITCH */
+        .zzz-crt-scanlines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.35), rgba(0,0,0,0.35) 2px, transparent 2px, transparent 4px);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .zzz-signal-box {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.8);
+            padding: 24px 44px;
+            border-radius: 16px;
+            background: rgba(15, 23, 42, 0.95);
+            border: 3px solid #38bdf8;
+            box-shadow: 0 0 30px #38bdf8;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .zzz-signal-box.animating.gold {
+            border-color: #fbbf24;
+            box-shadow: 0 0 50px #fbbf24, inset 0 0 30px rgba(251, 191, 36, 0.4);
+            animation: zzzSignalPulse 1.2s steps(8, end) forwards;
+        }
+
+        .zzz-signal-box.animating.purple {
+            border-color: #a855f7;
+            box-shadow: 0 0 50px #a855f7, inset 0 0 30px rgba(168, 85, 247, 0.4);
+            animation: zzzSignalPulse 1.2s steps(8, end) forwards;
+        }
+
+        .zzz-signal-box.animating.blue {
+            border-color: #38bdf8;
+            box-shadow: 0 0 50px #38bdf8, inset 0 0 30px rgba(56, 189, 248, 0.4);
+            animation: zzzSignalPulse 1.2s steps(8, end) forwards;
+        }
+
+        .zzz-signal-text {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 4px;
+            color: #fff;
+            text-transform: uppercase;
+        }
+
+        @keyframes zzzSignalPulse {
+            0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+            25% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+            50% { transform: translate(-48%, -52%) scale(0.95); }
+            75% { transform: translate(-52%, -48%) scale(1.1); }
+            100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+        }
+
+        /* CARD POP-IN DE REVELAÇÃO DO GACHA */
+        @keyframes wishCardPop {
+            0% { transform: scale(0.6) translateY(50px); opacity: 0; }
+            70% { transform: scale(1.03) translateY(-5px); opacity: 1; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+    </style>
 
 
 
@@ -654,9 +851,17 @@
                             </div>
                         </div>
 
-                        <button id="tab-btn-run-gacha-sim" class="primary-btn" style="width: 100%; padding: 14px; font-weight: bold; font-size: 14px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">
-                            <i class="fa-solid fa-play"></i> Executar Simulação Monte Carlo (10.000 Tiros)
-                        </button>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                            <button id="tab-btn-run-gacha-sim" type="button" class="primary-btn" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fa-solid fa-dice"></i> Monte Carlo
+                            </button>
+                            <button id="tab-btn-open-wish-single" type="button" class="primary-btn" onclick="window.startWishAnimation(1)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fa-solid fa-rotate-right"></i> Dar 1 Tiro
+                            </button>
+                            <button id="tab-btn-open-wish-multi" type="button" class="primary-btn" onclick="window.startWishAnimation(10)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> 10 Tiros
+                            </button>
+                        </div>
                     </div>
 
                     <!-- COLUNA DIREITA: RESULTADOS E PAINEL ESTATÍSTICO -->
@@ -1801,8 +2006,120 @@
         </div>
     </div>
 
+    <!-- MODAL FULLSCREEN DE ANIMAÇÃO INTERATIVA DE WISH / GACHA -->
+    <div id="wish-animation-modal" class="wish-modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #030712; z-index: 999999; justify-content: center; align-items: center; overflow: hidden; user-select: none;">
+        
+        <!-- 1. GENSHIN IMPACT: Meteoro Cadente Espacial -->
+        <div id="wish-fx-genshin" class="wish-game-fx-layer" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
+            <div class="wish-fx-stars" style="position: absolute; width: 100%; height: 100%;"></div>
+            <div id="wish-fx-meteor" class="wish-fx-meteor"></div>
+            <div id="wish-fx-shockwave" class="wish-fx-shockwave"></div>
+        </div>
+
+        <!-- 2. HONKAI STAR RAIL (HSR): Warp de Hiperespaço -->
+        <div id="wish-fx-hsr" class="wish-game-fx-layer" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
+            <div class="hsr-warp-tunnel"></div>
+            <div id="hsr-warp-star" class="hsr-warp-star-trail"></div>
+        </div>
+
+        <!-- 3. ZENLESS ZONE ZERO (ZZZ): Busca de Sinal CRT -->
+        <div id="wish-fx-zzz" class="wish-game-fx-layer" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;">
+            <div class="zzz-crt-scanlines"></div>
+            <div id="zzz-signal-box" class="zzz-signal-box">
+                <div class="zzz-signal-text">SIGNAL SEARCH</div>
+            </div>
+        </div>
+
+        <!-- Botão Pular Animação -->
+        <button id="wish-skip-btn" type="button" onclick="window.skipWishAnimation()" style="position: absolute; top: 24px; right: 28px; z-index: 30; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.25); color: #f8fafc; padding: 10px 24px; border-radius: 30px; font-size: 13px; font-weight: 700; cursor: pointer; backdrop-filter: blur(10px); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);">
+            <i class="fa-solid fa-forward-step"></i> Pular Animação
+        </button>
+
+        <!-- CONTAINER FULLSCREEN DA REVELAÇÃO DO GACHA (ESTILO GACHA OFICIAL) -->
+        <div id="wish-reveal-container" style="display: none; position: relative; z-index: 10; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; pointer-events: auto;">
+            
+            <!-- Glow Gigante de Luz de Fundo por Raridade (Azul 3★, Roxo 4★, Dourado 5★) -->
+            <div id="wish-card-glow" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 650px; height: 650px; border-radius: 50%; filter: blur(100px); z-index: 1; opacity: 0.85; pointer-events: none;"></div>
+
+            <!-- SPLASH ART GIGANTE DO PERSONAGEM EM DESTAQUE NO CENTRO (IGUAL AO JOGO) -->
+            <div style="position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; max-width: 90vw; max-height: 62vh; margin-bottom: 12px;">
+                <img id="wish-card-art" src="" alt="Splash Art" style="max-width: 100%; max-height: 62vh; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.85));" onerror="window.handleWishArtError(this)">
+            </div>
+
+            <!-- INFORMAÇÕES DO PERSONAGEM (NOME, ESTRELAS, BADGE E PITY) -->
+            <div style="position: relative; z-index: 3; text-align: center; max-width: 600px; padding: 0 20px;">
+                <!-- Badge do Jogo -->
+                <div id="wish-card-game-badge" style="display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: 3px; color: #fbbf24; background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); padding: 4px 18px; border-radius: 20px; margin-bottom: 6px; text-transform: uppercase;">
+                    GENSHIN IMPACT
+                </div>
+
+                <!-- Nome do Personagem -->
+                <h2 id="wish-card-name" style="margin: 2px 0 4px 0; font-size: 34px; font-weight: 900; color: #ffffff; text-shadow: 0 4px 15px rgba(0,0,0,0.85); letter-spacing: 1px;">
+                    Personagem Sorteado
+                </h2>
+
+                <!-- Estrelas Douradas Grandes -->
+                <div id="wish-card-stars" style="font-size: 24px; color: #fbbf24; text-shadow: 0 0 15px rgba(251, 191, 36, 0.8), 0 4px 10px rgba(0,0,0,0.9); font-weight: bold; margin-bottom: 6px; letter-spacing: 4px;">
+                    ★★★★★
+                </div>
+
+                <!-- Badge de Status e Pity -->
+                <div id="wish-card-status-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.15); border: 1px solid rgba(52, 211, 153, 0.35); padding: 5px 18px; border-radius: 14px; margin-bottom: 4px;">
+                    <i class="fa-solid fa-trophy" style="color: #fbbf24;"></i> 5★ LIMITADO ADQUIRIDO!
+                </div>
+                <div id="wish-card-pity-text" style="font-size: 12px; color: #cbd5e1; text-shadow: 0 2px 6px rgba(0,0,0,0.8);">
+                    Tiro nº 76 • Soft Pity Ativo • Próximo Pity: 0
+                </div>
+            </div>
+
+            <!-- BOTÃO FLUTUANTE DE PRÓXIMO ITEM (10 TIROS SEQUENCIAIS) -->
+            <button id="wish-next-item-btn" type="button" onclick="window.showWishItemAtIndex(window.wishCurrentIndex + 1)" style="display: none; position: absolute; bottom: 28px; right: 36px; z-index: 15; background: linear-gradient(135deg, #a855f7, #6366f1); color: #fff; padding: 12px 28px; border-radius: 30px; font-size: 14px; font-weight: 800; border: none; cursor: pointer; box-shadow: 0 8px 25px rgba(168, 85, 247, 0.5); display: flex; align-items: center; gap: 8px; backdrop-filter: blur(10px);">
+                <span id="wish-next-btn-label">Próximo Item ➔</span>
+            </button>
+
+            <!-- BARRA FLUTUANTE DE AÇÕES NA PARTE INFERIOR DA TELA (TIRO ÚNICO) -->
+            <div id="wish-single-actions-bar" style="position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 12px; justify-content: center; align-items: center; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2); padding: 10px 22px; border-radius: 40px; backdrop-filter: blur(16px); box-shadow: 0 15px 35px rgba(0,0,0,0.7);">
+                <button type="button" onclick="window.startWishAnimation(1)" style="padding: 10px 22px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-rotate-right"></i> +1 Tiro
+                </button>
+                <button type="button" onclick="window.startWishAnimation(10)" style="padding: 10px 24px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4); display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> 10 Tiros
+                </button>
+                <button type="button" onclick="window.closeWishModal()" style="padding: 10px 20px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.1); color: #e2e8f0; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-xmark"></i> Fechar
+                </button>
+            </div>
+        </div>
+
+        <!-- CONTAINER DA TELA DE RESUMO DOS 10 TIROS (LADO A LADO IGUAL AOS JOGOS) -->
+        <div id="wish-summary-container" style="display: none; position: relative; z-index: 10; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; pointer-events: auto; padding: 20px;">
+            
+            <h2 style="font-size: 26px; font-weight: 900; color: #ffffff; margin-bottom: 18px; text-shadow: 0 4px 15px rgba(0,0,0,0.85); display: flex; align-items: center; gap: 10px;">
+                <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Resultado dos 10 Tiros
+            </h2>
+
+            <!-- GRID COM OS 10 ITENS LADO A LADO -->
+            <div id="wish-summary-grid-box" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; width: 100%; max-width: 920px; max-height: 65vh; overflow-y: auto; padding: 18px; background: rgba(15, 23, 42, 0.85); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(20px); box-shadow: 0 25px 60px rgba(0,0,0,0.9);">
+                <!-- Renderizado dinamicamente via JS -->
+            </div>
+
+            <!-- BARRA DE AÇÕES INFERIOR DA TELA DE RESUMO -->
+            <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center; align-items: center; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2); padding: 10px 22px; border-radius: 40px; backdrop-filter: blur(16px); box-shadow: 0 15px 35px rgba(0,0,0,0.7);">
+                <button type="button" onclick="window.startWishAnimation(1)" style="padding: 10px 22px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-rotate-right"></i> +1 Tiro
+                </button>
+                <button type="button" onclick="window.startWishAnimation(10)" style="padding: 10px 24px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4); display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> 10 Tiros
+                </button>
+                <button type="button" onclick="window.closeWishModal()" style="padding: 10px 20px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.1); color: #e2e8f0; display: flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-xmark"></i> Fechar
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js?v=4.5"></script>
+    <script src="app.js?v=14.0"></script>
 </body>
 
 

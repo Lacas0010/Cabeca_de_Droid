@@ -2268,6 +2268,12 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             icon = char.get("icon", "")
             weapon = char.get("weapon", {})
             skills = char.get("skills", [])
+            if not skills and char.get("raw_md"):
+                try:
+                    from database import parse_skills_from_raw_md
+                    skills = parse_skills_from_raw_md(char["raw_md"])
+                except Exception:
+                    pass
             
             # Se a lista de skills vier vazia do backend, injeta habilidades padrões oficiais do jogo
             if not skills:
@@ -2315,12 +2321,14 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             if skills:
                 for sk_idx, sk in enumerate(skills):
                     s_l = sk.get("level", 1)
-                    if game_id == "hsr":
-                        s_m = 1 if sk_idx >= 4 else (sk.get("max_level") or (6 if sk_idx == 0 else 10))
-                    elif game_id == "genshin":
-                        s_m = 1 if sk_idx >= 3 else (sk.get("max_level") or 10)
-                    else:
-                        s_m = 1 if sk_idx >= 5 else (sk.get("max_level") or 12)
+                    s_m = sk.get("max_level")
+                    if not s_m:
+                        if game_id == "hsr":
+                            s_m = 1 if sk_idx >= 4 else (6 if sk_idx == 0 else 10)
+                        elif game_id == "genshin":
+                            s_m = 1 if sk_idx >= 3 else 10
+                        else:
+                            s_m = 6 if sk_idx == 5 else 12
                     if s_l < s_m:
                         has_pending_talents = True
                         break
