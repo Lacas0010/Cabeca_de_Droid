@@ -13,7 +13,7 @@
     <!-- FontAwesome 6 Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- CSS Estilos Customizados -->
-    <link rel="stylesheet" href="style.css?v=14.0">
+    <link rel="stylesheet" href="style.css?v=15.0">
 
     <style id="wish-inline-fx-styles">
         /* ANIMAÇÃO DO METEORO (GENSHIN IMPACT) */
@@ -209,6 +209,101 @@
             0% { transform: scale(0.6) translateY(50px); opacity: 0; }
             70% { transform: scale(1.03) translateY(-5px); opacity: 1; }
             100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        /* REGRA RESPONSIVA PARA DISPOSITIVOS MÓVEIS (TELA VERTICAL / SMARTPHONES) */
+        @media (max-width: 768px) {
+            #wish-skip-btn {
+                top: 14px !important;
+                right: 14px !important;
+                padding: 6px 14px !important;
+                font-size: 11px !important;
+            }
+
+            #wish-card-art {
+                max-height: 42vh !important;
+            }
+
+            #wish-card-name {
+                font-size: 24px !important;
+            }
+
+            #wish-card-stars {
+                font-size: 18px !important;
+                margin-bottom: 4px !important;
+            }
+
+            #wish-card-status-badge {
+                font-size: 11px !important;
+                padding: 4px 12px !important;
+            }
+
+            #wish-card-pity-text {
+                font-size: 11px !important;
+                margin-bottom: 70px !important;
+            }
+
+            #wish-next-item-btn {
+                position: fixed !important;
+                bottom: max(16px, env(safe-area-inset-bottom)) !important;
+                left: 50% !important;
+                right: auto !important;
+                transform: translateX(-50%) !important;
+                width: 88vw !important;
+                max-width: 340px !important;
+                justify-content: center !important;
+                padding: 14px 20px !important;
+                font-size: 15px !important;
+                box-shadow: 0 10px 30px rgba(168, 85, 247, 0.6) !important;
+                z-index: 999 !important;
+            }
+
+            #wish-single-actions-bar {
+                bottom: max(16px, env(safe-area-inset-bottom)) !important;
+                width: 90vw !important;
+                padding: 8px 12px !important;
+                gap: 6px !important;
+            }
+
+            #wish-single-actions-bar button {
+                padding: 8px 12px !important;
+                font-size: 11px !important;
+            }
+
+            #wish-summary-container {
+                padding: 12px 10px !important;
+                justify-content: flex-start !important;
+                padding-top: 50px !important;
+            }
+
+            #wish-summary-container h2 {
+                font-size: 20px !important;
+                margin-bottom: 12px !important;
+            }
+
+            #wish-summary-grid-box {
+                grid-template-columns: repeat(2, 1fr) !important;
+                gap: 10px !important;
+                max-height: 68vh !important;
+                padding: 12px 10px !important;
+                border-radius: 18px !important;
+                -webkit-overflow-scrolling: touch !important;
+            }
+
+            #wish-summary-grid-box > div {
+                padding: 10px 6px !important;
+            }
+
+            #wish-summary-grid-box img {
+                width: 60px !important;
+                height: 75px !important;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #wish-summary-grid-box {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
         }
     </style>
 
@@ -2119,7 +2214,7 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js?v=14.0"></script>
+    <script src="app.js?v=15.0"></script>
 </body>
 
 
