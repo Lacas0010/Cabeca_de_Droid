@@ -6687,6 +6687,106 @@ window.closeWishModal = function() {
     if (modal) modal.style.display = "none";
 };
 
+/* ==========================================================================
+   ROAST MY ACCOUNT FUNCTIONALITY (HERTA & NOUS IA)
+   ========================================================================== */
+window.lastRoastMarkdown = "";
+
+window.openRoastModal = async function(gameId) {
+    const activeTabBtn = document.querySelector(".tab-audit-game-btn.active");
+    const selectedGame = gameId || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || "hsr";
+    
+    const modal = document.getElementById("modal-roast");
+    const bodyEl = document.getElementById("roast-content-body");
+    
+    if (!modal || !bodyEl) return;
+    
+    modal.style.display = "flex";
+    window.lastRoastMarkdown = "";
+    
+    bodyEl.innerHTML = `
+        <div class="roast-loading-box">
+            <div class="roast-flame-spinner">
+                <i class="fa-solid fa-fire-flame-curved"></i>
+            </div>
+            <h3 style="color: #ff4b2b; margin: 0; font-size: 18px;">Consultando a Herta e o Aeon Nous...</h3>
+            <p style="color: #94a3b8; font-size: 13px; margin: 0;">Analisando suas relíquias lixo e rindo dos seus atributos flat...</p>
+        </div>
+    `;
+    
+    try {
+        const res = await fetch(`/api/roast/${selectedGame}`);
+        if (!res.ok) {
+            bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">Falha na requisição HTTP: Status ${res.status}</p>`;
+            return;
+        }
+        
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let rawText = "";
+        let buffer = "";
+        let isFirstToken = true;
+        
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop();
+            
+            for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                    try {
+                        const parsed = JSON.parse(line.substring(6));
+                        if (parsed.token) {
+                            if (isFirstToken) {
+                                bodyEl.innerHTML = "";
+                                isFirstToken = false;
+                            }
+                            rawText += parsed.token;
+                            window.lastRoastMarkdown = rawText;
+                            bodyEl.innerHTML = typeof marked !== "undefined" ? marked.parse(rawText) : rawText;
+                            bodyEl.scrollTop = bodyEl.scrollHeight;
+                        } else if (parsed.error) {
+                            if (isFirstToken) bodyEl.innerHTML = "";
+                            rawText += `\n\n⚠️ Erro: ${parsed.error}`;
+                            bodyEl.innerHTML = typeof marked !== "undefined" ? marked.parse(rawText) : rawText;
+                        }
+                    } catch (e) {
+                        // Ignora JSONs parciais em fatias de streaming
+                    }
+                }
+            }
+        }
+        
+        if (!rawText.trim()) {
+            bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">Nenhum conteúdo retornado pelo Roast. Verifique se sua chave API da Groq está configurada nas Configurações.</p>`;
+        }
+    } catch (err) {
+        console.error("Erro no Roast:", err);
+        bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">Ocorreu um erro ao gerar o Roast: ${err.message}</p>`;
+    }
+};
+
+window.copyRoastToClipboard = function() {
+    if (!window.lastRoastMarkdown) {
+        alert("Nenhum Roast para copiar ainda!");
+        return;
+    }
+    navigator.clipboard.writeText(window.lastRoastMarkdown).then(() => {
+        const btn = document.getElementById("btn-copy-roast");
+        if (btn) {
+            const orig = btn.innerHTML;
+            btn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Copiado!`;
+            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }
+    }).catch(err => {
+        console.error("Erro ao copiar:", err);
+    });
+};
+
+
 
 
 

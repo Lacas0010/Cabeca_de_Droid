@@ -4140,3 +4140,61 @@ h1, h2, h3, h4, h5, h6 {
     0% { transform: scale(0.7) translateY(40px); opacity: 0; }
     100% { transform: scale(1) translateY(0); opacity: 1; }
 }
+
+/* ==========================================================================
+   ROAST MY ACCOUNT MODAL STYLES (HERTA & NOUS IA)
+   ========================================================================== */
+.roast-modal-card h1, .roast-modal-card h2, .roast-modal-card h3 {
+    color: #ff6b6b;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-weight: 700;
+}
+.roast-modal-card h1 { font-size: 20px; border-bottom: 1px dashed rgba(255, 107, 107, 0.3); padding-bottom: 6px; }
+.roast-modal-card h2 { font-size: 17px; color: #ff8e8e; }
+.roast-modal-card h3 { font-size: 15px; color: #ffa8a8; }
+
+.roast-modal-card p {
+    margin-bottom: 10px;
+}
+
+.roast-modal-card ul, .roast-modal-card ol {
+    margin-left: 20px;
+    margin-bottom: 12px;
+}
+
+.roast-modal-card li {
+    margin-bottom: 4px;
+}
+
+.roast-modal-card blockquote {
+    background: rgba(255, 75, 43, 0.1);
+    border-left: 4px solid #ff4b2b;
+    padding: 10px 14px;
+    border-radius: 4px 8px 8px 4px;
+    margin: 12px 0;
+    font-style: italic;
+    color: #fca5a5;
+}
+
+.roast-loading-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 50px 20px;
+    gap: 16px;
+    text-align: center;
+}
+
+.roast-flame-spinner {
+    font-size: 48px;
+    color: #ff4b2b;
+    animation: flamePulse 1s infinite alternate ease-in-out;
+}
+
+@keyframes flamePulse {
+    0% { transform: scale(0.9); filter: drop-shadow(0 0 10px rgba(255, 75, 43, 0.5)); }
+    100% { transform: scale(1.15); filter: drop-shadow(0 0 25px rgba(255, 65, 108, 0.9)); }
+}
+

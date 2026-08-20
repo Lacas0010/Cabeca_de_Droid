@@ -1080,9 +1080,15 @@
                             <button class="filter-btn tab-audit-game-btn" data-game="genshin">Genshin Impact</button>
                             <button class="filter-btn tab-audit-game-btn" data-game="zzz">Zenless Zone Zero</button>
                         </div>
-                        <button id="btn-export-tierlist-card" class="primary-btn trigger-export-tierlist" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; cursor: pointer; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
-                            <i class="fa-solid fa-camera"></i> Gerar Imagem HD da Tier List
-                        </button>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button id="btn-trigger-roast-tab" onclick="window.openRoastModal()" class="primary-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #ff416c, #ff4b2b); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 14px rgba(255, 75, 43, 0.4); transition: transform 0.2s ease;">
+                                <i class="fa-solid fa-fire-flame-curved"></i> 🔥 Roast da Conta (Herta IA)
+                            </button>
+                            <button id="btn-export-tierlist-card" class="primary-btn trigger-export-tierlist" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; cursor: pointer; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-camera"></i> Gerar Imagem HD da Tier List
+                            </button>
+                        </div>
+
                     </div>
                     <div id="tab-audit-report-body" class="overview-card">
                         <!-- Preenchido via JS -->
@@ -2035,6 +2041,9 @@
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
                 <h3 style="margin: 0; color: #a855f7; font-size: 18px;"><i class="fa-solid fa-trophy"></i> Tier List & Relatório da Conta</h3>
                 <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-modal-roast-trigger" onclick="window.openRoastModal()" class="primary-btn" style="padding: 6px 12px; font-size: 11px; background: linear-gradient(135deg, #ff416c, #ff4b2b); border: none; cursor: pointer; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 0 10px rgba(255, 75, 43, 0.4);">
+                        <i class="fa-solid fa-fire-flame-curved"></i> Roast da Conta
+                    </button>
                     <button class="primary-btn trigger-export-tierlist" style="padding: 6px 12px; font-size: 11px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; cursor: pointer; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">
                         <i class="fa-solid fa-camera"></i> Gerar Imagem
                     </button>
@@ -2051,6 +2060,35 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL 6: ROAST MY ACCOUNT (HERTA / NOUS IA) -->
+    <div id="modal-roast" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.88); backdrop-filter: blur(10px); z-index: 9999; justify-content: center; align-items: center;">
+        <div class="modal-card-content roast-modal-card" style="background: linear-gradient(145deg, #0f172a, #1e1b4b); border: 1px solid rgba(255, 75, 43, 0.4); border-radius: 20px; width: 92%; max-width: 860px; padding: 24px; max-height: 88vh; display: flex; flex-direction: column; box-shadow: 0 20px 60px rgba(255, 75, 43, 0.25);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #ff416c, #ff4b2b); display: flex; align-items: center; justify-content: center; font-size: 22px; color: #fff; box-shadow: 0 0 15px rgba(255, 75, 43, 0.6);">
+                        <i class="fa-solid fa-fire-flame-curved"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; color: #fff; font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+                            Roast da Conta <span style="font-size: 11px; background: linear-gradient(135deg, #a855f7, #ec4899); color: #fff; padding: 3px 8px; border-radius: 12px; font-weight: 600;">Herta & Nous IA</span>
+                        </h3>
+                        <span style="font-size: 12px; color: #94a3b8;">Julgamento sarcástico e cirúrgico do seu inventário e builds</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-copy-roast" onclick="window.copyRoastToClipboard()" style="background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                        <i class="fa-solid fa-copy"></i> Copiar Roast
+                    </button>
+                    <button onclick="document.getElementById('modal-roast').style.display='none'" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">✕</button>
+                </div>
+            </div>
+            <div id="roast-content-body" style="flex: 1; overflow-y: auto; padding-right: 8px; color: #e2e8f0; font-size: 14px; line-height: 1.6;">
+                <!-- Conteúdo do Roast formatado em Markdown via SSE -->
+            </div>
+        </div>
+    </div>
+
 
     <!-- MODAL 5: COMPARATIVO DETALHADO DE BUILD DO PERSONAGEM -->
     <div id="modal-character-diff-detail" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
