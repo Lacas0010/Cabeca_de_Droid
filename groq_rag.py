@@ -49,7 +49,7 @@ class GroqRAG:
             
             # Executa uma chamada rápida de teste
             completion = test_client.chat.completions.create(
-                model="llama-3.1-8b-instant",
+                model="groq/compound-mini",
                 messages=[
                     {"role": "user", "content": "ping"}
                 ],
@@ -330,8 +330,10 @@ class GroqRAG:
         # 4. Lista de modelos (Principal + Fallbacks em caso de instabilidade)
         modelos = [
             "openai/gpt-oss-120b",
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant"
+            "groq/compound",
+            "groq/compound-mini",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.6-27b"
         ]
 
         last_exception = None
@@ -438,8 +440,11 @@ class GroqRAG:
 
         # 4. Lista de modelos compatíveis com streaming rápido
         modelos = [
-            "llama-3.3-70b-versatile",
-            "llama-3.1-8b-instant"
+            "groq/compound-mini",
+            "groq/compound",
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.6-27b"
         ]
 
         for model in modelos:
@@ -462,3 +467,83 @@ class GroqRAG:
                 continue
         
         yield "Erro: Não foi possível obter resposta de nenhum modelo de streaming da Groq."
+
+    def generate_account_roast_stream(self, game_id: str, account_summary: str, trash_relics_info: str = "", luck_info: str = ""):
+        """
+        Gera um Roast da conta em streaming utilizando a persona da Herta & Nous (Cabeça de Droid).
+        Analisa os dados da conta do jogador com um tom sarcástico, debochado, porém incrivelmente perspicaz.
+        """
+        if not self.client:
+            yield "Erro: Chave API da Groq não configurada. Configure sua chave nas Configurações para que o Nous e a Herta possam julgar sua conta!"
+            return
+
+        game_names = {
+            "hsr": "Honkai: Star Rail",
+            "zzz": "Zenless Zone Zero",
+            "genshin": "Genshin Impact"
+        }
+        nome_jogo = game_names.get(game_id.lower(), game_id.upper())
+
+        system_prompt = (
+            "Você é o Aeon Nous (o supercomputador astral da Erudição) auxiliado pela genial Herta da Estação Espacial. "
+            "Você está assumindo o controle do assistente 'Cabeça de Droid' para fazer um ROAST (uma crítica ácida, debochada, engraçada e extremamente perspicaz) da conta de um jogador. "
+            "Sua personalidade é de uma inteligência genial, extremamente impaciente com incompetência, sarcástica, divertida e implacável no humor, mas usando termos técnicos reais dos jogos da HoYoverse.\n\n"
+            "Diretrizes para o Roast:\n"
+            "1. Crie um apelido cômico e humilhante para a conta do jogador com base nos dados (ex: 'O Terror da Resina Jogada no Lixo', 'Mestre do DEF Flat', 'Colecionador de Relíquias Vergonhosas').\n"
+            "2. Destaque as maiores atrocidades encontradas: substatus inútis (ex: DEF Flat/HP Flat), relíquias de nível baixo em 5 estrelas, personagens sem arma/cone adequado, ou falta de sinergia nos times.\n"
+            "3. Se houver dados de peças 'Lixo' (Trash Relics) ou Índice de Sorte (Luck Score), use isso para zombar da ruindade do RNG dele ou de como ele guarda tralha no inventário.\n"
+            "4. Elogie com extremo desdém o 'menos pior' personagem da conta (ex: 'Até que este personagem não é um desastre completo... para os seus padrões deprimentes').\n"
+            "5. Dê um veredito final com uma Nota de Vergonha Alheia e 3 conselhos diretos para deixar de ser um fracasso no metagame.\n"
+            "6. Use Markdown visualmente incrível com títulos, emojis espaciais/fogo (🔥, 🤖, 💀, 👑, 💩, 🧠), negritos e listas.\n\n"
+            f"DADOS DA CONTA DO JOGADOR ({nome_jogo}):\n"
+            f"{account_summary}\n\n"
+        )
+        if trash_relics_info:
+            system_prompt += f"RELÍQUIAS LIXO IDENTIFICADAS NO INVENTÁRIO:\n{trash_relics_info}\n\n"
+        if luck_info:
+            system_prompt += f"ÍNDICE DE SORTE E RV DA CONTA:\n{luck_info}\n\n"
+
+        MAX_SYSTEM_PROMPT_CHARS = 16000
+        if len(system_prompt) > MAX_SYSTEM_PROMPT_CHARS:
+            print(f"[INFO] Truncando contexto do Roast de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres.")
+            system_prompt = system_prompt[:MAX_SYSTEM_PROMPT_CHARS] + "\n\n... (Resumo truncado para otimização de tokens) ..."
+
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": f"Faça o Roast definitivo e sem piedade da minha conta de {nome_jogo}! Mostre todo o deboche da Herta e o cálculo cirúrgico do Nous!"}
+        ]
+
+        modelos = [
+            "groq/compound-mini",
+            "groq/compound",
+            "openai/gpt-oss-120b",
+            "openai/gpt-oss-20b",
+            "qwen/qwen3.6-27b"
+        ]
+
+        last_err = None
+        for model in modelos:
+            try:
+                print(f"[INFO] Gerando Roast stream com modelo: {model}...")
+                completion = self.client.chat.completions.create(
+                    model=model,
+                    messages=messages,
+                    temperature=0.8,
+                    stream=True
+                )
+                has_yielded = False
+                for chunk in completion:
+                    if chunk.choices and chunk.choices[0].delta.content:
+                        has_yielded = True
+                        yield chunk.choices[0].delta.content
+                if has_yielded:
+                    return
+            except Exception as e:
+                last_err = str(e)
+                print(f"[WARN] Falha ao gerar Roast com modelo {model}: {e}")
+                continue
+
+        err_detail = f" Detalhes do erro: {last_err}" if last_err else ""
+        yield f"Erro: Não foi possível obter resposta dos modelos da Groq para realizar o Roast.{err_detail}"
+
+
