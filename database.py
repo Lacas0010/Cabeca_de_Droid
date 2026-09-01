@@ -241,11 +241,25 @@ def init_db() -> None:
         )
         """)
         
+        # 7. Tabela de Registros de Endgame
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS endgame_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            uid TEXT NOT NULL,
+            game_id TEXT NOT NULL,
+            modes_json TEXT,
+            raw_md TEXT,
+            updated_at TEXT NOT NULL,
+            UNIQUE(uid, game_id)
+        )
+        """)
+        
         # Criação de índices para acelerar consultas frequentes do Roster e de Relíquias
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_characters_game_uid ON characters(game_id, uid)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_relics_uid_char ON character_relics(uid, character_name)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_checkin_date ON daily_checkin_logs(date)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_uid ON account_snapshots(game_id, uid)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_endgame_game_uid ON endgame_records(game_id, uid)")
         
     print("[INFO] Banco de dados SQLite inicializado com sucesso.")
     fix_skills_json_max_levels()
@@ -942,6 +956,53 @@ def reset_database() -> None:
         cursor.execute("DROP TABLE IF EXISTS game_accounts")
         cursor.execute("DROP TABLE IF EXISTS daily_notes_cache")
         cursor.execute("DROP TABLE IF EXISTS daily_checkin_logs")
+        cursor.execute("DROP TABLE IF EXISTS endgame_records")
     init_db()
+
+def save_endgame_data(uid: str, game_id: str, modes_data: List[Dict[str, Any]], raw_md: str = "") -> None:
+    """Salva ou atualiza os registros de endgame para uma conta no banco de dados SQLite."""
+    if not uid:
+        uid = "000000000"
+    game_id_clean = (game_id or "hsr").lower().strip()
+    updated_at = datetime.now().isoformat()
+    modes_json_str = json.dumps(modes_data, ensure_ascii=False)
+    
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        INSERT INTO endgame_records (uid, game_id, modes_json, raw_md, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(uid, game_id) DO UPDATE SET
+            modes_json = excluded.modes_json,
+            raw_md = excluded.raw_md,
+            updated_at = excluded.updated_at
+        """, (str(uid), game_id_clean, modes_json_str, raw_md, updated_at))
+
+def get_endgame_data(game_id: str, uid: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """Recupera os registros de endgame mais recentes salvos para o jogo especificado."""
+    game_id_clean = (game_id or "hsr").lower().strip()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if uid:
+            cursor.execute("SELECT uid, game_id, modes_json, raw_md, updated_at FROM endgame_records WHERE game_id = ? AND uid = ?", (game_id_clean, str(uid)))
+        else:
+            cursor.execute("SELECT uid, game_id, modes_json, raw_md, updated_at FROM endgame_records WHERE game_id = ? ORDER BY updated_at DESC LIMIT 1", (game_id_clean,))
+        row = cursor.fetchone()
+        if row:
+            modes = []
+            if row["modes_json"]:
+                try:
+                    modes = json.loads(row["modes_json"])
+                except Exception:
+                    modes = []
+            return {
+                "uid": row["uid"],
+                "game_id": row["game_id"],
+                "modes": modes,
+                "raw_md": row["raw_md"],
+                "updated_at": row["updated_at"]
+            }
+    return None
+
 
 

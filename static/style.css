@@ -3307,6 +3307,10 @@ h1, h2, h3, h4, h5, h6 {
 
 .gacha-dist-bar-fill {
     height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+
 .gacha-game-pill.active[data-game="zzz"] {
     background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(8, 145, 178, 0.15));
     border-color: rgba(6, 182, 212, 0.5);
@@ -4197,4 +4201,676 @@ h1, h2, h3, h4, h5, h6 {
     0% { transform: scale(0.9); filter: drop-shadow(0 0 10px rgba(255, 75, 43, 0.5)); }
     100% { transform: scale(1.15); filter: drop-shadow(0 0 25px rgba(255, 65, 108, 0.9)); }
 }
+
+/* ==========================================================================
+   SUB-NAVEGAÇÃO DE ABAS DE JOGO (GALERIA / ENDGAME / ESTATÍSTICAS)
+   ========================================================================== */
+.game-subnav-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    background: rgba(15, 23, 42, 0.7);
+    padding: 6px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow-x: auto;
+}
+
+.game-subnav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.game-subnav-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.game-subnav-btn.active {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.subnav-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    font-weight: 700;
+    margin-left: 2px;
+}
+
+.game-subview {
+    display: none !important;
+}
+.game-subview.active {
+    display: block !important;
+    animation: subviewFadeIn 0.22s ease-out;
+}
+
+@keyframes subviewFadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ==========================================================================
+   PAINEL DE ENDGAME MODERNO, COMPACTO E RESPONSIVO (HSR, GENSHIN, ZZZ)
+   ========================================================================== */
+.endgame-view-wrapper {
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 16px 18px;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.endgame-view-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.3), rgba(255,255,255,0.1));
+}
+
+.endgame-view-wrapper.hsr-theme {
+    border-color: rgba(168, 85, 247, 0.3);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4), 0 0 25px rgba(168, 85, 247, 0.08);
+}
+.endgame-view-wrapper.hsr-theme::before {
+    background: linear-gradient(90deg, #a855f7, #ec4899, #6366f1);
+}
+
+.endgame-view-wrapper.genshin-theme {
+    border-color: rgba(6, 182, 212, 0.3);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4), 0 0 25px rgba(6, 182, 212, 0.08);
+}
+.endgame-view-wrapper.genshin-theme::before {
+    background: linear-gradient(90deg, #06b6d4, #3b82f6, #10b981);
+}
+
+.endgame-view-wrapper.zzz-theme {
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4), 0 0 25px rgba(245, 158, 11, 0.08);
+}
+.endgame-view-wrapper.zzz-theme::before {
+    background: linear-gradient(90deg, #f59e0b, #ef4444, #fbbf24);
+}
+
+/* Master Header com Resumo Global e Switcher */
+.endgame-master-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.endgame-master-title-area {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.endgame-game-badge {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.hsr-theme .endgame-game-badge {
+    background: rgba(168, 85, 247, 0.18);
+    color: #d8b4fe;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+}
+.genshin-theme .endgame-game-badge {
+    background: rgba(6, 182, 212, 0.18);
+    color: #67e8f9;
+    border: 1px solid rgba(6, 182, 212, 0.35);
+}
+.zzz-theme .endgame-game-badge {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fcd34d;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.endgame-master-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+}
+
+.endgame-master-stats-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.endgame-summary-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.endgame-summary-chip.gold {
+    color: #facc15;
+    background: rgba(250, 204, 21, 0.1);
+    border-color: rgba(250, 204, 21, 0.35);
+    box-shadow: 0 0 10px rgba(250, 204, 21, 0.15);
+}
+.endgame-summary-chip.cyan {
+    color: #38bdf8;
+    background: rgba(56, 189, 248, 0.1);
+    border-color: rgba(56, 189, 248, 0.3);
+}
+.endgame-summary-chip.purple {
+    color: #c084fc;
+    background: rgba(192, 132, 252, 0.1);
+    border-color: rgba(192, 132, 252, 0.3);
+}
+
+.endgame-view-toggle-group {
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 2px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.endgame-view-toggle-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-family: 'Outfit', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+.endgame-view-toggle-btn:hover {
+    color: #fff;
+}
+.endgame-view-toggle-btn.active {
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Barra de Seleção de Modos Compacta e Segmentada */
+.endgame-mode-selector-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+    padding: 3px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.endgame-mode-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+.endgame-mode-tab-btn:hover {
+    color: #f1f5f9;
+    background: rgba(255, 255, 255, 0.05);
+}
+.endgame-mode-tab-btn.active {
+    color: #ffffff;
+    font-weight: 700;
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.35);
+}
+
+.hsr-theme .endgame-mode-tab-btn.active {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(126, 34, 206, 0.4));
+    border-color: rgba(168, 85, 247, 0.5);
+    box-shadow: 0 3px 12px rgba(168, 85, 247, 0.25);
+}
+.genshin-theme .endgame-mode-tab-btn.active {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(14, 116, 144, 0.4));
+    border-color: rgba(6, 182, 212, 0.5);
+    box-shadow: 0 3px 12px rgba(6, 182, 212, 0.25);
+}
+.zzz-theme .endgame-mode-tab-btn.active {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(180, 83, 9, 0.4));
+    border-color: rgba(245, 158, 11, 0.5);
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.25);
+}
+
+.endgame-mode-tab-btn .tab-star-pill {
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #facc15;
+    font-weight: 800;
+    border: 1px solid rgba(250, 204, 21, 0.25);
+}
+
+/* Painel de Modo Ativo (Visão Detalhada) */
+.endgame-active-mode-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    animation: subviewFadeIn 0.2s ease-out;
+}
+
+.endgame-mode-meta-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: rgba(30, 41, 59, 0.35);
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.endgame-mode-title-area {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.endgame-mode-main-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.endgame-mode-stage-desc {
+    font-size: 11.5px;
+    color: #94a3b8;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-weight: 500;
+}
+
+.endgame-metrics-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.endgame-metric-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.endgame-metric-chip.gold-stars {
+    color: #facc15;
+    border-color: rgba(250, 204, 21, 0.35);
+    background: rgba(250, 204, 21, 0.08);
+}
+.endgame-metric-chip.blue-score {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.08);
+}
+.endgame-metric-chip.purple-rounds {
+    color: #c084fc;
+    border-color: rgba(192, 132, 252, 0.35);
+    background: rgba(192, 132, 252, 0.08);
+}
+
+/* Grid de Equipes Otimizado e Compacto */
+.endgame-teams-grid {
+    display: grid;
+    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+/* Em telas médias/grandes, distribui perfeitamente 3 lados em 3 colunas e 2 lados em 2 colunas */
+@media (min-width: 1024px) {
+    .endgame-teams-grid.teams-count-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    .endgame-teams-grid.teams-count-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .endgame-teams-grid.teams-count-1 {
+        grid-template-columns: 1fr;
+    }
+}
+
+.endgame-team-node {
+    background: rgba(30, 41, 59, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 10px;
+    padding: 10px 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.endgame-team-node:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(30, 41, 59, 0.6);
+}
+
+.endgame-team-node-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #cbd5e1;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding-bottom: 5px;
+}
+.endgame-team-title-left {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.endgame-side-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3b82f6;
+    box-shadow: 0 0 6px currentColor;
+}
+.hsr-theme .endgame-side-dot { background: #a855f7; color: #a855f7; }
+.genshin-theme .endgame-side-dot { background: #06b6d4; color: #06b6d4; }
+.zzz-theme .endgame-side-dot { background: #f59e0b; color: #f59e0b; }
+
+.endgame-chars-row {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+}
+
+/* Mini Cards de Personagens Compactos */
+.endgame-char-mini {
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 6px 2px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    user-select: none;
+}
+.endgame-char-mini:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.35);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, 0.5);
+    background: rgba(51, 65, 85, 0.9);
+}
+
+.endgame-char-avatar-box {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    margin-bottom: 3px;
+}
+
+.endgame-char-avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+}
+.endgame-char-mini.rarity-5 .endgame-char-avatar {
+    border-color: #f59e0b;
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
+}
+.endgame-char-mini.rarity-4 .endgame-char-avatar {
+    border-color: #a855f7;
+    box-shadow: 0 0 8px rgba(168, 85, 247, 0.25);
+}
+
+.endgame-char-elem-icon {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    padding: 1px;
+}
+
+.endgame-char-rank-badge {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #f8fafc;
+    font-size: 8.5px;
+    font-weight: 800;
+    padding: 0 3px;
+    border-radius: 3px;
+    line-height: 1.2;
+}
+
+.endgame-char-name-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: #f1f5f9;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    padding: 0 2px;
+    line-height: 1.2;
+}
+
+.endgame-char-lvl-label {
+    font-size: 9px;
+    color: #94a3b8;
+    font-weight: 500;
+    line-height: 1.1;
+}
+
+.endgame-enemies-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 2px;
+    padding-top: 4px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.05);
+}
+
+.endgame-enemy-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    color: #fca5a5;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    padding: 1px 5px;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* VISÃO GERAL (TODOS OS MODOS LADO A LADO) */
+.endgame-overview-matrix {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+    gap: 12px;
+    animation: subviewFadeIn 0.2s ease-out;
+}
+
+.endgame-overview-mode-card {
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: all 0.2s ease;
+}
+.endgame-overview-mode-card:hover {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(30, 41, 59, 0.55);
+}
+
+.endgame-overview-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding-bottom: 8px;
+}
+.endgame-overview-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Estado de Carregamento e Vazio */
+.endgame-loading-spinner {
+    padding: 24px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 13px;
+    font-weight: 500;
+}
+.endgame-loading-spinner i {
+    color: #38bdf8;
+    margin-right: 6px;
+}
+
+.endgame-empty-state {
+    padding: 28px 16px;
+    text-align: center;
+    color: #94a3b8;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.endgame-empty-state i {
+    font-size: 28px;
+    margin-bottom: 2px;
+    opacity: 0.5;
+}
+.endgame-empty-state p {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #cbd5e1;
+    margin: 0;
+}
+.endgame-empty-state span {
+    font-size: 11.5px;
+    color: #64748b;
+    max-width: 420px;
+    line-height: 1.4;
+}
+.endgame-empty-action-btn {
+    margin-top: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.endgame-empty-action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+}
+
+
+
 

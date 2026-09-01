@@ -13,7 +13,7 @@
     <!-- FontAwesome 6 Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- CSS Estilos Customizados -->
-    <link rel="stylesheet" href="style.css?v=15.0">
+    <link rel="stylesheet" href="style.css?v=17.0">
 
     <style id="wish-inline-fx-styles">
         /* ANIMAÇÃO DO METEORO (GENSHIN IMPACT) */
@@ -616,50 +616,74 @@
                     </details>
                 </div>
 
-                <!-- Estatísticas do Roster ZZZ -->
-                <div class="overview-card charts-card game-charts-card" id="charts-zzz" style="margin-bottom: 20px; display: none;">
-                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Zenless Zone Zero)</h3>
-                    <p class="section-desc">Distribuição de elementos e especialidades/raridade dos seus agentes ativos (Nv >= 50)</p>
-                    <div class="charts-container">
-                        <div class="chart-box">
-                            <h4>Atributos/Elementos (Agentes ZZZ)</h4>
-                            <div class="chart-visual-wrapper">
-                                <svg id="chart-elements-zzz" viewBox="0 0 200 200" width="100%" height="150">
-                                    <!-- Desenhado via JS -->
-                                </svg>
-                                <div id="legend-elements-zzz" class="chart-legend"></div>
-                            </div>
+                <!-- Sub-Navegação da Aba ZZZ -->
+                <div class="game-subnav-bar">
+                    <button class="game-subnav-btn active" data-game="zzz" data-view="gallery">
+                        <i class="fa-solid fa-users"></i> Galeria de Agentes
+                    </button>
+                    <button class="game-subnav-btn" data-game="zzz" data-view="endgame">
+                        <i class="fa-solid fa-shield-halved" style="color: var(--color-zzz);"></i> Desafios de Endgame
+                        <span class="subnav-badge" id="endgame-badge-zzz">Defesa Shiyu</span>
+                    </button>
+                    <button class="game-subnav-btn" data-game="zzz" data-view="charts">
+                        <i class="fa-solid fa-chart-pie"></i> Estatísticas
+                    </button>
+                </div>
+
+                <!-- SUBVIEW 1: Galeria de Agentes (Padrão) -->
+                <div id="view-gallery-zzz" class="game-subview active">
+                    <div class="gallery-container">
+                        <!-- Filtro de Elemento -->
+                        <div class="element-filters" data-game="zzz" style="margin-bottom: 8px;">
+                            <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
+                            <button class="filter-btn" data-filter="fire"><img src="/assets/elements/zzz_fire.png" class="filter-elem-icon"> Fogo</button>
+                            <button class="filter-btn" data-filter="electric"><img src="/assets/elements/zzz_electric.png" class="filter-elem-icon"> Elétrico</button>
+                            <button class="filter-btn" data-filter="ice"><img src="/assets/elements/zzz_ice.png" class="filter-elem-icon"> Gelo</button>
+                            <button class="filter-btn" data-filter="physical"><img src="/assets/elements/zzz_physical.png" class="filter-elem-icon"> Físico</button>
+                            <button class="filter-btn" data-filter="ether"><img src="/assets/elements/zzz_ether.png" class="filter-elem-icon"> Éter</button>
+                            <button class="filter-btn" data-filter="lumiflux"><img src="/assets/elements/zzz_lumiflux.png" class="filter-elem-icon" onerror="this.style.display='none';"> Lumiflux</button>
                         </div>
-                        <div class="chart-box">
-                            <h4>Raridade/Classe (Classe S vs Classe A)</h4>
-                            <div class="chart-visual-wrapper">
-                                <svg id="chart-rarity-zzz" viewBox="0 0 200 200" width="100%" height="150">
-                                    <!-- Desenhado via JS -->
-                                </svg>
-                                <div id="legend-rarity-zzz" class="chart-legend"></div>
-                            </div>
+                        <div class="element-filters rarity-filters" data-game="zzz" style="margin-bottom: 16px;">
+                            <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
+                            <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Rank S</button>
+                            <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #a78bfa;"></i> Rank A</button>
+                        </div>
+                        <div id="gallery-zzz" class="character-gallery">
+                            <!-- Renderizado via JS -->
                         </div>
                     </div>
                 </div>
 
-                <div class="gallery-container">
-                    <!-- Filtro de Elemento -->
-                    <div class="element-filters" data-game="zzz" style="margin-bottom: 8px;">
-                        <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
-                        <button class="filter-btn" data-filter="fire"><img src="/assets/elements/zzz_fire.png" class="filter-elem-icon"> Fogo</button>
-                        <button class="filter-btn" data-filter="electric"><img src="/assets/elements/zzz_electric.png" class="filter-elem-icon"> Elétrico</button>
-                        <button class="filter-btn" data-filter="ice"><img src="/assets/elements/zzz_ice.png" class="filter-elem-icon"> Gelo</button>
-                        <button class="filter-btn" data-filter="physical"><img src="/assets/elements/zzz_physical.png" class="filter-elem-icon"> Físico</button>
-                        <button class="filter-btn" data-filter="ether"><img src="/assets/elements/zzz_ether.png" class="filter-elem-icon"> Éter</button>
-                        <button class="filter-btn" data-filter="lumiflux"><img src="/assets/elements/zzz_lumiflux.png" class="filter-elem-icon" onerror="this.style.display='none';"> Lumiflux</button>
+                <!-- SUBVIEW 2: Endgame (Defesa Shiyu) -->
+                <div id="view-endgame-zzz" class="game-subview">
+                    <div class="endgame-view-wrapper zzz-theme">
+                        <div id="endgame-container-zzz">
+                            <div class="endgame-loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Carregando registros de endgame...</div>
+                        </div>
                     </div>
-                    <div class="element-filters rarity-filters" data-game="zzz" style="margin-bottom: 16px;">
-                        <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
-                        <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> Rank S</button>
-                        <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #a78bfa;"></i> Rank A</button>
-                    </div>
-                    <div id="gallery-zzz" class="character-gallery">
-                        <!-- Renderizado via JS -->
+                </div>
+
+                <!-- SUBVIEW 3: Estatísticas do Roster ZZZ -->
+                <div id="view-charts-zzz" class="game-subview">
+                    <div class="overview-card charts-card game-charts-card" id="charts-zzz" style="display: block;">
+                        <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Zenless Zone Zero)</h3>
+                        <p class="section-desc">Distribuição de elementos e especialidades/raridade dos seus agentes ativos (Nv >= 50)</p>
+                        <div class="charts-container">
+                            <div class="chart-box">
+                                <h4>Atributos/Elementos (Agentes ZZZ)</h4>
+                                <div class="chart-visual-wrapper">
+                                    <svg id="chart-elements-zzz" viewBox="0 0 200 200" width="100%" height="150"></svg>
+                                    <div id="legend-elements-zzz" class="chart-legend"></div>
+                                </div>
+                            </div>
+                            <div class="chart-box">
+                                <h4>Raridade/Classe (Classe S vs Classe A)</h4>
+                                <div class="chart-visual-wrapper">
+                                    <svg id="chart-rarity-zzz" viewBox="0 0 200 200" width="100%" height="150"></svg>
+                                    <div id="legend-rarity-zzz" class="chart-legend"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -699,51 +723,75 @@
                     </details>
                 </div>
 
-                <!-- Estatísticas do Roster Genshin -->
-                <div class="overview-card charts-card game-charts-card" id="charts-genshin" style="margin-bottom: 20px; display: none;">
-                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Genshin Impact)</h3>
-                    <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
-                    <div class="charts-container">
-                        <div class="chart-box">
-                            <h4>Elementos (Personagens Genshin)</h4>
-                            <div class="chart-visual-wrapper">
-                                <svg id="chart-elements-genshin" viewBox="0 0 200 200" width="100%" height="150">
-                                    <!-- Desenhado via JS -->
-                                </svg>
-                                <div id="legend-elements-genshin" class="chart-legend"></div>
-                            </div>
+                <!-- Sub-Navegação da Aba Genshin -->
+                <div class="game-subnav-bar">
+                    <button class="game-subnav-btn active" data-game="genshin" data-view="gallery">
+                        <i class="fa-solid fa-users"></i> Galeria de Personagens
+                    </button>
+                    <button class="game-subnav-btn" data-game="genshin" data-view="endgame">
+                        <i class="fa-solid fa-dungeon" style="color: var(--color-genshin);"></i> Desafios de Endgame
+                        <span class="subnav-badge" id="endgame-badge-genshin">Abismo & Teatro</span>
+                    </button>
+                    <button class="game-subnav-btn" data-game="genshin" data-view="charts">
+                        <i class="fa-solid fa-chart-pie"></i> Estatísticas
+                    </button>
+                </div>
+
+                <!-- SUBVIEW 1: Galeria de Personagens (Padrão) -->
+                <div id="view-gallery-genshin" class="game-subview active">
+                    <div class="gallery-container">
+                        <!-- Filtro de Elemento -->
+                        <div class="element-filters" data-game="genshin" style="margin-bottom: 8px;">
+                            <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
+                            <button class="filter-btn" data-filter="pyro"><img src="/assets/elements/genshin_pyro.png" class="filter-elem-icon"> Pyro</button>
+                            <button class="filter-btn" data-filter="hydro"><img src="/assets/elements/genshin_hydro.png" class="filter-elem-icon"> Hydro</button>
+                            <button class="filter-btn" data-filter="anemo"><img src="/assets/elements/genshin_anemo.png" class="filter-elem-icon"> Anemo</button>
+                            <button class="filter-btn" data-filter="electro"><img src="/assets/elements/genshin_electro.png" class="filter-elem-icon"> Electro</button>
+                            <button class="filter-btn" data-filter="dendro"><img src="/assets/elements/genshin_dendro.png" class="filter-elem-icon"> Dendro</button>
+                            <button class="filter-btn" data-filter="cryo"><img src="/assets/elements/genshin_cryo.png" class="filter-elem-icon"> Cryo</button>
+                            <button class="filter-btn" data-filter="geo"><img src="/assets/elements/genshin_geo.png" class="filter-elem-icon"> Geo</button>
                         </div>
-                        <div class="chart-box">
-                            <h4>Raridade (Personagens 5★ vs 4★)</h4>
-                            <div class="chart-visual-wrapper">
-                                <svg id="chart-rarity-genshin" viewBox="0 0 200 200" width="100%" height="150">
-                                    <!-- Desenhado via JS -->
-                                </svg>
-                                <div id="legend-rarity-genshin" class="chart-legend"></div>
-                            </div>
+                        <div class="element-filters rarity-filters" data-game="genshin" style="margin-bottom: 16px;">
+                            <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
+                            <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> 5★ Lendário</button>
+                            <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> 4★ Épico</button>
+                        </div>
+                        <div id="gallery-genshin" class="character-gallery">
+                            <!-- Renderizado via JS -->
                         </div>
                     </div>
                 </div>
 
-                <div class="gallery-container">
-                    <!-- Filtro de Elemento -->
-                    <div class="element-filters" data-game="genshin" style="margin-bottom: 8px;">
-                        <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
-                        <button class="filter-btn" data-filter="pyro"><img src="/assets/elements/genshin_pyro.png" class="filter-elem-icon"> Pyro</button>
-                        <button class="filter-btn" data-filter="hydro"><img src="/assets/elements/genshin_hydro.png" class="filter-elem-icon"> Hydro</button>
-                        <button class="filter-btn" data-filter="anemo"><img src="/assets/elements/genshin_anemo.png" class="filter-elem-icon"> Anemo</button>
-                        <button class="filter-btn" data-filter="electro"><img src="/assets/elements/genshin_electro.png" class="filter-elem-icon"> Electro</button>
-                        <button class="filter-btn" data-filter="dendro"><img src="/assets/elements/genshin_dendro.png" class="filter-elem-icon"> Dendro</button>
-                        <button class="filter-btn" data-filter="cryo"><img src="/assets/elements/genshin_cryo.png" class="filter-elem-icon"> Cryo</button>
-                        <button class="filter-btn" data-filter="geo"><img src="/assets/elements/genshin_geo.png" class="filter-elem-icon"> Geo</button>
+                <!-- SUBVIEW 2: Endgame (Abismo & Teatro) -->
+                <div id="view-endgame-genshin" class="game-subview">
+                    <div class="endgame-view-wrapper genshin-theme">
+                        <div id="endgame-container-genshin">
+                            <div class="endgame-loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Carregando registros de endgame...</div>
+                        </div>
                     </div>
-                    <div class="element-filters rarity-filters" data-game="genshin" style="margin-bottom: 16px;">
-                        <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
-                        <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> 5★ Lendário</button>
-                        <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> 4★ Épico</button>
-                    </div>
-                    <div id="gallery-genshin" class="character-gallery">
-                        <!-- Renderizado via JS -->
+                </div>
+
+                <!-- SUBVIEW 3: Estatísticas do Roster Genshin -->
+                <div id="view-charts-genshin" class="game-subview">
+                    <div class="overview-card charts-card game-charts-card" id="charts-genshin" style="display: block;">
+                        <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Genshin Impact)</h3>
+                        <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
+                        <div class="charts-container">
+                            <div class="chart-box">
+                                <h4>Elementos (Personagens Genshin)</h4>
+                                <div class="chart-visual-wrapper">
+                                    <svg id="chart-elements-genshin" viewBox="0 0 200 200" width="100%" height="150"></svg>
+                                    <div id="legend-elements-genshin" class="chart-legend"></div>
+                                </div>
+                            </div>
+                            <div class="chart-box">
+                                <h4>Raridade (Personagens 5★ vs 4★)</h4>
+                                <div class="chart-visual-wrapper">
+                                    <svg id="chart-rarity-genshin" viewBox="0 0 200 200" width="100%" height="150"></svg>
+                                    <div id="legend-rarity-genshin" class="chart-legend"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -783,51 +831,75 @@
                     </details>
                 </div>
 
-                <!-- Estatísticas do Roster HSR -->
-                <div class="overview-card charts-card game-charts-card" id="charts-hsr" style="margin-bottom: 20px; display: none;">
-                    <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Honkai: Star Rail)</h3>
-                    <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
-                    <div class="charts-container">
-                        <div class="chart-box">
-                            <h4>Elementos (Personagens HSR)</h4>
-                            <div class="chart-visual-wrapper">
-                                <svg id="chart-elements-hsr" viewBox="0 0 200 200" width="100%" height="150">
-                                    <!-- Desenhado via JS -->
-                                </svg>
-                                <div id="legend-elements-hsr" class="chart-legend"></div>
-                            </div>
+                <!-- Sub-Navegação da Aba HSR -->
+                <div class="game-subnav-bar">
+                    <button class="game-subnav-btn active" data-game="hsr" data-view="gallery">
+                        <i class="fa-solid fa-users"></i> Galeria de Personagens
+                    </button>
+                    <button class="game-subnav-btn" data-game="hsr" data-view="endgame">
+                        <i class="fa-solid fa-trophy" style="color: var(--color-hsr);"></i> Desafios de Endgame
+                        <span class="subnav-badge" id="endgame-badge-hsr">MoC / PF / AS</span>
+                    </button>
+                    <button class="game-subnav-btn" data-game="hsr" data-view="charts">
+                        <i class="fa-solid fa-chart-pie"></i> Estatísticas
+                    </button>
+                </div>
+
+                <!-- SUBVIEW 1: Galeria de Personagens (Padrão) -->
+                <div id="view-gallery-hsr" class="game-subview active">
+                    <div class="gallery-container">
+                        <!-- Filtro de Elemento -->
+                        <div class="element-filters" data-game="hsr" style="margin-bottom: 8px;">
+                            <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
+                            <button class="filter-btn" data-filter="fire"><img src="/assets/elements/hsr_fire.png" class="filter-elem-icon"> Fogo</button>
+                            <button class="filter-btn" data-filter="ice"><img src="/assets/elements/hsr_ice.png" class="filter-elem-icon"> Gelo</button>
+                            <button class="filter-btn" data-filter="physical"><img src="/assets/elements/hsr_physical.png" class="filter-elem-icon"> Físico</button>
+                            <button class="filter-btn" data-filter="wind"><img src="/assets/elements/hsr_wind.png" class="filter-elem-icon"> Vento</button>
+                            <button class="filter-btn" data-filter="lightning"><img src="/assets/elements/hsr_lightning.png" class="filter-elem-icon"> Raio</button>
+                            <button class="filter-btn" data-filter="quantum"><img src="/assets/elements/hsr_quantum.png" class="filter-elem-icon"> Quantum</button>
+                            <button class="filter-btn" data-filter="imaginary"><img src="/assets/elements/hsr_imaginary.png" class="filter-elem-icon"> Imaginário</button>
                         </div>
-                        <div class="chart-box">
-                            <h4>Raridade (Personagens 5★ vs 4★)</h4>
-                            <div class="chart-visual-wrapper">
-                                <svg id="chart-rarity-hsr" viewBox="0 0 200 200" width="100%" height="150">
-                                    <!-- Desenhado via JS -->
-                                </svg>
-                                <div id="legend-rarity-hsr" class="chart-legend"></div>
-                            </div>
+                        <div class="element-filters rarity-filters" data-game="hsr" style="margin-bottom: 16px;">
+                            <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
+                            <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> 5★ Lendário</button>
+                            <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> 4★ Épico</button>
+                        </div>
+                        <div id="gallery-hsr" class="character-gallery">
+                            <!-- Renderizado via JS -->
                         </div>
                     </div>
                 </div>
 
-                <div class="gallery-container">
-                    <!-- Filtro de Elemento -->
-                    <div class="element-filters" data-game="hsr" style="margin-bottom: 8px;">
-                        <button class="filter-btn active" data-filter="all">Todos os Elementos</button>
-                        <button class="filter-btn" data-filter="fire"><img src="/assets/elements/hsr_fire.png" class="filter-elem-icon"> Fogo</button>
-                        <button class="filter-btn" data-filter="ice"><img src="/assets/elements/hsr_ice.png" class="filter-elem-icon"> Gelo</button>
-                        <button class="filter-btn" data-filter="physical"><img src="/assets/elements/hsr_physical.png" class="filter-elem-icon"> Físico</button>
-                        <button class="filter-btn" data-filter="wind"><img src="/assets/elements/hsr_wind.png" class="filter-elem-icon"> Vento</button>
-                        <button class="filter-btn" data-filter="lightning"><img src="/assets/elements/hsr_lightning.png" class="filter-elem-icon"> Raio</button>
-                        <button class="filter-btn" data-filter="quantum"><img src="/assets/elements/hsr_quantum.png" class="filter-elem-icon"> Quantum</button>
-                        <button class="filter-btn" data-filter="imaginary"><img src="/assets/elements/hsr_imaginary.png" class="filter-elem-icon"> Imaginário</button>
+                <!-- SUBVIEW 2: Endgame (MoC, Ficção Pura, Sombra) -->
+                <div id="view-endgame-hsr" class="game-subview">
+                    <div class="endgame-view-wrapper hsr-theme">
+                        <div id="endgame-container-hsr">
+                            <div class="endgame-loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> Carregando registros de endgame...</div>
+                        </div>
                     </div>
-                    <div class="element-filters rarity-filters" data-game="hsr" style="margin-bottom: 16px;">
-                        <button class="filter-btn active" data-rarity="all">Todas as Raridades</button>
-                        <button class="filter-btn" data-rarity="5"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> 5★ Lendário</button>
-                        <button class="filter-btn" data-rarity="4"><i class="fa-solid fa-star" style="color: #8b5cf6;"></i> 4★ Épico</button>
-                    </div>
-                    <div id="gallery-hsr" class="character-gallery">
-                        <!-- Renderizado via JS -->
+                </div>
+
+                <!-- SUBVIEW 3: Estatísticas do Roster HSR -->
+                <div id="view-charts-hsr" class="game-subview">
+                    <div class="overview-card charts-card game-charts-card" id="charts-hsr" style="display: block;">
+                        <h3><i class="fa-solid fa-chart-pie"></i> Estatísticas do Roster (Honkai: Star Rail)</h3>
+                        <p class="section-desc">Distribuição de elementos e raridade em seus personagens ativos (Nv >= 70)</p>
+                        <div class="charts-container">
+                            <div class="chart-box">
+                                <h4>Elementos (Personagens HSR)</h4>
+                                <div class="chart-visual-wrapper">
+                                    <svg id="chart-elements-hsr" viewBox="0 0 200 200" width="100%" height="150"></svg>
+                                    <div id="legend-elements-hsr" class="chart-legend"></div>
+                                </div>
+                            </div>
+                            <div class="chart-box">
+                                <h4>Raridade (Personagens 5★ vs 4★)</h4>
+                                <div class="chart-visual-wrapper">
+                                    <svg id="chart-rarity-hsr" viewBox="0 0 200 200" width="100%" height="150"></svg>
+                                    <div id="legend-rarity-hsr" class="chart-legend"></div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -2252,7 +2324,7 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js?v=15.0"></script>
+    <script src="app.js?v=17.0"></script>
 </body>
 
 

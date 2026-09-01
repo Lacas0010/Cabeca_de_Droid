@@ -262,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupEnergyMonitor();
     setupCheckinSystem();
     setupInspectorTabs();
+    setupSubnavTabs();
     
     // Carrega dados iniciais
     fetchConfig();
@@ -269,6 +270,9 @@ document.addEventListener("DOMContentLoaded", () => {
     loadRoster("zzz");
     loadRoster("genshin");
     loadRoster("hsr");
+    loadEndgame("zzz");
+    loadEndgame("genshin");
+    loadEndgame("hsr");
 });
 
 async function loadOverview() {
@@ -573,9 +577,10 @@ function startPollingStatus(gameId) {
             if (!status.running) {
                 clearInterval(activePolling[gameId]);
                 activePolling[gameId] = null;
-                // Recarrega o roster visual do jogo que acabou de sincronizar
+                // Recarrega o roster visual e endgame do jogo que acabou de sincronizar
                 setTimeout(() => {
                     loadRoster(gameId);
+                    loadEndgame(gameId);
                     loadOverview();
                 }, 1000);
             }
@@ -583,6 +588,438 @@ function startPollingStatus(gameId) {
             console.error(`Erro ao consultar status de ${gameId}:`, err);
         }
     }, 1000);
+}
+
+// ==========================================================================
+// CONTROLE DE SUB-NAVEGAÇÃO DAS ABAS DE JOGO (GALERIA / ENDGAME / STATS)
+// ==========================================================================
+function setupSubnavTabs() {
+    document.querySelectorAll(".game-subnav-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const gameId = btn.getAttribute("data-game");
+            const targetView = btn.getAttribute("data-view");
+            if (!gameId || !targetView) return;
+
+            const section = document.getElementById(`tab-${gameId}`);
+            if (!section) return;
+
+            // Atualiza botões da sub-barra
+            section.querySelectorAll(".game-subnav-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+
+            // Alterna subviews
+            section.querySelectorAll(".game-subview").forEach(v => v.classList.remove("active"));
+            const targetEl = document.getElementById(`view-${targetView}-${gameId}`);
+            if (targetEl) {
+                targetEl.classList.add("active");
+            }
+
+            // Se mudou para charts, redesenha os gráficos SVG
+            if (targetView === "charts") {
+                renderRosterCharts();
+            }
+        });
+    });
+}
+
+// ==========================================================================
+// RENDERIZAÇÃO DO PAINEL DE ENDGAME COLETADO (HSR, GENSHIN, ZZZ)
+// ==========================================================================
+const activeEndgameModeIdx = { hsr: 0, genshin: 0, zzz: 0 };
+const activeEndgameView = { hsr: "single", genshin: "single", zzz: "single" };
+const cachedEndgameData = { hsr: null, genshin: null, zzz: null };
+
+function getEndgameModeIcon(modeId) {
+    if (modeId === "moc") return "fa-trophy";
+    if (modeId === "pure_fiction") return "fa-wand-magic-sparkles";
+    if (modeId === "apocalyptic_shadow") return "fa-skull";
+    if (modeId === "spiral_abyss") return "fa-dungeon";
+    if (modeId === "imaginarium_theater") return "fa-masks-theater";
+    if (modeId === "shiyu_defense") return "fa-shield-halved";
+    return "fa-award";
+}
+
+function normalizeEndgameChar(char, gameId) {
+    if (!char) return char;
+    let name = (char.name || "").trim();
+    const id = String(char.id || "").trim();
+    
+    // Normaliza nomes desconhecidos do Desbravador e Viajante
+    if (!name || name.toLowerCase().includes("desconhecido") || name.toLowerCase().includes("avatar")) {
+        if (id.startsWith("800") || id.startsWith("801") || name.includes("8009") || name.includes("800")) {
+            name = "Desbravador(a)";
+            char.name = name;
+            if (!char.element) char.element = "ice";
+            char.rarity = 5;
+        } else if (id === "10000005" || id === "10000007" || name.includes("1000000")) {
+            name = "Viajante";
+            char.name = name;
+            char.rarity = 5;
+        }
+    }
+
+    const roster = globalRoster[gameId] || [];
+    const found = roster.find(c => (c.name || "").toLowerCase() === name.toLowerCase());
+    if (found) {
+        if (!char.icon && found.icon) char.icon = found.icon;
+        if (!char.element && found.element) char.element = found.element;
+        if (!char.rarity && found.rarity) char.rarity = found.rarity;
+        if (!char.rank_str && found.rank_str) char.rank_str = found.rank_str;
+    }
+    
+    if (!char.icon) {
+        if (name.toLowerCase().includes("desbravador") || name.toLowerCase().includes("trailblazer")) {
+            char.icon = `/assets/hsr_icon.png`;
+        } else if (name.toLowerCase().includes("viajante") || name.toLowerCase().includes("traveler")) {
+            char.icon = `/assets/genshin_icon.png`;
+        } else if (name.toLowerCase().includes("bangboo")) {
+            char.icon = `/assets/zzz_icon.png`;
+        } else {
+            char.icon = `/assets/${gameId}_icon.png`;
+        }
+    }
+    return char;
+}
+
+function renderEndgameTeamCard(team, gameId) {
+    let charsHtml = "";
+    if (team.characters && team.characters.length > 0) {
+        charsHtml = `<div class="endgame-chars-row">`;
+        team.characters.forEach(rawChar => {
+            const char = normalizeEndgameChar(rawChar, gameId);
+            const elemKey = (char.element || "").toLowerCase();
+            const elemClass = ELEMENT_MAPPING[elemKey] || "el-physical";
+            const rarityClass = (char.rarity === 5 || char.rarity === "5" || String(char.rarity).toUpperCase() === "S") ? "rarity-5" : "rarity-4";
+            const fallbackIcon = `/assets/${gameId}_icon.png`;
+            const avatarSrc = char.icon || fallbackIcon;
+            const rankBadge = char.rank_str ? `<span class="endgame-char-rank-badge">${char.rank_str}</span>` : "";
+
+            charsHtml += `
+                <div class="endgame-char-mini ${elemClass} ${rarityClass}" data-char-name="${char.name}" title="${char.name} (Nv. ${char.level || 80}) • Inspecionar Build">
+                    <div class="endgame-char-avatar-box" style="position: relative; width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; flex-shrink: 0; display: inline-block;">
+                        <img src="${avatarSrc}" class="endgame-char-avatar" style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; border-radius: 50%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${char.name}">
+                        ${elemKey && elemKey !== "bangboo" ? `<img src="/assets/elements/${gameId}_${elemKey}.png" class="endgame-char-elem-icon" style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; min-width: 14px; min-height: 14px; max-width: 14px; max-height: 14px; border-radius: 50%; padding: 1px; object-fit: contain;" onerror="this.style.display='none';" alt="">` : ""}
+                        ${rankBadge}
+                    </div>
+                    <span class="endgame-char-name-label">${char.name}</span>
+                    <span class="endgame-char-lvl-label">Nv. ${char.level || 80}</span>
+                </div>
+            `;
+        });
+        charsHtml += `</div>`;
+    }
+
+    let monstersHtml = "";
+    if (team.monsters && team.monsters.length > 0) {
+        monstersHtml = `<div class="endgame-enemies-row">`;
+        team.monsters.forEach(m => {
+            const mName = m.name || "Inimigo";
+            const mLvl = m.level ? ` (Nv.${m.level})` : "";
+            monstersHtml += `<span class="endgame-enemy-chip" title="${mName}${mLvl}"><i class="fa-solid fa-skull"></i> ${mName}${mLvl}</span>`;
+        });
+        monstersHtml += `</div>`;
+    }
+
+    return `
+        <div class="endgame-team-node">
+            <div class="endgame-team-node-header">
+                <div class="endgame-team-title-left">
+                    <span class="endgame-side-dot"></span>
+                    <span>${team.name}</span>
+                </div>
+                <span style="font-size: 10.5px; color: #94a3b8; font-weight: 500;">${(team.characters || []).length} Mobilizados</span>
+            </div>
+            ${charsHtml}
+            ${monstersHtml}
+        </div>
+    `;
+}
+
+async function loadEndgame(gameId) {
+    const container = document.getElementById(`endgame-container-${gameId}`);
+    const badgeEl = document.getElementById(`endgame-badge-${gameId}`);
+    if (!container) return;
+
+    try {
+        const res = await fetch(`/api/endgame/${gameId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        
+        renderEndgame(gameId, data);
+    } catch (err) {
+        console.error(`Erro ao carregar endgame de ${gameId}:`, err);
+        if (container) {
+            container.innerHTML = `
+                <div class="endgame-empty-state">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i>
+                    <p>Erro ao carregar dados de endgame.</p>
+                    <span>${err.message || "Tente sincronizar sua conta novamente."}</span>
+                    <button class="endgame-empty-action-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click()">
+                        <i class="fa-solid fa-rotate"></i> Tentar Sincronizar
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+function renderEndgame(gameId, data) {
+    const container = document.getElementById(`endgame-container-${gameId}`);
+    const badgeEl = document.getElementById(`endgame-badge-${gameId}`);
+    if (!container) return;
+
+    if (!data || !data.has_data || !data.modes || data.modes.length === 0) {
+        if (badgeEl) badgeEl.innerText = "Sem Dados";
+        const gameNames = { hsr: "Honkai: Star Rail", genshin: "Genshin Impact", zzz: "Zenless Zone Zero" };
+        const modeExamples = {
+            hsr: "Caos da Memória (MoC), Ficção Pura ou Sombra Apocalíptica",
+            genshin: "Abismo Espiral ou Teatro Imaginário",
+            zzz: "Defesa Shiyu"
+        };
+        container.innerHTML = `
+            <div class="endgame-empty-state">
+                <i class="fa-solid fa-hourglass-half"></i>
+                <p>Nenhum registro de Endgame recente coletado para ${gameNames[gameId] || gameId.toUpperCase()}.</p>
+                <span>Conclua andares do ${modeExamples[gameId] || "Endgame"} no jogo e sincronize seu Roster para visualizar os times e pontuações aqui!</span>
+                <button class="endgame-empty-action-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click()">
+                    <i class="fa-solid fa-rotate"></i> Sincronizar ${gameId.toUpperCase()} Agora
+                </button>
+            </div>
+        `;
+        return;
+    }
+
+    cachedEndgameData[gameId] = data;
+
+    // Métricas Totais
+    const totalStars = data.modes.reduce((acc, m) => acc + (typeof m.stars === 'number' ? m.stars : 0), 0);
+    const maxTotalStars = data.modes.reduce((acc, m) => acc + (typeof m.max_stars === 'number' ? m.max_stars : 0), 0);
+
+    // Atualiza badge de resumo no botão da sub-navegação
+    if (badgeEl) {
+        if (totalStars > 0) {
+            badgeEl.innerHTML = `<i class="fa-solid fa-star" style="color: #facc15;"></i> ${totalStars}★ (${data.modes.length} Modos)`;
+        } else {
+            badgeEl.innerText = `${data.modes.length} Modos`;
+        }
+    }
+
+    const currentView = activeEndgameView[gameId] || "single";
+    const currentIdx = Math.min(activeEndgameModeIdx[gameId] || 0, data.modes.length - 1);
+
+    // 1. MASTER HEADER COM RESUMO E TOGGLE DE VISÃO
+    const gameLabels = { hsr: "Honkai: Star Rail", genshin: "Genshin Impact", zzz: "Zenless Zone Zero" };
+    let starsDisplay = `${totalStars}★`;
+    if (maxTotalStars > 0) starsDisplay = `${totalStars}/${maxTotalStars}★`;
+
+    let masterHeaderHtml = `
+        <div class="endgame-master-header">
+            <div class="endgame-master-title-area">
+                <span class="endgame-game-badge">
+                    <i class="fa-solid fa-shield-halved"></i> ${gameLabels[gameId] || gameId.toUpperCase()}
+                </span>
+                <div class="endgame-master-stats-group">
+                    <span class="endgame-summary-chip gold" title="Total de Estrelas Coletadas em Todos os Modos">
+                        <i class="fa-solid fa-star"></i> ${starsDisplay}
+                    </span>
+                    <span class="endgame-summary-chip cyan" title="Modos Ativos com Registros">
+                        <i class="fa-solid fa-circle-check"></i> ${data.modes.length} ${data.modes.length === 1 ? 'Modo' : 'Modos Ativos'}
+                    </span>
+                    ${data.uid ? `<span class="endgame-summary-chip purple" title="UID da Conta"><i class="fa-solid fa-id-card"></i> UID ${data.uid}</span>` : ''}
+                </div>
+            </div>
+            <div class="endgame-view-toggle-group">
+                <button class="endgame-view-toggle-btn ${currentView === 'single' ? 'active' : ''}" data-view="single" data-game="${gameId}">
+                    <i class="fa-solid fa-table-columns"></i> Modo Focado
+                </button>
+                <button class="endgame-view-toggle-btn ${currentView === 'all' ? 'active' : ''}" data-view="all" data-game="${gameId}">
+                    <i class="fa-solid fa-grip"></i> Visão Geral (${data.modes.length})
+                </button>
+            </div>
+        </div>
+    `;
+
+    // 2. BARRA DE SELEÇÃO DE MODOS (SEGMENTED TABS)
+    let pillsHtml = `<div class="endgame-mode-selector-bar">`;
+    
+    // Botão Visão Geral
+    pillsHtml += `
+        <button class="endgame-mode-tab-btn ${currentView === 'all' ? 'active' : ''}" data-mode-idx="all" data-game="${gameId}">
+            <i class="fa-solid fa-grip"></i>
+            <span>Todos os Modos</span>
+            <span class="tab-star-pill">${starsDisplay}</span>
+        </button>
+    `;
+
+    data.modes.forEach((mode, idx) => {
+        const icon = getEndgameModeIcon(mode.id);
+        let starPill = "";
+        if (mode.stars !== null && mode.stars !== undefined && mode.stars !== "?") {
+            starPill = `<span class="tab-star-pill">⭐ ${mode.stars}${mode.max_stars ? `/${mode.max_stars}` : ''}</span>`;
+        }
+
+        const isActive = (currentView === "single" && idx === currentIdx) ? "active" : "";
+        pillsHtml += `
+            <button class="endgame-mode-tab-btn ${isActive}" data-mode-idx="${idx}" data-game="${gameId}">
+                <i class="fa-solid ${icon}"></i>
+                <span>${mode.name}</span>
+                ${starPill}
+            </button>
+        `;
+    });
+    pillsHtml += `</div>`;
+
+    // 3. CONTEÚDO PRINCIPAL (VISÃO INDIVIDUAL OU VISÃO GERAL)
+    let contentHtml = "";
+
+    if (currentView === "all") {
+        // VISÃO GERAL: TODOS OS MODOS LADO A LADO EM CARDS COMPACTOS
+        let overviewCardsHtml = `<div class="endgame-overview-matrix">`;
+        data.modes.forEach((mode, mIdx) => {
+            const icon = getEndgameModeIcon(mode.id);
+            let modeMetrics = "";
+            if (mode.stars !== null && mode.stars !== undefined && mode.stars !== "?") {
+                modeMetrics += `<span class="endgame-metric-chip gold-stars"><i class="fa-solid fa-star"></i> ${mode.stars}${mode.max_stars ? `/${mode.max_stars}` : ''}</span>`;
+            }
+            if (mode.metric_label && mode.metric_value && mode.metric_value !== "?" && mode.metric_value !== "None") {
+                const isScore = mode.metric_label.toLowerCase().includes("pontuação") || mode.metric_label.toLowerCase().includes("score");
+                const isRounds = mode.metric_label.toLowerCase().includes("rodada") || mode.metric_label.toLowerCase().includes("round");
+                const chipClass = isScore ? "blue-score" : (isRounds ? "purple-rounds" : "");
+                const chipIcon = isScore ? "fa-bolt" : (isRounds ? "fa-clock-rotate-left" : "fa-award");
+                modeMetrics += `<span class="endgame-metric-chip ${chipClass}"><i class="fa-solid ${chipIcon}"></i> ${mode.metric_value}</span>`;
+            }
+
+            let teamsListHtml = "";
+            if (mode.teams && mode.teams.length > 0) {
+                const teamCountClass = `teams-count-${mode.teams.length}`;
+                teamsListHtml = `<div class="endgame-teams-grid ${teamCountClass}">`;
+                mode.teams.forEach(team => {
+                    teamsListHtml += renderEndgameTeamCard(team, gameId);
+                });
+                teamsListHtml += `</div>`;
+            }
+
+            overviewCardsHtml += `
+                <div class="endgame-overview-mode-card">
+                    <div class="endgame-overview-card-header">
+                        <div class="endgame-overview-title">
+                            <i class="fa-solid ${icon}"></i>
+                            <span>${mode.name}</span>
+                            ${mode.stage ? `<span class="endgame-mode-stage-desc">${mode.stage}</span>` : ""}
+                        </div>
+                        <div class="endgame-metrics-group">
+                            ${modeMetrics}
+                        </div>
+                    </div>
+                    ${teamsListHtml}
+                </div>
+            `;
+        });
+        overviewCardsHtml += `</div>`;
+        contentHtml = overviewCardsHtml;
+
+    } else {
+        // VISÃO DETALHADA DO MODO SELECIONADO
+        const activeMode = data.modes[currentIdx];
+        let metricsHtml = "";
+        if (activeMode.stars !== null && activeMode.stars !== undefined && activeMode.stars !== "?") {
+            metricsHtml += `
+                <span class="endgame-metric-chip gold-stars" title="Estrelas">
+                    <i class="fa-solid fa-star"></i> ${activeMode.stars}${activeMode.max_stars ? `/${activeMode.max_stars}` : ''} Estrelas
+                </span>
+            `;
+        }
+        if (activeMode.metric_label && activeMode.metric_value && activeMode.metric_value !== "?" && activeMode.metric_value !== "None") {
+            const isScore = activeMode.metric_label.toLowerCase().includes("pontuação") || activeMode.metric_label.toLowerCase().includes("score");
+            const isRounds = activeMode.metric_label.toLowerCase().includes("rodada") || activeMode.metric_label.toLowerCase().includes("round");
+            const chipClass = isScore ? "blue-score" : (isRounds ? "purple-rounds" : "");
+            const chipIcon = isScore ? "fa-bolt" : (isRounds ? "fa-clock-rotate-left" : "fa-award");
+            metricsHtml += `
+                <span class="endgame-metric-chip ${chipClass}">
+                    <i class="fa-solid ${chipIcon}"></i> ${activeMode.metric_value} ${!isScore && !isRounds ? "" : (isRounds ? "Rodadas" : "Pontos")}
+                </span>
+            `;
+        }
+
+        let teamsHtml = "";
+        if (activeMode.teams && activeMode.teams.length > 0) {
+            const teamCountClass = `teams-count-${activeMode.teams.length}`;
+            teamsHtml = `<div class="endgame-teams-grid ${teamCountClass}">`;
+            activeMode.teams.forEach(team => {
+                teamsHtml += renderEndgameTeamCard(team, gameId);
+            });
+            teamsHtml += `</div>`;
+        }
+
+        const activeIcon = getEndgameModeIcon(activeMode.id);
+        contentHtml = `
+            <div class="endgame-active-mode-pane">
+                <div class="endgame-mode-meta-header">
+                    <div class="endgame-mode-title-area">
+                        <div class="endgame-mode-main-title">
+                            <i class="fa-solid ${activeIcon}"></i>
+                            <span>${activeMode.name}</span>
+                            ${activeMode.badge ? `<span style="font-size: 10px; padding: 2px 6px; border-radius: 5px; background: rgba(255,255,255,0.08); font-weight: 700;">${activeMode.badge}</span>` : ""}
+                        </div>
+                        ${activeMode.stage ? `<span class="endgame-mode-stage-desc">${activeMode.stage}</span>` : ""}
+                    </div>
+                    <div class="endgame-metrics-group">
+                        ${metricsHtml}
+                    </div>
+                </div>
+                ${teamsHtml}
+            </div>
+        `;
+    }
+
+    container.innerHTML = masterHeaderHtml + pillsHtml + contentHtml;
+
+    // Configura botões de alternância de visão (Modo Focado vs Visão Geral)
+    container.querySelectorAll(".endgame-view-toggle-btn").forEach(tBtn => {
+        tBtn.addEventListener("click", () => {
+            const view = tBtn.getAttribute("data-view");
+            activeEndgameView[gameId] = view;
+            renderEndgame(gameId, cachedEndgameData[gameId]);
+        });
+    });
+
+    // Configura cliques nos botões da barra de modos
+    container.querySelectorAll(".endgame-mode-tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const modeIdxAttr = btn.getAttribute("data-mode-idx");
+            if (modeIdxAttr === "all") {
+                activeEndgameView[gameId] = "all";
+            } else {
+                activeEndgameView[gameId] = "single";
+                activeEndgameModeIdx[gameId] = parseInt(modeIdxAttr, 10);
+            }
+            renderEndgame(gameId, cachedEndgameData[gameId]);
+        });
+    });
+
+    // Configura cliques nos mini-cards para abrir o Build Inspector
+    container.querySelectorAll(".endgame-char-mini").forEach(miniBtn => {
+        miniBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const charName = miniBtn.getAttribute("data-char-name");
+            if (!charName) return;
+
+            const found = (globalRoster[gameId] || []).find(c => (c.name || "").toLowerCase() === charName.toLowerCase());
+            if (found) {
+                inspectCharacter(gameId, found);
+            } else {
+                const quickChar = {
+                    name: charName,
+                    level: 80,
+                    rarity: 5,
+                    element: "fire",
+                    icon: `/assets/${gameId}_icon.png`,
+                    rank_str: "E0"
+                };
+                inspectCharacter(gameId, quickChar);
+            }
+        });
+    });
 }
 
 // ==========================================================================
@@ -604,9 +1041,10 @@ async function loadRoster(gameId) {
         const res = await fetch(`/api/roster/${gameId}`);
         const roster = await res.json();
         
-        // Salva no estado global e atualiza os gráficos SVG
+        // Salva no estado global e atualiza os gráficos SVG e endgame
         globalRoster[gameId] = roster || [];
         renderRosterCharts();
+        loadEndgame(gameId);
         
         if (!roster || roster.length === 0) {
             gallery.innerHTML = `

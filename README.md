@@ -66,14 +66,17 @@ graph TD
 ```
 
 ### 1. Motor Mestre de IDs Universais e Resolução por Character ID
+
 - O sistema opera prioritariamente com **Character IDs numéricos oficiais** (ex: `"1310"` para Firefly, `"10000070"` para Nilou) através da função `fetch_master_id_list`.
 - **Normalização de Apelidos (`normalize_char_name`):** Trata variações de escrita, pontuação e codinomes (ex: *"Tingyun • Fugue"* $\rightarrow$ ID `"1225"`, *"Himeko - Nova"* $\rightarrow$ ID `"1510"`), garantindo cruzamento perfeito entre guias em inglês e dados da conta do jogador.
 
 ### 2. Banco de Dados SQLite (`hoyo_app.db`)
+
 - Tabelas relacionais para contas (`game_accounts`), personagens (`characters`), relíquias (`character_relics`), notas diárias (`daily_notes_cache`), logs de check-in (`daily_checkin_logs`) e snapshots da conta (`account_snapshots`).
 - Configurado com modo `WAL` (`Write-Ahead Logging`) para consultas ultra-rápidas e suporte concorrente.
 
 ### 3. Fontes de Raspagem de Metagame
+
 - **Honkai: Star Rail, Zenless Zone Zero & Genshin Impact:** Extração centralizada de guias, tier lists, estatísticas de uso e relatórios de endgame via **Prydwen.gg** ([scraper_prydwen.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_prydwen.py), [scraper_zzz.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_zzz.py) e [scraper_genshin.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_genshin.py)).
 - **Raspagem Completa & Bypass Anti-Bot (403):** Utiliza `curl_cffi` com cabeçalhos HTTP completos de navegadores modernos (`Accept`, `Accept-Language`, `Sec-Fetch-*`) para garantir o download de 100% dos guias da biblioteca de personagens (incluindo mais de 125 personagens em Genshin Impact), extraindo recomendações de armas, conjuntos de artefatos/discos, atributos principais, prioridade de substatus e prioridade de talentos.
 
@@ -83,11 +86,17 @@ graph TD
 
 A nota de cada peça de relíquia/artefato/disco é calculada avaliando o Roll Value (RV) dos substatus contra os rolls máximos de peças 5★/S-Rank:
 
-$$RV_i = \frac{\text{Valor Real do Substatus}_i}{\text{Valor Máximo do Roll 5★}}$$
+$$
+RV_i = \frac{\text{Valor Real do Substatus}_i}{\text{Valor Máximo do Roll 5★}}
+$$
 
-$$\text{Score da Peça} = \sum_{i} \left( RV_i \times \text{Peso}_i \right)$$
+$$
+\text{Score da Peça} = \sum_{i} \left( RV_i \times \text{Peso}_i \right)
+$$
 
-$$\text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{Score da Peça}_k}{\text{Total de Slots do Jogo}}$$
+$$
+\text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{Score da Peça}_k}{\text{Total de Slots do Jogo}}
+$$
 
 1. **Normalização Contextual de Slots (`normalize_slot_name`):** Converte posições numéricas do HoYoLAB (`1` a `5`/`6`) para as chaves exatas de cada jogo (ex: `flower`, `plume`, `sands`, `goblet`, `circlet` em Genshin; `head`, `hands`, `body`, `feet`, `planar_sphere`, `link_rope` em HSR; `slot_1` a `slot_6` em ZZZ), garantindo avaliação correta do Main Stat recomendado.
 2. **Main Stat Forgiveness:** Se o atributo principal da peça for um dos recomendados no guia (ex: Copo de ATQ% ou Botas de VEL), a peça recebe 40% de crédito base do Main Stat.
@@ -103,17 +112,17 @@ $$\text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{
 
 ## 🛠️ Tecnologias Utilizadas
 
-| Camada | Tecnologia | Descrição |
-| :--- | :--- | :--- |
-| **Backend Framework** | [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) | Servidor web assíncrono de alto desempenho com rotas REST e SSE |
-| **Banco de Dados** | SQLite3 (WAL Mode) | Persistência relacional local otimizada |
-| **Frontend UI/UX** | HTML5 + CSS3 (Vanilla Glassmorphism) + JS ES6+ | Interface responsiva sem frameworks pesados |
-| **Ícones & Design** | [Font Awesome 6](https://fontawesome.com/) + Google Fonts (Outfit / Inter) | Design moderno e sofisticado com distintivos de elementos |
-| **Inteligência Artificial** | Groq Cloud API (`groq`) | RAG local contextualizado rodando Llama 3.3 70B Versatile |
-| **Integração HoYoLAB** | [genshin.py](https://github.com/seriaati/genshin.py) | API assíncrona para extração de dados oficiais da HoYoverse |
-| **Autenticação** | Playwright Chromium Async | Captura automatizada de cookies de sessão (`ltuid_v2`, `ltoken_v2`) |
-| **Web Scraping** | `curl_cffi` + BeautifulSoup4 | Raspagem de metagame com perfil de navegador anti-403 |
-| **Empacotamento** | PyInstaller | Compilação para executável portable `.exe` no Windows |
+| Camada                             | Tecnologia                                                                   | Descrição                                                              |
+| :--------------------------------- | :--------------------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| **Backend Framework**        | [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) | Servidor web assíncrono de alto desempenho com rotas REST e SSE         |
+| **Banco de Dados**           | SQLite3 (WAL Mode)                                                           | Persistência relacional local otimizada                                 |
+| **Frontend UI/UX**           | HTML5 + CSS3 (Vanilla Glassmorphism) + JS ES6+                               | Interface responsiva sem frameworks pesados                              |
+| **Ícones & Design**         | [Font Awesome 6](https://fontawesome.com/) + Google Fonts (Outfit / Inter)    | Design moderno e sofisticado com distintivos de elementos                |
+| **Inteligência Artificial** | Groq Cloud API (`groq`)                                                    | RAG local contextualizado rodando Llama 3.3 70B Versatile                |
+| **Integração HoYoLAB**     | [genshin.py](https://github.com/seriaati/genshin.py)                          | API assíncrona para extração de dados oficiais da HoYoverse           |
+| **Autenticação**           | Playwright Chromium Async                                                    | Captura automatizada de cookies de sessão (`ltuid_v2`, `ltoken_v2`) |
+| **Web Scraping**             | `curl_cffi` + BeautifulSoup4                                               | Raspagem de metagame com perfil de navegador anti-403                    |
+| **Empacotamento**            | PyInstaller                                                                  | Compilação para executável portable`.exe` no Windows                |
 
 ---
 
@@ -147,10 +156,12 @@ hoyo-projetos/
 ## 🚀 Instalação e Execução
 
 ### 1. Pré-requisitos
+
 * Python 3.10 ou superior instalado.
 * Git (opcional).
 
 ### 2. Criar e Ativar Ambiente Virtual (venv)
+
 ```bash
 # Criar o ambiente virtual
 python -m venv .venv
@@ -163,6 +174,7 @@ source .venv/bin/activate
 ```
 
 ### 3. Instalar Dependências e Chromium do Playwright
+
 ```bash
 # Atualizar pip e instalar pacotes
 pip install --upgrade pip
@@ -173,10 +185,13 @@ playwright install chromium
 ```
 
 ### 4. Iniciar a Aplicação
+
 ```bash
 python main.py
 ```
+
 O servidor FastAPI subirá escutando em todas as interfaces (`0.0.0.0:8000`) e abrirá a interface no seu navegador padrão.
+
 - **Acesso Local (PC):** `http://127.0.0.1:8000`
 - **Acesso na Rede Local (Celular/Tablet):** `http://<IP_DO_SEU_COMPUTADOR>:8000` (o IP da sua máquina na rede Wi-Fi é detectado e exibido automaticamente no terminal ao iniciar).
 
@@ -189,43 +204,44 @@ Você pode compilar o projeto em um executável único de dois cliques usando o 
 ```bash
 pyinstaller main.spec
 ```
+
 O executável resultante estará localizado dentro do diretório `dist/main.exe`.
 
 ---
 
 ## 📡 Endpoints Principais da API REST
 
-| Método | Endpoint | Descrição |
-| :--- | :--- | :--- |
-| `GET` | `/api/overview` | Retorna o resumo unificado de estatísticas das 3 contas (UID, Nível, Chars) |
-| `GET` | `/api/roster/{game_id}` | Retorna o roster de personagens com notas RV, relíquias e raridades |
-| `POST` | `/api/sync/{game_id}` | Inicia sincronização em background (Roster, Guias, Metagame) |
-| `GET` | `/api/status/{game_id}` | Retorna o progresso percentual e logs da sincronização |
-| `GET` | `/api/notes` | Retorna status em tempo real da Energia/Resina/Bateria e expedições |
-| `POST` | `/api/checkin/run` | Executa o resgate manual do Check-in diário na HoYoLAB |
-| `GET` | `/api/checkin/today` | Retorna os logs do auto check-in efetuado hoje |
-| `GET` | `/api/compare/{game_id}/{char_name}` | Dados de comparação lado a lado contra os benchmarks do metagame |
-| `GET` | `/api/build/{game_id}/{char_name}` | Retorna os detalhes completos da build de um personagem específico |
-| `GET` | `/api/optimize/{game_id}/{char_name}` | Gera 3 sugestões de otimização de build via IA Groq |
-| `POST` | `/api/evaluate-stats/{game_id}/{char_id}` | Avalia os status de combate contra as metas recomendadas de metagame |
-| `POST` | `/api/materials/calculate` | Calcula materiais necessários para ascensão de nível (60/70/80/90) |
-| `POST` | `/api/gacha/calculate` | Executa simulação Monte Carlo de 10.000 tiros para probabilidade de banner |
-| `GET` | `/api/farming/today/{game_id}` | Retorna rotação diária de domínios e recomendação de farm |
-| `GET` | `/api/relics/trash/{game_id}` | Identifica relíquias e artefatos sem utilidade no metagame (Trash Finder) |
-| `POST` | `/api/stats/breakpoints` | Avalia os breakpoints e metas de status de um personagem |
-| `GET` | `/api/audit/{game_id}` | Retorna a Tier List visual e relatório de auditoria de saúde da conta |
-| `GET` | `/api/luck-index/{game_id}` | Retorna o medidor de sorte da conta, relíquia God Roll #1, Cursed Roll e análise por substatus |
-| `GET` | `/api/history/{game_id}` | Retorna os snapshots de histórico de evolução da conta |
-| `GET` | `/api/history/{game_id}/compare/{snap_a}/{snap_b}` | Compara dois snapshots históricos da conta |
-| `GET` | `/api/codes/{game_id}` | Lista códigos promocionais ativos por jogo |
-| `POST` | `/api/codes/redeem` | Resgata códigos promocionais via API da HoYoverse |
-| `POST` | `/api/team/analyze` | Analisa a sinergia de um time de 4 personagens (SSE Stream) |
-| `POST` | `/api/chat` | Chat RAG local com a IA Groq (SSE Stream) |
-| `POST` | `/api/login/auto` | Inicia o navegador Playwright para captura automatizada de cookies |
-| `GET` / `POST` | `/api/config` | Leitura e salvamento das chaves de API, cookies e agendamento diário |
-| `GET` | `/api/download/guides-zip` | Download empacotado em arquivo `.zip` das pastas de guias (`genshin/`, `hsr/`, `zzz/`) |
-| `GET` | `/api/proxy_image` | Proxy intermediário de imagens para contornar restrições de CORS |
-| `API Route` | `/api/reset-data` | Apaga permanentemente as pastas de guias e reseta o banco SQLite |
+| Método            | Endpoint                                             | Descrição                                                                                     |
+| :----------------- | :--------------------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| `GET`            | `/api/overview`                                    | Retorna o resumo unificado de estatísticas das 3 contas (UID, Nível, Chars)                   |
+| `GET`            | `/api/roster/{game_id}`                            | Retorna o roster de personagens com notas RV, relíquias e raridades                            |
+| `POST`           | `/api/sync/{game_id}`                              | Inicia sincronização em background (Roster, Guias, Metagame)                                  |
+| `GET`            | `/api/status/{game_id}`                            | Retorna o progresso percentual e logs da sincronização                                        |
+| `GET`            | `/api/notes`                                       | Retorna status em tempo real da Energia/Resina/Bateria e expedições                           |
+| `POST`           | `/api/checkin/run`                                 | Executa o resgate manual do Check-in diário na HoYoLAB                                         |
+| `GET`            | `/api/checkin/today`                               | Retorna os logs do auto check-in efetuado hoje                                                  |
+| `GET`            | `/api/compare/{game_id}/{char_name}`               | Dados de comparação lado a lado contra os benchmarks do metagame                              |
+| `GET`            | `/api/build/{game_id}/{char_name}`                 | Retorna os detalhes completos da build de um personagem específico                             |
+| `GET`            | `/api/optimize/{game_id}/{char_name}`              | Gera 3 sugestões de otimização de build via IA Groq                                          |
+| `POST`           | `/api/evaluate-stats/{game_id}/{char_id}`          | Avalia os status de combate contra as metas recomendadas de metagame                            |
+| `POST`           | `/api/materials/calculate`                         | Calcula materiais necessários para ascensão de nível (60/70/80/90)                           |
+| `POST`           | `/api/gacha/calculate`                             | Executa simulação Monte Carlo de 10.000 tiros para probabilidade de banner                    |
+| `GET`            | `/api/farming/today/{game_id}`                     | Retorna rotação diária de domínios e recomendação de farm                                 |
+| `GET`            | `/api/relics/trash/{game_id}`                      | Identifica relíquias e artefatos sem utilidade no metagame (Trash Finder)                      |
+| `POST`           | `/api/stats/breakpoints`                           | Avalia os breakpoints e metas de status de um personagem                                        |
+| `GET`            | `/api/audit/{game_id}`                             | Retorna a Tier List visual e relatório de auditoria de saúde da conta                         |
+| `GET`            | `/api/luck-index/{game_id}`                        | Retorna o medidor de sorte da conta, relíquia God Roll#1, Cursed Roll e análise por substatus |
+| `GET`            | `/api/history/{game_id}`                           | Retorna os snapshots de histórico de evolução da conta                                       |
+| `GET`            | `/api/history/{game_id}/compare/{snap_a}/{snap_b}` | Compara dois snapshots históricos da conta                                                     |
+| `GET`            | `/api/codes/{game_id}`                             | Lista códigos promocionais ativos por jogo                                                     |
+| `POST`           | `/api/codes/redeem`                                | Resgata códigos promocionais via API da HoYoverse                                              |
+| `POST`           | `/api/team/analyze`                                | Analisa a sinergia de um time de 4 personagens (SSE Stream)                                     |
+| `POST`           | `/api/chat`                                        | Chat RAG local com a IA Groq (SSE Stream)                                                       |
+| `POST`           | `/api/login/auto`                                  | Inicia o navegador Playwright para captura automatizada de cookies                              |
+| `GET` / `POST` | `/api/config`                                      | Leitura e salvamento das chaves de API, cookies e agendamento diário                           |
+| `GET`            | `/api/download/guides-zip`                         | Download empacotado em arquivo`.zip` das pastas de guias (`genshin/`, `hsr/`, `zzz/`)   |
+| `GET`            | `/api/proxy_image`                                 | Proxy intermediário de imagens para contornar restrições de CORS                             |
+| `API Route`      | `/api/reset-data`                                  | Apaga permanentemente as pastas de guias e reseta o banco SQLite                                |
 
 ---
 

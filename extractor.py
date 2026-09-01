@@ -603,8 +603,10 @@ class HSRExtractor(BaseExtractor):
         lines.append(f"**Baús Abertos:** {stats.chest_num}")
         lines.append(f"**Salão Esquecido:** {stats.abyss_process}")
         
+        endgame_modes_data = []
+        endgame_text = ""
         try:
-            endgame_text = await endgame_extractor.extrair_endgame_hsr(self.client, uid)
+            endgame_text, endgame_modes_data = await endgame_extractor.extrair_endgame_hsr_data(self.client, uid)
             if endgame_text:
                 lines.append("")
                 lines.append(endgame_text)
@@ -819,6 +821,15 @@ class HSRExtractor(BaseExtractor):
         except Exception as json_err:
             print(f"Aviso ao salvar roster_data_hsr.json: {json_err}")
 
+        # Salva dados estruturados de endgame em JSON
+        try:
+            endgame_json_path = "hsr/endgame_data_hsr.json"
+            os.makedirs(os.path.dirname(endgame_json_path) or ".", exist_ok=True)
+            with open(endgame_json_path, "w", encoding="utf-8") as ejf:
+                json.dump(endgame_modes_data, ejf, ensure_ascii=False, indent=2)
+        except Exception as e_err:
+            print(f"Aviso ao salvar endgame_data_hsr.json: {e_err}")
+
         markdown_content = "\n".join(lines)
         
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
@@ -832,6 +843,7 @@ class HSRExtractor(BaseExtractor):
             acc_level = getattr(info, "level", 70) if info else 70
             act_days = getattr(stats, "active_days", 0) if stats else 0
             database.save_game_account(uid, "hsr", nickname, acc_level, act_days)
+            database.save_endgame_data(str(uid), "hsr", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
                 pattern = rf'(\*\*(?:Personagem):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)'
@@ -973,8 +985,10 @@ class GenshinExtractor(BaseExtractor):
         lines.append(f"**Rank de Aventura:** {genshin_acc.level}")
         lines.append(f"**Personagens Obtidos:** {len(chars)}")
         
+        endgame_modes_data = []
+        endgame_text = ""
         try:
-            endgame_text = await endgame_extractor.extrair_endgame_genshin(self.client, uid)
+            endgame_text, endgame_modes_data = await endgame_extractor.extrair_endgame_genshin_data(self.client, uid)
             if endgame_text:
                 lines.append("")
                 lines.append(endgame_text)
@@ -1240,6 +1254,15 @@ class GenshinExtractor(BaseExtractor):
         except Exception as json_err:
             print(f"Aviso ao salvar roster_data_genshin.json: {json_err}")
 
+        # Salva dados estruturados de endgame em JSON
+        try:
+            endgame_json_path = "genshin/endgame_data_genshin.json"
+            os.makedirs(os.path.dirname(endgame_json_path) or ".", exist_ok=True)
+            with open(endgame_json_path, "w", encoding="utf-8") as ejf:
+                json.dump(endgame_modes_data, ejf, ensure_ascii=False, indent=2)
+        except Exception as e_err:
+            print(f"Aviso ao salvar endgame_data_genshin.json: {e_err}")
+
         markdown_content = "\n".join(lines)
         
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
@@ -1249,7 +1272,10 @@ class GenshinExtractor(BaseExtractor):
         # Salva no SQLite
         try:
             import database
-            database.save_game_account(uid, "genshin", genshin_acc.nickname if hasattr(genshin_acc, "nickname") else "Viajante", genshin_acc.level, getattr(genshin_acc, "active_days", 0))
+            nickname = getattr(genshin_acc, "nickname", "Viajante") if genshin_acc else "Viajante"
+            acc_level = getattr(genshin_acc, "level", 60) if genshin_acc else 60
+            database.save_game_account(uid, "genshin", nickname, acc_level, 0)
+            database.save_endgame_data(str(uid), "genshin", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
                 pattern = rf'(\*\*(?:Personagem):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)'
@@ -1341,8 +1367,10 @@ class ZZZExtractor(BaseExtractor):
         lines.append(f"**Bangboos Obtidos:** {user_data.stats.bangboo_obtained}")
         lines.append(f"**Conquistas:** {user_data.stats.achievement_count}")
         
+        endgame_modes_data = []
+        endgame_text = ""
         try:
-            endgame_text = await endgame_extractor.extrair_endgame_zzz(self.client, uid)
+            endgame_text, endgame_modes_data = await endgame_extractor.extrair_endgame_zzz_data(self.client, uid)
             if endgame_text:
                 lines.append("")
                 lines.append(endgame_text)
@@ -1512,7 +1540,7 @@ class ZZZExtractor(BaseExtractor):
                 # Extrai Status Finais (Final Stats) do Agente ZZZ
                 zzz_stats = {}
                 try:
-                    full_agents = await self.client.get_zzz_agent_info([agent.id], uid=zzz_account.uid)
+                    full_agents = await self.client.get_zzz_agent_info([agent.id], uid=zzz_acc.uid)
                     if not isinstance(full_agents, list): full_agents = [full_agents]
                     full_agent = full_agents[0] if full_agents else None
                     if full_agent:
@@ -1547,6 +1575,15 @@ class ZZZExtractor(BaseExtractor):
         except Exception as json_err:
             print(f"Aviso ao salvar roster_data_zzz.json: {json_err}")
 
+        # Salva dados estruturados de endgame em JSON
+        try:
+            endgame_json_path = "zzz/endgame_data_zzz.json"
+            os.makedirs(os.path.dirname(endgame_json_path) or ".", exist_ok=True)
+            with open(endgame_json_path, "w", encoding="utf-8") as ejf:
+                json.dump(endgame_modes_data, ejf, ensure_ascii=False, indent=2)
+        except Exception as e_err:
+            print(f"Aviso ao salvar endgame_data_zzz.json: {e_err}")
+
         markdown_content = "\n".join(lines)
         
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
@@ -1556,7 +1593,11 @@ class ZZZExtractor(BaseExtractor):
         # Salva no SQLite
         try:
             import database
-            database.save_game_account(uid, "zzz", zzz_acc.nickname if hasattr(zzz_acc, "nickname") else "Proxy", zzz_acc.level, getattr(user_data.stats, "active_days", 0))
+            nickname = getattr(zzz_acc, "nickname", "Proxy") if zzz_acc else "Proxy"
+            acc_level = getattr(zzz_acc, "level", 60) if zzz_acc else 60
+            act_days = getattr(user_data.stats, "active_days", 0) if (user_data and user_data.stats) else 0
+            database.save_game_account(uid, "zzz", nickname, acc_level, act_days)
+            database.save_endgame_data(str(uid), "zzz", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
                 pattern = rf'(\*\*(?:Agente):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Agente)|\n## |\Z)'
