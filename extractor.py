@@ -408,7 +408,10 @@ def extract_hsr_character_skills(char) -> list:
 def extract_genshin_character_skills(char) -> list:
     """Extrai todos os talentos e habilidades do personagem Genshin com seus níveis atuais e máximos."""
     skills_json = []
-    raw_skills = getattr(char, "skills", getattr(char, "talents", []))
+    try:
+        raw_skills = getattr(char, "skills", getattr(char, "talents", []))
+    except Exception:
+        raw_skills = []
     if not raw_skills:
         return skills_json
     seen_names = set()
@@ -913,18 +916,24 @@ class GenshinExtractor(BaseExtractor):
             if basic_chars:
                 for b in basic_chars:
                     if hasattr(b, "id"):
-                        try:
-                            b_n = b.name
-                            if b_n:
-                                basic_chars_map[b.id] = b_n
-                        except Exception:
-                            if hasattr(b, "dict"):
-                                try:
-                                    d = b.dict()
-                                    if d.get("name"):
-                                        basic_chars_map[b.id] = d["name"]
-                                except Exception:
-                                    pass
+                        b_id = b.id
+                        b_dict = {}
+                        for attr in ["name", "icon", "element", "rarity"]:
+                            try:
+                                val = getattr(b, attr, None)
+                                if val is not None:
+                                    b_dict[attr] = val
+                            except Exception:
+                                pass
+                        if hasattr(b, "dict"):
+                            try:
+                                d = b.dict()
+                                for k, v in d.items():
+                                    if k not in b_dict and v is not None:
+                                        b_dict[k] = v
+                            except Exception:
+                                pass
+                        basic_chars_map[b_id] = b_dict
 
             char_ids = [c.id for c in basic_chars]
             if char_ids:
@@ -952,8 +961,8 @@ class GenshinExtractor(BaseExtractor):
                     return name
             except Exception:
                 pass
-            if hasattr(c, "id") and c.id in basic_chars_map and basic_chars_map[c.id]:
-                return basic_chars_map[c.id]
+            if hasattr(c, "id") and c.id in basic_chars_map and basic_chars_map[c.id].get("name"):
+                return basic_chars_map[c.id]["name"]
             if hasattr(c, "dict"):
                 try:
                     d = c.dict()
@@ -970,6 +979,11 @@ class GenshinExtractor(BaseExtractor):
                     return str(el)
             except Exception:
                 pass
+            try:
+                if hasattr(c, "id") and c.id in basic_chars_map and basic_chars_map[c.id].get("element"):
+                    return str(basic_chars_map[c.id]["element"])
+            except Exception:
+                pass
             if hasattr(c, "dict"):
                 try:
                     d = c.dict()
@@ -978,6 +992,20 @@ class GenshinExtractor(BaseExtractor):
                 except Exception:
                     pass
             return "Anemo"
+
+        def safe_char_rarity(c) -> int:
+            try:
+                r = c.rarity
+                if r:
+                    return int(r)
+            except Exception:
+                pass
+            try:
+                if hasattr(c, "id") and c.id in basic_chars_map and basic_chars_map[c.id].get("rarity"):
+                    return int(basic_chars_map[c.id]["rarity"])
+            except Exception:
+                pass
+            return 4
 
         lines = []
         lines.append("# Relatório de Personagens - Genshin Impact")
@@ -1001,10 +1029,10 @@ class GenshinExtractor(BaseExtractor):
         lines.append("| Personagem | Nível | Raridade | Constelação | Arma | Artefatos |")
         lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
         
-        for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
+        for char in sorted(chars, key=lambda c: (safe_char_rarity(c), getattr(c, "level", 1)), reverse=True):
             try:
                 c_name = safe_char_name(char)
-                stars = "⭐" * getattr(char, "rarity", 4)
+                stars = "⭐" * safe_char_rarity(char)
                 w_name = char.weapon.name if (hasattr(char, "weapon") and char.weapon and hasattr(char.weapon, "name")) else "Nenhuma"
                 w_lvl = getattr(char.weapon, "level", 90) if hasattr(char, "weapon") and char.weapon else 1
                 w_ref = getattr(char.weapon, "refinement", 1) if hasattr(char, "weapon") and char.weapon else 1
@@ -1031,7 +1059,7 @@ class GenshinExtractor(BaseExtractor):
         lines.append("## Detalhes de Builds (Personagens Nv. 70 ou mais)")
         lines.append("")
         
-        for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
+        for char in sorted(chars, key=lambda c: (safe_char_rarity(c), getattr(c, "level", 1)), reverse=True):
             if getattr(char, "level", 0) >= 70:
                 try:
                     c_name = safe_char_name(char)
@@ -1135,7 +1163,7 @@ class GenshinExtractor(BaseExtractor):
                 "EQUIP_RING": "Cálice de Eonothem",
                 "EQUIP_DRESS": "Tiara de Logos"
             }
-            for char in sorted(chars, key=lambda c: (c.rarity, c.level), reverse=True):
+            for char in sorted(chars, key=lambda c: (safe_char_rarity(c), getattr(c, "level", 1)), reverse=True):
                 try:
                     c_name = safe_char_name(char)
                     w_info = {}
@@ -1176,7 +1204,21 @@ class GenshinExtractor(BaseExtractor):
                                 "sub": ", ".join(subs) if subs else "Sem substatus"
                             })
                             
-                    char_icon = getattr(char, "icon", "")
+                    char_icon = ""
+                    try:
+                        char_icon = getattr(char, "icon", "")
+                    except Exception:
+                        pass
+                    if not char_icon and hasattr(char, "id") and char.id in basic_chars_map:
+                        char_icon = basic_chars_map[char.id].get("icon", "")
+
+                    char_rarity = 4
+                    try:
+                        char_rarity = getattr(char, "rarity", 4)
+                    except Exception:
+                        if hasattr(char, "id") and char.id in basic_chars_map:
+                            char_rarity = basic_chars_map[char.id].get("rarity", 4)
+
                     genshin_splash = None
                     
                     if hasattr(char, "costumes") and char.costumes:
@@ -1198,7 +1240,10 @@ class GenshinExtractor(BaseExtractor):
                                 genshin_splash = getattr(costume, "gacha_art", getattr(costume, "splash_art", c_icon_str))
 
                     if not genshin_splash:
-                        genshin_splash = getattr(char, "gacha_card", getattr(char, "gacha_slice", getattr(char, "gacha_art", getattr(char, "splash_art", getattr(char, "display_image", getattr(char, "card_icon", char_icon))))))
+                        try:
+                            genshin_splash = getattr(char, "gacha_card", getattr(char, "gacha_slice", getattr(char, "gacha_art", getattr(char, "splash_art", getattr(char, "display_image", getattr(char, "card_icon", char_icon))))))
+                        except Exception:
+                            genshin_splash = char_icon
                         if not genshin_splash or "UI_AvatarIcon_" in str(genshin_splash):
                             if "UI_AvatarIcon_" in str(char_icon):
                                 if "Costume" in str(char_icon):
@@ -1232,12 +1277,19 @@ class GenshinExtractor(BaseExtractor):
 
                     skills_json = extract_genshin_character_skills(char)
 
+                    char_constellation = 0
+                    try:
+                        char_constellation = getattr(char, "constellation", 0)
+                    except Exception:
+                        if hasattr(char, "id") and char.id in basic_chars_map:
+                            char_constellation = basic_chars_map[char.id].get("constellation", 0)
+
                     char_json_list.append({
                         "id": str(getattr(char, "id", "")),
                         "name": c_name,
                         "level": getattr(char, "level", 1),
-                        "rarity": getattr(char, "rarity", 4),
-                        "rank_str": f"C{getattr(char, 'constellation', 0)}",
+                        "rarity": char_rarity,
+                        "rank_str": f"C{char_constellation}",
                         "element": safe_char_element(char),
                         "icon": sanitize_genshin_url(char_icon),
                         "gacha_art": sanitize_genshin_url(genshin_splash),

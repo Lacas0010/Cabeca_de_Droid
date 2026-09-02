@@ -238,6 +238,11 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
     # 1. Abismo Espiral
     try:
         abyss = await client.get_genshin_spiral_abyss(uid)
+        if not abyss.floors:
+            try:
+                abyss = await client.get_genshin_spiral_abyss(uid, previous=True)
+            except Exception:
+                pass
         if abyss.floors:
             floor = abyss.floors[-1]
             chamber = floor.chambers[-1] if floor.chambers else None
@@ -284,35 +289,85 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
     # 2. Teatro Imaginário
     try:
         it = await client.get_imaginarium_theater(uid)
+        target_data = None
+        is_current = True
+        
         if hasattr(it, "datas") and it.datas:
-            current = it.datas[0]
-            medals = getattr(current, 'medal_num', 0)
-            acts = getattr(current, 'max_round_id', 0)
-            
-            text += f" **Teatro Imaginário**\n"
-            text += f"  • Medalhas: {medals} | Atos Concluídos: {acts}\n"
-            
-            favs = getattr(current, "favorite_characters", [])
-            team_chars = []
-            if favs:
-                char_names = [f"{getattr(c, 'name', '?')} (Nv.{getattr(c, 'level', '?')})" for c in favs]
-                text += f"    - **Personagens Principais/Destaques:** {', '.join(char_names)}\n"
-                team_chars = [_build_char_node_data(c) for c in favs]
+            if it.datas[0].has_data:
+                target_data = it.datas[0]
+                is_current = True
+            else:
+                for d in it.datas:
+                    if d.has_data:
+                        target_data = d
+                        is_current = False
+                        break
+                if not target_data and it.datas:
+                    target_data = it.datas[0]
+        
+        if target_data and (target_data.has_data or getattr(target_data, "acts", [])):
+            stat = getattr(target_data, "stats", None)
+            medals = getattr(stat, "medal_num", 0) if stat else 0
+            best_act = getattr(stat, "best_record", 0) if stat else 0
+            if not best_act and hasattr(target_data, "acts") and target_data.acts:
+                best_act = len(target_data.acts)
                 
+            diff_obj = getattr(stat, "difficulty", None) if stat else None
+            diff_val = getattr(diff_obj, "value", diff_obj)
+            
+            DIFF_NAMES = {
+                1: "Fácil",
+                2: "Normal",
+                3: "Difícil",
+                4: "Visionário",
+                5: "Desafio Arcano"
+            }
+            diff_name = DIFF_NAMES.get(diff_val, f"Dificuldade {diff_val}" if diff_val else "Normal")
+            
+            DIFF_MAX_ACTS = {
+                1: 3,
+                2: 6,
+                3: 8,
+                4: 10,
+                5: 10
+            }
+            max_acts = DIFF_MAX_ACTS.get(diff_val, 10 if best_act > 8 else (8 if best_act > 6 else 6))
+            
+            season_id = getattr(target_data.schedule, "id", None) if hasattr(target_data, "schedule") and target_data.schedule else None
+            season_type = getattr(target_data.schedule, "schedule_type", 1) if hasattr(target_data, "schedule") and target_data.schedule else 1
+            season_str = "Temporada Atual" if is_current and season_type == 1 else "Temporada Anterior"
+            stage_name = f"{diff_name}" + (f" (Temporada #{season_id})" if season_id else "")
+            
+            text += f" **Teatro Imaginário** - {stage_name} ({season_str})\n"
+            text += f"  • Medalhas: {medals}/{max_acts} | Atos Concluídos: {best_act}/{max_acts}\n"
+            
+            teams = []
+            if hasattr(target_data, "acts") and target_data.acts:
+                for act in target_data.acts:
+                    act_chars = getattr(act, "characters", [])
+                    if not act_chars:
+                        continue
+                    n_chars = [_build_char_node_data(c) for c in act_chars]
+                    medal_mark = " (Medalha ⭐)" if getattr(act, "medal_obtained", False) else ""
+                    node_title = f"Ato {act.round_id}{medal_mark}"
+                    
+                    text += format_team_node(node_title, act_chars, None) + "\n"
+                    teams.append({
+                        "name": node_title,
+                        "characters": n_chars,
+                        "monsters": []
+                    })
+                    
             modes.append({
                 "id": "imaginarium_theater",
                 "name": "Teatro Imaginário",
                 "badge": "Teatro",
-                "stage": "Temporada Atual",
+                "stage": stage_name,
                 "stars": medals,
-                "max_stars": None,
+                "max_stars": max_acts,
                 "metric_label": "Atos Concluídos",
-                "metric_value": f"{acts} Atos ({medals} Medalhas)",
-                "teams": [{
-                    "name": "Elenco Principal / Destaques",
-                    "characters": team_chars,
-                    "monsters": []
-                }] if team_chars else []
+                "metric_value": f"{best_act}/{max_acts} Atos ({medals}★)",
+                "teams": teams
             })
     except Exception as e:
         print(f"[Aviso] Erro ao extrair Teatro Imaginário Genshin: {e}")
@@ -577,37 +632,40 @@ def parse_endgame_from_markdown(game_id: str, md_text: str, roster_list: List[di
             })
 
         # 2b. Teatro Imaginário
-        it_m = re.search(r'\*\*Teatro Imaginário\*\*(.*?)(?=\n\s*\*\*|\Z)', block, re.DOTALL | re.I)
+        it_m = re.search(r'\*\*Teatro Imaginário\*\*\s*-\s*(.*?)\n\s*•\s*Medalhas:\s*(\d+)/(\d+)\s*\|\s*Atos Concluídos:\s*(\d+)/(\d+)(.*?)(?=\n\s*\*\*|\Z)', block, re.DOTALL | re.I)
         if it_m:
-            it_c = it_m.group(1)
-            medals_m = re.search(r'Medalhas:\s*([^\s\|]+)', it_c)
-            acts_m = re.search(r'Atos Concluídos:\s*([^\s\n\|]+)', it_c)
-            medals = medals_m.group(1) if medals_m else "?"
-            acts = acts_m.group(1) if acts_m else "?"
+            stage = it_m.group(1).strip()
+            medals = int(it_m.group(2))
+            max_medals = int(it_m.group(3))
+            acts = int(it_m.group(4))
+            max_acts = int(it_m.group(5))
+            it_content = it_m.group(6)
             
             teams = []
-            dest_m = re.search(r'Personagens Principais/Destaques:\s*(.*?)(?=\n|$)', it_c)
-            if dest_m:
-                dest_chars = []
-                for ci in dest_m.group(1).split(','):
-                    ci = ci.strip()
-                    if not ci: continue
-                    cm = re.search(r'^(.*?)\s*\(Nv\.(\d+)\)$', ci)
-                    if cm: cname, clvl = cm.group(1).strip(), int(cm.group(2))
-                    else: cname, clvl = ci, 90
-                    c_meta = roster_map.get(cname.lower(), {})
-                    dest_chars.append({
-                        "id": c_meta.get("id", ""),
-                        "name": cname,
-                        "level": clvl,
-                        "element": c_meta.get("element", "Anemo"),
-                        "rarity": c_meta.get("rarity", 5),
-                        "icon": c_meta.get("icon", ""),
-                        "rank_str": c_meta.get("rank_str", "C0")
-                    })
+            act_nodes = re.findall(r'-\s*\*\*(Ato \d+.*?):\*\*(.*?)(?=\n\s*-\s*\*\*|\Z)', it_content, re.DOTALL)
+            for act_name, act_content in act_nodes:
+                team_chars = []
+                eq_m = re.search(r'Equipe:\s*(.*?)(?=\n|$)', act_content)
+                if eq_m:
+                    for ci in eq_m.group(1).split(','):
+                        ci = ci.strip()
+                        if not ci: continue
+                        cm = re.search(r'^(.*?)\s*\(Nv\.(\d+)\)$', ci)
+                        if cm: cname, clvl = cm.group(1).strip(), int(cm.group(2))
+                        else: cname, clvl = ci, 90
+                        c_meta = roster_map.get(cname.lower(), {})
+                        team_chars.append({
+                            "id": c_meta.get("id", ""),
+                            "name": cname,
+                            "level": clvl,
+                            "element": c_meta.get("element", "Anemo"),
+                            "rarity": c_meta.get("rarity", 5),
+                            "icon": c_meta.get("icon", ""),
+                            "rank_str": c_meta.get("rank_str", "C0")
+                        })
                 teams.append({
-                    "name": "Elenco Principal / Destaques",
-                    "characters": dest_chars,
+                    "name": act_name.strip(),
+                    "characters": team_chars,
                     "monsters": []
                 })
                 
@@ -615,13 +673,61 @@ def parse_endgame_from_markdown(game_id: str, md_text: str, roster_list: List[di
                 "id": "imaginarium_theater",
                 "name": "Teatro Imaginário",
                 "badge": "Teatro",
-                "stage": "Temporada Atual",
-                "stars": None,
-                "max_stars": None,
-                "metric_label": "Progresso",
-                "metric_value": f"{acts} Atos ({medals} Medalhas)" if acts != "?" and acts != "None" else "Concluído",
+                "stage": stage,
+                "stars": medals,
+                "max_stars": max_acts,
+                "metric_label": "Atos Concluídos",
+                "metric_value": f"{acts}/{max_acts} Atos ({medals}★)",
                 "teams": teams
             })
+        else:
+            # Fallback para formato antigo ou simplificado
+            old_it_m = re.search(r'\*\*Teatro Imaginário\*\*(.*?)(?=\n\s*\*\*|\Z)', block, re.DOTALL | re.I)
+            if old_it_m:
+                it_c = old_it_m.group(1)
+                medals_m = re.search(r'Medalhas:\s*([^\s\|]+)', it_c)
+                acts_m = re.search(r'Atos Concluídos:\s*([^\s\n\|]+)', it_c)
+                medals_str = medals_m.group(1) if medals_m else "?"
+                acts_str = acts_m.group(1) if acts_m else "?"
+                medals_val = int(medals_str) if medals_str.isdigit() else None
+                
+                teams = []
+                dest_m = re.search(r'Personagens Principais/Destaques:\s*(.*?)(?=\n|$)', it_c)
+                if dest_m:
+                    dest_chars = []
+                    for ci in dest_m.group(1).split(','):
+                        ci = ci.strip()
+                        if not ci: continue
+                        cm = re.search(r'^(.*?)\s*\(Nv\.(\d+)\)$', ci)
+                        if cm: cname, clvl = cm.group(1).strip(), int(cm.group(2))
+                        else: cname, clvl = ci, 90
+                        c_meta = roster_map.get(cname.lower(), {})
+                        dest_chars.append({
+                            "id": c_meta.get("id", ""),
+                            "name": cname,
+                            "level": clvl,
+                            "element": c_meta.get("element", "Anemo"),
+                            "rarity": c_meta.get("rarity", 5),
+                            "icon": c_meta.get("icon", ""),
+                            "rank_str": c_meta.get("rank_str", "C0")
+                        })
+                    teams.append({
+                        "name": "Elenco Principal / Destaques",
+                        "characters": dest_chars,
+                        "monsters": []
+                    })
+                    
+                modes.append({
+                    "id": "imaginarium_theater",
+                    "name": "Teatro Imaginário",
+                    "badge": "Teatro",
+                    "stage": "Temporada Atual",
+                    "stars": medals_val,
+                    "max_stars": None,
+                    "metric_label": "Progresso",
+                    "metric_value": f"{acts_str} Atos ({medals_str} Medalhas)" if acts_str != "?" and acts_str != "None" else "Concluído",
+                    "teams": teams
+                })
 
     # 3. ZENLESS ZONE ZERO
     elif game_id_clean == "zzz":
