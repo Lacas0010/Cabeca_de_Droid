@@ -658,10 +658,24 @@ function normalizeEndgameChar(char, gameId) {
         }
     }
 
+    // Sanitiza URL de Genshin se contiver .png.png ou ide_
+    if (char.icon && typeof char.icon === "string") {
+        let cleanIcon = char.icon.replace(/\.png\.png/gi, ".png").replace(/\/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_/gi, "/$1");
+        if (cleanIcon.includes("/api/proxy_image?url=")) {
+            const parts = cleanIcon.split("/api/proxy_image?url=");
+            let decoded = decodeURIComponent(parts[1] || "");
+            if (decoded.includes("ide_") || decoded.includes(".png.png")) {
+                decoded = decoded.replace(/\.png\.png/gi, ".png").replace(/\/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_/gi, "/$1");
+                cleanIcon = `/api/proxy_image?url=${encodeURIComponent(decoded)}`;
+            }
+        }
+        char.icon = cleanIcon;
+    }
+
     const roster = globalRoster[gameId] || [];
     const found = roster.find(c => (c.name || "").toLowerCase() === name.toLowerCase());
     if (found) {
-        if (!char.icon && found.icon) char.icon = found.icon;
+        if ((!char.icon || char.icon.includes(`${gameId}_icon.png`)) && found.icon) char.icon = found.icon;
         if (!char.element && found.element) char.element = found.element;
         if (!char.rarity && found.rarity) char.rarity = found.rarity;
         if (!char.rank_str && found.rank_str) char.rank_str = found.rank_str;

@@ -488,6 +488,13 @@ async def proxy_image(url: str):
     if not url or not url.startswith(("http://", "https://")):
         raise HTTPException(status_code=400, detail="URL de imagem inválida.")
     
+    # Sanitização defensiva para URLs do Genshin com .png.png ou ide_
+    try:
+        from extractor import sanitize_genshin_url
+        url = sanitize_genshin_url(url)
+    except Exception:
+        pass
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
@@ -841,7 +848,7 @@ async def get_endgame(game_id: str):
                     
                     if c_lower in roster_map:
                         rm = roster_map[c_lower]
-                        if not char.get("icon") and rm.get("icon"):
+                        if rm.get("icon"):
                             char["icon"] = rm["icon"]
                         if not char.get("element") and rm.get("element"):
                             char["element"] = rm["element"]
@@ -852,8 +859,17 @@ async def get_endgame(game_id: str):
                         if rm.get("id"):
                             char["id"] = rm["id"]
 
+                    # Sanitiza URLs de Genshin (eliminando .png.png e ide_)
+                    if game_id == "genshin" and char.get("icon"):
+                        try:
+                            from extractor import sanitize_genshin_url
+                            raw_c_icon = get_raw_url(char["icon"])
+                            char["icon"] = sanitize_genshin_url(raw_c_icon)
+                        except Exception:
+                            pass
+
                     # Fallbacks especiais para personagens sem ícone (ex: Traveler / Desbravador)
-                    if not char.get("icon"):
+                    if not char.get("icon") or char.get("icon").strip() == "":
                         if "desbravador" in c_lower or "trailblazer" in c_lower:
                             char["icon"] = f"/assets/hsr_icon.png"
                         elif "traveler" in c_lower or "viajante" in c_lower:

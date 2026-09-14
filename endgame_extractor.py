@@ -35,6 +35,18 @@ def format_team_node(node_name: str, characters: list, monsters: list = None, ch
     return "\n".join(lines)
 
 
+def sanitize_genshin_url(url_str: str) -> str:
+    """Sanitiza URLs de ícones e splash art do Genshin eliminando .png.png e ide_ de URLs do Enka/Yatta."""
+    if not url_str:
+        return ""
+    clean = str(url_str).strip()
+    while clean.endswith(".png.png"):
+        clean = clean[:-4]
+    clean = re.sub(r'/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_', r'/\1', clean)
+    if "gi.yatta.moe/assets/UI/" in clean:
+        clean = clean.replace("https://gi.yatta.moe/assets/UI/", "https://enka.network/ui/")
+    return clean
+
 def _build_char_node_data(c: Any, char_map: Dict[str, str] = None, roster_map: Dict[str, dict] = None) -> dict:
     """Cria o dicionário estruturado com metadados para um personagem de endgame."""
     c_name = getattr(c, "name", None)
@@ -52,17 +64,20 @@ def _build_char_node_data(c: Any, char_map: Dict[str, str] = None, roster_map: D
         c_name = "Desconhecido"
         
     c_lvl = getattr(c, "level", 80)
-    c_icon = getattr(c, "icon", "")
+    raw_icon = getattr(c, "icon", "")
+    c_icon = sanitize_genshin_url(raw_icon) if raw_icon else ""
     c_elem = getattr(c, "element", "")
     c_rarity = getattr(c, "rarity", 5)
     c_rank = getattr(c, "rank", getattr(c, "mindscape", getattr(c, "constellation", None)))
     rank_str = f"E{c_rank}" if c_rank is not None else ""
+    if hasattr(c, "constellation") and getattr(c, "constellation", None) is not None:
+        rank_str = f"C{c.constellation}"
 
     # Enriquece com o roster se disponível
     if roster_map and c_name.lower() in roster_map:
         rm = roster_map[c_name.lower()]
-        if not c_icon and rm.get("icon"):
-            c_icon = rm["icon"]
+        if rm.get("icon"):
+            c_icon = sanitize_genshin_url(rm["icon"])
         if not c_elem and rm.get("element"):
             c_elem = rm["element"]
         if rm.get("rarity"):
@@ -235,6 +250,20 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
     text = "=== GENSHIN IMPACT - ENDGAME ===\n"
     modes = []
 
+    roster_map = {}
+    try:
+        import os, json
+        roster_json_path = "genshin/roster_data_genshin.json"
+        if os.path.exists(roster_json_path):
+            with open(roster_json_path, "r", encoding="utf-8") as rf:
+                r_list = json.load(rf)
+                if isinstance(r_list, list):
+                    for rc in r_list:
+                        if rc.get("name"):
+                            roster_map[rc["name"].lower().strip()] = rc
+    except Exception:
+        pass
+
     # 1. Abismo Espiral
     try:
         abyss = await client.get_genshin_spiral_abyss(uid)
@@ -264,7 +293,7 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
                         
                     text += format_team_node(node_name, getattr(b, "characters", []), monsters) + "\n"
                     
-                    n_chars = [_build_char_node_data(c) for c in getattr(b, "characters", [])]
+                    n_chars = [_build_char_node_data(c, roster_map=roster_map) for c in getattr(b, "characters", [])]
                     n_monsters = [{"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", 100)} for m in monsters]
                     teams.append({
                         "name": node_name,
@@ -347,7 +376,7 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
                     act_chars = getattr(act, "characters", [])
                     if not act_chars:
                         continue
-                    n_chars = [_build_char_node_data(c) for c in act_chars]
+                    n_chars = [_build_char_node_data(c, roster_map=roster_map) for c in act_chars]
                     medal_mark = " (Medalha ⭐)" if getattr(act, "medal_obtained", False) else ""
                     node_title = f"Ato {act.round_id}{medal_mark}"
                     
