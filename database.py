@@ -1096,12 +1096,17 @@ def set_lan_access(enabled: bool) -> None:
         """, (1 if enabled else 0, now))
 
 def is_lan_access_allowed() -> bool:
-    """Informa se conexões originadas de IPs externos na LAN são permitidas."""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT allow_lan_access FROM security_settings WHERE id = 1")
-        row = cursor.fetchone()
-        return bool(row["allow_lan_access"]) if row else False
+    """Informa se conexões originadas de IPs externos na LAN, Tailscale ou VPN são permitidas."""
+    if os.environ.get("ALLOW_LAN", "").lower() in ("1", "true", "yes", "on") or os.environ.get("ALLOW_TAILSCALE", "").lower() in ("1", "true", "yes", "on") or os.environ.get("HOST", "") in ("0.0.0.0", "::"):
+        return True
+    try:
+        with get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT allow_lan_access FROM security_settings WHERE id = 1")
+            row = cursor.fetchone()
+            return bool(row["allow_lan_access"]) if row else False
+    except Exception:
+        return False
 
 
 

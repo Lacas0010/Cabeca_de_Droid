@@ -84,12 +84,19 @@ def wait_for_server(port: int, timeout: float = 10.0) -> bool:
         time.sleep(0.1)
     return False
 
-def start_server(port: int) -> None:
-    """Inicia o servidor web FastAPI usando Uvicorn com binding seguro."""
-    from database import is_lan_access_allowed
-    allow_lan = is_lan_access_allowed()
-    bind_host = "0.0.0.0" if allow_lan else "127.0.0.1"
-    config = uvicorn.Config(app, host=bind_host, port=port, log_level="info")
+import argparse
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Cabeça de Droid - Assistente HoYoLAB")
+    parser.add_argument("--host", "-H", type=str, default=None, help="Endereço IP para bind do servidor (ex: 0.0.0.0 ou 127.0.0.1)")
+    parser.add_argument("--port", "-p", type=int, default=None, help="Porta TCP do servidor (padrão: 8000)")
+    parser.add_argument("--lan", "--allow-lan", "--tailscale", action="store_true", help="Permite acesso via rede local (LAN), Tailscale ou VPN")
+    parser.add_argument("--no-browser", action="store_true", help="Não abre a janela do navegador automaticamente (ideal para servidores Linux/VMs)")
+    return parser.parse_args()
+
+def start_server(host: str, port: int) -> None:
+    """Inicia o servidor web FastAPI usando Uvicorn com binding configurado."""
+    config = uvicorn.Config(app, host=host, port=port, log_level="info")
     server = uvicorn.Server(config)
     server.run()
 
@@ -98,31 +105,65 @@ def main() -> None:
     Ponto de entrada unificado da aplicação.
     Inicializa o servidor FastAPI e abre a interface gráfica no navegador.
     """
-    from database import is_lan_access_allowed
-    port = find_available_port(8000)
+    args = parse_args()
+    from database import is_lan_access_allowed, set_lan_access
+
+    if args.lan:
+        os.environ["ALLOW_LAN"] = "1"
+        try:
+            set_lan_access(True)
+        except Exception:
+            pass
+
+    allow_lan = is_lan_access_allowed() or args.lan or os.environ.get("ALLOW_LAN", "").lower() in ("1", "true", "yes", "on")
+
+    # Define o host de binding
+    if args.host:
+        bind_host = args.host
+        if bind_host in ("0.0.0.0", "::"):
+            os.environ["ALLOW_LAN"] = "1"
+            allow_lan = True
+    elif os.environ.get("HOST"):
+        bind_host = os.environ["HOST"]
+        if bind_host in ("0.0.0.0", "::"):
+            os.environ["ALLOW_LAN"] = "1"
+            allow_lan = True
+    else:
+        bind_host = "0.0.0.0" if allow_lan else "127.0.0.1"
+
+    # Define a porta
+    if args.port:
+        port = args.port
+    elif os.environ.get("PORT"):
+        port = int(os.environ["PORT"])
+    else:
+        port = find_available_port(8000)
     
-    server_thread = threading.Thread(target=start_server, args=(port,), daemon=True)
+    server_thread = threading.Thread(target=start_server, args=(bind_host, port), daemon=True)
     server_thread.start()
     
-    # Aguarda ativamente o servidor responder no socket antes de abrir o navegador
+    # Aguarda ativamente o servidor responder no socket antes de prosseguir
     ready = wait_for_server(port)
     
     local_ip = get_local_ip()
-    allow_lan = is_lan_access_allowed()
     url_local = f"http://127.0.0.1:{port}/?v=4.0"
     url_rede = f"http://{local_ip}:{port}/?v=4.0"
     
     print("[INFO] Iniciando Cabeça de Droid v4.0 (Blindagem de Segurança Ativa)...")
-    print(f"[INFO] Servidor rodando localmente em: {url_local}")
-    if allow_lan:
-        print(f"[WARN] Acesso LAN Ativo: Dispositivos na mesma rede Wi-Fi podem acessar em: {url_rede}")
+    print(f"[INFO] Servidor escutando em: {bind_host}:{port}")
+    print(f"[INFO] Acesso local: {url_local}")
+    if allow_lan or bind_host == "0.0.0.0":
+        print(f"[SUCCESS] Acesso LAN / Tailscale / VPN HABILITADO na porta {port} (IP local: {local_ip})")
     else:
         print(f"[SECURITY] Isolamento de Rede Ativo: Servidor vinculado exclusivamente a 127.0.0.1 (Loopback).")
+        print(f"[TIP] Para liberar o acesso via Tailscale/VPN na VM, inicie com: python main.py --lan (ou --host 0.0.0.0)")
     
-    if ready:
-        webbrowser.open(url_local)
-    else:
-        print("[WARN] Servidor demorou mais que o esperado para responder, mas o processo continua rodando.")
+    should_open_browser = not args.no_browser and (sys.platform == "win32" or bool(os.environ.get("DISPLAY")))
+    if ready and should_open_browser:
+        try:
+            webbrowser.open(url_local)
+        except Exception:
+            pass
 
     try:
         while server_thread.is_alive():
