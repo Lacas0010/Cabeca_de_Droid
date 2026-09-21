@@ -1,104 +1,81 @@
 # 🛡️ Política de Segurança, Proteção de Dados e Arquitetura de Sessão
 
-Este documento descreve as práticas de segurança, gestão de credenciais, privacidade de dados e o **Plano de Blindagem de Tokens e Sessões** no aplicativo **Cabeça de Droid (v4.0+)**.
+Este documento descreve as práticas de segurança, gestão de credenciais, privacidade de dados e a arquitetura de proteção implementada no aplicativo **Cabeça de Droid (v4.0+)**.
 
 ---
 
-## 🔒 1. Diagnóstico do Modelo Atual e Credenciais Sensíveis
+## 🔒 1. Diagnóstico de Credenciais Sensíveis
 
-O aplicativo opera com duas categorias críticas de credenciais:
-1. **Chaves de API de IA (`config.json` ou Variáveis de Ambiente):** Chaves da Groq Cloud (`gsk_...`) ou Google Gemini (`AIza...`).
-2. **Tokens de Sessão da HoYoLAB (`cookies.json`):**
+O aplicativo opera com duas categorias de credenciais locais:
+
+1. **Chaves de API de IA (`config.json` ou Variáveis de Ambiente):** Chaves do Groq Cloud (`gsk_...`) ou Google Gemini (`AIza...`).
+2. **Tokens de Sessão da HoYoLAB (`cookies.enc`):**
    - `ltuid_v2` / `account_id_v2`: Identificador numérico público da conta HoYoLAB.
-   - `ltoken_v2`: Token de sessão criptográfica concedido após login oficial. Permite consulta a diários de exploração, roster de personagens, status de resina/energia em tempo real e auto-check-in.
+   - `ltoken_v2`: Token de sessão criptográfica concedido após login oficial. Permite consulta a diários de exploração, roster de personagens, status de resina/energia em tempo real e check-in diário.
    - `cookie_token_v2`: Token complementar necessário para resgate de códigos promocionais e interações em eventos web.
 
-> [!WARNING]  
-> Embora os tokens `ltoken_v2` **não permitam a troca de senha ou alteração de e-mail da conta miHoYo** (funções restritas a `stoken` no aplicativo mobile oficial), eles concedem acesso de leitura e automação à conta no HoYoLAB. Seu tratamento deve seguir padrões rigorosos de segurança defensiva.
+> [!WARNING]
+> **Aviso Conceitual de Segurança:**
+> Mesmo que esses tokens não permitam alterar diretamente a senha ou o e-mail da conta HoYoVerse (ações restritas a fluxos com `stoken` no app mobile oficial), eles devem ser tratados como **credenciais sensíveis de sessão**. O impacto exato de uma eventual exposição depende dos endpoints e serviços HoYoLAB acessíveis naquele momento e de possíveis mudanças de permissão que a HoYoverse venha a implementar no futuro.
 
 ---
 
-## 🏗️ 2. Os 7 Pilares de Segurança para Sessões e Cookies (Roadmap & Arquitetura)
+## 🏗️ 2. Arquitetura de Segurança Implementada
 
-### 1. 🔐 Criptografia Local dos Tokens em Repouso
-- **Problema:** O arquivo `cookies.json` é salvo em texto puro JSON. Caso um malware ou usuário local leia o arquivo, os tokens ficam legíveis.
-- **Solução Arquitetural:** 
-  - Utilizar criptografia simétrica autenticada (**AES-256-GCM** ou **Fernet**) para gravar o payload no disco (`cookies.enc`).
-  - Derivar uma chave criptográfica única combinando entropia da máquina (Machine GUID / Hardware ID) com sal criptográfico via PBKDF2/Argon2.
+Todas as medidas abaixo estão **ativas e implementadas no código-fonte atual**:
 
-### 2. 🗄️ Armazenamento Seguro Nativo no Sistema Operacional
-- **Problema:** Chaves gravadas em arquivos locais podem ser migradas ou lidas por outros processos do mesmo usuário sem isolamento do SO.
-- **Solução Arquitetural:**
-  - **Windows:** Integração com **Windows DPAPI** (`CryptProtectData` e `CryptUnprotectData` via `ctypes` ou biblioteca `cryptography`), atrelando a chave mestra exclusivamente à credencial de login do usuário logado no Windows.
-  - **Multiplataforma (Linux / macOS):** Integração com **Keyring** (`keyring` / `SecretStorage` no Linux via D-Bus Secret Service e **Keychain** no macOS).
+### 1. 🔐 Cofre Criptográfico Local (Windows DPAPI)
+- **Implementação:** Módulo [security_vault.py](security_vault.py).
+- **Mecanismo:** Utiliza a Windows Data Protection API (`CryptProtectData` e `CryptUnprotectData` via `ctypes.windll.crypt32`), atrelando a chave mestra de criptografia ao perfil de login do usuário do Windows no hardware atual.
+- **Armazenamento em Repouso:** Os cookies são persistidos exclusivamente em formato binário criptografado em `cookies.enc` (AES-256 / HMAC-SHA256).
+- **Migração Transparente:** Caso um arquivo legado em texto puro (`cookies.json`) seja detectado na inicialização, ele é automaticamente criptografado em `cookies.enc` e o arquivo legado é apagado com segurança.
 
-### 3. 🧹 Limpeza e Sanitização Automática de Logs Sensíveis
-- **Problema:** `print()`, stack traces (`traceback.print_exc()`) e endpoints de monitoramento (`sync_status["logs"]`) podem despejar acidentalmente headers HTTP ou respostas de requisição com cookies.
-- **Solução Arquitetural:**
-  - **Log Filter Middleware:** Interceptor central de logs que aplica expressões regulares de mascaramento (Redaction):
-    - `(ltoken(?:_v2)?=)[^;,\s&]+` ➔ `ltoken_v2=v2_***[REDACTED]***`
-    - `(ltuid(?:_v2)?=)[^;,\s&]+` ➔ `ltuid_v2=***[REDACTED]***`
-    - `(gsk_[a-zA-Z0-9]{20,})` ➔ `gsk_***[REDACTED]***`
-  - Sanitização obrigatória antes de persistir em `database.py` ou enviar via SSE / WebSockets.
+### 2. 🎭 Zero-Exposure e Mascaramento de Tokens no Frontend
+- **Implementação:** [server.py](server.py) e [static/app.js](static/app.js).
+- **Mecanismo:** O endpoint `GET /api/config` **nunca** retorna cookies em texto claro para a interface gráfica. O backend retorna apenas um preview sanitizado (`ltuid_v2=282***47; ltoken_v2=v2_CA***JkXB; cookie_token_v2=***[PROTEGIDO]***`).
+- **Buffer de Escrita Descartável:** Ao colar novos cookies na UI, o campo de texto atua exclusivamente como buffer temporário de gravação que é limpo imediatamente após o salvamento.
 
-### 4. 🎭 Mascaramento de Cookies no Frontend (Zero-Exposure no DOM)
-- **Problema:** O endpoint `GET /api/config` retornava a string inteira de cookies em texto puro para preencher o `<textarea>` do frontend.
-- **Solução Arquitetural:**
-  - O backend **nunca mais envia o token completo** na resposta da API.
-  - A API retorna um objeto sanitizado:
-    ```json
-    {
-      "has_cookies": true,
-      "valid": true,
-      "accounts": [
-        {
-          "uid_masked": "12***456",
-          "nickname": "Desbravador",
-          "ltoken_preview": "v2_a9***c3"
-        }
-      ]
-    }
-    ```
-  - Ao inserir manualmente novos cookies, o frontend envia via `POST /api/auth/manual_cookies`, o backend valida, encripta e responde com confirmação de sucesso sem refletir o segredo no HTML.
+### 3. 🧹 Sanitização e Redação Automática de Logs em Tempo Real
+- **Implementação:** Módulo [log_sanitizer.py](log_sanitizer.py).
+- **Mecanismo:** Interceptor com filtros regex que mascara ocorrências de `ltoken_v2`, `cookie_token_v2`, `ltuid_v2`, `account_id`, chaves Groq (`gsk_...`), chaves Gemini (`AIzaSy...`) e headers `Bearer` antes de serem impressos no terminal ou enviados para a interface web via SSE.
 
-### 5. 🌐 Isolamento de Rede e Proteção Contra Dispositivos na LAN
-- **Problema:** `uvicorn.run(host="0.0.0.0")` disponibiliza o servidor e todas as APIs administrativas em todas as interfaces de rede locais sem senha.
-- **Solução Arquitetural:**
-  - **Binding Seguro Padrão:** O backend inicia vinculado estritamente ao Loopback (`127.0.0.1` / `localhost`).
-  - **Modo LAN Opcional:** Se o usuário optar conscientemente por liberar acesso para celular na rede Wi-Fi (`0.0.0.0`):
-    - Requer autenticação por token de cabeçalho ou PIN.
-    - Endpoints de alto risco (`/api/config`, `/api/auth/*`, `/api/reset-data`) passam a exigir verificação de origem loopback ou cabeçalho `X-Local-Secret`.
-    - Restrição de CORS: Substituição de `allow_origins=["*"]` por origens locais estritas.
+### 4. 🌐 Isolamento de Rede por Padrão (Loopback 127.0.0.1)
+- **Implementação:** [main.py](main.py) e [server.py](server.py).
+- **Mecanismo:** O servidor inicia vinculado estritamente à interface local `127.0.0.1`, impedindo que outros dispositivos na mesma rede Wi-Fi/Ethernet acessem os endpoints ou o dashboard.
+- **Controle Explícito:** O acesso por outros dispositivos (`0.0.0.0`) só é habilitado se o usuário ativar intencionalmente o toggle na aba de Configurações.
 
-### 6. 🔑 Autenticação Local Opcional (PIN / Master Password)
-- **Problema:** Qualquer pessoa com acesso físico ao computador pode abrir o navegador e visualizar detalhes das contas ou alterar rotinas.
-- **Solução Arquitetural:**
-  - Criação de bloqueio local por PIN de 4 a 6 dígitos ou Master Password.
-  - Hash com salt gerado com **Argon2id** ou **PBKDF2-HMAC-SHA256** gravado no SQLite.
-  - Emissão de cookie de sessão HTTP-Only (`SameSite=Strict`, `Path=/`) com token efêmero JWT de curta duração (ex: 2 horas de inatividade).
+### 5. 🔑 Autenticação Local por PIN (Opcional)
+- **Implementação:** [database.py](database.py), [server.py](server.py) e [static/index.html](static/index.html).
+- **Mecanismo:** Permite cadastrar um PIN numérico (4 a 6 dígitos) com hash seguro derivado via `PBKDF2-HMAC-SHA256` (120.000 iterações com salt criptográfico exclusivo no SQLite).
+- **Middleware Interceptor:** Quando ativo, requisições sem cookie de sessão recebem status `HTTP 423 (Locked)`, exibindo a tela de bloqueio e emitindo cookie de sessão `hoyo_session` (`HTTP-Only`, `SameSite=Strict`).
 
-### 7. 📖 Transparência e Explicação Clara do que é Armazenado
-- **Problema:** Usuários podem temer que o app armazene senhas de login ou dados bancários/faturamento.
-- **Solução Arquitetural:**
-  - Inclusão do painel **"Transparência e Privacidade de Dados"** na interface web.
-  - Dicionário claro detalhando o propósito de cada item:
+### 6. 🗑️ Limpeza Rápida de Credenciais
+- **Implementação:** Endpoint `POST /api/security/clear_credentials` e botão na interface web que removem instantaneamente todos os cookies e chaves de IA armazenados no cofre.
 
-| Dado Armazenado | Finalidade | Nível de Risco | Onde é Salvo |
-| :--- | :--- | :--- | :--- |
-| `ltuid_v2` / `account_id` | Identificar o usuário no ecossistema HoYoLAB | Público / Baixo | `cookies.enc` / SQLite |
-| `ltoken_v2` | Consultar perfil, relíquias, diários e notas de resina | Sensível (Sessão de Leitura) | DPAPI / `cookies.enc` |
-| `cookie_token_v2` | Efetuar resgate de códigos promocionais | Sensível (Web Token) | DPAPI / `cookies.enc` |
-| `groq_api_key` / `gemini_api_key` | Realizar prompts de IA (Builds, Chats e Análises) | Privado | `config.json` / DPAPI |
-| `hoyo_app.db` | Histórico de evolução, builds e scores calculados | Não sensível (Dados de Jogo) | SQLite Local |
-
-> [!NOTE]
-> O aplicativo **NUNCA** coleta, armazena ou solicita sua senha pessoal da HoYoVerse nem o token mestre `stoken`. O login pelo Playwright é executado diretamente na página oficial `https://www.hoyolab.com`, sem que o aplicativo intercepte teclas digitadas (Keylogging).
+### 7. 📖 Transparência de Dados
+- **Implementação:** Tabela descritiva na aba de Configurações detalhando a finalidade e sensibilidade de cada dado, reforçando que **senhas pessoais e stoken NUNCA são solicitados ou armazenados**.
 
 ---
 
-## 🛡️ 3. Regras de Proteção no Controle de Versão (`.gitignore`)
+## ⚠️ 3. Limitações Atuais e Considerações Operacionais
 
-Os seguintes arquivos contêm credenciais ou estado local e **permanecem ignorados por padrão**:
+Para garantir transparência técnica com os usuários e desenvolvedores, destacam-se as seguintes limitações do modelo de segurança:
+
+1. **Escopo da Proteção DPAPI (Windows):**
+   - A DPAPI protege contra extração de dados *offline* (por exemplo, copiar o arquivo `cookies.enc` para outro computador ou acessar o disco sem estar autenticado no usuário do Windows).
+   - No entanto, outros processos maliciosos que estejam rodando sob a mesma conta de usuário do Windows no mesmo computador compartilham do mesmo contexto de descriptografia do sistema operacional.
+2. **Uso em Rede Local (Modo LAN):**
+   - Ao ativar o acesso de dispositivos móveis na rede local (`0.0.0.0`), a comunicação HTTP interna ocorre em texto claro na sua rede Wi-Fi (a menos que seja utilizado um reverse proxy com HTTPS, como Nginx ou Caddy).
+   - Recomenda-se manter o **Bloqueio por PIN ativado** e utilizar apenas redes Wi-Fi privadas e confiáveis.
+3. **Chaves de IA no `config.json`:**
+   - As chaves de API do Groq/Gemini são mascaradas na UI e nos logs, mas permanecem armazenadas localmente para permitir o funcionamento contínuo do assistente RAG sem exigir redigitação a cada inicialização.
+
+---
+
+## 🛡️ 4. Regras de Proteção no Controle de Versão (`.gitignore`)
+
+Os seguintes arquivos contêm segredos ou estado local e **permanecem rigorosamente ignorados pelo Git**:
+
 * `config.json` e `config.enc`
 * `cookies.json` e `cookies.enc`
 * `hoyo_app.db`, `hoyo_app.db-wal`, `hoyo_app.db-shm`
@@ -106,8 +83,10 @@ Os seguintes arquivos contêm credenciais ou estado local e **permanecem ignorad
 
 ---
 
-## 🚨 4. Procedimento em Caso de Suspeita de Vazamento
+## 🚨 5. Procedimento em Caso de Suspeita de Vazamento
 
-1. **Invalidar Sessões HoYoLAB:** Acesse `https://www.hoyolab.com`, acesse as configurações de conta e clique em **Sair de Todas as Sessões** (ou altere sua senha HoYoVerse). Todos os `ltoken_v2` e `cookie_token_v2` salvos localmente serão imediatamente revogados nos servidores da miHoYo.
-2. **Revogar Chaves de IA:** Delete as chaves no painel da [Groq Console](https://console.groq.com/keys) ou [Google AI Studio](https://aistudio.google.com/).
-3. **Limpar Arquivos Locais:** Remova os arquivos `config.json`, `cookies.json` ou clique no botão **Resetar Todos os Dados** na interface web.
+Caso você suspeite que seus tokens ou chaves foram expostos:
+
+1. **Invalidar Sessões HoYoLAB:** Acesse [https://www.hoyolab.com](https://www.hoyolab.com), vá nas configurações de conta e clique em **Sair de Todas as Sessões** (ou altere sua senha HoYoVerse). Isso invalida imediatamente todos os `ltoken_v2` e `cookie_token_v2` nos servidores da miHoYo.
+2. **Revogar Chaves de IA:** Delete ou gere novas chaves no painel da [Groq Console](https://console.groq.com/keys) ou [Google AI Studio](https://aistudio.google.com/).
+3. **Limpar Cofre Local:** Clique no botão **Limpar Credenciais do Cofre** na aba de Configurações ou apague os arquivos `cookies.enc` e `config.json`.

@@ -34,7 +34,7 @@ Para interagir com as APIs públicas e oficiais da HoYoverse sem exigir senhas o
 
 > [!CAUTION]
 > **Atenção aos Riscos:**
-> - Cookies como `ltoken_v2` e `cookie_token_v2` representam tokens de sessão ativos no ecossistema HoYoLAB. Embora eles **não permitam alterar sua senha** nem trocar dados cadastrais da conta (já que não há coleta de `stoken`), qualquer pessoa que tenha acesso a esses tokens poderia visualizar seus personagens e resgatar recompensas web em seu nome.
+> - Mesmo que esses tokens não permitam alterar diretamente a senha ou o e-mail da sua conta HoYoVerse (ações restritas a fluxos com `stoken` no aplicativo mobile oficial), eles devem ser tratados como **credenciais sensíveis de sessão**. O impacto exato de uma eventual exposição depende dos endpoints e serviços HoYoLAB acessíveis naquele momento e de possíveis mudanças de permissões que a HoYoverse venha a implementar no futuro.
 > - **Nunca compartilhe** seus arquivos `cookies.enc` ou valores brutos de cookies com terceiros ou em repositórios públicos.
 > - Se você suspeitar de qualquer exposição de tokens, basta fazer **Logout no site oficial da HoYoLAB** ou alterar sua senha para invalidar imediatamente todas as sessões ativas nos servidores da HoYoverse.
 
@@ -42,7 +42,7 @@ Para interagir com as APIs públicas e oficiais da HoYoverse sem exigir senhas o
 
 1. **Criptografia Local com Windows DPAPI (`cookies.enc`):** Seus cookies são salvos exclusivamente no seu computador com proteção nativa do sistema operacional (`CryptProtectData` via `ctypes.windll.crypt32`), atrelando a chave criptográfica ao seu perfil de login no Windows no hardware atual.
 2. **Zero-Exposure no Frontend:** O servidor nunca envia cookies em texto claro para a interface web. O frontend exibe apenas resumos mascarados (ex: `ltuid_v2=282***47; ltoken_v2=v2_CA***JkXB; cookie_token_v2=***[PROTEGIDO]***`). A caixa de texto é tratada como buffer descartável de escrita (*write-only*).
-3. **Higienização Automática de Logs:** Todas as mensagens de terminal e logs de sincronização passam por filtros regex em tempo real ([log_sanitizer.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/log_sanitizer.py)) para censurar automaticamente tokens, chaves de API e cabeçalhos de autorização.
+3. **Higienização Automática de Logs:** Todas as mensagens de terminal e logs de sincronização passam por filtros regex em tempo real ([log_sanitizer.py](log_sanitizer.py)) para censurar automaticamente tokens, chaves de API e cabeçalhos de autorização.
 4. **Isolamento de Rede por Padrão (Loopback 127.0.0.1):** O servidor inicia vinculado estritamente à máquina local. O acesso por outros dispositivos na mesma rede Wi-Fi/LAN só é liberado se você habilitar explicitamente a opção nas Configurações.
 5. **Autenticação Local por PIN (Opcional):** Permite configurar um PIN de 4 a 6 dígitos com hash `PBKDF2-HMAC-SHA256` (120.000 iterações com salt individual) para trancar o acesso ao dashboard em computadores compartilhados.
 
@@ -133,7 +133,7 @@ graph TD
 
 ### 3. Fontes de Raspagem de Metagame
 
-- **Honkai: Star Rail, Zenless Zone Zero & Genshin Impact:** Extração centralizada de guias, tier lists, estatísticas de uso e relatórios de endgame via **Prydwen.gg** ([scraper_prydwen.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_prydwen.py), [scraper_zzz.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_zzz.py) e [scraper_genshin.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/scraper_genshin.py)).
+- **Honkai: Star Rail, Zenless Zone Zero & Genshin Impact:** Extração centralizada de guias, tier lists, estatísticas de uso e relatórios de endgame via **Prydwen.gg** ([scraper_prydwen.py](scraper_prydwen.py), [scraper_zzz.py](scraper_zzz.py) e [scraper_genshin.py](scraper_genshin.py)).
 - **Raspagem Completa & Bypass Anti-Bot (403):** Utiliza `curl_cffi` com cabeçalhos HTTP completos de navegadores modernos (`Accept`, `Accept-Language`, `Sec-Fetch-*`) para garantir o download de 100% dos guias da biblioteca de personagens (incluindo mais de 125 personagens em Genshin Impact), extraindo recomendações de armas, conjuntos de artefatos/discos, atributos principais, prioridade de substatus e prioridade de talentos.
 
 ---
@@ -172,7 +172,7 @@ $$
 | :--- | :--- | :--- |
 | **Backend Framework** | [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) | Servidor web assíncrono de alto desempenho com rotas REST e SSE |
 | **Segurança & Cofre** | Windows DPAPI (`ctypes.windll.crypt32`) + PBKDF2 | Criptografia nativa em repouso e autenticação por PIN |
-| **Higienização de Logs** | Regex Engine Sanitizer ([log_sanitizer.py](file:///c:/Users/07049770108/Documents/hoyo-projetos/log_sanitizer.py)) | Redação e mascaramento em tempo real de tokens e API keys |
+| **Higienização de Logs** | Regex Engine Sanitizer ([log_sanitizer.py](log_sanitizer.py)) | Redação e mascaramento em tempo real de tokens e API keys |
 | **Banco de Dados** | SQLite3 (WAL Mode) | Persistência relacional local otimizada |
 | **Frontend UI/UX** | HTML5 + CSS3 (Vanilla Glassmorphism) + JS ES6+ | Interface responsiva sem dependências externas pesadas |
 | **Ícones & Design** | [Font Awesome 6](https://fontawesome.com/) + Google Fonts (Outfit / Inter) | Design moderno com badges de elementos e cofre de segurança |
@@ -322,4 +322,4 @@ O executável resultante estará localizado dentro do diretório `dist/main.exe`
 
 Todos os dados da sua conta são processados **exclusivamente no seu computador**. Os tokens de sessão são criptografados com **Windows DPAPI** em `cookies.enc` e **nunca são enviados para servidores externos de terceiros**, exceto nas chamadas diretas às APIs oficiais da HoYoverse (`genshin.py`) e aos endpoints de IA do Groq Cloud (`groq_rag.py`) quando solicitados pelo usuário.
 
-Para informações detalhadas sobre a modelagem de ameaças e práticas de segurança, consulte o documento [SECURITY.md](file:///c:/Users/07049770108/Documents/hoyo-projetos/SECURITY.md).
+Para informações detalhadas sobre a modelagem de ameaças e práticas de segurança, consulte o documento [SECURITY.md](SECURITY.md).
