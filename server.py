@@ -10,15 +10,16 @@ import time
 import genshin
 import urllib.parse
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, JSONResponse, FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
-
 # Importações dos módulos do projeto
+import security_vault
+from log_sanitizer import sanitize_log
 from auth import capturar_cookies_hoyolab
 from extractor import MultiGameExtractor, clean_relic_name, sanitize_stat_name
 import endgame_extractor
@@ -30,11 +31,31 @@ from groq_rag import GroqRAG
 import database
 from build_calculator import score_relic, calculate_ascension, get_meta_data, extract_weights_from_guide, normalize_char_name
 
-app = FastAPI(title="Cabeça de Droid API", version="3.0")
+app = FastAPI(title="Cabeça de Droid API", version="4.0")
+
+# Gestão de Sessões Ativas para PIN e Autenticação
+active_sessions: Dict[str, float] = {}
+
+def create_session() -> str:
+    """Cria e registra um token efêmero de sessão para desbloqueio local."""
+    token = security_vault.generate_session_token()
+    active_sessions[token] = time.time() + 86400 # 24 horas de validade
+    return token
+
+def is_valid_session(token: Optional[str]) -> bool:
+    """Verifica a validade do token de sessão ativo."""
+    if not token or token not in active_sessions:
+        return False
+    if time.time() > active_sessions[token]:
+        del active_sessions[token]
+        return False
+    return True
 
 @app.on_event("startup")
 def startup_event():
     database.init_db()
+    # Garante migração transparente de cookies legados para o cofre na inicialização
+    security_vault.load_secure_cookies()
 
 app.add_middleware(
     CORSMiddleware,
@@ -52,6 +73,49 @@ async def add_no_cache_header(request, call_next):
     response.headers["Expires"] = "0"
     return response
 
+@app.middleware("http")
+async def security_guard_middleware(request: Request, call_next):
+    """Middleware de controle de acesso de rede (LAN), isolamento de rotas e bloqueio por PIN."""
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    is_loopback = client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+    path = request.url.path
+    
+    # 1. Proteção de Rede LAN: rejeita conexões externas se LAN estiver desativada
+    if not is_loopback and not database.is_lan_access_allowed():
+        return JSONResponse(
+            status_code=403,
+            content={"error": "Acesso de outros dispositivos na rede local (LAN) está desativado nas Configurações do servidor."}
+        )
+        
+    # 2. Proteção de Endpoints Críticos para clientes na LAN
+    if not is_loopback and path in ("/api/config", "/api/reset-data", "/api/security/clear_credentials"):
+        token = request.cookies.get("hoyo_session") or request.headers.get("X-Session-Token")
+        if not is_valid_session(token):
+            return JSONResponse(
+                status_code=401,
+                content={"error": "Acesso administrativo via LAN bloqueado. Autentique-se com o PIN de segurança."}
+            )
+
+    # 3. Proteção por PIN Local (se habilitado)
+    sec_settings = database.get_security_settings()
+    if sec_settings.get("pin_enabled"):
+        is_public = (
+            path == "/"
+            or path.startswith("/assets")
+            or path.startswith("/static")
+            or path in ("/api/security/status", "/api/security/pin/verify", "/api/proxy_image")
+            or not path.startswith("/api")
+        )
+        if not is_public:
+            token = request.cookies.get("hoyo_session") or request.headers.get("X-Session-Token")
+            if not is_valid_session(token):
+                return JSONResponse(
+                    status_code=423,
+                    content={"error": "Aplicação bloqueada por PIN. Digite seu PIN de acesso para desbloquear.", "locked": True}
+                )
+
+    response = await call_next(request)
+    return response
 
 def get_raw_url(url_str: str) -> str:
     """Extrai a URL original subjacente caso a string já esteja envelopada pelo proxy interno."""
@@ -72,12 +136,13 @@ sync_status = {
 
 def log_game(game_id: str, msg: str, level: str = "INFO", progresso: float = None):
     timestamp = datetime.datetime.now().strftime("%H:%M:%S")
-    formatted_msg = f"[{timestamp}] [{level}] {msg}"
+    clean_msg = sanitize_log(msg)
+    formatted_msg = f"[{timestamp}] [{level}] {clean_msg}"
     print(formatted_msg)
     
     status = sync_status[game_id]
     status["logs"].append(formatted_msg)
-    status["message"] = f"{level == 'ERROR' and ' ' or ''}{msg}"
+    status["message"] = f"{level == 'ERROR' and ' ' or ''}{clean_msg}"
     if progresso is not None:
         status["progress"] = progresso
 
@@ -106,33 +171,10 @@ def bundle_guides(guides_dir: str, output_file: str, game_name: str):
         out_f.write("\n".join(lines))
 
 def get_cookies() -> dict:
-    cookie_file = "cookies.json"
-    if os.path.exists(cookie_file):
-        try:
-            with open(cookie_file, "r", encoding="utf-8") as f:
-                return json.load(f)
-        except Exception:
-            pass
-    return {}
+    return security_vault.load_secure_cookies()
 
 def get_config() -> dict:
-    config_file = "config.json"
-    defaults = {
-        "auto_sync_enabled": True,
-        "auto_sync_time": "04:00",
-        "auto_sync_roster": True,
-        "auto_sync_guides": True,
-        "last_auto_sync_date": ""
-    }
-    if os.path.exists(config_file):
-        try:
-            with open(config_file, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                defaults.update(data)
-                return defaults
-        except Exception:
-            pass
-    return defaults
+    return security_vault.load_secure_config()
 
 def parse_cookie_string(raw_cookie: str) -> dict:
     cookies = {}
@@ -931,39 +973,46 @@ async def get_sync_status(game_id: str):
 
 @app.get("/api/config")
 async def get_configuration():
-    """Retorna as chaves de API e cookies ativos atualmente."""
+    """Retorna as configurações sanitizadas e o resumo criptografado dos cookies."""
     cookies_dict = get_cookies()
     config_dict = get_config()
     
-    cookies_str_list = []
-    for k, v in cookies_dict.items():
-        cookies_str_list.append(f"{k}={v}")
-    cookies_raw = "; ".join(cookies_str_list)
+    cookies_summary = security_vault.get_masked_cookies_preview(cookies_dict)
+    raw_api_key = config_dict.get("groq_api_key") or config_dict.get("gemini_api_key") or ""
+    masked_key = security_vault.mask_secret_string(raw_api_key, 6, 4) if raw_api_key else ""
     
     return {
-        "groq_api_key": config_dict.get("groq_api_key") or config_dict.get("gemini_api_key") or "",
-        "cookies_raw": cookies_raw,
+        "groq_api_key": masked_key,
+        "groq_api_key_configured": bool(raw_api_key),
+        "cookies_raw": "",
+        "cookies_preview": cookies_summary["preview"],
+        "cookies_summary": cookies_summary,
         "has_cookies": len(cookies_dict) > 0,
-        "has_api_key": bool(config_dict.get("groq_api_key") or config_dict.get("gemini_api_key")),
+        "has_api_key": bool(raw_api_key),
         "auto_sync_enabled": config_dict.get("auto_sync_enabled", True),
         "auto_sync_time": config_dict.get("auto_sync_time", "04:00"),
         "auto_sync_roster": config_dict.get("auto_sync_roster", True),
         "auto_sync_guides": config_dict.get("auto_sync_guides", True),
-        "last_auto_sync_date": config_dict.get("last_auto_sync_date", "")
+        "last_auto_sync_date": config_dict.get("last_auto_sync_date", ""),
+        "vault_info": security_vault.get_vault_security_info()
     }
 
 @app.post("/api/config")
 async def save_configuration(req: ConfigSaveRequest):
-    """Salva a chave API, cookies e configurações de agendamento no formato JSON."""
-    config_file = "config.json"
-    cookie_file = "cookies.json"
-    
+    """Salva a chave API, cookies e configurações de agendamento de forma criptografada no cofre."""
     config = get_config()
     changed = False
 
     if req.groq_api_key is not None:
-        config["groq_api_key"] = req.groq_api_key.strip()
-        changed = True
+        key_val = req.groq_api_key.strip()
+        # Não sobrescreve se o usuário não alterou o valor mascarado
+        if key_val and not key_val.startswith("***") and "REDACTED" not in key_val and "***" not in key_val:
+            config["groq_api_key"] = key_val
+            changed = True
+        elif not key_val:
+            config["groq_api_key"] = ""
+            changed = True
+            
     if req.auto_sync_enabled is not None:
         config["auto_sync_enabled"] = req.auto_sync_enabled
         changed = True
@@ -978,29 +1027,22 @@ async def save_configuration(req: ConfigSaveRequest):
         changed = True
 
     if changed:
-        try:
-            with open(config_file, "w", encoding="utf-8") as f:
-                json.dump(config, f, indent=4)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Erro ao salvar config.json: {e}")
+        security_vault.save_secure_config(config)
             
     if req.cookies_raw is not None:
-        cookies = parse_cookie_string(req.cookies_raw)
-        if cookies:
-            try:
-                with open(cookie_file, "w", encoding="utf-8") as f:
-                    json.dump(cookies, f, indent=4)
-            except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Erro ao salvar cookies.json: {e}")
-        else:
-            if os.path.exists(cookie_file):
-                os.remove(cookie_file)
+        c_raw = req.cookies_raw.strip()
+        if c_raw and "REDACTED" not in c_raw and "***" not in c_raw:
+            cookies = parse_cookie_string(c_raw)
+            if cookies:
+                security_vault.save_secure_cookies(cookies)
+        elif not c_raw:
+            security_vault.save_secure_cookies({})
                 
-    return {"status": "success", "message": "Configurações salvas localmente."}
+    return {"status": "success", "message": "Configurações salvas e criptografadas localmente com segurança."}
 
 @app.post("/api/login/auto")
 async def auto_login_hoyolab(background_tasks: BackgroundTasks):
-    """Dispara a janela do navegador via Playwright para capturar os cookies automaticamente."""
+    """Dispara a janela do navegador via Playwright para capturar os cookies e salvá-los no cofre criptografado."""
     def _run_login():
         print("[INFO] Abrindo navegador Playwright para capturar cookies...")
         try:
@@ -1010,10 +1052,8 @@ async def auto_login_hoyolab(background_tasks: BackgroundTasks):
             loop.close()
             
             if cookies_captured:
-                cookie_file = "cookies.json"
-                with open(cookie_file, "w", encoding="utf-8") as f:
-                    json.dump(cookies_captured, f, indent=4)
-                print("[SUCCESS] Cookies capturados e salvos automaticamente!")
+                security_vault.save_secure_cookies(cookies_captured)
+                print("[SUCCESS] Cookies capturados, criptografados e salvos com sucesso no cofre DPAPI!")
         except Exception as e:
             print(f"[ERROR] Falha na captura automática de cookies: {e}")
             
@@ -2337,23 +2377,120 @@ async def check_breakpoints(req: BreakpointRequest):
 class ManualCookieRequest(BaseModel):
     cookie_string: str
 
+class PinSetRequest(BaseModel):
+    pin: str
+
+class PinVerifyRequest(BaseModel):
+    pin: str
+
+class PinDisableRequest(BaseModel):
+    current_pin: Optional[str] = None
+
+class LanToggleRequest(BaseModel):
+    enabled: Optional[bool] = None
+    allow_lan: Optional[bool] = None
+
 @app.post("/api/auth/manual_cookies")
 async def save_manual_cookies(req: ManualCookieRequest):
-    """Permite salvar cookies colados manualmente pelo usuário."""
+    """Permite salvar cookies colados manualmente pelo usuário de forma criptografada no cofre."""
     try:
         parsed = parse_cookie_string(req.cookie_string)
         if not parsed or not any(k in parsed for k in ["ltuid_v2", "ltoken_v2", "ltuid", "ltoken", "cookie_token_v2", "cookie_token"]):
             raise HTTPException(status_code=400, detail="String de cookie inválida ou sem os parâmetros de autenticação HoYoLAB.")
             
-        with open("cookies.json", "w", encoding="utf-8") as f:
-            json.dump(parsed, f, indent=4)
-            
-        return {"status": "success", "message": "Cookies salvos com sucesso em cookies.json!", "keys": list(parsed.keys())}
+        security_vault.save_secure_cookies(parsed)
+        preview = security_vault.get_masked_cookies_preview(parsed)
+        return {
+            "status": "success",
+            "message": "Cookies criptografados e salvos com sucesso no cofre seguro!",
+            "keys": list(parsed.keys()),
+            "preview": preview["preview"]
+        }
     except HTTPException:
         raise
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+# ==========================================
+# ENDPOINTS DE SEGURANÇA, PIN E REDE LOCAL
+# ==========================================
+
+@app.get("/api/security/status")
+async def get_security_status_endpoint(request: Request):
+    """Retorna o status consolidado de segurança da aplicação."""
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    is_loopback = client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+    token = request.cookies.get("hoyo_session") or request.headers.get("X-Session-Token")
+    is_auth = is_valid_session(token)
+    
+    sec_settings = database.get_security_settings()
+    vault_info = security_vault.get_vault_security_info()
+    cookies = get_cookies()
+    preview = security_vault.get_masked_cookies_preview(cookies)
+    
+    return {
+        "status": "success",
+        "storage_backend": vault_info.get("engine", "Windows DPAPI (Hardware-Tied User Key)"),
+        "dpapi_available": vault_info.get("is_windows", False),
+        "pin_enabled": sec_settings.get("pin_enabled", False),
+        "is_authenticated": is_auth or not sec_settings.get("pin_enabled", False),
+        "allow_lan_access": sec_settings.get("allow_lan_access", False),
+        "client_ip": client_ip,
+        "is_local_client": is_loopback,
+        "vault_info": vault_info,
+        "cookies_summary": preview
+    }
+
+@app.post("/api/security/pin/set")
+async def set_security_pin_endpoint(req: PinSetRequest):
+    """Configura ou atualiza o PIN local de proteção."""
+    clean_pin = str(req.pin).strip()
+    if len(clean_pin) < 4:
+        raise HTTPException(status_code=400, detail="O PIN deve ter no mínimo 4 dígitos.")
+    success = database.set_security_pin(clean_pin)
+    if not success:
+        raise HTTPException(status_code=500, detail="Falha ao gravar PIN de segurança.")
+    token = create_session()
+    resp = JSONResponse({"status": "ok", "message": "PIN de segurança ativado com sucesso!", "token": token})
+    resp.set_cookie(key="hoyo_session", value=token, httponly=True, samesite="strict", max_age=86400)
+    return resp
+
+@app.post("/api/security/pin/verify")
+async def verify_security_pin_endpoint(req: PinVerifyRequest):
+    """Valida o PIN digitado pelo usuário e emite token de sessão para desbloqueio."""
+    valid = database.verify_security_pin_attempt(req.pin)
+    if not valid:
+        raise HTTPException(status_code=401, detail="PIN incorreto. Tente novamente.")
+    token = create_session()
+    resp = JSONResponse({"status": "ok", "message": "Autenticado com sucesso!", "token": token})
+    resp.set_cookie(key="hoyo_session", value=token, httponly=True, samesite="strict", max_age=86400)
+    return resp
+
+@app.post("/api/security/pin/disable")
+async def disable_security_pin_endpoint(req: PinDisableRequest):
+    """Desativa o PIN após confirmação do PIN atual se fornecido."""
+    success = database.disable_security_pin(req.current_pin)
+    if not success:
+        raise HTTPException(status_code=401, detail="PIN atual incorreto. Não foi possível desativar.")
+    return {"status": "ok", "message": "Bloqueio por PIN desativado com sucesso."}
+
+@app.post("/api/security/lan/toggle")
+async def toggle_lan_access_endpoint(req: LanToggleRequest):
+    """Ativa ou desativa a permissão para acesso de outros dispositivos na rede local."""
+    val = req.enabled if req.enabled is not None else bool(req.allow_lan)
+    database.set_lan_access(val)
+    return {"status": "ok", "allow_lan_access": val, "message": f"Acesso na rede local {'ativado' if val else 'desativado'}."}
+
+@app.post("/api/security/clear_credentials")
+async def clear_credentials_endpoint():
+    """Remove permanentemente do cofre local todos os cookies e chaves de IA."""
+    security_vault.save_secure_cookies({})
+    config = get_config()
+    config["groq_api_key"] = ""
+    config["gemini_api_key"] = ""
+    security_vault.save_secure_config(config)
+    return {"status": "success", "message": "Credenciais e cookies locais removidos com sucesso!"}
 
 @app.get("/api/relics/optimize/{game_id}/{char_name}")
 async def optimize_relics_for_character(game_id: str, char_name: str):

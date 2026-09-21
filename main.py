@@ -85,8 +85,11 @@ def wait_for_server(port: int, timeout: float = 10.0) -> bool:
     return False
 
 def start_server(port: int) -> None:
-    """Inicia o servidor web FastAPI usando Uvicorn na porta alocada."""
-    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="info")
+    """Inicia o servidor web FastAPI usando Uvicorn com binding seguro."""
+    from database import is_lan_access_allowed
+    allow_lan = is_lan_access_allowed()
+    bind_host = "0.0.0.0" if allow_lan else "127.0.0.1"
+    config = uvicorn.Config(app, host=bind_host, port=port, log_level="info")
     server = uvicorn.Server(config)
     server.run()
 
@@ -95,6 +98,7 @@ def main() -> None:
     Ponto de entrada unificado da aplicação.
     Inicializa o servidor FastAPI e abre a interface gráfica no navegador.
     """
+    from database import is_lan_access_allowed
     port = find_available_port(8000)
     
     server_thread = threading.Thread(target=start_server, args=(port,), daemon=True)
@@ -104,12 +108,16 @@ def main() -> None:
     ready = wait_for_server(port)
     
     local_ip = get_local_ip()
+    allow_lan = is_lan_access_allowed()
     url_local = f"http://127.0.0.1:{port}/?v=4.0"
     url_rede = f"http://{local_ip}:{port}/?v=4.0"
     
-    print("[INFO] Iniciando Cabeça de Droid v4.0...")
+    print("[INFO] Iniciando Cabeça de Droid v4.0 (Blindagem de Segurança Ativa)...")
     print(f"[INFO] Servidor rodando localmente em: {url_local}")
-    print(f"[INFO] Para acessar pelo celular ou outro dispositivo na mesma rede Wi-Fi, acesse: {url_rede}")
+    if allow_lan:
+        print(f"[WARN] Acesso LAN Ativo: Dispositivos na mesma rede Wi-Fi podem acessar em: {url_rede}")
+    else:
+        print(f"[SECURITY] Isolamento de Rede Ativo: Servidor vinculado exclusivamente a 127.0.0.1 (Loopback).")
     
     if ready:
         webbrowser.open(url_local)

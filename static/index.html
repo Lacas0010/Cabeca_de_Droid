@@ -1235,29 +1235,82 @@
             <!-- ABA CONFIGURAÇÕES -->
             <section id="tab-config" class="tab-pane">
                 <div class="config-container">
-                    <h2>Configurações do Aplicativo</h2>
-                    <p class="config-desc">As chaves de API e credenciais de login são armazenadas localmente no seu computador e não são enviadas a servidores externos.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+                        <h2 style="margin: 0;"><i class="fa-solid fa-sliders" style="color: #a855f7;"></i> Configurações do Aplicativo</h2>
+                        <div id="cfg-vault-badge" class="security-vault-badge">
+                            <i class="fa-solid fa-shield-halved"></i> <span>Proteção Criptográfica Ativa</span>
+                        </div>
+                    </div>
+                    <p class="config-desc">Todas as chaves de API, cookies de sessão e dados de contas são armazenados exclusivamente no seu computador com criptografia local (Windows DPAPI / AES-256).</p>
                     
+                    <!-- 1. CHAVE DE API GROQ / GEMINI -->
                     <div class="config-section">
-                        <h3><i class="fa-solid fa-key"></i> API Key do Groq</h3>
-                        <p class="section-desc">Insira a chave da API do Groq (começando com <code>gsk_</code>). Você pode obter uma gratuitamente no console oficial da Groq.</p>
+                        <h3><i class="fa-solid fa-key" style="color: #6366f1;"></i> API Key do Groq / IA</h3>
+                        <p class="section-desc">Insira a chave da API do Groq (iniciando com <code>gsk_</code>) para alimentar o Assistente RAG e o Otimizador de Builds.</p>
                         <div class="input-group">
                             <input type="password" id="cfg-groq-key" placeholder="gsk_..." class="config-input">
                         </div>
                     </div>
                     
+                    <!-- 2. COFRE DE COOKIES HOYOLAB (ENTRADA SEGURA) -->
                     <div class="config-section">
-                        <h3><i class="fa-solid fa-cookie-bite"></i> Cookies de Sessão HoYoLAB</h3>
-                        <p class="section-desc">Insira os cookies da sua sessão HoYoLAB no formato <code>ltuid_v2=xxx; ltoken_v2=yyy; cookie_token_v2=zzz;</code> (ou utilize o login automático abaixo).</p>
-                        <div class="input-group">
-                            <textarea id="cfg-hoyolab-cookies" placeholder="Cole os cookies de sessão aqui..." class="config-input config-textarea"></textarea>
+                        <h3><i class="fa-solid fa-cookie-bite" style="color: #f59e0b;"></i> Cookies de Sessão HoYoLAB (Cofre Criptografado)</h3>
+                        <p class="section-desc">Seus tokens são encriptados no disco com a chave do usuário do sistema operacional (DPAPI). O aplicativo nunca renderiza o segredo completo no navegador.</p>
+                        
+                        <!-- Status e Máscara Atual -->
+                        <div id="cfg-cookies-summary-box" class="security-masked-preview">
+                            <span id="cfg-cookies-preview-text"><i class="fa-solid fa-lock"></i> Nenhum cookie configurado no cofre.</span>
+                            <span id="cfg-cookies-status-tag" style="font-size: 11px; background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 2px 8px; border-radius: 6px; font-weight: 700;">DPAPI</span>
                         </div>
-                        <div class="btn-row">
-                            <button id="btn-auto-login" class="secondary-btn"><i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright</button>
-                            <span class="btn-info">Isto abrirá uma janela do navegador temporária para você logar no site da HoYoLAB.</span>
+                        
+                        <div class="input-group" style="margin-top: 12px;">
+                            <label style="font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px;">Inserir/Atualizar Novos Cookies (Campo Descartável):</label>
+                            <textarea id="cfg-hoyolab-cookies" placeholder="Cole novos cookies aqui (ltuid_v2=...; ltoken_v2=...) para encriptar..." class="config-input config-textarea" style="height: 65px;"></textarea>
+                        </div>
+                        
+                        <div class="btn-row" style="margin-top: 10px; flex-wrap: wrap; gap: 10px;">
+                            <button id="btn-auto-login" class="secondary-btn" style="border-color: #3b82f6; color: #60a5fa;"><i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright</button>
+                            <button id="btn-clear-credentials" class="secondary-btn" style="border-color: #ef4444; color: #f87171; background: rgba(239, 68, 68, 0.08);"><i class="fa-solid fa-key"></i> Limpar Credenciais do Cofre</button>
                         </div>
                     </div>
                     
+                    <!-- 3. AUTENTICAÇÃO LOCAL (BLOQUEIO POR PIN) -->
+                    <div class="config-section">
+                        <h3><i class="fa-solid fa-lock" style="color: #ec4899;"></i> Bloqueio de Acesso Local por PIN</h3>
+                        <p class="section-desc">Exige um PIN numérico (4 a 6 dígitos) para acessar e visualizar as informações dos seus personagens e contas neste dispositivo.</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer;">
+                                <input type="checkbox" id="cfg-pin-enabled" style="width: 16px; height: 16px; accent-color: #ec4899;">
+                                Ativar Proteção de Tela por PIN
+                            </label>
+                            
+                            <div id="cfg-pin-config-box" style="display: none; background: rgba(0,0,0,0.25); padding: 14px; border-radius: 10px; border: 1px solid rgba(236,72,153,0.3);">
+                                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                                    <input type="password" id="cfg-new-pin" placeholder="Digite 4 a 6 dígitos" maxlength="6" class="snap-select" style="padding: 6px 12px; width: 180px; text-align: center; letter-spacing: 4px; font-size: 16px;">
+                                    <button id="btn-save-pin" class="primary-btn" style="padding: 7px 16px; font-size: 12px; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none;">Gravar PIN</button>
+                                    <button id="btn-disable-pin" class="secondary-btn" style="padding: 7px 14px; font-size: 12px; border-color: #ef4444; color: #f87171; display: none;">Desativar PIN</button>
+                                </div>
+                                <span style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: block;">Hash seguro gerado com algoritmo PBKDF2-HMAC-SHA256 (120.000 iterações).</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 4. CONTROLE DE REDE LOCAL (LAN / WI-FI) -->
+                    <div class="config-section">
+                        <h3><i class="fa-solid fa-network-wired" style="color: #06b6d4;"></i> Proteção de Rede Local (LAN / Wi-Fi)</h3>
+                        <p class="section-desc">Por padrão, o servidor escuta exclusivamente no Loopback seguro (<code>127.0.0.1</code>), impedindo qualquer acesso de outros computadores ou celulares na mesma rede Wi-Fi.</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer;">
+                                <input type="checkbox" id="cfg-lan-access-toggle" style="width: 16px; height: 16px; accent-color: #06b6d4;">
+                                Permitir acesso de celular/tablet na rede local (Binding 0.0.0.0)
+                            </label>
+                            <span id="cfg-lan-status-msg" style="font-size: 11px; color: var(--text-muted);">Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.</span>
+                        </div>
+                    </div>
+                    
+                    <!-- 5. AGENDAMENTO AUTOMÁTICO DIÁRIO -->
                     <div class="config-section">
                         <h3><i class="fa-solid fa-clock-rotate-left" style="color: #ec4899;"></i> Sincronização Diária Programada (Roster & Guias)</h3>
                         <p class="section-desc">Agende um horário fixo diário para atualizar automaticamente os personagens do roster e guias de metagame dos 3 jogos. Snapshots só serão gravados se houver alterações.</p>
@@ -1287,8 +1340,9 @@
                         </div>
                     </div>
                     
+                    <!-- 6. AUTO CHECK-IN DIÁRIO -->
                     <div class="config-section">
-                        <h3><i class="fa-regular fa-calendar-check"></i> Resgate de Recompensas Diárias HoYoLAB</h3>
+                        <h3><i class="fa-regular fa-calendar-check" style="color: #10b981;"></i> Resgate de Recompensas Diárias HoYoLAB</h3>
                         <p class="section-desc">O aplicativo realiza automaticamente o resgate de recompensas diárias a cada 6 horas. Você também pode forçar o resgate manual abaixo.</p>
                         <div class="btn-row">
                             <button id="btn-manual-checkin" class="secondary-btn" style="border-color: var(--color-success); color: #4ade80;"><i class="fa-solid fa-gift"></i> Resgatar Recompensas Agora</button>
@@ -1301,7 +1355,59 @@
                             </ul>
                         </div>
                     </div>
+
+                    <!-- 7. TRANSPARÊNCIA & PRIVACIDADE DE DADOS -->
+                    <div class="config-section" style="border-top: 1px solid rgba(168, 85, 247, 0.3); padding-top: 16px;">
+                        <h3 style="color: #c084fc;"><i class="fa-solid fa-shield-halved"></i> Transparência & Privacidade de Dados</h3>
+                        <p class="section-desc">Entenda detalhadamente quais dados são armazenados localmente no seu computador e quais nunca são acessados:</p>
+                        
+                        <div class="privacy-table-container">
+                            <table class="privacy-table">
+                                <thead>
+                                    <tr>
+                                        <th>Dado Armazenado</th>
+                                        <th>Finalidade</th>
+                                        <th>Nível de Risco</th>
+                                        <th>Forma de Proteção</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>ltuid_v2</strong></td>
+                                        <td>Identificador público da conta no HoYoLAB</td>
+                                        <td><span style="color: #38bdf8;">Público / Baixo</span></td>
+                                        <td>Criptografado em <code>cookies.enc</code></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>ltoken_v2</strong></td>
+                                        <td>Leitura de roster, resina/energia e check-in diário</td>
+                                        <td><span style="color: #f59e0b;">Sessão de Leitura</span></td>
+                                        <td>Windows DPAPI + AES-256</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>cookie_token_v2</strong></td>
+                                        <td>Resgate de códigos promocionais e eventos web</td>
+                                        <td><span style="color: #f59e0b;">Token Web</span></td>
+                                        <td>Windows DPAPI + AES-256</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Chave de IA (Groq)</strong></td>
+                                        <td>Prompts para Assistente RAG e Análise de Builds</td>
+                                        <td><span style="color: #a855f7;">Privado</span></td>
+                                        <td>Cofre local em <code>config.json</code></td>
+                                    </tr>
+                                    <tr style="background: rgba(239, 68, 68, 0.08);">
+                                        <td><strong>Senha HoYoVerse & stoken</strong></td>
+                                        <td><strong>NUNCA COLETADOS OU ARMAZENADOS</strong></td>
+                                        <td><span style="color: #4ade80;">Zero Risco</span></td>
+                                        <td>Login feito 100% no site oficial</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                     
+                    <!-- 8. ZONA DE PERIGO / RESET -->
                     <div class="config-section" style="border-top: 1px solid rgba(239, 68, 68, 0.3); margin-top: 24px; padding-top: 16px;">
                         <h3 style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Zona de Perigo / Limpeza de Dados</h3>
                         <p class="section-desc">Apaga permanentemente as 3 pastas de guias e relatórios (<code>zzz</code>, <code>hsr</code>, <code>genshin</code>) e reseta todas as tabelas do Banco de Dados local (SQLite).</p>
@@ -2323,12 +2429,38 @@
         </div>
     </div>
 
+    <!-- MODAL DE BLOQUEIO POR PIN LOCAL -->
+    <div id="modal-pin-lock" class="pin-lock-overlay" style="display: none;">
+        <div class="pin-lock-card">
+            <div style="width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, #a855f7, #6366f1); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto; font-size: 24px; color: #fff; box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <h2 style="margin: 0 0 6px 0; color: #fff; font-size: 22px; font-weight: 800;">Cabeça de Droid Bloqueado</h2>
+            <p style="margin: 0 0 16px 0; color: var(--text-secondary); font-size: 13px;">Digite seu PIN de 4 a 6 dígitos para desbloquear o acesso aos dados.</p>
+            
+            <div class="pin-dots-display" id="pin-dots-box">
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+                <div class="pin-dot"></div>
+            </div>
+            
+            <div style="margin: 12px 0;">
+                <input type="password" id="pin-unlock-input" maxlength="6" autofocus placeholder="••••" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(168, 85, 247, 0.4); color: #fff; font-size: 22px; text-align: center; letter-spacing: 12px; padding: 10px 16px; border-radius: 12px; width: 180px;">
+            </div>
+            
+            <div id="pin-error-msg" style="color: #ef4444; font-size: 12px; margin-top: 6px; min-height: 18px; font-weight: 600;"></div>
+            
+            <div style="margin-top: 14px; display: flex; gap: 10px; justify-content: center;">
+                <button id="btn-submit-unlock-pin" class="primary-btn" style="padding: 10px 28px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #a855f7, #7e22ce); border: none; border-radius: 10px;">
+                    <i class="fa-solid fa-key"></i> Desbloquear
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Lógica do Frontend -->
     <script src="app.js?v=17.0"></script>
 </body>
-
-
-
-
 </html>
 

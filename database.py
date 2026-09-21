@@ -254,6 +254,21 @@ def init_db() -> None:
         )
         """)
         
+        # 8. Tabela de Configurações de Segurança e PIN Local
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS security_settings (
+            id INTEGER PRIMARY KEY,
+            pin_enabled INTEGER DEFAULT 0,
+            pin_hash TEXT,
+            pin_salt TEXT,
+            allow_lan_access INTEGER DEFAULT 0,
+            updated_at TEXT
+        )
+        """)
+        
+        # Garante linha única de configuração de segurança
+        cursor.execute("INSERT OR IGNORE INTO security_settings (id, pin_enabled, allow_lan_access, updated_at) VALUES (1, 0, 0, ?)", (datetime.now().isoformat(),))
+        
         # Criação de índices para acelerar consultas frequentes do Roster e de Relíquias
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_characters_game_uid ON characters(game_id, uid)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_relics_uid_char ON character_relics(uid, character_name)")
@@ -1003,6 +1018,91 @@ def get_endgame_data(game_id: str, uid: Optional[str] = None) -> Optional[Dict[s
                 "updated_at": row["updated_at"]
             }
     return None
+
+# ==========================================
+# GESTÃO DE SEGURANÇA, PIN E ACESSO LAN
+# ==========================================
+
+def get_security_settings() -> Dict[str, Any]:
+    """Retorna as configurações atuais de segurança e autenticação."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT pin_enabled, pin_hash, pin_salt, allow_lan_access, updated_at FROM security_settings WHERE id = 1")
+        row = cursor.fetchone()
+        if row:
+            return {
+                "pin_enabled": bool(row["pin_enabled"]),
+                "has_pin": bool(row["pin_hash"]),
+                "allow_lan_access": bool(row["allow_lan_access"]),
+                "updated_at": row["updated_at"]
+            }
+    return {"pin_enabled": False, "has_pin": False, "allow_lan_access": False, "updated_at": ""}
+
+def set_security_pin(pin: str) -> bool:
+    """Configura ou atualiza o PIN local de proteção."""
+    from security_vault import hash_security_pin
+    if not pin or len(str(pin).strip()) < 4:
+        return False
+    
+    pin_clean = str(pin).strip()
+    pin_hash, pin_salt = hash_security_pin(pin_clean)
+    now = datetime.now().isoformat()
+    
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        UPDATE security_settings
+        SET pin_enabled = 1, pin_hash = ?, pin_salt = ?, updated_at = ?
+        WHERE id = 1
+        """, (pin_hash, pin_salt, now))
+    return True
+
+def verify_security_pin_attempt(pin: str) -> bool:
+    """Valida uma tentativa de inserção de PIN contra o hash armazenado."""
+    from security_vault import verify_security_pin
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT pin_enabled, pin_hash, pin_salt FROM security_settings WHERE id = 1")
+        row = cursor.fetchone()
+        if not row or not row["pin_enabled"] or not row["pin_hash"]:
+            return True
+            
+        return verify_security_pin(str(pin).strip(), row["pin_salt"], row["pin_hash"])
+
+def disable_security_pin(current_pin: Optional[str] = None) -> bool:
+    """Desativa o PIN após confirmação do PIN atual se fornecido."""
+    if current_pin is not None and not verify_security_pin_attempt(current_pin):
+        return False
+        
+    now = datetime.now().isoformat()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        UPDATE security_settings
+        SET pin_enabled = 0, pin_hash = NULL, pin_salt = NULL, updated_at = ?
+        WHERE id = 1
+        """, (now,))
+    return True
+
+def set_lan_access(enabled: bool) -> None:
+    """Ativa ou desativa a permissão para acesso de outros dispositivos na rede local."""
+    now = datetime.now().isoformat()
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        UPDATE security_settings
+        SET allow_lan_access = ?, updated_at = ?
+        WHERE id = 1
+        """, (1 if enabled else 0, now))
+
+def is_lan_access_allowed() -> bool:
+    """Informa se conexões originadas de IPs externos na LAN são permitidas."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT allow_lan_access FROM security_settings WHERE id = 1")
+        row = cursor.fetchone()
+        return bool(row["allow_lan_access"]) if row else False
+
 
 
 

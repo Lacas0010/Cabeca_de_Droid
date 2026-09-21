@@ -8,6 +8,18 @@ let globalRoster = { zzz: [], genshin: [], hsr: [] };
 let activeInspectGame = "";
 let activeInspectChar = null;
 
+// ==========================================================================
+// INTERCEPTOR GLOBAL DE FETCH (SEGURANÇA & PIN 423)
+// ==========================================================================
+const originalFetch = window.fetch;
+window.fetch = async function(...args) {
+    const response = await originalFetch.apply(this, args);
+    if (response.status === 423) {
+        showPinLockModal();
+    }
+    return response;
+};
+
 // Dicionário de normalização de elementos para classes CSS
 const ELEMENT_MAPPING = {
     // Honkai Star Rail
@@ -263,6 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setupCheckinSystem();
     setupInspectorTabs();
     setupSubnavTabs();
+    setupPinSecurityUI();
     
     // Carrega dados iniciais
     fetchConfig();
@@ -402,15 +415,90 @@ function setupTabSwitching() {
 
 
 // ==========================================================================
-// SISTEMA DE CONFIGURAÇÃO (API KEYS & COOKIES)
+// SISTEMA DE CONFIGURAÇÃO (API KEYS & COOKIES & SEGURANÇA DPAPI)
 // ==========================================================================
 async function fetchConfig() {
     try {
-        const res = await fetch("/api/config");
-        const config = await res.json();
+        const [cfgRes, secRes] = await Promise.all([
+            fetch("/api/config"),
+            fetch("/api/security/status")
+        ]);
+
+        const config = await cfgRes.json();
+        let secStatus = {};
+        if (secRes.ok) {
+            secStatus = await secRes.json();
+        }
         
-        document.getElementById("cfg-groq-key").value = config.groq_api_key;
-        document.getElementById("cfg-hoyolab-cookies").value = config.cookies_raw;
+        // 1. Chave IA Groq (Tratada com máscara ou em branco para segurança)
+        const groqInput = document.getElementById("cfg-groq-key");
+        if (groqInput) {
+            if (config.has_api_key) {
+                groqInput.value = "";
+                groqInput.placeholder = config.groq_api_key || "gsk_... (Chave configurada)";
+            } else {
+                groqInput.value = "";
+                groqInput.placeholder = "gsk_...";
+            }
+        }
+
+        // 2. Máscara de Cookies (Zero-Exposure de tokens no frontend)
+        const previewEl = document.getElementById("cfg-cookies-preview-text");
+        const previewTag = document.getElementById("cfg-cookies-status-tag");
+        if (previewEl) {
+            if (config.has_cookies && config.cookies_preview) {
+                previewEl.innerHTML = `<i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 6px;"></i><code>${config.cookies_preview}</code>`;
+                if (previewTag) previewTag.style.display = "inline-block";
+            } else {
+                previewEl.innerHTML = `<i class="fa-solid fa-lock" style="margin-right: 6px;"></i>Nenhum cookie configurado no cofre.`;
+                if (previewTag) previewTag.style.display = "none";
+            }
+        }
+
+        // Campo de entrada de novos cookies (sempre limpo para gravação descartável)
+        const hoyoInput = document.getElementById("cfg-hoyolab-cookies");
+        if (hoyoInput) hoyoInput.value = "";
+
+        // 3. Vault Badge
+        const vaultBadge = document.getElementById("cfg-vault-badge");
+        if (vaultBadge && secStatus.storage_backend) {
+            if (secStatus.dpapi_available) {
+                vaultBadge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>Proteção Windows DPAPI Ativa</span>`;
+            } else {
+                vaultBadge.innerHTML = `<i class="fa-solid fa-shield"></i> <span>Cofre Criptografado Ativo</span>`;
+            }
+        }
+
+        // 4. PIN de Segurança
+        const pinCheckbox = document.getElementById("cfg-pin-enabled");
+        const pinBox = document.getElementById("cfg-pin-config-box");
+        const disablePinBtn = document.getElementById("btn-disable-pin");
+        const newPinInput = document.getElementById("cfg-new-pin");
+        if (pinCheckbox) {
+            pinCheckbox.checked = !!secStatus.pin_enabled;
+        }
+        if (pinBox) {
+            pinBox.style.display = secStatus.pin_enabled ? "block" : "none";
+        }
+        if (disablePinBtn) {
+            disablePinBtn.style.display = secStatus.pin_enabled ? "inline-flex" : "none";
+        }
+        if (newPinInput) {
+            newPinInput.value = "";
+            newPinInput.placeholder = secStatus.pin_enabled ? "PIN Ativo (Alterar)" : "Digite 4 a 6 dígitos";
+        }
+
+        // 5. Controle de Acesso LAN
+        const lanToggle = document.getElementById("cfg-lan-access-toggle");
+        const lanStatusMsg = document.getElementById("cfg-lan-status-msg");
+        if (lanToggle) {
+            lanToggle.checked = !!secStatus.allow_lan_access;
+        }
+        if (lanStatusMsg) {
+            lanStatusMsg.innerText = secStatus.allow_lan_access 
+                ? "Acesso LAN ativo: Celular/tablet na mesma rede Wi-Fi podem acessar." 
+                : "Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.";
+        }
         
         updateApiStatusIndicator(config.has_api_key && config.has_cookies);
     } catch (err) {
@@ -421,12 +509,14 @@ async function fetchConfig() {
 function updateApiStatusIndicator(online) {
     const dot = document.getElementById("api-status-dot");
     const text = document.getElementById("api-status-text");
-    if (online) {
-        dot.className = "status-dot online";
-        text.innerText = "IA & Cookies Conectados";
-    } else {
-        dot.className = "status-dot offline";
-        text.innerText = "Configuração pendente";
+    if (dot && text) {
+        if (online) {
+            dot.className = "status-dot online";
+            text.innerText = "IA & Cookies Conectados";
+        } else {
+            dot.className = "status-dot offline";
+            text.innerText = "Configuração pendente";
+        }
     }
 }
 
@@ -434,63 +524,342 @@ async function setupConfigForm() {
     const saveBtn = document.getElementById("btn-save-config");
     const autoLoginBtn = document.getElementById("btn-auto-login");
     const statusMsg = document.getElementById("config-save-status");
+    const clearCredsBtn = document.getElementById("btn-clear-credentials");
+    const pinCheckbox = document.getElementById("cfg-pin-enabled");
+    const savePinBtn = document.getElementById("btn-save-pin");
+    const disablePinBtn = document.getElementById("btn-disable-pin");
+    const lanToggle = document.getElementById("cfg-lan-access-toggle");
 
-    saveBtn.addEventListener("click", async () => {
-        const groq_api_key = document.getElementById("cfg-groq-key").value;
-        const cookies_raw = document.getElementById("cfg-hoyolab-cookies").value;
-        
-        statusMsg.className = "status-msg";
-        statusMsg.innerText = "Salvando...";
-        
-        try {
-            const res = await fetch("/api/config", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ groq_api_key, cookies_raw })
-            });
-            const data = await res.json();
+    // Salvar Configurações (Chave Groq + Cookies)
+    if (saveBtn) {
+        saveBtn.addEventListener("click", async () => {
+            const groq_api_key = document.getElementById("cfg-groq-key")?.value || "";
+            const cookies_raw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
             
-            if (res.ok) {
-                statusMsg.className = "status-msg success";
-                statusMsg.innerText = "Configurações salvas localmente!";
-                fetchConfig();
-            } else {
-                statusMsg.className = "status-msg error";
-                statusMsg.innerText = `Erro: ${data.detail}`;
+            if (statusMsg) {
+                statusMsg.className = "status-msg";
+                statusMsg.innerText = "Criptografando e salvando...";
             }
-        } catch (err) {
-            statusMsg.className = "status-msg error";
-            statusMsg.innerText = "Erro ao conectar com o servidor.";
-        }
-    });
-
-    autoLoginBtn.addEventListener("click", async () => {
-        autoLoginBtn.disabled = true;
-        autoLoginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguardando login no navegador...';
-        
-        try {
-            const res = await fetch("/api/login/auto", { method: "POST" });
-            if (res.ok) {
-                // Monitora o status das configurações para ver se os cookies mudaram para "has_cookies: true"
-                let attempts = 0;
-                const interval = setInterval(async () => {
-                    attempts++;
-                    const checkRes = await fetch("/api/config");
-                    const checkCfg = await checkRes.json();
-                    if (checkCfg.has_cookies || attempts > 60) {
-                        clearInterval(interval);
-                        autoLoginBtn.disabled = false;
-                        autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
-                        fetchConfig();
+            
+            try {
+                const res = await fetch("/api/config", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ groq_api_key, cookies_raw })
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    if (statusMsg) {
+                        statusMsg.className = "status-msg success";
+                        statusMsg.innerText = "Configurações salvas no cofre com sucesso!";
                     }
-                }, 2000);
+                    showToast("Configurações atualizadas e criptografadas!", "success");
+                    fetchConfig();
+                } else {
+                    if (statusMsg) {
+                        statusMsg.className = "status-msg error";
+                        statusMsg.innerText = `Erro: ${data.detail || "Erro desconhecido"}`;
+                    }
+                }
+            } catch (err) {
+                if (statusMsg) {
+                    statusMsg.className = "status-msg error";
+                    statusMsg.innerText = "Erro ao conectar com o servidor.";
+                }
             }
-        } catch (err) {
-            autoLoginBtn.disabled = false;
-            autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
+        });
+    }
+
+    // Auto Login Playwright
+    if (autoLoginBtn) {
+        autoLoginBtn.addEventListener("click", async () => {
+            autoLoginBtn.disabled = true;
+            autoLoginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguardando login no navegador...';
+            
+            try {
+                const res = await fetch("/api/login/auto", { method: "POST" });
+                if (res.ok) {
+                    let attempts = 0;
+                    const interval = setInterval(async () => {
+                        attempts++;
+                        const checkRes = await fetch("/api/config");
+                        const checkCfg = await checkRes.json();
+                        if (checkCfg.has_cookies || attempts > 60) {
+                            clearInterval(interval);
+                            autoLoginBtn.disabled = false;
+                            autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
+                            showToast("Cookies capturados e criptografados com sucesso!", "success");
+                            fetchConfig();
+                        }
+                    }, 2000);
+                }
+            } catch (err) {
+                autoLoginBtn.disabled = false;
+                autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
+            }
+        });
+    }
+
+    // Limpar Credenciais do Cofre
+    if (clearCredsBtn) {
+        clearCredsBtn.addEventListener("click", async () => {
+            if (!confirm("Deseja realmente apagar todos os cookies e chaves de IA armazenados no cofre?")) return;
+            try {
+                const res = await fetch("/api/security/clear_credentials", { method: "POST" });
+                if (res.ok) {
+                    showToast("Credenciais e tokens removidos com sucesso.", "info");
+                    fetchConfig();
+                } else {
+                    showToast("Erro ao limpar credenciais.", "error");
+                }
+            } catch (err) {
+                showToast("Erro ao conectar com o servidor.", "error");
+            }
+        });
+    }
+
+    // Toggle de ativação do PIN
+    if (pinCheckbox) {
+        pinCheckbox.addEventListener("change", () => {
+            const pinBox = document.getElementById("cfg-pin-config-box");
+            if (pinCheckbox.checked) {
+                if (pinBox) pinBox.style.display = "block";
+                const newPinInput = document.getElementById("cfg-new-pin");
+                if (newPinInput) newPinInput.focus();
+            } else {
+                if (disablePinBtn && disablePinBtn.style.display !== "none") {
+                    disablePinBtn.click();
+                } else {
+                    if (pinBox) pinBox.style.display = "none";
+                }
+            }
+        });
+    }
+
+    // Salvar novo PIN
+    if (savePinBtn) {
+        savePinBtn.addEventListener("click", async () => {
+            const pinInput = document.getElementById("cfg-new-pin");
+            const pin = (pinInput ? pinInput.value : "").trim();
+            if (!pin || pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin)) {
+                showToast("O PIN deve conter entre 4 e 6 dígitos numéricos.", "error");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/security/pin/set", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ pin })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast("PIN de segurança configurado com sucesso!", "success");
+                    fetchConfig();
+                } else {
+                    showToast(`Erro ao gravar PIN: ${data.detail || "Erro"}`, "error");
+                }
+            } catch (err) {
+                showToast("Erro ao conectar com o servidor.", "error");
+            }
+        });
+    }
+
+    // Desativar PIN
+    if (disablePinBtn) {
+        disablePinBtn.addEventListener("click", async () => {
+            if (!confirm("Deseja realmente desativar o bloqueio por PIN?")) {
+                if (pinCheckbox) pinCheckbox.checked = true;
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/security/pin/disable", { method: "POST" });
+                if (res.ok) {
+                    showToast("Bloqueio por PIN desativado.", "info");
+                    fetchConfig();
+                } else {
+                    showToast("Erro ao desativar PIN.", "error");
+                }
+            } catch (err) {
+                showToast("Erro ao conectar com o servidor.", "error");
+            }
+        });
+    }
+
+    // Toggle de Acesso LAN
+    if (lanToggle) {
+        lanToggle.addEventListener("change", async () => {
+            const allow_lan = lanToggle.checked;
+            try {
+                const res = await fetch("/api/security/lan/toggle", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ allow_lan })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(data.message || "Configuração de rede atualizada.", "info");
+                    const lanStatusMsg = document.getElementById("cfg-lan-status-msg");
+                    if (lanStatusMsg) {
+                        lanStatusMsg.innerText = allow_lan 
+                            ? "Acesso LAN ativo: Celular/tablet na mesma rede Wi-Fi podem acessar." 
+                            : "Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.";
+                    }
+                } else {
+                    showToast("Erro ao alterar configuração de LAN.", "error");
+                    lanToggle.checked = !allow_lan;
+                }
+            } catch (err) {
+                showToast("Erro ao conectar com o servidor.", "error");
+                lanToggle.checked = !allow_lan;
+            }
+        });
+    }
+}
+
+// ==========================================================================
+// MODAL DE PIN & FEEDBACK VISUAL (TOASTS)
+// ==========================================================================
+function showPinLockModal() {
+    const modal = document.getElementById("modal-pin-lock");
+    if (modal) {
+        modal.style.display = "flex";
+        const pinInput = document.getElementById("pin-unlock-input");
+        if (pinInput) {
+            pinInput.value = "";
+            updatePinDots("");
+            pinInput.focus();
+        }
+        const errorEl = document.getElementById("pin-error-msg");
+        if (errorEl) errorEl.innerText = "";
+    }
+}
+
+function hidePinLockModal() {
+    const modal = document.getElementById("modal-pin-lock");
+    if (modal) {
+        modal.style.display = "none";
+    }
+}
+
+function updatePinDots(val) {
+    const dotsBox = document.getElementById("pin-dots-box");
+    if (!dotsBox) return;
+    const dots = dotsBox.querySelectorAll(".pin-dot");
+    dots.forEach((dot, idx) => {
+        if (idx < val.length) {
+            dot.classList.add("filled");
+        } else {
+            dot.classList.remove("filled");
         }
     });
 }
+
+function setupPinSecurityUI() {
+    const pinInput = document.getElementById("pin-unlock-input");
+    const submitBtn = document.getElementById("btn-submit-unlock-pin");
+    const errorEl = document.getElementById("pin-error-msg");
+
+    if (pinInput) {
+        pinInput.addEventListener("input", () => {
+            pinInput.value = pinInput.value.replace(/\D/g, "");
+            updatePinDots(pinInput.value);
+            if (errorEl) errorEl.innerText = "";
+            if (pinInput.value.length === 6) {
+                submitPinUnlock();
+            }
+        });
+
+        pinInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                submitPinUnlock();
+            }
+        });
+    }
+
+    if (submitBtn) {
+        submitBtn.addEventListener("click", submitPinUnlock);
+    }
+
+    async function submitPinUnlock() {
+        const pin = pinInput ? pinInput.value : "";
+        if (!pin || pin.length < 4) {
+            if (errorEl) errorEl.innerText = "Digite de 4 a 6 dígitos numéricos.";
+            return;
+        }
+
+        try {
+            if (submitBtn) submitBtn.disabled = true;
+            const res = await originalFetch("/api/security/pin/verify", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pin })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.status === "ok") {
+                hidePinLockModal();
+                showToast("Acesso desbloqueado com sucesso!", "success");
+                fetchConfig();
+                loadOverview();
+                loadRoster("zzz");
+                loadRoster("genshin");
+                loadRoster("hsr");
+            } else {
+                if (errorEl) errorEl.innerText = data.detail || "PIN incorreto. Tente novamente.";
+                if (pinInput) {
+                    pinInput.value = "";
+                    updatePinDots("");
+                    pinInput.focus();
+                }
+            }
+        } catch (err) {
+            if (errorEl) errorEl.innerText = "Erro ao conectar com o servidor.";
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    }
+}
+
+function showToast(message, type = "info") {
+    let container = document.getElementById("app-toast-container");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "app-toast-container";
+        container.style.cssText = "position: fixed; bottom: 24px; right: 24px; z-index: 100000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;";
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement("div");
+    const colors = {
+        success: "background: rgba(16, 185, 129, 0.95); border: 1px solid #10b981; color: #fff;",
+        error: "background: rgba(239, 68, 68, 0.95); border: 1px solid #ef4444; color: #fff;",
+        info: "background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168, 85, 247, 0.5); color: #e2e8f0;"
+    };
+    const icons = {
+        success: '<i class="fa-solid fa-circle-check"></i>',
+        error: '<i class="fa-solid fa-circle-exclamation"></i>',
+        info: '<i class="fa-solid fa-circle-info" style="color: #a855f7;"></i>'
+    };
+
+    toast.style.cssText = `padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(8px); transition: all 0.3s ease; opacity: 0; transform: translateY(10px); pointer-events: auto; ${colors[type] || colors.info}`;
+    toast.innerHTML = `${icons[type] || icons.info} <span>${message}</span>`;
+    container.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.style.opacity = "1";
+        toast.style.transform = "translateY(0)";
+    });
+
+    setTimeout(() => {
+        toast.style.opacity = "0";
+        toast.style.transform = "translateY(10px)";
+        setTimeout(() => toast.remove(), 300);
+    }, 4000);
+}
+window.showToast = showToast;
 
 // ==========================================================================
 // CONTROLES DE SINCRONIZAÇÃO E LOGS EM TEMPO REAL
