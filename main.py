@@ -9,8 +9,11 @@ import uvicorn
 def setup_playwright() -> None:
     """
     Garante que o executável Chromium do Playwright esteja disponível no ambiente do usuário.
-    Se estiver rodando empacotado via PyInstaller, força a busca na pasta AppData/Local padrão.
+    Se estiver rodando empacotado via PyInstaller no Windows, força a busca na pasta AppData/Local padrão.
     """
+    if sys.platform != "win32":
+        return
+
     local_app_data = os.environ.get("LOCALAPPDATA", os.path.expanduser("~\\AppData\\Local"))
     pw_path = os.path.join(local_app_data, "ms-playwright")
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = pw_path
@@ -29,9 +32,7 @@ def setup_playwright() -> None:
             env = get_driver_env()
             env["PLAYWRIGHT_BROWSERS_PATH"] = pw_path
             
-            creationflags = 0
-            if sys.platform == "win32":
-                creationflags = subprocess.CREATE_NO_WINDOW
+            creationflags = subprocess.CREATE_NO_WINDOW
                 
             subprocess.run(
                 [driver_executable, driver_cli, "install", "chromium"], 

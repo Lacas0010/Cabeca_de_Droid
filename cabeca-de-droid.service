@@ -1,0 +1,33 @@
+[Unit]
+Description=Cabeça de Droid - Assistente HoYoLAB
+After=network.target tailscaled.service
+Wants=tailscaled.service
+
+[Service]
+Type=simple
+# Ajuste o User conforme sua distro na Oracle Cloud (ex: ubuntu ou opc)
+User=ubuntu
+Group=ubuntu
+
+# Caminho do projeto no servidor (ajuste se for diferente)
+WorkingDirectory=/home/ubuntu/cabeca-de-droid
+
+# Variáveis de ambiente
+Environment="PYTHONUNBUFFERED=1"
+Environment="ALLOW_LAN=1"
+Environment="HOST=0.0.0.0"
+Environment="PORT=8000"
+
+# Execução com o Python do ambiente virtual
+ExecStart=/home/ubuntu/cabeca-de-droid/.venv/bin/python main.py --no-browser --lan --host 0.0.0.0 --port 8000
+
+# Reinicialização automática em caso de falha
+Restart=always
+RestartSec=5
+
+# Limites e segurança do serviço
+KillMode=mixed
+TimeoutStopSec=10
+
+[Install]
+WantedBy=multi-user.target
