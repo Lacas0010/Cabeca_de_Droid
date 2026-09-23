@@ -87,3 +87,7 @@ dist/
 build/
 *.spec
 *.exe
+
+cookies.enc
+config.enc
+*.enc
