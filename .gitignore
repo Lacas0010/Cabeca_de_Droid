@@ -43,8 +43,14 @@ desktop.ini
 
 # Local Credentials, Databases & Secrets
 config.json
+config.enc
 cookies.json
+cookies.enc
+*.enc
 chave de api.txt
+*.key
+*.pem
+*.pfx
 hoyo_app.db
 *.db
 *.db-journal
@@ -87,7 +93,3 @@ dist/
 build/
 *.spec
 *.exe
-
-cookies.enc
-config.enc
-*.enc
