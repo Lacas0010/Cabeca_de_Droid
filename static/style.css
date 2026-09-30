@@ -5067,6 +5067,265 @@ h1, h2, h3, h4, h5, h6 {
     transform: scale(1.15);
 }
 
+/* ==========================================================================
+   MOBILE & RESPONSIVE POLISH SUITE V5.0 (GLOBAL ENHANCEMENTS)
+   ========================================================================== */
+@media (max-width: 860px) {
+    /* CHAT IA & MONTADOR DE TIMES EM COLUNA NO MOBILE */
+    .chat-layout-wrapper {
+        flex-direction: column !important;
+        height: auto !important;
+        gap: 16px !important;
+        min-height: auto !important;
+    }
 
+    .chat-container {
+        width: 100% !important;
+        height: 58vh !important;
+        min-height: 380px !important;
+        border-radius: 14px !important;
+        margin: 0 !important;
+        border: 1px solid var(--border-color) !important;
+    }
 
+    .team-builder-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-top: 4px !important;
+        box-sizing: border-box !important;
+    }
 
+    .team-chars-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 6px !important;
+    }
+
+    /* CENTRAL DE AJUDA (HELP HUB V5.0) NO MOBILE */
+    .help-hub-container {
+        gap: 16px !important;
+    }
+
+    .help-hero-banner {
+        padding: 16px 14px !important;
+        border-radius: 14px !important;
+    }
+
+    .help-hero-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 14px !important;
+    }
+
+    .help-title-group h2 {
+        font-size: 17px !important;
+    }
+
+    .help-title-group p {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+    }
+
+    .help-search-box {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .help-search-input {
+        width: 100% !important;
+        font-size: 13px !important;
+        padding: 10px 14px 10px 38px !important;
+    }
+
+    .help-category-pills {
+        gap: 6px !important;
+        margin-top: 14px !important;
+    }
+
+    .help-pill {
+        padding: 7px 11px !important;
+        font-size: 11.5px !important;
+        flex: 1 1 auto !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+
+    .help-cards-grid {
+        grid-template-columns: 1fr !important;
+        gap: 14px !important;
+    }
+
+    .help-card {
+        padding: 16px 14px !important;
+        border-radius: 14px !important;
+    }
+
+    .help-card-title {
+        font-size: 14.5px !important;
+    }
+
+    .help-card-desc {
+        font-size: 12px !important;
+    }
+
+    .help-card-details {
+        font-size: 12px !important;
+        padding: 10px !important;
+    }
+
+    .help-card-footer {
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+        padding-top: 12px !important;
+    }
+
+    .help-toggle-details-btn,
+    .help-action-btn {
+        flex: 1 1 auto !important;
+        padding: 8px 12px !important;
+        font-size: 11.5px !important;
+        justify-content: center !important;
+    }
+
+    /* MORNING BRIEFING WIDGET */
+    #home-morning-briefing-widget {
+        padding: 14px 12px !important;
+        margin-top: 14px !important;
+        border-radius: 14px !important;
+    }
+
+    #home-morning-briefing-widget > div:first-child {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+    }
+
+    #home-morning-briefing-widget button {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* CENTRAL DE FARM & ORDEM DE SERVIÇO DIÁRIA */
+    .farm-schedule-container,
+    .farm-domains-list {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    .farm-weekday-tabs {
+        overflow-x: auto !important;
+        flex-wrap: nowrap !important;
+        padding-bottom: 4px !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .farm-weekday-pill {
+        flex-shrink: 0 !important;
+        padding: 6px 12px !important;
+        font-size: 11.5px !important;
+    }
+
+    /* TIER LIST & AUDITORIA DA CONTA */
+    .tier-row-container {
+        flex-direction: column !important;
+        gap: 8px !important;
+    }
+
+    .tier-grade-badge {
+        width: 100% !important;
+        height: 38px !important;
+        font-size: 14px !important;
+    }
+
+    .tier-characters-pool {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)) !important;
+        gap: 8px !important;
+    }
+
+    /* RELÍQUIAS LIXO & RECOMENDADOR DE SÍNTESE */
+    .trash-relics-grid,
+    .relic-craft-rec-grid {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* TABELAS COM SCROLL HORIZONTAL SUAVE */
+    .table-responsive-container,
+    .privacy-table-container,
+    .endgame-table-wrapper {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        max-width: 100% !important;
+    }
+
+    /* AJUSTE GERAL DE MODAIS NO MOBILE */
+    .modal-card-content,
+    .roast-modal-card {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        max-height: 92vh !important;
+        padding: 16px 14px !important;
+        border-radius: 14px !important;
+        box-sizing: border-box !important;
+        margin: auto !important;
+    }
+
+    .modal-card-header h3 {
+        font-size: 14.5px !important;
+    }
+
+    .modal-card-footer {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+    }
+
+    .modal-card-footer button,
+    .modal-card-footer .primary-btn,
+    .modal-card-footer .secondary-btn {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* TOASTS & NOTIFICAÇÕES NO MOBILE */
+    .toast-notification,
+    #toast-container {
+        width: 90vw !important;
+        max-width: 360px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        bottom: max(16px, env(safe-area-inset-bottom)) !important;
+        font-size: 12px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .team-chars-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+    .character-gallery {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .char-card-avatar {
+        height: 78px !important;
+    }
+
+    .char-name {
+        font-size: 10px !important;
+    }
+
+    .banner-title-row h2 {
+        font-size: 16px !important;
+    }
+
+    .mobile-header {
+        padding: 10px 12px !important;
+    }
+
+    .mobile-brand-title {
+        font-size: 14.5px !important;
+    }
+}
