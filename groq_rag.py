@@ -171,6 +171,20 @@ class GroqRAG:
             except Exception as e:
                 print(f"[WARN] Erro ao ler roster de {game_id}: {e}")
                 
+        # 1.5 Diagnóstico Estratégico de Lacunas e Prioridades de Banners
+        try:
+            import database
+            from build_calculator import analyze_account_gaps
+            roster_db = database.get_roster_data(game_id)
+            if roster_db:
+                endgame_db = database.get_endgame_data(game_id)
+                gap_analysis = analyze_account_gaps(game_id, roster_db, endgame_db)
+                if gap_analysis and gap_analysis.get("rag_summary_markdown"):
+                    lines.append("## AUDITORIA DE LACUNAS DA CONTA & RECOMENDAÇÕES DE GACHA")
+                    lines.append(gap_analysis["rag_summary_markdown"])
+        except Exception as e:
+            print(f"[WARN] Erro ao injetar análise de lacunas no RAG para {game_id}: {e}")
+
         # 2. Meta/Tier List
         meta_filename = f"meta_endgame_{game_id}.md"
         meta_path = f"{game_id}/{meta_filename}"

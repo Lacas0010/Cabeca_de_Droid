@@ -1,0 +1,1461 @@
+{
+    "genshin": {
+        "hu_tao": {
+            "Vida": "30.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+",
+            "Proficiência Elemental": "150+"
+        },
+        "kaedehara_kazuha": {
+            "Proficiência Elemental": "900+",
+            "Recarga de Energia": "160%+"
+        },
+        "raiden_shogun": {
+            "Recarga de Energia": "250%+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "120%+",
+            "ATQ": "1.600+"
+        },
+        "neuvillette": {
+            "Vida": "35.000+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "200%+",
+            "Recarga de Energia": "120%+"
+        },
+        "furina": {
+            "Vida": "38.000+",
+            "Recarga de Energia": "180%+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+"
+        },
+        "zhongli": {
+            "Vida": "45.000+",
+            "DEF": "900+"
+        },
+        "bennett": {
+            "Recarga de Energia": "220%+",
+            "Vida": "28.000+",
+            "Bônus de Cura": "35%+"
+        },
+        "xiangling": {
+            "Recarga de Energia": "200%+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "130%+",
+            "Proficiência Elemental": "180+"
+        },
+        "xingqiu": {
+            "Recarga de Energia": "200%+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "120%+"
+        },
+        "yelan": {
+            "Vida": "32.000+",
+            "Recarga de Energia": "190%+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "nahida": {
+            "Proficiência Elemental": "800+",
+            "Taxa Crítica": "50%+",
+            "Dano Crítico": "110%+",
+            "Recarga de Energia": "125%+"
+        },
+        "alhaitham": {
+            "Proficiência Elemental": "350+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Recarga de Energia": "130%+"
+        },
+        "mavuika": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+",
+            "Proficiência Elemental": "150+"
+        },
+        "skirk": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "citlali": {
+            "Proficiência Elemental": "700+",
+            "Recarga de Energia": "180%+"
+        },
+        "xilonen": {
+            "DEF": "3.200+",
+            "Recarga de Energia": "170%+"
+        },
+        "chasca": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "kinich": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+"
+        },
+        "mualani": {
+            "Vida": "34.000+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "180%+",
+            "Proficiência Elemental": "160+"
+        },
+        "clorinde": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+"
+        },
+        "arlecchino": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "navia": {
+            "ATQ": "2.300+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "kamisato_ayaka": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "40%+",
+            "Dano Crítico": "220%+",
+            "Recarga de Energia": "135%+"
+        },
+        "kamisato_ayato": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+",
+            "Vida": "20.000+"
+        },
+        "ganyu": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "180%+",
+            "Proficiência Elemental": "150+"
+        },
+        "xiao": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "170%+",
+            "Recarga de Energia": "130%+"
+        },
+        "wanderer": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "arataki_itto": {
+            "DEF": "2.600+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Recarga de Energia": "125%+"
+        },
+        "albedo": {
+            "DEF": "2.400+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+"
+        },
+        "chiori": {
+            "DEF": "2.300+",
+            "ATQ": "1.300+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "kachina": {
+            "DEF": "2.200+",
+            "Recarga de Energia": "160%+"
+        },
+        "noelle": {
+            "DEF": "2.300+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+",
+            "Recarga de Energia": "130%+"
+        },
+        "gorou": {
+            "DEF": "1.500+",
+            "Recarga de Energia": "200%+"
+        },
+        "yun_jin": {
+            "DEF": "2.400+",
+            "Recarga de Energia": "200%+"
+        },
+        "sangonomiya_kokomi": {
+            "Vida": "38.000+",
+            "Bônus de Cura": "35%+",
+            "Recarga de Energia": "150%+"
+        },
+        "baizhu": {
+            "Vida": "48.000+",
+            "Recarga de Energia": "190%+"
+        },
+        "kuki_shinobu": {
+            "Proficiência Elemental": "900+",
+            "Vida": "28.000+"
+        },
+        "nilou": {
+            "Vida": "70.000+",
+            "Proficiência Elemental": "150+"
+        },
+        "wriothesley": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "170%+"
+        },
+        "tighnari": {
+            "Proficiência Elemental": "300+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "cyno": {
+            "Proficiência Elemental": "300+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Recarga de Energia": "135%+"
+        },
+        "sucrose": {
+            "Proficiência Elemental": "800+",
+            "Recarga de Energia": "160%+"
+        },
+        "venti": {
+            "Proficiência Elemental": "800+",
+            "Recarga de Energia": "170%+"
+        },
+        "xianyun": {
+            "ATQ": "3.000+",
+            "Recarga de Energia": "180%+"
+        },
+        "shenhe": {
+            "ATQ": "3.500+",
+            "Recarga de Energia": "180%+"
+        },
+        "faruzan": {
+            "Recarga de Energia": "250%+",
+            "Taxa Crítica": "50%+"
+        },
+        "kujou_sara": {
+            "Recarga de Energia": "200%+",
+            "ATQ": "1.600+",
+            "Taxa Crítica": "50%+"
+        },
+        "diona": {
+            "Vida": "30.000+",
+            "Recarga de Energia": "180%+"
+        },
+        "thoma": {
+            "Recarga de Energia": "200%+",
+            "Vida": "28.000+"
+        },
+        "yaoyao": {
+            "Vida": "32.000+",
+            "Recarga de Energia": "180%+"
+        },
+        "chevreuse": {
+            "Vida": "40.000+",
+            "Recarga de Energia": "140%+"
+        },
+        "kirara": {
+            "Vida": "38.000+",
+            "Recarga de Energia": "160%+"
+        },
+        "layla": {
+            "Vida": "38.000+",
+            "Recarga de Energia": "150%+"
+        },
+        "sigewinne": {
+            "Vida": "50.000+",
+            "Recarga de Energia": "160%+"
+        },
+        "dehya": {
+            "Vida": "35.000+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "120%+",
+            "Recarga de Energia": "160%+"
+        },
+        "diluc": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Proficiência Elemental": "120+"
+        },
+        "yoimiya": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "klee": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "yanfei": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Proficiência Elemental": "120+"
+        },
+        "gaming": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Proficiência Elemental": "150+"
+        },
+        "lyney": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "170%+"
+        },
+        "tartaglia": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Proficiência Elemental": "100+"
+        },
+        "mona": {
+            "Recarga de Energia": "220%+",
+            "Taxa Crítica": "50%+",
+            "Dano Crítico": "100%+"
+        },
+        "candace": {
+            "Vida": "35.000+",
+            "Recarga de Energia": "180%+"
+        },
+        "barbara": {
+            "Vida": "30.000+",
+            "Bônus de Cura": "35%+",
+            "Recarga de Energia": "150%+"
+        },
+        "keqing": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+",
+            "Proficiência Elemental": "100+"
+        },
+        "yae_miko": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+",
+            "Proficiência Elemental": "150+"
+        },
+        "fischl": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+"
+        },
+        "beidou": {
+            "ATQ": "1.800+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "120%+",
+            "Recarga de Energia": "180%+"
+        },
+        "razor": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+"
+        },
+        "sethos": {
+            "Proficiência Elemental": "300+",
+            "ATQ": "1.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "dori": {
+            "Vida": "30.000+",
+            "Recarga de Energia": "200%+"
+        },
+        "lisa": {
+            "Proficiência Elemental": "700+",
+            "Recarga de Energia": "160%+"
+        },
+        "eula": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+",
+            "Recarga de Energia": "130%+"
+        },
+        "freminet": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+"
+        },
+        "rosaria": {
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "120%+",
+            "Recarga de Energia": "160%+",
+            "ATQ": "1.800+"
+        },
+        "kaeya": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "130%+",
+            "Recarga de Energia": "150%+"
+        },
+        "chongyun": {
+            "ATQ": "1.900+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "130%+",
+            "Recarga de Energia": "140%+"
+        },
+        "charlotte": {
+            "ATQ": "2.200+",
+            "Recarga de Energia": "200%+",
+            "Bônus de Cura": "35%+"
+        },
+        "mika": {
+            "Vida": "32.000+",
+            "Recarga de Energia": "200%+"
+        },
+        "qiqi": {
+            "ATQ": "2.200+",
+            "Recarga de Energia": "200%+",
+            "Bônus de Cura": "35%+"
+        },
+        "aloy": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+"
+        },
+        "jean": {
+            "ATQ": "2.000+",
+            "Recarga de Energia": "160%+",
+            "Bônus de Cura": "35%+"
+        },
+        "sayu": {
+            "Proficiência Elemental": "700+",
+            "Recarga de Energia": "180%+"
+        },
+        "shikanoin_heizou": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+"
+        },
+        "lynette": {
+            "ATQ": "1.900+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "120%+",
+            "Recarga de Energia": "170%+"
+        },
+        "emilie": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Recarga de Energia": "130%+"
+        },
+        "collei": {
+            "Recarga de Energia": "180%+",
+            "Proficiência Elemental": "200%+",
+            "Taxa Crítica": "50%+"
+        },
+        "kaveh": {
+            "Proficiência Elemental": "700+",
+            "Recarga de Energia": "180%+"
+        },
+        "ningguang": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+"
+        },
+        "xinyan": {
+            "DEF": "2.200+",
+            "Recarga de Energia": "160%+"
+        },
+        "amber": {
+            "ATQ": "1.800+",
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "130%+"
+        },
+        "ororon": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "130%+",
+            "Recarga de Energia": "160%+"
+        },
+        "lan_yan": {
+            "Proficiência Elemental": "800+",
+            "Recarga de Energia": "160%+"
+        },
+        "iansan": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+"
+        },
+        "odette": {
+            "Vida": "32.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "150%+"
+        },
+        "escoffier": {
+            "Vida": "30.000+",
+            "Recarga de Energia": "160%+",
+            "Bônus de Cura": "35%+"
+        },
+        "vodyanitsa": {
+            "Vida": "42.000+",
+            "Recarga de Energia": "140%+",
+            "Bônus de Cura": "35%+"
+        },
+        "durin": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+"
+        },
+        "columbina": {
+            "Vida": "35.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+"
+        },
+        "nefer": {
+            "Vida": "36.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "150%+"
+        },
+        "lauma": {
+            "Proficiência Elemental": "800+",
+            "Recarga de Energia": "170%+"
+        },
+        "varesa": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+"
+        },
+        "varka": {
+            "ATQ": "2.400+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "zibai": {
+            "DEF": "2.500+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+"
+        },
+        "aino": {
+            "Proficiência Elemental": "750+",
+            "Recarga de Energia": "160%+"
+        },
+        "alyosha": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "dahlia": {
+            "Vida": "35.000+",
+            "Recarga de Energia": "180%+"
+        },
+        "flins": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "ifa": {
+            "Proficiência Elemental": "700+",
+            "Recarga de Energia": "170%+"
+        },
+        "illuga": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+"
+        },
+        "ineffa": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "jahoda": {
+            "ATQ": "2.100+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+"
+        },
+        "linnea": {
+            "Vida": "32.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "150%+"
+        },
+        "lohen": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+"
+        },
+        "nicole": {
+            "Proficiência Elemental": "750+",
+            "Recarga de Energia": "170%+"
+        },
+        "prune": {
+            "Vida": "30.000+",
+            "Recarga de Energia": "180%+"
+        },
+        "sandrone": {
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "vesna": {
+            "Vida": "34.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "150%+"
+        },
+        "yumemizuki_mizuki": {
+            "Proficiência Elemental": "800+",
+            "Recarga de Energia": "160%+"
+        },
+        "traveler_anemo": {
+            "Proficiência Elemental": "700+",
+            "Recarga de Energia": "170%+"
+        },
+        "traveler_geo": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+",
+            "Recarga de Energia": "130%+"
+        },
+        "traveler_electro": {
+            "Recarga de Energia": "240%+",
+            "ATQ": "1.500+"
+        },
+        "traveler_dendro": {
+            "Recarga de Energia": "200%+",
+            "Proficiência Elemental": "250%+",
+            "Taxa Crítica": "50%+"
+        },
+        "traveler_hydro": {
+            "Vida": "30.000+",
+            "Recarga de Energia": "170%+",
+            "Taxa Crítica": "60%+"
+        },
+        "traveler_pyro": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+",
+            "Proficiência Elemental": "120+"
+        },
+        "traveler_cryo": {
+            "ATQ": "2.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "140%+",
+            "Recarga de Energia": "140%+"
+        }
+    },
+    "hsr": {
+        "acheron": {
+            "ATQ": "3.500+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+",
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "160%+"
+        },
+        "feixiao": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "85%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "firefly": {
+            "Efeito de Quebra": "250%+",
+            "VEL": "150+",
+            "ATQ": "2.400+"
+        },
+        "boothill": {
+            "Efeito de Quebra": "280%+",
+            "VEL": "145+",
+            "Taxa Crítica": "50%+"
+        },
+        "rappa": {
+            "Efeito de Quebra": "240%+",
+            "ATQ": "2.600+",
+            "VEL": "145+"
+        },
+        "kafka": {
+            "ATQ": "3.600+",
+            "Acerto de Efeito": "28%+",
+            "Taxa de Acerto de Efeito": "28%+",
+            "VEL": "136+"
+        },
+        "black_swan": {
+            "ATQ": "3.000+",
+            "Acerto de Efeito": "120%+",
+            "Taxa de Acerto de Efeito": "120%+",
+            "VEL": "134+"
+        },
+        "jiaoqiu": {
+            "Taxa de Acerto de Efeito": "140%+",
+            "Acerto de Efeito": "140%+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "silver_wolf": {
+            "Taxa de Acerto de Efeito": "96%+",
+            "Acerto de Efeito": "96%+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "pela": {
+            "Taxa de Acerto de Efeito": "57%+",
+            "Acerto de Efeito": "57%+",
+            "VEL": "143+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "guinaifen": {
+            "ATQ": "3.000+",
+            "Acerto de Efeito": "67%+",
+            "Taxa de Acerto de Efeito": "67%+",
+            "VEL": "134+"
+        },
+        "sampo": {
+            "ATQ": "3.000+",
+            "Acerto de Efeito": "67%+",
+            "Taxa de Acerto de Efeito": "67%+",
+            "VEL": "134+"
+        },
+        "luka": {
+            "ATQ": "3.000+",
+            "Acerto de Efeito": "67%+",
+            "Taxa de Acerto de Efeito": "67%+",
+            "VEL": "134+"
+        },
+        "welt": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "130%+",
+            "Acerto de Efeito": "50%+",
+            "VEL": "134+"
+        },
+        "aventurine": {
+            "DEF": "4.000+",
+            "Taxa Crítica": "30%+",
+            "Dano Crítico": "120%+",
+            "VEL": "134+"
+        },
+        "fu_xuan": {
+            "Vida": "7.500+",
+            "DEF": "1.600+",
+            "VEL": "134+",
+            "Resistência a Efeito": "30%+"
+        },
+        "gepard": {
+            "DEF": "3.800+",
+            "VEL": "134+",
+            "Taxa de Acerto de Efeito": "50%+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "huohuo": {
+            "Vida": "6.500+",
+            "VEL": "136+",
+            "Taxa de Regen. Energia": "19.4%+",
+            "Bônus de Cura": "34.5%+"
+        },
+        "luocha": {
+            "ATQ": "2.800+",
+            "VEL": "134+",
+            "Bônus de Cura": "34.5%+",
+            "Resistência a Efeito": "30%+"
+        },
+        "lingsha": {
+            "Efeito de Quebra": "150%+",
+            "ATQ": "2.500+",
+            "VEL": "136+",
+            "Bônus de Cura": "34.5%+"
+        },
+        "gallagher": {
+            "Efeito de Quebra": "130%+",
+            "VEL": "134+",
+            "Bônus de Cura": "34.5%+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "ruan_mei": {
+            "Efeito de Quebra": "180%+",
+            "VEL": "134+",
+            "Vida": "4.500+",
+            "DEF": "1.200+"
+        },
+        "robin": {
+            "ATQ": "4.000+",
+            "VEL": "121+",
+            "Taxa de Regen. Energia": "19.4%+",
+            "Vida": "4.000+"
+        },
+        "sparkle": {
+            "Dano Crítico": "180%+",
+            "VEL": "160+",
+            "Vida": "4.500+",
+            "DEF": "1.200+"
+        },
+        "bronya": {
+            "Dano Crítico": "180%+",
+            "VEL": "134+",
+            "Vida": "4.500+",
+            "DEF": "1.200+"
+        },
+        "sunday": {
+            "Dano Crítico": "180%+",
+            "VEL": "134+",
+            "Taxa de Regen. Energia": "19.4%+",
+            "Vida": "4.500+"
+        },
+        "tingyun": {
+            "ATQ": "2.600+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+",
+            "Vida": "3.500+"
+        },
+        "tingyun_•_fugue": {
+            "Efeito de Quebra": "220%+",
+            "VEL": "145+",
+            "Acerto de Efeito": "50%+"
+        },
+        "tingyun_fugue": {
+            "Efeito de Quebra": "220%+",
+            "VEL": "145+",
+            "Acerto de Efeito": "50%+"
+        },
+        "the_herta": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "aglaea": {
+            "ATQ": "3.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+",
+            "VEL": "134+"
+        },
+        "dr._ratio": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "dr_ratio": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "jingliu": {
+            "ATQ": "2.400+",
+            "Taxa Crítica": "50%+",
+            "Dano Crítico": "220%+",
+            "VEL": "134+"
+        },
+        "dan_heng_•_imbibitor_lunae": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "dan_heng_imbibitor_lunae": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "blade": {
+            "Vida": "7.500+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "seele": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "121+"
+        },
+        "jing_yuan": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "topaz_&_numby": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "topaz": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "yunli": {
+            "ATQ": "3.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "140%+",
+            "Vida": "4.000+"
+        },
+        "clara": {
+            "ATQ": "3.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+",
+            "Vida": "4.000+"
+        },
+        "jade": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "argenti": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "himeko": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "herta": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "130%+"
+        },
+        "qingque": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "xueyi": {
+            "Efeito de Quebra": "160%+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "130%+",
+            "VEL": "134+"
+        },
+        "sushang": {
+            "ATQ": "2.600+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "130%+",
+            "VEL": "134+"
+        },
+        "dan_heng": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "yanqing": {
+            "ATQ": "2.600+",
+            "Taxa Crítica": "35%+",
+            "Dano Crítico": "200%+",
+            "VEL": "134+"
+        },
+        "arlan": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+"
+        },
+        "hook": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "130%+"
+        },
+        "misha": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "130%+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "moze": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "serval": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "65%+",
+            "Dano Crítico": "130%+",
+            "VEL": "134+"
+        },
+        "march_7th": {
+            "DEF": "3.500+",
+            "VEL": "134+",
+            "Taxa de Acerto de Efeito": "50%+"
+        },
+        "march_7th_•_the_hunt": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "march_7th_the_hunt": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "140%+",
+            "VEL": "134+"
+        },
+        "bailu": {
+            "Vida": "6.500+",
+            "VEL": "134+",
+            "Bônus de Cura": "34.5%+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "lynx": {
+            "Vida": "6.000+",
+            "VEL": "134+",
+            "Bônus de Cura": "34.5%+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "natasha": {
+            "Vida": "6.000+",
+            "VEL": "134+",
+            "Bônus de Cura": "34.5%+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "trailblazer_•_harmony": {
+            "Efeito de Quebra": "200%+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "trailblazer_harmony": {
+            "Efeito de Quebra": "200%+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "trailblazer_•_preservation": {
+            "DEF": "3.500+",
+            "VEL": "134+",
+            "Taxa de Acerto de Efeito": "50%+"
+        },
+        "trailblazer_preservation": {
+            "DEF": "3.500+",
+            "VEL": "134+",
+            "Taxa de Acerto de Efeito": "50%+"
+        },
+        "trailblazer_•_destruction": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "130%+"
+        },
+        "trailblazer_destruction": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "130%+"
+        },
+        "trailblazer_•_remembrance": {
+            "Efeito de Quebra": "180%+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "trailblazer_remembrance": {
+            "Efeito de Quebra": "180%+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "tribbie": {
+            "Efeito de Quebra": "200%+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "mydei": {
+            "ATQ": "3.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "phainon": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "castorice": {
+            "Vida": "7.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "VEL": "134+"
+        },
+        "cerydra": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "cipher": {
+            "ATQ": "3.000+",
+            "Acerto de Efeito": "100%+",
+            "VEL": "145+"
+        },
+        "cyrene": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "anaxa": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+"
+        },
+        "archer": {
+            "ATQ": "3.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "ashveil": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "evanescia": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "gilgamesh": {
+            "ATQ": "3.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "hysilens": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+"
+        },
+        "hyacine": {
+            "ATQ": "3.000+",
+            "VEL": "145+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "rin_tohsaka": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+"
+        },
+        "saber": {
+            "ATQ": "3.200+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "160%+"
+        },
+        "sparxie": {
+            "ATQ": "2.800+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "140%+"
+        },
+        "the_dahlia": {
+            "Efeito de Quebra": "220%+",
+            "VEL": "145+",
+            "Acerto de Efeito": "50%+"
+        },
+        "yao_guang": {
+            "ATQ": "3.000+",
+            "Taxa Crítica": "75%+",
+            "Dano Crítico": "150%+"
+        },
+        "hanya": {
+            "VEL": "160+",
+            "Vida": "4.500+",
+            "DEF": "1.200+"
+        },
+        "asta": {
+            "VEL": "145+",
+            "Vida": "4.500+",
+            "DEF": "1.200+",
+            "Taxa de Regen. Energia": "19.4%+"
+        },
+        "yukong": {
+            "Taxa Crítica": "60%+",
+            "Dano Crítico": "120%+",
+            "VEL": "134+",
+            "Taxa de Regen. Energia": "19.4%+"
+        }
+    },
+    "zzz": {
+        "jane_doe": {
+            "Proficiência de Anomalia": "420+",
+            "ATQ": "2.600+",
+            "Maestria de Anomalia": "120+"
+        },
+        "jane": {
+            "Proficiência de Anomalia": "420+",
+            "ATQ": "2.600+",
+            "Maestria de Anomalia": "120+"
+        },
+        "caesar": {
+            "Impacto": "160+",
+            "ATQ": "2.400+",
+            "DEF": "1.800+"
+        },
+        "caesar_king": {
+            "Impacto": "160+",
+            "ATQ": "2.400+",
+            "DEF": "1.800+"
+        },
+        "miyabi": {
+            "Taxa CRIT": "70%+",
+            "Taxa Crítica": "70%+",
+            "Dano CRIT": "140%+",
+            "Dano Crítico": "140%+",
+            "ATQ": "2.800+"
+        },
+        "hoshimi_miyabi": {
+            "Taxa CRIT": "70%+",
+            "Taxa Crítica": "70%+",
+            "Dano CRIT": "140%+",
+            "Dano Crítico": "140%+",
+            "ATQ": "2.800+"
+        },
+        "burnice": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.700+",
+            "Taxa de Regen. Energia": "20%+"
+        },
+        "yanagi": {
+            "Proficiência de Anomalia": "400+",
+            "ATQ": "2.800+",
+            "Taxa de Perfuração": "24%+"
+        },
+        "qingyi": {
+            "Impacto": "180+",
+            "Taxa CRIT": "50%+",
+            "ATQ": "2.200+"
+        },
+        "lycaon": {
+            "Impacto": "180+",
+            "ATQ": "2.200+",
+            "Taxa CRIT": "50%+"
+        },
+        "ellen": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "140%+",
+            "ATQ": "2.700+"
+        },
+        "zhu_yuan": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.600+"
+        },
+        "harumasa": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.700+"
+        },
+        "lighter": {
+            "Impacto": "175+",
+            "ATQ": "2.400+",
+            "Taxa CRIT": "50%+"
+        },
+        "evelyn": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.800+"
+        },
+        "astra_yao": {
+            "ATQ": "3.000+",
+            "Taxa de Regen. Energia": "25%+"
+        },
+        "astra": {
+            "ATQ": "3.000+",
+            "Taxa de Regen. Energia": "25%+"
+        },
+        "rina": {
+            "Taxa de Perfuração": "60%+",
+            "Taxa de Regen. Energia": "20%+"
+        },
+        "soldier_11": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "140%+",
+            "ATQ": "2.600+"
+        },
+        "grace": {
+            "Proficiência de Anomalia": "350+",
+            "ATQ": "2.500+"
+        },
+        "koleda": {
+            "Impacto": "170+",
+            "DEF": "1.500+",
+            "ATQ": "2.000+"
+        },
+        "ben": {
+            "DEF": "2.800+",
+            "Vida": "15.000+"
+        },
+        "lucy": {
+            "ATQ": "2.600+",
+            "Taxa de Regen. Energia": "20%+"
+        },
+        "soukaku": {
+            "ATQ": "2.500+",
+            "Taxa de Regen. Energia": "20%+"
+        },
+        "piper": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.400+"
+        },
+        "seth": {
+            "Proficiência de Anomalia": "250+",
+            "DEF": "2.200+",
+            "ATQ": "2.000+"
+        },
+        "alice": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.600+"
+        },
+        "anby": {
+            "Impacto": "165+",
+            "ATQ": "2.000+",
+            "Taxa CRIT": "45%+"
+        },
+        "nekomata": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "140%+",
+            "ATQ": "2.600+"
+        },
+        "corin": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "140%+",
+            "ATQ": "2.500+"
+        },
+        "billy": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "130%+",
+            "ATQ": "2.500+"
+        },
+        "billy_starlight": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "130%+",
+            "ATQ": "2.500+"
+        },
+        "anton": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "130%+",
+            "ATQ": "2.500+"
+        },
+        "nicole": {
+            "Taxa de Regen. Energia": "25%+",
+            "Taxa de Perfuração": "24%+",
+            "ATQ": "2.200+"
+        },
+        "pulchra": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.600+"
+        },
+        "vivian": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.700+"
+        },
+        "hugo": {
+            "Impacto": "170+",
+            "ATQ": "2.200+"
+        },
+        "ju_fufu": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "140%+",
+            "ATQ": "2.600+"
+        },
+        "lucia": {
+            "ATQ": "2.600+",
+            "Taxa de Regen. Energia": "20%+"
+        },
+        "manato": {
+            "ATQ": "2.500+",
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "130%+"
+        },
+        "nangong_yu": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.700+"
+        },
+        "norma": {
+            "DEF": "2.400+",
+            "Vida": "14.000+"
+        },
+        "orphie_&_magus": {
+            "ATQ": "2.700+",
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "140%+"
+        },
+        "orfeu_&_magus": {
+            "ATQ": "2.700+",
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "140%+"
+        },
+        "pan_yinhu": {
+            "Impacto": "170+",
+            "ATQ": "2.200+"
+        },
+        "promeia": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.700+"
+        },
+        "pyrois": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.600+"
+        },
+        "remielle": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.700+"
+        },
+        "seed": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.800+"
+        },
+        "sigrid": {
+            "Taxa CRIT": "65%+",
+            "Dano CRIT": "140%+",
+            "ATQ": "2.600+"
+        },
+        "sunna": {
+            "ATQ": "2.600+",
+            "Taxa de Regen. Energia": "20%+"
+        },
+        "trigger": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.700+"
+        },
+        "velina": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.600+"
+        },
+        "ye_shunguang": {
+            "Taxa CRIT": "75%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.800+"
+        },
+        "yidhari": {
+            "Impacto": "170+",
+            "ATQ": "2.400+"
+        },
+        "yixuan": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.700+"
+        },
+        "yuzuha": {
+            "ATQ": "2.800+",
+            "Taxa de Regen. Energia": "25%+"
+        },
+        "zhao": {
+            "DEF": "2.400+",
+            "Vida": "14.000+"
+        },
+        "banyue": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "140%+",
+            "ATQ": "2.600+"
+        },
+        "aria": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.600+"
+        },
+        "claret": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.700+"
+        },
+        "cissia": {
+            "Proficiência de Anomalia": "380+",
+            "ATQ": "2.600+"
+        },
+        "dialyn": {
+            "Taxa CRIT": "70%+",
+            "Dano CRIT": "150%+",
+            "ATQ": "2.700+"
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{
+  "hsr": {
+    "fire": "https://static.wikia.nocookie.net/houkai-star-rail/images/c/ca/Element_Fire.png",
+    "ice": "https://static.wikia.nocookie.net/houkai-star-rail/images/1/15/Element_Ice.png",
+    "physical": "https://static.wikia.nocookie.net/houkai-star-rail/images/2/29/Element_Physical.png",
+    "wind": "https://static.wikia.nocookie.net/houkai-star-rail/images/7/77/Element_Wind.png",
+    "lightning": "https://static.wikia.nocookie.net/houkai-star-rail/images/e/e0/Element_Lightning.png",
+    "quantum": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/df/Element_Quantum.png",
+    "imaginary": "https://static.wikia.nocookie.net/houkai-star-rail/images/a/ab/Element_Imaginary.png"
+  },
+  "genshin": {
+    "pyro": "https://static.wikia.nocookie.net/genshin-impact/images/a/ad/Element_Pyro.png",
+    "hydro": "https://static.wikia.nocookie.net/genshin-impact/images/3/35/Element_Hydro.png",
+    "anemo": "https://static.wikia.nocookie.net/genshin-impact/images/a/a4/Element_Anemo.png",
+    "electro": "https://static.wikia.nocookie.net/genshin-impact/images/7/73/Element_Electro.png",
+    "dendro": "https://static.wikia.nocookie.net/genshin-impact/images/f/f4/Element_Dendro.png",
+    "cryo": "https://static.wikia.nocookie.net/genshin-impact/images/8/88/Element_Cryo.png",
+    "geo": "https://static.wikia.nocookie.net/genshin-impact/images/4/4a/Element_Geo.png"
+  },
+  "zzz": {
+    "fire": "https://static.wikia.nocookie.net/zenless-zone-zero/images/d/df/Attribute_Fire.png",
+    "electric": "https://static.wikia.nocookie.net/zenless-zone-zero/images/5/52/Attribute_Electric.png",
+    "ice": "https://static.wikia.nocookie.net/zenless-zone-zero/images/c/c3/Attribute_Ice.png",
+    "physical": "https://static.wikia.nocookie.net/zenless-zone-zero/images/1/15/Attribute_Physical.png",
+    "ether": "https://static.wikia.nocookie.net/zenless-zone-zero/images/e/ea/Attribute_Ether.png"
+  }
+}

@@ -399,6 +399,9 @@ function setupTabSwitching() {
                 if (targetTab === 'luck' && window.initLuckDashboard) {
                     window.initLuckDashboard();
                 }
+                if (targetTab === 'home' && window.loadDailyFarmOrder) {
+                    window.loadDailyFarmOrder(window.currentFarmOrderGame || 'genshin');
+                }
             } else {
                 console.warn("Aba não encontrada:", `tab-${targetTab}`);
             }
@@ -2484,26 +2487,136 @@ function setupInspectorTabs() {
 
 async function loadBuildComparison() {
     const rowsContainer = document.getElementById("ins-comparison-rows");
+    const scoreCard = document.getElementById("ins-meta-score-card");
+    const tierBadge = document.getElementById("ins-meta-tier-badge");
+    const scorePctEl = document.getElementById("ins-meta-score-pct");
+    const scoreBar = document.getElementById("ins-meta-score-bar");
+    const feedbackList = document.getElementById("ins-meta-feedback");
+    const gameTag = document.getElementById("ins-compare-game-tag");
+    
     if (!rowsContainer || !activeInspectChar) return;
     
-    rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px 0; color: var(--text-muted);">Carregando comparação...</td></tr>`;
+    if (gameTag) {
+        gameTag.textContent = `${activeInspectGame.toUpperCase()} • METAGAME BENCHMARK`;
+    }
+    
+    rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 25px 0; color: var(--text-muted);"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i> Carregando comparação com o metagame...</td></tr>`;
+    if (scoreCard) scoreCard.style.display = "none";
     
     try {
         const res = await fetch(`/api/compare/${activeInspectGame}/${encodeURIComponent(activeInspectChar.name)}`);
         const data = await res.json();
         
-        const build = data.player_build;
-        const target = data.meta_target;
+        const build = data.player_build || {};
+        const target = data.meta_target || {};
         
-        // Dicionário de tradução Português <-> Inglês estendido para itens/sets comuns de Genshin, Star Rail e ZZZ
+        // Dicionário de tradução bidirecional Português <-> Inglês estendido para itens/sets comuns
         const translationDict = {
             // Genshin Weapons
+            "luz lazuli": "azurelight",
+            "luz lazúli": "azurelight",
+            "azurelight": "luz lazúli",
+            "galerias da sombra da onda": "finale of the deep galleries",
+            "finale of the deep galleries": "galerias da sombra da onda",
+            "calamidade de eshu": "calamity of eshu",
+            "calamity of eshu": "calamidade de eshu",
+            "alvorecer da tecela da lua": "moonweaver's dawn",
+            "alvorecer da tecelã da lua": "moonweaver's dawn",
+            "moonweaver's dawn": "alvorecer da tecelã da lua",
+            "sinfonista dos aromas": "symphonist of scents",
+            "symphonist of scents": "sinfonista dos aromas",
+            "hino do turbilhao": "hymn of the maelstrom",
+            "hino do turbilhão": "hymn of the maelstrom",
+            "hymn of the maelstrom": "hino do turbilhão",
+            "historias de tamayuratei": "tamayuratei no ohanashi",
+            "histórias de tamayuratei": "tamayuratei no ohanashi",
+            "tamayuratei no ohanashi": "histórias de tamayuratei",
+            "mil sois ardentes": "a thousand blazing suns",
+            "mil sóis ardentes": "a thousand blazing suns",
+            "a thousand blazing suns": "mil sóis ardentes",
+            "cancao da patrulha do pico": "peak patrol song",
+            "canção da patrulha do pico": "peak patrol song",
+            "peak patrol song": "canção da patrulha do pico",
+            "plumagem escarlate do abutre astral": "astral vulture's crimson plumage",
+            "astral vulture's crimson plumage": "plumagem escarlate do abutre astral",
+            "presa do rei da montanha": "fang of the mountain king",
+            "fang of the mountain king": "presa do rei da montanha",
+            "prancha pronta": "surf's up",
+            "surf's up": "prancha pronta",
+            "observador do chamador das estrelas": "starcaller's watch",
+            "starcaller's watch": "observador do chamador das estrelas",
+            "harmonia das chuvas prateadas": "silvershower heartstrings",
+            "silvershower heartstrings": "harmonia das chuvas prateadas",
+            "absolvicao": "absolution",
+            "absolvição": "absolution",
+            "absolution": "absolvição",
+            "semblante da lua carmesim": "crimson moon's semblance",
+            "crimson moon's semblance": "semblante da lua carmesim",
+            "elegia de lumidouce": "lumidouce elegy",
+            "lumidouce elegy": "elegia de lumidouce",
+            "uraku misugiri": "uraku misugiri",
+            "veredito": "verdict",
+            "verdict": "veredito",
+            "rito do fluxo eterno": "tome of the eternal flow",
+            "tome of the eternal flow": "rito do fluxo eterno",
+            "supervisao do fluxo de caixa": "cashflow supervision",
+            "supervisão do fluxo de caixa": "cashflow supervision",
+            "cashflow supervision": "supervisão do fluxo de caixa",
+            "sinal dos mares de juncos": "beacon of the reed sea",
+            "beacon of the reed sea": "sinal dos mares de juncos",
+            "luz das folhas cortadas": "light of foliar incision",
+            "light of foliar incision": "luz das folhas cortadas",
+            "sonhos flutuantes das mil noites": "a thousand floating dreams",
+            "a thousand floating dreams": "sonhos flutuantes das mil noites",
+            "caminho do cacador": "hunter's path",
+            "caminho do caçador": "hunter's path",
+            "hunter's path": "caminho do caçador",
+            "mingua de haran geppaku": "haran geppaku futsu",
+            "míngua de haran geppaku": "haran geppaku futsu",
+            "haran geppaku futsu": "míngua de haran geppaku",
+            "prova de kagura": "kagura's verity",
+            "kagura's verity": "prova de kagura",
+            "chifres vermelhos destruidores de pedras": "redhorn stonethresher",
+            "redhorn stonethresher": "chifres vermelhos destruidores de pedras",
+            "luz do cortador de grama": "engulfing lightning",
+            "engulfing lightning": "luz do cortador de grama",
+            "agitacao trovejante": "thundering pulse",
+            "agitação trovejante": "thundering pulse",
+            "thundering pulse": "agitação trovejante",
+            "juramento pela liberdade": "freedom-sworn",
+            "freedom-sworn": "juramento pela liberdade",
+            "cancao dos pinhos": "song of broken pines",
+            "canção dos pinhos": "song of broken pines",
+            "song of broken pines": "canção dos pinhos",
+            "lanca de jade primitiva": "primordial jade winged-spear",
+            "lança de jade primitiva": "primordial jade winged-spear",
+            "primordial jade winged-spear": "lança de jade primitiva",
+            "arco de amos": "amos' bow",
+            "amos' bow": "arco de amos",
+            "memoria da poeira": "memory of dust",
+            "memória da poeira": "memory of dust",
+            "memory of dust": "memória da poeira",
+            "perfuradora prismatica": "vortex vanquisher",
+            "perfuradora prismática": "vortex vanquisher",
+            "vortex vanquisher": "perfuradora prismática",
+            "espadao cornigero": "the unforged",
+            "espadão cornígero": "the unforged",
+            "the unforged": "espadão cornígero",
+            "abalador da terra": "earth shaker",
+            "earth shaker": "abalador da terra",
             "os sete éditos da poeira e luz": "angelos' heptades",
             "angelos' heptades": "os sete éditos da poeira e luz",
             "cortadora da neblina reforjada": "mistsplitter reforged",
+            "mistsplitter reforged": "cortadora da neblina reforjada",
+            "asa gelada do lago branco": "whitelake frostfeather",
+            "whitelake frostfeather": "asa gelada do lago branco",
+            "espada primordial de jade": "primordial jade cutter",
+            "primordial jade cutter": "espada primordial de jade",
             "luz lunar de xiphos": "xiphos' moonlight",
             "espinha dorsal da serpente": "serpent spine",
             "esplendor das águas silenciosas": "splendor of silent waters",
+            "splendor of silent waters": "esplendor das águas silenciosas",
+            "splendor of tranquil waters": "esplendor das águas silenciosas",
             "memórias de sacrifício": "sacrificial fragments",
             "chave de hierofania": "key of khaj-nisut",
             "subjugadora de calamidades": "calamity queller",
@@ -2514,14 +2627,20 @@ async function loadBuildComparison() {
             "arcana original": "the first great magic",
             "espada de favonius": "favonius sword",
             "lâmina amenoma kageuchi": "amenoma kageuchi",
-            "amenoma kageuchi": "amenoma kageuchi",
+            "amenoma kageuchi": "lâmina amenoma kageuchi",
             "prenúncio do alvorecer": "harbinger of dawn",
             "falcão": "aquila favonia",
             "elegia do suspiro final": "elegy for the end",
-            "báculo de goma": "staff of homa",
             "báculo de homa": "staff of homa",
+            "báculo das areias escarlates": "staff of the scarlet sands",
+            "túmulo do lobo": "wolf's gravestone",
+            "sombra da maré": "tidal shadow",
 
             // Genshin Sets
+            "coração forjado": "heart of the furnace",
+            "heart of the furnace": "coração forjado",
+            "desencantamento nas sombras profundas": "disenchantment in deep shadow",
+            "disenchantment in deep shadow": "desencantamento nas sombras profundas",
             "dádiva celestial": "song of days past",
             "song of days past": "dádiva celestial",
             "pergaminho do herói da cidade incandescente": "scroll of the hero of the cinder city",
@@ -2531,7 +2650,9 @@ async function loadBuildComparison() {
             "sombra verde": "viridescent venerer",
             "viridescent venerer": "sombra verde",
             "millelith firmes": "tenacity of the millelith",
+            "tenacity of the millelith": "millelith firmes",
             "selo da insulação": "emblem of severed fate",
+            "emblem of severed fate": "selo da insulação",
             "herói invernal": "blizzard strayer",
             "caçador das sombras": "marechaussee hunter",
             "trupe dourada": "golden troupe",
@@ -2544,109 +2665,156 @@ async function loadBuildComparison() {
             "juramento da noite eterna": "oath of the eternal night",
             "pedra arcaica": "archaic petra",
             "último juramento do gladiador": "gladiator's finale",
-            "ascensão zéfira": "a day carved from rising winds",
 
             // HSR Sets & Weapons
-            "como o navegador isee vê": "as navigator isee sees it",
-            "ancoradouro da estrela caída": "fallen star anchorage",
-            "lushaka, os mares afundados": "lushaka's waterside",
+            "rumo ao amanhã cor-de-rosa": "fly into a pink tomorrow",
+            "fly into a pink tomorrow": "rumo ao amanhã cor-de-rosa",
+            "instante de eterno amor": "this love, forever",
+            "this love, forever": "instante de eterno amor",
+            "as cortinas da memória nunca caem": "memory's curtain never falls",
+            "a cortina da memória nunca cai": "memory's curtain never falls",
+            "memory's curtain never falls": "as cortinas da memória nunca caem",
+            "que os arco-íris adornem o céu": "long may rainbows adorn the sky",
+            "long may rainbows adorn the sky": "que os arco-íris adornem o céu",
+            "a próxima página da história": "the story's next page",
+            "vitória em um piscar de olhos": "victory in a blink",
+            "herói da melodia triunfante": "world-remaking deliverer",
+            "portador da reconstrução do mundo": "world-remaking deliverer",
+            "world-remaking deliverer": "herói da melodia triunfante",
+            "lushaka, os mares afundados": "lushaka, the sunken seas",
+            "lushaka, the sunken seas": "lushaka, os mares afundados",
+            "amphoreus, a terra eterna": "amphoreus, the eternal land",
+            "amphoreus, the eternal land": "amphoreus, a terra eterna",
+            "mergulhador pioneiro das águas mortas": "pioneer diver of dead waters",
+            "pioneer diver of dead waters": "mergulhador pioneiro das águas mortas",
             "profeta de alcance distante": "scholar lost in erudition",
-            "menina mágica sempre gloriosa": "pioneer diver of dead waters",
+            "scholar lost in erudition": "profeta de alcance distante",
+            "provação renascida de sacerdos": "sacerdos' relived ordeal",
+            "sacerdos' relived ordeal": "provação renascida de sacerdos",
+            "arauto que racha o espaço": "herald of space fracturing",
+            "ao véu inalcançável": "along the passing shore",
+            "along the passing shore": "ao véu inalcançável",
             "antes do amanhecer": "before dawn",
             "noite sobre a via láctea": "night on the milky way",
             "repouso dos gênios": "geniuses' repose",
             "cálculo eterno": "eternal calculus",
             "hoje também é um dia pacífico": "today is another peaceful day",
+            "salsotto inerte": "inert salsotto",
+            "izumo gensei e reino divino de takama": "izumo gensei and takama divine realm",
+            "fronteira do firmamento: glamoth": "firmament frontline: glamoth",
+            "estação de vedação de espaço": "space sealing station",
 
             // ZZZ Sets & Weapons
-            "salão sibilante": "wuthering salon",
-            "ode ao cavaleiro lunar": "ode to moonlight",
-            "voz astral": "astral voice",
-            "rei do monte": "woodpecker electro",
-            "techno pica-pau": "woodpecker electro",
-            "canção das ondas": "water ballad",
-            "canção da espada de ramo": "branch sword",
-            "metal infernal": "infernal metal",
-            "metal polar": "polar metal",
-            "jazz com swing": "swing jazz",
-            "disco estrelante": "starlight engine",
+            "motor da constelação": "starlight engine",
+            "starlight engine": "motor da constelação",
+            "lamento das estrelas": "weeping gemini",
+            "weeping gemini": "lamento das estrelas",
+            "eco rítmico": "rhythm echo",
+            "ode ao cavaleiro lunar": "knight's extolment",
+            "knight's extolment": "ode ao cavaleiro lunar",
+            "o enxofre": "the brimstone",
+            "the brimstone": "o enxofre",
+            "inocência cortada": "severed innocence",
+            "perfeição praticada": "practiced perfection",
+            "practiced perfection": "perfeição praticada",
+            "ferrão afiado": "sharpened stinger",
+            "compilador de fusão": "fusion compiler",
+            "brilho labial elétrico": "electro-lip gloss",
             "punk hormonal": "hormone punk",
-            "harmonia das sombras": "shockstar disco"
+            "hormone punk": "punk hormonal",
+            "techno baiacu": "puffer electro",
+            "puffer electro": "techno baiacu",
+            "blues livre": "freedom blues",
+            "freedom blues": "blues livre",
+            "metal presa": "fanged metal",
+            "fanged metal": "metal presa",
+            "destino emplumado": "feathered fate",
+            "feathered fate": "destino emplumado",
+            "salão sibilante": "wuthering salon",
+            "voz astral": "astral voice",
+            "jazz do caos": "chaos jazz",
+            "jazz com swing": "swing jazz",
+            "metal infernal": "infernal metal",
+            "metal polar": "polar metal"
         };
         
-        function translateToEnglish(name) {
-            if (!name) return "";
-            const clean = name.toLowerCase().replace(/\([^)]*\)/g, "").replace(/•/g, "").replace(/[^a-z0-9\s]/g, "").trim();
-            for (const key in translationDict) {
-                if (clean.includes(key) || key.includes(clean)) {
-                    return translationDict[key];
-                }
-            }
-            return clean;
+        function normalizeStrForMatch(str) {
+            if (!str) return "";
+            return str.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                .replace(/\([^)]*\)/g, "") // Remove parênteses e níveis
+                .replace(/•/g, "")
+                .replace(/[^a-z0-9\s]/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
         }
-        
-        const wordMappings = {
-            "ferro": "iron", "cavalaria": "cavalry", "praga": "scourge", "ninjutsu": "ninjutsu",
-            "inscrição": "inscription", "deslumbrante": "dazzling", "mal": "evil", "reino": "kingdom",
-            "banditismo": "banditry", "duke": "duque", "amanhecer": "dawn", "antes": "before",
-            "luz": "light", "estrelas": "stars", "lua": "moon", "sombra": "shadow", "verde": "green",
-            "venerer": "venerer", "millelith": "millelith", "firmes": "tenacity", "insulação": "severed",
-            "selo": "emblem", "invernal": "blizzard", "herói": "hero", "caçador": "hunter",
-            "sombras": "shadows", "dourada": "golden", "trupe": "troupe", "floresta": "deepwood",
-            "memórias": "memories", "sonhos": "dreams", "dourados": "gilded", "ritual": "noblesse",
-            "real": "oblige", "incandescente": "cinder", "cidade": "city", "pergaminho": "scroll",
-            "obsidiana": "obsidian", "códice": "codex", "dádiva": "gift", "celestial": "song",
-            "revelação": "unveiling", "céu": "sky", "noite": "night", "eterna": "eternal",
-            "juramento": "oath", "pedra": "stone", "arcaica": "archaic", "gladiador": "gladiator"
-        };
         
         function checkFuzzyMatch(name1, name2) {
             if (!name1 || !name2) return false;
-            const clean1 = translateToEnglish(name1).toLowerCase();
-            const clean2 = translateToEnglish(name2).toLowerCase();
+            const norm1 = normalizeStrForMatch(name1);
+            const norm2 = normalizeStrForMatch(name2);
             
-            if (clean1.includes(clean2) || clean2.includes(clean1)) {
+            if (norm1 === norm2 || norm1.includes(norm2) || norm2.includes(norm1)) {
                 return true;
             }
             
-            const words1 = clean1.split(/\s+/);
-            const words2 = clean2.split(/\s+/);
+            // Checa correspondência via dicionário de tradução
+            const trans1 = translationDict[norm1] || translationDict[name1.toLowerCase().trim()] || "";
+            const trans2 = translationDict[norm2] || translationDict[name2.toLowerCase().trim()] || "";
             
-            const mapped1 = words1.map(w => wordMappings[w] || w);
-            const mapped2 = words2.map(w => wordMappings[w] || w);
+            if (trans1 && (normalizeStrForMatch(trans1) === norm2 || normalizeStrForMatch(trans1).includes(norm2) || norm2.includes(normalizeStrForMatch(trans1)))) {
+                return true;
+            }
+            if (trans2 && (normalizeStrForMatch(trans2) === norm1 || normalizeStrForMatch(trans2).includes(norm1) || norm1.includes(normalizeStrForMatch(trans2)))) {
+                return true;
+            }
             
-            const sig1 = mapped1.filter(w => w.length > 3);
-            const sig2 = mapped2.filter(w => w.length > 3);
-            
-            const intersection = sig1.filter(w => sig2.includes(w));
-            if (intersection.length >= 1) {
+            // Checa intersecção de palavras-chave significativas
+            const words1 = norm1.split(" ").filter(w => w.length > 3);
+            const words2 = norm2.split(" ").filter(w => w.length > 3);
+            const overlap = words1.filter(w => words2.includes(w));
+            if (overlap.length >= 2 || (words1.length === 1 && words2.length === 1 && overlap.length === 1)) {
                 return true;
             }
             return false;
         }
 
-        function getUnifiedSlotKey(slotStr) {
+        function getUnifiedSlotKey(slotStr, gameId) {
             if (!slotStr) return "";
-            const s = String(slotStr).toLowerCase().replace(/[^a-z0-9]/g, "").trim();
-            if (s === "1" || s.includes("flor") || s.includes("flower")) return "flower";
-            if (s === "2" || s.includes("pena") || s.includes("plume") || s.includes("feather")) return "plume";
-            if (s === "3" || s.includes("areia") || s.includes("relogio") || s.includes("ampulheta") || s.includes("sands")) return "sands";
-            if (s === "4" || s.includes("copo") || s.includes("calice") || s.includes("goblet")) return "goblet";
-            if (s === "5" || s.includes("tiara") || s.includes("coroa") || s.includes("circlet")) return "circlet";
+            const s = String(slotStr).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "").trim();
+            const g = (gameId || activeInspectGame || "").toLowerCase();
+            
+            if (g === "genshin") {
+                if (s === "1" || s.includes("flor") || s.includes("flower")) return "flower";
+                if (s === "2" || s.includes("pena") || s.includes("plume") || s.includes("pluma") || s.includes("feather")) return "plume";
+                if (s === "3" || s.includes("areia") || s.includes("relogio") || s.includes("ampulheta") || s.includes("sands")) return "sands";
+                if (s === "4" || s.includes("copo") || s.includes("calice") || s.includes("goblet")) return "goblet";
+                if (s === "5" || s.includes("tiara") || s.includes("coroa") || s.includes("circlet")) return "circlet";
+            } else if (g === "hsr") {
+                if (s === "1" || s.includes("cabeca") || s.includes("head")) return "head";
+                if (s === "2" || s.includes("mao") || s.includes("maos") || s.includes("hands")) return "hands";
+                if (s === "3" || s.includes("corpo") || s.includes("body")) return "body";
+                if (s === "4" || s.includes("pe") || s.includes("pes") || s.includes("bota") || s.includes("feet")) return "feet";
+                if (s === "5" || s.includes("esfera") || s.includes("sphere")) return "planar_sphere";
+                if (s === "6" || s.includes("corda") || s.includes("rope")) return "link_rope";
+            } else if (g === "zzz") {
+                for (let i = 1; i <= 6; i++) {
+                    if (s === String(i) || s.includes(`disco${i}`) || s.includes(`disk${i}`) || s.includes(`slot${i}`)) {
+                        return `slot_${i}`;
+                    }
+                }
+            }
 
-            if (s === "1" || s.includes("cabeca") || s.includes("head")) return "head";
-            if (s === "2" || s.includes("mao") || s.includes("maos") || s.includes("hands")) return "hands";
-            if (s === "3" || s.includes("corpo") || s.includes("body")) return "body";
-            if (s === "4" || s.includes("pe") || s.includes("pes") || s.includes("bota") || s.includes("feet")) return "feet";
-            if (s === "5" || s.includes("esfera") || s.includes("sphere")) return "planar_sphere";
-            if (s === "6" || s.includes("corda") || s.includes("rope")) return "link_rope";
-
-            if (s === "1" || s.includes("disco1") || s.includes("slot1")) return "slot_1";
-            if (s === "2" || s.includes("disco2") || s.includes("slot2")) return "slot_2";
-            if (s === "3" || s.includes("disco3") || s.includes("slot3")) return "slot_3";
-            if (s === "4" || s.includes("disco4") || s.includes("slot4")) return "slot_4";
-            if (s === "5" || s.includes("disco5") || s.includes("slot5")) return "slot_5";
-            if (s === "6" || s.includes("disco6") || s.includes("slot6")) return "slot_6";
+            // Mapeamento genérico
+            if (s.includes("corpo") || s.includes("body")) return "body";
+            if (s.includes("bota") || s.includes("pes") || s.includes("feet")) return "feet";
+            if (s.includes("esfera") || s.includes("sphere")) return "planar_sphere";
+            if (s.includes("corda") || s.includes("rope")) return "link_rope";
+            if (s.includes("areia") || s.includes("ampulheta") || s.includes("sands")) return "sands";
+            if (s.includes("copo") || s.includes("calice") || s.includes("goblet")) return "goblet";
+            if (s.includes("tiara") || s.includes("circlet")) return "circlet";
+            if (s.includes("flor") || s.includes("flower")) return "flower";
+            if (s.includes("pena") || s.includes("plume")) return "plume";
 
             return s;
         }
@@ -2654,161 +2822,256 @@ async function loadBuildComparison() {
         function normalizeStatTerm(str) {
             if (!str) return "";
             let s = String(str).toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 .replace(/\([^)]*\)/g, "") // Remove números entre parênteses ex: (46.6%)
                 .replace(/[0-9.,%+]/g, "")
                 .trim();
                 
             if (s.includes("quebra") || s.includes("break")) return "break";
-            if (s.includes("taxa") || s.includes("rate")) return "crit_rate";
+            if (s.includes("taxa") || s.includes("rate") || s.includes("chance")) return "crit_rate";
             if (s.includes("dano crit") || s.includes("crit dmg") || s.includes("dano crt")) return "crit_dmg";
             if (s.includes("crit")) return "crit";
-            if (s.includes("recarga") || s.includes("recharge") || s.includes("regen") || s.includes("er")) return "er";
+            if (s.includes("recarga") || s.includes("recharge") || s.includes("regen") || s.includes("recup") || s.includes("er") || s.includes("err")) return "er";
             if (s.includes("prof") || s.includes("mastery") || s.includes("em") || s.includes("anomalia")) return "em";
             if (s.includes("atq") || s.includes("atk") || s.includes("ataque")) return "atk";
             if (s.includes("pv") || s.includes("hp") || s.includes("vida")) return "hp";
             if (s.includes("def") || s.includes("defesa")) return "def";
             if (s.includes("vel") || s.includes("spd") || s.includes("velocidade")) return "speed";
             if (s.includes("cura") || s.includes("healing")) return "healing";
-            if (s.includes("dano") || s.includes("bonus") || s.includes("dmg")) return "elemental_dmg";
             if (s.includes("perfura") || s.includes("pen")) return "pen";
+            if (s.includes("impact") || s.includes("impacto")) return "impact";
+            if (s.includes("dano") || s.includes("bonus") || s.includes("dmg")) return "elemental_dmg";
 
             return s;
         }
         
+        let scoreTotal = 0;
+        let scoreMax = 100;
+        let feedbackBullets = [];
+        
         let html = "";
         
-        // 1. Arma (com verificação de múltiplos substitutos e tradução)
-        const cleanPlayerWeapon = (build.weapon || "").replace(/\(Nv\..*?\)/gi, "").replace(/\(R[1-5]\)/gi, "").trim();
-        const recommendedWeapons = target.weapons && target.weapons.length > 0 ? target.weapons : [target.weapon];
-        const hasWeaponMatch = recommendedWeapons.some(w => checkFuzzyMatch(cleanPlayerWeapon, w));
+        // ==========================================
+        // 1. AVALIAÇÃO DE ARMA / CONE / W-ENGINE (25 pts)
+        // ==========================================
+        const rawPlayerWeapon = build.weapon || "Não informado";
+        const cleanPlayerWeapon = (build.weapon_clean || rawPlayerWeapon).replace(/\(Nv\..*?\)/gi, "").replace(/\(R[1-5]\)/gi, "").replace(/\(Sobreposição \d\)/gi, "").trim();
+        const recommendedWeapons = target.weapons && target.weapons.length > 0 ? target.weapons : (target.weapon !== "Não informado" ? [target.weapon] : []);
         
-        let weaponClass = "comparison-neutral";
-        if (target.weapon !== "Não informado") {
-            if (hasWeaponMatch) {
-                weaponClass = "comparison-match";
-            } else if (cleanPlayerWeapon && cleanPlayerWeapon !== "Não informado") {
-                // Marca como alternativa viável para evitar falso-positivo em vermelho
-                weaponClass = "comparison-warning";
-            } else {
-                weaponClass = "comparison-mismatch";
+        let weaponMatchTier = 0; // 0: None, 1: Bis (1st), 2: Alternate, 3: Viable
+        if (recommendedWeapons.length > 0 && cleanPlayerWeapon && cleanPlayerWeapon !== "Não informado") {
+            if (checkFuzzyMatch(cleanPlayerWeapon, recommendedWeapons[0])) {
+                weaponMatchTier = 1; // Best in Slot
+            } else if (recommendedWeapons.slice(1).some(w => checkFuzzyMatch(cleanPlayerWeapon, w))) {
+                weaponMatchTier = 2; // Recomendada na lista
+            } else if (cleanPlayerWeapon.length > 3) {
+                weaponMatchTier = 3; // Alternativa equipada
             }
         }
         
+        let weaponBadgeHtml = "";
+        let weaponScore = 0;
+        if (weaponMatchTier === 1) {
+            weaponScore = 25;
+            weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-crown"></i> Ideal (BIS)</span>`;
+            feedbackBullets.push(`<strong>Arma:</strong> <span style="color: #10b981;">Ideal (Best in Slot) equipada</span> com sucesso.`);
+        } else if (weaponMatchTier === 2) {
+            weaponScore = 20;
+            weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> Recomendada</span>`;
+            feedbackBullets.push(`<strong>Arma:</strong> <span style="color: #38bdf8;">Opção recomendada</span> pelo metagame equipada.`);
+        } else if (weaponMatchTier === 3) {
+            weaponScore = 12;
+            weaponBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> Alternativa</span>`;
+            feedbackBullets.push(`<strong>Arma:</strong> Usando alternativa viável. O ideal para pico de dano/suporte é <em>${recommendedWeapons[0] || 'arma BIS'}</em>.`);
+        } else {
+            weaponScore = 0;
+            weaponBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> Subótimo</span>`;
+            feedbackBullets.push(`<strong>Arma:</strong> Nenhuma arma meta identificada. Recomendado buscar <em>${recommendedWeapons[0] || 'arma recomendada'}</em>.`);
+        }
+        scoreTotal += weaponScore;
+        
+        const displayTargetWeapon = translationDict[String(target.weapon || '').toLowerCase().trim()] || target.weapon;
+        
         html += `
+            <tr class="comparison-section-header">
+                <td colspan="3"><i class="fa-solid fa-shield-halved" style="margin-right: 6px; color: var(--color-hsr);"></i> Equipamentos & Conjuntos</td>
+            </tr>
             <tr>
-                <td class="comparison-row-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 6px;"></i> Arma/Cone</td>
-                <td class="${weaponClass}">${build.weapon}</td>
-                <td class="comparison-val-target" style="text-align: right;">${target.weapon} ${recommendedWeapons.length > 1 ? '<br><small style="color: var(--text-muted); font-size: 10px;">(Ou substitutos recomendados)</small>' : ''}</td>
+                <td class="comparison-row-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 6px; opacity: 0.7;"></i> Arma / Cone</td>
+                <td>
+                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                        <span style="font-weight: 600; color: var(--text-primary);">${rawPlayerWeapon}</span>
+                        ${weaponBadgeHtml}
+                    </div>
+                </td>
+                <td class="comparison-val-target">
+                    <strong style="color: var(--text-primary);">${displayTargetWeapon}</strong>
+                    ${recommendedWeapons.length > 1 ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">+ ${recommendedWeapons.length - 1} opções viáveis</div>` : ''}
+                </td>
             </tr>
         `;
         
-        // 2. Sets (com verificação de múltiplos substitutos e tradução)
-        const currentSetsStr = build.sets.join(" / ") || "Nenhum";
-        const targetSetsStr = target.sets.join(" / ") || "Não informado";
+        // ==========================================
+        // 2. AVALIAÇÃO DE CONJUNTOS / SETS (25 pts)
+        // ==========================================
+        const playerSets = build.sets || [];
+        const currentSetsStr = playerSets.join(" + ") || "Nenhum conjunto ativo";
+        const recommendedSets = target.all_sets && target.all_sets.length > 0 ? target.all_sets : (target.sets && target.sets[0] !== "Não informado" ? target.sets : []);
+        const targetSetsStr = target.sets && target.sets[0] !== "Não informado" ? target.sets.join(" / ") : "Não informado";
         
-        let setsClass = "comparison-neutral";
-        if (targetSetsStr !== "Não informado" && build.sets.length > 0) {
-            const recommendedSets = target.all_sets && target.all_sets.length > 0 ? target.all_sets : target.sets;
-            const hasSetMatch = build.sets.some(bSet => 
-                recommendedSets.some(tSet => checkFuzzyMatch(bSet, tSet))
-            );
-            if (hasSetMatch) {
-                setsClass = "comparison-match";
-            } else if (build.sets.some(s => s.includes("4 peças") || s.includes("4p") || s.includes("2 peças"))) {
-                setsClass = "comparison-warning";
-            } else {
-                setsClass = "comparison-mismatch";
+        let setMatchTier = 0; // 0: None, 1: 4p Bis, 2: 2p+2p / Sub, 3: Active
+        if (playerSets.length > 0 && recommendedSets.length > 0) {
+            const hasBisMatch = playerSets.some(pS => checkFuzzyMatch(pS, recommendedSets[0]));
+            const hasAnyRecMatch = playerSets.some(pS => recommendedSets.some(rS => checkFuzzyMatch(pS, rS)));
+            
+            if (hasBisMatch && playerSets.some(pS => pS.includes("4 peças") || pS.includes("4p"))) {
+                setMatchTier = 1; // 4p BIS
+            } else if (hasAnyRecMatch) {
+                setMatchTier = 2; // 2p recomendado
+            } else if (playerSets.some(pS => pS.includes("4 peças") || pS.includes("2 peças"))) {
+                setMatchTier = 3; // Conjunto ativo genérico
             }
         }
         
+        let setBadgeHtml = "";
+        let setScore = 0;
+        if (setMatchTier === 1) {
+            setScore = 25;
+            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-circle-check"></i> 4p BIS Ideal</span>`;
+            feedbackBullets.push(`<strong>Conjunto:</strong> <span style="color: #10b981;">Bônus de 4 peças ideal</span> ativo.`);
+        } else if (setMatchTier === 2) {
+            setScore = 20;
+            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> Conjunto Meta</span>`;
+            feedbackBullets.push(`<strong>Conjunto:</strong> <span style="color: #38bdf8;">Conjunto recomendado</span> equipado.`);
+        } else if (setMatchTier === 3) {
+            setScore = 12;
+            setBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> Alternativo</span>`;
+            feedbackBullets.push(`<strong>Conjunto:</strong> Bônus ativo, mas conjunto ideal recomendado é <em>${recommendedSets[0] || 'o set 4p do meta'}</em>.`);
+        } else {
+            setScore = 0;
+            setBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> Incompleto</span>`;
+            feedbackBullets.push(`<strong>Conjunto:</strong> Sem bônus de conjunto ideal ativo.`);
+        }
+        scoreTotal += setScore;
+        
         html += `
             <tr>
-                <td class="comparison-row-title"><i class="fa-solid fa-gem" style="margin-right: 6px;"></i> Sets</td>
-                <td class="${setsClass}">${currentSetsStr}</td>
-                <td class="comparison-val-target" style="text-align: right;">${targetSetsStr} ${target.all_sets && target.all_sets.length > 1 ? '<br><small style="color: var(--text-muted); font-size: 10px;">(Ou substitutos recomendados)</small>' : ''}</td>
+                <td class="comparison-row-title"><i class="fa-solid fa-gem" style="margin-right: 6px; opacity: 0.7;"></i> Conjuntos</td>
+                <td>
+                    <div style="display: flex; flex-direction: column; gap: 3px;">
+                        <span style="font-weight: 500; color: var(--text-primary);">${currentSetsStr}</span>
+                        ${setBadgeHtml}
+                    </div>
+                </td>
+                <td class="comparison-val-target">
+                    <strong style="color: var(--text-primary);">${targetSetsStr}</strong>
+                    ${recommendedSets.length > 1 ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">+ combinações 2p/planares</div>` : ''}
+                </td>
             </tr>
         `;
         
-        // 3. Status Alvo (Sands, Goblet, Circlet / Discos 4, 5, 6 / Corpo, Pés, Esfera, Corda)
-        const targetStatsKeys = Object.keys(target.stats);
+        // ==========================================
+        // 3. ATRIBUTOS PRINCIPAIS POR SLOT (30 pts)
+        // ==========================================
+        const targetStatsKeys = Object.keys(target.stats || {});
         
         if (targetStatsKeys.length > 0) {
+            html += `
+                <tr class="comparison-section-header">
+                    <td colspan="3"><i class="fa-solid fa-bullseye" style="margin-right: 6px; color: #f59e0b;"></i> Atributos Principais por Slot (Main Stats)</td>
+                </tr>
+            `;
+            
+            const pointsPerSlot = 30 / targetStatsKeys.length;
+            let slotIssues = [];
+            
             targetStatsKeys.forEach(key => {
                 let playerVal = "Não equipado";
                 let statClass = "comparison-mismatch";
+                let slotBadgeHtml = "";
                 
-                // Tenta encontrar a peça correspondente ao slot normalizado
+                // Mapeia peça correspondente ao slot
                 const matchedPiece = (build.pieces || []).find(p => {
-                    const pKey = getUnifiedSlotKey(p.slot);
-                    const tKey = getUnifiedSlotKey(key);
+                    const pKey = getUnifiedSlotKey(p.slot, activeInspectGame);
+                    const tKey = getUnifiedSlotKey(key, activeInspectGame);
                     return (pKey && tKey && pKey === tKey) || p.slot.toLowerCase().trim().includes(key.toLowerCase().trim()) || key.toLowerCase().trim().includes(p.slot.toLowerCase().trim());
                 });
                 
-                if (matchedPiece) {
+                if (matchedPiece && matchedPiece.main) {
                     playerVal = matchedPiece.main;
                     const targetValLower = target.stats[key].toLowerCase();
-                    const options = targetValLower.split(/[=/>]|\bou\b/).map(s => s.trim());
+                    const options = targetValLower.split(/[=/>|]|\bou\b/).map(s => s.trim());
                     
-                    const isMatch = options.some(opt => {
-                        if (!opt) return false;
+                    const mainNorm = normalizeStatTerm(matchedPiece.main);
+                    
+                    // Match exato com a primeira opção (Prioridade máxima)
+                    const firstOptNorm = normalizeStatTerm(options[0] || "");
+                    const isFirstMatch = mainNorm === firstOptNorm || mainNorm.includes(firstOptNorm) || firstOptNorm.includes(mainNorm);
+                    
+                    // Match com qualquer opção alternativa
+                    const isAnyMatch = isFirstMatch || options.slice(1).some(opt => {
                         const optNorm = normalizeStatTerm(opt);
-                        const mainNorm = normalizeStatTerm(matchedPiece.main);
                         return mainNorm === optNorm || mainNorm.includes(optNorm) || optNorm.includes(mainNorm);
                     });
                     
-                    statClass = isMatch ? "comparison-match" : "comparison-warning";
-                } else {
-                    // Fallback para buscar nas estatísticas gerais do jogador
-                    playerVal = "Não encontrado";
-                    const targetValLower = target.stats[key].toLowerCase();
-                    const playerStatsKeys = Object.keys(build.stats || {});
-                    const options = targetValLower.split(/[=/>]|\bou\b/).map(s => s.trim());
-                    
-                    for (const opt of options) {
-                        if (!opt) continue;
-                        const matchedKey = playerStatsKeys.find(pK => {
-                            const pKNorm = normalizeStatTerm(pK);
-                            const optNorm = normalizeStatTerm(opt);
-                            return pKNorm === optNorm || pKNorm.includes(optNorm) || optNorm.includes(pKNorm);
-                        });
-                        
-                        if (matchedKey) {
-                            playerVal = build.stats[matchedKey];
-                            statClass = "comparison-match";
-                            break;
-                        }
+                    if (isFirstMatch) {
+                        scoreTotal += pointsPerSlot;
+                        statClass = "comparison-match";
+                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> Ideal</span>`;
+                    } else if (isAnyMatch) {
+                        scoreTotal += pointsPerSlot * 0.75;
+                        statClass = "comparison-warning";
+                        slotBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-check-double"></i> Válido</span>`;
+                    } else {
+                        statClass = "comparison-mismatch";
+                        slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-xmark"></i> Incompatível</span>`;
+                        slotIssues.push(`${key} (${target.stats[key]})`);
                     }
+                } else {
+                    slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-circle-question"></i> Vazio</span>`;
+                    slotIssues.push(key);
                 }
                 
                 html += `
                     <tr>
                         <td class="comparison-row-title">• ${key}</td>
-                        <td class="${statClass}">${playerVal}</td>
-                        <td class="comparison-val-target" style="text-align: right;">${target.stats[key]}</td>
+                        <td class="${statClass}">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>${playerVal}</span>
+                                ${slotBadgeHtml}
+                            </div>
+                        </td>
+                        <td class="comparison-val-target">${target.stats[key]}</td>
                     </tr>
                 `;
             });
-        } else {
-            html += `
-                <tr>
-                    <td colspan="3" style="text-align: center; padding: 10px 0; color: var(--text-muted);">Nenhum detalhe de status alvo no guia.</td>
-                </tr>
-            `;
+            
+            if (slotIssues.length === 0) {
+                feedbackBullets.push(`<strong>Main Stats:</strong> <span style="color: #10b981;">Todos os slots chave</span> possuem os atributos principais ideais.`);
+            } else {
+                feedbackBullets.push(`<strong>Main Stats:</strong> Priorize trocar peças com main stats incorretos em: <em>${slotIssues.join(', ')}</em>.`);
+            }
         }
         
-        // 4. Atributos Finais Recomendados (Endgame Stats)
+        // ==========================================
+        // 4. ATRIBUTOS FINAIS / ENDGAME BENCHMARKS (20 pts)
+        // ==========================================
         const endgameStats = target.endgame_stats || {};
         const endgameKeys = Object.keys(endgameStats);
+        
         if (endgameKeys.length > 0) {
             html += `
-                <tr style="border-top: 1px solid var(--border-color); background: rgba(255,255,255,0.02);">
-                    <td colspan="3" style="padding: 8px 0; font-weight: 700; color: var(--text-secondary); font-size: 11px;"><i class="fa-solid fa-chart-simple" style="margin-right: 6px;"></i> Atributos Finais (Endgame Stats)</td>
+                <tr class="comparison-section-header">
+                    <td colspan="3"><i class="fa-solid fa-chart-line" style="margin-right: 6px; color: #38bdf8;"></i> Status Finais de Combate (Endgame Benchmarks)</td>
                 </tr>
             `;
+            
+            const pointsPerBenchmark = 20 / endgameKeys.length;
             
             endgameKeys.forEach(key => {
                 let playerVal = "Não encontrado";
                 let statClass = "comparison-neutral";
+                let diffBadgeHtml = "";
                 
                 const keyLower = key.toLowerCase();
                 const playerStatsKeys = Object.keys(build.stats || {});
@@ -2821,16 +3084,17 @@ async function loadBuildComparison() {
                     "vida máxima": ["vida", "hp", "pv", "vida máxima", "vida máx"],
                     "def": ["defesa", "def"],
                     "defesa": ["defesa", "def"],
-                    "proficiência de anomalia": ["proficiência de anomalia", "anomaly proficiency", "profic"],
-                    "recuperação de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia"],
-                    "taxa de regeneração de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia"],
-                    "taxa crítica": ["taxa crítica", "crit rate", "taxa crít", "chance de crit", "taxa crt"],
+                    "proficiência de anomalia": ["proficiência de anomalia", "anomaly proficiency", "profic", "ap"],
+                    "maestria de anomalia": ["maestria de anomalia", "anomaly mastery", "am"],
+                    "recuperação de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia", "taxa de regen. energia"],
+                    "taxa de regeneração de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia", "taxa de regen. energia"],
+                    "taxa crítica": ["taxa crítica", "crit rate", "taxa crít", "chance de crit", "taxa crt", "chance de crítico"],
                     "chance de crit": ["taxa crítica", "crit rate", "taxa crít", "chance de crit", "taxa crt", "chance de crítico"],
                     "dano crítico": ["dano crítico", "crit dmg", "dano crít", "dano crit", "dano crt"],
                     "dano crit": ["dano crítico", "crit dmg", "dano crít", "dano crit", "dano crt"],
-                    "recarga de energia": ["recarga de energia", "energy recharge", "recarga"],
+                    "recarga de energia": ["recarga de energia", "energy recharge", "recarga", "er"],
                     "efeito de quebra": ["efeito de quebra", "break effect", "quebra"],
-                    "proficiência elemental": ["proficiência elemental", "elemental mastery", "proficiência"],
+                    "proficiência elemental": ["proficiência elemental", "elemental mastery", "proficiência", "em"],
                     "vel": ["vel", "speed", "velocidade"],
                     "velocidade": ["vel", "speed", "velocidade"]
                 };
@@ -2853,25 +3117,89 @@ async function loadBuildComparison() {
                     const playerNum = parseFloat(playerVal.replace(/[^0-9.]/g, ""));
                     const targetMinNum = parseFloat(targetStr.split(/[-+]/)[0].replace(/[^0-9.]/g, ""));
                     
-                    if (!isNaN(playerNum) && !isNaN(targetMinNum)) {
-                        statClass = playerNum >= targetMinNum ? "comparison-match" : "comparison-mismatch";
+                    if (!isNaN(playerNum) && !isNaN(targetMinNum) && targetMinNum > 0) {
+                        const diff = playerNum - targetMinNum;
+                        const isPercent = playerVal.includes("%") || targetStr.includes("%");
+                        const diffFormatted = (diff >= 0 ? `+` : ``) + (isPercent ? `${diff.toFixed(1)}%` : Math.round(diff));
+                        
+                        if (playerNum >= targetMinNum) {
+                            scoreTotal += pointsPerBenchmark;
+                            statClass = "comparison-match";
+                            diffBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> Meta OK (${diffFormatted})</span>`;
+                        } else if (playerNum >= targetMinNum * 0.85) {
+                            scoreTotal += pointsPerBenchmark * 0.5;
+                            statClass = "comparison-warning";
+                            diffBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-triangle-exclamation"></i> Próximo (${diffFormatted})</span>`;
+                        } else {
+                            statClass = "comparison-mismatch";
+                            diffBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-arrow-down"></i> ${diffFormatted}</span>`;
+                        }
                     }
                 }
                 
                 html += `
                     <tr>
                         <td class="comparison-row-title">• ${key}</td>
-                        <td class="${statClass}">${playerVal}</td>
-                        <td class="comparison-val-target" style="text-align: right;">${endgameStats[key]}</td>
+                        <td class="${statClass}">
+                            <div style="display: flex; align-items: center; justify-content: space-between;">
+                                <span>${playerVal}</span>
+                                ${diffBadgeHtml}
+                            </div>
+                        </td>
+                        <td class="comparison-val-target">${endgameStats[key]}</td>
                     </tr>
                 `;
             });
         }
         
         rowsContainer.innerHTML = html;
+        
+        // ==========================================
+        // 5. RENDERIZA CARD DE SCORE EXECUTIVO
+        // ==========================================
+        const finalScorePct = Math.min(100, Math.max(0, Math.round(scoreTotal)));
+        
+        if (scoreCard && tierBadge && scorePctEl && scoreBar && feedbackList) {
+            scoreCard.style.display = "block";
+            scorePctEl.textContent = `${finalScorePct}%`;
+            scoreBar.style.width = `${finalScorePct}%`;
+            
+            if (finalScorePct >= 85) {
+                tierBadge.textContent = "S-Tier";
+                tierBadge.style.background = "rgba(16, 185, 129, 0.2)";
+                tierBadge.style.color = "#10b981";
+                tierBadge.style.borderColor = "#10b981";
+                scorePctEl.style.color = "#10b981";
+                scoreBar.style.background = "linear-gradient(90deg, #10b981, #059669)";
+            } else if (finalScorePct >= 70) {
+                tierBadge.textContent = "A-Tier";
+                tierBadge.style.background = "rgba(56, 189, 248, 0.2)";
+                tierBadge.style.color = "#38bdf8";
+                tierBadge.style.borderColor = "#38bdf8";
+                scorePctEl.style.color = "#38bdf8";
+                scoreBar.style.background = "linear-gradient(90deg, #38bdf8, #0284c7)";
+            } else if (finalScorePct >= 50) {
+                tierBadge.textContent = "B-Tier";
+                tierBadge.style.background = "rgba(245, 158, 11, 0.2)";
+                tierBadge.style.color = "#f59e0b";
+                tierBadge.style.borderColor = "#f59e0b";
+                scorePctEl.style.color = "#f59e0b";
+                scoreBar.style.background = "linear-gradient(90deg, #f59e0b, #d97706)";
+            } else {
+                tierBadge.textContent = "C-Tier";
+                tierBadge.style.background = "rgba(239, 68, 68, 0.2)";
+                tierBadge.style.color = "#ef4444";
+                tierBadge.style.borderColor = "#ef4444";
+                scorePctEl.style.color = "#ef4444";
+                scoreBar.style.background = "linear-gradient(90deg, #ef4444, #b91c1c)";
+            }
+            
+            feedbackList.innerHTML = feedbackBullets.map(b => `<div style="display: flex; gap: 6px; align-items: flex-start;"><span style="color: var(--color-hsr);">•</span> <span>${b}</span></div>`).join("");
+        }
+        
     } catch(err) {
         console.error("Erro ao carregar comparação de builds:", err);
-        rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px 0; color: var(--color-danger);">Erro ao carregar comparação.</td></tr>`;
+        rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px 0; color: var(--color-danger);">Erro ao carregar comparação: ${err.message}</td></tr>`;
     }
 }
 
@@ -4634,6 +4962,229 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
+    // ==========================================
+    // 2.1 ORDEM DE SERVIÇO DO DIA (ROTEIRO DE ENERGIA)
+    // ==========================================
+    window.currentFarmOrderGame = "genshin";
+    window.lastLoadedFarmOrder = null;
+
+    window.loadDailyFarmOrder = async (gameId = window.currentFarmOrderGame || "genshin") => {
+        window.currentFarmOrderGame = gameId;
+        const container = document.getElementById("farm-order-tasks-list");
+        if (!container) return;
+
+        const weekdayTag = document.getElementById("farm-order-weekday-tag");
+        const energyVal = document.getElementById("farm-order-energy-val");
+        const energyBar = document.getElementById("farm-order-energy-bar");
+        const progressText = document.getElementById("farm-order-progress-text");
+        const progressBar = document.getElementById("farm-order-progress-bar");
+
+        // Atualiza abas ativas
+        document.querySelectorAll(".farm-order-game-btn").forEach(btn => {
+            if (btn.dataset.game === gameId) {
+                btn.classList.add("active");
+                btn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+                btn.style.color = "#ffffff";
+                btn.style.fontWeight = "700";
+            } else {
+                btn.classList.remove("active");
+                btn.style.background = "transparent";
+                btn.style.color = "#94a3b8";
+                btn.style.fontWeight = "normal";
+            }
+        });
+
+        container.innerHTML = "<div style='color: #94a3b8; text-align: center; padding: 20px;'><i class='fa-solid fa-spinner fa-spin'></i> Otimizando roteiro diário de energia...</div>";
+
+        try {
+            const res = await fetch(`/api/farm/order-of-day/${gameId}`);
+            const data = await res.json();
+            window.lastLoadedFarmOrder = data;
+
+            if (weekdayTag) weekdayTag.innerText = `${data.weekday_name || 'Hoje'}`;
+            
+            const energy = data.energy || {};
+            if (energyVal) energyVal.innerText = `${energy.current || 0} / ${energy.max || 0} ${energy.name || ''}`;
+            if (energyBar) energyBar.style.width = `${energy.usage_pct || 0}%`;
+
+            const compCount = data.completed_count || 0;
+            const totTasks = data.total_tasks || 0;
+            const compPct = data.completion_percentage || 0;
+
+            if (progressText) progressText.innerText = `${compCount}/${totTasks} (${compPct}%)`;
+            if (progressBar) progressBar.style.width = `${compPct}%`;
+
+            const tasks = data.tasks || [];
+            if (tasks.length === 0) {
+                container.innerHTML = "<div style='color: #94a3b8; text-align: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 8px;'>Nenhuma recomendação pendente para hoje!</div>";
+                return;
+            }
+
+            let html = "";
+            tasks.forEach(t => {
+                const isDone = !!t.completed;
+                const isAvail = !!t.available_now;
+                const badgeBg = t.badge_color ? `${t.badge_color}22` : 'rgba(16,185,129,0.15)';
+                const badgeColor = t.badge_color || '#10b981';
+                const statusColor = isAvail ? '#10b981' : '#f59e0b';
+                const statusBg = isAvail ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)';
+
+                html += `
+                    <div class="farm-order-step-item" id="order-step-item-${t.id}" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: ${isDone ? 'rgba(16, 185, 129, 0.08)' : 'rgba(15, 23, 42, 0.7)'}; border: 1px solid ${isDone ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 12px; transition: all 0.25s ease; ${isDone ? 'opacity: 0.75;' : ''}">
+                        <!-- Checkbox de Conclusão -->
+                        <div style="padding-top: 2px;">
+                            <input type="checkbox" class="farm-order-step-cb" data-game="${gameId}" data-task-id="${t.id}" ${isDone ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;">
+                        </div>
+
+                        <!-- Avatar do Personagem ou Ícone -->
+                        <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; position: relative;">
+                            ${t.character_icon ? `<img src="${t.character_icon}" style="width: 100%; height: 100%; object-fit: cover;">` : `<i class="fa-solid ${t.type_icon || 'fa-seedling'}" style="color: #38bdf8; font-size: 16px;"></i>`}
+                            ${t.character_grade ? `<span style="position: absolute; bottom: 0; right: 0; font-size: 8px; font-weight: 800; background: rgba(0,0,0,0.8); color: #f59e0b; padding: 1px 3px; border-top-left-radius: 4px;">${t.character_grade}</span>` : ''}
+                        </div>
+
+                        <!-- Detalhes do Passo -->
+                        <div style="flex: 1; min-width: 0;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <strong style="font-size: 13px; color: ${isDone ? '#94a3b8' : '#ffffff'}; ${isDone ? 'text-decoration: line-through;' : ''}">Passo ${t.step}: ${t.target_character} • ${t.type_label}</strong>
+                                    <span style="font-size: 10px; background: ${badgeBg}; color: ${badgeColor}; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${t.priority_badge}</span>
+                                </div>
+                                <span style="font-size: 10px; background: ${statusBg}; color: ${statusColor}; padding: 2px 8px; border-radius: 10px; font-weight: 700;">
+                                    <i class="fa-solid ${isAvail ? 'fa-circle-check' : 'fa-clock'}"></i> ${t.time_estimate}
+                                </span>
+                            </div>
+
+                            <div style="font-size: 12px; color: #cbd5e1; margin-top: 4px;">
+                                <span style="color: #38bdf8; font-weight: 600;">${t.material_name}</span> • <span style="color: var(--text-muted);">${t.location}</span>
+                            </div>
+
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--text-muted); flex-wrap: wrap; gap: 6px;">
+                                <span>${t.description}</span>
+                                <span style="color: #e2e8f0; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;">
+                                    <i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> Custo: <strong>${t.cost_energy} ${t.energy_name}</strong> (${t.runs}x)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+
+            // Listeners nos Checkboxes de Conclusão
+            container.querySelectorAll(".farm-order-step-cb").forEach(cb => {
+                cb.addEventListener("change", async (e) => {
+                    const taskId = e.target.dataset.taskId;
+                    const gId = e.target.dataset.game;
+                    const isChecked = e.target.checked;
+                    const stepEl = document.getElementById(`order-step-item-${taskId}`);
+
+                    if (stepEl) {
+                        stepEl.style.opacity = isChecked ? "0.75" : "1";
+                        stepEl.style.background = isChecked ? "rgba(16, 185, 129, 0.08)" : "rgba(15, 23, 42, 0.7)";
+                        stepEl.style.borderColor = isChecked ? "rgba(16, 185, 129, 0.4)" : "rgba(255, 255, 255, 0.06)";
+                    }
+
+                    try {
+                        await fetch("/api/farm/order-of-day/toggle-step", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                                game_id: gId,
+                                task_id: taskId,
+                                completed: isChecked
+                            })
+                        });
+                        // Recarrega contadores
+                        window.loadDailyFarmOrder(gId);
+                    } catch (err) {
+                        console.error("Erro ao salvar conclusão de tarefa de farm:", err);
+                    }
+                });
+            });
+
+        } catch (e) {
+            console.error("Erro ao carregar Ordem de Serviço:", e);
+            container.innerHTML = "<div style='color: #ef4444; padding: 14px;'>Erro ao calcular a Ordem de Serviço do dia.</div>";
+        }
+    };
+
+    // Listeners dos Botões da Ordem do Dia
+    document.querySelectorAll(".farm-order-game-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            window.loadDailyFarmOrder(btn.dataset.game);
+        });
+    });
+
+    const btnCopyOrder = document.getElementById("btn-copy-farm-order");
+    if (btnCopyOrder) {
+        btnCopyOrder.addEventListener("click", () => {
+            const textToCopy = window.lastLoadedFarmOrder?.quick_summary_text;
+            if (textToCopy) {
+                navigator.clipboard.writeText(textToCopy).then(() => {
+                    const origHtml = btnCopyOrder.innerHTML;
+                    btnCopyOrder.innerHTML = `<i class="fa-solid fa-check"></i> Roteiro Copiado!`;
+                    btnCopyOrder.style.borderColor = "#10b981";
+                    btnCopyOrder.style.color = "#4ade80";
+                    setTimeout(() => {
+                        btnCopyOrder.innerHTML = origHtml;
+                        btnCopyOrder.style.borderColor = "rgba(56,189,248,0.4)";
+                        btnCopyOrder.style.color = "#38bdf8";
+                    }, 2500);
+                }).catch(err => {
+                    console.error("Erro ao copiar texto:", err);
+                });
+            }
+        });
+    }
+
+    const btnSendOrderNotif = document.getElementById("btn-send-farm-order-notif");
+    if (btnSendOrderNotif) {
+        btnSendOrderNotif.addEventListener("click", async () => {
+            btnSendOrderNotif.disabled = true;
+            btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando...`;
+            try {
+                const res = await fetch("/api/farm/order-of-day/send-notification", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ game_id: window.currentFarmOrderGame || "genshin" })
+                });
+                const data = await res.json();
+                if (data.status === "success") {
+                    btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-check"></i> Notificação Enviada!`;
+                    btnSendOrderNotif.style.color = "#4ade80";
+                    setTimeout(() => {
+                        btnSendOrderNotif.disabled = false;
+                        btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord/Telegram`;
+                        btnSendOrderNotif.style.color = "#10b981";
+                    }, 3000);
+                } else {
+                    alert("Aviso: Notificações estão desativadas nas Configurações ou os Webhooks não foram configurados.");
+                    btnSendOrderNotif.disabled = false;
+                    btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord/Telegram`;
+                }
+            } catch (err) {
+                console.error("Erro ao enviar notificação de farm:", err);
+                btnSendOrderNotif.disabled = false;
+                btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord/Telegram`;
+            }
+        });
+    }
+
+    const btnRefreshOrder = document.getElementById("btn-refresh-farm-order");
+    if (btnRefreshOrder) {
+        btnRefreshOrder.addEventListener("click", () => {
+            window.loadDailyFarmOrder(window.currentFarmOrderGame);
+        });
+    }
+
+    // Inicializa a Ordem do Dia na inicialização
+    setTimeout(() => {
+        if (document.getElementById("farm-order-tasks-list")) {
+            window.loadDailyFarmOrder("genshin");
+        }
+    }, 600);
+
     // 3. RELÍQUIAS LIXO (TRASH FINDER)
     window.loadTrashRelics = async (gameId, targetContainerId = "trash-relics-body") => {
         const body = document.getElementById(targetContainerId);
@@ -6120,34 +6671,90 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 window.loadPromoCodes = async (gameId = "hsr") => {
     const container = document.getElementById("tab-codes-body");
     if (!container) return;
-    container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Buscando códigos promocionais ativos...</p></div>`;
+    container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Buscando códigos promocionais ativos e histórico de resgates...</p></div>`;
 
     try {
-        const res = await fetch(`/api/codes/${gameId}`);
-        const data = await res.json();
-        const codes = data.codes || [];
+        const [resCodes, resHistory] = await Promise.all([
+            fetch(`/api/codes/${gameId}`).then(r => r.json()).catch(() => ({ codes: [] })),
+            fetch(`/api/codes/history/${gameId}`).then(r => r.json()).catch(() => ({ history: [] }))
+        ]);
 
-        if (!codes.length) {
+        const codes = resCodes.codes || [];
+        const history = resHistory.history || [];
+        const historyMap = {};
+        history.forEach(h => {
+            historyMap[h.code.toUpperCase()] = h;
+        });
+
+        if (!codes.length && !history.length) {
             container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><p>Nenhum código ativo encontrado para ${gameId.toUpperCase()}.</p></div>`;
             return;
         }
 
         let html = `
-            <div style="display: flex; flex-direction: column; gap: 12px;">
-                ${codes.map(c => `
-                    <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-                        <div>
-                            <code style="font-size: 16px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">${c.code}</code>
-                            <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;"> Recompensas: ${c.rewards}</span>
-                            <span style="display: block; font-size: 10px; color: #10b981; margin-top: 2px;">• ${c.status}</span>
-                        </div>
-                        <button class="action-btn btn-redeem-single" data-game="${gameId}" data-code="${c.code}" style="padding: 8px 14px; font-size: 12px; background: rgba(245, 158, 11, 0.15); border-color: rgba(245, 158, 11, 0.4); color: #fbbf24; border-radius: 6px; cursor: pointer;">
-                            <i class="fa-solid fa-gift"></i> Resgatar Este
-                        </button>
-                    </div>
-                `).join('')}
+            <!-- CÓDIGOS ATIVOS -->
+            <div style="margin-bottom: 24px;">
+                <h4 style="color: #f59e0b; margin-top: 0; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-fire"></i> Códigos Promocionais Disponíveis (${codes.length})
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    ${codes.map(c => {
+                        const hEntry = historyMap[c.code.toUpperCase()];
+                        const isClaimed = hEntry && (hEntry.status === "claimed" || hEntry.status === "success");
+                        const isInvalid = hEntry && hEntry.status === "invalid";
+
+                        let badgeHtml = "";
+                        if (isClaimed) {
+                            badgeHtml = `<span style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-check"></i> Resgatado</span>`;
+                        } else if (isInvalid) {
+                            badgeHtml = `<span style="font-size: 11px; background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fa-solid fa-xmark"></i> Expirado</span>`;
+                        }
+
+                        return `
+                            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                                <div>
+                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                        <code style="font-size: 16px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">${c.code}</code>
+                                        ${badgeHtml}
+                                    </div>
+                                    <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;"> Recompensas: ${c.rewards}</span>
+                                    <span style="display: block; font-size: 10px; color: #10b981; margin-top: 2px;">• ${c.status}</span>
+                                </div>
+                                <button class="action-btn btn-redeem-single" data-game="${gameId}" data-code="${c.code}" style="padding: 8px 14px; font-size: 12px; background: ${isClaimed ? 'rgba(255,255,255,0.05)' : 'rgba(245, 158, 11, 0.15)'}; border-color: ${isClaimed ? 'rgba(255,255,255,0.1)' : 'rgba(245, 158, 11, 0.4)'}; color: ${isClaimed ? 'var(--text-muted)' : '#fbbf24'}; border-radius: 6px; cursor: pointer;">
+                                    <i class="fa-solid fa-gift"></i> ${isClaimed ? 'Resgatar Novamente' : 'Resgatar Este'}
+                                </button>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+                <div id="codes-redeem-status" style="margin-top: 16px; font-size: 12px;"></div>
             </div>
-            <div id="codes-redeem-status" style="margin-top: 16px; font-size: 12px;"></div>
+
+            <!-- HISTÓRICO DE RESGATES AUTO-REDEEM -->
+            ${history.length > 0 ? `
+                <details style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-top: 20px;">
+                    <summary style="font-size: 13px; font-weight: 700; color: #38bdf8; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        <i class="fa-solid fa-clock-rotate-left"></i> Histórico de Resgates Registrados (${history.length})
+                    </summary>
+                    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+                        ${history.map(h => {
+                            const isOk = h.status === 'success' || h.status === 'claimed';
+                            return `
+                                <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: rgba(255,255,255,0.02); border-radius: 6px; border-left: 3px solid ${isOk ? '#10b981' : '#ef4444'}; font-size: 12px; flex-wrap: wrap; gap: 6px;">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <strong style="color: #fff; font-family: monospace;">${h.code}</strong>
+                                        <span style="color: var(--text-muted); font-size: 11px;">(UID: ${h.uid})</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="color: ${isOk ? '#34d399' : '#f87171'}; font-size: 11px;">${h.message}</span>
+                                        <span style="color: var(--text-muted); font-size: 10px;">${h.redeemed_at.replace('T', ' ').substring(0, 19)}</span>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </details>
+            ` : ''}
         `;
         container.innerHTML = html;
 
@@ -6168,6 +6775,8 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                     if (resData.results && resData.results.length) {
                         const item = resData.results[0];
                         statusBox.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; color: #4ade80;">${item.message}</div>`;
+                        // Recarrega lista para atualizar badges
+                        setTimeout(() => window.loadPromoCodes(game), 1500);
                     }
                 } catch (e) {
                     showToast("Erro ao resgatar código.");
@@ -6224,6 +6833,35 @@ window.loadAppConfiguration = async () => {
             const lastDate = data.last_auto_sync_date;
             statusEl.innerHTML = `<i class="fa-solid fa-circle-info" style="color: #38bdf8;"></i> Agendado diariamente para o horário <strong>${data.auto_sync_time || "04:00"}</strong>. ${lastDate ? `Última atualização executada em: <strong>${lastDate}</strong>.` : 'Ainda não executado hoje.'}`;
         }
+
+        // Carregamento das Notificações Proativas
+        const notifEnabled = document.getElementById("cfg-notif-enabled");
+        if (notifEnabled) notifEnabled.checked = !!data.notifications_enabled;
+
+        const discordUrl = document.getElementById("cfg-notif-discord-url");
+        if (discordUrl && data.discord_webhook_url) discordUrl.value = data.discord_webhook_url;
+
+        const tgToken = document.getElementById("cfg-notif-telegram-token");
+        if (tgToken && data.telegram_bot_token) tgToken.value = data.telegram_bot_token;
+
+        const tgChat = document.getElementById("cfg-notif-telegram-chat-id");
+        if (tgChat && data.telegram_chat_id) tgChat.value = data.telegram_chat_id;
+
+        const notifCheckin = document.getElementById("cfg-notif-checkin");
+        if (notifCheckin) notifCheckin.checked = data.notify_on_checkin !== false;
+
+        const notifEnergy = document.getElementById("cfg-notif-energy");
+        if (notifEnergy) notifEnergy.checked = data.notify_on_energy_cap !== false;
+
+        const notifThreshold = document.getElementById("cfg-notif-energy-threshold");
+        if (notifThreshold && data.energy_cap_threshold_pct) notifThreshold.value = String(data.energy_cap_threshold_pct);
+
+        const notifEndgame = document.getElementById("cfg-notif-endgame");
+        if (notifEndgame) notifEndgame.checked = data.notify_on_endgame !== false;
+
+        const notifCodes = document.getElementById("cfg-notif-codes");
+        if (notifCodes) notifCodes.checked = data.notify_on_codes !== false;
+
     } catch (err) {
         console.error("Erro ao carregar configurações:", err);
     }
@@ -6237,6 +6875,16 @@ window.saveAppConfiguration = async () => {
     const autoSyncRoster = document.getElementById("cfg-auto-sync-roster")?.checked ?? true;
     const autoSyncGuides = document.getElementById("cfg-auto-sync-guides")?.checked ?? true;
 
+    const notifEnabled = document.getElementById("cfg-notif-enabled")?.checked ?? false;
+    const discordUrl = document.getElementById("cfg-notif-discord-url")?.value || "";
+    const tgToken = document.getElementById("cfg-notif-telegram-token")?.value || "";
+    const tgChat = document.getElementById("cfg-notif-telegram-chat-id")?.value || "";
+    const notifCheckin = document.getElementById("cfg-notif-checkin")?.checked ?? true;
+    const notifEnergy = document.getElementById("cfg-notif-energy")?.checked ?? true;
+    const energyThreshold = parseInt(document.getElementById("cfg-notif-energy-threshold")?.value || "90", 10);
+    const notifEndgame = document.getElementById("cfg-notif-endgame")?.checked ?? true;
+    const notifCodes = document.getElementById("cfg-notif-codes")?.checked ?? true;
+
     try {
         const res = await fetch("/api/config", {
             method: "POST",
@@ -6247,7 +6895,16 @@ window.saveAppConfiguration = async () => {
                 auto_sync_enabled: autoSyncEnabled,
                 auto_sync_time: autoSyncTime,
                 auto_sync_roster: autoSyncRoster,
-                auto_sync_guides: autoSyncGuides
+                auto_sync_guides: autoSyncGuides,
+                notifications_enabled: notifEnabled,
+                discord_webhook_url: discordUrl,
+                telegram_bot_token: tgToken,
+                telegram_chat_id: tgChat,
+                notify_on_checkin: notifCheckin,
+                notify_on_energy_cap: notifEnergy,
+                energy_cap_threshold_pct: energyThreshold,
+                notify_on_endgame: notifEndgame,
+                notify_on_codes: notifCodes
             })
         });
         const data = await res.json();
@@ -6256,6 +6913,166 @@ window.saveAppConfiguration = async () => {
         showToast("Erro ao salvar configurações.");
     }
 };
+
+// Handler para Teste Imediato de Notificações
+document.addEventListener("DOMContentLoaded", () => {
+    const btnTestNotif = document.getElementById("btn-test-notifications");
+    if (btnTestNotif && !btnTestNotif.dataset.bound) {
+        btnTestNotif.dataset.bound = "true";
+        btnTestNotif.addEventListener("click", async () => {
+            const discordUrl = document.getElementById("cfg-notif-discord-url")?.value || "";
+            const tgToken = document.getElementById("cfg-notif-telegram-token")?.value || "";
+            const tgChat = document.getElementById("cfg-notif-telegram-chat-id")?.value || "";
+            const statusBox = document.getElementById("notif-test-status-box");
+
+            if (!discordUrl && (!tgToken || !tgChat)) {
+                alert("Por favor, preencha a URL do Webhook do Discord ou o Token e Chat ID do Telegram antes de testar.");
+                return;
+            }
+
+            btnTestNotif.disabled = true;
+            btnTestNotif.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Disparando Teste...`;
+            if (statusBox) {
+                statusBox.style.display = "block";
+                statusBox.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(56,189,248,0.1); border: 1px solid #38bdf8; color: #38bdf8;"><i class="fa-solid fa-spinner fa-spin"></i> Enviando mensagens de teste para os canais configurados...</div>`;
+            }
+
+            try {
+                const res = await fetch("/api/notifications/test", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        discord_webhook_url: discordUrl,
+                        telegram_bot_token: tgToken,
+                        telegram_chat_id: tgChat
+                    })
+                });
+                const data = await res.json();
+                const r = data.results || {};
+
+                let html = `<div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">`;
+                
+                if (r.discord && r.discord.attempted) {
+                    const dOk = r.discord.success;
+                    html += `
+                        <div style="padding: 10px 14px; border-radius: 8px; background: ${dOk ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; border: 1px solid ${dOk ? '#10b981' : '#ef4444'}; color: ${dOk ? '#4ade80' : '#f87171'}; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-brands fa-discord" style="font-size: 16px;"></i>
+                            <div><strong>Discord:</strong> ${r.discord.message}</div>
+                        </div>
+                    `;
+                }
+
+                if (r.telegram && r.telegram.attempted) {
+                    const tOk = r.telegram.success;
+                    html += `
+                        <div style="padding: 10px 14px; border-radius: 8px; background: ${tOk ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)'}; border: 1px solid ${tOk ? '#10b981' : '#ef4444'}; color: ${tOk ? '#4ade80' : '#f87171'}; display: flex; align-items: center; gap: 10px;">
+                            <i class="fa-brands fa-telegram" style="font-size: 16px;"></i>
+                            <div><strong>Telegram:</strong> ${r.telegram.message}</div>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+                if (statusBox) statusBox.innerHTML = html;
+            } catch (err) {
+                console.error("Erro no teste de notificações:", err);
+                if (statusBox) statusBox.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">Falha ao comunicar com o servidor para testar notificações.</div>`;
+            } finally {
+                btnTestNotif.disabled = false;
+                btnTestNotif.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Testar Notificações Agora`;
+            }
+        });
+    }
+
+    // Handlers para Sincronização de Dados Estáticos & Datamines
+    window.loadStaticDataStatus = async () => {
+        try {
+            const res = await fetch("/api/static-data/status");
+            const data = await res.json();
+            if (data.status === "success" && data.summary) {
+                const s = data.summary;
+                
+                // Genshin
+                const gTag = document.getElementById("static-status-genshin-tag");
+                const gDesc = document.getElementById("static-status-genshin-desc");
+                if (gTag && gDesc && s.genshin) {
+                    gTag.innerText = s.genshin.offline_ready ? "Pronto (Offline)" : "Pendente";
+                    gTag.style.background = s.genshin.offline_ready ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
+                    gTag.style.color = s.genshin.offline_ready ? "#34d399" : "#fbbf24";
+                    gDesc.innerHTML = `<strong>${s.genshin.characters}</strong> personagens indexados.<br><span style="color:#64748b; font-size:10px;">Origem: ${s.genshin.manifest?.source || 'Seed Local'}</span>`;
+                }
+
+                // HSR
+                const hTag = document.getElementById("static-status-hsr-tag");
+                const hDesc = document.getElementById("static-status-hsr-desc");
+                if (hTag && hDesc && s.hsr) {
+                    hTag.innerText = s.hsr.offline_ready ? "Pronto (Offline)" : "Pendente";
+                    hTag.style.background = s.hsr.offline_ready ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
+                    hTag.style.color = s.hsr.offline_ready ? "#34d399" : "#fbbf24";
+                    hDesc.innerHTML = `<strong>${s.hsr.characters}</strong> personagens indexados.<br><span style="color:#64748b; font-size:10px;">Origem: ${s.hsr.manifest?.source || 'Seed Local'}</span>`;
+                }
+
+                // ZZZ
+                const zTag = document.getElementById("static-status-zzz-tag");
+                const zDesc = document.getElementById("static-status-zzz-desc");
+                if (zTag && zDesc && s.zzz) {
+                    zTag.innerText = s.zzz.offline_ready ? "Pronto (Offline)" : "Pendente";
+                    zTag.style.background = s.zzz.offline_ready ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
+                    zTag.style.color = s.zzz.offline_ready ? "#34d399" : "#fbbf24";
+                    zDesc.innerHTML = `<strong>${s.zzz.characters}</strong> agentes indexados.<br><span style="color:#64748b; font-size:10px;">Origem: ${s.zzz.manifest?.source || 'Seed Local'}</span>`;
+                }
+            }
+        } catch (err) {
+            console.error("Erro ao carregar status de dados estáticos:", err);
+        }
+    };
+
+    const btnSyncStatic = document.getElementById("btn-sync-static-data");
+    const staticSyncResult = document.getElementById("static-sync-result-box");
+    if (btnSyncStatic) {
+        btnSyncStatic.addEventListener("click", async () => {
+            btnSyncStatic.disabled = true;
+            btnSyncStatic.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando Datamines...`;
+            if (staticSyncResult) {
+                staticSyncResult.style.display = "block";
+                staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; color: #34d399;"><i class="fa-solid fa-spinner fa-spin"></i> Conectando com repositórios GitHub e HoYoWiki para atualizar JSONs...</div>`;
+            }
+
+            try {
+                const res = await fetch("/api/static-data/sync", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (data.status === "success") {
+                    let html = `<div style="padding: 10px 14px; border-radius: 8px; background: rgba(16,185,129,0.12); border: 1px solid #10b981; color: #4ade80;">`;
+                    html += `<strong><i class="fa-solid fa-check"></i> Sincronização concluída com sucesso!</strong><ul style="margin: 6px 0 0 16px; font-size: 11px;">`;
+                    for (const [gid, info] of Object.entries(data.results || {})) {
+                        html += `<li><strong>${gid.toUpperCase()}:</strong> ${info.character_count} personagens atualizados via ${info.source || 'Seed'} (${info.status})</li>`;
+                    }
+                    html += `</ul></div>`;
+                    if (staticSyncResult) staticSyncResult.innerHTML = html;
+                    window.loadStaticDataStatus();
+                } else {
+                    if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">Erro na sincronização: ${data.detail || 'Falha desconhecida'}</div>`;
+                }
+            } catch (err) {
+                console.error("Erro ao sincronizar dados estáticos:", err);
+                if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">Falha ao comunicar com o servidor. O cache offline permanece ativo.</div>`;
+            } finally {
+                btnSyncStatic.disabled = false;
+                btnSyncStatic.innerHTML = `<i class="fa-solid fa-rotate"></i> Sincronizar Datamines Agora`;
+            }
+        });
+    }
+
+    // Inicializa o status dos dados estáticos e Ordem de Farm na inicialização
+    window.loadStaticDataStatus();
+    if (window.loadDailyFarmOrder) {
+        window.loadDailyFarmOrder("genshin");
+    }
+});
 
 /* ==========================================================================
    HELP HUB INTERACTIVE LOGIC (SEARCH & FILTER & ACCORDION TOGGLE)
@@ -6323,6 +7140,12 @@ document.addEventListener("DOMContentLoaded", () => {
     window.initHelpHubHandlers();
     if (window.initGachaSimulator) {
         window.initGachaSimulator();
+    }
+    if (window.initGachaNavigation) {
+        window.initGachaNavigation();
+    }
+    if (window.updateGoalsCountBadge) {
+        window.updateGoalsCountBadge();
     }
 });
 
@@ -6755,11 +7578,565 @@ window.runGachaSimulation = async function() {
         if (typeof showToast === "function") showToast("Erro ao executar simulação de Gacha.");
     } finally {
         if (runBtn) {
-            runBtn.innerHTML = `<i class="fa-solid fa-play"></i> Executar Simulação Monte Carlo (10.000 Tiros)`;
+            runBtn.innerHTML = `<i class="fa-solid fa-dice"></i> Monte Carlo`;
             runBtn.disabled = false;
         }
     }
 };
+
+// ==========================================================================
+// GACHA FORECAST & PLANEJADOR DE BANNERS FUTUROS FRONTEND LOGIC
+// ==========================================================================
+
+window.lastForecastResult = null;
+window.forecastState = {
+    gameId: "genshin",
+    charList: []
+};
+
+window.initGachaNavigation = function() {
+    const viewBtns = document.querySelectorAll(".gacha-view-btn");
+    viewBtns.forEach(btn => {
+        btn.onclick = () => {
+            viewBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const viewTarget = btn.dataset.view;
+
+            document.querySelectorAll(".gacha-subview").forEach(sv => {
+                sv.style.display = "none";
+                sv.classList.remove("active");
+            });
+
+            const activeView = document.getElementById(`gacha-view-${viewTarget}`);
+            if (activeView) {
+                activeView.style.display = "block";
+                activeView.classList.add("active");
+            }
+
+            if (viewTarget === "forecast") {
+                window.initGachaForecast();
+            } else if (viewTarget === "goals") {
+                window.loadGachaGoals("all");
+            }
+        };
+    });
+};
+
+window.initGachaForecast = async function() {
+    const gameBtns = document.querySelectorAll(".forecast-game-btn");
+    const slider = document.getElementById("forecast-days-slider");
+    const sliderVal = document.getElementById("forecast-days-val");
+    const quickDayBtns = document.querySelectorAll(".forecast-quick-day-btn");
+    const charSelect = document.getElementById("forecast-char-select");
+    const curRankSelect = document.getElementById("forecast-current-rank");
+    const runBtn = document.getElementById("btn-run-forecast-calc");
+    const saveGoalBtn = document.getElementById("btn-save-forecast-goal");
+
+    gameBtns.forEach(btn => {
+        btn.onclick = async () => {
+            gameBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const gId = btn.dataset.game;
+            window.forecastState.gameId = gId;
+            window.updateForecastRankLabels(gId);
+            await window.loadForecastCharacters(gId);
+            window.runGachaForecastCalculation();
+        };
+    });
+
+    if (slider && sliderVal) {
+        slider.oninput = () => {
+            sliderVal.innerText = `${slider.value} dias`;
+            quickDayBtns.forEach(b => {
+                if (parseInt(b.dataset.days) === parseInt(slider.value)) {
+                    b.classList.add("active");
+                } else {
+                    b.classList.remove("active");
+                }
+            });
+        };
+    }
+
+    quickDayBtns.forEach(btn => {
+        btn.onclick = () => {
+            quickDayBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const days = parseInt(btn.dataset.days);
+            if (slider) slider.value = days;
+            if (sliderVal) sliderVal.innerText = `${days} dias`;
+        };
+    });
+
+    if (curRankSelect) {
+        curRankSelect.onchange = () => {
+            window.updateForecastTargetRankOptions();
+        };
+    }
+
+    if (runBtn) {
+        runBtn.onclick = window.runGachaForecastCalculation;
+    }
+
+    if (saveGoalBtn) {
+        saveGoalBtn.onclick = window.saveCurrentGachaGoal;
+    }
+
+    // Inicialização do Jogo Atual do Forecast
+    const activeBtn = document.querySelector(".forecast-game-btn.active");
+    const curGame = activeBtn ? activeBtn.dataset.game : "genshin";
+    window.forecastState.gameId = curGame;
+    window.updateForecastRankLabels(curGame);
+    await window.loadForecastCharacters(curGame);
+    window.updateGoalsCountBadge();
+    window.runGachaForecastCalculation();
+};
+
+window.updateForecastRankLabels = function(gameId) {
+    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const lblCur = document.getElementById("lbl-forecast-current-rank");
+    const lblTgt = document.getElementById("lbl-forecast-target-rank");
+    if (lblCur) lblCur.innerText = `${terms.term} Atual:`;
+    if (lblTgt) lblTgt.innerText = `Meta de ${terms.term}:`;
+
+    const curSelect = document.getElementById("forecast-current-rank");
+    if (curSelect) {
+        curSelect.innerHTML = `<option value="-1">${terms.unownedLabel}</option>`;
+        terms.ranks.forEach(r => {
+            const opt = document.createElement("option");
+            opt.value = r.val;
+            opt.innerText = r.label;
+            curSelect.appendChild(opt);
+        });
+    }
+
+    window.updateForecastTargetRankOptions();
+};
+
+window.updateForecastTargetRankOptions = function() {
+    const gameId = window.forecastState.gameId || "genshin";
+    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const curRank = parseInt(document.getElementById("forecast-current-rank")?.value ?? -1);
+    const tgtSelect = document.getElementById("forecast-target-rank");
+    if (!tgtSelect) return;
+
+    const prevTgt = parseInt(tgtSelect.value ?? 0);
+    tgtSelect.innerHTML = "";
+
+    terms.ranks.forEach(r => {
+        if (r.val > curRank || (curRank === -1 && r.val >= 0)) {
+            const opt = document.createElement("option");
+            opt.value = r.val;
+            const extra = curRank < 0
+                ? (r.val === 0 ? " (Obter Personagem Base)" : ` (+${r.val + 1} cópias)`)
+                : ` (+${r.val - curRank} cópias)`;
+            opt.innerText = `${terms.prefix}${r.val}${extra}`;
+            tgtSelect.appendChild(opt);
+        }
+    });
+
+    if (prevTgt > curRank) {
+        tgtSelect.value = prevTgt;
+    } else if (tgtSelect.options.length > 0) {
+        tgtSelect.value = tgtSelect.options[0].value;
+    }
+};
+
+window.loadForecastCharacters = async function(gameId) {
+    const select = document.getElementById("forecast-char-select");
+    if (!select) return;
+    select.innerHTML = `<option value="">Buscando personagens...</option>`;
+
+    try {
+        const res = await fetch(`/api/gacha/characters/${gameId}`);
+        const data = await res.json();
+        const chars = data.characters || [];
+        window.forecastState.charList = chars;
+
+        select.innerHTML = "";
+        const optGeneric = document.createElement("option");
+        optGeneric.value = "Próximo Personagem 5★ Limitado";
+        optGeneric.innerText = "✨ Próximo Banner Limitado / Novo Personagem";
+        select.appendChild(optGeneric);
+
+        const owned = chars.filter(c => c.owned);
+        const unowned = chars.filter(c => !c.owned);
+
+        if (unowned.length > 0) {
+            const grpUnowned = document.createElement("optgroup");
+            grpUnowned.label = "⚪ Personagens 5★ Não Obtidos";
+            unowned.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.name;
+                opt.innerText = `${c.name} (Banner / Rerun)`;
+                grpUnowned.appendChild(opt);
+            });
+            select.appendChild(grpUnowned);
+        }
+
+        if (owned.length > 0) {
+            const grpOwned = document.createElement("optgroup");
+            grpOwned.label = "🟢 Personagens 5★ no Roster (Constelações/Eidolons)";
+            owned.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.name;
+                opt.innerText = `✓ ${c.name} (${c.rank_str || 'C0'})`;
+                grpOwned.appendChild(opt);
+            });
+            select.appendChild(grpOwned);
+        }
+
+        select.onchange = () => {
+            const cName = select.value;
+            const cObj = chars.find(c => c.name === cName);
+            const curRankSel = document.getElementById("forecast-current-rank");
+            if (cObj && cObj.owned && curRankSel) {
+                curRankSel.value = String(cObj.current_rank >= 0 ? cObj.current_rank : 0);
+            } else if (curRankSel) {
+                curRankSel.value = "-1";
+            }
+            window.updateForecastTargetRankOptions();
+        };
+
+    } catch (e) {
+        console.error("Erro ao carregar personagens para forecast:", e);
+        select.innerHTML = `<option value="Próximo Banner 5★">Próximo Banner 5★</option>`;
+    }
+};
+
+window.runGachaForecastCalculation = async function() {
+    const gameId = window.forecastState.gameId || "genshin";
+    const charSelect = document.getElementById("forecast-char-select");
+    const charName = charSelect?.value || "Personagem 5★ Alvo";
+    const currentPulls = parseInt(document.getElementById("forecast-pulls-cur")?.value) || 0;
+    const currentPity = parseInt(document.getElementById("forecast-pity-cur")?.value) || 0;
+    const isGuaranteed = document.getElementById("forecast-guaranteed-cur")?.value === "true";
+    const currentRank = parseInt(document.getElementById("forecast-current-rank")?.value ?? -1);
+    const targetRank = parseInt(document.getElementById("forecast-target-rank")?.value ?? 0);
+    const targetDays = parseInt(document.getElementById("forecast-days-slider")?.value) || 21;
+
+    const hasDailyPass = document.getElementById("forecast-inc-pass")?.checked ?? false;
+    const hasBattlePass = document.getElementById("forecast-inc-bp")?.checked ?? false;
+    const incShop = document.getElementById("forecast-inc-shop")?.checked ?? true;
+    const incEvents = document.getElementById("forecast-inc-events")?.checked ?? true;
+
+    const runBtn = document.getElementById("btn-run-forecast-calc");
+    if (runBtn) {
+        runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Projetando acúmulo de gemas & Monte Carlo...`;
+        runBtn.disabled = true;
+    }
+
+    try {
+        const res = await fetch("/api/gacha/forecast/calculate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                game_id: gameId,
+                character_name: charName,
+                current_pulls: currentPulls,
+                current_pity: currentPity,
+                is_guaranteed: isGuaranteed,
+                current_rank: currentRank,
+                target_rank: targetRank,
+                target_days: targetDays,
+                has_daily_pass: hasDailyPass,
+                has_battle_pass: hasBattlePass,
+                include_shop_resets: incShop,
+                include_events_estimate: incEvents,
+                include_endgame_resets: incEvents
+            })
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || `Erro na API (${res.status})`);
+        }
+
+        const data = await res.json();
+        window.lastForecastResult = data;
+        window.renderGachaForecastResult(data);
+
+    } catch (err) {
+        console.error("Erro no Gacha Forecast:", err);
+        if (typeof showToast === "function") showToast("Erro ao calcular o Gacha Forecast: " + err.message);
+    } finally {
+        if (runBtn) {
+            runBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Calcular Projeção & Monte Carlo`;
+            runBtn.disabled = false;
+        }
+    }
+};
+
+window.renderGachaForecastResult = function(data) {
+    if (!data) return;
+
+    // 1. Parecer Estratégico
+    const verdict = data.verdict || {};
+    const badgeEl = document.getElementById("forecast-verdict-badge");
+    const textEl = document.getElementById("forecast-verdict-text");
+    const boxEl = document.getElementById("forecast-verdict-box");
+
+    if (badgeEl) {
+        badgeEl.innerText = verdict.badge || "Análise Concluída";
+        badgeEl.style.color = verdict.color || "#34d399";
+        badgeEl.style.background = `${verdict.color || '#34d399'}22`;
+    }
+    if (textEl) {
+        textEl.innerHTML = `<strong>${data.character_name} (${data.target_rank_str}):</strong> ${verdict.text || ''}`;
+    }
+    if (boxEl) {
+        boxEl.style.borderColor = `${verdict.color || '#34d399'}44`;
+        boxEl.style.background = `${verdict.color || '#34d399'}11`;
+    }
+
+    // 2. KPIs Principais
+    const kpiChance = document.getElementById("forecast-kpi-chance");
+    const kpiF2P = document.getElementById("forecast-kpi-f2p-comp");
+    const kpiTotal = document.getElementById("forecast-kpi-total-pulls");
+    const kpiFuture = document.getElementById("forecast-kpi-future-add");
+    const kpiWorst = document.getElementById("forecast-kpi-worst-case");
+    const kpiMissing = document.getElementById("forecast-kpi-missing-pulls");
+
+    if (kpiChance) {
+        kpiChance.innerText = `${data.success_rate}%`;
+        kpiChance.style.color = data.success_rate >= 75 ? "#34d399" : (data.success_rate >= 50 ? "#fbbf24" : "#f87171");
+    }
+    if (kpiF2P) {
+        kpiF2P.innerText = `(F2P Puro: ${data.f2p_pure_success_rate}%)`;
+    }
+    if (kpiTotal) {
+        kpiTotal.innerText = `${data.total_projected_pulls} tiros`;
+    }
+    if (kpiFuture) {
+        kpiFuture.innerText = `+${Math.round(data.income_breakdown?.total_future_pulls || 0)} novos no período`;
+    }
+    if (kpiWorst) {
+        kpiWorst.innerText = `${data.worst_case_pulls} tiros`;
+    }
+    if (kpiMissing) {
+        if (data.pulls_needed_for_guarantee === 0) {
+            kpiMissing.innerText = "✓ Garantido matematicamente!";
+            kpiMissing.style.color = "#34d399";
+        } else {
+            kpiMissing.innerText = `Faltam ${data.pulls_needed_for_guarantee} tiros p/ 100%`;
+            kpiMissing.style.color = "#fca5a5";
+        }
+    }
+
+    // 3. Breakdown de Renda
+    const inc = data.income_breakdown || {};
+    const totalLbl = document.getElementById("forecast-breakdown-total-lbl");
+    const listEl = document.getElementById("forecast-income-breakdown-list");
+
+    if (totalLbl) {
+        totalLbl.innerText = `${inc.total_projected_pulls} tiros (~${(inc.total_projected_gems_equiv || 0).toLocaleString()} gemas)`;
+    }
+
+    if (listEl) {
+        const items = [
+            { icon: "fa-solid fa-wallet", color: "#a855f7", label: `Saldo Atual Guardado`, pulls: inc.current_pulls, gems: inc.current_gems_equiv },
+            { icon: "fa-solid fa-calendar-check", color: "#38bdf8", label: inc.daily_f2p?.label, pulls: inc.daily_f2p?.pulls, gems: inc.daily_f2p?.gems },
+            ...(inc.daily_pass?.active ? [{ icon: "fa-solid fa-moon", color: "#fbbf24", label: inc.daily_pass?.label, pulls: inc.daily_pass?.pulls, gems: inc.daily_pass?.gems }] : []),
+            ...(inc.battle_pass?.active ? [{ icon: "fa-solid fa-award", color: "#ec4899", label: inc.battle_pass?.label, pulls: inc.battle_pass?.pulls, gems: Math.round(inc.battle_pass?.pulls * 160) }] : []),
+            ...(inc.shop_resets?.pulls > 0 ? [{ icon: "fa-solid fa-shop", color: "#10b981", label: inc.shop_resets?.label, pulls: inc.shop_resets?.pulls, gems: inc.shop_resets?.pulls * 160 }] : []),
+            ...(inc.events?.gems > 0 ? [{ icon: "fa-solid fa-star", color: "#f59e0b", label: inc.events?.label, pulls: inc.events?.pulls, gems: inc.events?.gems }] : []),
+            ...(inc.endgame?.gems > 0 ? [{ icon: "fa-solid fa-trophy", color: "#34d399", label: inc.endgame?.label, pulls: inc.endgame?.pulls, gems: inc.endgame?.gems }] : [])
+        ];
+
+        listEl.innerHTML = items.map(item => `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.04);">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <i class="${item.icon}" style="color: ${item.color}; font-size: 13px;"></i>
+                    <span style="color: #cbd5e1;">${item.label}</span>
+                </div>
+                <div style="text-align: right;">
+                    <strong style="color: #fff; font-size: 13px;">+${item.pulls} tiros</strong>
+                    <span style="font-size: 10px; color: var(--text-muted); display: block;">(${item.gems?.toLocaleString()} gemas)</span>
+                </div>
+            </div>
+        `).join('');
+    }
+};
+
+window.saveCurrentGachaGoal = async function() {
+    const data = window.lastForecastResult;
+    if (!data) {
+        if (typeof showToast === "function") showToast("Calcule a projeção antes de salvar a meta.");
+        return;
+    }
+
+    const saveBtn = document.getElementById("btn-save-forecast-goal");
+    if (saveBtn) {
+        saveBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Salvando no SQLite...`;
+        saveBtn.disabled = true;
+    }
+
+    try {
+        const res = await fetch("/api/gacha/goals", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                game_id: data.game_id,
+                character_name: data.character_name,
+                target_rank_str: data.target_rank_str,
+                current_pulls: data.current_pulls,
+                current_pity: data.current_pity,
+                is_guaranteed: data.is_guaranteed,
+                target_days: data.target_days,
+                has_daily_pass: Boolean(data.income_breakdown?.daily_pass?.active),
+                success_rate: data.success_rate,
+                projected_pulls: data.total_projected_pulls,
+                notes: `Meta de banner planejada para ${data.target_days} dias.`
+            })
+        });
+
+        if (res.ok) {
+            if (typeof showToast === "function") {
+                showToast(`Meta de ${data.character_name} salva com sucesso! 🎉`);
+            }
+            window.updateGoalsCountBadge();
+            if (saveBtn) {
+                saveBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Meta Salva no Banco!`;
+                setTimeout(() => {
+                    saveBtn.innerHTML = `<i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner`;
+                    saveBtn.disabled = false;
+                }, 2000);
+            }
+        }
+    } catch (e) {
+        console.error("Erro ao salvar meta:", e);
+        if (typeof showToast === "function") showToast("Erro ao salvar a meta no banco de dados.");
+        if (saveBtn) {
+            saveBtn.innerHTML = `<i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner`;
+            saveBtn.disabled = false;
+        }
+    }
+};
+
+window.updateGoalsCountBadge = async function() {
+    try {
+        const res = await fetch("/api/gacha/goals/all");
+        if (res.ok) {
+            const data = await res.json();
+            const count = (data.goals || []).length;
+            const badge = document.getElementById("gacha-goals-count-badge");
+            if (badge) badge.innerText = String(count);
+        }
+    } catch (e) {}
+};
+
+window.loadGachaGoals = async function(gameFilter = "all") {
+    const grid = document.getElementById("gacha-saved-goals-grid");
+    if (!grid) return;
+
+    grid.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Buscando metas salvas...</p></div>`;
+
+    const goalFilterBtns = document.querySelectorAll(".goals-game-btn");
+    goalFilterBtns.forEach(btn => {
+        btn.onclick = () => {
+            goalFilterBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            window.loadGachaGoals(btn.dataset.game);
+        };
+    });
+
+    try {
+        const res = await fetch(`/api/gacha/goals/${gameFilter === 'all' ? '' : gameFilter}`);
+        const data = await res.json();
+        const goals = data.goals || [];
+
+        window.updateGoalsCountBadge();
+
+        if (goals.length === 0) {
+            grid.innerHTML = `
+                <div style="text-align: center; color: var(--text-muted); padding: 50px 20px; grid-column: 1 / -1; background: rgba(0,0,0,0.2); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-bullseye" style="font-size: 36px; color: #64748b; margin-bottom: 12px;"></i>
+                    <h4 style="margin: 0 0 6px 0; color: #e2e8f0; font-size: 15px;">Nenhuma meta salva no momento</h4>
+                    <p style="margin: 0; font-size: 12px; color: #94a3b8;">Acesse a aba <strong>Gacha Forecast</strong> para planejar seus próximos banners e salvar metas estratégicas.</p>
+                </div>
+            `;
+            return;
+        }
+
+        grid.innerHTML = goals.map(g => {
+            const chance = g.success_rate;
+            const col = chance >= 75 ? '#34d399' : (chance >= 50 ? '#fbbf24' : '#ef4444');
+            const gameTitle = g.game_id === 'genshin' ? 'Genshin Impact' : (g.game_id === 'hsr' ? 'Honkai: Star Rail' : 'Zenless Zone Zero');
+
+            return `
+                <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-top: 3px solid ${col}; border-radius: 14px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                            <div>
+                                <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">${gameTitle}</span>
+                                <h4 style="margin: 2px 0 0 0; color: #fff; font-size: 17px; font-weight: 800;">${g.character_name}</h4>
+                            </div>
+                            <span style="font-size: 12px; font-weight: 800; background: ${col}22; color: ${col}; padding: 3px 10px; border-radius: 8px; border: 1px solid ${col}44;">
+                                Meta ${g.target_rank_str}
+                            </span>
+                        </div>
+
+                        <!-- Barra de Probabilidade -->
+                        <div style="margin: 12px 0;">
+                            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                                <span style="color: var(--text-muted);">Probabilidade Calculada:</span>
+                                <strong style="color: ${col};">${chance}%</strong>
+                            </div>
+                            <div class="gacha-dist-bar-track" style="height: 8px;">
+                                <div class="gacha-dist-bar-fill target-reached" style="width: ${chance}%; background: ${col};"></div>
+                            </div>
+                        </div>
+
+                        <!-- Resumo dos Dados -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
+                            <div>
+                                <span style="color: var(--text-muted); display: block;">Tiros Projetados:</span>
+                                <strong style="color: #fbbf24; font-size: 13px;">${g.projected_pulls} tiros</strong>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); display: block;">Janela de Tempo:</span>
+                                <strong style="color: #38bdf8; font-size: 13px;">${g.target_days} dias</strong>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); display: block;">Pity Inicial:</span>
+                                <strong style="color: #cbd5e1;">${g.current_pity} (${g.is_guaranteed ? 'Garantido' : '50/50'})</strong>
+                            </div>
+                            <div>
+                                <span style="color: var(--text-muted); display: block;">Passe da Lua/Exp:</span>
+                                <strong style="color: ${g.has_daily_pass ? '#34d399' : '#94a3b8'};">${g.has_daily_pass ? 'Ativo (+90/d)' : 'Inativo'}</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botões de Ação -->
+                    <div style="display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
+                        <button onclick="window.deleteGachaGoal(${g.id})" class="secondary-btn" style="padding: 6px 10px; font-size: 11px; color: #f87171; border-color: rgba(239, 68, 68, 0.4); flex: 1;">
+                            <i class="fa-solid fa-trash-can"></i> Excluir
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+    } catch (e) {
+        console.error("Erro ao carregar metas:", e);
+        grid.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 20px; grid-column: 1 / -1;">Erro ao carregar metas salvas.</div>`;
+    }
+};
+
+window.deleteGachaGoal = async function(goalId) {
+    if (!confirm("Deseja realmente excluir esta meta de banner?")) return;
+    try {
+        const res = await fetch(`/api/gacha/goals/${goalId}`, { method: "DELETE" });
+        if (res.ok) {
+            if (typeof showToast === "function") showToast("Meta excluída com sucesso.");
+            const activeBtn = document.querySelector(".goals-game-btn.active");
+            window.loadGachaGoals(activeBtn ? activeBtn.dataset.game : "all");
+        }
+    } catch (e) {
+        console.error("Erro ao excluir meta:", e);
+    }
+};
+
 
 // ==========================================================================
 // CONTROLADOR DO ÍNDICE DE SORTE & EFICIÊNCIA DE ROLAGENS (LUCK DASHBOARD)
@@ -7606,6 +8983,642 @@ window.copyRoastToClipboard = function() {
         console.error("Erro ao copiar:", err);
     });
 };
+
+// =========================================================================
+// PARTE 6: ASSISTENTE ESTRATÉGICO & DIAGNÓSTICO DE LACUNAS DA CONTA (GAPS)
+// =========================================================================
+
+window.currentGapsGame = "hsr";
+window.lastGapsAnalysis = null;
+
+window.switchAuditSubView = function(viewName) {
+    const btnTierlist = document.getElementById("btn-subnav-audit-tierlist");
+    const btnGaps = document.getElementById("btn-subnav-audit-gaps");
+    const viewTierlist = document.getElementById("audit-view-tierlist");
+    const viewGaps = document.getElementById("audit-view-gaps");
+
+    if (viewName === "tierlist") {
+        if (viewTierlist) viewTierlist.style.display = "block";
+        if (viewGaps) viewGaps.style.display = "none";
+        if (btnTierlist) {
+            btnTierlist.className = "subnav-btn active";
+            btnTierlist.style.border = "1px solid rgba(168, 85, 247, 0.4)";
+            btnTierlist.style.background = "rgba(168, 85, 247, 0.15)";
+            btnTierlist.style.color = "#c084fc";
+        }
+        if (btnGaps) {
+            btnGaps.className = "subnav-btn";
+            btnGaps.style.border = "1px solid rgba(255,255,255,0.1)";
+            btnGaps.style.background = "rgba(0,0,0,0.2)";
+            btnGaps.style.color = "var(--text-muted)";
+        }
+    } else {
+        if (viewTierlist) viewTierlist.style.display = "none";
+        if (viewGaps) viewGaps.style.display = "block";
+        if (btnTierlist) {
+            btnTierlist.className = "subnav-btn";
+            btnTierlist.style.border = "1px solid rgba(255,255,255,0.1)";
+            btnTierlist.style.background = "rgba(0,0,0,0.2)";
+            btnTierlist.style.color = "var(--text-muted)";
+        }
+        if (btnGaps) {
+            btnGaps.className = "subnav-btn active";
+            btnGaps.style.border = "1px solid rgba(56, 189, 248, 0.4)";
+            btnGaps.style.background = "rgba(56, 189, 248, 0.15)";
+            btnGaps.style.color = "#38bdf8";
+        }
+        window.loadAccountGapsAnalysis(window.currentGapsGame || "hsr");
+    }
+};
+
+window.loadAccountGapsAnalysis = async function(gameId) {
+    window.currentGapsGame = gameId;
+    const bodyEl = document.getElementById("tab-gaps-content-body");
+    if (!bodyEl) return;
+
+    // Atualiza pills de jogo ativas
+    document.querySelectorAll(".tab-gaps-game-btn").forEach(btn => {
+        if (btn.getAttribute("data-game") === gameId) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+
+    bodyEl.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #38bdf8;"></i>
+            <p style="margin-top: 12px; font-size: 13px;">Auditando Roster, Sinergias e Cobertura de ${gameId.toUpperCase()}...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`/api/strategy/account-gaps/${gameId}`);
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || `Erro na API (${res.status})`);
+        }
+        const data = await res.json();
+        window.lastGapsAnalysis = data;
+        window.renderAccountGapsResult(data);
+    } catch (err) {
+        console.error("Erro ao carregar análise de lacunas:", err);
+        bodyEl.innerHTML = `
+            <div style="padding: 24px; text-align: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #f87171; font-size: 24px;"></i>
+                <h4 style="color: #fca5a5; margin: 8px 0;">Falha na Auditoria Estratégica</h4>
+                <p style="color: var(--text-muted); font-size: 12px;">${err.message}</p>
+                <button onclick="window.loadAccountGapsAnalysis('${gameId}')" class="primary-btn" style="margin-top: 10px; padding: 6px 14px; font-size: 12px;">Tentar Novamente</button>
+            </div>
+        `;
+    }
+};
+
+window.renderAccountGapsResult = function(data) {
+    const bodyEl = document.getElementById("tab-gaps-content-body");
+    if (!bodyEl || !data) return;
+
+    const score = data.overall_score || 0;
+    const grade = data.score_grade || "B";
+    const label = data.score_label || "";
+    const color = data.score_color || "#38bdf8";
+
+    // 1. Header KPI
+    let html = `
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; margin-bottom: 20px;">
+            <!-- CARD DE PONTUAÇÃO DE SAÚDE DA CONTA -->
+            <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6)); border: 1px solid ${color}44; border-radius: 16px; padding: 20px; display: flex; align-items: center; gap: 18px; position: relative; overflow: hidden; box-shadow: 0 4px 20px ${color}15;">
+                <div style="position: absolute; right: -15px; bottom: -15px; font-size: 90px; color: ${color}0d; pointer-events: none; font-weight: 900;">${grade}</div>
+                <div style="width: 75px; height: 75px; border-radius: 50%; border: 4px solid ${color}; display: flex; flex-direction: column; align-items: center; justify-content: center; background: ${color}15; flex-shrink: 0;">
+                    <span style="font-size: 22px; font-weight: 800; color: ${color}; line-height: 1;">${score}</span>
+                    <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-top: 2px;">/100</span>
+                </div>
+                <div>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <span style="background: ${color}22; color: ${color}; border: 1px solid ${color}66; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800;">RANK ${grade}</span>
+                        <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">Saúde da Conta</h3>
+                    </div>
+                    <p style="margin: 0; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${label}</p>
+                </div>
+            </div>
+
+            <!-- CARD PRONTIDÃO DE ENDGAME -->
+            <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.6)); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">Prontidão de Endgame</span>
+                        <h4 style="margin: 0; font-size: 17px; color: #38bdf8; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-swords"></i> ${data.endgame_readiness?.status || '1/2 Equipes'}
+                        </h4>
+                    </div>
+                    <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">
+                        ${data.built_characters} / ${data.total_characters} Prontos
+                    </span>
+                </div>
+                <p style="margin: 8px 0 0 0; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${data.endgame_readiness?.summary || ''}</p>
+            </div>
+        </div>
+    `;
+
+    // 2. Grid de Arquétipos
+    html += `
+        <div style="margin-bottom: 24px;">
+            <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-shield-cat" style="color: #a855f7;"></i> Cobertura de Arquétipos Essenciais
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px;">
+    `;
+
+    (data.archetypes_summary || []).forEach(arch => {
+        const charListHtml = (arch.owned_characters && arch.owned_characters.length > 0)
+            ? arch.owned_characters.map(c => `<span style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 2px 7px; border-radius: 6px; font-size: 11px; color: #e2e8f0;">${c}</span>`).join(" ")
+            : `<span style="color: #fca5a5; font-size: 11px; font-style: italic;">Nenhum identificado</span>`;
+
+        html += `
+            <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 13px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid ${arch.icon || 'fa-star'}" style="color: ${arch.status_color || '#38bdf8'};"></i> ${arch.title}
+                        </span>
+                        <span style="background: ${arch.status_color}22; color: ${arch.status_color}; border: 1px solid ${arch.status_color}55; padding: 2px 7px; border-radius: 6px; font-size: 10px; font-weight: 700;">
+                            ${arch.status} (${arch.owned_count}/${arch.target_count})
+                        </span>
+                    </div>
+                    <p style="margin: 0 0 10px 0; font-size: 11px; color: var(--text-muted); line-height: 1.3;">${arch.description}</p>
+                </div>
+                <div>
+                    <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Possuídos na Função:</div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">${charListHtml}</div>
+                </div>
+            </div>
+        `;
+    });
+    html += `</div></div>`;
+
+    // 3. Matriz de Cobertura Elemental
+    if (data.elemental_coverage && data.elemental_coverage.length > 0) {
+        html += `
+            <div style="margin-bottom: 24px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-atom" style="color: #38bdf8;"></i> Matriz de Cobertura Elemental
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr)); gap: 8px;">
+        `;
+        data.elemental_coverage.forEach(el => {
+            const stCol = el.status === "Forte" ? "#10b981" : (el.status === "Moderado" ? "#f59e0b" : "#ef4444");
+            html += `
+                <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 12px; text-align: center;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+                        <i class="fa-solid ${el.icon}" style="color: ${el.color}; font-size: 13px;"></i>
+                        <strong style="font-size: 12px; color: var(--text-primary);">${el.element}</strong>
+                    </div>
+                    <div style="font-size: 11px; color: ${stCol}; font-weight: 700;">
+                        ${el.built_count} Prontos (${el.count} total)
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+    }
+
+    // 4. Lacunas Críticas & Gargalos
+    html += `
+        <div style="margin-bottom: 24px;">
+            <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Gargalos & Lacunas Estratégicas Detectadas
+            </h4>
+    `;
+
+    if (!data.critical_gaps || data.critical_gaps.length === 0) {
+        html += `
+            <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 18px; text-align: center; color: #34d399;">
+                <i class="fa-solid fa-circle-check fa-2x" style="margin-bottom: 8px;"></i>
+                <h4 style="margin: 0 0 4px 0;">Nenhuma Lacuna Crítica Detectada!</h4>
+                <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Sua conta possui excelente equilíbrio em todas as funções essenciais para o Endgame.</p>
+            </div>
+        `;
+    } else {
+        html += `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 12px;">`;
+        data.critical_gaps.forEach(gap => {
+            const sevColor = gap.severity_color || "#ef4444";
+            const recCharsHtml = (gap.recommended_characters || []).map(rc => `<strong style="color: #38bdf8;">${rc}</strong>`).join(", ");
+            html += `
+                <div style="background: rgba(15, 23, 42, 0.75); border: 1px solid ${sevColor}44; border-left: 4px solid ${sevColor}; border-radius: 12px; padding: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                        <span style="font-size: 11px; font-weight: 800; color: ${sevColor}; text-transform: uppercase;">[${gap.severity}] ${gap.badge || ''}</span>
+                    </div>
+                    <h4 style="margin: 0 0 6px 0; font-size: 14px; color: var(--text-primary);">${gap.title}</h4>
+                    <p style="margin: 0 0 8px 0; font-size: 12px; color: var(--text-secondary); line-height: 1.4;">${gap.description}</p>
+                    <div style="background: rgba(0,0,0,0.3); padding: 8px 10px; border-radius: 8px; font-size: 11px; line-height: 1.4; border: 1px solid rgba(255,255,255,0.04);">
+                        <div style="color: #fca5a5; margin-bottom: 4px;"><strong>Impacto no Endgame:</strong> ${gap.endgame_impact}</div>
+                        <div style="color: #cbd5e1;"><strong>Alvos Sugeridos:</strong> ${recCharsHtml}</div>
+                    </div>
+                </div>
+            `;
+        });
+        html += `</div>`;
+    }
+    html += `</div>`;
+
+    // 5. Recomendações Ranqueadas de Puxadas (Gacha Strategy)
+    if (data.pull_recommendations && data.pull_recommendations.length > 0) {
+        html += `
+            <div style="margin-bottom: 24px;">
+                <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Prioridades Estratégicas no Gacha & Banners Futuros
+                </h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px;">
+        `;
+        data.pull_recommendations.forEach(rec => {
+            const charTags = (rec.characters || []).map(c => `<span style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">${c}</span>`).join(" ");
+            html += `
+                <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 14px; position: relative;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #020617; font-weight: 800; font-size: 10px; padding: 2px 8px; border-radius: 10px;">
+                            #${rec.priority_rank} ${rec.badge || 'Prioridade'}
+                        </span>
+                        <span style="font-size: 11px; color: #34d399; font-weight: 700;">${rec.impact_score || ''}</span>
+                    </div>
+                    <h4 style="margin: 0 0 6px 0; font-size: 14px; color: #f8fafc;">${rec.archetype}</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px;">${charTags}</div>
+                    <p style="margin: 0; font-size: 11px; color: var(--text-secondary); line-height: 1.4;">${rec.reason}</p>
+                </div>
+            `;
+        });
+        html += `</div></div>`;
+    }
+
+    // 6. Box de Parecer da IA & Ação Rápida
+    html += `
+        <div id="ai-strategic-verdict-box" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; color: #38bdf8;">
+                        <i class="fa-solid fa-brain" style="font-size: 18px;"></i>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0; font-size: 15px; color: var(--text-primary);">Parecer Estratégico da IA (Groq RAG)</h4>
+                        <span style="font-size: 11px; color: var(--text-muted);">Recomendações customizadas em tempo real alimentadas pelo seu Roster</span>
+                    </div>
+                </div>
+                <button id="btn-request-ai-verdict" onclick="window.consultAiAccountGaps()" class="primary-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Parecer Completo da IA
+                </button>
+            </div>
+
+            <div id="ai-verdict-content-area" style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
+                <p style="margin: 0; color: var(--text-muted); font-style: italic;">
+                    Clique no botão acima para que a inteligência artificial analise suas lacunas e formule o plano ideal de composições de times e banners prioritários.
+                </p>
+            </div>
+        </div>
+    `;
+
+    bodyEl.innerHTML = html;
+};
+
+window.consultAiAccountGaps = async function(customQuestion) {
+    const gameId = window.currentGapsGame || "hsr";
+    const contentArea = document.getElementById("ai-verdict-content-area");
+    const reqBtn = document.getElementById("btn-request-ai-verdict");
+    const topBtn = document.getElementById("btn-ask-ai-gaps-action");
+
+    if (contentArea) {
+        contentArea.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 10px; padding: 16px 0; color: #38bdf8;">
+                <i class="fa-solid fa-spinner fa-spin fa-lg"></i>
+                <span>Avaliando combinações de times, Roster e metagame com o modelo Groq...</span>
+            </div>
+        `;
+    }
+
+    if (reqBtn) reqBtn.disabled = true;
+    if (topBtn) topBtn.disabled = true;
+
+    try {
+        const res = await fetch("/api/strategy/ask-ai-gaps", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                game_id: gameId,
+                custom_question: customQuestion || null
+            })
+        });
+
+        if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.detail || `Erro (${res.status})`);
+        }
+
+        const data = await res.json();
+        if (contentArea) {
+            const parsedMd = typeof marked !== "undefined" ? marked.parse(data.ai_response || "") : data.ai_response;
+            contentArea.innerHTML = `
+                <div class="ai-rendered-response" style="line-height: 1.6; color: #e2e8f0;">
+                    ${parsedMd}
+                </div>
+            `;
+        }
+    } catch (err) {
+        console.error("Erro ao consultar IA sobre lacunas:", err);
+        if (contentArea) {
+            contentArea.innerHTML = `
+                <div style="color: #fca5a5; padding: 10px 0;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Não foi possível obter o parecer da IA: ${err.message}
+                </div>
+            `;
+        }
+    } finally {
+        if (reqBtn) reqBtn.disabled = false;
+        if (topBtn) topBtn.disabled = false;
+    }
+};
+
+// Vinculação de eventos para as pills de jogo de lacunas
+document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll(".tab-gaps-game-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const g = btn.getAttribute("data-game");
+            if (g) window.loadAccountGapsAnalysis(g);
+        });
+    });
+
+    // Carrega o Morning Briefing automaticamente ao abrir a aplicação
+    setTimeout(() => {
+        if (typeof window.loadMorningBriefing === "function") {
+            window.loadMorningBriefing();
+        }
+    }, 800);
+});
+
+// =========================================================================
+// PARTE 7: MORNING BRIEFING & CONSELHEIRO DE SÍNTESE / RESINA AUTOMODELADORA
+// =========================================================================
+
+window.loadMorningBriefing = async function() {
+    const gridEl = document.getElementById("briefing-content-grid");
+    const dateLbl = document.getElementById("briefing-date-lbl");
+    const weekdayTag = document.getElementById("briefing-weekday-tag");
+    if (!gridEl) return;
+
+    try {
+        const res = await fetch("/api/briefing/today");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        if (dateLbl) dateLbl.innerText = `${data.weekday}, ${data.date} • Tarefas e Metas Consolidadas`;
+        if (weekdayTag) weekdayTag.innerText = data.weekday;
+
+        let html = "";
+
+        // 1. Cards de Tarefas dos 3 Jogos
+        (data.games || []).forEach(g => {
+            html += `
+                <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <span style="font-size: 13px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px;">
+                            <span>${g.icon}</span> ${g.game_name}
+                        </span>
+                        <span style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">
+                            ${g.characters_count} chars
+                        </span>
+                    </div>
+                    <div style="font-size: 12px; color: #cbd5e1; line-height: 1.4; margin-bottom: 10px;">
+                        <strong style="color: #fbbf24; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px;">${g.domain_type}:</strong>
+                        ${g.top_task}
+                    </div>
+                    <button onclick="document.querySelector('[data-tab=${g.game_id}]')?.click()" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer;">
+                        Abrir Galeria & Resina ➔
+                    </button>
+                </div>
+            `;
+        });
+
+        // 2. Card de Metas de Gacha Forecast
+        if (data.gacha_goals && data.gacha_goals.length > 0) {
+            let goalsHtml = data.gacha_goals.map(gl => `
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 6px 8px; border-radius: 6px; margin-bottom: 4px; font-size: 11px;">
+                    <strong style="color: #f8fafc;">${gl.character_name} (${gl.target_rank_str})</strong>
+                    <span style="color: ${gl.success_rate >= 75 ? '#34d399' : '#fbbf24'}; font-weight: 800;">${gl.success_rate}% (${gl.target_days}d)</span>
+                </div>
+            `).join("");
+
+            html += `
+                <div style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.12), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 13px; font-weight: 700; color: #c084fc; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Metas de Gacha
+                            </span>
+                            <span style="font-size: 10px; color: var(--text-muted);">Monte Carlo</span>
+                        </div>
+                        <div>${goalsHtml}</div>
+                    </div>
+                    <button onclick="document.querySelector('[data-tab=gacha]')?.click()" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer; margin-top: 8px;">
+                        Ver Simulador & Forecast ➔
+                    </button>
+                </div>
+            `;
+        }
+
+        // 3. Card de Dica de Síntese
+        if (data.top_craft) {
+            const tc = data.top_craft;
+            html += `
+                <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 13px; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-cube"></i> Síntese Recomendada
+                            </span>
+                            <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">Alta Prioridade</span>
+                        </div>
+                        <div style="font-size: 12px; color: #e2e8f0; line-height: 1.4;">
+                            Fabricar <strong>${tc.slot_name}</strong> (${tc.recommended_main_stat}) para <strong style="color: #38bdf8;">${tc.character_name}</strong>.
+                            <div style="color: #34d399; font-size: 11px; margin-top: 4px;"><strong>Ganho:</strong> ${tc.expected_gain}</div>
+                        </div>
+                    </div>
+                    <button onclick="document.querySelector('[data-tab=trash]')?.click(); window.switchTrashSubView('craft');" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer; margin-top: 8px;">
+                        Ver Conselheiro de Síntese ➔
+                    </button>
+                </div>
+            `;
+        }
+
+        gridEl.innerHTML = html;
+
+    } catch (err) {
+        console.error("Erro ao carregar Morning Briefing:", err);
+        gridEl.innerHTML = `
+            <div style="text-align: center; color: var(--text-muted); padding: 20px; grid-column: 1 / -1;">
+                <p style="margin: 0; font-size: 12px;">Não foi possível carregar o resumo matinal automaticamente.</p>
+                <button onclick="window.loadMorningBriefing()" class="secondary-btn" style="margin-top: 6px; padding: 4px 10px; font-size: 11px;">Recarregar</button>
+            </div>
+        `;
+    }
+};
+
+window.sendMorningBriefingNow = async function() {
+    const btn = document.getElementById("btn-send-briefing-webhook");
+    if (btn) {
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Enviando...`;
+        btn.disabled = true;
+    }
+
+    try {
+        const res = await fetch("/api/briefing/send-now", { method: "POST" });
+        const data = await res.json();
+        if (typeof showToast === "function") {
+            showToast("☀️ Morning Briefing enviado com sucesso para seus Webhooks configurados!");
+        } else {
+            alert("Morning Briefing enviado com sucesso!");
+        }
+    } catch (err) {
+        console.error("Erro ao enviar Morning Briefing:", err);
+        if (typeof showToast === "function") showToast("Erro ao enviar webhook: " + err.message);
+    } finally {
+        if (btn) {
+            btn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord & Telegram`;
+            btn.disabled = false;
+        }
+    }
+};
+
+window.currentTrashSubView = "finder";
+window.currentTrashGame = "hsr";
+
+window.switchTrashSubView = function(viewName) {
+    window.currentTrashSubView = viewName;
+    const btnFinder = document.getElementById("btn-subnav-trash-finder");
+    const btnCraft = document.getElementById("btn-subnav-trash-craft");
+    const viewFinder = document.getElementById("trash-view-finder");
+    const viewCraft = document.getElementById("trash-view-craft");
+
+    if (viewName === "finder") {
+        if (viewFinder) viewFinder.style.display = "block";
+        if (viewCraft) viewCraft.style.display = "none";
+        if (btnFinder) {
+            btnFinder.className = "subnav-btn active";
+            btnFinder.style.border = "1px solid rgba(239, 68, 68, 0.4)";
+            btnFinder.style.background = "rgba(239, 68, 68, 0.15)";
+            btnFinder.style.color = "#f87171";
+        }
+        if (btnCraft) {
+            btnCraft.className = "subnav-btn";
+            btnCraft.style.border = "1px solid rgba(255,255,255,0.1)";
+            btnCraft.style.background = "rgba(0,0,0,0.2)";
+            btnCraft.style.color = "var(--text-muted)";
+        }
+    } else {
+        if (viewFinder) viewFinder.style.display = "none";
+        if (viewCraft) viewCraft.style.display = "block";
+        if (btnFinder) {
+            btnFinder.className = "subnav-btn";
+            btnFinder.style.border = "1px solid rgba(255,255,255,0.1)";
+            btnFinder.style.background = "rgba(0,0,0,0.2)";
+            btnFinder.style.color = "var(--text-muted)";
+        }
+        if (btnCraft) {
+            btnCraft.className = "subnav-btn active";
+            btnCraft.style.border = "1px solid rgba(245, 158, 11, 0.4)";
+            btnCraft.style.background = "rgba(245, 158, 11, 0.15)";
+            btnCraft.style.color = "#fbbf24";
+        }
+        window.loadCraftRecommendations(window.currentTrashGame || "hsr");
+    }
+};
+
+window.loadCraftRecommendations = async function(gameId) {
+    window.currentTrashGame = gameId;
+    const bodyEl = document.getElementById("tab-craft-recommendations-body");
+    if (!bodyEl) return;
+
+    bodyEl.innerHTML = `
+        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #f59e0b;"></i>
+            <p style="margin-top: 10px; font-size: 13px;">Calculando os melhores alvos para uso de Resina Automodeladora / Elixir...</p>
+        </div>
+    `;
+
+    try {
+        const res = await fetch(`/api/relics/craft-recommendations/${gameId}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+
+        let html = `
+            <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                    <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); display: flex; align-items: center; justify-content: center; color: #fbbf24; font-size: 18px;">
+                        <i class="fa-solid ${data.crafting_item_icon || 'fa-cube'}"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">${data.crafting_item_name}</h3>
+                        <span style="font-size: 11px; color: var(--text-muted);">Recomendações baseadas nas piores peças dos personagens meta do seu Roster</span>
+                    </div>
+                </div>
+                <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                    ${typeof marked !== "undefined" ? marked.parse(data.summary_tip || '') : data.summary_tip}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px;">
+        `;
+
+        (data.recommendations || []).forEach(rec => {
+            const substatsHtml = (rec.recommended_substats || []).map(s => `<span style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px; font-size: 10px; color: #cbd5e1;">${s}</span>`).join(" ");
+
+            html += `
+                <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                ${rec.character_icon ? `<img src="${rec.character_icon}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #fbbf24;">` : ''}
+                                <strong style="font-size: 15px; color: var(--text-primary);">${rec.character_name}</strong>
+                            </div>
+                            <span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #020617; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;">
+                                #${rec.priority_rank} ${rec.urgency}
+                            </span>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.04);">
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Set & Slot Alvo:</div>
+                            <div style="font-size: 13px; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">
+                                <i class="fa-solid ${rec.slot_icon || 'fa-gem'}" style="color: #fbbf24; margin-right: 4px;"></i> ${rec.target_set_name} • ${rec.slot_name}
+                            </div>
+                            <div style="font-size: 12px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">
+                                🎯 Atributo Principal: ${rec.recommended_main_stat}
+                            </div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 4px;">${substatsHtml}</div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div style="font-size: 11px; color: #fca5a5; margin-bottom: 4px;">
+                            <i class="fa-solid fa-circle-info"></i> ${rec.current_piece_status}
+                        </div>
+                        <div style="font-size: 11px; color: #34d399; font-weight: 700;">
+                            ✨ ${rec.expected_gain}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += `</div>`;
+        bodyEl.innerHTML = html;
+
+    } catch (err) {
+        console.error("Erro ao carregar recomendações de craft:", err);
+        bodyEl.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
+                <p>Não foi possível calcular as recomendações de síntese: ${err.message}</p>
+            </div>
+        `;
+    }
+};
+
+
 
 
 

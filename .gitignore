@@ -59,7 +59,7 @@ hoyo_app.db
 *.sqlite
 *.sqlite3
 
-# Markdown, Data Exports & Caches (Generated)
+# Markdown, Data Exports & Caches (Generated Scrapings)
 hsr/
 zzz/
 genshin/
@@ -76,16 +76,15 @@ assets/relics/
 assets/elements/
 assets/logo.ico
 
-# Logs, Compressed Archives & Temporary Files
+# Logs, Compressed Archives & Temporary Scratch Scripts
 *.log
 *.tmp
 *.zip
 *.tar.gz
 *.bak
-check_*.py
-test_*.py
 scratch_*.py
-print_roster.py
+temp_*.py
+check_*.py
 scratch/
 
 # Build & Executable Packaging (PyInstaller)

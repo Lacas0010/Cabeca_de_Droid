@@ -266,6 +266,62 @@ def init_db() -> None:
         )
         """)
         
+        # 9. Tabela de Histórico de Resgate de Códigos Promocionais
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS promo_code_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id TEXT NOT NULL,
+            uid TEXT NOT NULL,
+            code TEXT NOT NULL,
+            status TEXT NOT NULL,
+            message TEXT,
+            redeemed_at TEXT NOT NULL,
+            UNIQUE(game_id, uid, code)
+        )
+        """)
+
+        # 10. Tabela de Manifestos de Dados Estáticos e Datamines
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS static_data_manifests (
+            game_id TEXT PRIMARY KEY,
+            version TEXT,
+            item_count INTEGER,
+            last_synced TEXT NOT NULL,
+            status TEXT NOT NULL,
+            source TEXT
+        )
+        """)
+
+        # 11. Tabela de Tarefas Concluídas da Ordem de Serviço de Farm Diário
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS daily_farm_tasks_completed (
+            date TEXT NOT NULL,
+            game_id TEXT NOT NULL,
+            task_id TEXT NOT NULL,
+            completed_at TEXT NOT NULL,
+            PRIMARY KEY (date, game_id, task_id)
+        )
+        """)
+
+        # 12. Tabela de Metas de Banners & Gacha Forecast
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS gacha_forecast_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            game_id TEXT NOT NULL,
+            character_name TEXT NOT NULL,
+            target_rank_str TEXT NOT NULL,
+            current_pulls INTEGER NOT NULL,
+            current_pity INTEGER NOT NULL,
+            is_guaranteed INTEGER NOT NULL,
+            target_days INTEGER NOT NULL,
+            has_daily_pass INTEGER NOT NULL,
+            success_rate REAL NOT NULL,
+            projected_pulls INTEGER NOT NULL,
+            notes TEXT,
+            created_at TEXT NOT NULL
+        )
+        """)
+        
         # Garante linha única de configuração de segurança
         cursor.execute("INSERT OR IGNORE INTO security_settings (id, pin_enabled, allow_lan_access, updated_at) VALUES (1, 0, 0, ?)", (datetime.now().isoformat(),))
         
@@ -275,6 +331,10 @@ def init_db() -> None:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_checkin_date ON daily_checkin_logs(date)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_uid ON account_snapshots(game_id, uid)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_endgame_game_uid ON endgame_records(game_id, uid)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_promo_history_lookup ON promo_code_history(game_id, uid, code)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_static_data_game ON static_data_manifests(game_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_farm_tasks_lookup ON daily_farm_tasks_completed(date, game_id)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_gacha_goals_game ON gacha_forecast_goals(game_id)")
         
     print("[INFO] Banco de dados SQLite inicializado com sucesso.")
     fix_skills_json_max_levels()
@@ -1107,6 +1167,195 @@ def is_lan_access_allowed() -> bool:
             return bool(row["allow_lan_access"]) if row else False
     except Exception:
         return False
+
+# ==========================================
+# 9. GESTÃO DE CÓDIGOS PROMOCIONAIS & AUTO-REDEEM
+# ==========================================
+def save_code_redemption(game_id: str, uid: str, code: str, status: str, message: str) -> None:
+    """Registra uma tentativa ou sucesso de resgate de código promocional no SQLite."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        now = datetime.now().isoformat()
+        cursor.execute("""
+        INSERT INTO promo_code_history (game_id, uid, code, status, message, redeemed_at)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(game_id, uid, code) DO UPDATE SET
+            status = excluded.status,
+            message = excluded.message,
+            redeemed_at = excluded.redeemed_at
+        """, (game_id.lower().strip(), str(uid).strip(), str(code).upper().strip(), status.lower().strip(), message, now))
+
+def get_redeemed_codes(game_id: str, uid: str) -> set:
+    """Retorna o conjunto de códigos que já foram processados (sucesso, já resgatado ou inválido) para a conta."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT code FROM promo_code_history 
+        WHERE game_id = ? AND uid = ? AND status IN ('success', 'claimed', 'invalid')
+        """, (game_id.lower().strip(), str(uid).strip()))
+        rows = cursor.fetchall()
+        return {r["code"].upper() for r in rows}
+
+def get_code_redemption_history(game_id: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+    """Retorna o histórico cronológico de resgates de códigos."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if game_id:
+            cursor.execute("""
+            SELECT * FROM promo_code_history WHERE game_id = ? ORDER BY redeemed_at DESC LIMIT ?
+            """, (game_id.lower().strip(), limit))
+        else:
+            cursor.execute("""
+            SELECT * FROM promo_code_history ORDER BY redeemed_at DESC LIMIT ?
+            """, (limit,))
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+
+# ==========================================
+# 10. GESTÃO DE MANIFESTOS DE DADOS ESTÁTICOS
+# ==========================================
+def save_static_data_manifest(game_id: str, version: str, item_count: int, status: str, source: str) -> None:
+    """Registra ou atualiza o status de sincronização de um manifesto de jogo no SQLite."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        now = datetime.now().isoformat()
+        cursor.execute("""
+        INSERT INTO static_data_manifests (game_id, version, item_count, last_synced, status, source)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT(game_id) DO UPDATE SET
+            version = excluded.version,
+            item_count = excluded.item_count,
+            last_synced = excluded.last_synced,
+            status = excluded.status,
+            source = excluded.source
+        """, (game_id.lower().strip(), version, item_count, now, status, source))
+
+def get_static_data_manifests() -> List[Dict[str, Any]]:
+    """Retorna o status de sincronização de todos os manifestos de dados estáticos."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM static_data_manifests ORDER BY game_id ASC")
+        rows = cursor.fetchall()
+        return [dict(r) for r in rows]
+
+def get_static_data_manifest(game_id: str) -> Optional[Dict[str, Any]]:
+    """Retorna o manifesto de um jogo específico."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM static_data_manifests WHERE game_id = ?", (game_id.lower().strip(),))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
+# ==========================================
+# 11. TAREFAS DE FARM DIÁRIO (ORDEM DE SERVIÇO)
+# ==========================================
+def get_completed_farm_tasks(date_str: str, game_id: str) -> List[str]:
+    """Retorna a lista de IDs de tarefas de farm marcadas como concluídas para a data e jogo."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        SELECT task_id FROM daily_farm_tasks_completed
+        WHERE date = ? AND game_id = ?
+        """, (date_str, game_id.lower().strip()))
+        return [r["task_id"] for r in cursor.fetchall()]
+
+def set_farm_task_completed(date_str: str, game_id: str, task_id: str, completed: bool = True) -> bool:
+    """Marca ou desmarca uma tarefa de farm como concluída no banco de dados SQLite."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if completed:
+            now_iso = datetime.now().isoformat()
+            cursor.execute("""
+            INSERT OR REPLACE INTO daily_farm_tasks_completed (date, game_id, task_id, completed_at)
+            VALUES (?, ?, ?, ?)
+            """, (date_str, game_id.lower().strip(), task_id, now_iso))
+        else:
+            cursor.execute("""
+            DELETE FROM daily_farm_tasks_completed
+            WHERE date = ? AND game_id = ? AND task_id = ?
+            """, (date_str, game_id.lower().strip(), task_id))
+        return completed
+
+def clear_completed_farm_tasks(date_str: str, game_id: str) -> None:
+    """Limpa todas as tarefas de farm concluídas para uma data e jogo."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+        DELETE FROM daily_farm_tasks_completed
+        WHERE date = ? AND game_id = ?
+        """, (date_str, game_id.lower().strip()))
+
+
+# ==========================================
+# 12. GESTÃO DE METAS DE GACHA FORECAST
+# ==========================================
+def save_gacha_goal(
+    game_id: str,
+    character_name: str,
+    target_rank_str: str,
+    current_pulls: int,
+    current_pity: int,
+    is_guaranteed: bool,
+    target_days: int,
+    has_daily_pass: bool,
+    success_rate: float,
+    projected_pulls: int,
+    notes: str = ""
+) -> int:
+    """Salva uma meta de planejamento de gacha/banner futuro no SQLite e retorna seu ID."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        now_iso = datetime.now().isoformat()
+        cursor.execute("""
+        INSERT INTO gacha_forecast_goals (
+            game_id, character_name, target_rank_str, current_pulls,
+            current_pity, is_guaranteed, target_days, has_daily_pass,
+            success_rate, projected_pulls, notes, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            game_id.lower().strip(),
+            character_name.strip(),
+            target_rank_str.strip(),
+            current_pulls,
+            current_pity,
+            1 if is_guaranteed else 0,
+            target_days,
+            1 if has_daily_pass else 0,
+            round(success_rate, 1),
+            projected_pulls,
+            notes.strip(),
+            now_iso
+        ))
+        return cursor.lastrowid
+
+def get_gacha_goals(game_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Retorna as metas de gacha salvas, opcionalmente filtradas por jogo."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if game_id and game_id.lower().strip() not in ["", "all", "todos"]:
+            cursor.execute("""
+            SELECT * FROM gacha_forecast_goals WHERE game_id = ? ORDER BY id DESC
+            """, (game_id.lower().strip(),))
+        else:
+            cursor.execute("SELECT * FROM gacha_forecast_goals ORDER BY id DESC")
+        rows = cursor.fetchall()
+        goals = []
+        for r in rows:
+            g_dict = dict(r)
+            g_dict["is_guaranteed"] = bool(g_dict.get("is_guaranteed"))
+            g_dict["has_daily_pass"] = bool(g_dict.get("has_daily_pass"))
+            goals.append(g_dict)
+        return goals
+
+def delete_gacha_goal(goal_id: int) -> bool:
+    """Remove uma meta de gacha salva pelo ID."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM gacha_forecast_goals WHERE id = ?", (goal_id,))
+        return cursor.rowcount > 0
+
+
 
 
 

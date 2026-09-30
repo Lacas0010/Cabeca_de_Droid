@@ -3,6 +3,7 @@ import re
 import json
 import random
 import datetime
+from datetime import datetime, timedelta
 import unicodedata
 import time
 import requests
@@ -1798,9 +1799,10 @@ ASCENSION_TABLES = {
     }
 }
 
-def calculate_ascension(game_id, current_lvl, target_lvl):
+def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[str] = None):
     """
-    Calcula a diferença de recursos necessários entre o nível atual e o nível alvo.
+    Calcula a diferença de recursos necessários entre o nível atual e o nível alvo,
+    enriquecendo opcionalmente com materiais reais do personagem via static_data_manager.
     """
     game_id = game_id.lower().strip()
     if game_id not in ASCENSION_TABLES:
@@ -1836,6 +1838,32 @@ def calculate_ascension(game_id, current_lvl, target_lvl):
     
     currency_name = "Mora" if game_id == "genshin" else ("Créditos" if game_id == "hsr" else "Dennys")
     boss_item_name = "Materiais de Chefe"
+    local_specialty = None
+    talent_material = None
+    weekly_boss_mat = None
+    domain_days = None
+    open_today = True
+
+    # Enriquecimento via static_data_manager se nome do personagem for fornecido
+    if char_name:
+        try:
+            from static_data_manager import static_data_manager
+            char_profile = static_data_manager.get_character_profile(game_id, char_name)
+            if char_profile:
+                if char_profile.get("boss_mat"):
+                    boss_item_name = char_profile["boss_mat"]
+                elif char_profile.get("stagnant_shadow_mat"):
+                    boss_item_name = char_profile["stagnant_shadow_mat"]
+                elif char_profile.get("core_skill_mat"):
+                    boss_item_name = char_profile["core_skill_mat"]
+                    
+                local_specialty = char_profile.get("local_specialty")
+                talent_material = char_profile.get("talent_book") or char_profile.get("calyx_mat") or char_profile.get("chip_type")
+                weekly_boss_mat = char_profile.get("weekly_boss_mat")
+                domain_days = char_profile.get("domain_days")
+                open_today = char_profile.get("open_today", True)
+        except Exception:
+            pass
     
     daily_energy = 180 if game_id == "genshin" else 240
     boss_cost_per_run = 40 if game_id in ["genshin", "zzz"] else 30
@@ -1850,6 +1878,11 @@ def calculate_ascension(game_id, current_lvl, target_lvl):
         "currency_name": currency_name,
         "boss_items_needed": boss_diff,
         "boss_item_name": boss_item_name,
+        "local_specialty": local_specialty,
+        "talent_material": talent_material,
+        "weekly_boss_material": weekly_boss_mat,
+        "domain_days": domain_days,
+        "open_today": open_today,
         "energy_needed": total_energy_needed,
         "daily_energy_limit": daily_energy,
         "estimated_farming_days": estimated_days
@@ -2085,6 +2118,219 @@ def simulate_gacha_probabilities(
         "distribution": dist_pct,
         "num_simulations": num_simulations,
         "game_id": game_id
+    }
+
+
+def calculate_gacha_forecast(
+    game_id: str,
+    current_pulls: int,
+    current_pity: int,
+    is_guaranteed: bool,
+    target_rank: int = 0,
+    current_rank: int = -1,
+    target_days: int = 21,
+    has_daily_pass: bool = False,
+    has_battle_pass: bool = False,
+    include_shop_resets: bool = True,
+    include_events_estimate: bool = True,
+    include_endgame_resets: bool = True,
+    character_name: str = "",
+    num_simulations: int = 10000
+) -> dict:
+    """
+    Calcula a projeção completa de acúmulo de tiros/gemas futuras (diárias, passe, eventos, resets)
+    e executa simulação Monte Carlo conectada para prever a probabilidade de bater a meta de banner.
+    """
+    game_id = (game_id or "genshin").lower().strip()
+    target_days = max(1, min(int(target_days), 180))
+    current_pulls = max(0, int(current_pulls))
+    current_pity = max(0, min(int(current_pity), 89))
+    target_rank = max(0, min(int(target_rank), 6))
+    current_rank = max(-1, min(int(current_rank), 6))
+
+    # Nomenclaturas oficiais por jogo
+    game_terms = {
+        "genshin": {"term": "Constelação", "prefix": "C", "currency": "Gemas Essenciais", "pass_name": "Bênção da Lua Nova"},
+        "hsr": {"term": "Eidolon", "prefix": "E", "currency": "Jades Estelares", "pass_name": "Passe de Suprimentos do Expresso"},
+        "zzz": {"term": "Mindscape Cinema", "prefix": "M", "currency": "Policromos", "pass_name": "Associação Inter-Nó"}
+    }
+    t_info = game_terms.get(game_id, game_terms["genshin"])
+
+    # 1. Projeção de Renda Diária F2P (60 gemas/dia em todos os 3 jogos)
+    daily_gems = target_days * 60
+    daily_pulls = daily_gems / 160.0
+
+    # 2. Passe Diário (+90 gemas/dia)
+    pass_gems = (target_days * 90) if has_daily_pass else 0
+    pass_pulls = pass_gems / 160.0
+
+    # 3. Resets Mensais da Loja (5 tiros no dia 1º de cada mês)
+    shop_resets_count = 0
+    if include_shop_resets:
+        now = datetime.now()
+        for d in range(1, target_days + 1):
+            future_day = now + timedelta(days=d)
+            if future_day.day == 1:
+                shop_resets_count += 1
+    shop_pulls = shop_resets_count * 5
+
+    # 4. Projeção de Eventos da Versão (~52.4 gemas/dia de média de eventos)
+    events_gems = int(target_days * 52.4) if include_events_estimate else 0
+    events_pulls = events_gems / 160.0
+
+    # 5. Endgame Quinzenal/Mensal (Abismo/Teatro/MoC/PF/AS/Shiyu - ~800 gemas por ciclo de 15 dias)
+    endgame_cycles = (target_days // 15) if include_endgame_resets else 0
+    endgame_gems = endgame_cycles * 800
+    endgame_pulls = endgame_gems / 160.0
+
+    # 6. Passe de Batalha (4 tiros especiais + 680 gemas por patch de 42 dias -> ~8.25 tiros)
+    bp_pulls = round((target_days / 42.0) * 8.25, 1) if has_battle_pass else 0.0
+
+    # Total de Tiros Futuros Acumulados
+    future_pulls_total = round(daily_pulls + pass_pulls + shop_pulls + events_pulls + endgame_pulls + bp_pulls, 1)
+    total_projected_pulls = int(current_pulls + future_pulls_total)
+
+    # 7. Simulação Monte Carlo com o Total Projetado
+    sim_result = simulate_gacha_probabilities(
+        game_id=game_id,
+        current_pity=current_pity,
+        is_guaranteed=is_guaranteed,
+        pulls_available=total_projected_pulls,
+        current_rank=current_rank,
+        target_rank=target_rank,
+        num_simulations=num_simulations
+    )
+
+    # Simulação de Comparação F2P (Apenas Saldo Atual + Diárias Puras)
+    f2p_pure_pulls = int(current_pulls + daily_pulls + shop_pulls)
+    f2p_sim_result = simulate_gacha_probabilities(
+        game_id=game_id,
+        current_pity=current_pity,
+        is_guaranteed=is_guaranteed,
+        pulls_available=f2p_pure_pulls,
+        current_rank=current_rank,
+        target_rank=target_rank,
+        num_simulations=3000
+    )
+
+    # 8. Cálculo Matemático de Pior Cenário (Worst-case para 100% de Garantia)
+    needed_new_copies = sim_result.get("needed_new_copies", 1)
+    if needed_new_copies <= 0:
+        worst_case_pulls = 0
+    elif needed_new_copies == 1:
+        worst_case_pulls = (90 - current_pity) if is_guaranteed else (180 - current_pity)
+    else:
+        first_copy_worst = (90 - current_pity) if is_guaranteed else (180 - current_pity)
+        remaining_copies_worst = (needed_new_copies - 1) * 180
+        worst_case_pulls = first_copy_worst + remaining_copies_worst
+
+    pulls_needed_for_guarantee = max(0, worst_case_pulls - total_projected_pulls)
+    gems_needed_for_guarantee = pulls_needed_for_guarantee * 160
+
+    # 9. Parecer Estratégico Textual & Classificação
+    success_rate = sim_result.get("success_rate", 0.0)
+    if needed_new_copies <= 0:
+        verdict_status = "ACQUIRED"
+        verdict_badge = "Meta Já Alcançada"
+        verdict_color = "#34d399"
+        verdict_text = f"Você já possui o nível desejado ({t_info['prefix']}{target_rank}) no seu Roster!"
+    elif success_rate >= 95.0:
+        verdict_status = "SAFE"
+        verdict_badge = "Garantia Praticamente Assegurada"
+        verdict_color = "#34d399"
+        verdict_text = f"Excelente planejamento! Sua probabilidade de sucesso é de {success_rate}%. Com ~{total_projected_pulls} tiros projetados, o risco de não bater a meta é quase nulo."
+    elif success_rate >= 75.0:
+        verdict_status = "FAVORABLE"
+        verdict_badge = "Cenário Muito Favorável"
+        verdict_color = "#10b981"
+        verdict_text = f"Probabilidade Alta ({success_rate}%). Você acumulará cerca de {int(future_pulls_total)} novos tiros em {target_days} dias. Mantenha as diárias e eventos em dia."
+    elif success_rate >= 50.0:
+        verdict_status = "MODERATE"
+        verdict_badge = "Cenário Competitivo (50/50)"
+        verdict_color = "#fbbf24"
+        verdict_text = f"Probabilidade Moderada ({success_rate}%). Você terá ~{total_projected_pulls} tiros até o fim do banner. Faltam {pulls_needed_for_guarantee} tiros para 100% de garantia matemática."
+    elif success_rate >= 25.0:
+        verdict_status = "RISKY"
+        verdict_badge = "Cenário de Alto Risco"
+        verdict_color = "#f97316"
+        verdict_text = f"Probabilidade Baixa ({success_rate}%). O saldo projetado de {total_projected_pulls} tiros pode não ser suficiente caso perca o 50/50. Faltam {pulls_needed_for_guarantee} tiros para garantir."
+    else:
+        verdict_status = "CRITICAL"
+        verdict_badge = "Cenário Crítico"
+        verdict_color = "#ef4444"
+        verdict_text = f"Probabilidade Crítica ({success_rate}%). Recomenda-se economizar mais recursos ou focar no C0/E0/M0 antes de arriscar cópias adicionais."
+
+    income_breakdown = {
+        "current_pulls": current_pulls,
+        "current_gems_equiv": current_pulls * 160,
+        "daily_f2p": {
+            "days": target_days,
+            "gems": daily_gems,
+            "pulls": round(daily_pulls, 1),
+            "label": f"Missões Diárias ({target_days}d × 60)"
+        },
+        "daily_pass": {
+            "active": has_daily_pass,
+            "gems": pass_gems,
+            "pulls": round(pass_pulls, 1),
+            "label": f"{t_info['pass_name']} ({target_days}d × 90)" if has_daily_pass else f"{t_info['pass_name']} (Inativo)"
+        },
+        "battle_pass": {
+            "active": has_battle_pass,
+            "pulls": round(bp_pulls, 1),
+            "label": "Passe de Batalha (Prorrateado)" if has_battle_pass else "Passe de Batalha (Inativo)"
+        },
+        "shop_resets": {
+            "count": shop_resets_count,
+            "pulls": shop_pulls,
+            "label": f"Reset de Loja ({shop_resets_count} mês(es) × 5)"
+        },
+        "events": {
+            "active": include_events_estimate,
+            "gems": events_gems,
+            "pulls": round(events_pulls, 1),
+            "label": f"Eventos de Versão (~{events_gems} gemas)"
+        },
+        "endgame": {
+            "cycles": endgame_cycles,
+            "gems": endgame_gems,
+            "pulls": round(endgame_pulls, 1),
+            "label": f"Endgame ({endgame_cycles} ciclos × 800 gemas)"
+        },
+        "total_future_pulls": future_pulls_total,
+        "total_projected_pulls": total_projected_pulls,
+        "total_projected_gems_equiv": total_projected_pulls * 160
+    }
+
+    return {
+        "game_id": game_id,
+        "character_name": character_name or "Personagem 5★ Alvo",
+        "target_days": target_days,
+        "current_pulls": current_pulls,
+        "current_pity": current_pity,
+        "is_guaranteed": is_guaranteed,
+        "current_rank": current_rank,
+        "target_rank": target_rank,
+        "current_rank_str": sim_result["current_rank_str"],
+        "target_rank_str": sim_result["target_rank_str"],
+        "term": t_info["term"],
+        "needed_new_copies": needed_new_copies,
+        "total_projected_pulls": total_projected_pulls,
+        "income_breakdown": income_breakdown,
+        "success_rate": success_rate,
+        "f2p_pure_success_rate": f2p_sim_result.get("success_rate", 0.0),
+        "f2p_pure_pulls": f2p_pure_pulls,
+        "avg_pulls_spent": sim_result.get("avg_pulls_spent"),
+        "worst_case_pulls": worst_case_pulls,
+        "pulls_needed_for_guarantee": pulls_needed_for_guarantee,
+        "gems_needed_for_guarantee": gems_needed_for_guarantee,
+        "distribution": sim_result.get("distribution", {}),
+        "verdict": {
+            "status": verdict_status,
+            "badge": verdict_badge,
+            "color": verdict_color,
+            "text": verdict_text
+        }
     }
 
 
@@ -2799,4 +3045,1453 @@ def fetch_active_promo_codes(game_id: str) -> List[Dict[str, Any]]:
         
     # Fallback caso a busca ao vivo falhe ou dê timeout
     return FALLBACK_PROMO_CODES.get(g, [])
+
+
+# ==========================================
+# 6. GERADOR DE ORDEM DE SERVIÇO DIÁRIA
+# ==========================================
+def generate_daily_farm_order(
+    game_id: str,
+    roster: Optional[List[Dict[str, Any]]] = None,
+    meta_data: Optional[Dict[str, Any]] = None,
+    current_energy: Optional[int] = None,
+    max_energy: Optional[int] = None,
+    weekday: Optional[int] = None,
+    selected_chars: Optional[List[str]] = None
+) -> Dict[str, Any]:
+    """
+    Gera a 'Ordem de Serviço do Dia' inteligente e otimizada.
+    Cruza o saldo de energia atual, os domínios abertos hoje, os personagens do Roster
+    e os materiais prioritários para alocar os pontos de resina/energia com máxima eficiência.
+    """
+    g = (game_id or "genshin").lower().strip()
+    if g not in ["genshin", "hsr", "zzz"]:
+        g = "genshin"
+
+    now_dt = datetime.now()
+    if weekday is None:
+        weekday = now_dt.weekday()
+    today_str = now_dt.strftime("%Y-%m-%d")
+
+    weekday_names = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+    weekday_name = weekday_names[weekday]
+
+    # Configurações de Energia e Custos por Jogo
+    game_configs = {
+        "genshin": {
+            "energy_name": "Resina Original",
+            "energy_icon": "fa-droplet",
+            "default_max": 200,
+            "default_current": 160,
+            "regen_minutes": 8,
+            "talent_run_cost": 20,
+            "talent_runs_default": 2,
+            "boss_run_cost": 40,
+            "weekly_boss_run_cost": 30,
+            "relic_run_cost": 20,
+            "relic_runs_default": 2,
+            "currency_name": "Mora",
+            "max_level": 90
+        },
+        "hsr": {
+            "energy_name": "Poder de Desbravamento",
+            "energy_icon": "fa-bolt",
+            "default_max": 300,
+            "default_current": 240,
+            "regen_minutes": 6,
+            "talent_run_cost": 30,
+            "talent_runs_default": 2,
+            "boss_run_cost": 30,
+            "weekly_boss_run_cost": 30,
+            "relic_run_cost": 40,
+            "relic_runs_default": 1,
+            "currency_name": "Créditos",
+            "max_level": 80
+        },
+        "zzz": {
+            "energy_name": "Carga de Bateria",
+            "energy_icon": "fa-battery-full",
+            "default_max": 240,
+            "default_current": 240,
+            "regen_minutes": 6,
+            "talent_run_cost": 40,
+            "talent_runs_default": 1,
+            "boss_run_cost": 40,
+            "weekly_boss_run_cost": 60,
+            "relic_run_cost": 60,
+            "relic_runs_default": 1,
+            "currency_name": "Dennys",
+            "max_level": 60
+        }
+    }
+
+    cfg = game_configs[g]
+
+    # Obtenção de Roster e Meta se não fornecidos
+    if roster is None:
+        try:
+            import database
+            roster = database.get_roster_data(g)
+        except Exception:
+            roster = []
+
+    if meta_data is None:
+        try:
+            meta_data = get_meta_data(g)
+        except Exception:
+            meta_data = {}
+
+    # Obtenção de Energia via Cache se não fornecida
+    if current_energy is None or max_energy is None:
+        try:
+            import database
+            cached_notes = database.get_cached_daily_notes()
+            if g in cached_notes and cached_notes[g].get("current_energy") is not None:
+                if current_energy is None:
+                    current_energy = int(cached_notes[g]["current_energy"])
+                if max_energy is None:
+                    max_energy = int(cached_notes[g].get("max_energy", cfg["default_max"]))
+        except Exception:
+            pass
+
+    if current_energy is None:
+        current_energy = cfg["default_current"]
+    if max_energy is None:
+        max_energy = cfg["default_max"]
+
+    # Obtenção de tarefas já concluídas hoje no SQLite
+    completed_task_ids = set()
+    try:
+        import database
+        completed_task_ids = set(database.get_completed_farm_tasks(today_str, g))
+    except Exception:
+        pass
+
+    # Consulta de recomendações de farm diárias
+    recs_data = get_daily_farm_recommendations(game_id=g, roster=roster, day_of_week=weekday, selected_chars=selected_chars)
+    targets = recs_data.get("priority_targets", [])
+    cal_info = recs_data.get("calendar_info", {})
+
+    from static_data_manager import static_data_manager
+    static_schedule = static_data_manager.get_daily_farm_schedule(g, weekday=weekday)
+
+    # Construção da lista de tarefas priorizadas
+    tasks = []
+    task_idx = 1
+    accumulated_energy = 0
+    seen_task_signatures = set()
+
+    # PRIORIDADE 1: Livros de Talentos ABERTOS HOJE para personagens prioritários
+    for target in targets:
+        c_name = target.get("name")
+        c_grade = target.get("grade", "A")
+        items_needed = target.get("items_needed", {})
+        talents_list = items_needed.get("talent_upgrade_details", [])
+
+        # Verifica se tem talentos pendentes
+        if not talents_list:
+            continue
+
+        # Verifica dados estáticos de materiais de talento
+        profile = static_data_manager.get_character_profile(g, c_name)
+        talent_mat_name = profile.get("talent_book", "") if profile else ""
+        if not talent_mat_name and cal_info.get("talents"):
+            talent_mat_name = cal_info["talents"][0]
+
+        is_farmable_today = target.get("farmable_today", True)
+        if g == "genshin" and not is_farmable_today:
+            # Em Genshin, pula se o domínio NÃO estiver aberto hoje (a não ser que seja domingo)
+            continue
+
+        sig = f"talent_{c_name}_{talent_mat_name}"
+        if sig in seen_task_signatures:
+            continue
+        seen_task_signatures.add(sig)
+
+        runs = cfg["talent_runs_default"]
+        cost = runs * cfg["talent_run_cost"]
+
+        location = "Domínio de Livros de Talento"
+        if profile and profile.get("region"):
+            location = f"Domínio da Região de {profile['region']}"
+        elif g == "hsr":
+            location = f"Cálice Rubro ({profile.get('path', 'Caminho') if profile else 'Rastros'})"
+        elif g == "zzz":
+            location = f"Treinamento de Habilidades ({profile.get('specialty', 'Agente') if profile else 'Ataque'})"
+
+        task_item = {
+            "id": sig,
+            "step": task_idx,
+            "type": "talent_domain",
+            "type_label": "Livros de Talento",
+            "type_icon": "fa-book-open",
+            "target_character": c_name,
+            "character_icon": target.get("icon"),
+            "character_grade": c_grade,
+            "material_name": talent_mat_name or "Livros de Elevação",
+            "location": location,
+            "runs": runs,
+            "cost_energy": cost,
+            "energy_name": cfg["energy_name"],
+            "priority_badge": "⭐ Aberto Hoje",
+            "badge_color": "#10b981",
+            "description": f"Faça {runs}x {location} para obter {talent_mat_name} e avançar os talentos prioritários de {c_name} (Nota {c_grade}).",
+            "completed": sig in completed_task_ids
+        }
+
+        # Cálculo de tempo até disponibilidade de energia
+        accumulated_energy += cost
+        task_item["cumulative_energy"] = accumulated_energy
+        if accumulated_energy <= current_energy:
+            task_item["available_now"] = True
+            task_item["status_text"] = "Pronto para Executar"
+            task_item["time_estimate"] = "Disponível Agora"
+        else:
+            deficit = accumulated_energy - current_energy
+            wait_min = deficit * cfg["regen_minutes"]
+            ready_dt = now_dt + timedelta(minutes=wait_min)
+            task_item["available_now"] = False
+            task_item["status_text"] = "Aguardando Energia"
+            task_item["time_estimate"] = f"Disponível às {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
+
+        tasks.append(task_item)
+        task_idx += 1
+        if len(tasks) >= 3:
+            break
+
+    # PRIORIDADE 2: Materiais de Chefe de Ascensão (se personagem estiver abaixo do nível máximo)
+    for target in targets:
+        c_name = target.get("name")
+        c_lvl = target.get("level", 1)
+        c_max = target.get("max_level", cfg["max_level"])
+        c_grade = target.get("grade", "A")
+
+        if c_lvl >= c_max:
+            continue
+
+        profile = static_data_manager.get_character_profile(g, c_name)
+        boss_name = profile.get("boss_mat", "") if profile else "Chefe do Mundo"
+        
+        sig = f"boss_{c_name}_{boss_name}"
+        if sig in seen_task_signatures:
+            continue
+        seen_task_signatures.add(sig)
+
+        runs = 1
+        cost = runs * cfg["boss_run_cost"]
+
+        location = f"Chefe de Ascensão ({boss_name})"
+        if profile and profile.get("region"):
+            location = f"Chefe de {profile['region']} ({boss_name})"
+
+        task_item = {
+            "id": sig,
+            "step": task_idx,
+            "type": "boss",
+            "type_label": "Chefe de Ascensão",
+            "type_icon": "fa-skull",
+            "target_character": c_name,
+            "character_icon": target.get("icon"),
+            "character_grade": c_grade,
+            "material_name": boss_name,
+            "location": location,
+            "runs": runs,
+            "cost_energy": cost,
+            "energy_name": cfg["energy_name"],
+            "priority_badge": "🔥 Ascensão Pendente",
+            "badge_color": "#f59e0b",
+            "description": f"Derrote {location} para avançar {c_name} do Nv. {c_lvl} rumo ao Nv. {c_max}.",
+            "completed": sig in completed_task_ids
+        }
+
+        accumulated_energy += cost
+        task_item["cumulative_energy"] = accumulated_energy
+        if accumulated_energy <= current_energy:
+            task_item["available_now"] = True
+            task_item["status_text"] = "Pronto para Executar"
+            task_item["time_estimate"] = "Disponível Agora"
+        else:
+            deficit = accumulated_energy - current_energy
+            wait_min = deficit * cfg["regen_minutes"]
+            ready_dt = now_dt + timedelta(minutes=wait_min)
+            task_item["available_now"] = False
+            task_item["status_text"] = "Aguardando Energia"
+            task_item["time_estimate"] = f"Disponível às {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
+
+        tasks.append(task_item)
+        task_idx += 1
+        if len(tasks) >= 5:
+            break
+
+    # PRIORIDADE 3: Otimização de Relíquias / Artefatos / Discos (Min-Maxing)
+    for target in targets:
+        c_name = target.get("name")
+        c_grade = target.get("grade", "A")
+
+        sig = f"relic_{c_name}_meta"
+        if sig in seen_task_signatures:
+            continue
+        seen_task_signatures.add(sig)
+
+        runs = cfg["relic_runs_default"]
+        cost = runs * cfg["relic_run_cost"]
+
+        domain_label = "Domínio de Artefatos" if g == "genshin" else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
+        
+        task_item = {
+            "id": sig,
+            "step": task_idx,
+            "type": "relic_domain",
+            "type_label": domain_label,
+            "type_icon": "fa-gem",
+            "target_character": c_name,
+            "character_icon": target.get("icon"),
+            "character_grade": c_grade,
+            "material_name": f"Sets Recomendados para {c_name}",
+            "location": f"{domain_label} Recomendado",
+            "runs": runs,
+            "cost_energy": cost,
+            "energy_name": cfg["energy_name"],
+            "priority_badge": "💎 Otimização de Build",
+            "badge_color": "#ec4899",
+            "description": f"Realize {runs}x {domain_label} buscando peças com Atributos Ideais para maximizar a nota de {c_name}.",
+            "completed": sig in completed_task_ids
+        }
+
+        accumulated_energy += cost
+        task_item["cumulative_energy"] = accumulated_energy
+        if accumulated_energy <= current_energy:
+            task_item["available_now"] = True
+            task_item["status_text"] = "Pronto para Executar"
+            task_item["time_estimate"] = "Disponível Agora"
+        else:
+            deficit = accumulated_energy - current_energy
+            wait_min = deficit * cfg["regen_minutes"]
+            ready_dt = now_dt + timedelta(minutes=wait_min)
+            task_item["available_now"] = False
+            task_item["status_text"] = "Aguardando Energia"
+            task_item["time_estimate"] = f"Disponível às {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
+
+        tasks.append(task_item)
+        task_idx += 1
+        if len(tasks) >= 6:
+            break
+
+    # Se a lista de tarefas estiver vazia (ex: conta recém-criada ou todos maximizados), cria uma tarefa de Linhas Ley/Cálice Dourado
+    if not tasks:
+        sig = f"calyx_currency_{g}"
+        cost = cfg["talent_run_cost"] * 2
+        tasks.append({
+            "id": sig,
+            "step": 1,
+            "type": "currency",
+            "type_label": f"Reserva de {cfg['currency_name']}",
+            "type_icon": "fa-coins",
+            "target_character": "Conta Geral",
+            "character_icon": None,
+            "character_grade": "S",
+            "material_name": cfg["currency_name"],
+            "location": "Linhas Ley / Cálice Dourado",
+            "runs": 2,
+            "cost_energy": cost,
+            "energy_name": cfg["energy_name"],
+            "priority_badge": "🪙 Reserva Econômica",
+            "badge_color": "#eab308",
+            "description": f"Todos os seus personagens principais estão no nível máximo! Farme {cfg['currency_name']} para futuras versões.",
+            "completed": sig in completed_task_ids,
+            "cumulative_energy": cost,
+            "available_now": True,
+            "status_text": "Pronto para Executar",
+            "time_estimate": "Disponível Agora"
+        })
+        accumulated_energy = cost
+
+    completed_count = sum(1 for t in tasks if t["completed"])
+    completion_pct = int((completed_count / len(tasks)) * 100) if tasks else 0
+
+    # Geração do texto formatado para cópia / webhook
+    game_names = {"genshin": "Genshin Impact", "hsr": "Honkai: Star Rail", "zzz": "Zenless Zone Zero"}
+    summary_lines = [
+        f"📋 **ORDEM DE SERVIÇO DO DIA - {game_names.get(g, g.upper())}**",
+        f"⚡ **Energia Atual:** {current_energy} / {max_energy} {cfg['energy_name']}",
+        f"📅 **Dia:** {weekday_name} ({today_str})",
+        "",
+        "🎯 **Roteiro de Farm Prioritário:**"
+    ]
+    for t in tasks:
+        check_box = "[x]" if t["completed"] else "[ ]"
+        status_disp = "(Disponível Agora)" if t["available_now"] else f"({t['time_estimate']})"
+        summary_lines.append(f"{t['step']}. {check_box} **{t['target_character']}** | {t['type_label']}: {t['material_name']} ({t['cost_energy']} {cfg['energy_name']}) - *{status_disp}*")
+
+    summary_lines.append("")
+    summary_lines.append(f"💡 *Total Planejado: {accumulated_energy} {cfg['energy_name']} | Progresso Hoje: {completed_count}/{len(tasks)} ({completion_pct}%)*")
+    quick_summary_text = "\n".join(summary_lines)
+
+    return {
+        "game_id": g,
+        "game_name": game_names.get(g, g.upper()),
+        "date": today_str,
+        "weekday": weekday,
+        "weekday_name": weekday_name,
+        "energy": {
+            "current": current_energy,
+            "max": max_energy,
+            "name": cfg["energy_name"],
+            "icon": cfg["energy_icon"],
+            "allocated_total": accumulated_energy,
+            "usage_pct": min(100, int((current_energy / max_energy) * 100)) if max_energy > 0 else 0
+        },
+        "tasks": tasks,
+        "completed_count": completed_count,
+        "total_tasks": len(tasks),
+        "completion_percentage": completion_pct,
+        "quick_summary_text": quick_summary_text
+    }
+
+
+def _norm_str(text: str) -> str:
+    """Normaliza strings removendo acentos, pontuação e espaços em excesso."""
+    import unicodedata, re
+    if not text:
+        return ""
+    text = unicodedata.normalize("NFKD", str(text)).encode("ASCII", "ignore").decode("utf-8").lower()
+    text = re.sub(r"[^a-z0-9]", "", text)
+    return text
+
+
+def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) -> dict:
+    """
+    Realiza uma auditoria estratégica profunda da conta do jogador (Genshin, HSR ou ZZZ),
+    identificando carências de arquétipos (Sustentação, Buffers de Ação, DPSs, Sub-DPS),
+    cobertura elemental, prontidão para os modos de Endgame e recomendações ranqueadas de gacha.
+    """
+    g = game_id.lower().strip()
+    game_names = {"genshin": "Genshin Impact", "hsr": "Honkai: Star Rail", "zzz": "Zenless Zone Zero"}
+
+    # Extrai e normaliza personagens do roster
+    owned_chars_map = {}
+    for item in roster or []:
+        if isinstance(item, dict):
+            c_name = item.get("name") or ""
+            c_lvl = int(item.get("level") or 1)
+            c_rarity = int(item.get("rarity") or 4)
+            c_rank = int(item.get("rank") or item.get("constellation") or item.get("eidolon") or 0)
+            c_elem = item.get("element") or ""
+        elif isinstance(item, str):
+            c_name = item
+            c_lvl = 80
+            c_rarity = 5
+            c_rank = 0
+            c_elem = ""
+        else:
+            continue
+
+        norm_key = _norm_str(c_name)
+        if norm_key:
+            owned_chars_map[norm_key] = {
+                "name": c_name,
+                "level": c_lvl,
+                "rarity": c_rarity,
+                "rank": c_rank,
+                "element": c_elem,
+                "is_built": c_lvl >= (70 if g != "zzz" else 50)
+            }
+
+    def has_any(alias_list: list, min_built: bool = False) -> tuple[bool, list]:
+        """Verifica se o jogador possui ao menos um personagem da lista de aliases."""
+        matched = []
+        for alias in alias_list:
+            norm_a = _norm_str(alias)
+            for k, info in owned_chars_map.items():
+                if norm_a in k or k in norm_a:
+                    if not min_built or info["is_built"]:
+                        if info["name"] not in matched:
+                            matched.append(info["name"])
+        return (len(matched) > 0, matched)
+
+    def count_in_group(alias_groups: list, min_built: bool = False) -> list:
+        """Retorna lista de nomes únicos encontrados a partir de uma lista de aliases."""
+        found = set()
+        for alias in alias_groups:
+            _, matches = has_any([alias], min_built)
+            for m in matches:
+                found.add(m)
+        return list(found)
+
+    # Definição das matrizes por jogo
+    overall_score = 100
+    critical_gaps = []
+    pull_recommendations = []
+    archetypes_summary = []
+    elemental_coverage = []
+    endgame_readiness = {}
+
+    total_chars = len(owned_chars_map)
+    built_chars = sum(1 for c in owned_chars_map.values() if c["is_built"])
+
+    # ==========================================
+    # 1. GENSHIN IMPACT
+    # ==========================================
+    if g == "genshin":
+        # Arquétipos
+        sustain_t0 = ["zhongli", "kokomi", "baizhu", "xianyun", "bennett", "kuki shinobu", "sigewinne"]
+        sustain_others = ["diona", "layla", "kirara", "jean", "charlotte", "yaoyao", "barbara", "noelle", "sayu", "chevreuse", "mika", "thoma", "qiqi"]
+        owned_sustain_t0 = count_in_group(sustain_t0)
+        owned_sustain_all = count_in_group(sustain_t0 + sustain_others)
+
+        buffers_t0 = ["furina", "kazuha", "nahida", "xilonen", "shenhe", "sucrose", "faruzan", "emilie"]
+        buffers_others = ["lynette", "gorou", "yun jin", "kujou sara", "candace", "traveler"]
+        owned_buffers_t0 = count_in_group(buffers_t0)
+        owned_buffers_all = count_in_group(buffers_t0 + buffers_others)
+
+        offfield_hydro = ["xingqiu", "yelan", "furina", "kokomi", "sigewinne"]
+        owned_offfield_hydro = count_in_group(offfield_hydro)
+
+        offfield_subdps = ["xiangling", "fischl", "yae miko", "nahida", "emilie", "chiori", "albedo", "raiden shogun"]
+        owned_offfield_subdps = count_in_group(offfield_subdps)
+
+        main_dps_list = [
+            "neuvillette", "arlecchino", "alhaitham", "raiden shogun", "hu tao", "navia",
+            "mualani", "kinich", "clorinde", "lyney", "wriothesley", "xiao", "wanderer",
+            "kamisato ayaka", "ganyu", "arataki itto", "tartaglia", "cyno", "tighnari",
+            "diluc", "keqing", "gaming", "yanfei", "sethos"
+        ]
+        owned_main_dps = count_in_group(main_dps_list)
+
+        # Status dos Arquétipos
+        def get_status_data(count, t0_count, ideal_min=2):
+            if t0_count >= ideal_min or count >= ideal_min + 2:
+                return "Excelente", "#10b981"
+            elif count >= ideal_min:
+                return "Suficiente", "#3b82f6"
+            elif count == 1:
+                return "Atenção", "#f59e0b"
+            else:
+                return "Crítico", "#ef4444"
+
+        st_sust, col_sust = get_status_data(len(owned_sustain_all), len(owned_sustain_t0), 2)
+        archetypes_summary.append({
+            "key": "sustain",
+            "title": "Sustentação (Shield / Healer)",
+            "icon": "fa-shield-halved",
+            "status": st_sust,
+            "status_color": col_sust,
+            "owned_count": len(owned_sustain_all),
+            "target_count": 2,
+            "owned_characters": owned_sustain_all,
+            "description": "Essencial para sobrevivência nos 2 lados do Abismo 12."
+        })
+
+        st_buff, col_buff = get_status_data(len(owned_buffers_all), len(owned_buffers_t0), 2)
+        archetypes_summary.append({
+            "key": "buffers",
+            "title": "Buffers & Redução de RES (VV / Suportes)",
+            "icon": "fa-wand-magic-sparkles",
+            "status": st_buff,
+            "status_color": col_buff,
+            "owned_count": len(owned_buffers_all),
+            "target_count": 2,
+            "owned_characters": owned_buffers_all,
+            "description": "Multiplicadores de dano e reações elementais da equipe."
+        })
+
+        st_hydro, col_hydro = get_status_data(len(owned_offfield_hydro), len(owned_offfield_hydro), 2)
+        archetypes_summary.append({
+            "key": "offfield_hydro",
+            "title": "Aplicadores Hydro Off-Field",
+            "icon": "fa-droplet",
+            "status": st_hydro,
+            "status_color": col_hydro,
+            "owned_count": len(owned_offfield_hydro),
+            "target_count": 2,
+            "owned_characters": owned_offfield_hydro,
+            "description": "Coluna vertebral para Vaporize, Hyperbloom, Taser e Freeze."
+        })
+
+        st_dps, col_dps = get_status_data(len(owned_main_dps), len(owned_main_dps), 2)
+        archetypes_summary.append({
+            "key": "main_dps",
+            "title": "DPS Principal (Hypercarries / Reaction)",
+            "icon": "fa-khanda",
+            "status": st_dps,
+            "status_color": col_dps,
+            "owned_count": len(owned_main_dps),
+            "target_count": 2,
+            "owned_characters": owned_main_dps,
+            "description": "Pilares de dano para as duas metades das câmaras de combate."
+        })
+
+        # Cobertura Elemental
+        elements_cfg = [
+            ("Pyro", "fa-fire", "#ef4444", ["arlecchino", "hu tao", "bennett", "xiangling", "diluc", "gaming", "lyney", "yoimiya", "thoma", "chevreuse", "yanfei", "dehya"]),
+            ("Hydro", "fa-droplet", "#0284c7", ["neuvillette", "furina", "yelan", "xingqiu", "kokomi", "mualani", "ayato", "tartaglia", "mona", "sigewinne", "barbara", "candace"]),
+            ("Dendro", "fa-leaf", "#10b981", ["nahida", "alhaitham", "baizhu", "kinich", "emilie", "tighnari", "yaoyao", "kirara", "collei", "kaveh"]),
+            ("Electro", "fa-bolt", "#a855f7", ["raiden shogun", "clorinde", "yae miko", "fischl", "kuki shinobu", "cyno", "beidou", "keqing", "sethos", "kujou sara"]),
+            ("Anemo", "fa-wind", "#14b8a6", ["kazuha", "xianyun", "sucrose", "xiao", "wanderer", "jean", "faruzan", "lynette", "heizou", "sayu"]),
+            ("Cryo", "fa-snowflake", "#38bdf8", ["ayaka", "ganyu", "wriothesley", "shenhe", "charlotte", "diona", "layla", "rosaria", "mika", "qiqi"]),
+            ("Geo", "fa-mountain", "#f59e0b", ["zhongli", "navia", "xilonen", "chiori", "itto", "albedo", "noelle", "kachina", "gorou", "yun jin"])
+        ]
+        for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
+            elem_chars = count_in_group(char_pool)
+            elem_built = count_in_group(char_pool, min_built=True)
+            status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
+            elemental_coverage.append({
+                "element": elem_name,
+                "icon": elem_icon,
+                "color": elem_color,
+                "count": len(elem_chars),
+                "built_count": len(elem_built),
+                "characters": elem_chars,
+                "status": status
+            })
+
+        # Lacunas Críticas
+        if len(owned_sustain_t0) == 0:
+            overall_score -= 22
+            critical_gaps.append({
+                "id": "genshin_no_t0_sustain",
+                "severity": "CRÍTICA",
+                "severity_color": "#ef4444",
+                "badge": "🛡️ Sobrevivência em Risco",
+                "title": "Falta de Sustentador Premium Tier 0",
+                "description": "Você não possui nenhum curandeiro/escudo de elite (Zhongli, Kokomi, Baizhu, Xianyun ou Bennett).",
+                "endgame_impact": "Alta dificuldade para manter a rotação viva e evitar interrupções no Abismo 12.",
+                "suggested_archetype": "Shielder Indestrutível ou Healer Global com utilidade de Buff",
+                "recommended_characters": ["Zhongli", "Kokomi", "Baizhu", "Xianyun"]
+            })
+
+        if len(owned_offfield_hydro) < 2:
+            overall_score -= 18
+            critical_gaps.append({
+                "id": "genshin_lack_hydro",
+                "severity": "ALTA",
+                "severity_color": "#f97316",
+                "badge": "💧 Carência de Aplicação Hydro",
+                "title": "Falta de Aplicador Hydro Off-Field para 2 Times",
+                "description": "Possui menos de 2 aplicadores Hydro (Xingqiu, Yelan, Furina).",
+                "endgame_impact": "Limita severamente a formação de times simultâneos de Vaporize, Hyperbloom ou Freeze.",
+                "suggested_archetype": "Sub-DPS / Buffer Hydro Off-Field",
+                "recommended_characters": ["Yelan", "Furina", "Xingqiu"]
+            })
+
+        has_vv, _ = has_any(["kazuha", "sucrose"])
+        if not has_vv:
+            overall_score -= 15
+            critical_gaps.append({
+                "id": "genshin_no_vv_shred",
+                "severity": "ALTA",
+                "severity_color": "#f97316",
+                "badge": "🌪️ Sem Redução Elemental VV",
+                "title": "Ausência de Buffer Anemo Sombra Verde (VV)",
+                "description": "Você não tem Kazuha ou Sacarose para aplicar o debuff de 40% de RES Shred.",
+                "endgame_impact": "Perda direta de ~25% a 30% do DPS final em composições de reação elemental.",
+                "suggested_archetype": "Buffer / Agrupador Anemo",
+                "recommended_characters": ["Kaedehara Kazuha", "Sucrose"]
+            })
+
+        if len(owned_main_dps) < 2:
+            overall_score -= 20
+            critical_gaps.append({
+                "id": "genshin_lack_main_dps",
+                "severity": "CRÍTICA",
+                "severity_color": "#ef4444",
+                "badge": "⚔️ Carência de Dano Principal",
+                "title": "Menos de 2 Hypercarries/Drivers Construídos",
+                "description": "Faltam carregadores de dano principais para cobrir as duas câmaras do Abismo 12.",
+                "endgame_impact": "Incapacidade de atingir as metas de DPS para fechar com 36 estrelas.",
+                "suggested_archetype": "DPS Principal Top-Tier",
+                "recommended_characters": ["Neuvillette", "Arlecchino", "Alhaitham", "Navia"]
+            })
+
+        # Recomendações de Puxadas
+        rank_idx = 1
+        if len(owned_sustain_t0) == 0:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "Sustentador / Shielder Tier 0",
+                "badge": "Prioridade Máxima",
+                "tag": "Sobrevivência & Conforto",
+                "characters": ["Zhongli", "Xilonen", "Kokomi"],
+                "reason": "Garante estabilidade absoluta de rotação no Abismo 12 sem interrupções de golpes inimigos.",
+                "impact_score": "+35% Conforto & Consistência de Clear"
+            })
+            rank_idx += 1
+
+        if not has_any(["furina", "kazuha"])[0]:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "Universal Damage Buffer",
+                "badge": "Alta Prioridade",
+                "tag": "Salto de DPS Global",
+                "characters": ["Furina", "Kaedehara Kazuha"],
+                "reason": "Aumenta drasticamente o dano de quase todas as equipes do jogo através de buffs globais e RES shred.",
+                "impact_score": "+30% a 40% Dano Global da Equipe"
+            })
+            rank_idx += 1
+
+        if len(owned_main_dps) < 2:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "Hypercarry On-Field",
+                "badge": "Alta Prioridade",
+                "tag": "DPS de Fechamento",
+                "characters": ["Neuvillette", "Arlecchino"],
+                "reason": "Unidades independentes e com multiplicadores colossais para carregar um lado inteiro do Abismo.",
+                "impact_score": "Garante 1 lado completo do Abismo 12"
+            })
+            rank_idx += 1
+
+    # ==========================================
+    # 2. HONKAI: STAR RAIL
+    # ==========================================
+    elif g == "hsr":
+        # Arquétipos
+        harmony_t0 = ["ruan mei", "robin", "sparkle", "sunday", "bronya", "tingyun"]
+        owned_harmony_t0 = count_in_group(harmony_t0)
+
+        sustain_5star = ["aventurine", "huohuo", "fu xuan", "lingsha", "luocha"]
+        sustain_all = sustain_5star + ["gallagher", "lynx", "natasha", "bailu", "gepard", "march 7th"]
+        owned_sustain_5star = count_in_group(sustain_5star)
+        owned_sustain_all = count_in_group(sustain_all)
+
+        break_archetype = ["firefly", "boothill", "rappa", "trailblazer", "xueyi", "fugue", "ruan mei", "gallagher", "lingsha"]
+        owned_break = count_in_group(break_archetype)
+
+        fua_archetype = ["feixiao", "aventurine", "robin", "topaz", "dr. ratio", "yunli", "clara", "moze", "march 7th", "jade"]
+        owned_fua = count_in_group(fua_archetype)
+
+        pf_erudition = ["herta", "himeko", "jade", "argenti", "acheron"]
+        owned_pf = count_in_group(pf_erudition)
+
+        dot_archetype = ["kafka", "black swan", "jiaoqiu", "guinaifen", "sampo", "luka"]
+        owned_dot = count_in_group(dot_archetype)
+
+        crit_hypercarries = ["acheron", "feixiao", "dan heng il", "jingliu", "dr. ratio", "yunli", "argenti", "blade", "jing yuan", "clara", "seele"]
+        owned_crit_dps = count_in_group(crit_hypercarries)
+
+        # Status dos Arquétipos
+        def get_hsr_status(count, t0_count, ideal_min=2):
+            if t0_count >= ideal_min:
+                return "Excelente", "#10b981"
+            elif count >= ideal_min:
+                return "Suficiente", "#3b82f6"
+            elif count == 1:
+                return "Atenção", "#f59e0b"
+            else:
+                return "Crítico", "#ef4444"
+
+        st_harm, col_harm = get_hsr_status(len(owned_harmony_t0), len(owned_harmony_t0), 2)
+        archetypes_summary.append({
+            "key": "harmony",
+            "title": "Harmonia & Manipulação de Ação (Tier 0)",
+            "icon": "fa-music",
+            "status": st_harm,
+            "status_color": col_harm,
+            "owned_count": len(owned_harmony_t0),
+            "target_count": 2,
+            "owned_characters": owned_harmony_t0,
+            "description": "Peças fundamentais para turnos extras, penetração de resistência e buffs de crítico."
+        })
+
+        st_sust, col_sust = get_hsr_status(len(owned_sustain_all), len(owned_sustain_5star), 2)
+        archetypes_summary.append({
+            "key": "sustain",
+            "title": "Sustentadores de Elite (Preservação / Abundância)",
+            "icon": "fa-shield-halved",
+            "status": st_sust,
+            "status_color": col_sust,
+            "owned_count": len(owned_sustain_all),
+            "target_count": 2,
+            "owned_characters": owned_sustain_5star if owned_sustain_5star else owned_sustain_all,
+            "description": "Imunidade a controle (CC), escudos inquebráveis e cura reativa para MoC 12 e AS 4."
+        })
+
+        st_break, col_break = ("Excelente", "#10b981") if len(owned_break) >= 3 else (("Suficiente", "#3b82f6") if len(owned_break) >= 2 else ("Atenção", "#f59e0b"))
+        archetypes_summary.append({
+            "key": "break",
+            "title": "Núcleo de Quebra / Super Break",
+            "icon": "fa-burst",
+            "status": st_break,
+            "status_color": col_break,
+            "owned_count": len(owned_break),
+            "target_count": 3,
+            "owned_characters": owned_break,
+            "description": "Dominância contra fraquezas e velocidade de limpeza em Sombra Apocalíptica."
+        })
+
+        st_pf, col_pf = ("Excelente", "#10b981") if len(owned_pf) >= 2 else (("Suficiente", "#3b82f6") if len(owned_pf) >= 1 else ("Crítico", "#ef4444"))
+        archetypes_summary.append({
+            "key": "pure_fiction",
+            "title": "Especialistas em AoE / Pura Ficção",
+            "icon": "fa-meteor",
+            "status": st_pf,
+            "status_color": col_pf,
+            "owned_count": len(owned_pf),
+            "target_count": 2,
+            "owned_characters": owned_pf,
+            "description": "Erudição e dano em área contínuo para bater 60.000+ pontos na Pura Ficção."
+        })
+
+        # Cobertura Elemental
+        elements_cfg = [
+            ("Físico", "fa-hand-fist", "#e2e8f0", ["boothill", "feixiao", "robin", "yunli", "argenti", "clara", "luka", "sushang", "natasha"]),
+            ("Fogo", "fa-fire", "#ef4444", ["firefly", "topaz", "jiaoqiu", "gallagher", "lingsha", "himeko", "guinaifen", "asta", "hook"]),
+            ("Gelo", "fa-snowflake", "#38bdf8", ["jingliu", "ruan mei", "herta", "gepard", "pela", "march 7th", "yanqing", "misha"]),
+            ("Raio", "fa-bolt", "#a855f7", ["acheron", "kafka", "jing yuan", "tingyun", "bailu", "moze", "serval", "arlan"]),
+            ("Vento", "fa-wind", "#10b981", ["black swan", "feixiao", "huohuo", "blade", "bronya", "dan heng", "sampo"]),
+            ("Quântico", "fa-atom", "#6366f1", ["sparkle", "jade", "fu xuan", "seele", "silver wolf", "xueyi", "lynx", "qingque"]),
+            ("Imaginário", "fa-sun", "#f59e0b", ["aventurine", "sunday", "dan heng il", "dr. ratio", "luocha", "trailblazer", "yukong", "welt"])
+        ]
+        for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
+            elem_chars = count_in_group(char_pool)
+            elem_built = count_in_group(char_pool, min_built=True)
+            status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
+            elemental_coverage.append({
+                "element": elem_name,
+                "icon": elem_icon,
+                "color": elem_color,
+                "count": len(elem_chars),
+                "built_count": len(elem_built),
+                "characters": elem_chars,
+                "status": status
+            })
+
+        # Lacunas Críticas
+        if len(owned_harmony_t0) < 2:
+            overall_score -= 22
+            critical_gaps.append({
+                "id": "hsr_lack_tier0_harmony",
+                "severity": "CRÍTICA",
+                "severity_color": "#ef4444",
+                "badge": "🎵 Déficit de Harmonia Tier 0",
+                "title": "Menos de 2 Suportes Harmonia Premium",
+                "description": "Você possui menos de 2 buffers de alta geração de turnos (Ruan Mei, Robin, Sparkle, Sunday).",
+                "endgame_impact": "Queda drástica de ciclos no MoC e dificuldade de alcançar os 40.000 pts na Pura Ficção.",
+                "suggested_archetype": "Harmonia Limitada (Avanço de Ação / Penetração de RES / DMG%)",
+                "recommended_characters": ["Robin", "Ruan Mei", "Sunday", "Sparkle"]
+            })
+
+        if len(owned_sustain_5star) < 2:
+            overall_score -= 20
+            critical_gaps.append({
+                "id": "hsr_lack_5star_sustain",
+                "severity": "ALTA",
+                "severity_color": "#f97316",
+                "badge": "🛡️ Sustentação de Alto Nível",
+                "title": "Falta de 2 Sustentadores Limitados 5★",
+                "description": "Você não possui 2 sustentadores premium (Aventurine, Huohuo, Fu Xuan, Lingsha).",
+                "endgame_impact": "Vulnerabilidade a debuffs de controle (Crowd Control) e one-shots nos andares 11 e 12.",
+                "suggested_archetype": "Preservação / Abundância Limitada",
+                "recommended_characters": ["Aventurine", "Huohuo", "Lingsha", "Fu Xuan"]
+            })
+
+        has_herta_himeko = ("Herta" in owned_pf or "Himeko" in owned_pf or "Jade" in owned_pf)
+        if not has_herta_himeko:
+            overall_score -= 15
+            critical_gaps.append({
+                "id": "hsr_no_pure_fiction_core",
+                "severity": "ALTA",
+                "severity_color": "#f97316",
+                "badge": "📖 Fraqueza em Pura Ficção",
+                "title": "Falta de Núcleo Especialista em AoE",
+                "description": "Herta ou Himeko não estão construídas na conta.",
+                "endgame_impact": "Dificuldade constante para obter a pontuação máxima (60.000 / 80.000) na Pura Ficção.",
+                "suggested_archetype": "Erudição / AoE Follow-Up",
+                "recommended_characters": ["Herta (Construir)", "Himeko", "Jade"]
+            })
+
+        # Recomendações de Puxadas
+        rank_idx = 1
+        if len(owned_harmony_t0) < 2:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "Suporte Harmonia Universal (Robin / Sunday / Ruan Mei)",
+                "badge": "Prioridade Máxima",
+                "tag": "Multiplicador de Conta",
+                "characters": ["Robin", "Sunday", "Ruan Mei"],
+                "reason": "O maior upgrade de poder possível em Honkai: Star Rail. Transforma qualquer DPS em uma máquina de ciclos zero.",
+                "impact_score": "-2 a 4 Ciclos no Caos da Memória (MoC)"
+            })
+            rank_idx += 1
+
+        if len(owned_sustain_5star) < 2:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "Sustentador 5★ de Elite (Aventurine / Huohuo)",
+                "badge": "Alta Prioridade",
+                "tag": "Segurança & Utilidade",
+                "characters": ["Aventurine", "Huohuo", "Lingsha"],
+                "reason": "Aventurine traz sinergia colossal com FuA/Acheron e escudos infinitos. Huohuo recarrega energia globalmente.",
+                "impact_score": "100% de Taxa de Sobrevivência no MoC 12"
+            })
+            rank_idx += 1
+
+        if len(owned_crit_dps) == 0 and len(owned_break) < 2:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "DPS de Elite (Acheron / Firefly / Feixiao)",
+                "badge": "Alta Prioridade",
+                "tag": "Finalizador de Endgame",
+                "characters": ["Acheron", "Firefly", "Feixiao"],
+                "reason": "Mecanismos de quebra que ignoram fraquezas ou rajadas de dano absurdas com escalonamento moderno.",
+                "impact_score": "Garante 36★ no MoC e 12★ na Sombra Apocalíptica"
+            })
+            rank_idx += 1
+
+    # ==========================================
+    # 3. ZENLESS ZONE ZERO
+    # ==========================================
+    elif g == "zzz":
+        # Arquétipos
+        stunners_s = ["qingyi", "lycaon", "caesar", "koleda"]
+        stunners_all = stunners_s + ["anby"]
+        owned_stunners_s = count_in_group(stunners_s)
+        owned_stunners_all = count_in_group(stunners_all)
+
+        supports_s = ["caesar", "astra yao", "rina"]
+        supports_all = supports_s + ["soukaku", "lucy", "nicole", "seth"]
+        owned_supports_s = count_in_group(supports_s)
+        owned_supports_all = count_in_group(supports_all)
+
+        attack_dps = ["ellen", "zhu yuan", "soldier 11", "nekomata", "harumasa", "miyabi", "corin", "anton", "billy"]
+        owned_attack_dps = count_in_group(attack_dps)
+
+        anomaly_dps = ["jane doe", "burnice", "yanagi", "grace", "piper"]
+        owned_anomaly_dps = count_in_group(anomaly_dps)
+
+        # Status
+        st_stun = "Excelente" if len(owned_stunners_s) >= 2 else ("Suficiente" if len(owned_stunners_all) >= 2 else "Atenção")
+        col_stun = "#10b981" if st_stun == "Excelente" else ("#3b82f6" if st_stun == "Suficiente" else "#f59e0b")
+        archetypes_summary.append({
+            "key": "stunners",
+            "title": "Atordoadores (Stun / Daze)",
+            "icon": "fa-bolt",
+            "status": st_stun,
+            "status_color": col_stun,
+            "owned_count": len(owned_stunners_all),
+            "target_count": 2,
+            "owned_characters": owned_stunners_all,
+            "description": "Multiplica o dano em 150%+ durante a janela de Atordoamento (Stun Window)."
+        })
+
+        st_supp = "Excelente" if len(owned_supports_all) >= 3 else ("Suficiente" if len(owned_supports_all) >= 2 else "Atenção")
+        col_supp = "#10b981" if st_supp == "Excelente" else ("#3b82f6" if st_supp == "Suficiente" else "#f59e0b")
+        archetypes_summary.append({
+            "key": "supports",
+            "title": "Suportes & Defesa (Buff de ATK / DEF Shred)",
+            "icon": "fa-shield-halved",
+            "status": st_supp,
+            "status_color": col_supp,
+            "owned_count": len(owned_supports_all),
+            "target_count": 2,
+            "owned_characters": owned_supports_all,
+            "description": "Gera pontos de assistência, buffs de ATK puro e debuffs defensivos no inimigo."
+        })
+
+        st_atk = "Excelente" if len(owned_attack_dps) >= 2 else ("Suficiente" if len(owned_attack_dps) >= 1 else "Atenção")
+        col_atk = "#10b981" if st_atk == "Excelente" else ("#3b82f6" if st_atk == "Suficiente" else "#f59e0b")
+        archetypes_summary.append({
+            "key": "attack_dps",
+            "title": "Agentes de Ataque (Burst / Dano Direto)",
+            "icon": "fa-crosshairs",
+            "status": st_atk,
+            "status_color": col_atk,
+            "owned_count": len(owned_attack_dps),
+            "target_count": 2,
+            "owned_characters": owned_attack_dps,
+            "description": "Descarregam dano massivo durante as janelas de Chain Attack e Stun."
+        })
+
+        st_anom = "Excelente" if len(owned_anomaly_dps) >= 2 else ("Suficiente" if len(owned_anomaly_dps) >= 1 else "Atenção")
+        col_anom = "#10b981" if st_anom == "Excelente" else ("#3b82f6" if st_anom == "Suficiente" else "#f59e0b")
+        archetypes_summary.append({
+            "key": "anomaly_dps",
+            "title": "Agentes de Anomalia (DoT / Desordem)",
+            "icon": "fa-flask-vial",
+            "status": st_anom,
+            "status_color": col_anom,
+            "owned_count": len(owned_anomaly_dps),
+            "target_count": 2,
+            "owned_characters": owned_anomaly_dps,
+            "description": "Acumulam anomalia e causam Desordem contínua sem depender do atordoamento."
+        })
+
+        # Cobertura de Atributos ZZZ
+        elements_cfg = [
+            ("Físico", "fa-hand-fist", "#e2e8f0", ["jane doe", "caesar", "nekomata", "piper", "corin", "billy", "seth"]),
+            ("Fogo", "fa-fire", "#ef4444", ["burnice", "soldier 11", "koleda", "lucy", "lighter"]),
+            ("Gelo", "fa-snowflake", "#38bdf8", ["ellen", "lycaon", "soukaku", "miyabi"]),
+            ("Elétrico", "fa-bolt", "#a855f7", ["qingyi", "yanagi", "rina", "grace", "anby", "anton", "harumasa"]),
+            ("Éter", "fa-circle-radiation", "#10b981", ["zhu yuan", "nicole", "astra yao"])
+        ]
+        for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
+            elem_chars = count_in_group(char_pool)
+            elem_built = count_in_group(char_pool, min_built=True)
+            status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
+            elemental_coverage.append({
+                "element": elem_name,
+                "icon": elem_icon,
+                "color": elem_color,
+                "count": len(elem_chars),
+                "built_count": len(elem_built),
+                "characters": elem_chars,
+                "status": status
+            })
+
+        # Lacunas Críticas
+        if len(owned_stunners_s) == 0:
+            overall_score -= 22
+            critical_gaps.append({
+                "id": "zzz_no_s_stunner",
+                "severity": "CRÍTICA",
+                "severity_color": "#ef4444",
+                "badge": "⚡ Lentidão no Atordoamento",
+                "title": "Falta de Atordoador S-Rank (Qingyi / Lycaon / Caesar)",
+                "description": "Você depende exclusivamente da Anby como atordoadora nos 2 lados do Shiyu Defense.",
+                "endgame_impact": "Demora excessiva para atingir o estado de Stun nos Chefes da Shiyu Crítica (Nível 5-7).",
+                "suggested_archetype": "Atordoador S-Rank de Alto Impacto",
+                "recommended_characters": ["Qingyi", "Caesar", "Von Lycaon"]
+            })
+
+        if len(owned_attack_dps) + len(owned_anomaly_dps) < 2:
+            overall_score -= 25
+            critical_gaps.append({
+                "id": "zzz_lack_dps",
+                "severity": "CRÍTICA",
+                "severity_color": "#ef4444",
+                "badge": "⚔️ Carência de Finalizadores",
+                "title": "Falta de DPSs Principais para 2 Equipes",
+                "description": "Menos de 2 agentes de Ataque ou Anomalia de alto investimento.",
+                "endgame_impact": "Inviabiliza a obtenção de Rank S na Shiyu Defense dos dois lados.",
+                "suggested_archetype": "DPS S-Rank de Ataque ou Anomalia",
+                "recommended_characters": ["Ellen Joe", "Jane Doe", "Zhu Yuan", "Miyabi", "Burnice"]
+            })
+
+        # Recomendações de Puxadas
+        rank_idx = 1
+        if len(owned_stunners_s) == 0:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "Atordoador S-Rank (Qingyi / Caesar)",
+                "badge": "Prioridade Máxima",
+                "tag": "Velocidade de Stun",
+                "characters": ["Qingyi", "Caesar"],
+                "reason": "Qingyi eleva o multiplicador de atordoamento para 200%+ e atordoa chefes na metade do tempo da Anby.",
+                "impact_score": "-40s no Tempo de Clear do Shiyu 7"
+            })
+            rank_idx += 1
+
+        if len(owned_anomaly_dps) == 0:
+            pull_recommendations.append({
+                "priority_rank": rank_idx,
+                "archetype": "Especialista em Anomalia / Desordem",
+                "badge": "Alta Prioridade",
+                "tag": "Novo Arquétipo Meta",
+                "characters": ["Jane Doe", "Burnice", "Yanagi"],
+                "reason": "Permite ignorar mecânicas de atordoamento e derreter inimigos com Desordem de alto escalonamento.",
+                "impact_score": "+30% Flexibilidade contra Chefes com Alta Resistência a Stun"
+            })
+            rank_idx += 1
+
+    # Normalização final da pontuação
+    overall_score = max(20, min(100, overall_score))
+    if overall_score >= 85:
+        score_grade = "S"
+        score_label = "Excelente Cobertura & Alta Prontidão"
+        score_color = "#10b981"
+    elif overall_score >= 70:
+        score_grade = "A"
+        score_label = "Conta Equilibrada com Boas Sinergias"
+        score_color = "#3b82f6"
+    elif overall_score >= 50:
+        score_grade = "B"
+        score_label = "Lacunas Moderadas em Arquétipos Chave"
+        score_color = "#f59e0b"
+    else:
+        score_grade = "C"
+        score_label = "Atenção: Carência Crítica de Suportes/Sustentação"
+        score_color = "#ef4444"
+
+    # Avaliação de Prontidão de Endgame
+    endgame_teams_ready = 2 if len(critical_gaps) <= 1 and built_chars >= 6 else (1 if built_chars >= 3 else 0)
+    endgame_readiness = {
+        "status": f"{endgame_teams_ready}/2 Equipes Prontas para Endgame",
+        "teams_ready": endgame_teams_ready,
+        "summary": (
+            "Sua conta possui fundações completas para fechar o conteúdo mais difícil do jogo com nota máxima."
+            if endgame_teams_ready == 2 else
+            "Você tem 1 time competitivo consolidado, mas a segunda equipe precisa de reforços nos arquétipos sinalizados."
+            if endgame_teams_ready == 1 else
+            "Concentre seus recursos e energia em elevar o nível e fechar as builds da sua equipe principal primeiro."
+        ),
+        "details": [gap["title"] for gap in critical_gaps]
+    }
+
+    # Resumo formatado em Markdown para injeção rápida no Groq RAG
+    rag_lines = [
+        f"### DIAGNÓSTICO DE LACUNAS DA CONTA ({game_names.get(g, g.upper())}):",
+        f"- **Pontuação de Saúde da Conta:** {overall_score}/100 (Classificação: {score_grade} - {score_label})",
+        f"- **Personagens Construídos (Prontos p/ Batalha):** {built_chars} de {total_chars}",
+        f"- **Equipes Prontas p/ Endgame:** {endgame_teams_ready}/2 times"
+    ]
+    if critical_gaps:
+        rag_lines.append("- **Lacunas Estratégicas Críticas Detectadas:**")
+        for cg in critical_gaps:
+            rag_lines.append(f"  * [{cg['severity']}] {cg['title']}: {cg['description']} -> *Recomendado buscar:* {', '.join(cg['recommended_characters'])}")
+    else:
+        rag_lines.append("- **Lacunas:** Nenhuma carência grave detectada! Conta muito bem balanceada.")
+
+    if pull_recommendations:
+        rag_lines.append("- **Prioridades de Puxada no Gacha / Banners Futuros:**")
+        for pr in pull_recommendations:
+            rag_lines.append(f"  {pr['priority_rank']}. **{pr['archetype']}** ({', '.join(pr['characters'])}): {pr['reason']}")
+
+    rag_summary_markdown = "\n".join(rag_lines)
+
+    return {
+        "game_id": g,
+        "game_name": game_names.get(g, g.upper()),
+        "overall_score": overall_score,
+        "score_grade": score_grade,
+        "score_label": score_label,
+        "score_color": score_color,
+        "total_characters": total_chars,
+        "built_characters": built_chars,
+        "archetypes_summary": archetypes_summary,
+        "elemental_coverage": elemental_coverage,
+        "critical_gaps": critical_gaps,
+        "pull_recommendations": pull_recommendations,
+        "endgame_readiness": endgame_readiness,
+        "rag_summary_markdown": rag_summary_markdown
+    }
+
+
+def recommend_relic_crafting(game_id: str, roster: list) -> dict:
+    """
+    Analisa os personagens de maior prioridade do Roster e identifica as piores peças equipadas
+    (ou peças com atributos principais incorretos), recomendando os melhores alvos para uso
+    de Resina Automodeladora (HSR), Elixir Santificador (Genshin) ou Calibrador de Discos (ZZZ).
+    """
+    g = game_id.lower().strip()
+    game_names = {"genshin": "Genshin Impact", "hsr": "Honkai: Star Rail", "zzz": "Zenless Zone Zero"}
+
+    item_names = {
+        "genshin": "Elixir Santificador & Relic Strongbox",
+        "hsr": "Resina Automodeladora & Síntese Omnipotente",
+        "zzz": "Sintetizador de Discos & Calibrador Hi-Fi"
+    }
+
+    item_icons = {
+        "genshin": "fa-flask-round-potion",
+        "hsr": "fa-cube",
+        "zzz": "fa-compact-disc"
+    }
+
+    # Ordena personagens por nível / raridade / prioridade de investimento
+    top_candidates = []
+    for item in roster or []:
+        if isinstance(item, dict):
+            c_name = item.get("name") or ""
+            c_lvl = int(item.get("level") or 1)
+            c_rarity = int(item.get("rarity") or 4)
+            c_score = float(item.get("overall_score") or item.get("score") or 0.0)
+            c_grade = str(item.get("overall_grade") or item.get("grade") or "B")
+            c_icon = item.get("icon")
+            relics = item.get("relics") or []
+            if c_lvl >= 50 or c_rarity == 5:
+                top_candidates.append({
+                    "name": c_name,
+                    "level": c_lvl,
+                    "rarity": c_rarity,
+                    "score": c_score,
+                    "grade": c_grade,
+                    "icon": c_icon,
+                    "relics": relics
+                })
+
+    # Prioriza quem tem score baixo ou nota B/C/D mas é personagem forte
+    top_candidates.sort(key=lambda x: (x["rarity"], -x["score"]), reverse=True)
+
+    recommendations = []
+    rank_counter = 1
+
+    # ==========================================
+    # REGRAS DE CRAFTING POR JOGO
+    # ==========================================
+    if g == "genshin":
+        # Meta targets no Genshin
+        meta_craft_genshin = {
+            "neuvillette": {
+                "set": "Caçador das Sombras",
+                "slot": "Cálice de Eonothem (Slot 4)",
+                "main": "Bônus de Dano Hydro (ou HP%)",
+                "substats": ["Dano Crítico", "Taxa Crítica", "HP%", "Recarga de Energia"],
+                "gain": "+25% Dano no Ataque Carregado Notável"
+            },
+            "furina": {
+                "set": "Trompete do Éter / Companhia Dourada",
+                "slot": "Ampulheta / Cálice (Slot 3 ou 4)",
+                "main": "Recarga de Energia ou HP%",
+                "substats": ["Taxa Crítica", "Dano Crítico", "HP%", "Recarga de Energia"],
+                "gain": "Garante 100% de Uptime no Supremo Fanfarra"
+            },
+            "arlecchino": {
+                "set": "Fragmento da Harmonia Caprichosa",
+                "slot": "Cálice de Bônus Pyro (Slot 4)",
+                "main": "Bônus de Dano Pyro",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Proficiência Elemental"],
+                "gain": "+30% Eficiência em Golpes de Vaporize"
+            },
+            "kaedehara kazuha": {
+                "set": "Sombra Verde (VV)",
+                "slot": "Cálice / Tiara (Slot 4 ou 5)",
+                "main": "Proficiência Elemental (EM)",
+                "substats": ["Recarga de Energia", "Proficiência Elemental", "ATK%"],
+                "gain": "Atinge a meta de 1.000 EM para buffer máximo de 40% DMG"
+            },
+            "nahida": {
+                "set": "Memórias da Floresta (Deepwood)",
+                "slot": "Tiara / Cálice (Slot 4 ou 5)",
+                "main": "Proficiência Elemental (ou Taxa Crítica)",
+                "substats": ["Proficiência Elemental", "Taxa Crítica", "Dano Crítico", "Recarga de Energia"],
+                "gain": "Maximiza dano de Tri-Karma e bônus da cúpula"
+            },
+            "yelan": {
+                "set": "Selo da Insulação (Emblem)",
+                "slot": "Cálice de Dano Hydro ou Tiara Crítica",
+                "main": "Bônus de Dano Hydro (ou Taxa/Dano Crítico)",
+                "substats": ["Taxa Crítica", "Dano Crítico", "Recarga de Energia", "HP%"],
+                "gain": "+20% Dano Coordenado do Supremo"
+            }
+        }
+
+        for cand in top_candidates:
+            c_norm = _norm_str(cand["name"])
+            matched_key = None
+            for mk in meta_craft_genshin:
+                if mk in c_norm or c_norm in mk:
+                    matched_key = mk
+                    break
+
+            cfg = meta_craft_genshin.get(matched_key) if matched_key else {
+                "set": "Set Bis Recomendado",
+                "slot": "Cálice Elemental (Slot 4) ou Tiara Crítica (Slot 5)",
+                "main": "Bônus Elemental ou Taxa/Dano Crítico",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%/HP%", "Recarga"],
+                "gain": "+15% a +25% Dano Total do Personagem"
+            }
+
+            # Encontra se alguma peça equipada tem nota baixa
+            lowest_piece = "Nenhuma relíquia equipada"
+            if cand["relics"]:
+                lowest_piece = f"Peça atual subótima (Build: {cand['grade']})"
+
+            recommendations.append({
+                "priority_rank": rank_counter,
+                "character_name": cand["name"],
+                "character_icon": cand["icon"],
+                "target_set_name": cfg["set"],
+                "slot_name": cfg["slot"],
+                "slot_icon": "fa-wand-magic-sparkles",
+                "recommended_main_stat": cfg["main"],
+                "recommended_substats": cfg["substats"],
+                "current_piece_status": lowest_piece,
+                "expected_gain": cfg["gain"],
+                "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA"
+            })
+            rank_counter += 1
+            if rank_counter > 5:
+                break
+
+    elif g == "hsr":
+        # Meta targets no HSR
+        meta_craft_hsr = {
+            "robin": {
+                "set": "Lushaka das Águas Afundadas / Vonwacq",
+                "slot": "Corda de Ligação (Slot 6)",
+                "main": "Taxa de Recuperação de Energia (ERR)",
+                "substats": ["Velocidade (SPD)", "ATK%", "HP%", "RES a Efeito"],
+                "gain": "Recarrega o Concerto do Supremo em 1 rotação"
+            },
+            "sunday": {
+                "set": "Lushaka das Águas Afundadas",
+                "slot": "Corda de ERR (Slot 6) ou Pés de SPD (Slot 4)",
+                "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade",
+                "substats": ["Dano Crítico", "Velocidade", "RES a Efeito", "HP%"],
+                "gain": "Sincroniza avanço de ação imediato no turno do Hypercarry"
+            },
+            "ruan mei": {
+                "set": "Talia: Reino dos Bandidos / Vonwacq",
+                "slot": "Corda de ERR (Slot 6) ou Pés de SPD (Slot 4)",
+                "main": "Taxa de Recuperação de Energia ou Velocidade",
+                "substats": ["Efeito de Quebra (Break Effect)", "Velocidade", "HP%"],
+                "gain": "Alcança 160% de Efeito de Quebra para buff de 68% DMG global"
+            },
+            "acheron": {
+                "set": "Pioneiro Mergulhador no Mar Morto / Izumo Gensei",
+                "slot": "Esfera de ATK% / Raio (Slot 5) ou Corpo de Dano Crítico",
+                "main": "Dano Crítico (Corpo) ou ATK% (Esfera)",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Velocidade"],
+                "gain": "+35% Dano Bruto no Supremo dos Nove Cortes"
+            },
+            "firefly": {
+                "set": "Cavalaria de Ferro dos Flagelos / Kalpagni",
+                "slot": "Pés de SPD (Slot 4) ou Esfera de ATK% (Slot 5)",
+                "main": "Velocidade (150+ SPD) e ATK%",
+                "substats": ["Efeito de Quebra (Break Effect)", "Velocidade", "ATK%"],
+                "gain": "Garante 4 ações completas no estado Combustão Completa"
+            },
+            "feixiao": {
+                "set": "Corajoso ao Vento / Duran: Dinastia dos Lobos",
+                "slot": "Corpo de Taxa Crítica (Slot 3) ou Esfera de Dano Físico",
+                "main": "Taxa Crítica (Corpo) ou Dano Físico (Esfera)",
+                "substats": ["Dano Crítico", "Taxa Crítica", "Velocidade", "ATK%"],
+                "gain": "Consistência de 95%+ Crítico nos Ataques Extras e Supremo"
+            },
+            "aventurine": {
+                "set": "Palácio dos Cavaleiros da Pureza / Salsotto",
+                "slot": "Corpo de DEF% ou Dano Crítico (Slot 3)",
+                "main": "DEF% (para 4.000 DEF) ou Dano Crítico",
+                "substats": ["DEF%", "Velocidade", "Dano Crítico", "Taxa Crítica"],
+                "gain": "Escudo perpétuo de 100% e ativação do buff de 48% Crítico"
+            }
+        }
+
+        for cand in top_candidates:
+            c_norm = _norm_str(cand["name"])
+            matched_key = None
+            for mk in meta_craft_hsr:
+                if mk in c_norm or c_norm in mk:
+                    matched_key = mk
+                    break
+
+            cfg = meta_craft_hsr.get(matched_key) if matched_key else {
+                "set": "Set de Ornamentos Planares Meta",
+                "slot": "Corda de Recuperação de Energia (Slot 6) ou Pés de SPD (Slot 4)",
+                "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade (SPD)",
+                "substats": ["Velocidade", "Taxa Crítica", "Dano Crítico", "HP%/ATK%"],
+                "gain": "+20% Eficiência de Ciclos no Caos da Memória (MoC)"
+            }
+
+            lowest_piece = "Peça atual subótima"
+            if cand["relics"]:
+                lowest_piece = f"Build Atual: Nota {cand['grade']} ({cand['score']}%)"
+
+            recommendations.append({
+                "priority_rank": rank_counter,
+                "character_name": cand["name"],
+                "character_icon": cand["icon"],
+                "target_set_name": cfg["set"],
+                "slot_name": cfg["slot"],
+                "slot_icon": "fa-cube",
+                "recommended_main_stat": cfg["main"],
+                "recommended_substats": cfg["substats"],
+                "current_piece_status": lowest_piece,
+                "expected_gain": cfg["gain"],
+                "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA"
+            })
+            rank_counter += 1
+            if rank_counter > 5:
+                break
+
+    elif g == "zzz":
+        # Meta targets no ZZZ
+        meta_craft_zzz = {
+            "qingyi": {
+                "set": "Jazz Eletrizante / Choque Trovejante",
+                "slot": "Disco 6 (Impacto %)",
+                "main": "Impacto %",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Proficiência de Anomalia"],
+                "gain": "Atordoa chefes de Shiyu em menos de 15 segundos"
+            },
+            "ellen": {
+                "set": "Pica-Pau Polar / Metal Polar",
+                "slot": "Disco 4 (Taxa/Dano Crítico) ou Disco 5 (Bônus Gelo)",
+                "main": "Dano Crítico ou Bônus de Dano de Gelo",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
+                "gain": "+30% Dano Crítico nas Tesouradas de Gelo"
+            },
+            "jane doe": {
+                "set": "Presa Furiosa / Jazz da Liberdade",
+                "slot": "Disco 4 (Proficiência de Anomalia) ou Disco 5 (Dano Físico)",
+                "main": "Proficiência de Anomalia ou Bônus Físico",
+                "substats": ["Proficiência de Anomalia", "Taxa de Anomalia", "ATK%"],
+                "gain": "Desencadeia Assalto Crítico contínuo de 500k+ dano"
+            },
+            "caesar": {
+                "set": "Protetor da Proto-Faixa / Jazz",
+                "slot": "Disco 6 (Impacto %) ou Disco 4 (DEF%)",
+                "main": "Impacto % (ou DEF%)",
+                "substats": ["DEF%", "HP%", "Impacto", "ATK%"],
+                "gain": "Concede +1.000 de ATK instantâneo para todo o time com escudo"
+            }
+        }
+
+        for cand in top_candidates:
+            c_norm = _norm_str(cand["name"])
+            matched_key = None
+            for mk in meta_craft_zzz:
+                if mk in c_norm or c_norm in mk:
+                    matched_key = mk
+                    break
+
+            cfg = meta_craft_zzz.get(matched_key) if matched_key else {
+                "set": "Discos de Música Recomendados",
+                "slot": "Disco 6 (Impacto ou Regeneração de Energia)",
+                "main": "Impacto % ou Regeneração de Energia",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
+                "gain": "+20% Velocidade de Stun ou Dano de Burst"
+            }
+
+            lowest_piece = f"Build Atual: Nota {cand['grade']}"
+
+            recommendations.append({
+                "priority_rank": rank_counter,
+                "character_name": cand["name"],
+                "character_icon": cand["icon"],
+                "target_set_name": cfg["set"],
+                "slot_name": cfg["slot"],
+                "slot_icon": "fa-compact-disc",
+                "recommended_main_stat": cfg["main"],
+                "recommended_substats": cfg["substats"],
+                "current_piece_status": lowest_piece,
+                "expected_gain": cfg["gain"],
+                "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA"
+            })
+            rank_counter += 1
+            if rank_counter > 5:
+                break
+
+    # Fallback se roster estiver vazio
+    if not recommendations:
+        recommendations.append({
+            "priority_rank": 1,
+            "character_name": "Suporte / Buffer Principal",
+            "character_icon": None,
+            "target_set_name": "Set de Energia ou Velocidade",
+            "slot_name": "Corda de ERR / Cálice Elemental / Disco 6",
+            "slot_icon": item_icons.get(g, "fa-gem"),
+            "recommended_main_stat": "Recuperação de Energia / Dano Elemental / Impacto",
+            "recommended_substats": ["Velocidade", "Taxa Crítica", "Dano Crítico"],
+            "current_piece_status": "Nenhum personagem de alto nível sincronizado",
+            "expected_gain": "Otimização de Rotação Global",
+            "urgency": "ALTA"
+        })
+
+    summary_tip = (
+        f"💡 **Dica de Ouro:** Guarde sua {item_names.get(g, 'Resina')} para peças de **Recuperação de Energia (ERR)** "
+        "ou **Cálices de Bônus Elemental / Discos de Impacto**, pois elas possuem a menor probabilidade matemática de drop natural (~3% a 5%)."
+    )
+
+    return {
+        "game_id": g,
+        "game_name": game_names.get(g, g.upper()),
+        "crafting_item_name": item_names.get(g, "Item de Síntese"),
+        "crafting_item_icon": item_icons.get(g, "fa-wand-magic-sparkles"),
+        "recommendations": recommendations,
+        "summary_tip": summary_tip
+    }
+
+
+
 

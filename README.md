@@ -1,6 +1,6 @@
-# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v4.5)
+# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v5.0)
 
-Uma suíte local moderna com interface gráfica **Web Premium** desenvolvida em **HTML5, CSS3 (Vanilla Glassmorphism), JavaScript ES6+** e backend em Python (**FastAPI + SQLite + Playwright + Groq Cloud RAG + Windows DPAPI Security Vault**).
+Uma suíte local moderna com interface gráfica **Web Premium** desenvolvida em **HTML5, CSS3 (Vanilla Glassmorphism), JavaScript ES6+** e arquitetura modular limpa em Python (**FastAPI + Clean Architecture + SQLite + Playwright + Groq Cloud RAG + Windows DPAPI Security Vault**).
 
 > [!NOTE]
 > **Sobre o nome:** "Cabeça de Droid" é uma referência divertida a *Honkai: Star Rail* — especificamente à maneira carinhosa como a Herta chama o **Aeon Nous** (o Aeon da Erudição), um supercomputador astral gigante que ascendeu à divindade após desenvolver uma Inteligência Artificial Geral (ASI).
@@ -9,17 +9,17 @@ Uma suíte local moderna com interface gráfica **Web Premium** desenvolvida em 
 
 ## 📌 Contexto do Projeto
 
-Este projeto nasceu como uma ferramenta pessoal para organizar meus rosters, guias e dados de jogos da HoYoverse (*Genshin Impact*, *Honkai: Star Rail* e *Zenless Zone Zero*) e enviá-los a uma IA para análise contextualizada. Ele não foi originalmente concebido como um produto comercial generalista pronto para o usuário comum.
+Este projeto nasceu como uma ferramenta pessoal para organizar rosters, guias e dados de jogos da HoYoverse (*Genshin Impact*, *Honkai: Star Rail* e *Zenless Zone Zero*) e integrá-los a uma IA para análise contextualizada e otimização de builds.
 
-O código está público principalmente por interesse em open source, compartilhamento de ideias e aprendizado. A compatibilidade e as decisões de arquitetura refletem meu próprio fluxo de uso. Ele foi publicado como open source para compartilhar a arquitetura e as ideias desenvolvidas, mas não tem como objetivo substituir ferramentas comunitárias especializadas nem oferecer uma experiência pronta e universal para todos os jogadores.
+O código está público principalmente por interesse em open source, compartilhamento de ideias e boas práticas de arquitetura de software limpa em Python. O sistema opera de forma 100% local, independente e sem telemetria externa.
 
-A compatibilidade pode variar conforme mudanças nas APIs da HoYoverse, nas fontes externas de dados (como Prydwen.gg) e em atualizações dos próprios jogos.
+A compatibilidade pode variar conforme mudanças nas APIs públicas da HoYoverse, nas fontes externas de dados (como Prydwen.gg) e em atualizações dos próprios jogos.
 
 ---
 
-## 🍪 Cookies HoYoLAB: O que é coletado, finalidade e riscos
+## 🍪 Cookies HoYoLAB: Coleta, Finalidade e Segurança
 
-Para interagir com as APIs públicas e oficiais da HoYoverse sem exigir senhas ou credenciais de conta, o aplicativo utiliza cookies de sessão web (`ltuid_v2`, `ltoken_v2`, `cookie_token_v2`).
+Para interagir com as APIs públicas e oficiais da HoYoverse sem exigir senhas ou credenciais de login, o aplicativo utiliza cookies de sessão web (`ltuid_v2`, `ltoken_v2`, `cookie_token_v2`).
 
 ### Quais cookies são utilizados e para que servem?
 
@@ -34,107 +34,174 @@ Para interagir com as APIs públicas e oficiais da HoYoverse sem exigir senhas o
 
 > [!CAUTION]
 > **Atenção aos Riscos:**
-> - Mesmo que esses tokens não permitam alterar diretamente a senha ou o e-mail da sua conta HoYoVerse (ações restritas a fluxos com `stoken` no aplicativo mobile oficial), eles devem ser tratados como **credenciais sensíveis de sessão**. O impacto exato de uma eventual exposição depende dos endpoints e serviços HoYoLAB acessíveis naquele momento e de possíveis mudanças de permissões que a HoYoverse venha a implementar no futuro.
+> - Mesmo que esses tokens não permitam alterar diretamente a senha ou o e-mail da sua conta HoYoVerse (ações restritas a fluxos com `stoken` no aplicativo mobile oficial), eles devem ser tratados como **credenciais sensíveis de sessão**.
 > - **Nunca compartilhe** seus arquivos `cookies.enc` ou valores brutos de cookies com terceiros ou em repositórios públicos.
-> - Se você suspeitar de qualquer exposição de tokens, basta fazer **Logout no site oficial da HoYoLAB** ou alterar sua senha para invalidar imediatamente todas as sessões ativas nos servidores da HoYoverse.
+> - Se suspeitar de qualquer exposição de tokens, basta fazer **Logout no site oficial da HoYoLAB** ou alterar sua senha para invalidar imediatamente todas as sessões ativas nos servidores da HoYoverse.
 
 ### 🛡️ Medidas de Proteção Implementadas na Aplicação
 
 1. **Criptografia Local com Windows DPAPI (`cookies.enc`):** Seus cookies são salvos exclusivamente no seu computador com proteção nativa do sistema operacional (`CryptProtectData` via `ctypes.windll.crypt32`), atrelando a chave criptográfica ao seu perfil de login no Windows no hardware atual.
-2. **Zero-Exposure no Frontend:** O servidor nunca envia cookies em texto claro para a interface web. O frontend exibe apenas resumos mascarados (ex: `ltuid_v2=282***47; ltoken_v2=v2_CA***JkXB; cookie_token_v2=***[PROTEGIDO]***`). A caixa de texto é tratada como buffer descartável de escrita (*write-only*).
-3. **Higienização Automática de Logs:** Todas as mensagens de terminal e logs de sincronização passam por filtros regex em tempo real ([log_sanitizer.py](log_sanitizer.py)) para censurar automaticamente tokens, chaves de API e cabeçalhos de autorização.
+2. **Zero-Exposure no Frontend:** O servidor nunca envia cookies em texto claro para a interface web. O frontend exibe apenas resumos mascarados (ex: `ltuid_v2=282***47; ltoken_v2=v2_CA***JkXB; cookie_token_v2=***[PROTEGIDO]***`).
+3. **Higienização Automática de Logs:** Todas as mensagens de terminal e logs de sincronização passam por filtros regex em tempo real ([log_sanitizer.py](core/security.py)) para censurar automaticamente tokens, chaves de API e cabeçalhos de autorização.
 4. **Isolamento de Rede por Padrão (Loopback 127.0.0.1):** O servidor inicia vinculado estritamente à máquina local. O acesso por outros dispositivos na mesma rede Wi-Fi/LAN só é liberado se você habilitar explicitamente a opção nas Configurações.
-5. **Autenticação Local por PIN (Opcional):** Permite configurar um PIN de 4 a 6 dígitos com hash `PBKDF2-HMAC-SHA256` (120.000 iterações com salt individual) para trancar o acesso ao dashboard em computadores compartilhados.
+5. **Autenticação Local por PIN (Opcional):** Permite configurar um PIN numérico com hash `PBKDF2-HMAC-SHA256` (120.000 iterações com salt individual) para trancar o acesso ao dashboard em computadores compartilhados.
 
 ---
 
-## 🌟 Principais Recursos
+## 🌟 Principais Recursos (20 Módulos Inteligentes)
 
-- **📊 Mini-Dashboards da Conta:** Exibição em tempo real de estatísticas do jogador (UID, Nível da Conta, Total de Personagens e Personagens 5★/Rank S) no topo da tela de cada jogo (*Zenless Zone Zero*, *Genshin Impact* e *Honkai: Star Rail*).
-- **🔋 Monitoramento Preciso de Energia (Daily Notes):** Acompanhamento em tempo real da Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR), com anéis de progresso SVG dinâmicos, cronômetro de recuperação completa em tempo real e expedições ativas.
-- **🎁 Auto-Check-in Diário Automático:** Resgate automático das recompensas diárias do HoYoLAB em segundo plano a cada 6 horas (com disparo inicial no arranque do servidor) e botão manual na interface com histórico de logs gravados no banco SQLite (`daily_checkin_logs`).
-- **⏰ Sincronização Diária Programada (Auto-Sync):** Agendamento configurável em horário fixo (ex: `04:00` AM) para atualizar automaticamente os personagens do roster e guias de metagame dos 3 jogos. Snapshots de evolução só são gravados se houver alterações detectadas.
-- **📁 Interface Web Premium (Glassmorphism & Mobile-Ready):** Painel escuro moderno com esquemas de cores específicos por jogo (ZZZ, Genshin, HSR), efeitos de vidro fosco, transições fluidas e suporte total a telas móveis (Smartphones e Tablets).
-- **📱 Acesso por Dispositivos Móveis & Rede Local (Wi-Fi / LAN):** Alternância sob demanda para binding em `0.0.0.0:8000`, permitindo acessar a aplicação no celular ou tablet através do IP local da sua máquina.
-- **🗂️ Menu Lateral Retrátil & Off-Canvas Mobile Drawer:**
-  - **No Desktop:** Botão de alternância (<i class="fa-solid fa-bars-staggered"></i>) para recolher o menu lateral para modo compacto de ícones (78px) ou expandi-lo (280px).
-  - **No Mobile:** O menu se transforma em uma gaveta off-canvas deslizante com cabeçalho superior fixo, botão hambúrguer (<i class="fa-solid fa-bars"></i>) e fundo escuro desfocado.
-- **🎨 Visual com Ícones Dinâmicos & Filtros de Raridade/Elemento:** Ícones nativos de elementos de combate baixados em cache local e integrados à galeria, com filtros por Elemento (incluindo *Lumiflux* de ZZZ) e Raridade (5★ Lendário / 4★ Épico ou Rank S / Rank A).
-- **🖼️ Proxy de Imagens Anti-CORS (`/api/proxy_image`):** Endpoint intermediário que faz o download seguro de imagens da HoYoLAB, Enka e Prydwen, contornando bloqueios de CORS e garantindo o carregamento perfeito de avatares e equipamentos no navegador e no Canvas.
-- **⚡ Terminal de Logs em Tempo Real & Barra de Progresso:** Monitoramento visual do progresso de raspagem (0 a 100%) e logs retráteis linha a linha para cada sincronização.
-- **⚔️ Tracker & Histórico de Endgame:**
-  - **Genshin Impact:** Abismo Espiral (*Spiral Abyss*) e Teatro Imaginário (*Imaginarium Theater*).
-  - **Honkai: Star Rail:** Memória do Caos (*Memory of Chaos*), Pura Ficção (*Pure Fiction*) e Sombra Apocalíptica (*Apocalyptic Shadow*).
-  - **Zenless Zone Zero:** Defesa Shiyu (*Shiyu Defense*) e *Deadly Assault*.
-  - Exibe andares concluídos, estrelas obtidas, pontuação e a composição detalhada dos times utilizados em cada lado.
-- **📈 Gráficos SVG & Distribuição da Conta:** Gráficos em pizza SVG dinâmicos integrados à subnavegação de cada jogo, ilustrando a distribuição do roster por Elemento, Caminho/Especialidade e Raridade.
-- **🗡️ Inspetor de Builds, Roll Value (RV) & Classificação (SSS a D):**
-  - Exibição de builds em gaveta deslizante em tela cheia no celular com overlay desfocado, botão proeminente de fechar e grade de status (`stats-grid`) adaptada em colunas.
-  - Avaliação individual de cada peça via **Roll Value (RV)** com compensação de Main Stat (*Main Stat Forgiveness*) e peso parcial para atributos Flat.
-  - Classificação de builds em **SSS** ($\ge 90\%$), **SS** ($\ge 75\%$), **S** ($\ge 60\%$), **A** ($\ge 45\%$), **B** ($\ge 30\%$) e **C/D** ($<30\%$).
-- **📷 Suíte de Exportação de Cards em Imagem HD (Canvas 2D Puro):**
-  - Gerador nativo em JavaScript Canvas em resolução **4K / Retina (2400 × 1350 px)**.
-  - **Card de Build (Landscape 16:9):** Splash Art do personagem, arma, talentos, notas e grid horizontal de relíquias com substatus e badges.
-  - **Card de Tier List da Conta:** Renderização gráfica da classificação de todos os personagens da conta.
-  - **Card de Evolução (Diff Card):** Visualização gráfica lado a lado da evolução de builds entre dois snapshots da linha do tempo.
-  - Suporte a download direto em PNG e cópia rápida para a área de transferência do sistema operacional.
-- **⚖️ Comparador Meta Lado a Lado (Sidebar):** Aba exclusiva no inspetor que contrasta a arma equipada, conjuntos de relíquias e status principais do jogador diretamente contra os benchmarks do metagame, destacando acertos (verde), desvios (vermelho) e opções alternativas viáveis (amarelo ouro).
-- **📊 Comparador de Metas Gerais (Stat Breakpoints):** Comparação em tempo real dos status de combate finais do personagem (Vida, Ataque, Defesa, Taxa Crítica, Dano Crítico, Velocidade, Recarga de Energia, etc.) contra as metas recomendadas de metagame.
-- **🧮 Calculadora de Ascensão de Personagens:** Inserida no inspetor de build, calcula o montante exato de XP, Moeda (Mora/Créditos/Dennys), Materiais de Chefes e Livros/Chips de Talentos necessários para elevar o personagem ao nível alvo (60, 70, 80 ou 90).
-- **🧠 Otimizador de Build IA (Groq):** Botão "Analisar" no painel do personagem que aciona a IA Groq para gerar 3 conselhos diretos e acionáveis de melhorias de build.
-- **🔥 Roast da Conta com IA:** Módulo humorístico que analisa a saúde da conta, personagens esquecidos e investimentos duvidosos de relíquias, gerando um "roast" sarcástico e personalizado via IA Groq.
-- **🍀 Índice de Sorte & Eficiência de Rolagens (Luck Score Module):** Módulo estatístico avançado inspirado no Akasha e Prydwen que avalia a sorte das relíquias equipadas na conta através do Roll Value (RV%) e sinergia de substatus. Exibe o medidor de sorte radial da conta (ex: *SSS+ Deus do RNG*, *SS Abençoado*), destaca a peça **God Roll #1** e **Cursed Roll** com ícones reais oficiais e classifica cada rolagem de substatus (*Perfeito +4*, *Ótimo +2*, *Útil +1*, *Desperdício*).
-- **🎲 Simulador Monte Carlo de Gacha & Tiros:** Simulação estocástica de 10.000 invocações para banners de 4★ e 5★ / Ranks A e S. Permite selecionar qualquer personagem do jogo, desconta automaticamente as cópias já obtidas no Roster (C0 a C6 / E0 a E6 / M0 a M6), inclui modelo real de **Soft Pity** (+6% por tiro do 74º/75º até 100% no 90º) e utiliza a nomenclatura oficial de cada jogo (Constelação, Eidolon, Mindscape Cinema).
-- **🌾 Central de Farm Inteligente Diário & Limites Máximos de Nível:**
-  - Respeita rigorosamente os níveis máximos de cada jogo (**Genshin Impact: Nv 90**, **Honkai: Star Rail: Nv 80**, **Zenless Zone Zero: Nv 60**).
-  - **Filtro de Personagens Alvo:** Seleção personalizada de personagens prioritários.
-  - Exibe a rotação diária de domínios (Livros de Talento, Materiais de Ascensão de Arma, Domínios de Artefatos) e recomendações de gasto de energia.
-- **🗑️ Analisador de Relíquias Lixo (Trash Finder):** Identifica automaticamente no inventário do jogador peças com combinações de atributos principais e secundários que nenhum personagem do metagame atual aproveita, sugerindo reciclagem segura.
-- **🏆 Tier List & Auditoria da Conta:** Classificação visual dos personagens ativos por Tiers (S+, S, A, B, C), acompanhada de nota global de saúde da conta e diagnóstico de investimento, com exportador de imagem HD da Tier List.
-- **📈 Linha do Tempo & Evolução da Conta (Timeline Snapshots):** Registro de snapshots periódicos da conta para acompanhamento gráfico de novos 5★/Rank S obtidos, evolução da nota média das builds e métricas acumuladas, com botão manual, comparador de diffs customizado e **Filtro de Exibição Apenas para Personagens Alterados**.
-- **🎁 Resgate de Códigos Promocionais:** Busca e ativação em 1 clique de códigos promocionais ativos de Gemas Essenciais, Jades Estelares e Polychromes via API da HoYoverse.
-- **💬 Chat IA Meta & Montador de Times (Groq RAG + SSE Stream):** Chat conversacional com RAG de guias atualizados e ferramenta visual para composição e análise de sinergia de times de 4 personagens via Server-Sent Events (SSE).
-- **📦 Download de Guias em ZIP (.zip):** Endpoint dedicado (`/api/download/guides-zip`) para download empacotado em arquivo `.zip` dos guias em Markdown das 3 pastas de jogos para uso offline ou no Google NotebookLM.
-- **🔑 Suporte Duplo de Autenticação:** Login automatizado através de navegador Chromium invisível (Playwright) ou inserção manual direta dos cookies (`ltuid_v2`, `ltoken_v2`, `cookie_token_v2`) na aba de configurações.
-- **📖 Central de Ajuda & Tutorial Interativo:** Aba de documentação integrada (`#tab-help`) com tutoriais passo a passo, atalhos rápidos e explicações para cada tela do sistema.
-- **⚠️ Zona de Perigo / Limpeza de Dados:** Botão de reset na aba Configurações que apaga permanentemente as pastas de guias (`genshin`, `hsr`, `zzz`) e reseta o banco de dados SQLite (`hoyo_app.db`).
+1. **📊 Mini-Dashboards da Conta:** Exibição em tempo real de estatísticas do jogador (UID, Nível da Conta, Total de Personagens e Personagens 5★/Rank S) no topo da tela de cada jogo (*Zenless Zone Zero*, *Genshin Impact* e *Honkai: Star Rail*).
+2. **🔋 Monitoramento Preciso de Energia (Daily Notes):** Acompanhamento em tempo real da Bateria (ZZZ), Resina (Genshin) e Poder de Desbravamento (HSR), com anéis de progresso SVG dinâmicos e contagem regressiva para recuperação completa.
+3. **🎁 Auto-Check-in Diário Automático:** Resgate automático das recompensas diárias do HoYoLAB a cada 6 horas com histórico persistido em banco SQLite (`daily_checkin_logs`).
+4. **⏰ Sincronização Diária Programada (Auto-Sync):** Agendamento configurável em horário fixo (ex: `04:00` AM) para atualizar automaticamente o Roster e guias de metagame dos 3 jogos com detecção inteligente de diffs.
+5. **📁 Interface Web Glassmorphism & Mobile-Ready:** Painel escuro com temas específicos por jogo, efeitos de vidro fosco, gaveta off-canvas deslizante e suporte total a Smartphones e Tablets.
+6. **📱 Acesso por Dispositivos Móveis & Rede Local (LAN):** Binding sob demanda em `0.0.0.0:8000`, permitindo acessar o app no celular através do IP local.
+7. **🎨 Ícones Oficiais, Filtros e Galeria:** Filtros rápidos por Raridade e Elemento (incluindo *Lumiflux* de ZZZ) com ícones oficiais em cache local.
+8. **🖼️ Proxy de Imagens Anti-CORS (`/api/proxy_image`):** Endpoint intermediário que faz o download seguro de avatares e equipamentos da HoYoLAB, Enka e Prydwen, viabilizando exportações em Canvas 2D sem violação de CORS.
+9. **⚔️ Tracker & Histórico de Endgame:**
+   - **Genshin Impact:** Abismo Espiral (*Spiral Abyss*) e Teatro Imaginário (*Imaginarium Theater*).
+   - **Honkai: Star Rail:** Memória do Caos (*Memory of Chaos*), Pura Ficção (*Pure Fiction*) e Sombra Apocalíptica (*Apocalyptic Shadow*).
+   - **Zenless Zone Zero:** Defesa Shiyu (*Shiyu Defense*) e *Deadly Assault*.
+10. **🗡️ Inspetor de Builds, Roll Value (RV) & Notas (SSS a D):**
+    - Avaliação matemática de cada peça via **Roll Value (RV)** com compensação de Main Stat (*Main Stat Forgiveness*) e peso parcial para atributos Flat.
+    - Classificação de builds em **SSS** ($\ge 90\%$), **SS** ($\ge 75\%$), **S** ($\ge 60\%$), **A** ($\ge 45\%$), **B** ($\ge 30\%$) e **C/D** ($<30\%$).
+11. **📷 Suíte de Exportação de Cards em Imagem HD (Canvas 2D Puro):**
+    - Renderização nativa em **4K / Retina (2400 × 1350 px)**.
+    - Cards de Build 16:9, Card de Tier List da Conta e Card de Evolução/Diffs com download em PNG e cópia direta para o clipboard.
+12. **⚖️ Comparador Meta & Breakpoints de Combate:** Comparação lado a lado dos atributos reais do personagem contra as metas do metagame (verde = meta atingida, vermelho = defasagem).
+13. **🧮 Calculadora de Ascensão com Cap Real:** Estimativa exata de materiais, Mora/Créditos e Livros de XP respeitando os limites reais de cada jogo (**Genshin: Nv 90**, **HSR: Nv 80**, **ZZZ: Nv 60**).
+14. **🧠 Otimizador IA Groq (Llama 3.3 70B):** Análise instantânea gerando 3 recomendações acionáveis de melhoria de build.
+15. **🔥 Diagnóstico de Lacunas (Account Gaps) & Roast IA:** Análise de cobertura elemental e de funções, acompanhada de crítica bem-humorada ("roast") da conta gerada por IA.
+16. **🍀 Índice de Sorte & Eficiência de Rolagens (Luck Score):** Classificação do RNG de relíquias da conta (SSS+ a F), identificando o **God Roll #1** e o **Cursed Roll** com quebra detalhada por rolagem (+4 Perfeito, +2 Ótimo, Desperdício).
+17. **🎲 Simulador Monte Carlo de Gacha & Previsão de Banners:** Simulação estocástica de 10.000 invocações com modelo real de **Soft Pity** (74+), desconto automático de cópias do Roster e metas salvas no banco.
+18. **🌾 Central de Farm Inteligente & Ordem de Serviço Diária:** Rotação diária de domínios abertos, cálculo de alocação de resina e geração da Ordem de Serviço Diária.
+19. **🗑️ Analisador de Relíquias Lixo & Recomendador de Síntese:** Varredura de peças inúteis no inventário (Trash Finder) e conselheiro de criação de peças com Resina Automodeladora / Elixir Santificador.
+20. **💬 Chat IA Meta & Montador de Times (Groq RAG + SSE Stream):** Chat conversacional alimentado pelos guias e Roster com análise de sinergia de equipes em tempo real via Server-Sent Events.
 
 ---
 
-## ⚙️ Arquitetura e Funcionamento do Sistema
+## ⚙️ Arquitetura do Sistema (Clean Architecture)
+
+O backend foi projetado com uma arquitetura modular em camadas desacopladas:
 
 ```mermaid
 graph TD
-    A[Usuário / Web UI Glassmorphism] -->|HTTP REST / SSE Stream| B[FastAPI Server server.py]
-    B -->|PIN Security Middleware| SEC{PIN Ativo?}
-    SEC -->|Não Autenticado| LOCK[HTTP 423 Locked / Modal PIN]
-    SEC -->|Liberado| C[(SQLite hoyo_app.db)]
-    B -->|Cofre DPAPI| V[security_vault.py -> cookies.enc]
-    B -->|Sanitização de Logs| S[log_sanitizer.py]
-    B -->|Auto Check-in 6h & Notes| D[API HoYoLAB genshin.py]
-    B -->|Auto Login Chromium| E[Playwright async_playwright auth.py]
-    B -->|Extração de Metagame| F[Scrapers Prydwen.gg: HSR, ZZZ, Genshin]
-    B -->|Calculadora, RV & Monte Carlo| G[build_calculator.py]
-    B -->|Chat & Montador IA| H[Groq Cloud RAG groq_rag.py]
-    B -->|Proxy Anti-CORS| I[Proxy /api/proxy_image]
-    F -->|Caches Estruturados| J[meta_data_game.json & guias markdown]
-    H -->|Prompt Contextual| J
+    UI[Frontend Web SPA - Glassmorphism] -->|HTTP REST / SSE Stream| Server[FastAPI Server - server.py]
+    Server --> Routers[Camada de Roteamento - routers/]
+    
+    subgraph "Camada de Aplicação & APIs"
+        Routers --> R_Sec[routers/security.py]
+        Routers --> R_Roster[routers/roster.py]
+        Routers --> R_Gacha[routers/gacha.py]
+        Routers --> R_Farm[routers/farming.py]
+        Routers --> R_Chat[routers/chat.py]
+        Routers --> R_Other[Outros Routers...]
+    end
+
+    subgraph "Camada de Validação (Schemas)"
+        Routers -.-> Schemas[schemas/*.py - Pydantic Models]
+    end
+
+    subgraph "Camada de Serviços (Services)"
+        Routers --> Services[services/*.py]
+        Services --> S_Sync[sync_service.py]
+        Services --> S_Checkin[checkin_service.py]
+        Services --> S_Gacha[gacha_service.py]
+        Services --> S_Roster[roster_service.py]
+        Services --> S_Codes[promo_codes_service.py]
+        Services --> S_Roast[roast_service.py]
+    end
+
+    subgraph "Camada Core & Infraestrutura"
+        Services --> CoreSec[core/security.py - DPAPI / AES / PIN]
+        Services --> CoreCfg[core/config.py - Paths / Settings]
+        Services --> DB[(SQLite hoyo_app.db)]
+        Services --> StaticData[static_data/*.json]
+        Services --> Scrapers[Scrapers Prydwen: HSR / ZZZ / Genshin]
+        Services --> GroqAI[Groq Cloud API - Llama 3.3 70B]
+        Services --> HoYoAPI[HoYoLAB API - genshin.py / Playwright]
+    end
 ```
 
-### 1. Motor Mestre de IDs Universais e Resolução por Character ID
+---
 
-- O sistema opera prioritariamente com **Character IDs numéricos oficiais** (ex: `"1310"` para Firefly, `"10000070"` para Nilou) através da função `fetch_master_id_list`.
-- **Normalização de Apelidos (`normalize_char_name`):** Trata variações de escrita, pontuação e codinomes (ex: *"Tingyun • Fugue"* $\rightarrow$ ID `"1225"`, *"Himeko - Nova"* $\rightarrow$ ID `"1510"`), garantindo cruzamento perfeito entre guias em inglês e dados da conta do jogador.
+## 📂 Estrutura de Diretórios
 
-### 2. Banco de Dados SQLite (`hoyo_app.db`)
-
-- Tabelas relacionais para contas (`game_accounts`), personagens (`characters`), relíquias (`character_relics`), notas diárias (`daily_notes_cache`), logs de check-in (`daily_checkin_logs`), snapshots da conta (`account_snapshots`) e configurações de segurança (`security_settings`).
-- Configurado com modo `WAL` (`Write-Ahead Logging`) para consultas ultra-rápidas e suporte concorrente.
-
-### 3. Fontes de Raspagem de Metagame
-
-- **Honkai: Star Rail, Zenless Zone Zero & Genshin Impact:** Extração centralizada de guias, tier lists, estatísticas de uso e relatórios de endgame via **Prydwen.gg** ([scraper_prydwen.py](scraper_prydwen.py), [scraper_zzz.py](scraper_zzz.py) e [scraper_genshin.py](scraper_genshin.py)).
-- **Raspagem Completa & Bypass Anti-Bot (403):** Utiliza `curl_cffi` com cabeçalhos HTTP completos de navegadores modernos (`Accept`, `Accept-Language`, `Sec-Fetch-*`) para garantir o download de 100% dos guias da biblioteca de personagens (incluindo mais de 125 personagens em Genshin Impact), extraindo recomendações de armas, conjuntos de artefatos/discos, atributos principais, prioridade de substatus e prioridade de talentos.
+```
+hoyo-projetos/
+├── main.py                  # Entrypoint principal (inicialização do servidor + navegador)
+├── server.py                # Orquestrador FastAPI modular com ciclo de vida e re-exports
+├── core/                    # Camada Core de infraestrutura e configurações centrais
+│   ├── config.py            # Configurações globais, paths e constantes do sistema
+│   └── security.py          # Windows DPAPI, AES-GCM, PBKDF2 e sanitização de logs
+├── schemas/                 # Contratos de dados Pydantic (Type safety & validação)
+│   ├── auth_security.py     # Schemas para PIN, status de segurança e autenticação
+│   ├── config.py            # Schemas para configuração de chaves, agendamento e webhooks
+│   ├── chat.py              # Schemas para requisições de chat RAG e team builder
+│   ├── sync.py              # Schemas para operações de sincronização
+│   ├── gacha.py             # Schemas para cálculo Monte Carlo, previsões e metas
+│   ├── farming.py           # Schemas para ordem de serviço, cálculo de materiais e passos
+│   ├── codes.py             # Schemas para códigos promocionais e auto-redeem
+│   └── stats.py             # Schemas para avaliação de atributos e breakpoints
+├── services/                # Camada de Serviços de Negócio (Desacoplamento e Clean Architecture)
+│   ├── sync_service.py      # Orquestração de sincronizações assíncronas e status
+│   ├── checkin_service.py   # Execução e agendamento autônomo do check-in diário HoYoLAB
+│   ├── promo_codes_service.py # Varredura e resgate automático periódico de códigos (3h)
+│   ├── roster_service.py    # Consulta e agregação de personagens e builds do Roster
+│   ├── endgame_service.py   # Processamento de dados de endgame (MoC, Abismo, Shiyu)
+│   ├── gacha_service.py     # Simulações estocásticas Monte Carlo e metas de banners
+│   ├── roast_service.py     # Geração de análises e pareceres por IA Groq Llama 3.3 70B
+│   ├── media_service.py     # Proxy de imagens anti-CORS e empacotamento ZIP de guias
+│   └── translation_service.py # Normalização de nomes e tradução Inglês -> PT-BR
+├── routers/                 # Camada de Rotas e Controladores REST (APIRouter)
+│   ├── security.py          # Rotas de segurança, PIN, DPAPI e controle de LAN
+│   ├── config.py            # Rotas de configuração de sistema, webhooks e agendador
+│   ├── sync.py              # Rotas de sincronização por jogo e status em tempo real
+│   ├── roster.py            # Rotas de roster de personagens, comparação e otimização
+│   ├── endgame.py           # Rotas de modos de endgame dos 3 jogos
+│   ├── gacha.py             # Rotas do simulador de tiros Monte Carlo, previsões e metas
+│   ├── farming.py           # Rotas de farm diário, ordem de serviço e ascensão
+│   ├── relics.py            # Rotas de relíquias lixo (Trash Finder) e conselheiro de síntese
+│   ├── strategy.py          # Rotas de diagnóstico de lacunas da conta (Account Gaps)
+│   ├── codes.py             # Rotas de códigos promocionais e resgate em lote
+│   ├── history.py           # Rotas da linha do tempo e comparação de snapshots
+│   ├── checkin.py           # Rotas de check-in diário e histórico de logs
+│   ├── chat.py              # Rotas de chat IA RAG e montador de times (SSE)
+│   ├── static_data.py       # Rotas de sincronização de dados estáticos offline
+│   └── system.py            # Rotas de overview, proxy de imagens, briefing e reset
+├── static_data/             # Bases de dados estáticas desacopladas (JSON puro)
+│   ├── character_elements.json # Mapeamento completo de elementos de combate (Genshin/ZZZ)
+│   ├── known_4star_characters.json # Catálogo de personagens 4★ / Rank A dos 3 jogos
+│   ├── prydwen_slug_mappings.json  # Dicionário de slugs e normalização Prydwen.gg
+│   └── element_icons.json   # URLs e CDNs oficiais de ícones elementais
+├── static/                  # Frontend Web SPA (index.html, style.css, app.js)
+├── assets/                  # Ícones estáticos, avatares e assets da interface
+├── tests/                   # Suíte de Testes Automatizados (62+ testes unitários)
+│   ├── test_build_calculator.py
+│   ├── test_database.py
+│   ├── test_endgame_extractor.py
+│   ├── test_gacha_simulator.py
+│   ├── test_groq_rag.py
+│   ├── test_log_sanitizer.py
+│   ├── test_router_endpoints.py
+│   ├── test_schemas_validation.py
+│   └── test_security_vault.py
+├── database.py              # Camada de persistência SQLite (hoyo_app.db) com WAL
+├── build_calculator.py      # Motor RV, cálculo de atributos e utilitários de build
+├── groq_rag.py              # Motor RAG local para Groq Cloud (Llama 3.3 70B)
+├── auth.py                  # Captura automática de cookies via Playwright Chromium
+├── extractor.py             # Extração de roster HoYoLAB com suporte a skins e IDs
+├── endgame_extractor.py     # Extração de dados de endgame (MoC, Shiyu, Abismo)
+├── scraper_genshin.py       # Raspador de meta e guias de Genshin Impact (Prydwen)
+├── scraper_prydwen.py       # Raspador de meta e guias de HSR (Prydwen)
+├── scraper_zzz.py           # Raspador de meta e guias de ZZZ (Prydwen ZZZ)
+├── scraper_meta.py          # Agregador de meta para HSR
+├── traducoes.json           # Dicionário de termos de metagame Inglês -> PT-BR
+├── requirements.txt         # Dependências do ambiente Python
+├── .gitignore               # Regras de exclusão do Git
+├── SECURITY.md              # Documentação formal de governança e segurança
+└── README.md                # Documentação oficial do projeto
+```
 
 ---
 
@@ -154,15 +221,11 @@ $$
 \text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{Score da Peça}_k}{\text{Total de Slots do Jogo}}
 $$
 
-1. **Normalização Contextual de Slots (`normalize_slot_name`):** Converte posições numéricas do HoYoLAB (`1` a `5`/`6`) para as chaves exatas de cada jogo (ex: `flower`, `plume`, `sands`, `goblet`, `circlet` em Genshin; `head`, `hands`, `body`, `feet`, `planar_sphere`, `link_rope` em HSR; `slot_1` a `slot_6` em ZZZ), garantindo avaliação correta do Main Stat recomendado.
+1. **Normalização Contextual de Slots (`normalize_slot_name`):** Converte posições numéricas (`1` a `5`/`6`) para as chaves exatas de cada jogo (ex: `flower`, `plume`, `sands`, `goblet`, `circlet` em Genshin; `head`, `hands`, `body`, `feet`, `planar_sphere`, `link_rope` em HSR; `slot_1` a `slot_6` em ZZZ).
 2. **Main Stat Forgiveness:** Se o atributo principal da peça for um dos recomendados no guia (ex: Copo de ATQ% ou Botas de VEL), a peça recebe 40% de crédito base do Main Stat.
 3. **Flat Stat Fallback:** Substatus brutos (Ataque Flat, Vida Flat, Defesa Flat) recebem peso parcial automático (50% do peso da versão %) se a versão percentual for recomendada pelo guia.
-4. **Benchmark Dinâmico por Substatus Prioritários:** O limite teórico de rolagens adapta-se dinamicamente à quantidade de substatus prioritários que sobraram pós-exclusão do Main Stat:
-   - **1 prioritário restante:** 4.0 rolagens no 1º + 5.0 rolagens no pool de outros atributos (peso 0.30).
-   - **2 prioritários restantes:** 4.0 rolagens no 1º + 3.0 no 2º + 2.0 rolagens no pool de outros atributos.
-   - **3 prioritários restantes:** 5.0 rolagens no 1º + 2.0 no 2º + 1.0 no 3º + 1.0 rolagem no pool de outros atributos.
-   - **4+ prioritários restantes:** Distribuição padrão de 9 rolagens `[6.0, 1.0, 1.0, 1.0]`.
-5. **Ponderação Proporcional por Slots Totais:** O divisor da Nota Geral é fixo no total de slots do jogo ($6$ para HSR/ZZZ, $5$ para Genshin). Slots vazios/não equipados pontuam $0.0$, penalizando builds incompletas proporcionalmente.
+4. **Benchmark Dinâmico por Substatus Prioritários:** O limite teórico de rolagens adapta-se dinamicamente à quantidade de substatus prioritários restantes.
+5. **Ponderação Proporcional por Slots Totais:** O divisor da Nota Geral é fixo no total de slots do jogo ($6$ para HSR/ZZZ, $5$ para Genshin). Slots não equipados pontuam $0.0$, penalizando builds incompletas proporcionalmente.
 
 ---
 
@@ -170,47 +233,18 @@ $$
 
 | Camada | Tecnologia | Descrição |
 | :--- | :--- | :--- |
-| **Backend Framework** | [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) | Servidor web assíncrono de alto desempenho com rotas REST e SSE |
+| **Backend Framework** | [FastAPI](https://fastapi.tiangolo.com/) + [Uvicorn](https://www.uvicorn.org/) | Servidor web assíncrono modular com Clean Architecture, REST e SSE |
+| **Validação & Tipagem** | [Pydantic v2](https://docs.pydantic.dev/) | Modelos e contratos tipados de entrada e saída com validação estrita |
 | **Segurança & Cofre** | Windows DPAPI (`ctypes.windll.crypt32`) + PBKDF2 | Criptografia nativa em repouso e autenticação por PIN |
-| **Higienização de Logs** | Regex Engine Sanitizer ([log_sanitizer.py](log_sanitizer.py)) | Redação e mascaramento em tempo real de tokens e API keys |
+| **Higienização de Logs** | Regex Engine Sanitizer ([core/security.py](core/security.py)) | Redação e mascaramento em tempo real de tokens e chaves de API |
 | **Banco de Dados** | SQLite3 (WAL Mode) | Persistência relacional local otimizada |
-| **Frontend UI/UX** | HTML5 + CSS3 (Vanilla Glassmorphism) + JS ES6+ | Interface responsiva sem dependências externas pesadas |
-| **Ícones & Design** | [Font Awesome 6](https://fontawesome.com/) + Google Fonts (Outfit / Inter) | Design moderno com badges de elementos e cofre de segurança |
+| **Frontend UI/UX** | HTML5 + CSS3 (Vanilla Glassmorphism) + JS ES6+ | Interface responsiva sem frameworks pesados |
+| **Ícones & Design** | [Font Awesome 6](https://fontawesome.com/) + Google Fonts | Design moderno com badges de elementos e cofre de segurança |
 | **Inteligência Artificial** | Groq Cloud API (`groq`) | RAG local contextualizado rodando Llama 3.3 70B Versatile |
 | **Integração HoYoLAB** | [genshin.py](https://github.com/seriaati/genshin.py) | API assíncrona para extração de dados oficiais da HoYoverse |
 | **Autenticação** | Playwright Chromium Async | Captura automatizada de cookies de sessão (`ltuid_v2`, `ltoken_v2`) |
 | **Web Scraping** | `curl_cffi` + BeautifulSoup4 | Raspagem de metagame com perfil de navegador anti-403 |
-| **Empacotamento** | PyInstaller | Compilação para executável portable `.exe` no Windows |
-
----
-
-## 📂 Estrutura de Arquivos do Projeto
-
-```
-hoyo-projetos/
-├── main.py                  # Ponto de entrada unificado (servidor seguro + auto browser launch)
-├── server.py                # Servidor FastAPI com rotas REST, SSE e background workers
-├── security_vault.py        # Cofre criptográfico local (Windows DPAPI, AES-256, PBKDF2)
-├── log_sanitizer.py         # Higienizador de logs e redação de segredos sensíveis
-├── database.py              # Camada de persistência SQLite (hoyo_app.db) com WAL
-├── build_calculator.py      # Motor RV, gacha Monte Carlo, farm diário, fonte mestre de IDs
-├── groq_rag.py              # Motor RAG local para Groq Cloud (Llama 3.3 70B)
-├── auth.py                  # Captura automática de cookies via Playwright Chromium
-├── extractor.py             # Extração de roster HoYoLAB com suporte a skins e IDs
-├── endgame_extractor.py     # Extração de dados de endgame (MoC, Shiyu, Abismo)
-├── scraper_genshin.py       # Raspador de meta e guias de Genshin Impact (Prydwen)
-├── scraper_prydwen.py       # Raspador de meta e guias de HSR (Prydwen)
-├── scraper_zzz.py           # Raspador de meta e guias de ZZZ (Prydwen ZZZ)
-├── scraper_meta.py          # Agregador de meta para HSR
-├── test_security_suite.py   # Suíte de testes automatizados de segurança
-├── static/                  # Frontend Web (index.html, style.css, app.js)
-├── assets/                  # Ícones estáticos e cache local de elementos/avatares
-├── traducoes.json           # Dicionário de tradução Inglês -> PT-BR
-├── requirements.txt         # Dependências do ambiente Python
-├── .gitignore               # Regras de exclusão do Git
-├── SECURITY.md              # Documentação formal de governança e segurança
-└── README.md                # Documentação oficial do projeto
-```
+| **Testes Automatizados** | `unittest` | Suíte de 62+ testes unitários cobrindo todos os módulos |
 
 ---
 
@@ -245,7 +279,14 @@ pip install -r requirements.txt
 playwright install chromium
 ```
 
-### 4. Iniciar a Aplicação
+### 4. Executar os Testes Unitários
+
+```bash
+# Executar a suíte completa de 62+ testes automatizados
+python -m unittest discover
+```
+
+### 5. Iniciar a Aplicação
 
 ```bash
 python main.py
@@ -255,18 +296,6 @@ Por padrão, o servidor FastAPI subirá escutando exclusivamente no Loopback seg
 
 - **Acesso Local (PC):** `http://127.0.0.1:8000`
 - **Acesso na Rede Local (Celular/Tablet):** Caso você habilite o acesso LAN na aba de Configurações, acesse `http://<IP_DO_SEU_COMPUTADOR>:8000`.
-
----
-
-## 📦 Compilação para Executável Portable (Windows `.exe`)
-
-Você pode compilar o projeto em um executável único usando o PyInstaller:
-
-```bash
-pyinstaller main.spec
-```
-
-O executável resultante estará localizado dentro do diretório `dist/main.exe`.
 
 ---
 
@@ -295,8 +324,22 @@ O executável resultante estará localizado dentro do diretório `dist/main.exe`
 | `POST` | `/api/materials/calculate` | Calcula materiais necessários para ascensão de nível (60/70/80/90) |
 | `POST` | `/api/gacha/calculate` | Executa simulação Monte Carlo de 10.000 tiros para probabilidade de banner |
 | `GET` | `/api/gacha/characters/{game_id}` | Retorna a lista de personagens disponíveis para a simulação de gacha |
+| `POST` | `/api/gacha/forecast/calculate` | Projeção de acúmulo de gemas/tiros e simulação Monte Carlo de banners futuros |
+| `GET` | `/api/gacha/goals/{game_id}` | Lista as metas de banners salvas no banco de dados SQLite |
+| `POST` | `/api/gacha/goals` | Salva uma nova meta de banner futuro no SQLite |
+| `DELETE` | `/api/gacha/goals/{goal_id}` | Remove uma meta de banner salva pelo ID |
+| `GET` | `/api/strategy/account-gaps/{game_id}` | Diagnóstico profundo de lacunas da conta, cobertura de arquétipos e prioridades de banners |
+| `POST` | `/api/strategy/ask-ai-gaps` | Parecer estratégico customizado da IA Groq alimentado pelas lacunas do Roster |
 | `GET` | `/api/farming/today/{game_id}` | Retorna rotação diária de domínios e recomendação de farm |
+| `GET` | `/api/farm/order-of-day/{game_id}` | Retorna a Ordem de Serviço do Dia com alocação inteligente de resina |
+| `POST` | `/api/farm/order-of-day/toggle-step` | Marca/desmarca passos concluídos no checklist interativo do roteiro diário |
+| `POST` | `/api/farm/order-of-day/send-notification` | Envia o roteiro diário de energia para Discord Webhook e Telegram Bot |
+| `GET` | `/api/static-data/status` | Retorna o status de sincronização dos manifestos e dados estáticos offline |
+| `POST` | `/api/static-data/sync` | Força sincronização de dados estáticos com repositórios GitHub e HoYoWiki |
 | `GET` | `/api/relics/trash/{game_id}` | Identifica relíquias e artefatos sem utilidade no metagame (Trash Finder) |
+| `GET` | `/api/relics/craft-recommendations/{game_id}` | Conselheiro de síntese e uso de Resina Automodeladora / Elixir Santificador |
+| `GET` | `/api/briefing/today` | Retorna o Morning Briefing executivo consolidando os 3 jogos e metas |
+| `POST` | `/api/briefing/send-now` | Envia o Morning Briefing imediatamente para Discord e Telegram |
 | `GET` | `/api/relics/optimize/{game_id}/{char_name}` | Otimizador de combinações de relíquias do inventário para o personagem |
 | `POST` | `/api/stats/breakpoints` | Avalia os breakpoints e metas de status de um personagem |
 | `GET` | `/api/audit/{game_id}` | Retorna a Tier List visual e relatório de auditoria de saúde da conta |
@@ -314,7 +357,7 @@ O executável resultante estará localizado dentro do diretório `dist/main.exe`
 | `GET` / `POST` | `/api/config` | Leitura e salvamento das chaves de IA, cookies e agendamento diário |
 | `GET` | `/api/download/guides-zip` | Download empacotado em arquivo `.zip` das pastas de guias (`genshin/`, `hsr/`, `zzz/`) |
 | `GET` | `/api/proxy_image` | Proxy intermediário de imagens para contornar restrições de CORS |
-| `API Route` | `/api/reset-data` | Apaga permanentemente as pastas de guias e reseta o banco SQLite |
+| `POST` | `/api/reset-data` | Apaga permanentemente as pastas de guias e reseta o banco SQLite |
 
 ---
 

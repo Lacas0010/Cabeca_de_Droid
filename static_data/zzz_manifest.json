@@ -1,0 +1,202 @@
+{
+  "characters": {
+    "miyabi": {
+      "id": "miyabi",
+      "name": "Hoshimi Miyabi",
+      "rarity": 5,
+      "element": "Frost / Ice",
+      "specialty": "Anomaly",
+      "chip_type": "Chip de Anomalia Especializado",
+      "core_skill_mat": "Emblema de Maestria da Seção 6",
+      "weekly_boss_mat": "Ferocidade Carniceira",
+      "schedule_type": "Daily"
+    },
+    "harumasa": {
+      "id": "harumasa",
+      "name": "Asaba Harumasa",
+      "rarity": 5,
+      "element": "Electric",
+      "specialty": "Attack",
+      "chip_type": "Chip de Ataque Especializado",
+      "core_skill_mat": "Emblema de Maestria da Seção 6",
+      "weekly_boss_mat": "Ferocidade Carniceira",
+      "schedule_type": "Daily"
+    },
+    "astra": {
+      "id": "astra",
+      "name": "Astra Yao",
+      "rarity": 5,
+      "element": "Ether",
+      "specialty": "Support",
+      "chip_type": "Chip de Suporte Especializado",
+      "core_skill_mat": "Medalha de Honra de Nova Eridu",
+      "weekly_boss_mat": "Núcleo Corrompido da Marionete",
+      "schedule_type": "Daily"
+    },
+    "ellen": {
+      "id": "ellen",
+      "name": "Ellen Joe",
+      "rarity": 5,
+      "element": "Ice",
+      "specialty": "Attack",
+      "chip_type": "Chip de Ataque Especializado",
+      "core_skill_mat": "Insígnia de Serviço Victoria",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "zhu_yuan": {
+      "id": "zhu_yuan",
+      "name": "Zhu Yuan",
+      "rarity": 5,
+      "element": "Ether",
+      "specialty": "Attack",
+      "chip_type": "Chip de Ataque Especializado",
+      "core_skill_mat": "Emblema da Segurança Pública Criminal",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "jane": {
+      "id": "jane",
+      "name": "Jane Doe",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Anomaly",
+      "chip_type": "Chip de Anomalia Especializado",
+      "core_skill_mat": "Emblema da Segurança Pública Criminal",
+      "weekly_boss_mat": "Coração do Tirano da Fissura",
+      "schedule_type": "Daily"
+    },
+    "caesar": {
+      "id": "caesar",
+      "name": "Caesar King",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Defense",
+      "chip_type": "Chip de Defesa Especializado",
+      "core_skill_mat": "Medalha dos Filhos de Calydon",
+      "weekly_boss_mat": "Coração do Tirano da Fissura",
+      "schedule_type": "Daily"
+    },
+    "burnice": {
+      "id": "burnice",
+      "name": "Burnice White",
+      "rarity": 5,
+      "element": "Fire",
+      "specialty": "Anomaly",
+      "chip_type": "Chip de Anomalia Especializado",
+      "core_skill_mat": "Medalha dos Filhos de Calydon",
+      "weekly_boss_mat": "Coração do Tirano da Fissura",
+      "schedule_type": "Daily"
+    },
+    "qingyi": {
+      "id": "qingyi",
+      "name": "Qingyi",
+      "rarity": 5,
+      "element": "Electric",
+      "specialty": "Stun",
+      "chip_type": "Chip de Atordoamento Especializado",
+      "core_skill_mat": "Emblema da Segurança Pública Criminal",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "yanagi": {
+      "id": "yanagi",
+      "name": "Tsukishiro Yanagi",
+      "rarity": 5,
+      "element": "Electric",
+      "specialty": "Anomaly",
+      "chip_type": "Chip de Anomalia Especializado",
+      "core_skill_mat": "Emblema de Maestria da Seção 6",
+      "weekly_boss_mat": "Ferocidade Carniceira",
+      "schedule_type": "Daily"
+    },
+    "lighter": {
+      "id": "lighter",
+      "name": "Lighter",
+      "rarity": 5,
+      "element": "Fire",
+      "specialty": "Stun",
+      "chip_type": "Chip de Atordoamento Especializado",
+      "core_skill_mat": "Medalha dos Filhos de Calydon",
+      "weekly_boss_mat": "Coração do Tirano da Fissura",
+      "schedule_type": "Daily"
+    },
+    "lycaon": {
+      "id": "lycaon",
+      "name": "Von Lycaon",
+      "rarity": 5,
+      "element": "Ice",
+      "specialty": "Stun",
+      "chip_type": "Chip de Atordoamento Especializado",
+      "core_skill_mat": "Insígnia de Serviço Victoria",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "rina": {
+      "id": "rina",
+      "name": "Alexandrina",
+      "rarity": 5,
+      "element": "Electric",
+      "specialty": "Support",
+      "chip_type": "Chip de Suporte Especializado",
+      "core_skill_mat": "Insígnia de Serviço Victoria",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "nicole": {
+      "id": "nicole",
+      "name": "Nicole Demara",
+      "rarity": 4,
+      "element": "Ether",
+      "specialty": "Support",
+      "chip_type": "Chip de Suporte Básico/Avançado",
+      "core_skill_mat": "Insígnia Cunning Hares",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "anby": {
+      "id": "anby",
+      "name": "Anby Demara",
+      "rarity": 4,
+      "element": "Electric",
+      "specialty": "Stun",
+      "chip_type": "Chip de Atordoamento Básico/Avançado",
+      "core_skill_mat": "Insígnia Cunning Hares",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "billy": {
+      "id": "billy",
+      "name": "Billy Kid",
+      "rarity": 4,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Ataque Básico/Avançado",
+      "core_skill_mat": "Insígnia Cunning Hares",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "corin": {
+      "id": "corin",
+      "name": "Corin Wickes",
+      "rarity": 4,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Ataque Básico/Avançado",
+      "core_skill_mat": "Insígnia de Serviço Victoria",
+      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
+      "schedule_type": "Daily"
+    },
+    "seth": {
+      "id": "seth",
+      "name": "Seth Lowell",
+      "rarity": 4,
+      "element": "Electric",
+      "specialty": "Defense",
+      "chip_type": "Chip de Defesa Básico/Avançado",
+      "core_skill_mat": "Emblema da Segurança Pública Criminal",
+      "weekly_boss_mat": "Coração do Tirano da Fissura",
+      "schedule_type": "Daily"
+    }
+  }
+}

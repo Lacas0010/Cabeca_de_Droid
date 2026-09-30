@@ -437,6 +437,38 @@
                         <p>Visão geral unificada das suas contas da HoYoverse e otimização IA</p>
                     </div>
                 </div>
+
+                <!-- WIDGET MORNING BRIEFING DIÁRIO -->
+                <div id="home-morning-briefing-widget" style="margin-top: 20px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 42px; height: 42px; border-radius: 12px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; color: #38bdf8; font-size: 20px;">
+                                <i class="fa-solid fa-sun"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 17px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                                    Morning Briefing Executivo <span id="briefing-weekday-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Hoje</span>
+                                </h3>
+                                <span id="briefing-date-lbl" style="font-size: 12px; color: var(--text-muted);">Sincronizando tarefas prioritárias e metas...</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button id="btn-send-briefing-webhook" onclick="window.sendMorningBriefingNow()" class="primary-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                                <i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord & Telegram
+                            </button>
+                            <button onclick="window.loadMorningBriefing()" class="secondary-btn" style="padding: 8px 12px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                                <i class="fa-solid fa-rotate"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="briefing-content-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 14px;">
+                        <!-- Preenchido via JS -->
+                        <div style="text-align: center; color: var(--text-muted); padding: 20px; grid-column: 1 / -1;">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Carregando Morning Briefing...
+                        </div>
+                    </div>
+                </div>
                 
                 <div class="overview-grid">
                     <!-- Card ZZZ -->
@@ -547,7 +579,68 @@
                     </div>
                 </div>
 
+                <!-- ORDEM DE SERVIÇO DO DIA (ROTEIRO OTIMIZADO DE ENERGIA) -->
+                <div class="overview-card farm-order-card" style="margin-bottom: 20px; background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(16, 185, 129, 0.08)); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 16px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                        <div>
+                            <h3 style="margin: 0; color: #10b981; font-size: 18px; display: flex; align-items: center; gap: 10px;">
+                                <i class="fa-solid fa-clipboard-list" style="color: #10b981;"></i> Ordem de Serviço do Dia
+                                <span id="farm-order-weekday-tag" style="font-size: 11px; background: rgba(16,185,129,0.2); color: #34d399; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Hoje</span>
+                            </h3>
+                            <span style="font-size: 12px; color: var(--text-muted);">Alocação inteligente de resina e energia nos domínios abertos hoje para seu Roster.</span>
+                        </div>
+                        
+                        <!-- Seletor de Jogo -->
+                        <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                            <button class="filter-btn active farm-order-game-btn" data-game="genshin" style="padding: 4px 10px; font-size: 11px;">Genshin</button>
+                            <button class="filter-btn farm-order-game-btn" data-game="hsr" style="padding: 4px 10px; font-size: 11px;">HSR</button>
+                            <button class="filter-btn farm-order-game-btn" data-game="zzz" style="padding: 4px 10px; font-size: 11px;">ZZZ</button>
+                        </div>
+                    </div>
 
+                    <!-- Barra de Resumo de Energia e Progresso -->
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
+                        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 11px; color: var(--text-muted);">Saldo de Energia:</span>
+                                <strong id="farm-order-energy-val" style="font-size: 13px; color: #38bdf8;">-- / --</strong>
+                            </div>
+                            <div class="progress-bar-bg" style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 4px; margin-top: 6px; overflow: hidden;">
+                                <div id="farm-order-energy-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #10b981); transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+
+                        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); border-radius: 10px; padding: 10px 14px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 11px; color: var(--text-muted);">Progresso da Ordem:</span>
+                                <strong id="farm-order-progress-text" style="font-size: 13px; color: #10b981;">0/0 (0%)</strong>
+                            </div>
+                            <div class="progress-bar-bg" style="height: 6px; background: rgba(255,255,255,0.06); border-radius: 4px; margin-top: 6px; overflow: hidden;">
+                                <div id="farm-order-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #10b981, #34d399); transition: width 0.3s ease;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Tarefas / Checklist Interativo -->
+                    <div id="farm-order-tasks-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div style="color: #94a3b8; text-align: center; padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Otimizando roteiro diário de energia...</div>
+                    </div>
+
+                    <!-- Ações Rápidas -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06);">
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button id="btn-copy-farm-order" class="secondary-btn" style="padding: 6px 12px; font-size: 11px; border-color: rgba(56,189,248,0.4); color: #38bdf8;">
+                                <i class="fa-solid fa-copy"></i> Copiar Roteiro
+                            </button>
+                            <button id="btn-send-farm-order-notif" class="secondary-btn" style="padding: 6px 12px; font-size: 11px; border-color: rgba(16,185,129,0.4); color: #10b981;">
+                                <i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord/Telegram
+                            </button>
+                        </div>
+                        <button id="btn-refresh-farm-order" class="secondary-btn" style="padding: 6px 10px; font-size: 11px; color: var(--text-muted);" title="Recarregar Ordem do Dia">
+                            <i class="fa-solid fa-rotate"></i> Recalcular
+                        </button>
+                    </div>
+                </div>
 
                 <div class="overview-card start-guide-card" style="margin-bottom: 20px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9)); border: 1px solid rgba(245, 158, 11, 0.3);">
                     <h3><i class="fa-solid fa-layer-group" style="color: #f59e0b;"></i> Ferramentas Avançadas do Metagame</h3>
@@ -904,167 +997,392 @@
                 </div>
             </section>
 
-            <!-- ABA SIMULADOR DE GACHA -->
+            <!-- ABA SIMULADOR DE GACHA & FORECAST -->
             <section id="tab-gacha" class="tab-pane">
                 <div class="game-banner" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
                     <div class="banner-overlay">
-                        <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Simulador de Tiros & Gacha</h2>
-                        <p>Simulação estatística Monte Carlo (10.000 iterações) com sincronização direta do seu Roster</p>
+                        <h2><i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Simulador de Tiros & Gacha Forecast</h2>
+                        <p>Simulação Monte Carlo (10.000 iterações), projeção de acúmulo de gemas/tiros e metas de banners futuros</p>
                     </div>
                 </div>
 
-                <div class="gacha-dashboard-grid">
-                    <!-- COLUNA ESQUERDA: CONFIGURAÇÕES E SELEÇÃO DE PERSONAGEM -->
-                    <div class="overview-card" style="margin-top: 0;">
-                        <!-- Selector Pill de Jogo -->
-                        <label style="font-size: 12px; color: #94a3b8; margin-bottom: 6px; display: block; font-weight: 600;">Selecione o Jogo Alvo:</label>
-                        <div class="gacha-game-pill-container" id="gacha-game-pills">
-                            <button type="button" class="gacha-game-pill active" data-game="genshin">
-                                <i class="fa-solid fa-wind"></i> Genshin Impact
-                            </button>
-                            <button type="button" class="gacha-game-pill" data-game="hsr">
-                                <i class="fa-solid fa-star"></i> Honkai: Star Rail
-                            </button>
-                            <button type="button" class="gacha-game-pill" data-game="zzz">
-                                <i class="fa-solid fa-bolt"></i> Zenless Zone Zero
-                            </button>
-                        </div>
-                        <input type="hidden" id="tab-gacha-game-select" value="genshin">
+                <!-- Sub-Navegação da Aba Gacha -->
+                <div class="game-subnav-bar" style="margin-top: 16px;">
+                    <button class="game-subnav-btn active gacha-view-btn" data-view="sim">
+                        <i class="fa-solid fa-dice"></i> Simulador Monte Carlo
+                    </button>
+                    <button class="game-subnav-btn gacha-view-btn" data-view="forecast">
+                        <i class="fa-solid fa-chart-line" style="color: #f59e0b;"></i> Gacha Forecast (Banners Futuros)
+                        <span class="subnav-badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">Inteligente</span>
+                    </button>
+                    <button class="game-subnav-btn gacha-view-btn" data-view="goals">
+                        <i class="fa-solid fa-bullseye" style="color: #10b981;"></i> Metas de Banners Salvas
+                        <span class="subnav-badge" id="gacha-goals-count-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">0</span>
+                    </button>
+                </div>
 
-                        <!-- Seleção de Personagem -->
-                        <div style="margin-bottom: 16px;">
-                            <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Personagem Alvo:</label>
-                            <select id="tab-gacha-char-select" class="search-input" style="width: 100%; margin-top: 4px; padding: 10px;">
-                                <option value="">Carregando lista de personagens...</option>
-                            </select>
-                        </div>
-
-                        <!-- Card Hero de Previsualização do Personagem Selecionado -->
-                        <div id="gacha-char-hero-preview" class="gacha-char-hero-card">
-                            <div class="gacha-char-hero-bg" id="gacha-hero-bg"></div>
-                            <div class="gacha-char-avatar-frame" id="gacha-hero-avatar-frame">
-                                <img id="gacha-hero-avatar-img" src="" alt="Avatar" style="display: none;">
-                                <div id="gacha-hero-avatar-fallback" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:24px;">
-                                    <i class="fa-solid fa-user-astronaut"></i>
-                                </div>
+                <!-- SUBVIEW 1: SIMULADOR RÁPIDO MONTE CARLO -->
+                <div id="gacha-view-sim" class="gacha-subview active">
+                    <div class="gacha-dashboard-grid" style="margin-top: 14px;">
+                        <!-- COLUNA ESQUERDA: CONFIGURAÇÕES E SELEÇÃO DE PERSONAGEM -->
+                        <div class="overview-card" style="margin-top: 0;">
+                            <!-- Selector Pill de Jogo -->
+                            <label style="font-size: 12px; color: #94a3b8; margin-bottom: 6px; display: block; font-weight: 600;">Selecione o Jogo Alvo:</label>
+                            <div class="gacha-game-pill-container" id="gacha-game-pills">
+                                <button type="button" class="gacha-game-pill active" data-game="genshin">
+                                    <i class="fa-solid fa-wind"></i> Genshin Impact
+                                </button>
+                                <button type="button" class="gacha-game-pill" data-game="hsr">
+                                    <i class="fa-solid fa-star"></i> Honkai: Star Rail
+                                </button>
+                                <button type="button" class="gacha-game-pill" data-game="zzz">
+                                    <i class="fa-solid fa-bolt"></i> Zenless Zone Zero
+                                </button>
                             </div>
-                            <div class="gacha-char-info">
-                                <div class="gacha-char-name" id="gacha-hero-name">Personagem Genérico 5★</div>
-                                <div class="gacha-rarity-stars" id="gacha-hero-stars">★★★★★</div>
-                                <div id="gacha-hero-badge" class="gacha-char-badge-unowned">
-                                    <i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)
-                                </div>
-                            </div>
-                        </div>
+                            <input type="hidden" id="tab-gacha-game-select" value="genshin">
 
-                        <!-- Grid de Controles de Rank/Constelação/Eidolon/Mindscape -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                            <div>
-                                <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-current-rank">Constelação Atual:</label>
-                                <select id="tab-gacha-current-rank" class="search-input" style="width: 100%; margin-top: 4px;">
-                                    <option value="-1">Não possui (0 cópias)</option>
-                                    <option value="0">C0 (Personagem Base)</option>
-                                    <option value="1">C1</option>
-                                    <option value="2">C2</option>
-                                    <option value="3">C3</option>
-                                    <option value="4">C4</option>
-                                    <option value="5">C5</option>
-                                    <option value="6">C6 (Máximo)</option>
+                            <!-- Seleção de Personagem -->
+                            <div style="margin-bottom: 16px;">
+                                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Personagem Alvo:</label>
+                                <select id="tab-gacha-char-select" class="search-input" style="width: 100%; margin-top: 4px; padding: 10px;">
+                                    <option value="">Carregando lista de personagens...</option>
                                 </select>
                             </div>
-                            <div>
-                                <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-target-rank">Meta Desejada:</label>
-                                <select id="tab-gacha-target-rank" class="search-input" style="width: 100%; margin-top: 4px;">
-                                    <option value="0">C0 (Garantir 1º Personagem)</option>
-                                    <option value="1">C1</option>
-                                    <option value="2">C2</option>
-                                    <option value="3">C3</option>
-                                    <option value="4">C4</option>
-                                    <option value="5">C5</option>
-                                    <option value="6" selected>C6 (Máximo)</option>
-                                </select>
-                            </div>
-                        </div>
 
-                        <!-- Estado do Pity e 50/50 -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                            <div>
+                            <!-- Card Hero de Previsualização do Personagem Selecionado -->
+                            <div id="gacha-char-hero-preview" class="gacha-char-hero-card">
+                                <div class="gacha-char-hero-bg" id="gacha-hero-bg"></div>
+                                <div class="gacha-char-avatar-frame" id="gacha-hero-avatar-frame">
+                                    <img id="gacha-hero-avatar-img" src="" alt="Avatar" style="display: none;">
+                                    <div id="gacha-hero-avatar-fallback" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:24px;">
+                                        <i class="fa-solid fa-user-astronaut"></i>
+                                    </div>
+                                </div>
+                                <div class="gacha-char-info">
+                                    <div class="gacha-char-name" id="gacha-hero-name">Personagem Genérico 5★</div>
+                                    <div class="gacha-rarity-stars" id="gacha-hero-stars">★★★★★</div>
+                                    <div id="gacha-hero-badge" class="gacha-char-badge-unowned">
+                                        <i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Grid de Controles de Rank/Constelação/Eidolon/Mindscape -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                <div>
+                                    <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-current-rank">Constelação Atual:</label>
+                                    <select id="tab-gacha-current-rank" class="search-input" style="width: 100%; margin-top: 4px;">
+                                        <option value="-1">Não possui (0 cópias)</option>
+                                        <option value="0">C0 (Personagem Base)</option>
+                                        <option value="1">C1</option>
+                                        <option value="2">C2</option>
+                                        <option value="3">C3</option>
+                                        <option value="4">C4</option>
+                                        <option value="5">C5</option>
+                                        <option value="6">C6 (Máximo)</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-target-rank">Meta Desejada:</label>
+                                    <select id="tab-gacha-target-rank" class="search-input" style="width: 100%; margin-top: 4px;">
+                                        <option value="0">C0 (Garantir 1º Personagem)</option>
+                                        <option value="1">C1</option>
+                                        <option value="2">C2</option>
+                                        <option value="3">C3</option>
+                                        <option value="4">C4</option>
+                                        <option value="5">C5</option>
+                                        <option value="6" selected>C6 (Máximo)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Estado do Pity e 50/50 -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                <div>
+                                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                                        <label style="font-size: 12px; color: #94a3b8;">Pity Atual (0-89):</label>
+                                    </div>
+                                    <input type="number" id="tab-gacha-pity" value="35" min="0" max="89" class="search-input" style="width: 100%; margin-top: 4px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #94a3b8;">Estado do 50/50:</label>
+                                    <select id="tab-gacha-guaranteed" class="search-input" style="width: 100%; margin-top: 4px;">
+                                        <option value="false">50/50 Ativo (Normal)</option>
+                                        <option value="true">Garantido (Perdeu 50/50 anterior)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Tiros e Gemas Disponíveis com Botões de Ajuste Rápido -->
+                            <div style="margin-bottom: 20px;">
                                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <label style="font-size: 12px; color: #94a3b8;">Pity Atual (0-89):</label>
+                                    <label style="font-size: 12px; color: #94a3b8;">Tiros/Desejos Disponíveis:</label>
+                                    <span id="gacha-gems-convert-lbl" style="font-size: 11px; color: #a78bfa;">(Equivale a 14.400 Gemas)</span>
                                 </div>
-                                <input type="number" id="tab-gacha-pity" value="35" min="0" max="89" class="search-input" style="width: 100%; margin-top: 4px;">
+                                <input type="number" id="tab-gacha-pulls" value="90" min="1" class="search-input" style="width: 100%; margin-top: 4px;">
+                                <div class="gacha-quick-pulls">
+                                    <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(10)">+10 Tiros</button>
+                                    <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(50)">+50 Tiros</button>
+                                    <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(90)">+90 Tiros</button>
+                                    <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(180)">+180 Tiros</button>
+                                </div>
                             </div>
-                            <div>
-                                <label style="font-size: 12px; color: #94a3b8;">Estado do 50/50:</label>
-                                <select id="tab-gacha-guaranteed" class="search-input" style="width: 100%; margin-top: 4px;">
-                                    <option value="false">50/50 Ativo (Normal)</option>
-                                    <option value="true">Garantido (Perdeu 50/50 anterior)</option>
-                                </select>
+
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                <button id="tab-btn-run-gacha-sim" type="button" class="primary-btn" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i class="fa-solid fa-dice"></i> Monte Carlo
+                                </button>
+                                <button id="tab-btn-open-wish-single" type="button" class="primary-btn" onclick="window.startWishAnimation(1)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i class="fa-solid fa-rotate-right"></i> Dar 1 Tiro
+                                </button>
+                                <button id="tab-btn-open-wish-multi" type="button" class="primary-btn" onclick="window.startWishAnimation(10)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i class="fa-solid fa-wand-magic-sparkles"></i> 10 Tiros
+                                </button>
                             </div>
                         </div>
 
-                        <!-- Tiros e Gemas Disponíveis com Botões de Ajuste Rápido -->
-                        <div style="margin-bottom: 20px;">
-                            <div style="display:flex; justify-content:space-between; align-items:center;">
-                                <label style="font-size: 12px; color: #94a3b8;">Tiros/Desejos Disponíveis:</label>
-                                <span id="gacha-gems-convert-lbl" style="font-size: 11px; color: #a78bfa;">(Equivale a 14.400 Gemas)</span>
-                            </div>
-                            <input type="number" id="tab-gacha-pulls" value="90" min="1" class="search-input" style="width: 100%; margin-top: 4px;">
-                            <div class="gacha-quick-pulls">
-                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(10)">+10 Tiros</button>
-                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(50)">+50 Tiros</button>
-                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(90)">+90 Tiros</button>
-                                <button type="button" class="gacha-quick-btn" onclick="addGachaPulls(180)">+180 Tiros</button>
-                            </div>
-                        </div>
+                        <!-- COLUNA DIREITA: RESULTADOS E PAINEL ESTATÍSTICO -->
+                        <div id="tab-gacha-results-box" class="overview-card" style="margin-top: 0; display: block;">
+                            <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i> Resultado da Simulação
+                            </h3>
 
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-                            <button id="tab-btn-run-gacha-sim" type="button" class="primary-btn" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                <i class="fa-solid fa-dice"></i> Monte Carlo
-                            </button>
-                            <button id="tab-btn-open-wish-single" type="button" class="primary-btn" onclick="window.startWishAnimation(1)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                <i class="fa-solid fa-rotate-right"></i> Dar 1 Tiro
-                            </button>
-                            <button id="tab-btn-open-wish-multi" type="button" class="primary-btn" onclick="window.startWishAnimation(10)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> 10 Tiros
-                            </button>
+                            <!-- Card de Gauge/Chance de Sucesso -->
+                            <div class="gacha-result-gauge-card">
+                                <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Chance de Alcançar a Meta</div>
+                                <div class="gacha-gauge-val success-high" id="tab-gacha-chance-lbl">0.0%</div>
+                                <div id="tab-gacha-target-summary" style="font-size: 13px; color: #cbd5e1; font-weight: 500;">
+                                    Simule para calcular a probabilidade real
+                                </div>
+                            </div>
+
+                            <!-- Métricas Secundárias -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0;">
+                                <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-size: 11px; color: #94a3b8;">Média de Tiros Gastos:</div>
+                                    <div style="font-size: 14px; font-weight: bold; color: #f8fafc; margin-top: 2px;" id="tab-gacha-avg-lbl">N/A</div>
+                                </div>
+                                <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
+                                    <div style="font-size: 11px; color: #94a3b8;">Custo Estimado em Gemas:</div>
+                                    <div style="font-size: 14px; font-weight: bold; color: #a78bfa; margin-top: 2px;" id="tab-gacha-gems-spent-lbl">N/A</div>
+                                </div>
+                            </div>
+
+                            <!-- Lista Visual de Distribuição de Resultados -->
+                            <div style="margin-top: 16px;">
+                                <div style="font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
+                                    <span>Distribuição Probabilística de Resultados:</span>
+                                    <span style="font-size: 11px; color: #94a3b8;">10.000 Iterações</span>
+                                </div>
+                                <div id="tab-gacha-dist-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                            </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- COLUNA DIREITA: RESULTADOS E PAINEL ESTATÍSTICO -->
-                    <div id="tab-gacha-results-box" class="overview-card" style="margin-top: 0; display: block;">
-                        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-chart-pie" style="color: #f59e0b;"></i> Resultado da Simulação
-                        </h3>
+                <!-- SUBVIEW 2: GACHA FORECAST & PLANEJADOR DE BANNERS FUTUROS -->
+                <div id="gacha-view-forecast" class="gacha-subview" style="display: none; margin-top: 14px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 16px;">
+                        
+                        <!-- PAINEL DE CONFIGURAÇÃO DO FORECAST -->
+                        <div class="overview-card" style="margin-top: 0; background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(245, 158, 11, 0.05)); border: 1px solid rgba(245, 158, 11, 0.25);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+                                <h3 style="margin: 0; font-size: 16px; color: #fbbf24; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-calculator"></i> Planejador de Banner
+                                </h3>
+                                <div style="display: flex; gap: 6px;">
+                                    <button class="filter-btn active forecast-game-btn" data-game="genshin" style="padding: 4px 10px; font-size: 11px;">Genshin</button>
+                                    <button class="filter-btn forecast-game-btn" data-game="hsr" style="padding: 4px 10px; font-size: 11px;">HSR</button>
+                                    <button class="filter-btn forecast-game-btn" data-game="zzz" style="padding: 4px 10px; font-size: 11px;">ZZZ</button>
+                                </div>
+                            </div>
 
-                        <!-- Card de Gauge/Chance de Sucesso -->
-                        <div class="gacha-result-gauge-card">
-                            <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Chance de Alcançar a Meta</div>
-                            <div class="gacha-gauge-val success-high" id="tab-gacha-chance-lbl">0.0%</div>
-                            <div id="tab-gacha-target-summary" style="font-size: 13px; color: #cbd5e1; font-weight: 500;">
-                                Simule para calcular a probabilidade real
+                            <!-- Personagem Alvo -->
+                            <div style="margin-bottom: 14px;">
+                                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Personagem Alvo:</label>
+                                <select id="forecast-char-select" class="search-input" style="width: 100%; margin-top: 4px; padding: 10px;">
+                                    <option value="">Carregando lista...</option>
+                                </select>
+                            </div>
+
+                            <!-- Meta e Nível Atual -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="font-size: 12px; color: #94a3b8;" id="lbl-forecast-current-rank">Nível Atual:</label>
+                                    <select id="forecast-current-rank" class="search-input" style="width: 100%; margin-top: 4px;">
+                                        <option value="-1">Não possui</option>
+                                        <option value="0">C0 / E0 / M0</option>
+                                        <option value="1">C1 / E1 / M1</option>
+                                        <option value="2">C2 / E2 / M2</option>
+                                        <option value="3">C3 / E3 / M3</option>
+                                        <option value="4">C4 / E4 / M4</option>
+                                        <option value="5">C5 / E5 / M5</option>
+                                        <option value="6">C6 / E6 / M6</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label style="font-size: 12px; color: #94a3b8;" id="lbl-forecast-target-rank">Meta Alvo:</label>
+                                    <select id="forecast-target-rank" class="search-input" style="width: 100%; margin-top: 4px;">
+                                        <option value="0" selected>C0 / E0 (Obter 1º)</option>
+                                        <option value="1">C1 / E1</option>
+                                        <option value="2">C2 / E2</option>
+                                        <option value="3">C3 / E3</option>
+                                        <option value="4">C4 / E4</option>
+                                        <option value="5">C5 / E5</option>
+                                        <option value="6">C6 / E6 (Max)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Recursos Atuais (Pity, Garantido, Saldo) -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #94a3b8;">Tiros Guardados:</label>
+                                    <input type="number" id="forecast-pulls-cur" value="30" min="0" class="search-input" style="width: 100%; margin-top: 4px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #94a3b8;">Pity Atual (0-89):</label>
+                                    <input type="number" id="forecast-pity-cur" value="20" min="0" max="89" class="search-input" style="width: 100%; margin-top: 4px;">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #94a3b8;">50/50 Atual:</label>
+                                    <select id="forecast-guaranteed-cur" class="search-input" style="width: 100%; margin-top: 4px; font-size: 11px;">
+                                        <option value="false">50/50</option>
+                                        <option value="true">Garantido</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Janela de Tempo (Dias até o término do Banner) -->
+                            <div style="margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Janela de Tempo (Dias até o fim do Banner):</label>
+                                    <strong id="forecast-days-val" style="color: #fbbf24; font-size: 13px;">21 dias</strong>
+                                </div>
+                                <input type="range" id="forecast-days-slider" min="1" max="90" value="21" style="width: 100%; accent-color: #f59e0b; cursor: pointer;">
+                                <div style="display: flex; gap: 6px; margin-top: 8px;">
+                                    <button type="button" class="filter-btn forecast-quick-day-btn" data-days="7" style="flex: 1; padding: 4px 6px; font-size: 10px;">7d (1 sem)</button>
+                                    <button type="button" class="filter-btn active forecast-quick-day-btn" data-days="21" style="flex: 1; padding: 4px 6px; font-size: 10px;">21d (1 banner)</button>
+                                    <button type="button" class="filter-btn forecast-quick-day-btn" data-days="42" style="flex: 1; padding: 4px 6px; font-size: 10px;">42d (1 patch)</button>
+                                    <button type="button" class="filter-btn forecast-quick-day-btn" data-days="63" style="flex: 1; padding: 4px 6px; font-size: 10px;">63d (1.5 patch)</button>
+                                </div>
+                            </div>
+
+                            <!-- Toggles de Renda Futura -->
+                            <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; margin-bottom: 16px;">
+                                <div style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 10px;">Fontes de Renda Ativas no Período:</div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 8px; font-size: 12px; color: #e2e8f0;">
+                                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                                        <span><i class="fa-solid fa-calendar-check" style="color: #38bdf8;"></i> Missões Diárias (60 gemas/dia)</span>
+                                        <input type="checkbox" id="forecast-inc-daily" checked disabled style="accent-color: #10b981;">
+                                    </label>
+                                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                                        <span><i class="fa-solid fa-moon" style="color: #fbbf24;"></i> Passe da Lua / Express (+90 gemas/dia)</span>
+                                        <input type="checkbox" id="forecast-inc-pass" checked style="accent-color: #f59e0b;">
+                                    </label>
+                                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                                        <span><i class="fa-solid fa-award" style="color: #a855f7;"></i> Passe de Batalha (Gnostic / Nameless)</span>
+                                        <input type="checkbox" id="forecast-inc-bp" style="accent-color: #a855f7;">
+                                    </label>
+                                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                                        <span><i class="fa-solid fa-shop" style="color: #10b981;"></i> Reset da Loja Mensal (5 tiros/mês)</span>
+                                        <input type="checkbox" id="forecast-inc-shop" checked style="accent-color: #10b981;">
+                                    </label>
+                                    <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                                        <span><i class="fa-solid fa-star" style="color: #ec4899;"></i> Eventos & Endgame (Abismo / MoC)</span>
+                                        <input type="checkbox" id="forecast-inc-events" checked style="accent-color: #ec4899;">
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button id="btn-run-forecast-calc" type="button" class="primary-btn" style="width: 100%; padding: 12px; font-weight: 700; font-size: 13px; background: linear-gradient(135deg, #f59e0b, #d97706); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> Calcular Projeção & Monte Carlo
+                            </button>
+                        </div>
+
+                        <!-- PAINEL DE RESULTADOS DA PROJEÇÃO E PARECER ESTRATÉGICO -->
+                        <div id="forecast-results-panel" class="overview-card" style="margin-top: 0; background: linear-gradient(145deg, rgba(15, 23, 42, 0.95), rgba(16, 185, 129, 0.05)); border: 1px solid rgba(16, 185, 129, 0.25);">
+                            <h3 style="margin: 0 0 14px 0; font-size: 16px; color: #34d399; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-chart-pie"></i> Projeção de Acúmulo & Probabilidade
+                            </h3>
+
+                            <!-- Card de Parecer Estratégico -->
+                            <div id="forecast-verdict-box" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 14px; margin-bottom: 16px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <span id="forecast-verdict-badge" style="font-size: 11px; font-weight: 800; background: rgba(16, 185, 129, 0.25); color: #34d399; padding: 3px 10px; border-radius: 10px; text-transform: uppercase;">Aguardando Cálculo</span>
+                                    <span id="forecast-conf-tag" style="font-size: 11px; color: var(--text-muted);">10.000 iterações</span>
+                                </div>
+                                <div id="forecast-verdict-text" style="font-size: 13px; color: #e2e8f0; line-height: 1.5;">
+                                    Configure os dados ao lado e clique em Calcular Projeção para simular as chances da sua conta.
+                                </div>
+                            </div>
+
+                            <!-- KPIs Principais da Projeção -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
+                                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 10px; text-align: center;">
+                                    <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Chance Projetada</span>
+                                    <strong id="forecast-kpi-chance" style="font-size: 22px; color: #34d399; display: block; margin-top: 2px;">--%</strong>
+                                    <span id="forecast-kpi-f2p-comp" style="font-size: 10px; color: #94a3b8; display: block;">(F2P: --%)</span>
+                                </div>
+
+                                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 10px; text-align: center;">
+                                    <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Total de Tiros Projetados</span>
+                                    <strong id="forecast-kpi-total-pulls" style="font-size: 22px; color: #fbbf24; display: block; margin-top: 2px;">--</strong>
+                                    <span id="forecast-kpi-future-add" style="font-size: 10px; color: #38bdf8; display: block;">+-- novos</span>
+                                </div>
+
+                                <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 10px; text-align: center;">
+                                    <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Garantia 100% (Worst-case)</span>
+                                    <strong id="forecast-kpi-worst-case" style="font-size: 22px; color: #f87171; display: block; margin-top: 2px;">--</strong>
+                                    <span id="forecast-kpi-missing-pulls" style="font-size: 10px; color: #fca5a5; display: block;">Faltam -- tiros</span>
+                                </div>
+                            </div>
+
+                            <!-- Detalhamento da Renda (Income Breakdown) -->
+                            <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; margin-bottom: 16px;">
+                                <div style="font-size: 11px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between;">
+                                    <span>Composição dos Tiros Futuros:</span>
+                                    <span id="forecast-breakdown-total-lbl" style="color: #fbbf24;">-- tiros</span>
+                                </div>
+                                <div id="forecast-income-breakdown-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
+                                    <div style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 10px;">Execute a simulação para ver a composição detalhada.</div>
+                                </div>
+                            </div>
+
+                            <!-- Ações: Salvar Meta no SQLite -->
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                <button id="btn-save-forecast-goal" type="button" class="primary-btn" style="flex: 1; padding: 10px; font-size: 12px; font-weight: 700; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                    <i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBVIEW 3: LISTA DE METAS SALVAS -->
+                <div id="gacha-view-goals" class="gacha-subview" style="display: none; margin-top: 14px;">
+                    <div class="overview-card" style="margin-top: 0;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                            <div>
+                                <h3 style="margin: 0; color: #10b981; font-size: 17px; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-bullseye"></i> Metas de Banners Salvas
+                                </h3>
+                                <span style="font-size: 12px; color: var(--text-muted);">Acompanhe o progresso das suas metas planejadas para cada jogo.</span>
+                            </div>
+                            <div style="display: flex; gap: 6px;">
+                                <button class="filter-btn active goals-game-btn" data-game="all" style="padding: 5px 12px; font-size: 11px;">Todos os Jogos</button>
+                                <button class="filter-btn goals-game-btn" data-game="genshin" style="padding: 5px 12px; font-size: 11px;">Genshin</button>
+                                <button class="filter-btn goals-game-btn" data-game="hsr" style="padding: 5px 12px; font-size: 11px;">HSR</button>
+                                <button class="filter-btn goals-game-btn" data-game="zzz" style="padding: 5px 12px; font-size: 11px;">ZZZ</button>
                             </div>
                         </div>
 
-                        <!-- Métricas Secundárias -->
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0;">
-                            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-                                <div style="font-size: 11px; color: #94a3b8;">Média de Tiros Gastos:</div>
-                                <div style="font-size: 14px; font-weight: bold; color: #f8fafc; margin-top: 2px;" id="tab-gacha-avg-lbl">N/A</div>
+                        <div id="gacha-saved-goals-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px;">
+                            <div style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;">
+                                <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                                <p style="margin-top: 10px;">Carregando metas salvas...</p>
                             </div>
-                            <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-                                <div style="font-size: 11px; color: #94a3b8;">Custo Estimado em Gemas:</div>
-                                <div style="font-size: 14px; font-weight: bold; color: #a78bfa; margin-top: 2px;" id="tab-gacha-gems-spent-lbl">N/A</div>
-                            </div>
-                        </div>
-
-                        <!-- Lista Visual de Distribuição de Resultados -->
-                        <div style="margin-top: 16px;">
-                            <div style="font-size: 13px; font-weight: 600; color: #cbd5e1; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                                <span>Distribuição Probabilística de Resultados:</span>
-                                <span style="font-size: 11px; color: #94a3b8;">10.000 Iterações</span>
-                            </div>
-                            <div id="tab-gacha-dist-list" style="display: flex; flex-direction: column; gap: 6px;"></div>
                         </div>
                     </div>
                 </div>
@@ -1090,22 +1408,45 @@
                 </div>
             </section>
 
-            <!-- ABA RELÍQUIAS LIXO -->
+            <!-- ABA RELÍQUIAS LIXO & CONSELHEIRO DE SÍNTESE -->
             <section id="tab-trash" class="tab-pane">
                 <div class="game-banner" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(239, 68, 68, 0.3);">
                     <div class="banner-overlay">
-                        <h2><i class="fa-solid fa-trash-can" style="color: #ef4444;"></i> Analisador de Relíquias Lixo</h2>
-                        <p>Identificador inteligente de peças do inventário sem utilidade no metagame</p>
+                        <h2><i class="fa-solid fa-trash-can" style="color: #ef4444;"></i> Gestão de Relíquias & Síntese Inteligente</h2>
+                        <p>Desmanche inteligente de peças sem utilidade e conselheiro de uso para Resina Automodeladora e Elixir Santificador</p>
                     </div>
                 </div>
-                <div style="margin-top: 20px;">
+
+                <!-- SUB-NAVEGAÇÃO: LIXO vs SÍNTESE -->
+                <div class="gacha-subnav" style="display: flex; gap: 8px; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+                    <button id="btn-subnav-trash-finder" class="subnav-btn active" onclick="window.switchTrashSubView('finder')" style="padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-trash-can"></i> Peças Lixo (Desmanche)
+                    </button>
+                    <button id="btn-subnav-trash-craft" class="subnav-btn" onclick="window.switchTrashSubView('craft')" style="padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Conselheiro de Síntese & Resina Automodeladora
+                        <span style="background: #f59e0b; color: #020617; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 800;">AUTO</span>
+                    </button>
+                </div>
+
+                <div style="margin-top: 10px;">
                     <div style="display: flex; gap: 10px; margin-bottom: 16px;">
-                        <button class="filter-btn active tab-trash-game-btn" data-game="genshin">Genshin Impact</button>
-                        <button class="filter-btn tab-trash-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                        <button class="filter-btn active tab-trash-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                        <button class="filter-btn tab-trash-game-btn" data-game="genshin">Genshin Impact</button>
                         <button class="filter-btn tab-trash-game-btn" data-game="zzz">Zenless Zone Zero</button>
                     </div>
-                    <div id="tab-trash-relics-body" class="overview-card">
-                        <!-- Preenchido via JS -->
+
+                    <!-- SUBVIEW 1: IDENTIFICADOR DE LIXO -->
+                    <div id="trash-view-finder" class="trash-subview">
+                        <div id="tab-trash-relics-body" class="overview-card">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <!-- SUBVIEW 2: CONSELHEIRO DE SÍNTESE -->
+                    <div id="trash-view-craft" class="trash-subview" style="display: none;">
+                        <div id="tab-craft-recommendations-body">
+                            <!-- Preenchido via JS -->
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1141,11 +1482,24 @@
             <section id="tab-audit" class="tab-pane">
                 <div class="game-banner" style="background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(168, 85, 247, 0.3);">
                     <div class="banner-overlay">
-                        <h2><i class="fa-solid fa-trophy" style="color: #a855f7;"></i> Tier List & Relatório da Conta</h2>
-                        <p>Classificação visual dos seus personagens e auditoria de investimento</p>
+                        <h2><i class="fa-solid fa-trophy" style="color: #a855f7;"></i> Tier List & Diagnóstico Estratégico</h2>
+                        <p>Classificação visual do Roster, auditoria de investimento e análise profunda de lacunas da conta com IA</p>
                     </div>
                 </div>
-                <div style="margin-top: 20px;">
+
+                <!-- SUB-NAVEGAÇÃO: TIER LIST vs DIAGNÓSTICO DE LACUNAS -->
+                <div class="gacha-subnav" style="display: flex; gap: 8px; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+                    <button id="btn-subnav-audit-tierlist" class="subnav-btn active" onclick="window.switchAuditSubView('tierlist')" style="padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.15); color: #c084fc; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-layer-group"></i> Tier List & Builds
+                    </button>
+                    <button id="btn-subnav-audit-gaps" class="subnav-btn" onclick="window.switchAuditSubView('gaps')" style="padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-chess-knight" style="color: #38bdf8;"></i> Diagnóstico de Lacunas & Estratégia de Banners
+                        <span style="background: #38bdf8; color: #020617; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: 800;">IA</span>
+                    </button>
+                </div>
+
+                <!-- SUBVIEW 1: TIER LIST TRADICIONAL -->
+                <div id="audit-view-tierlist" class="audit-subview" style="margin-top: 10px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                             <button class="filter-btn active tab-audit-game-btn" data-game="hsr">Honkai: Star Rail</button>
@@ -1160,10 +1514,32 @@
                                 <i class="fa-solid fa-camera"></i> Gerar Imagem HD da Tier List
                             </button>
                         </div>
-
                     </div>
                     <div id="tab-audit-report-body" class="overview-card">
                         <!-- Preenchido via JS -->
+                    </div>
+                </div>
+
+                <!-- SUBVIEW 2: DIAGNÓSTICO DE LACUNAS & ESTRATÉGIA DE BANNERS -->
+                <div id="audit-view-gaps" class="audit-subview" style="display: none; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button class="filter-btn active tab-gaps-game-btn" data-game="hsr">Honkai: Star Rail</button>
+                            <button class="filter-btn tab-gaps-game-btn" data-game="genshin">Genshin Impact</button>
+                            <button class="filter-btn tab-gaps-game-btn" data-game="zzz">Zenless Zone Zero</button>
+                        </div>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button id="btn-ask-ai-gaps-action" onclick="window.consultAiAccountGaps()" class="primary-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);">
+                                <i class="fa-solid fa-brain"></i> Parecer Estratégico da IA
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="tab-gaps-content-body">
+                        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
+                            <i class="fa-solid fa-spinner fa-spin fa-2x"></i>
+                            <p style="margin-top: 10px;">Executando auditoria estratégica da conta...</p>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1356,7 +1732,132 @@
                         </div>
                     </div>
 
-                    <!-- 7. TRANSPARÊNCIA & PRIVACIDADE DE DADOS -->
+                    <!-- 7. NOTIFICAÇÕES PROATIVAS (DISCORD & TELEGRAM) -->
+                    <div class="config-section" style="border-top: 1px solid rgba(56, 189, 248, 0.3); padding-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+                            <h3 style="margin: 0; color: #38bdf8;"><i class="fa-solid fa-bell" style="color: #38bdf8;"></i> Notificações Proativas (Discord & Telegram)</h3>
+                            <span style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">ASSISTENTE AUTÔNOMO</span>
+                        </div>
+                        <p class="section-desc">Receba avisos instantâneos no seu celular ou servidor Discord sem precisar abrir o navegador: energia prestes a estourar, check-in concluído e novos códigos resgatados.</p>
+                        
+                        <div style="display: flex; flex-direction: column; gap: 14px; margin-top: 12px;">
+                            <label style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer;">
+                                <input type="checkbox" id="cfg-notif-enabled" style="width: 16px; height: 16px; accent-color: #38bdf8;">
+                                Ativar Envio de Notificações em Segundo Plano
+                            </label>
+
+                            <!-- Painel de Canais (Discord & Telegram) -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px;">
+                                <!-- Discord Webhook -->
+                                <div style="background: rgba(88, 101, 242, 0.08); border: 1px solid rgba(88, 101, 242, 0.25); border-radius: 10px; padding: 14px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <i class="fa-brands fa-discord" style="color: #5865f2; font-size: 18px;"></i>
+                                        <strong style="font-size: 13px; color: #fff;">Discord Webhook</strong>
+                                    </div>
+                                    <input type="text" id="cfg-notif-discord-url" placeholder="https://discord.com/api/webhooks/..." class="config-input" style="font-size: 12px; padding: 8px 10px;">
+                                    <span style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: block;">Cole a URL do Webhook do canal do seu servidor Discord.</span>
+                                </div>
+
+                                <!-- Telegram Bot -->
+                                <div style="background: rgba(0, 136, 204, 0.08); border: 1px solid rgba(0, 136, 204, 0.25); border-radius: 10px; padding: 14px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                        <i class="fa-brands fa-telegram" style="color: #0088cc; font-size: 18px;"></i>
+                                        <strong style="font-size: 13px; color: #fff;">Telegram Bot API</strong>
+                                    </div>
+                                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                                        <input type="password" id="cfg-notif-telegram-token" placeholder="Bot Token (ex: 123456:ABC-DEF...)" class="config-input" style="font-size: 12px; padding: 8px 10px;">
+                                        <input type="text" id="cfg-notif-telegram-chat-id" placeholder="Seu Chat ID (ex: 987654321)" class="config-input" style="font-size: 12px; padding: 8px 10px;">
+                                    </div>
+                                    <span style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: block;">Obtenha o Token via @BotFather e seu Chat ID via @userinfobot.</span>
+                                </div>
+                            </div>
+
+                            <!-- Gatilhos de Notificação -->
+                            <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px;">
+                                <strong style="font-size: 12px; color: #cbd5e1; display: block; margin-bottom: 10px;">Gatilhos de Notificação Ativos:</strong>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;">
+                                    <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="cfg-notif-checkin" checked style="accent-color: #38bdf8;">
+                                        🎁 Recompensas de Check-in
+                                    </label>
+                                    <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="cfg-notif-energy" checked style="accent-color: #38bdf8;">
+                                        🔋 Alerta de Energia / Resina
+                                    </label>
+                                    <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="cfg-notif-endgame" checked style="accent-color: #38bdf8;">
+                                        ⚔️ Vencimento de Endgame
+                                    </label>
+                                    <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="cfg-notif-codes" checked style="accent-color: #38bdf8;">
+                                        💎 Códigos Promocionais
+                                    </label>
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05);">
+                                    <label style="font-size: 12px; color: var(--text-secondary);">Disparar alerta de energia em:</label>
+                                    <select id="cfg-notif-energy-threshold" class="snap-select" style="padding: 4px 10px; border-color: rgba(56,189,248,0.4);">
+                                        <option value="85">85% da Capacidade</option>
+                                        <option value="90" selected>90% da Capacidade (Recomendado)</option>
+                                        <option value="95">95% da Capacidade</option>
+                                        <option value="100">100% (Cap Cheio)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="btn-row" style="margin-top: 4px; gap: 10px; flex-wrap: wrap;">
+                                <button id="btn-test-notifications" class="secondary-btn" style="border-color: #38bdf8; color: #38bdf8; background: rgba(56, 189, 248, 0.1);">
+                                    <i class="fa-solid fa-paper-plane"></i> Testar Notificações Agora
+                                </button>
+                                <span class="btn-info" style="color: var(--text-muted);">Envia uma mensagem de teste para verificar se o Discord e Telegram estão funcionando.</span>
+                            </div>
+                            <div id="notif-test-status-box" style="display: none; margin-top: 8px; font-size: 12px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- 8. SINCRONIZAÇÃO DE DADOS ESTÁTICOS & DATAMINES -->
+                    <div class="config-section" style="border-top: 1px solid rgba(16, 185, 129, 0.3); padding-top: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
+                            <h3 style="margin: 0; color: #10b981;"><i class="fa-solid fa-database" style="color: #10b981;"></i> Dados Estáticos & Datamines (GitHub / HoYoWiki)</h3>
+                            <span style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);">ZERO SCRAPING FRÁGIL</span>
+                        </div>
+                        <p class="section-desc">Sincroniza automaticamente informações estruturadas de personagens, livros de talentos, materiais de ascensão e rotações de domínios via repositórios do GitHub (GenshinData, StarRailRes, ZenlessData) e APIs da HoYoWiki.</p>
+
+                        <!-- Status dos Jogos -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px;">
+                            <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <strong style="color: #38bdf8; font-size: 13px;"><i class="fa-solid fa-wind"></i> Genshin Impact</strong>
+                                    <span id="static-status-genshin-tag" style="font-size: 10px; background: rgba(16,185,129,0.2); color: #34d399; padding: 2px 6px; border-radius: 4px;">Offline Ready</span>
+                                </div>
+                                <div id="static-status-genshin-desc" style="font-size: 11px; color: var(--text-secondary);">Carregando manifesto...</div>
+                            </div>
+                            <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <strong style="color: #a855f7; font-size: 13px;"><i class="fa-solid fa-train"></i> Honkai: Star Rail</strong>
+                                    <span id="static-status-hsr-tag" style="font-size: 10px; background: rgba(16,185,129,0.2); color: #34d399; padding: 2px 6px; border-radius: 4px;">Offline Ready</span>
+                                </div>
+                                <div id="static-status-hsr-desc" style="font-size: 11px; color: var(--text-secondary);">Carregando manifesto...</div>
+                            </div>
+                            <div style="background: rgba(15,23,42,0.6); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <strong style="color: #f59e0b; font-size: 13px;"><i class="fa-solid fa-bolt"></i> Zenless Zone Zero</strong>
+                                    <span id="static-status-zzz-tag" style="font-size: 10px; background: rgba(16,185,129,0.2); color: #34d399; padding: 2px 6px; border-radius: 4px;">Offline Ready</span>
+                                </div>
+                                <div id="static-status-zzz-desc" style="font-size: 11px; color: var(--text-secondary);">Carregando manifesto...</div>
+                            </div>
+                        </div>
+
+                        <div class="btn-row" style="margin-top: 14px; gap: 10px; flex-wrap: wrap;">
+                            <button id="btn-sync-static-data" class="secondary-btn" style="border-color: #10b981; color: #10b981; background: rgba(16, 185, 129, 0.1);">
+                                <i class="fa-solid fa-rotate"></i> Sincronizar Datamines Agora
+                            </button>
+                            <span class="btn-info" style="color: var(--text-muted);">Baixa os manifestos e dados mais recentes dos 3 jogos. Se a internet falhar, o cache local assume sem interrupções.</span>
+                        </div>
+                        <div id="static-sync-result-box" style="display: none; margin-top: 8px; font-size: 12px;"></div>
+                    </div>
+
+                    <!-- 9. TRANSPARÊNCIA & PRIVACIDADE DE DADOS -->
                     <div class="config-section" style="border-top: 1px solid rgba(168, 85, 247, 0.3); padding-top: 16px;">
                         <h3 style="color: #c084fc;"><i class="fa-solid fa-shield-halved"></i> Transparência & Privacidade de Dados</h3>
                         <p class="section-desc">Entenda detalhadamente quais dados são armazenados localmente no seu computador e quais nunca são acessados:</p>
@@ -1461,9 +1962,14 @@
             <!-- ABA CÓDIGOS PROMOCIONAIS -->
             <section id="tab-codes" class="tab-pane">
                 <div class="game-banner" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
-                    <div class="banner-overlay">
-                        <h2><i class="fa-solid fa-gift" style="color: #f59e0b;"></i> Gerenciador e Resgate de Códigos Promocionais</h2>
-                        <p>Busca e resgate de códigos de Gemas, Jades Estelares e Polychromes via API da HoYoverse</p>
+                    <div class="banner-overlay" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                        <div>
+                            <h2><i class="fa-solid fa-gift" style="color: #f59e0b;"></i> Gerenciador e Resgate de Códigos Promocionais</h2>
+                            <p>Busca e resgate automático de códigos de Gemas, Jades Estelares e Polychromes via API da HoYoverse</p>
+                        </div>
+                        <div style="display: inline-flex; align-items: center; gap: 8px; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.4); padding: 6px 14px; border-radius: 20px; color: #fbbf24; font-size: 12px; font-weight: 700;">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Auto-Redeem em Segundo Plano Ativo (a cada 3h)
+                        </div>
                     </div>
                 </div>
                 <div style="margin-top: 20px;">
@@ -1483,7 +1989,7 @@
                 </div>
             </section>
 
-            <!-- ABA COMO USAR (HELP HUB & KNOWLEDGE BASE V4.5) -->
+            <!-- ABA COMO USAR (HELP HUB & KNOWLEDGE BASE V5.0) -->
             <section id="tab-help" class="tab-pane">
                 <div class="help-hub-container">
                     <!-- HERO BANNER -->
@@ -1491,7 +1997,7 @@
                         <div class="help-hero-header">
                             <div class="help-title-group">
                                 <h2><i class="fa-solid fa-graduation-cap" style="color: #6366f1;"></i> Central de Ajuda & Guia de Recursos</h2>
-                                <p>Explore os 16+ módulos inteligentes do Cabeça de Droid v4.5. Utilize os filtros por categoria ou a busca em tempo real para encontrar tutoriais e atalhos rápidos.</p>
+                                <p>Explore os 20 módulos inteligentes do Cabeça de Droid v5.0. Utilize os filtros por categoria ou a busca em tempo real para encontrar tutoriais, atalhos rápidos e regras do sistema.</p>
                             </div>
                             <div class="help-search-box">
                                 <i class="fa-solid fa-magnifying-glass help-search-icon"></i>
@@ -1501,19 +2007,20 @@
 
                         <!-- CATEGORY PILLS FILTER -->
                         <div class="help-category-pills">
-                            <button class="help-pill active" data-category="all"><i class="fa-solid fa-border-all"></i> Todos os Recursos (16)</button>
-                            <button class="help-pill" data-category="auth"><i class="fa-solid fa-key" style="color: #10b981;"></i> Conta & Autenticação</button>
-                            <button class="help-pill" data-category="builds"><i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i> Roster, Builds & RV</button>
-                            <button class="help-pill" data-category="tools"><i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Simuladores & Inventário</button>
-                            <button class="help-pill" data-category="ia"><i class="fa-solid fa-brain" style="color: #a855f7;"></i> IA & Montador de Times</button>
-                            <button class="help-pill" data-category="export"><i class="fa-solid fa-file-zipper" style="color: #ec4899;"></i> Rede & Exportações</button>
+                            <button class="help-pill active" data-category="all"><i class="fa-solid fa-border-all"></i> Todos os Recursos (20)</button>
+                            <button class="help-pill" data-category="auth"><i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> Conta & Segurança</button>
+                            <button class="help-pill" data-category="builds"><i class="fa-solid fa-wand-magic-sparkles" style="color: #6366f1;"></i> Roster, Builds & RV</button>
+                            <button class="help-pill" data-category="tools"><i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i> Simuladores & Farm</button>
+                            <button class="help-pill" data-category="audit"><i class="fa-solid fa-trophy" style="color: #a855f7;"></i> Auditoria & Evolução</button>
+                            <button class="help-pill" data-category="ia"><i class="fa-solid fa-brain" style="color: #ec4899;"></i> IA & Automação</button>
+                            <button class="help-pill" data-category="export"><i class="fa-solid fa-network-wired" style="color: #06b6d4;"></i> Rede & Exportações</button>
                         </div>
                     </div>
 
                     <!-- CARDS GRID -->
                     <div id="help-cards-grid" class="help-cards-grid">
                         
-                        <!-- CARD 1: LOGIN AUTOMÁTICO -->
+                        <!-- CARD 1: LOGIN AUTOMÁTICO PLAYWRIGHT -->
                         <div class="help-card" data-category="auth">
                             <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">CONTA</span>
                             <div>
@@ -1523,14 +2030,14 @@
                                     </div>
                                     <div class="help-card-title">1. Autenticação & Playwright</div>
                                 </div>
-                                <div class="help-card-desc">Login automático com Chromium headless para captura segura de cookies de sessão (`ltuid_v2`, `ltoken_v2`).</div>
+                                <div class="help-card-desc">Login automático com Chromium headless para captura segura e direta de cookies de sessão (`ltuid_v2`, `ltoken_v2`).</div>
                                 <div class="help-card-tags">
-                                    <span class="help-tag">Cookies</span>
-                                    <span class="help-tag">Chromium</span>
-                                    <span class="help-tag">Segurança</span>
+                                    <span class="help-tag">Cookies v2</span>
+                                    <span class="help-tag">Playwright</span>
+                                    <span class="help-tag">Zero Credenciais</span>
                                 </div>
                                 <div class="help-card-details">
-                                    Acesse a aba <strong>Configurações</strong> e clique em <strong>Login Automático via Playwright</strong>. Uma janela segura do Chromium será aberta para você logar no site da HoYoLAB. Os cookies são salvos localmente em `cookies.json`. Chaves de API Groq (`gsk_...`) também são configuradas aqui.
+                                    Acesse a aba <strong>Configurações</strong> e clique em <strong>Login Automático via Playwright</strong>. Uma janela segura do Chromium será aberta para você logar no portal oficial da HoYoLAB. Seus tokens de sessão são salvos localmente no cofre seguro. O sistema nunca tem acesso à sua senha.
                                 </div>
                             </div>
                             <div class="help-card-footer">
@@ -1539,267 +2046,33 @@
                             </div>
                         </div>
 
-                        <!-- CARD 2: AUTO SYNC & SCRAPING -->
+                        <!-- CARD 2: COFRE DPAPI & PIN LOCK -->
                         <div class="help-card" data-category="auth">
-                            <span class="help-card-badge" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);">SINCRONIZAÇÃO</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
-                                        <i class="fa-solid fa-rotate"></i>
-                                    </div>
-                                    <div class="help-card-title">2. Sincronização & Agendamento</div>
-                                </div>
-                                <div class="help-card-desc">Raspagem inteligente no Prydwen.gg anti-403 e agendamento diário automático de roster e guias.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Prydwen</span>
-                                    <span class="help-tag">Auto-Sync 04:00</span>
-                                    <span class="help-tag">Bypass 403</span>
-                                </div>
-                                <div class="help-card-details">
-                                    Nas abas de cada jogo (<strong>ZZZ</strong>, <strong>Genshin</strong> ou <strong>HSR</strong>), selecione os módulos e sincronize em tempo real. Você pode agendar na aba Configurações um horário diário fixo (ex: 04:00 AM) para execução automática. O sistema normaliza apelidos (ex: <em>Himeko - Nova</em> &rarr; ID 1510).
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-rotate"></i> Ir para Sincronização</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 3: ROLL VALUE & INSPETOR -->
-                        <div class="help-card" data-category="builds">
-                            <span class="help-card-badge" style="color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">BUILDS</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
-                                        <i class="fa-solid fa-shield-halved"></i>
-                                    </div>
-                                    <div class="help-card-title">3. Roll Value (RV) & Notas</div>
-                                </div>
-                                <div class="help-card-desc">Avaliação de peças de relíquias com Main Stat Forgiveness, Flat Fallback e classificação SSS a D.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Roll Value</span>
-                                    <span class="help-tag">Notas SSS-D</span>
-                                    <span class="help-tag">Comparador Meta</span>
-                                </div>
-                                <div class="help-card-details">
-                                    Clique em qualquer personagem para abrir a gaveta do Inspetor. O cálculo de Roll Value avalia substatus contra rolagens 5★ máximas. main stats corretos recebem 40% de bônus base, e status Flat ganham 50% de crédito parcial. Grades: <strong>SSS</strong> (&ge;90%), <strong>SS</strong> (75-89%), <strong>S</strong> (60-74%), <strong>A</strong> (45-59%), <strong>B</strong> (30-44%), <strong>C/D</strong> (&lt;30%).
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-user-ninja"></i> Ver Personagens</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 4: BREAKPOINTS & ASCENSÃO -->
-                        <div class="help-card" data-category="builds">
-                            <span class="help-card-badge" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">METAS</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
-                                        <i class="fa-solid fa-gauge-high"></i>
-                                    </div>
-                                    <div class="help-card-title">4. Breakpoints & Ascensão</div>
-                                </div>
-                                <div class="help-card-desc">Comparador de metas de combate (Vida, ATQ, Taxa/Dano Crítico, VEL) e cálculo de materiais para níveis 60-90.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Breakpoints</span>
-                                    <span class="help-tag">Calculadora XP</span>
-                                    <span class="help-tag">Materiais Nv 90</span>
-                                </div>
-                                <div class="help-card-details">
-                                    No Inspetor de Builds, a aba <strong>Comparador de Metas Gerais</strong> indica se o seu personagem atingiu os patamares de status recomendados no metagame (destacando acertos em verde e desvios em vermelho). A <strong>Calculadora de Ascensão</strong> estima com precisão a quantidade de Mora/Créditos, Livros de XP e itens de chefe para alcançar o nível selecionado.
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=genshin]').click()" class="help-action-btn"><i class="fa-solid fa-calculator"></i> Inspetor de Builds</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 5: CARD IMAGEM HD & OTIMIZADOR IA -->
-                        <div class="help-card" data-category="builds">
-                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">EXPORTAR</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-                                        <i class="fa-solid fa-camera"></i>
-                                    </div>
-                                    <div class="help-card-title">5. Card Imagem HD & IA</div>
-                                </div>
-                                <div class="help-card-desc">Gerador de imagem PNG em alta resolução da build para Discord e botão Otimizador IA com 3 conselhos diretos.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Card PNG</span>
-                                    <span class="help-tag">Discord Share</span>
-                                    <span class="help-tag">Otimizador IA</span>
-                                </div>
-                                <div class="help-card-details">
-                                    Clique no botão <strong>Card Imagem</strong> no Inspetor para renderizar uma imagem completa da build com avatares, notas e equipamentos. O botão traz opção de download direto e cópia de imagem para a área de transferência. O botão <strong>Analisar</strong> executa a IA Groq para apontar os 3 pontos fracos da build.
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-image"></i> Gerar Card</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 6: SIMULADOR GACHA -->
-                        <div class="help-card" data-category="tools">
-                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">SIMULADOR</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
-                                    </div>
-                                    <div class="help-card-title">6. Monte Carlo Gacha & Simulador de Tiros</div>
-                                </div>
-                                <div class="help-card-desc">Simulação estocástica de 10.000 invocações com seleção de personagem do banner, reconhecimento de cópias do Roster e Soft Pity.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Selection 4★/5★</span>
-                                    <span class="help-tag">Soft Pity 74+</span>
-                                    <span class="help-tag">Desconto Roster</span>
-                                </div>
-                                <div class="help-card-details">
-                                    Acesse a aba <strong>Simulador de Tiros</strong> no menu lateral. Escolha o personagem desejado (5★ / Rank S ou 4★ / Rank A) — o sistema reconhece automaticamente as cópias que você já possui no Roster e calcula as próximas. Inclui modelo real de <strong>Soft Pity</strong> (crescimento de 6% por tiro a partir do 74º/75º até 100% no 90º) e nomenclatura própria por jogo (<strong>Constelação</strong> no Genshin, <strong>Eidolon</strong> no HSR e <strong>Mindscape Cinema</strong> no ZZZ).
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=gacha]').click()" class="help-action-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Testar Simulador</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 7: CENTRAL DE FARM -->
-                        <div class="help-card" data-category="tools">
-                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">FARM</span>
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SEGURANÇA</span>
                             <div>
                                 <div class="help-card-header">
                                     <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-                                        <i class="fa-solid fa-seedling"></i>
+                                        <i class="fa-solid fa-vault"></i>
                                     </div>
-                                    <div class="help-card-title">7. Central de Farm Inteligente Diário</div>
+                                    <div class="help-card-title">2. Cofre de Segurança DPAPI & PIN Lock</div>
                                 </div>
-                                <div class="help-card-desc">Rotação diária de domínios, materiais de ascensão e planejamento inteligente de gasto de energia/resina.</div>
+                                <div class="help-card-desc">Criptografia Windows DPAPI, derivação PBKDF2/AES-256 e PIN de Bloqueio numérico para blindar suas credenciais.</div>
                                 <div class="help-card-tags">
-                                    <span class="help-tag">Rotação Diária</span>
-                                    <span class="help-tag">Prioridade Roster</span>
-                                    <span class="help-tag">Nível Máximo Real</span>
+                                    <span class="help-tag">DPAPI Vault</span>
+                                    <span class="help-tag">PIN 4 Dígitos</span>
+                                    <span class="help-tag">AES-256-GCM</span>
                                 </div>
                                 <div class="help-card-details">
-                                    A <strong>Central de Farm</strong> identifica automaticamente quais livros de talento, materiais de chefes e domínios de relíquias estão abertos hoje para os personagens do seu Roster (respeitando o nível máximo de 90 no Genshin, 80 no HSR e 60 no ZZZ).
+                                    Todas as credenciais (`cookies.enc`, `config.enc`) são criptografadas com a API DPAPI do Windows vinculada ao seu usuário do SO. Você também pode ativar um <strong>PIN de Acesso</strong> nas Configurações: com o cofre bloqueado, nenhuma ação ou consulta a dados sensíveis é liberada.
                                 </div>
                             </div>
                             <div class="help-card-footer">
                                 <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=farm]').click()" class="help-action-btn"><i class="fa-solid fa-seedling"></i> Ver Farm Diário</button>
+                                <button onclick="document.querySelector('[data-tab=config]').click()" class="help-action-btn"><i class="fa-solid fa-lock"></i> Configurar PIN</button>
                             </div>
                         </div>
 
-                        <!-- CARD 8: TRASH FINDER -->
-                        <div class="help-card" data-category="tools">
-                            <span class="help-card-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">INVENTÁRIO</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </div>
-                                    <div class="help-card-title">8. Analisador de Relíquias Lixo</div>
-                                </div>
-                                <div class="help-card-desc">Identificador automático de peças de artefatos/relíquias do inventário com substatus incompatíveis com o metagame.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Trash Finder</span>
-                                    <span class="help-tag">Limpeza Inventário</span>
-                                    <span class="help-tag">Sintetizador</span>
-                                </div>
-                                <div class="help-card-details">
-                                    A ferramenta <strong>Relíquias Lixo</strong> compara os status de cada peça guardada no seu inventário contra o banco de recomendações de todos os personagens ativos do jogo, apontando relíquias sem utilidade prática que podem ser destruídas ou recicladas.
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=trash]').click()" class="help-action-btn"><i class="fa-solid fa-trash-can"></i> Ver Relíquias Lixo</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 9: TIER LIST & AUDITORIA -->
-                        <div class="help-card" data-category="tools">
-                            <span class="help-card-badge" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">AUDITORIA</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
-                                        <i class="fa-solid fa-trophy"></i>
-                                    </div>
-                                    <div class="help-card-title">9. Tier List & Auditoria da Conta</div>
-                                </div>
-                                <div class="help-card-desc">Matriz visual de classificação dos personagens por Tiers (S+ a C), nota global de saúde da conta e exportação de Imagem HD.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Tier List S+</span>
-                                    <span class="help-tag">Saúde da Conta</span>
-                                    <span class="help-tag">Export PNG HD</span>
-                                </div>
-                                <div class="help-card-details">
-                                    Na aba <strong>Tier List & Audit</strong>, a aplicação analisa os seus personagens evoluídos e projeta uma matriz gráfica dividida por tiers. Clique no botão <strong>Gerar Imagem HD da Tier List</strong> no topo para exportar o quadro completo em formato de imagem PNG.
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=audit]').click()" class="help-action-btn"><i class="fa-solid fa-trophy"></i> Abrir Tier List</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 10: TIMELINE & SNAPSHOTS -->
-                        <div class="help-card" data-category="tools">
-                            <span class="help-card-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">EVOLUÇÃO</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
-                                        <i class="fa-solid fa-chart-line"></i>
-                                    </div>
-                                    <div class="help-card-title">10. Linha do Tempo & Snapshots (Com Filtro de Alterações)</div>
-                                </div>
-                                <div class="help-card-desc">Histórico gráfico de crescimento da conta com métricas acumuladas, novos 5★ e botão de filtro para exibir apenas evoluções.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Timeline Stepper</span>
-                                    <span class="help-tag">Filtro Alterações</span>
-                                    <span class="help-tag">Comparação Diffs</span>
-                                </div>
-                                <div class="help-card-details">
-                                    A aba <strong>Linha do Tempo</strong> registra snapshots periódicos da sua conta. Você pode criar um snapshot manualmente ou usar o botão <strong>Apenas Personagens com Alterações</strong> para ocultar unidades estáticas e focar 100% nas evoluções, novos 5★ e mudanças de build.
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=history]').click()" class="help-action-btn"><i class="fa-solid fa-chart-line"></i> Ver Linha do Tempo</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 11: CÓDIGOS PROMOCIONAIS -->
-                        <div class="help-card" data-category="tools">
-                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">CÓDIGOS</span>
-                            <div>
-                                <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-                                        <i class="fa-solid fa-gift"></i>
-                                    </div>
-                                    <div class="help-card-title">11. Códigos Promocionais</div>
-                                </div>
-                                <div class="help-card-desc">Busca automática de códigos de Gemas Essenciais, Jades Estelares e Polychromes com resgate em 1 clique.</div>
-                                <div class="help-card-tags">
-                                    <span class="help-tag">Gemas & Jades</span>
-                                    <span class="help-tag">Auto-Redeem</span>
-                                    <span class="help-tag">HoYoverse API</span>
-                                </div>
-                                <div class="help-card-details">
-                                    Na aba <strong>Códigos Promocionais</strong>, a aplicação consulta periodicamente códigos ativos para Genshin, HSR e ZZZ. Clique no botão <strong>Resgatar Todos os Códigos</strong> para efetuar a ativação direta na sua conta sem precisar copiar e colar no site.
-                                </div>
-                            </div>
-                            <div class="help-card-footer">
-                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=codes]').click()" class="help-action-btn"><i class="fa-solid fa-gift"></i> Ver Códigos</button>
-                            </div>
-                        </div>
-
-                        <!-- CARD 12: DAILY NOTES & AUTO CHECKIN -->
+                        <!-- CARD 3: DAILY NOTES & AUTO CHECKIN -->
                         <div class="help-card" data-category="auth">
                             <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">ENERGIA</span>
                             <div>
@@ -1807,16 +2080,16 @@
                                     <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
                                         <i class="fa-solid fa-battery-three-quarters"></i>
                                     </div>
-                                    <div class="help-card-title">12. Energia & Auto-Check-in 6h</div>
+                                    <div class="help-card-title">3. Daily Notes & Auto Check-in 6h</div>
                                 </div>
-                                <div class="help-card-desc">Monitor de Resina, Poder de Desbravamento e Bateria com anéis de progresso SVG e check-in diário a cada 6h.</div>
+                                <div class="help-card-desc">Monitor em tempo real de Resina, Poder de Desbravamento e Bateria com anéis SVG e check-in diário a cada 6h.</div>
                                 <div class="help-card-tags">
                                     <span class="help-tag">Daily Notes</span>
                                     <span class="help-tag">Anéis SVG</span>
                                     <span class="help-tag">Auto Check-in 6h</span>
                                 </div>
                                 <div class="help-card-details">
-                                    No topo da aba <strong>Início</strong>, o monitor exibe o tempo restante exato para recuperação de energia dos 3 jogos. Em segundo plano, o servidor FastAPI executa o auto check-in diário a cada 6 horas registrando os logs no banco SQLite.
+                                    No topo da aba <strong>Início</strong>, o monitor exibe a contagem regressiva e o tempo exato para o cap de energia nos 3 jogos (Genshin 200, HSR 300, ZZZ 240). O backend FastAPI executa o check-in oficial diário automaticamente a cada 6 horas no HoYoLAB, registrando o histórico no SQLite.
                                 </div>
                             </div>
                             <div class="help-card-footer">
@@ -1825,102 +2098,232 @@
                             </div>
                         </div>
 
-                        <!-- CARD 13: CHAT IA & MONTADOR DE TIMES -->
-                        <div class="help-card" data-category="ia">
-                            <span class="help-card-badge" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">INTELIGÊNCIA ARTIFICIAL</span>
+                        <!-- CARD 4: SINCRONIZAÇÃO & AGENDAMENTO -->
+                        <div class="help-card" data-category="auth">
+                            <span class="help-card-badge" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);">SINCRONIZAÇÃO</span>
                             <div>
                                 <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
-                                        <i class="fa-solid fa-comments"></i>
+                                    <div class="help-card-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
+                                        <i class="fa-solid fa-rotate"></i>
                                     </div>
-                                    <div class="help-card-title">13. Chat IA & Montador de Times</div>
+                                    <div class="help-card-title">4. Sincronização & Agendamento Autônomo</div>
                                 </div>
-                                <div class="help-card-desc">Chat conversacional RAG com Groq Llama 3.3 70B e analisador de sinergia de equipes de 4 personagens via SSE.</div>
+                                <div class="help-card-desc">Raspagem no Prydwen.gg com perfil anti-403 (`curl_cffi`) e sincronização diária programada às 04:00 AM.</div>
                                 <div class="help-card-tags">
-                                    <span class="help-tag">Groq RAG 70B</span>
-                                    <span class="help-tag">Team Builder</span>
-                                    <span class="help-tag">SSE Streaming</span>
+                                    <span class="help-tag">Prydwen</span>
+                                    <span class="help-tag">Bypass 403</span>
+                                    <span class="help-tag">Cron 04:00</span>
                                 </div>
                                 <div class="help-card-details">
-                                    Na aba <strong>Chat IA Meta</strong>, tire dúvidas com o assistente RAG local alimentado pelos guias e pelo seu Roster. No painel <strong>Montador de Times</strong> à direita, selecione 4 personagens para receber uma análise completa de rotação e sinergia de combate em tempo real.
+                                    Nas abas de cada jogo (<strong>ZZZ</strong>, <strong>Genshin</strong> ou <strong>HSR</strong>), você pode puxar dados ao vivo da API da HoYoverse e mesclar com as recomendações de builds e tiers do Prydwen. Um agendador interno atualiza automaticamente tudo no horário definido (padrão: 04:00 AM).
                                 </div>
                             </div>
                             <div class="help-card-footer">
                                 <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="document.querySelector('[data-tab=chat]').click()" class="help-action-btn"><i class="fa-solid fa-comments"></i> Abrir Chat IA</button>
+                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-rotate"></i> Ver Roster</button>
                             </div>
                         </div>
 
-                        <!-- CARD 14: REDE LOCAL WI-FI -->
-                        <div class="help-card" data-category="export">
-                            <span class="help-card-badge" style="color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">REDE LOCAL</span>
+                        <!-- CARD 5: ROLL VALUE & INSPETOR DE RELÍQUIAS -->
+                        <div class="help-card" data-category="builds">
+                            <span class="help-card-badge" style="color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">BUILDS</span>
                             <div>
                                 <div class="help-card-header">
-                                    <div class="help-card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
-                                        <i class="fa-solid fa-network-wired"></i>
+                                    <div class="help-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+                                        <i class="fa-solid fa-shield-halved"></i>
                                     </div>
-                                    <div class="help-card-title">14. Acesso Wi-Fi / Rede Local (LAN)</div>
+                                    <div class="help-card-title">5. Roll Value (RV) & Inspetor de Peças</div>
                                 </div>
-                                <div class="help-card-desc">Binding em `0.0.0.0:8000` permitindo usar toda a aplicação no Smartphone ou Tablet conectado na mesma rede local.</div>
+                                <div class="help-card-desc">Avaliação matemática de artefatos com Main Stat Forgiveness, Flat Fallback e classificação SSS a D.</div>
                                 <div class="help-card-tags">
-                                    <span class="help-tag">Mobile Responsive</span>
-                                    <span class="help-tag">LAN 0.0.0.0</span>
-                                    <span class="help-tag">Off-Canvas Menu</span>
+                                    <span class="help-tag">Roll Value</span>
+                                    <span class="help-tag">Notas SSS-D</span>
+                                    <span class="help-tag">Substat Weight</span>
                                 </div>
                                 <div class="help-card-details">
-                                    O servidor FastAPI escuta em todas as interfaces da rede local. Abra o navegador do seu celular ou tablet e acesse `http://<IP_DO_SEU_PC>:8000`. O IP da sua máquina é exibido automaticamente no terminal do Python ao iniciar a aplicação.
+                                    Clique em qualquer card de personagem para abrir a gaveta do Inspetor. O cálculo de Roll Value avalia substatus contra rolagens 5★ máximas. Main stats corretos recebem 40% de bônus base, e status Flat ganham 50% de crédito parcial. Grades: <strong>SSS</strong> (&ge;90%), <strong>SS</strong> (75-89%), <strong>S</strong> (60-74%), <strong>A</strong> (45-59%), <strong>B</strong> (30-44%), <strong>C/D</strong> (&lt;30%).
                                 </div>
                             </div>
                             <div class="help-card-footer">
                                 <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <button onclick="showToast('Acesse http://' + window.location.hostname + ':8000 no celular!')" class="help-action-btn"><i class="fa-solid fa-mobile-screen"></i> Ver IP Local</button>
+                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-user-ninja"></i> Ver Personagens</button>
                             </div>
                         </div>
 
-                        <!-- CARD 15: DOWNLOAD ZIP & NOTEBOOKLM -->
-                        <div class="help-card" data-category="export">
-                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">DOWNLOAD</span>
+                        <!-- CARD 6: BREAKPOINTS & ASCENSÃO -->
+                        <div class="help-card" data-category="builds">
+                            <span class="help-card-badge" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">METAS</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
+                                        <i class="fa-solid fa-gauge-high"></i>
+                                    </div>
+                                    <div class="help-card-title">6. Breakpoints & Calculadora de Ascensão</div>
+                                </div>
+                                <div class="help-card-desc">Comparador de metas de combate (Vida, ATQ, Taxa/Dano Crítico, VEL) e cálculo de materiais para níveis 60/80/90.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Breakpoints</span>
+                                    <span class="help-tag">Calculadora XP</span>
+                                    <span class="help-tag">Cap Real 60/80/90</span>
+                                </div>
+                                <div class="help-card-details">
+                                    No Inspetor de Builds, a aba <strong>Comparador de Metas Gerais</strong> indica se o personagem atingiu os patamares recomendados no metagame (verde = meta atingida, vermelho = defasagem). A <strong>Calculadora de Ascensão</strong> estima com precisão Mora/Créditos, Livros de XP e Drops de Chefe respeitando os limites reais de cada jogo.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=genshin]').click()" class="help-action-btn"><i class="fa-solid fa-calculator"></i> Inspetor de Builds</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 7: CARD IMAGEM HD & OTIMIZADOR IA -->
+                        <div class="help-card" data-category="builds">
+                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">EXPORTAR</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                        <i class="fa-solid fa-camera"></i>
+                                    </div>
+                                    <div class="help-card-title">7. Card Imagem HD & Otimizador IA</div>
+                                </div>
+                                <div class="help-card-desc">Gerador de imagem PNG em alta resolução para Discord e consultor IA com 3 conselhos diretos e acionáveis.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Card PNG</span>
+                                    <span class="help-tag">Discord Ready</span>
+                                    <span class="help-tag">Groq 70B</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Clique no botão <strong>Card Imagem</strong> no Inspetor para renderizar uma vitrine visual completa da build com equipamentos, atributos e notas. Use o botão <strong>Otimizador IA</strong> para invocar o Groq Llama 3.3 70B e receber os 3 ajustes prioritários imediatos para maximizar o dano do personagem.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=hsr]').click()" class="help-action-btn"><i class="fa-solid fa-image"></i> Gerar Card</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 8: SIMULADOR GACHA MONTE CARLO -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">SIMULADOR</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                                    </div>
+                                    <div class="help-card-title">8. Monte Carlo Gacha & Simulador de Tiros</div>
+                                </div>
+                                <div class="help-card-desc">Simulação estocástica de 10.000 invocações, Soft Pity real (74+), cálculo de cópias faltantes e animações 3D.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Soft Pity 74+</span>
+                                    <span class="help-tag">10.000 Rodadas</span>
+                                    <span class="help-tag">Desconto Roster</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Acesse a aba <strong>Simulador de Tiros</strong> no menu lateral. Escolha o personagem desejado (5★ / Rank S ou 4★ / Rank A) — o sistema identifica suas cópias já obtidas no Roster e calcula os tiros necessários para as próximas. Inclui animações visuais imersivas de Meteoro (Genshin), Passagem Estelar (HSR) e Glitch CRT (ZZZ).
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=gacha]').click()" class="help-action-btn"><i class="fa-solid fa-wand-magic-sparkles"></i> Testar Simulador</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 9: CENTRAL DE FARM & ORDEM DE SERVIÇO -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">FARM</span>
                             <div>
                                 <div class="help-card-header">
                                     <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-                                        <i class="fa-solid fa-file-zipper"></i>
+                                        <i class="fa-solid fa-wheat-awn"></i>
                                     </div>
-                                    <div class="help-card-title">15. Download ZIP & NotebookLM</div>
+                                    <div class="help-card-title">9. Central de Farm & Ordem de Serviço Diária</div>
                                 </div>
-                                <div class="help-card-desc">Download empacotado em `.zip` de todos os guias em Markdown para leitura offline ou uso no Google NotebookLM.</div>
+                                <div class="help-card-desc">Rotação diária de domínios, materiais de ascensão e planejamento de gasto de resina priorizado pelo Roster.</div>
                                 <div class="help-card-tags">
-                                    <span class="help-tag">Download .ZIP</span>
-                                    <span class="help-tag">Markdown Guias</span>
-                                    <span class="help-tag">NotebookLM</span>
+                                    <span class="help-tag">Rotação Diária</span>
+                                    <span class="help-tag">Ordem de Serviço</span>
+                                    <span class="help-tag">Alocação de Resina</span>
                                 </div>
                                 <div class="help-card-details">
-                                    Você pode fazer o download empacotado dos guias em formato `.zip` através do botão na barra superior de cada jogo ou diretamente via endpoint `/api/download/guides-zip`. Os arquivos Markdown são ideais para alimentar cadernos de estudo no Google NotebookLM.
+                                    A <strong>Central de Farm</strong> cruza os domínios abertos no dia da semana com os personagens prioritários da sua conta. Gera uma <strong>Ordem de Serviço Diária</strong> estruturada, calculando exatamente quanta resina investir em talentos, chefes ou artefatos.
                                 </div>
                             </div>
                             <div class="help-card-footer">
                                 <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
-                                <a href="/api/download/guides-zip" download class="help-action-btn" style="text-decoration: none;"><i class="fa-solid fa-download"></i> Baixar ZIP</a>
+                                <button onclick="document.querySelector('[data-tab=farm]').click()" class="help-action-btn"><i class="fa-solid fa-wheat-awn"></i> Ver Farm Diário</button>
                             </div>
                         </div>
 
-                        <!-- CARD 16: ÍNDICE DE SORTE DA CONTA -->
+                        <!-- CARD 10: TRASH FINDER -->
                         <div class="help-card" data-category="tools">
-                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SORTE & RELÍQUIAS</span>
+                            <span class="help-card-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">INVENTÁRIO</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </div>
+                                    <div class="help-card-title">10. Analisador de Relíquias Lixo (Trash Finder)</div>
+                                </div>
+                                <div class="help-card-desc">Identificador automático de artefatos e relíquias do inventário com substatus incompatíveis com o metagame.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Trash Finder</span>
+                                    <span class="help-tag">Limpeza de Mochila</span>
+                                    <span class="help-tag">Reciclagem</span>
+                                </div>
+                                <div class="help-card-details">
+                                    A ferramenta <strong>Relíquias Lixo</strong> analisa todas as peças do inventário contra as diretrizes de todos os personagens existentes no jogo. Destaca com precisão as peças sem utilidade prática que podem ser destruídas por Mora ou recicladas no sintetizador.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=trash]').click()" class="help-action-btn"><i class="fa-solid fa-trash-can"></i> Ver Relíquias Lixo</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 11: RECOMENDADOR DE ARTESANATO (RELIC CRAFTING) -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SÍNTESE</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+                                        <i class="fa-solid fa-hammer"></i>
+                                    </div>
+                                    <div class="help-card-title">11. Artesanato de Relíquias & Síntese</div>
+                                </div>
+                                <div class="help-card-desc">Recomendador inteligente de criação de peças com Resina Automoduladora focado nas piores peças da sua equipe principal.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Relic Crafting</span>
+                                    <span class="help-tag">Resina Automoduladora</span>
+                                    <span class="help-tag">Slot Prioritário</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Tier List & Audit</strong>, o módulo de <strong>Artesanato de Relíquias</strong> identifica qual slot de equipamento dos seus personagens mais fortes possui o menor Roll Value (RV) e sugere qual peça, conjunto e atributo principal você deve sintetizar para obter o maior ganho de dano imediato.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=audit]').click()" class="help-action-btn"><i class="fa-solid fa-hammer"></i> Ver Síntese</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 12: ÍNDICE DE SORTE DA CONTA -->
+                        <div class="help-card" data-category="tools">
+                            <span class="help-card-badge" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SORTE RNG</span>
                             <div>
                                 <div class="help-card-header">
                                     <div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
                                         <i class="fa-solid fa-clover"></i>
                                     </div>
-                                    <div class="help-card-title">16. Índice de Sorte & Eficiência de Rolagens</div>
+                                    <div class="help-card-title">12. Índice de Sorte & Eficiência de Rolagens</div>
                                 </div>
-                                <div class="help-card-desc">Análise estatística da sorte de relíquias da conta (Luck Score, God Roll #1, Cursed Roll e substatus analisados).</div>
+                                <div class="help-card-desc">Análise estatística do RNG de relíquias (Luck Score %, God Roll #1, Cursed Roll e substatus detalhados).</div>
                                 <div class="help-card-tags">
                                     <span class="help-tag">Luck Score %</span>
                                     <span class="help-tag">God Roll vs Cursed</span>
                                     <span class="help-tag">Ícones Oficiais</span>
                                 </div>
                                 <div class="help-card-details">
-                                    Na aba <strong>Índice de Sorte</strong>, a aplicação calcula o valor de rolagem (Roll Value & Substat Synergy) de todas as relíquias/artefatos equipados. Exibe o medidor de sorte da conta (ex: <i>SSS+ Deus do RNG</i>), destaca o <strong>God Roll #1</strong> e a peça <strong>Cursed Roll</strong> com ícones reais dos itens e avalia substatus por substatus (ex: <i>Perfeito +4</i>, <i>Ótimo +2</i>, <i>Desperdício</i>).
+                                    Na aba <strong>Índice de Sorte</strong>, a aplicação calcula o valor de rolagem de todas as relíquias equipadas. Exibe o medidor de sorte da conta (ex: <i>SSS+ Deus do RNG</i>), compara a peça <strong>God Roll #1</strong> com a peça <strong>Cursed Roll</strong> e classifica cada rolagem (ex: <i>Perfeito +4</i>, <i>Ótimo +2</i>, <i>Desperdício</i>).
                                 </div>
                             </div>
                             <div class="help-card-footer">
@@ -1929,7 +2332,189 @@
                             </div>
                         </div>
 
-                        <!-- CARD 17: LIMPEZA DE DADOS -->
+                        <!-- CARD 13: TIER LIST & AUDITORIA DA CONTA -->
+                        <div class="help-card" data-category="audit">
+                            <span class="help-card-badge" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">AUDITORIA</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
+                                        <i class="fa-solid fa-trophy"></i>
+                                    </div>
+                                    <div class="help-card-title">13. Tier List & Auditoria da Conta</div>
+                                </div>
+                                <div class="help-card-desc">Matriz visual de classificação por Tiers (S+ a C), nota global de maturidade da conta e exportação de Imagem HD.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Tier List S+</span>
+                                    <span class="help-tag">Saúde da Conta</span>
+                                    <span class="help-tag">Export PNG HD</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Tier List & Audit</strong>, a aplicação analisa seus personagens evoluídos e projeta uma matriz gráfica dividida por tiers de poder. Clique no botão <strong>Gerar Imagem HD da Tier List</strong> no topo para exportar o quadro completo em formato PNG de alta fidelidade.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=audit]').click()" class="help-action-btn"><i class="fa-solid fa-trophy"></i> Abrir Tier List</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 14: DIAGNÓSTICO DE LACUNAS & ROAST IA -->
+                        <div class="help-card" data-category="audit">
+                            <span class="help-card-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">DIAGNÓSTICO</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
+                                        <i class="fa-solid fa-fire"></i>
+                                    </div>
+                                    <div class="help-card-title">14. Diagnóstico de Lacunas & Roast da Conta</div>
+                                </div>
+                                <div class="help-card-desc">Detecção de fraquezas de elementos e funções (DPS/Sustento/Buffer) e modo Roast sarcástico com Groq Llama 3.3 70B.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Account Gaps</span>
+                                    <span class="help-tag">Modo Roast IA</span>
+                                    <span class="help-tag">Cobertura Elemental</span>
+                                </div>
+                                <div class="help-card-details">
+                                    O motor de diagnóstico identifica elementos ausentes no seu elenco para o endgame (Abismo Espiral, MoC ou Shiyu Defense). O botão <strong>Roast da Minha Conta</strong> gera uma crítica bem-humorada, honesta e ácida sobre as escolhas de pulls e investimentos de recursos da sua conta.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=audit]').click()" class="help-action-btn"><i class="fa-solid fa-fire"></i> Ver Roast & Gaps</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 15: TIMELINE & SNAPSHOTS DE EVOLUÇÃO -->
+                        <div class="help-card" data-category="audit">
+                            <span class="help-card-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">EVOLUÇÃO</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+                                        <i class="fa-solid fa-chart-line"></i>
+                                    </div>
+                                    <div class="help-card-title">15. Linha do Tempo & Snapshots de Evolução</div>
+                                </div>
+                                <div class="help-card-desc">Histórico gráfico de evolução com métricas acumuladas, novos 5★ e filtro para exibir apenas alterações.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Timeline Stepper</span>
+                                    <span class="help-tag">Filtro Alterações</span>
+                                    <span class="help-tag">Comparação Diffs</span>
+                                </div>
+                                <div class="help-card-details">
+                                    A aba <strong>Linha do Tempo</strong> registra snapshots periódicos da sua conta. Você pode criar um snapshot a qualquer momento ou usar o botão <strong>Apenas Personagens com Alterações</strong> para ocultar unidades estáticas e focar 100% nas evoluções de nível, novos 5★ e melhorias de relíquias.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=history]').click()" class="help-action-btn"><i class="fa-solid fa-chart-line"></i> Ver Linha do Tempo</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 16: CÓDIGOS PROMOCIONAIS & RESGATE 3H -->
+                        <div class="help-card" data-category="ia">
+                            <span class="help-card-badge" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">CÓDIGOS</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
+                                        <i class="fa-solid fa-gift"></i>
+                                    </div>
+                                    <div class="help-card-title">16. Códigos Promocionais & Auto-Redeem 3h</div>
+                                </div>
+                                <div class="help-card-desc">Busca contínua de códigos de Gemas Essenciais, Jades Estelares e Polychromes com resgate autônomo a cada 3h.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Gemas & Jades</span>
+                                    <span class="help-tag">Auto-Redeem 3h</span>
+                                    <span class="help-tag">HoYoverse Direct</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Códigos Promocionais</strong>, o sistema pesquisa novos códigos ativos na web. O servidor executa uma rotina em segundo plano a cada 3 horas para resgatar automaticamente novos códigos na sua conta sem qualquer intervenção manual.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=codes]').click()" class="help-action-btn"><i class="fa-solid fa-gift"></i> Ver Códigos</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 17: NOTIFICAÇÕES PROATIVAS WEBHOOKS -->
+                        <div class="help-card" data-category="ia">
+                            <span class="help-card-badge" style="color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">WEBHOOKS</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
+                                        <i class="fa-solid fa-bell"></i>
+                                    </div>
+                                    <div class="help-card-title">17. Notificações Proativas (Discord / Telegram)</div>
+                                </div>
+                                <div class="help-card-desc">Alertas instantâneos enviados diretamente para o seu Discord ou Telegram quando a resina encher ou códigos forem ativados.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Discord Webhook</span>
+                                    <span class="help-tag">Telegram Bot</span>
+                                    <span class="help-tag">Alerta Resina Cheia</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Configure seu Webhook do Discord ou Token/Chat ID do Telegram na aba <strong>Configurações</strong>. O servidor enviará mensagens formatadas em embeds avisando sobre resina cheia iminente, sucesso no check-in diário e códigos promocionais ativados.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=config]').click()" class="help-action-btn"><i class="fa-solid fa-bell"></i> Configurar Webhook</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 18: CHAT IA & MONTADOR DE TIMES -->
+                        <div class="help-card" data-category="ia">
+                            <span class="help-card-badge" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">CHAT IA</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+                                        <i class="fa-solid fa-comments"></i>
+                                    </div>
+                                    <div class="help-card-title">18. Chat IA Meta & Montador de Times (SSE)</div>
+                                </div>
+                                <div class="help-card-desc">Assistente RAG conversacional Groq Llama 3.3 70B e analisador de sinergia de equipes em tempo real via Server-Sent Events.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">Groq RAG 70B</span>
+                                    <span class="help-tag">Team Builder</span>
+                                    <span class="help-tag">SSE Streaming</span>
+                                </div>
+                                <div class="help-card-details">
+                                    Na aba <strong>Chat IA Meta</strong>, converse com o assistente inteligente munido do contexto do seu Roster e guias do Prydwen. No painel <strong>Montador de Times</strong> à direita, selecione até 4 personagens para receber uma análise de rotação, ressonância elemental e sinergia de combate.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <button onclick="document.querySelector('[data-tab=chat]').click()" class="help-action-btn"><i class="fa-solid fa-comments"></i> Abrir Chat IA</button>
+                            </div>
+                        </div>
+
+                        <!-- CARD 19: REDE LOCAL WI-FI & EXPORTAÇÃO ZIP -->
+                        <div class="help-card" data-category="export">
+                            <span class="help-card-badge" style="color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">REDE & EXPORT</span>
+                            <div>
+                                <div class="help-card-header">
+                                    <div class="help-card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
+                                        <i class="fa-solid fa-network-wired"></i>
+                                    </div>
+                                    <div class="help-card-title">19. Acesso Wi-Fi LAN & Exportação ZIP / NotebookLM</div>
+                                </div>
+                                <div class="help-card-desc">Binding `0.0.0.0:8000` para acesso via smartphone na rede local e download empacotado em `.zip` de todos os guias Markdown.</div>
+                                <div class="help-card-tags">
+                                    <span class="help-tag">LAN 0.0.0.0</span>
+                                    <span class="help-tag">Mobile Responsive</span>
+                                    <span class="help-tag">NotebookLM .ZIP</span>
+                                </div>
+                                <div class="help-card-details">
+                                    O servidor FastAPI escuta em todas as interfaces da sua rede local. Acesse `http://<IP_DO_PC>:8000` pelo celular para usar todas as funcionalidades. Você também pode baixar o arquivo compactado de todos os guias em Markdown para alimentar cadernos no Google NotebookLM.
+                                </div>
+                            </div>
+                            <div class="help-card-footer">
+                                <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> Detalhes</button>
+                                <a href="/api/download/guides-zip" download class="help-action-btn" style="text-decoration: none;"><i class="fa-solid fa-file-zipper"></i> Baixar ZIP</a>
+                            </div>
+                        </div>
+
+                        <!-- CARD 20: RESET & ZONA DE SEGURANÇA -->
                         <div class="help-card" data-category="export">
                             <span class="help-card-badge" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">ZONA DE PERIGO</span>
                             <div>
@@ -1937,16 +2522,16 @@
                                     <div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
                                         <i class="fa-solid fa-triangle-exclamation"></i>
                                     </div>
-                                    <div class="help-card-title">16. Reset & Limpeza de Dados</div>
+                                    <div class="help-card-title">20. Reset, Criptografia & Zona de Segurança</div>
                                 </div>
-                                <div class="help-card-desc">Procedimento seguro para apagar permanentemente as pastas de guias e resetar o banco de dados SQLite local.</div>
+                                <div class="help-card-desc">Procedimento seguro para exclusão de caches de guias e redefinição limpa do banco de dados SQLite local.</div>
                                 <div class="help-card-tags">
                                     <span class="help-tag">Reset DB</span>
                                     <span class="help-tag">Purge Pastas</span>
                                     <span class="help-tag">SQLite</span>
                                 </div>
                                 <div class="help-card-details">
-                                    Na aba <strong>Configurações</strong>, a opção <strong>Apagar Pastas e Banco de Dados</strong> reseta permanentemente a aplicação, excluindo as pastas de guias (`genshin`, `hsr`, `zzz`) e recriando a estrutura limpa do banco SQLite (`hoyo_app.db`).
+                                    Na aba <strong>Configurações</strong>, a opção <strong>Apagar Pastas e Banco de Dados</strong> reseta permanentemente a aplicação, excluindo caches de guias locais e recriando uma estrutura de banco SQLite (`hoyo_app.db`) totalmente limpa e sem inconsistências.
                                 </div>
                             </div>
                             <div class="help-card-footer">
@@ -2069,9 +2654,29 @@
  
                 <!-- PAINEL 2: COMPARADOR SIDE-BY-SIDE -->
                 <div id="panel-compare" class="inspector-panel" style="display: none;">
+                    <!-- CARD DE SCORE DE CONFORMIDADE META -->
+                    <div id="ins-meta-score-card" class="inspector-card meta-summary-card" style="display: none; margin-bottom: 12px; padding: 14px; border-radius: 12px; background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span id="ins-meta-tier-badge" class="meta-tier-badge" style="padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase;">S-Tier</span>
+                                <span style="font-weight: 600; font-size: 13px; color: var(--text-primary);">Conformidade com o Metagame</span>
+                            </div>
+                            <span id="ins-meta-score-pct" style="font-size: 14px; font-weight: 800; color: var(--color-success);">0%</span>
+                        </div>
+                        <div class="meta-score-bar-bg" style="width: 100%; height: 6px; background: rgba(255,255,255,0.08); border-radius: 3px; overflow: hidden; margin-bottom: 10px;">
+                            <div id="ins-meta-score-bar" class="meta-score-bar-fill" style="width: 0%; height: 100%; background: linear-gradient(90deg, #10b981, #38bdf8); transition: width 0.5s ease;"></div>
+                        </div>
+                        <div id="ins-meta-feedback" style="font-size: 11px; color: var(--text-secondary); line-height: 1.5; display: flex; flex-direction: column; gap: 4px;">
+                            <!-- Dicas e destaques rápidos via JS -->
+                        </div>
+                    </div>
+
                     <div class="inspector-card">
-                        <h4><i class="fa-solid fa-scale-balanced"></i> Comparação Lado a Lado</h4>
-                        <p class="section-desc" style="margin-bottom: 12px;">Seus equipamentos e atributos comparados com as recomendações de metagame.</p>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <h4 style="margin: 0;"><i class="fa-solid fa-scale-balanced"></i> Comparação Lado a Lado</h4>
+                            <span id="ins-compare-game-tag" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--text-muted); text-transform: uppercase; font-weight: 600;">Metagame Benchmark</span>
+                        </div>
+                        <p class="section-desc" style="margin-bottom: 12px; font-size: 11px;">Seus equipamentos e atributos comparados com as recomendações ideais de metagame.</p>
                         <div class="comparison-table-wrapper">
                             <table class="comparison-table" style="width: 100%; border-collapse: collapse; font-size: 12px;">
                                 <thead>

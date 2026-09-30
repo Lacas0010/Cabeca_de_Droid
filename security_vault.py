@@ -257,7 +257,16 @@ def load_secure_config() -> Dict[str, Any]:
         "auto_sync_roster": True,
         "auto_sync_guides": True,
         "last_auto_sync_date": "",
-        "allow_lan_access": False
+        "allow_lan_access": False,
+        "notifications_enabled": False,
+        "discord_webhook_url": "",
+        "telegram_bot_token": "",
+        "telegram_chat_id": "",
+        "notify_on_checkin": True,
+        "notify_on_energy_cap": True,
+        "energy_cap_threshold_pct": 90,
+        "notify_on_endgame": True,
+        "notify_on_codes": True
     }
     if os.path.exists(CONFIG_LEGACY_FILE):
         try:
