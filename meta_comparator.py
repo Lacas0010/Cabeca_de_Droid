@@ -45,12 +45,13 @@ def normalize_slug_text(text: str) -> str:
         return ""
     text = unicodedata.normalize('NFKD', str(text)).encode('ASCII', 'ignore').decode('utf-8')
     text = text.lower().strip()
-    text = re.sub(r'[\'\"’`\(\)]', '', text)
+    text = re.sub(r'[\'\"’`\(\)•·・:!?,]', '', text)
     text = re.sub(r'[\s\-_/\.]+', ' ', text)
     return text.strip()
 
+
 def resolve_character_canonical_slug(game_id: str, char_name: str, element: str = "", roster_data: Optional[List[Dict[str, Any]]] = None) -> str:
-    """Resolve o slug canônico de um personagem em qualquer idioma (PT-BR, EN, ES, ID HoYoLAB)."""
+    """Resolve o slug canônico de um personagem em qualquer idioma (PT-BR, EN, ES, ID HoYoLAB) com suporte a Fuzzy Matching."""
     if not char_name:
         return ""
     g = game_id.lower().strip()
@@ -59,8 +60,16 @@ def resolve_character_canonical_slug(game_id: str, char_name: str, element: str 
     hoyolab_map = get_hoyolab_mappings().get(g, {})
     
     # 1. Se for ID numérico direto do HoYoLAB
-    if char_str.isdigit() and char_str in hoyolab_map:
-        return hoyolab_map[char_str]
+    if char_str.isdigit():
+        if char_str in hoyolab_map:
+            return hoyolab_map[char_str]
+        try:
+            from static_data_manager import static_data_manager
+            char_info = static_data_manager.get_character_by_hoyolab_id(g, char_str)
+            if char_info and "id" in char_info:
+                return char_info["id"]
+        except Exception:
+            pass
             
     # 2. Consultar o Roster (se fornecido) para obter char_id ou matching exato
     if roster_data:
@@ -70,8 +79,16 @@ def resolve_character_canonical_slug(game_id: str, char_name: str, element: str 
             if (c_name.lower() == char_str.lower() or c_id == char_str) and c_id in hoyolab_map:
                 return hoyolab_map[c_id]
         
-    # 3. Consultar dicionário de Aliases multilíngues (PT-BR, ES, EN)
+    # 3. Tratamento especial para Viajante / Desbravador com elemento
     norm = normalize_slug_text(char_str)
+    if ("viajante" in norm or "traveler" in norm) and element:
+        el_norm = normalize_slug_text(element)
+        return f"traveler_{el_norm}"
+    if ("desbravador" in norm or "trailblazer" in norm) and element:
+        el_norm = normalize_slug_text(element)
+        return f"trailblazer_•_{el_norm}"
+
+    # 4. Consultar dicionário de Aliases multilíngues (PT-BR, ES, EN)
     aliases = get_character_aliases().get(g, {})
     
     if norm in aliases:
@@ -83,20 +100,57 @@ def resolve_character_canonical_slug(game_id: str, char_name: str, element: str 
         if normalize_slug_text(alias_k) == norm:
             return canonical
 
-    # 4. Tratamento especial para Viajante / Desbravador com elemento
-    if ("viajante" in norm or "traveler" in norm) and element:
-        el_norm = normalize_slug_text(element)
-        return f"traveler_{el_norm}"
-    if ("desbravador" in norm or "trailblazer" in norm) and element:
-        el_norm = normalize_slug_text(element)
-        return f"trailblazer_•_{el_norm}"
+    # 5. Busca Inteligente Dinâmica no Catálogo do static_data_manager (Zero-Maintenance)
+    try:
+        from static_data_manager import static_data_manager
+        catalog = static_data_manager._cache.get(g, {}).get("characters", {})
+        if catalog:
+            # 5a. Match exato por chave / slug
+            clean_q = norm.replace(" ", "_")
+            if clean_q in catalog:
+                return clean_q
+                
+            # 5b. Match exato por nome cadastrado
+            for cid, cinfo in catalog.items():
+                if normalize_slug_text(cinfo.get("name", "")) == norm:
+                    return cid
 
-    # 5. Normalização direta em slug (substituindo espaços por _)
+            # 5c. Guarda rígida para Nomes Curtos (len <= 4) para evitar colisões
+            # Ex: "Seth" deve casar com "Seth Lowell", mas NUNCA com "Sethos" ou "Sayu"
+            if len(norm) <= 4:
+                for cid, cinfo in catalog.items():
+                    c_name_norm = normalize_slug_text(cinfo.get("name", ""))
+                    tokens = c_name_norm.split()
+                    if norm in tokens or cid == norm:
+                        return cid
+                return norm.replace(" ", "_")
+
+            # 5d. Fuzzy Matching Estrito (Threshold >= 88) para nomes longos
+            choices = {cid: normalize_slug_text(cinfo.get("name", cid)) for cid, cinfo in catalog.items()}
+            try:
+                from rapidfuzz import process, fuzz
+                best_match = process.extractOne(norm, choices, scorer=fuzz.token_sort_ratio)
+                if best_match and best_match[1] >= 88:
+                    return best_match[2] # Retorna o ID canônico correspondente
+            except ImportError:
+                import difflib
+                names = list(choices.values())
+                matches = difflib.get_close_matches(norm, names, n=1, cutoff=0.88)
+                if matches:
+                    matched_name = matches[0]
+                    for cid, cname in choices.items():
+                        if cname == matched_name:
+                            return cid
+    except Exception:
+        pass
+
+    # 6. Normalização direta em slug (substituindo espaços por _)
     slug = norm.replace(" ", "_")
     return slug
 
+
 def find_best_guide_file(game_id: str, char_name: str, element: str = "", roster_data: Optional[List[Dict[str, Any]]] = None) -> str:
-    """Encontra o arquivo Markdown do guia oficial correspondente ao personagem."""
+    """Encontra o arquivo Markdown do guia oficial correspondente ao personagem com busca tolerante a variações."""
     g = game_id.lower().strip()
     guides_dir = os.path.join(BASE_DIR, g, "guias")
     
@@ -126,28 +180,35 @@ def find_best_guide_file(game_id: str, char_name: str, element: str = "", roster
         norm_target = normalize_slug_text(canonical)
         norm_char = normalize_slug_text(char_name)
         
-        all_files = os.listdir(guides_dir)
+        all_files = [f for f in os.listdir(guides_dir) if f.endswith(".md")]
         for fname in all_files:
-            if not fname.endswith(".md"):
-                continue
             f_stem = fname[:-3]
             f_norm = normalize_slug_text(f_stem)
             
             if f_norm == norm_target or f_norm == norm_char:
                 return os.path.join(guides_dir, fname)
                 
-        # 3. Substring match segura (se o nome do personagem tiver mais de 4 letras)
+        # 3. Substring match segura
         if len(norm_target) >= 4:
             for fname in all_files:
-                if not fname.endswith(".md"):
-                    continue
                 f_norm = normalize_slug_text(fname[:-3])
                 if norm_target in f_norm or f_norm in norm_target:
                     return os.path.join(guides_dir, fname)
+
+        # 4. Fuzzy match com arquivos existentes
+        try:
+            from rapidfuzz import process, fuzz
+            choices = {fname: fname[:-3] for fname in all_files}
+            best = process.extractOne(canonical, choices, scorer=fuzz.token_set_ratio)
+            if best and best[1] >= 80:
+                return os.path.join(guides_dir, best[2])
+        except Exception:
+            pass
     except Exception:
         pass
         
     return ""
+
 
 def clean_meta_item_name(s: str) -> str:
     """Limpa tags markdown e sufixos numéricos de nomes de armas/conjuntos."""
@@ -263,13 +324,23 @@ def parse_meta_target(
     benchmarks_db = get_character_benchmarks().get(game_id, {})
     
     guide_path = find_best_guide_file(game_id, char_name, element, roster_data)
+    if not guide_path or not os.path.exists(guide_path):
+        try:
+            from services.ai_build_generator import AIBuildGenerator
+            generated = AIBuildGenerator.get_or_generate_guide(game_id, char_name, element)
+            if generated and os.path.exists(generated):
+                guide_path = generated
+        except Exception:
+            pass
+
     guide_content = ""
-    if os.path.exists(guide_path):
+    if guide_path and os.path.exists(guide_path):
         try:
             with open(guide_path, "r", encoding="utf-8", errors="ignore") as f:
                 guide_content = f.read()
         except Exception:
             pass
+
             
     weapons_list: List[str] = []
     sets_list: List[str] = []

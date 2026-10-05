@@ -20,5 +20,8 @@ playwright>=1.41.0
 # Groq Cloud API Integration (Motor RAG contextualizado com Llama 3.3 70B Versatile)
 groq>=0.4.0
 
+# Fuzzy String Matching & Dynamic Entity Resolution (Resolução autônoma de personagens sem aliases manuais)
+rapidfuzz>=3.0.0
+
 # Executable Packaging (Compilação para executável portable .exe no Windows)
 pyinstaller>=6.3.0

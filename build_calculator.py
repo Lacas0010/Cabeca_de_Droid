@@ -2339,12 +2339,12 @@ def calculate_gacha_forecast(
 # ==========================================
 FARM_CALENDAR = {
     "genshin": {
-        0: {"days": "Segunda-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro"]},
-        1: {"days": "Terça-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora"]},
-        2: {"days": "Quarta-feira", "talents": ["Balada", "Ouro", "Luz", "Justiça"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico"]},
-        3: {"days": "Quinta-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro"]},
-        4: {"days": "Sexta-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora"]},
-        5: {"days": "Sábado", "talents": ["Balada", "Ouro", "Luz", "Justiça"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico"]},
+        0: {"days": "Segunda-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem", "Contenda (Natlan)"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro", "Madeira Sagrada (Natlan)"]},
+        1: {"days": "Terça-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade", "Ignição (Natlan)"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora", "Chama Noturna (Natlan)"]},
+        2: {"days": "Quarta-feira", "talents": ["Balada", "Ouro", "Luz", "Justiça", "Conflito (Natlan)"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico", "Vontade Deliberada (Natlan)"]},
+        3: {"days": "Quinta-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem", "Contenda (Natlan)"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro", "Madeira Sagrada (Natlan)"]},
+        4: {"days": "Sexta-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade", "Ignição (Natlan)"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora", "Chama Noturna (Natlan)"]},
+        5: {"days": "Sábado", "talents": ["Balada", "Ouro", "Luz", "Justiça", "Conflito (Natlan)"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico", "Vontade Deliberada (Natlan)"]},
         6: {"days": "Domingo", "talents": ["Todos os materiais abertos"], "weapons": ["Todos os materiais abertos"]}
     },
     "hsr": {
@@ -2376,9 +2376,19 @@ GAME_MAX_LEVELS = {
 def is_genshin_farmable_today(char_name: str, day_of_week: int) -> bool:
     if day_of_week == 6:  # Domingo tudo aberto
         return True
-    mon_thu = {"amber", "barbara", "klee", "diona", "aloy", "sucrose", "keqing", "ningguang", "qiqi", "xiao", "yelan", "shenhe", "thoma", "yoimiya", "heizou", "kokomi", "tighnari", "candace", "cyno", "faruzan", "lyney", "neuvillette", "navia", "xianyun", "mualani", "kachina", "kinich"}
-    tue_fri = {"bennett", "diluc", "jean", "noelle", "mona", "eula", "ganyu", "hu tao", "hu_tao", "xiangling", "chongyun", "yun jin", "yun_jin", "yaoyao", "ayaka", "ayato", "sara", "araki", "itto", "nahida", "alhaitham", "dori", "layla", "kaveh", "freminet", "charlotte", "clorinde", "furina"}
-    wed_sat = {"fischl", "kaeya", "lisa", "venti", "rosaria", "albedo", "beidou", "xingqiu", "zhongli", "yanfei", "baizhu", "raiden", "raiden shogun", "yae miko", "sayu", "gorou", "collei", "nilou", "wanderer", "dehya", "wriothesley", "chevreuse", "arlecchino", "emilie"}
+    try:
+        from static_data_manager import static_data_manager
+        sched = static_data_manager.get_daily_farm_schedule("genshin", day_of_week)
+        farmable_chars = [c.lower() for c in sched.get("farmable_characters", [])]
+        c_clean = char_name.lower().strip()
+        if any(c_clean == fc or fc in c_clean or c_clean in fc for fc in farmable_chars):
+            return True
+    except Exception:
+        pass
+
+    mon_thu = {"amber", "barbara", "klee", "diona", "aloy", "sucrose", "keqing", "ningguang", "qiqi", "xiao", "yelan", "shenhe", "thoma", "yoimiya", "heizou", "kokomi", "tighnari", "candace", "cyno", "faruzan", "lyney", "neuvillette", "navia", "xianyun", "mualani", "kachina", "kinich", "xilonen", "mavuika", "citlali", "ororon"}
+    tue_fri = {"bennett", "diluc", "jean", "noelle", "mona", "eula", "ganyu", "hu tao", "hu_tao", "xiangling", "chongyun", "yun jin", "yun_jin", "yaoyao", "ayaka", "ayato", "sara", "araki", "itto", "nahida", "alhaitham", "dori", "layla", "kaveh", "freminet", "charlotte", "clorinde", "furina", "chasca", "ifa"}
+    wed_sat = {"fischl", "kaeya", "lisa", "venti", "rosaria", "albedo", "beidou", "xingqiu", "zhongli", "yanfei", "baizhu", "raiden", "raiden shogun", "yae miko", "sayu", "gorou", "collei", "nilou", "wanderer", "dehya", "wriothesley", "chevreuse", "arlecchino", "emilie", "lan yan"}
 
     c_clean = char_name.lower().strip()
     if day_of_week in (0, 3):
@@ -2411,14 +2421,14 @@ ITEM_ICONS = {
         "weapon_mat": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png"
     },
     "zzz": {
-        "mora": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_202.png",
-        "xp": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104003.png",
-        "talent_book": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104303.png",
-        "boss": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113001.png",
-        "weekly_boss": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113021.png",
-        "crown": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104319.png",
-        "weapon_ore": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104013.png",
-        "weapon_mat": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104303.png"
+        "mora": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/4fde02b5f3a4c790dcbef6c74cb4fabf.png",
+        "xp": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/55c259888e808554c02a3161944d7868.png",
+        "talent_book": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/ba07d11da190b24386fca2f75b4581a0.png",
+        "boss": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/e1c89620556d60ab11c7b143162d0f4a.png",
+        "weekly_boss": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/2196659ee41fc22d1533519c53644f37.png",
+        "crown": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/faeebca44b20e03ee23b610c4f8ea03d.png",
+        "weapon_ore": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/4f1444b51f52e8e0ad4a8dc13432b04f.png",
+        "weapon_mat": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/ba07d11da190b24386fca2f75b4581a0.png"
     }
 }
 
@@ -2496,9 +2506,10 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
     terms = GAME_SPECIFIC_TERMS.get(game_id, GAME_SPECIFIC_TERMS["genshin"])
     
     if day_of_week is None:
-        day_of_week = datetime.datetime.now().weekday()  # 0=Segunda, 6=Domingo
+        day_of_week = datetime.now().weekday()  # 0=Segunda, 6=Domingo
         
     game_calendar = FARM_CALENDAR.get(game_id, {}).get(day_of_week, {"days": "Hoje", "note": "Farm Livre"})
+
     meta_db = get_meta_data(game_id)
     
     recommendations = []
@@ -2562,9 +2573,9 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                         break
             talent_priority = char_meta.get("talent_priority", "") if isinstance(char_meta, dict) else ""
             
-            farmable_today = True
+            talent_domain_open = True
             if game_id == "genshin":
-                farmable_today = is_genshin_farmable_today(name, day_of_week)
+                talent_domain_open = is_genshin_farmable_today(name, day_of_week)
                 
             w_lvl = weapon.get("level", 1) if isinstance(weapon, dict) and weapon else max_weapon_lvl
             w_name = weapon.get("name", "Arma Equipada") if isinstance(weapon, dict) and weapon else "Arma Equipada"
@@ -2604,20 +2615,55 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     
                 reason = " | ".join(reason_parts)
                 
+                # Resolução do perfil detalhado do personagem e materiais de farm
+                try:
+                    from static_data_manager import static_data_manager
+                    char_profile = static_data_manager.get_character_profile(game_id, name)
+                    if not char_profile:
+                        char_profile = static_data_manager._enrich_character_profile(game_id, dict(char))
+                except Exception:
+                    pass
+
                 items_needed = {"icons": icons, "terms": terms}
                 
                 # 1. Ascensão de Personagem
                 if level < max_level:
-                    asc_calc = calculate_ascension(game_id, level, max_level)
+                    asc_calc = calculate_ascension(game_id, level, max_level, char_name=name)
                     if asc_calc:
                         asc_calc["currency_name"] = terms["currency_name"]
                         asc_calc["xp_book_name"] = terms["xp_book_name"]
+                        if char_profile:
+                            if char_profile.get("boss_mat_name"):
+                                asc_calc["boss_item_name"] = char_profile["boss_mat_name"]
+                            if char_profile.get("boss_mat_icon"):
+                                asc_calc["boss_item_icon"] = char_profile["boss_mat_icon"]
+                            if char_profile.get("local_specialty_name"):
+                                asc_calc["local_specialty"] = char_profile["local_specialty_name"]
+                            if char_profile.get("local_specialty_icon"):
+                                asc_calc["specialty_icon"] = char_profile["local_specialty_icon"]
                     items_needed["ascension"] = asc_calc
                 else:
                     items_needed["ascension"] = None
                     
                 # 2. Detalhamento por Talento / Habilidade
                 talent_details = []
+                
+                # Nomes e ícones específicos para talentos
+                t2_name = (char_profile.get("talent_tier2_name") if char_profile else None) or terms["green_book"]
+                t2_icon = (char_profile.get("talent_tier2_icon") if char_profile else None) or icons["talent_book"]
+                t3_name = (char_profile.get("talent_tier3_name") if char_profile else None) or terms["blue_book"]
+                t3_icon = (char_profile.get("talent_tier3_icon") if char_profile else None) or icons["talent_book"]
+                t4_name = (char_profile.get("talent_tier4_name") if char_profile else None) or terms["purple_book"]
+                t4_icon = (char_profile.get("talent_tier4_icon") if char_profile else None) or icons["talent_book"]
+                e1_name = (char_profile.get("enemy_tier1_name") if char_profile else None) or terms["enemy_t1"]
+                e1_icon = (char_profile.get("enemy_tier1_icon") if char_profile else None) or icons["boss"]
+                e2_name = (char_profile.get("enemy_tier2_name") if char_profile else None) or terms["enemy_t2"]
+                e2_icon = (char_profile.get("enemy_tier2_icon") if char_profile else None) or icons["boss"]
+                e3_name = (char_profile.get("enemy_tier3_name") if char_profile else None) or terms["enemy_t3"]
+                e3_icon = (char_profile.get("enemy_tier3_icon") if char_profile else None) or icons["boss"]
+                wb_name = (char_profile.get("weekly_boss_mat_name") if char_profile else None) or terms["weekly_boss_mat"]
+                wb_icon = (char_profile.get("weekly_boss_mat_icon") if char_profile else None) or icons["weekly_boss"]
+
                 for sk_idx, sk in enumerate(skills):
                     s_n = sk.get("name", "Habilidade")
                     s_l = sk.get("level", 1)
@@ -2639,13 +2685,29 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                                 "current_level": 0,
                                 "target_level": 1,
                                 "green_books": 1,
+                                "green_book_name": t2_name,
+                                "green_book_icon": t2_icon,
                                 "blue_books": 0,
+                                "blue_book_name": t3_name,
+                                "blue_book_icon": t3_icon,
                                 "purple_books": 0,
+                                "purple_book_name": t4_name,
+                                "purple_book_icon": t4_icon,
                                 "enemy_tier1": 2,
+                                "enemy_t1_name": e1_name,
+                                "enemy_t1_icon": e1_icon,
                                 "enemy_tier2": 0,
+                                "enemy_t2_name": e2_name,
+                                "enemy_t2_icon": e2_icon,
                                 "enemy_tier3": 0,
+                                "enemy_t3_name": e3_name,
+                                "enemy_t3_icon": e3_icon,
                                 "weekly_boss_mats": 0,
+                                "weekly_boss_mat_name": wb_name,
+                                "weekly_boss_mat_icon": wb_icon,
                                 "crowns_needed": 0,
+                                "crown_mat_name": terms["crown_mat"],
+                                "crown_icon": icons["crown"],
                                 "currency_needed": 5000
                             })
                     elif s_l < s_m:
@@ -2672,13 +2734,29 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                             "current_level": s_l,
                             "target_level": s_m,
                             "green_books": green_books,
+                            "green_book_name": t2_name,
+                            "green_book_icon": t2_icon,
                             "blue_books": blue_books,
+                            "blue_book_name": t3_name,
+                            "blue_book_icon": t3_icon,
                             "purple_books": purple_books,
+                            "purple_book_name": t4_name,
+                            "purple_book_icon": t4_icon,
                             "enemy_tier1": enemy_tier1,
+                            "enemy_t1_name": e1_name,
+                            "enemy_t1_icon": e1_icon,
                             "enemy_tier2": enemy_tier2,
+                            "enemy_t2_name": e2_name,
+                            "enemy_t2_icon": e2_icon,
                             "enemy_tier3": enemy_tier3,
+                            "enemy_t3_name": e3_name,
+                            "enemy_t3_icon": e3_icon,
                             "weekly_boss_mats": weekly_boss_mats,
+                            "weekly_boss_mat_name": wb_name,
+                            "weekly_boss_mat_icon": wb_icon,
                             "crowns_needed": crowns_needed,
+                            "crown_mat_name": terms["crown_mat"],
+                            "crown_icon": icons["crown"],
                             "currency_needed": currency_needed
                         })
 
@@ -2700,20 +2778,45 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     w_enemy_t2 = 18 if w_lvl < 60 else 0
                     w_enemy_t3 = 27 if w_lvl < 90 else 0
 
+                    w_prof = {}
+                    try:
+                        from static_data_manager import static_data_manager
+                        w_prof = static_data_manager.get_weapon_profile(game_id, w_name)
+                    except Exception:
+                        pass
+
                     weapon_details = {
                         "weapon_name": w_name,
                         "weapon_icon": w_icon,
                         "current_level": w_lvl,
                         "target_level": max_weapon_lvl,
                         "ores_needed": ores_needed,
+                        "ore_name": terms["ore_name"],
+                        "ore_icon": icons["weapon_ore"],
                         "currency_needed": w_currency_needed,
+                        "currency_name": terms["currency_name"],
+                        "currency_icon": icons["mora"],
                         "w_mat_green": w_mat_green,
+                        "w_mat_green_name": w_prof.get("w_mat_tier2_name", terms["w_mat_green"]),
+                        "w_mat_green_icon": w_prof.get("w_mat_tier2_icon", icons["weapon_mat"]),
                         "w_mat_blue": w_mat_blue,
+                        "w_mat_blue_name": w_prof.get("w_mat_tier3_name", terms["w_mat_blue"]),
+                        "w_mat_blue_icon": w_prof.get("w_mat_tier3_icon", icons["weapon_mat"]),
                         "w_mat_purple": w_mat_purple,
+                        "w_mat_purple_name": w_prof.get("w_mat_tier4_name", terms["w_mat_purple"]),
+                        "w_mat_purple_icon": w_prof.get("w_mat_tier4_icon", icons["weapon_mat"]),
                         "w_mat_gold": w_mat_gold,
+                        "w_mat_gold_name": w_prof.get("w_mat_tier5_name", terms["w_mat_gold"]),
+                        "w_mat_gold_icon": w_prof.get("w_mat_tier5_icon", icons["weapon_mat"]),
                         "w_enemy_t1": w_enemy_t1,
+                        "w_enemy_t1_name": w_prof.get("enemy_tier1_name", terms["enemy_t1"]),
+                        "w_enemy_t1_icon": w_prof.get("enemy_tier1_icon", icons["boss"]),
                         "w_enemy_t2": w_enemy_t2,
-                        "w_enemy_t3": w_enemy_t3
+                        "w_enemy_t2_name": w_prof.get("enemy_tier2_name", terms["enemy_t2"]),
+                        "w_enemy_t2_icon": w_prof.get("enemy_tier2_icon", icons["boss"]),
+                        "w_enemy_t3": w_enemy_t3,
+                        "w_enemy_t3_name": w_prof.get("enemy_tier3_name", terms["enemy_t3"]),
+                        "w_enemy_t3_icon": w_prof.get("enemy_tier3_icon", icons["boss"])
                     }
                 items_needed["weapon_upgrade_details"] = weapon_details
                 
@@ -2721,6 +2824,17 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                 relic_info = f"Farm de Relíquias/Artefatos/Discos (Otimizar Nota {grade})"
                 items_needed["relics"] = relic_info
                 
+                # Se o personagem precisa de ascensão de nível, materiais de chefe, especialidades ou drops de monstros,
+                # todos esses itens de mundo aberto estão abertos 24/7 (hoje!).
+                # Se faltam apenas talentos, o farm depende do domínio de talentos estar aberto hoje.
+                if game_id == "genshin":
+                    if level < max_level or has_pending_weapon:
+                        farmable_today = True
+                    else:
+                        farmable_today = talent_domain_open
+                else:
+                    farmable_today = True
+
                 recommendations.append({
                     "name": name,
                     "level": level,
@@ -2732,6 +2846,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     "weapon_info": weapon,
                     "skills_info": skills,
                     "talent_priority": talent_priority,
+                    "talent_domain_open": talent_domain_open,
                     "farmable_today": farmable_today,
                     "reason": reason,
                     "items_needed": items_needed,
@@ -2770,6 +2885,31 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
         if wd and isinstance(wd, dict):
             summary_totals["currency"] += wd.get("currency_needed", 0)
             summary_totals["ores"] += wd.get("ores_needed", 0)
+
+    all_roster_characters = []
+    if roster:
+        for char in roster:
+            c_name = char.get("name")
+            if not c_name:
+                continue
+            c_lvl = char.get("level", 1)
+            c_rarity = char.get("rarity", 5 if "5" in str(char.get("rarity", "")) else 4)
+            c_elem = char.get("element", "")
+            c_icon = char.get("icon", "")
+            c_grade = char.get("overall_grade", char.get("build_grade", "N/A"))
+            c_score = char.get("overall_score", char.get("build_score", 0.0))
+            
+            all_roster_characters.append({
+                "name": c_name,
+                "level": c_lvl,
+                "rarity": c_rarity,
+                "element": c_elem,
+                "icon": c_icon,
+                "grade": c_grade,
+                "score": c_score,
+                "needs_ascension": c_lvl < max_level,
+                "needs_relics": c_grade in ["B", "C", "D", "A"]
+            })
                 
     return {
         "game_id": game_id,
@@ -2777,6 +2917,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
         "day_of_week": day_of_week,
         "calendar_info": game_calendar,
         "all_roster_names": all_roster_names,
+        "all_roster_characters": all_roster_characters,
         "priority_targets": recommendations,
         "summary_totals": summary_totals
     }

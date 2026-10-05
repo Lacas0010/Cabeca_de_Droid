@@ -4,12 +4,11 @@
       "id": "miyabi",
       "name": "Hoshimi Miyabi",
       "rarity": 5,
-      "element": "Frost / Ice",
+      "element": "Ice",
       "specialty": "Anomaly",
-      "chip_type": "Chip de Anomalia Especializado",
-      "core_skill_mat": "Emblema de Maestria da Seção 6",
-      "weekly_boss_mat": "Ferocidade Carniceira",
-      "schedule_type": "Daily"
+      "expert_key": "section6",
+      "weekly_key": "butcher_ferocity",
+      "enemy_key": "ethereal"
     },
     "harumasa": {
       "id": "harumasa",
@@ -17,10 +16,9 @@
       "rarity": 5,
       "element": "Electric",
       "specialty": "Attack",
-      "chip_type": "Chip de Ataque Especializado",
-      "core_skill_mat": "Emblema de Maestria da Seção 6",
-      "weekly_boss_mat": "Ferocidade Carniceira",
-      "schedule_type": "Daily"
+      "expert_key": "section6",
+      "weekly_key": "butcher_ferocity",
+      "enemy_key": "ethereal"
     },
     "astra": {
       "id": "astra",
@@ -28,10 +26,9 @@
       "rarity": 5,
       "element": "Ether",
       "specialty": "Support",
-      "chip_type": "Chip de Suporte Especializado",
-      "core_skill_mat": "Medalha de Honra de Nova Eridu",
-      "weekly_boss_mat": "Núcleo Corrompido da Marionete",
-      "schedule_type": "Daily"
+      "expert_key": "new_eridu",
+      "weekly_key": "puppet_core",
+      "enemy_key": "ethereal"
     },
     "ellen": {
       "id": "ellen",
@@ -39,10 +36,9 @@
       "rarity": 5,
       "element": "Ice",
       "specialty": "Attack",
-      "chip_type": "Chip de Ataque Especializado",
-      "core_skill_mat": "Insígnia de Serviço Victoria",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "victoria",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "zhu_yuan": {
       "id": "zhu_yuan",
@@ -50,10 +46,9 @@
       "rarity": 5,
       "element": "Ether",
       "specialty": "Attack",
-      "chip_type": "Chip de Ataque Especializado",
-      "core_skill_mat": "Emblema da Segurança Pública Criminal",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "public_security",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "jane": {
       "id": "jane",
@@ -61,10 +56,9 @@
       "rarity": 5,
       "element": "Physical",
       "specialty": "Anomaly",
-      "chip_type": "Chip de Anomalia Especializado",
-      "core_skill_mat": "Emblema da Segurança Pública Criminal",
-      "weekly_boss_mat": "Coração do Tirano da Fissura",
-      "schedule_type": "Daily"
+      "expert_key": "public_security",
+      "weekly_key": "corrupted_heart",
+      "enemy_key": "rebel"
     },
     "caesar": {
       "id": "caesar",
@@ -72,10 +66,9 @@
       "rarity": 5,
       "element": "Physical",
       "specialty": "Defense",
-      "chip_type": "Chip de Defesa Especializado",
-      "core_skill_mat": "Medalha dos Filhos de Calydon",
-      "weekly_boss_mat": "Coração do Tirano da Fissura",
-      "schedule_type": "Daily"
+      "expert_key": "calydon",
+      "weekly_key": "corrupted_heart",
+      "enemy_key": "rebel"
     },
     "burnice": {
       "id": "burnice",
@@ -83,10 +76,9 @@
       "rarity": 5,
       "element": "Fire",
       "specialty": "Anomaly",
-      "chip_type": "Chip de Anomalia Especializado",
-      "core_skill_mat": "Medalha dos Filhos de Calydon",
-      "weekly_boss_mat": "Coração do Tirano da Fissura",
-      "schedule_type": "Daily"
+      "expert_key": "calydon",
+      "weekly_key": "corrupted_heart",
+      "enemy_key": "rebel"
     },
     "qingyi": {
       "id": "qingyi",
@@ -94,10 +86,9 @@
       "rarity": 5,
       "element": "Electric",
       "specialty": "Stun",
-      "chip_type": "Chip de Atordoamento Especializado",
-      "core_skill_mat": "Emblema da Segurança Pública Criminal",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "public_security",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "yanagi": {
       "id": "yanagi",
@@ -105,10 +96,9 @@
       "rarity": 5,
       "element": "Electric",
       "specialty": "Anomaly",
-      "chip_type": "Chip de Anomalia Especializado",
-      "core_skill_mat": "Emblema de Maestria da Seção 6",
-      "weekly_boss_mat": "Ferocidade Carniceira",
-      "schedule_type": "Daily"
+      "expert_key": "section6",
+      "weekly_key": "butcher_ferocity",
+      "enemy_key": "ethereal"
     },
     "lighter": {
       "id": "lighter",
@@ -116,10 +106,9 @@
       "rarity": 5,
       "element": "Fire",
       "specialty": "Stun",
-      "chip_type": "Chip de Atordoamento Especializado",
-      "core_skill_mat": "Medalha dos Filhos de Calydon",
-      "weekly_boss_mat": "Coração do Tirano da Fissura",
-      "schedule_type": "Daily"
+      "expert_key": "calydon",
+      "weekly_key": "pompey_bite",
+      "enemy_key": "rebel"
     },
     "lycaon": {
       "id": "lycaon",
@@ -127,10 +116,9 @@
       "rarity": 5,
       "element": "Ice",
       "specialty": "Stun",
-      "chip_type": "Chip de Atordoamento Especializado",
-      "core_skill_mat": "Insígnia de Serviço Victoria",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "victoria",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "rina": {
       "id": "rina",
@@ -138,10 +126,49 @@
       "rarity": 5,
       "element": "Electric",
       "specialty": "Support",
-      "chip_type": "Chip de Suporte Especializado",
-      "core_skill_mat": "Insígnia de Serviço Victoria",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "victoria",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
+    },
+    "soldier_11": {
+      "id": "soldier_11",
+      "name": "Soldier 11",
+      "rarity": 5,
+      "element": "Fire",
+      "specialty": "Attack",
+      "expert_key": "defense_force",
+      "weekly_key": "silent_death",
+      "enemy_key": "rebel"
+    },
+    "koleda": {
+      "id": "koleda",
+      "name": "Koleda Belobog",
+      "rarity": 5,
+      "element": "Fire",
+      "specialty": "Stun",
+      "expert_key": "belobog",
+      "weekly_key": "silent_death",
+      "enemy_key": "rebel"
+    },
+    "grace": {
+      "id": "grace",
+      "name": "Grace Howard",
+      "rarity": 5,
+      "element": "Electric",
+      "specialty": "Anomaly",
+      "expert_key": "belobog",
+      "weekly_key": "silent_death",
+      "enemy_key": "rebel"
+    },
+    "nekomata": {
+      "id": "nekomata",
+      "name": "Nekomata",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "expert_key": "cunning_hares",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "nicole": {
       "id": "nicole",
@@ -149,10 +176,9 @@
       "rarity": 4,
       "element": "Ether",
       "specialty": "Support",
-      "chip_type": "Chip de Suporte Básico/Avançado",
-      "core_skill_mat": "Insígnia Cunning Hares",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "cunning_hares",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "anby": {
       "id": "anby",
@@ -160,10 +186,9 @@
       "rarity": 4,
       "element": "Electric",
       "specialty": "Stun",
-      "chip_type": "Chip de Atordoamento Básico/Avançado",
-      "core_skill_mat": "Insígnia Cunning Hares",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "cunning_hares",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "billy": {
       "id": "billy",
@@ -171,10 +196,9 @@
       "rarity": 4,
       "element": "Physical",
       "specialty": "Attack",
-      "chip_type": "Chip de Ataque Básico/Avançado",
-      "core_skill_mat": "Insígnia Cunning Hares",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "cunning_hares",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "corin": {
       "id": "corin",
@@ -182,10 +206,9 @@
       "rarity": 4,
       "element": "Physical",
       "specialty": "Attack",
-      "chip_type": "Chip de Ataque Básico/Avançado",
-      "core_skill_mat": "Insígnia de Serviço Victoria",
-      "weekly_boss_mat": "Testemunho da Morte Silenciosa",
-      "schedule_type": "Daily"
+      "expert_key": "victoria",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
     },
     "seth": {
       "id": "seth",
@@ -193,10 +216,531 @@
       "rarity": 4,
       "element": "Electric",
       "specialty": "Defense",
-      "chip_type": "Chip de Defesa Básico/Avançado",
-      "core_skill_mat": "Emblema da Segurança Pública Criminal",
-      "weekly_boss_mat": "Coração do Tirano da Fissura",
-      "schedule_type": "Daily"
+      "expert_key": "public_security",
+      "weekly_key": "corrupted_heart",
+      "enemy_key": "ethereal"
+    },
+    "piper": {
+      "id": "piper",
+      "name": "Piper Wheel",
+      "rarity": 4,
+      "element": "Physical",
+      "specialty": "Anomaly",
+      "expert_key": "calydon",
+      "weekly_key": "corrupted_heart",
+      "enemy_key": "rebel"
+    },
+    "lucy": {
+      "id": "lucy",
+      "name": "Lucy",
+      "rarity": 4,
+      "element": "Fire",
+      "specialty": "Support",
+      "expert_key": "calydon",
+      "weekly_key": "corrupted_heart",
+      "enemy_key": "rebel"
+    },
+    "soukaku": {
+      "id": "soukaku",
+      "name": "Soukaku",
+      "rarity": 4,
+      "element": "Ice",
+      "specialty": "Support",
+      "expert_key": "section6",
+      "weekly_key": "silent_death",
+      "enemy_key": "ethereal"
+    },
+    "alice": {
+      "id": "alice",
+      "name": "Alice",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/alice"
+    },
+    "anby_soldier_0": {
+      "id": "anby_soldier_0",
+      "name": "Anby: Soldier 0",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/anby-demara-soldier-0"
+    },
+    "anton": {
+      "id": "anton",
+      "name": "Anton",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/anton"
+    },
+    "aria": {
+      "id": "aria",
+      "name": "Aria",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/aria"
+    },
+    "astra_yao": {
+      "id": "astra_yao",
+      "name": "Astra Yao",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/astra-yao"
+    },
+    "banyue": {
+      "id": "banyue",
+      "name": "Banyue",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/banyue"
+    },
+    "ben": {
+      "id": "ben",
+      "name": "Ben",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/ben"
+    },
+    "billy_-_starlight": {
+      "id": "billy_-_starlight",
+      "name": "Billy - Starlight",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/billy-starlight"
+    },
+    "cissia": {
+      "id": "cissia",
+      "name": "Cissia",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/cissia"
+    },
+    "claret": {
+      "id": "claret",
+      "name": "Claret",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/claret"
+    },
+    "dialyn": {
+      "id": "dialyn",
+      "name": "Dialyn",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/dialyn"
+    },
+    "evelyn": {
+      "id": "evelyn",
+      "name": "Evelyn",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/evelyn"
+    },
+    "hugo": {
+      "id": "hugo",
+      "name": "Hugo",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/hugo"
+    },
+    "jane_doe": {
+      "id": "jane_doe",
+      "name": "Jane Doe",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/jane-doe"
+    },
+    "ju_fufu": {
+      "id": "ju_fufu",
+      "name": "Ju Fufu",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/ju-fufu"
+    },
+    "lucia": {
+      "id": "lucia",
+      "name": "Lucia",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/lucia"
+    },
+    "manato": {
+      "id": "manato",
+      "name": "Manato",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/manato"
+    },
+    "nangong_yu": {
+      "id": "nangong_yu",
+      "name": "Nangong Yu",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/nangong-yu"
+    },
+    "norma": {
+      "id": "norma",
+      "name": "Norma",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/norma"
+    },
+    "orphie_&_magus": {
+      "id": "orphie_&_magus",
+      "name": "Orphie & Magus",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/orphie-and-magus"
+    },
+    "pan_yinhu": {
+      "id": "pan_yinhu",
+      "name": "Pan Yinhu",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/pan-yinhu"
+    },
+    "phoenix3.x": {
+      "id": "phoenix3.x",
+      "name": "Phoenix3.x",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/phoenix"
+    },
+    "promeia": {
+      "id": "promeia",
+      "name": "Promeia",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/promeia"
+    },
+    "pulchra": {
+      "id": "pulchra",
+      "name": "Pulchra",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/pulchra"
+    },
+    "pyrois": {
+      "id": "pyrois",
+      "name": "Pyrois",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/pyrois"
+    },
+    "remielle": {
+      "id": "remielle",
+      "name": "Remielle",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/remielle"
+    },
+    "roxynew": {
+      "id": "roxynew",
+      "name": "RoxyNew",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/roxy"
+    },
+    "seed": {
+      "id": "seed",
+      "name": "Seed",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/seed"
+    },
+    "severian3.x": {
+      "id": "severian3.x",
+      "name": "Severian3.x",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/severian"
+    },
+    "sigrid": {
+      "id": "sigrid",
+      "name": "Sigrid",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/sigrid"
+    },
+    "sunbringer3.x": {
+      "id": "sunbringer3.x",
+      "name": "Sunbringer3.x",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/sunbringer"
+    },
+    "sunna": {
+      "id": "sunna",
+      "name": "Sunna",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/sunna"
+    },
+    "the_storyteller3.x": {
+      "id": "the_storyteller3.x",
+      "name": "The Storyteller3.x",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/the-storyteller"
+    },
+    "trigger": {
+      "id": "trigger",
+      "name": "Trigger",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/trigger"
+    },
+    "velina": {
+      "id": "velina",
+      "name": "Velina",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/velina"
+    },
+    "vivian": {
+      "id": "vivian",
+      "name": "Vivian",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/vivian"
+    },
+    "ye_shunguang": {
+      "id": "ye_shunguang",
+      "name": "Ye Shunguang",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/ye-shunguang"
+    },
+    "yidhari": {
+      "id": "yidhari",
+      "name": "Yidhari",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/yidhari"
+    },
+    "yixuan": {
+      "id": "yixuan",
+      "name": "Yixuan",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/yixuan"
+    },
+    "yuzuha": {
+      "id": "yuzuha",
+      "name": "Yuzuha",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/ukinami-yuzuha"
+    },
+    "zhao": {
+      "id": "zhao",
+      "name": "Zhao",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/zhao"
     }
   }
 }

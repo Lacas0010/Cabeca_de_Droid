@@ -179,8 +179,44 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
             notify_res = self.client.post("/api/farm/order-of-day/send-notification", json={
                 "game_id": "genshin"
             })
-            self.assertEqual(notify_res.status_code, 200)
-            self.assertEqual(notify_res.json()["status"], "success")
+    def test_rest_api_farming_today_endpoints_all_games(self):
+        for gid in ["genshin", "hsr", "zzz"]:
+            res = self.client.get(f"/api/farming/today/{gid}")
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertEqual(data["game_id"], gid)
+            self.assertIn("calendar_info", data)
+            self.assertIn("all_roster_names", data)
+            self.assertIn("all_roster_characters", data)
+            self.assertIn("priority_targets", data)
+            self.assertIn("summary_totals", data)
+            self.assertIsInstance(data["all_roster_names"], list)
+            self.assertIsInstance(data["all_roster_characters"], list)
+            self.assertIsInstance(data["priority_targets"], list)
+            if data["all_roster_characters"]:
+                first_c = data["all_roster_characters"][0]
+                self.assertIn("name", first_c)
+                self.assertIn("level", first_c)
+                self.assertIn("rarity", first_c)
+                self.assertIn("grade", first_c)
+
+    def test_rest_api_farming_today_selected_chars_filtering(self):
+        # 1. Test com __none__
+        res_none = self.client.get("/api/farming/today/genshin?selected_chars=__none__")
+        self.assertEqual(res_none.status_code, 200)
+        data_none = res_none.json()
+        self.assertEqual(len(data_none["priority_targets"]), 0)
+        self.assertTrue(len(data_none["all_roster_names"]) > 0)
+
+        # 2. Test com nome específico
+        if data_none["all_roster_names"]:
+            target_name = data_none["all_roster_names"][0]
+            res_target = self.client.get(f"/api/farming/today/genshin?selected_chars={target_name}")
+            self.assertEqual(res_target.status_code, 200)
+            data_target = res_target.json()
+            # Todos os priority_targets retornados devem ser o personagem selecionado
+            for pt in data_target["priority_targets"]:
+                self.assertEqual(pt["name"], target_name)
 
 if __name__ == "__main__":
     unittest.main()

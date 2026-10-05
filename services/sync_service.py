@@ -65,6 +65,16 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
     sync_status[game_id]["running"] = True
     
     try:
+        # 0. ATUALIZAÇÃO AUTOMÁTICA UPSTREAM (Datamines & Manifestos Públicos)
+        try:
+            from static_data_manager import static_data_manager
+            log_game(game_id, f"Verificando atualizações de manifestos upstream ({game_id.upper()})...", "INFO", progresso=0.03)
+            up_res = static_data_manager.sync_upstream_data(game_id)
+            g_info = up_res.get(game_id, {})
+            log_game(game_id, f"Catálogo atualizado: {g_info.get('character_count', 0)} entidades ({g_info.get('source', 'Local')})", "INFO", progresso=0.05)
+        except Exception as up_err:
+            log_game(game_id, f"Aviso na sincronização upstream: {up_err}", "WARN")
+
         # 1. EXTRAÇÃO DE ROSTER
         if run_roster:
             cookies = get_cookies()
@@ -73,7 +83,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                 sync_status[game_id]["running"] = False
                 return
                 
-            log_game(game_id, "Conectando à API HoYoLAB para extrair Roster...", "INFO", progresso=0.05)
+            log_game(game_id, "Conectando à API HoYoLAB para extrair Roster...", "INFO", progresso=0.08)
             try:
                 extractor = MultiGameExtractor(cookies)
                 # Como rodamos em thread síncrona do FastAPI background, criamos um event loop próprio
@@ -160,6 +170,20 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                 except Exception as scraper_err:
                     traceback.print_exc()
                     log_game(game_id, f"Erro ao obter guias Genshin: {scraper_err}", "ERROR")
+
+        # 2.5 VERIFICAÇÃO AUTOMÁTICA DE GUIAS DAY-1 PARA PERSONAGENS DO ROSTER
+        try:
+            roster_data = database.get_roster_data(game_id)
+            if roster_data:
+                from services.ai_build_generator import AIBuildGenerator
+                for r_char in roster_data:
+                    c_name = r_char.get("name", "")
+                    c_elem = r_char.get("element", "")
+                    if c_name:
+                        AIBuildGenerator.get_or_generate_guide(game_id, c_name, c_elem)
+        except Exception as auto_guide_err:
+            print(f"[AUTO-GUIDE] Aviso na verificação de guias Day-1: {auto_guide_err}")
+
 
         # 3. EXTRAÇÃO DE META E ENDGAME
         if run_meta:

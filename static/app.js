@@ -4529,6 +4529,12 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
+    window.farmRosterCache = window.farmRosterCache || {};
+    window.currentFarmModalGame = "genshin";
+    window.currentFarmModalContainer = "tab-farm-content-body";
+    window.farmModalSelectedSet = new Set();
+    window.currentFarmFilterPill = "all";
+
     // 2. CENTRAL DE FARM DIÁRIO
     window.loadFarmData = async (gameId, targetContainerId = "farm-content-body") => {
         const body = document.getElementById(targetContainerId);
@@ -4540,27 +4546,52 @@ document.addEventListener("DOMContentLoaded", () => {
             let savedSelected = null;
             try {
                 const rawSaved = localStorage.getItem(storageKey);
-                if (rawSaved) savedSelected = JSON.parse(rawSaved);
+                if (rawSaved) {
+                    const parsed = JSON.parse(rawSaved);
+                    if (Array.isArray(parsed)) {
+                        savedSelected = parsed;
+                    }
+                }
             } catch(e) {}
 
             let apiUrl = `/api/farming/today/${gameId}`;
-            if (savedSelected && Array.isArray(savedSelected)) {
+            if (savedSelected && Array.isArray(savedSelected) && savedSelected.length > 0 && !savedSelected.includes("__none__")) {
                 apiUrl += `?selected_chars=${encodeURIComponent(savedSelected.join(","))}`;
+            } else if (savedSelected && savedSelected.includes("__none__")) {
+                apiUrl += `?selected_chars=__none__`;
             }
 
             const res = await fetch(apiUrl);
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.detail || `Erro HTTP ${res.status}`);
+            }
             const data = await res.json();
             const cal = data.calendar_info || {};
             const allRosterNames = data.all_roster_names || [];
+            const allRosterChars = data.all_roster_characters || allRosterNames.map(n => ({ name: n, level: 90, rarity: 5, icon: '' }));
             const targets = data.priority_targets || [];
             const maxLvl = data.max_level || (gameId === "genshin" ? 90 : (gameId === "hsr" ? 80 : 60));
 
+            // Salva no cache para o seletor modal
+            window.farmRosterCache[gameId] = allRosterChars;
+
             let selectedSet;
             if (savedSelected && Array.isArray(savedSelected)) {
-                selectedSet = new Set(savedSelected);
+                if (savedSelected.includes("__none__")) {
+                    selectedSet = new Set();
+                } else {
+                    selectedSet = new Set(savedSelected);
+                }
             } else {
                 selectedSet = new Set(allRosterNames);
             }
+
+            // Mapa para buscar ícone rápido
+            const charIconMap = {};
+            allRosterChars.forEach(c => {
+                if (c.name) charIconMap[c.name] = c.icon || '';
+            });
 
             let html = `
                 <!-- CALENDÁRIO DO DIA -->
@@ -4575,35 +4606,56 @@ document.addEventListener("DOMContentLoaded", () => {
             if (cal.note) html += `<div style="font-size:13px; color:#f59e0b; margin-top:4px;"><strong>Nota Especial:</strong> ${cal.note}</div>`;
             html += `</div>`;
 
-            // PAINEL DE SELEÇÃO DE PERSONAGENS
+            // PAINEL / TRAY DE SELEÇÃO VISUAL DE PERSONAGENS ALVO
             html += `
-                <div style="padding:12px; background:rgba(15,23,42,0.7); border-radius:10px; margin-bottom:16px; border:1px solid rgba(255,255,255,0.08);">
-                    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="const el=document.getElementById('${targetContainerId}-char-selector'); el.style.display = el.style.display==='none'?'block':'none';">
-                        <strong style="color:#e2e8f0; font-size:13px; display:flex; align-items:center; gap:6px;">
-                            <i class="fa-solid fa-user-check" style="color:#38bdf8;"></i> Personagens Alvo do Farm (${selectedSet.size}/${allRosterNames.length})
-                        </strong>
-                        <span style="font-size:11px; color:#38bdf8; text-decoration:underline;"> Selecionar Personagens</span>
-                    </div>
-                    <div id="${targetContainerId}-char-selector" style="display:none; margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06);">
-                        <div style="display:flex; gap:10px; margin-bottom:10px;">
-                            <button id="${targetContainerId}-select-all" style="font-size:11px; padding:4px 8px; background:rgba(56,189,248,0.15); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer;">Selecionar Todos</button>
-                            <button id="${targetContainerId}-deselect-all" style="font-size:11px; padding:4px 8px; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; cursor:pointer;">Desmarcar Todos</button>
+                <div style="padding:14px; background:rgba(15,23,42,0.8); border-radius:12px; margin-bottom:16px; border:1px solid rgba(16,185,129,0.25); box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <strong style="color:#ffffff; font-size:14px; display:flex; align-items:center; gap:6px;">
+                                <i class="fa-solid fa-crosshairs" style="color:#10b981;"></i> Foco de Farm Ativo
+                            </strong>
+                            <span style="font-size:11px; background:rgba(56,189,248,0.15); color:#38bdf8; font-weight:700; padding:2px 8px; border-radius:12px; border:1px solid rgba(56,189,248,0.3);">
+                                ${selectedSet.size} de ${allRosterNames.length} personagens
+                            </span>
                         </div>
-                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:6px; max-height:160px; overflow-y:auto; padding-right:4px;">
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <button onclick="window.openFarmCharSelectorModal('${gameId}', '${targetContainerId}')" style="padding:6px 14px; font-size:12px; font-weight:700; background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 2px 10px rgba(16,185,129,0.35);">
+                                <i class="fa-solid fa-user-pen"></i> Escolher Personagens Alvo
+                            </button>
+                            <button onclick="window.quickSelectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer; font-weight:600;">
+                                Todos
+                            </button>
+                            <button onclick="window.quickDeselectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; cursor:pointer; font-weight:600;">
+                                Desmarcar
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Horizontal Chips Tray of Selected Characters -->
+                    <div style="display:flex; gap:8px; overflow-x:auto; padding:6px 2px; max-height:85px; align-items:center;">
             `;
 
-            allRosterNames.forEach(cName => {
-                const isChecked = selectedSet.has(cName);
+            if (selectedSet.size === 0) {
                 html += `
-                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#cbd5e1; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:6px; cursor:pointer; user-select:none;">
-                        <input type="checkbox" class="${targetContainerId}-char-cb" data-char="${cName}" ${isChecked ? 'checked' : ''}>
-                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${cName}</span>
-                    </label>
+                    <div style="font-size:12px; color:#f87171; width:100%; padding:8px 12px; background:rgba(239,68,68,0.08); border-radius:8px; border:1px solid rgba(239,68,68,0.2); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                        <span><i class="fa-solid fa-circle-exclamation"></i> Nenhum personagem focado no momento. O Farm e a Ordem Diária estão sem metas ativas.</span>
+                        <button onclick="window.openFarmCharSelectorModal('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:4px 10px; background:#10b981; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer;">Selecionar Alvos</button>
+                    </div>
                 `;
-            });
+            } else {
+                Array.from(selectedSet).forEach(cName => {
+                    const cIcon = charIconMap[cName] || '';
+                    html += `
+                        <div class="farm-target-chip">
+                            ${cIcon ? `<img src="${cIcon}" onerror="this.src='/assets/logo.svg'">` : `<i class="fa-solid fa-user" style="font-size:11px; color:#38bdf8;"></i>`}
+                            <span>${cName}</span>
+                            <button class="btn-remove-chip" title="Remover foco" onclick="window.quickRemoveFarmTarget('${gameId}', '${cName}', '${targetContainerId}')">✕</button>
+                        </div>
+                    `;
+                });
+            }
 
             html += `
-                        </div>
                     </div>
                 </div>
             `;
@@ -4632,7 +4684,22 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             if (displayTargets.length === 0) {
-                html += `<div style="padding:16px; background:rgba(255,255,255,0.02); border-radius:8px; font-size:13px; color:#94a3b8; text-align:center;">Nenhum personagem selecionado precisa de ascensão no momento ou tem materiais abertos hoje! Todos os selecionados estão no nível máximo (${maxLvl}) com talentos e armas atualizados.</div>`;
+                if (targets.length > 0 && isFarmableOnly) {
+                    html += `
+                        <div style="padding:18px; background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.25); border-radius:10px; font-size:13px; color:#fde047; text-align:center; line-height:1.6;">
+                            <i class="fa-solid fa-calendar-xmark" style="font-size:18px; margin-bottom:6px; display:block; color:#facc15;"></i>
+                            <strong>Os domínios de talento dos personagens selecionados estão fechados hoje!</strong><br>
+                            <span style="font-size:12px; color:#94a3b8;">Desmarque a opção <strong>"Apenas Materiais Abertos Hoje"</strong> acima para visualizar todos os materiais de ascensão, chefes e talentos mesmo com o domínio fechado.</span>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div style="padding:18px; background:rgba(255,255,255,0.02); border-radius:10px; font-size:13px; color:#94a3b8; text-align:center;">
+                            <i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i>
+                            Nenhum personagem selecionado precisa de ascensão no momento. Todos os selecionados estão no nível máximo (${maxLvl}) com talentos e armas atualizados!
+                        </div>
+                    `;
+                }
             } else {
                 const elementGlows = {
                     pyro: { color: "#ef4444", bg: "rgba(239,68,68,0.08)", border: "rgba(239,68,68,0.3)" },
@@ -4641,7 +4708,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     ice: { color: "#06b6d4", bg: "rgba(6,182,212,0.08)", border: "rgba(6,182,212,0.3)" },
                     cryo: { color: "#06b6d4", bg: "rgba(6,182,212,0.08)", border: "rgba(6,182,212,0.3)" },
                     electro: { color: "#a855f7", bg: "rgba(168,85,247,0.08)", border: "rgba(168,85,247,0.3)" },
-                    anemo: { color: "#10b981", bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.3)" },
+                    anemo: { color: "#10b981", bg: "rgba(168,185,129,0.08)", border: "rgba(16,185,129,0.3)" },
                     geo: { color: "#f59e0b", bg: "rgba(245,158,11,0.08)", border: "rgba(245,158,11,0.3)" },
                     physical: { color: "#94a3b8", bg: "rgba(148,163,184,0.08)", border: "rgba(148,163,184,0.3)" },
                     dendro: { color: "#84cc16", bg: "rgba(132,204,22,0.08)", border: "rgba(132,204,22,0.3)" },
@@ -4783,13 +4850,13 @@ document.addEventListener("DOMContentLoaded", () => {
                             weapon_ore: "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/102.png"
                         },
                         zzz: {
-                            mora: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_202.png",
-                            xp: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104003.png",
-                            talent_book: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104303.png",
-                            boss: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113001.png",
-                            weekly_boss: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113021.png",
-                            crown: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104319.png",
-                            weapon_ore: "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_104013.png"
+                            mora: "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/4fde02b5f3a4c790dcbef6c74cb4fabf.png",
+                            xp: "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/55c259888e808554c02a3161944d7868.png",
+                            talent_book: "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/ba07d11da190b24386fca2f75b4581a0.png",
+                            boss: "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/e1c89620556d60ab11c7b143162d0f4a.png",
+                            weekly_boss: "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/2196659ee41fc22d1533519c53644f37.png",
+                            crown: "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/faeebca44b20e03ee23b610c4f8ea03d.png",
+                            weapon_ore: "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/4f1444b51f52e8e0ad4a8dc13432b04f.png"
                         }
                     };
 
@@ -4799,22 +4866,33 @@ document.addEventListener("DOMContentLoaded", () => {
                     const xpIcon = `<img src="${finalIcons.xp}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
                     const talentIcon = `<img src="${finalIcons.talent_book}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
                     const bossIcon = `<img src="${finalIcons.boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
-                    const weeklyIcon = `<img src="${finalIcons.weekly_boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
-                    const crownIcon = `<img src="${finalIcons.crown}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
-                    const oreIcon = `<img src="${finalIcons.weapon_ore}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+
+                    // Helper para renderizar ícone com fallback seguro
+                    const makeMatIcon = (src, fallbackSrc, size = 18) => {
+                        const effectiveSrc = src || fallbackSrc;
+                        return `<img src="${effectiveSrc}" style="width:${size}px; height:${size}px; vertical-align:middle; margin-right:4px; object-fit:contain; border-radius:3px;" onerror="this.onerror=null; this.src='${fallbackSrc}';">`;
+                    };
 
                     // 1. Ascensão de Personagem
                     if (t.items_needed && t.items_needed.ascension) {
                         const asc = t.items_needed.ascension;
+                        const bIconHtml = makeMatIcon(asc.boss_item_icon, finalIcons.boss);
+                        const specIconHtml = makeMatIcon(asc.specialty_icon, finalIcons.boss);
                         html += `
                             <div style="background:rgba(239,68,68,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #ef4444;">
-                                <strong style="color:#f87171; display:flex; align-items:center; gap:6px; margin-bottom:6px; font-size:13px;">
-                                     Elevação de Nível & Ascensão do Personagem (Nv. ${t.level} ➔ Nv. ${t.max_level})
-                                </strong>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
+                                    <strong style="color:#f87171; display:flex; align-items:center; gap:6px; font-size:13px;">
+                                         Elevação de Nível & Ascensão do Personagem (Nv. ${t.level} ➔ Nv. ${t.max_level})
+                                    </strong>
+                                    <span style="font-size:11px; padding:2px 8px; border-radius:6px; background:rgba(16,185,129,0.15); color:#34d399; font-weight:600;">
+                                        <i class="fa-solid fa-earth-americas"></i> Aberto Hoje (Chefe de Campo & Especialidades 24/7)
+                                    </span>
+                                </div>
                                 <div style="color:#cbd5e1; line-height:1.6; font-size:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:6px;">
                                     <div>${xpIcon} <strong>${terms.xp_book_name}:</strong> ${asc.xp_needed.toLocaleString()} EXP (~${asc.xp_books_purple} un. Roxos)</div>
                                     <div>${moraIcon} <strong>${terms.currency_name}:</strong> ${asc.currency_needed.toLocaleString()}</div>
-                                    ${asc.boss_items_needed > 0 ? `<div>${bossIcon} <strong>${asc.boss_item_name}:</strong> ${asc.boss_items_needed} un.</div>` : ''}
+                                    ${asc.boss_items_needed > 0 ? `<div>${bIconHtml} <strong>${asc.boss_item_name || terms.boss_mat}:</strong> ${asc.boss_items_needed} un.</div>` : ''}
+                                    ${asc.local_specialty ? `<div>${specIconHtml} <strong>${asc.local_specialty}:</strong> Especialidade Local</div>` : ''}
                                 </div>
                             </div>
                         `;
@@ -4822,23 +4900,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // 2. Talentos / Habilidades
                     if (t.items_needed && t.items_needed.talent_upgrade_details && t.items_needed.talent_upgrade_details.length > 0) {
+                        const isTalentOpen = t.talent_domain_open !== false;
                         html += `
                             <div style="background:rgba(56,189,248,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #38bdf8;">
-                                <strong style="color:#38bdf8; display:flex; align-items:center; gap:6px; margin-bottom:8px; font-size:13px;">
-                                     Elevação de ${terms.talent_category} Detalhada por Habilidade:
-                                </strong>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                                    <strong style="color:#38bdf8; display:flex; align-items:center; gap:6px; font-size:13px;">
+                                         Elevação de ${terms.talent_category} Detalhada por Habilidade:
+                                    </strong>
+                                    ${gameIdStr === "genshin" ? `
+                                        <span style="font-size:11px; padding:2px 8px; border-radius:6px; background:${isTalentOpen ? 'rgba(56,189,248,0.15)' : 'rgba(234,179,8,0.15)'}; color:${isTalentOpen ? '#38bdf8' : '#fde047'}; font-weight:600;">
+                                            <i class="fa-solid ${isTalentOpen ? 'fa-door-open' : 'fa-clock'}"></i> ${isTalentOpen ? 'Domínio Aberto Hoje!' : 'Domínio Fechado Hoje'}
+                                        </span>
+                                    ` : ''}
+                                </div>
                                 <div style="display:flex; flex-direction:column; gap:6px;">
                         `;
                         t.items_needed.talent_upgrade_details.forEach(td => {
                             let matsList = [];
-                            if (td.green_books > 0) matsList.push(`${talentIcon} ${td.green_books}x ${terms.green_book}`);
-                            if (td.blue_books > 0) matsList.push(`${talentIcon} ${td.blue_books}x ${terms.blue_book}`);
-                            if (td.purple_books > 0) matsList.push(`${talentIcon} ${td.purple_books}x ${terms.purple_book}`);
-                            if (td.enemy_tier1 > 0) matsList.push(`${bossIcon} ${td.enemy_tier1}x ${terms.enemy_t1 || 'Drop Inimigo (1★)'}`);
-                            if (td.enemy_tier2 > 0) matsList.push(`${bossIcon} ${td.enemy_tier2}x ${terms.enemy_t2 || 'Drop Inimigo (2★)'}`);
-                            if (td.enemy_tier3 > 0) matsList.push(`${bossIcon} ${td.enemy_tier3}x ${terms.enemy_t3 || 'Drop Inimigo (3★)'}`);
-                            if (td.weekly_boss_mats > 0) matsList.push(`${weeklyIcon} ${td.weekly_boss_mats}x ${terms.weekly_boss_mat}`);
-                            if (td.crowns_needed > 0) matsList.push(`${crownIcon} ${td.crowns_needed}x ${terms.crown_mat}`);
+                            if (td.green_books > 0) matsList.push(`${makeMatIcon(td.green_book_icon, finalIcons.talent_book)} ${td.green_books}x ${td.green_book_name || terms.green_book}`);
+                            if (td.blue_books > 0) matsList.push(`${makeMatIcon(td.blue_book_icon, finalIcons.talent_book)} ${td.blue_books}x ${td.blue_book_name || terms.blue_book}`);
+                            if (td.purple_books > 0) matsList.push(`${makeMatIcon(td.purple_book_icon, finalIcons.talent_book)} ${td.purple_books}x ${td.purple_book_name || terms.purple_book}`);
+                            if (td.enemy_tier1 > 0) matsList.push(`${makeMatIcon(td.enemy_t1_icon, finalIcons.boss)} ${td.enemy_tier1}x ${td.enemy_t1_name || terms.enemy_t1 || 'Drop Inimigo (1★)'}`);
+                            if (td.enemy_tier2 > 0) matsList.push(`${makeMatIcon(td.enemy_t2_icon, finalIcons.boss)} ${td.enemy_tier2}x ${td.enemy_t2_name || terms.enemy_t2 || 'Drop Inimigo (2★)'}`);
+                            if (td.enemy_tier3 > 0) matsList.push(`${makeMatIcon(td.enemy_t3_icon, finalIcons.boss)} ${td.enemy_tier3}x ${td.enemy_t3_name || terms.enemy_t3 || 'Drop Inimigo (3★)'}`);
+                            if (td.weekly_boss_mats > 0) matsList.push(`${makeMatIcon(td.weekly_boss_mat_icon, finalIcons.weekly_boss)} ${td.weekly_boss_mats}x ${td.weekly_boss_mat_name || terms.weekly_boss_mat}`);
+                            if (td.crowns_needed > 0) matsList.push(`${makeMatIcon(td.crown_icon, finalIcons.crown)} ${td.crowns_needed}x ${td.crown_mat_name || terms.crown_mat}`);
 
                             const skillIconHtml = td.skill_icon ? `<img src="${td.skill_icon}" style="width:20px; height:20px; vertical-align:middle; margin-right:6px; object-fit:contain; border-radius:4px; background:rgba(0,0,0,0.3); padding:2px;">` : talentIcon;
 
@@ -4869,14 +4955,14 @@ document.addEventListener("DOMContentLoaded", () => {
                         const wIconImg = wd.weapon_icon ? `<img src="${wd.weapon_icon}" style="width:24px; height:24px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:4px; padding:2px; border:1px solid rgba(255,255,255,0.1);">` : '';
 
                         let wMats = [];
-                        if (wd.ores_needed > 0) wMats.push(`<div>${oreIcon} <strong>${terms.ore_name}:</strong> ~${wd.ores_needed} un.</div>`);
-                        if (wd.w_mat_green > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_green || 'Mat. Domínio Arma (2★)'}:</strong> ${wd.w_mat_green} un.</div>`);
-                        if (wd.w_mat_blue > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_blue || 'Mat. Domínio Arma (3★)'}:</strong> ${wd.w_mat_blue} un.</div>`);
-                        if (wd.w_mat_purple > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_purple || 'Mat. Domínio Arma (4★)'}:</strong> ${wd.w_mat_purple} un.</div>`);
-                        if (wd.w_mat_gold > 0) wMats.push(`<div>${talentIcon} <strong>${terms.w_mat_gold || 'Mat. Domínio Arma (5★)'}:</strong> ${wd.w_mat_gold} un.</div>`);
-                        if (wd.w_enemy_t1 > 0) wMats.push(`<div>${bossIcon} <strong>${terms.enemy_t1 || 'Drop Inimigo (1★)'}:</strong> ${wd.w_enemy_t1} un.</div>`);
-                        if (wd.w_enemy_t2 > 0) wMats.push(`<div>${bossIcon} <strong>${terms.enemy_t2 || 'Drop Inimigo (2★)'}:</strong> ${wd.w_enemy_t2} un.</div>`);
-                        if (wd.w_enemy_t3 > 0) wMats.push(`<div>${bossIcon} <strong>${terms.enemy_t3 || 'Drop Inimigo (3★)'}:</strong> ${wd.w_enemy_t3} un.</div>`);
+                        if (wd.ores_needed > 0) wMats.push(`<div>${makeMatIcon(wd.ore_icon, finalIcons.weapon_ore)} <strong>${wd.ore_name || terms.ore_name}:</strong> ~${wd.ores_needed} un.</div>`);
+                        if (wd.w_mat_green > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_green_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_green_name || terms.w_mat_green || 'Mat. Domínio Arma (2★)'}:</strong> ${wd.w_mat_green} un.</div>`);
+                        if (wd.w_mat_blue > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_blue_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_blue_name || terms.w_mat_blue || 'Mat. Domínio Arma (3★)'}:</strong> ${wd.w_mat_blue} un.</div>`);
+                        if (wd.w_mat_purple > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_purple_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_purple_name || terms.w_mat_purple || 'Mat. Domínio Arma (4★)'}:</strong> ${wd.w_mat_purple} un.</div>`);
+                        if (wd.w_mat_gold > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_gold_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_gold_name || terms.w_mat_gold || 'Mat. Domínio Arma (5★)'}:</strong> ${wd.w_mat_gold} un.</div>`);
+                        if (wd.w_enemy_t1 > 0) wMats.push(`<div>${makeMatIcon(wd.w_enemy_t1_icon, finalIcons.boss)} <strong>${wd.w_enemy_t1_name || terms.enemy_t1 || 'Drop Inimigo (1★)'}:</strong> ${wd.w_enemy_t1} un.</div>`);
+                        if (wd.w_enemy_t2 > 0) wMats.push(`<div>${makeMatIcon(wd.w_enemy_t2_icon, finalIcons.boss)} <strong>${wd.w_enemy_t2_name || terms.enemy_t2 || 'Drop Inimigo (2★)'}:</strong> ${wd.w_enemy_t2} un.</div>`);
+                        if (wd.w_enemy_t3 > 0) wMats.push(`<div>${makeMatIcon(wd.w_enemy_t3_icon, finalIcons.boss)} <strong>${wd.w_enemy_t3_name || terms.enemy_t3 || 'Drop Inimigo (3★)'}:</strong> ${wd.w_enemy_t3} un.</div>`);
                         if (wd.currency_needed > 0) wMats.push(`<div>${moraIcon} <strong>${terms.currency_name}:</strong> ${wd.currency_needed.toLocaleString()}</div>`);
 
                         html += `
@@ -4919,36 +5005,263 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
             }
 
-            const saveAndReload = () => {
-                const checkedCbs = document.querySelectorAll(`.${targetContainerId}-char-cb:checked`);
-                const newSelected = Array.from(checkedCbs).map(cb => cb.dataset.char);
-                localStorage.setItem(storageKey, JSON.stringify(newSelected));
-                window.loadFarmData(gameId, targetContainerId);
-            };
-
-            document.querySelectorAll(`.${targetContainerId}-char-cb`).forEach(cb => {
-                cb.addEventListener("change", saveAndReload);
-            });
-
-            const btnSelAll = document.getElementById(`${targetContainerId}-select-all`);
-            if (btnSelAll) {
-                btnSelAll.onclick = () => {
-                    localStorage.setItem(storageKey, JSON.stringify(allRosterNames));
-                    window.loadFarmData(gameId, targetContainerId);
-                };
-            }
-
-            const btnDeselAll = document.getElementById(`${targetContainerId}-deselect-all`);
-            if (btnDeselAll) {
-                btnDeselAll.onclick = () => {
-                    localStorage.setItem(storageKey, JSON.stringify([]));
-                    window.loadFarmData(gameId, targetContainerId);
-                };
-            }
-
         } catch (e) {
-            console.error(e);
-            body.innerHTML = "<div style='color:#ef4444; padding:16px;'>Erro ao carregar dados da Central de Farm.</div>";
+            console.error("Erro na Central de Farm:", e);
+            body.innerHTML = `
+                <div style='color:#ef4444; padding:20px; text-align:center; background:rgba(239,68,68,0.08); border-radius:10px; border:1px solid rgba(239,68,68,0.3);'>
+                    <i class='fa-solid fa-triangle-exclamation fa-2x' style='margin-bottom:8px; display:block;'></i>
+                    <strong style='font-size:14px; display:block; margin-bottom:4px;'>Erro ao carregar dados da Central de Farm</strong>
+                    <span style='font-size:12px; color:#cbd5e1; display:block; margin-bottom:12px;'>${e.message || e}</span>
+                    <button onclick="window.loadFarmData('${gameId}', '${targetContainerId}')" style="padding:6px 14px; background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; cursor:pointer; font-size:12px;">
+                        <i class="fa-solid fa-rotate-right"></i> Tentar Novamente
+                    </button>
+                </div>
+            `;
+        }
+    };
+
+    // ==========================================
+    // 2.0 CONTROLADOR DO SELETOR VISUAL DE PERSONAGENS ALVO DO FARM
+    // ==========================================
+    window.openFarmCharSelectorModal = async (gameId = "genshin", targetContainerId = "farm-content-body") => {
+        window.currentFarmModalGame = gameId;
+        window.currentFarmModalContainer = targetContainerId;
+
+        const modal = document.getElementById("modal-farm-char-selector");
+        if (!modal) return;
+
+        // Atualiza abas do modal
+        document.querySelectorAll(".farm-modal-game-btn").forEach(btn => {
+            if (btn.dataset.game === gameId) {
+                btn.classList.add("active");
+                btn.style.background = "#10b981";
+                btn.style.color = "#fff";
+                btn.style.fontWeight = "700";
+            } else {
+                btn.classList.remove("active");
+                btn.style.background = "transparent";
+                btn.style.color = "#94a3b8";
+                btn.style.fontWeight = "normal";
+            }
+        });
+
+        // Carrega seleção salva
+        const storageKey = `hoyo_farm_selected_${gameId}`;
+        let savedSelected = null;
+        try {
+            const rawSaved = localStorage.getItem(storageKey);
+            if (rawSaved) {
+                const parsed = JSON.parse(rawSaved);
+                if (Array.isArray(parsed)) savedSelected = parsed;
+            }
+        } catch(e) {}
+
+        // Busca lista de personagens do cache ou API
+        let rosterList = window.farmRosterCache[gameId] || [];
+        if (rosterList.length === 0) {
+            try {
+                const res = await fetch(`/api/farming/today/${gameId}`);
+                if (res.ok) {
+                    const d = await res.json();
+                    rosterList = d.all_roster_characters || (d.all_roster_names || []).map(n => ({ name: n, level: 90, rarity: 5, icon: '' }));
+                    window.farmRosterCache[gameId] = rosterList;
+                }
+            } catch(e) {}
+        }
+
+        if (savedSelected && Array.isArray(savedSelected)) {
+            if (savedSelected.includes("__none__")) {
+                window.farmModalSelectedSet = new Set();
+            } else {
+                window.farmModalSelectedSet = new Set(savedSelected);
+            }
+        } else {
+            window.farmModalSelectedSet = new Set(rosterList.map(c => c.name));
+        }
+
+        // Reseta campo de busca e filtros
+        const searchInput = document.getElementById("farm-char-search-input");
+        if (searchInput) searchInput.value = "";
+        window.currentFarmFilterPill = "all";
+        document.querySelectorAll(".farm-filter-pill").forEach(p => {
+            if (p.dataset.filter === "all") p.classList.add("active");
+            else p.classList.remove("active");
+        });
+
+        window.renderFarmModalGrid();
+        modal.style.display = "flex";
+    };
+
+    window.closeFarmCharSelectorModal = () => {
+        const modal = document.getElementById("modal-farm-char-selector");
+        if (modal) modal.style.display = "none";
+    };
+
+    window.switchFarmModalGame = (gameId) => {
+        window.currentFarmModalGame = gameId;
+        window.openFarmCharSelectorModal(gameId, window.currentFarmModalContainer);
+    };
+
+    window.renderFarmModalGrid = () => {
+        const grid = document.getElementById("farm-modal-char-grid");
+        const countEl = document.getElementById("farm-modal-selection-count");
+        if (!grid) return;
+
+        const gameId = window.currentFarmModalGame || "genshin";
+        const rosterList = window.farmRosterCache[gameId] || [];
+        const searchVal = (document.getElementById("farm-char-search-input")?.value || "").toLowerCase().trim();
+        const filterType = window.currentFarmFilterPill || "all";
+
+        let filtered = rosterList.filter(c => {
+            const nameMatch = !searchVal || (c.name || "").toLowerCase().includes(searchVal);
+            if (!nameMatch) return false;
+
+            const rarityNum = parseInt(c.rarity) || (String(c.rarity).includes("5") || String(c.rarity).toUpperCase() === "S" ? 5 : 4);
+            if (filterType === "5star" && rarityNum !== 5) return false;
+            if (filterType === "4star" && rarityNum !== 4) return false;
+            if (filterType === "pending" && !c.needs_ascension) return false;
+            if (filterType === "needs_build" && !c.needs_relics) return false;
+
+            return true;
+        });
+
+        if (countEl) {
+            countEl.innerText = `${window.farmModalSelectedSet.size} / ${rosterList.length} selecionados`;
+        }
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">Nenhum personagem encontrado com os filtros aplicados.</div>`;
+            return;
+        }
+
+        const gradeColors = { SSS: "#f59e0b", SS: "#ec4899", S: "#10b981", A: "#3b82f6", B: "#8b5cf6", C: "#6b7280", D: "#ef4444" };
+
+        let html = "";
+        filtered.forEach(c => {
+            const isSelected = window.farmModalSelectedSet.has(c.name);
+            const isFiveStar = (parseInt(c.rarity) === 5) || String(c.rarity).includes("5") || String(c.rarity).toUpperCase() === "S";
+            const gColor = gradeColors[c.grade] || "#94a3b8";
+
+            html += `
+                <div class="farm-char-card ${isSelected ? 'selected' : ''} ${isFiveStar ? 'five-star' : 'four-star'}" onclick="window.toggleFarmModalCharCard('${c.name.replace(/'/g, "\\'")}')">
+                    <div class="card-check-badge">
+                        <i class="fa-solid fa-check"></i>
+                    </div>
+                    <div class="avatar-wrapper">
+                        <img src="${c.icon || '/assets/logo.svg'}" onerror="this.src='/assets/logo.svg'" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="font-weight: 700; color: #fff; font-size: 12px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
+                        ${c.name}
+                    </div>
+                    <div style="display: flex; gap: 4px; align-items: center; justify-content: center; flex-wrap: wrap;">
+                        <span style="font-size: 9px; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #cbd5e1;">Nv. ${c.level}</span>
+                        ${c.grade && c.grade !== 'N/A' ? `<span style="font-size: 9px; padding: 1px 5px; border-radius: 4px; background: ${gColor}22; color: ${gColor}; font-weight: 700; border: 1px solid ${gColor}44;">${c.grade}</span>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        grid.innerHTML = html;
+    };
+
+    window.toggleFarmModalCharCard = (charName) => {
+        if (window.farmModalSelectedSet.has(charName)) {
+            window.farmModalSelectedSet.delete(charName);
+        } else {
+            window.farmModalSelectedSet.add(charName);
+        }
+        window.renderFarmModalGrid();
+    };
+
+    window.selectAllFarmModalChars = () => {
+        const gameId = window.currentFarmModalGame || "genshin";
+        const rosterList = window.farmRosterCache[gameId] || [];
+        rosterList.forEach(c => window.farmModalSelectedSet.add(c.name));
+        window.renderFarmModalGrid();
+    };
+
+    window.deselectAllFarmModalChars = () => {
+        window.farmModalSelectedSet.clear();
+        window.renderFarmModalGrid();
+    };
+
+    window.selectMetaPicksFarmModal = () => {
+        const gameId = window.currentFarmModalGame || "genshin";
+        const rosterList = window.farmRosterCache[gameId] || [];
+        window.farmModalSelectedSet.clear();
+        rosterList.forEach(c => {
+            const isFiveStar = (parseInt(c.rarity) === 5) || String(c.rarity).includes("5") || String(c.rarity).toUpperCase() === "S";
+            if (isFiveStar || c.needs_ascension || c.needs_relics) {
+                window.farmModalSelectedSet.add(c.name);
+            }
+        });
+        window.renderFarmModalGrid();
+    };
+
+    window.setFarmFilterPill = (filterType) => {
+        window.currentFarmFilterPill = filterType;
+        document.querySelectorAll(".farm-filter-pill").forEach(btn => {
+            if (btn.dataset.filter === filterType) btn.classList.add("active");
+            else btn.classList.remove("active");
+        });
+        window.renderFarmModalGrid();
+    };
+
+    window.filterFarmCharCards = () => {
+        window.renderFarmModalGrid();
+    };
+
+    window.saveAndApplyFarmCharSelection = () => {
+        const gameId = window.currentFarmModalGame || "genshin";
+        const storageKey = `hoyo_farm_selected_${gameId}`;
+        const selectedArr = Array.from(window.farmModalSelectedSet);
+        localStorage.setItem(storageKey, JSON.stringify(selectedArr.length > 0 ? selectedArr : ["__none__"]));
+        window.closeFarmCharSelectorModal();
+        window.loadFarmData(gameId, window.currentFarmModalContainer);
+        if (typeof window.loadDailyFarmOrder === "function") {
+            window.loadDailyFarmOrder(gameId);
+        }
+    };
+
+    window.quickRemoveFarmTarget = (gameId, charName, targetContainerId) => {
+        const storageKey = `hoyo_farm_selected_${gameId}`;
+        let savedSelected = [];
+        try {
+            const raw = localStorage.getItem(storageKey);
+            if (raw) savedSelected = JSON.parse(raw);
+            if (!Array.isArray(savedSelected)) savedSelected = [];
+        } catch(e) {}
+
+        const rosterList = window.farmRosterCache[gameId] || [];
+        if (savedSelected.length === 0 || savedSelected.includes("__none__")) {
+            savedSelected = rosterList.map(c => c.name);
+        }
+
+        const newSelected = savedSelected.filter(n => n !== charName);
+        localStorage.setItem(storageKey, JSON.stringify(newSelected.length > 0 ? newSelected : ["__none__"]));
+        window.loadFarmData(gameId, targetContainerId);
+        if (typeof window.loadDailyFarmOrder === "function") {
+            window.loadDailyFarmOrder(gameId);
+        }
+    };
+
+    window.quickSelectAllFarm = (gameId, targetContainerId) => {
+        const storageKey = `hoyo_farm_selected_${gameId}`;
+        const rosterList = window.farmRosterCache[gameId] || [];
+        const allNames = rosterList.map(c => c.name);
+        localStorage.setItem(storageKey, JSON.stringify(allNames));
+        window.loadFarmData(gameId, targetContainerId);
+        if (typeof window.loadDailyFarmOrder === "function") {
+            window.loadDailyFarmOrder(gameId);
+        }
+    };
+
+    window.quickDeselectAllFarm = (gameId, targetContainerId) => {
+        const storageKey = `hoyo_farm_selected_${gameId}`;
+        localStorage.setItem(storageKey, JSON.stringify(["__none__"]));
+        window.loadFarmData(gameId, targetContainerId);
+        if (typeof window.loadDailyFarmOrder === "function") {
+            window.loadDailyFarmOrder(gameId);
         }
     };
 
@@ -4998,6 +5311,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
         try {
             const res = await fetch(`/api/farm/order-of-day/${gameId}`);
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.detail || `Erro HTTP ${res.status}`);
+            }
             const data = await res.json();
             window.lastLoadedFarmOrder = data;
 

@@ -179,5 +179,45 @@ class TestStaticDataSuite(unittest.TestCase):
         self.assertEqual(mat_data["boss_item_name"], "Gota d'Água Não Envelhecida")
         self.assertEqual(mat_data["local_specialty"], "Lírio de Lakelight")
 
+    def test_hsr_specific_material_resolution(self):
+        acheron = static_data_manager.get_character_profile("hsr", "acheron")
+        self.assertIsNotNone(acheron)
+        self.assertEqual(acheron["name"], "Acheron")
+        self.assertIn("Incinerador Celestial", acheron.get("talent_tier4_name", ""))
+        self.assertTrue(acheron.get("talent_tier4_icon", "").startswith("https://raw.githubusercontent.com/Mar-7th/StarRailRes"))
+        self.assertIn("Estatuto", acheron.get("boss_mat_name", ""))
+        self.assertIn("Monstro dos Sonhos", acheron.get("weekly_boss_mat_name", ""))
+        self.assertIn("Pensamento", acheron.get("enemy_tier1_name", ""))
+
+        firefly = static_data_manager.get_character_profile("hsr", "firefly")
+        self.assertIsNotNone(firefly)
+        self.assertIn("Chama Estrondosa", firefly.get("boss_mat_name", ""))
+        self.assertIn("Mandíbula Voraz Lunífera", firefly.get("talent_tier4_name", ""))
+
+        # Teste Light Cone profile
+        lc_prof = static_data_manager.get_weapon_profile("hsr", "Along the Passing Shore")
+        self.assertIsNotNone(lc_prof)
+        self.assertIn("Incinerador Celestial", lc_prof.get("w_mat_tier4_name", ""))
+        self.assertTrue(lc_prof.get("w_mat_tier4_icon", "").startswith("https://raw.githubusercontent.com/Mar-7th/StarRailRes"))
+
+    def test_zzz_specific_material_resolution(self):
+        ellen = static_data_manager.get_character_profile("zzz", "ellen")
+        self.assertIsNotNone(ellen)
+        self.assertEqual(ellen["name"], "Ellen Joe")
+        self.assertIn("Chip Especializado de Gelo", ellen.get("talent_tier4_name", ""))
+        self.assertTrue(ellen.get("talent_tier4_icon", "").startswith("https://"))
+        self.assertIn("Insígnia de Serviço Victoria", ellen.get("boss_mat_name", ""))
+        self.assertIn("Passaporte da Gaiola", ellen.get("crown_mat_name", ""))
+
+        miyabi = static_data_manager.get_character_profile("zzz", "miyabi")
+        self.assertIsNotNone(miyabi)
+        self.assertIn("Selo de Anomalia", miyabi.get("local_specialty_name", ""))
+
+        # Teste W-Engine profile
+        w_prof = static_data_manager.get_weapon_profile("zzz", "Deep Sea Visitor")
+        self.assertIsNotNone(w_prof)
+        self.assertTrue(len(w_prof.get("w_mat_tier4_name", "")) > 0)
+        self.assertTrue(w_prof.get("w_mat_tier4_icon", "").startswith("https://"))
+
 if __name__ == "__main__":
     unittest.main()
