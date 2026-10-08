@@ -60,9 +60,9 @@ hoyo_app.db
 *.sqlite3
 
 # Markdown, Data Exports & Caches (Generated Scrapings)
-hsr/
-zzz/
-genshin/
+/hsr/
+/zzz/
+/genshin/
 meta_data_*.json
 meus_personagens_*.md
 meta_e_tierlists_*.md
@@ -70,10 +70,13 @@ meta_endgame_report.md
 moc_payload_dump.txt
 
 # Asset Cache (Downloaded dynamically at runtime)
+assets/cache/
 assets/avatars/
 assets/weapons/
 assets/relics/
 assets/elements/
+assets/shards/
+assets/mindscapes/zzz/focus/
 assets/logo.ico
 
 # Logs, Compressed Archives & Temporary Scratch Scripts

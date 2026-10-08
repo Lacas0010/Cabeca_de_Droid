@@ -359,6 +359,37 @@ def sanitize_stat_name(stat_text: str) -> str:
     return s
 
 
+def clean_hoyoverse_desc(text: str) -> str:
+    """Limpa tags HTML, tags de gênero, marcações de links e estilos do texto retornado pela API da HoYoverse."""
+    if not text:
+        return ""
+    s = str(text)
+    s = s.replace("\r", "").replace("\\r", "")
+    s = s.replace("\\n", "\n")
+    s = re.sub(r'<br\s*/?>', '\n', s, flags=re.I)
+    s = re.sub(r'\{M#([^}]*)\}\{F#([^}]*)\}', r'\1', s, flags=re.I)
+    s = re.sub(r'\{F#([^}]*)\}', r'\1', s, flags=re.I)
+    s = re.sub(r'\{M#([^}]*)\}', r'\1', s, flags=re.I)
+    s = re.sub(r'\{LINK#[^}]*\}', '', s, flags=re.I)
+    s = re.sub(r'\{/LINK\}', '', s, flags=re.I)
+    s = re.sub(r'\{[A-Z0-9_#]+(?::[^}]*)?\}', '', s)
+    s = re.sub(r'<color=[^>]*>', '', s, flags=re.I)
+    s = re.sub(r'</color>', '', s, flags=re.I)
+    s = re.sub(r'<IconMap:[^>]+>', '', s, flags=re.I)
+    s = re.sub(r'</?Term(?:\s+[^>]*)?>', '', s, flags=re.I)
+    s = re.sub(r'</?[a-zA-Z0-9:_-]+(?:\s+[^>]*)?>', '', s)
+    s = (s.replace('&nbsp;', ' ')
+          .replace('&quot;', '"')
+          .replace('&amp;', '&')
+          .replace('&lt;', '<')
+          .replace('&gt;', '>')
+          .replace('&#39;', "'")
+          .replace('&apos;', "'"))
+    s = re.sub(r'[ \t]+', ' ', s)
+    s = re.sub(r'\n\s*\n\s*\n+', '\n\n', s)
+    return s.strip()
+
+
 def extract_hsr_character_skills(char) -> list:
     """Extrai todas as habilidades e rastros do personagem HSR com seus níveis atuais e máximos."""
     skills_json = []
@@ -393,13 +424,19 @@ def extract_hsr_character_skills(char) -> list:
 
         s_name = s.skill_stages[0].name if s.skill_stages else default_name
         s_icon = s.skill_stages[0].item_url if s.skill_stages else getattr(s, "icon", "")
+        s_desc = ""
+        if s.skill_stages and hasattr(s.skill_stages[0], "desc"):
+            s_desc = getattr(s.skill_stages[0], "desc", "")
+        if not s_desc:
+            s_desc = getattr(s, "desc", getattr(s, "description", ""))
 
         res[order] = {
             "name": str(s_name),
             "level": int(getattr(s, "level", 1)),
             "max_level": int(max_lvl),
             "type": str(order),
-            "icon": str(s_icon)
+            "icon": str(s_icon),
+            "desc": clean_hoyoverse_desc(s_desc)
         }
     skills_json = [res[k] for k in sorted(res.keys())]
     return skills_json
@@ -436,12 +473,14 @@ def extract_genshin_character_skills(char) -> list:
 
         s_max = 1 if is_passive else getattr(sk, "max_level", 10)
         s_icon = getattr(sk, "icon", getattr(sk, "image", getattr(sk, "icon_url", "")))
+        s_desc = getattr(sk, "description", getattr(sk, "desc", getattr(sk, "effect", "")))
         skills_json.append({
             "name": str(s_name),
             "level": int(s_lvl),
             "max_level": int(s_max) if s_max else (1 if is_passive else 10),
             "type": str(s_type),
-            "icon": str(s_icon)
+            "icon": str(s_icon),
+            "desc": clean_hoyoverse_desc(s_desc)
         })
     return skills_json
 
@@ -491,14 +530,127 @@ def extract_zzz_agent_skills(agent) -> list:
         s_lvl = getattr(sk, "level", 1)
         s_max = 6 if t_type == 6 else 12
         s_icon = getattr(sk, "icon", getattr(sk, "item_url", getattr(sk, "image", "")))
+        if not s_icon:
+            zzz_skill_icons = {
+                1: "/assets/skills/zzz/basic_attack.png",
+                2: "/assets/skills/zzz/dodge.png",
+                3: "/assets/skills/zzz/assist.png",
+                4: "/assets/skills/zzz/special.png",
+                5: "/assets/skills/zzz/ultimate.png",
+                6: "/assets/skills/zzz/core.png",
+            }
+            s_icon = zzz_skill_icons.get(t_type, "/assets/skills/zzz/basic_attack.png")
+        s_desc = getattr(sk, "desc", getattr(sk, "description", ""))
+        if not s_desc and hasattr(sk, "items") and sk.items:
+            s_desc = getattr(sk.items[0], "text", "")
+
         skills_json.append({
             "name": str(s_name),
             "level": int(s_lvl),
             "max_level": int(s_max),
             "type": str(t_type if t_type else ""),
-            "icon": str(s_icon)
+            "icon": str(s_icon),
+            "desc": clean_hoyoverse_desc(s_desc)
         })
     return skills_json
+
+
+def extract_hsr_character_ranks(char) -> list:
+    """Extrai os 6 eidolons do personagem HSR com seus ícones, nomes e estado de ativação."""
+    ranks_json = []
+    char_rank = int(getattr(char, "rank", 0) or 0)
+    raw_ranks = getattr(char, "ranks", getattr(char, "eidolons", []))
+    
+    if raw_ranks and len(raw_ranks) > 0:
+        for r in raw_ranks:
+            pos = int(getattr(r, "pos", getattr(r, "position", getattr(r, "id", len(ranks_json) + 1))))
+            name = str(getattr(r, "name", f"Eidolon {pos}"))
+            icon = str(getattr(r, "icon", getattr(r, "icon_url", getattr(r, "image", ""))))
+            desc = clean_hoyoverse_desc(getattr(r, "desc", getattr(r, "description", "")))
+            is_unlocked = bool(getattr(r, "is_unlocked", getattr(r, "unlocked", pos <= char_rank)))
+            ranks_json.append({
+                "pos": pos,
+                "name": name,
+                "icon": icon,
+                "desc": desc,
+                "is_unlocked": is_unlocked
+            })
+    else:
+        for pos in range(1, 7):
+            ranks_json.append({
+                "pos": pos,
+                "name": f"Eidolon {pos}",
+                "icon": "",
+                "desc": "",
+                "is_unlocked": pos <= char_rank
+            })
+    return ranks_json
+
+
+def extract_genshin_character_constellations(char) -> list:
+    """Extrai as 6 constelações do personagem Genshin com seus ícones, nomes e estado de ativação."""
+    constellations_json = []
+    char_constellation = int(getattr(char, "constellation", getattr(char, "actived_constellation_num", 0)) or 0)
+    raw_constellations = getattr(char, "constellations", [])
+    
+    if raw_constellations and len(raw_constellations) > 0:
+        for idx, c in enumerate(raw_constellations):
+            pos = int(getattr(c, "pos", getattr(c, "position", idx + 1)))
+            name = str(getattr(c, "name", f"Constelação {pos}"))
+            icon = str(getattr(c, "icon", getattr(c, "icon_url", getattr(c, "image", ""))))
+            desc = clean_hoyoverse_desc(getattr(c, "effect", getattr(c, "desc", getattr(c, "description", ""))))
+            is_unlocked = bool(getattr(c, "is_actived", getattr(c, "activated", getattr(c, "is_unlocked", pos <= char_constellation))))
+            constellations_json.append({
+                "pos": pos,
+                "name": name,
+                "icon": icon,
+                "desc": desc,
+                "is_unlocked": is_unlocked
+            })
+    else:
+        for pos in range(1, 7):
+            constellations_json.append({
+                "pos": pos,
+                "name": f"Constelação {pos}",
+                "icon": "",
+                "desc": "",
+                "is_unlocked": pos <= char_constellation
+            })
+    return constellations_json
+
+
+def extract_zzz_agent_ranks(agent) -> list:
+    """Extrai os 6 mindscapes do agente ZZZ com seus ícones, nomes e estado de ativação."""
+    ranks_json = []
+    agent_rank = int(getattr(agent, "rank", 0) or 0)
+    raw_ranks = getattr(agent, "ranks", getattr(agent, "mindscapes", []))
+    
+    if raw_ranks and len(raw_ranks) > 0:
+        for idx, r in enumerate(raw_ranks):
+            pos = int(getattr(r, "position", getattr(r, "pos", idx + 1)))
+            name = str(getattr(r, "name", f"Cinema Mental {pos}"))
+            icon = str(getattr(r, "icon", getattr(r, "icon_url", getattr(r, "image", ""))))
+            if not icon:
+                icon = f"/assets/mindscapes/zzz/m{pos}.png"
+            desc = clean_hoyoverse_desc(getattr(r, "description", getattr(r, "desc", "")))
+            is_unlocked = bool(getattr(r, "unlocked", getattr(r, "is_unlocked", pos <= agent_rank)))
+            ranks_json.append({
+                "pos": pos,
+                "name": name,
+                "icon": icon,
+                "desc": desc,
+                "is_unlocked": is_unlocked
+            })
+    else:
+        for pos in range(1, 7):
+            ranks_json.append({
+                "pos": pos,
+                "name": f"Cinema Mental {pos}",
+                "icon": f"/assets/mindscapes/zzz/m{pos}.png",
+                "desc": "",
+                "is_unlocked": pos <= agent_rank
+            })
+    return ranks_json
 
 
 
@@ -783,14 +935,43 @@ class HSRExtractor(BaseExtractor):
                     })
                     
                 char_icon = getattr(char, "icon", getattr(char, "image", ""))
-                hsr_splash = getattr(char, "portrait", getattr(char, "draw", getattr(char, "art_url", getattr(char, "image", getattr(char, "figure_path", getattr(char, "gacha_art", getattr(char, "icon", "")))))))
+                char_id_str = str(getattr(char, "id", ""))
+                
+                # Resolução de skins e costumes do HSR
+                effective_id = char_id_str
                 costumes = getattr(char, "costumes", getattr(char, "skins", getattr(char, "outfits", None)))
-                if costumes:
+                if costumes and isinstance(costumes, list) and len(costumes) > 0:
                     c_item = costumes[0]
+                    c_id = getattr(c_item, "id", None) if not isinstance(c_item, dict) else c_item.get("id")
+                    if c_id and str(c_id).isdigit():
+                        effective_id = str(c_id)
                     char_icon = getattr(c_item, "icon", getattr(c_item, "image", char_icon))
-                    c_splash = getattr(c_item, "portrait", getattr(c_item, "draw", getattr(c_item, "art_url", getattr(c_item, "image", getattr(c_item, "figure_path", getattr(c_item, "gacha_art", getattr(c_item, "icon", None)))))))
-                    if c_splash:
-                        hsr_splash = c_splash
+                    
+                raw_image = str(getattr(char, "image", "") or "")
+                raw_figure = str(getattr(char, "figure_path", "") or "")
+                check_str = f"{getattr(char, 'name', '')} {char_id_str} {char_icon} {raw_image} {raw_figure}".lower()
+                skin_m = re.search(r'\b(150[1-9]|151[0-5]|1414)\b', check_str)
+                if skin_m:
+                    effective_id = skin_m.group(1)
+                elif "summeretto" in check_str or "robin summer" in check_str:
+                    effective_id = "1512"
+                elif "himeko - nova" in check_str or "himeko nova" in check_str:
+                    effective_id = "1510"
+                elif "999" in check_str or "loba prateada nv." in check_str:
+                    effective_id = "1506"
+                elif "permansor" in check_str:
+                    effective_id = "1414" if "terrae" in check_str else "1505"
+                elif "veraneio" in check_str:
+                    effective_id = "1513"
+                elif "noite de inverno" in check_str or "winter" in check_str or "sparxie" in check_str:
+                    effective_id = "1501"
+
+                eidolon_art_url = f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/{effective_id}.png" if effective_id else ""
+                hsr_splash = f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/{effective_id}.png" if effective_id else ""
+                if "avatar_skin_image" in raw_image:
+                    hsr_splash = raw_image
+                elif "avatar_skin_image" in raw_figure:
+                    hsr_splash = raw_figure
 
                 # Extrai Status Finais (Final Stats) do personagem HSR
                 hsr_stats = {}
@@ -803,9 +984,10 @@ class HSRExtractor(BaseExtractor):
                         hsr_stats[label] = str(p_final)
 
                 skills_json = extract_hsr_character_skills(char)
+                ranks_json = extract_hsr_character_ranks(char)
 
                 char_json_list.append({
-                    "id": str(char.id),
+                    "id": str(effective_id or char.id),
                     "name": char.name,
                     "level": char.level,
                     "rarity": char.rarity,
@@ -813,9 +995,13 @@ class HSRExtractor(BaseExtractor):
                     "element": element,
                     "icon": char_icon,
                     "gacha_art": hsr_splash,
+                    "portrait": hsr_splash,
+                    "splash_art": hsr_splash,
+                    "eidolon_art": eidolon_art_url,
                     "weapon": w_info,
                     "relics": relics_json,
                     "skills": skills_json,
+                    "ranks": ranks_json,
                     "stats": hsr_stats
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
@@ -871,7 +1057,8 @@ class HSRExtractor(BaseExtractor):
                     weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
                     raw_md=char_md,
                     skills_json=json.dumps(c.get("skills", [])),
-                    stats_json=json.dumps(c.get("stats", {}))
+                    stats_json=json.dumps(c.get("stats", {})),
+                    ranks_json=json.dumps(c.get("ranks", []))
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1276,6 +1463,7 @@ class GenshinExtractor(BaseExtractor):
                                 genshin_stats[label_map.get(attr_name, attr_name)] = str(v)
 
                     skills_json = extract_genshin_character_skills(char)
+                    constellations_json = extract_genshin_character_constellations(char)
 
                     char_constellation = 0
                     try:
@@ -1296,6 +1484,8 @@ class GenshinExtractor(BaseExtractor):
                         "weapon": w_info,
                         "relics": artifacts_json,
                         "skills": skills_json,
+                        "constellations": constellations_json,
+                        "ranks": constellations_json,
                         "stats": genshin_stats
                     })
                 except Exception as c_json_err:
@@ -1352,7 +1542,8 @@ class GenshinExtractor(BaseExtractor):
                     weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
                     raw_md=char_md,
                     skills_json=json.dumps(c.get("skills", [])),
-                    stats_json=json.dumps(c.get("stats", {}))
+                    stats_json=json.dumps(c.get("stats", {})),
+                    ranks_json=json.dumps(c.get("constellations", []))
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1606,6 +1797,7 @@ class ZZZExtractor(BaseExtractor):
                     pass
 
                 skills_json = extract_zzz_agent_skills(agent)
+                ranks_json = extract_zzz_agent_ranks(agent)
 
                 char_json_list.append({
                     "id": str(agent.id),
@@ -1619,6 +1811,8 @@ class ZZZExtractor(BaseExtractor):
                     "weapon": w_info,
                     "relics": discs_json,
                     "skills": skills_json,
+                    "ranks": ranks_json,
+                    "mindscapes": ranks_json,
                     "stats": zzz_stats
                 })
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
@@ -1674,7 +1868,8 @@ class ZZZExtractor(BaseExtractor):
                     weapon_icon=c["weapon"].get("icon") if c["weapon"] else None,
                     raw_md=char_md,
                     skills_json=json.dumps(c.get("skills", [])),
-                    stats_json=json.dumps(c.get("stats", {}))
+                    stats_json=json.dumps(c.get("stats", {})),
+                    ranks_json=json.dumps(c.get("ranks", []))
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:

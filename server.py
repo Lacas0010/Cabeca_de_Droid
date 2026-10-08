@@ -23,7 +23,7 @@ import security_vault
 from notifications import notifier
 from groq_rag import GroqRAG
 from static_data_manager import static_data_manager
-from services.media_service import get_raw_url, download_element_icons, ELEMENT_ICONS_MAP
+from services.media_service import get_raw_url, download_element_icons, download_hsr_eidolon_shards, ELEMENT_ICONS_MAP
 from services.translation_service import traduzir_item
 from services.sync_service import (
     sync_status,
@@ -179,8 +179,9 @@ app.middleware("http")(security_guard_middleware)
 for router in all_routers:
     app.include_router(router)
 
-# Download proativo de ícones dos elementos
+# Download proativo de ícones dos elementos e fragmentos de Eidolon
 download_element_icons()
+threading.Thread(target=download_hsr_eidolon_shards, daemon=True).start()
 
 # Montagem de arquivos estáticos da interface Web Glassmorphism
 static_dir = get_resource_path("static")

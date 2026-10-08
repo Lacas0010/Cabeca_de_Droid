@@ -13,7 +13,7 @@
     <!-- FontAwesome 6 Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
     <!-- CSS Estilos Customizados -->
-    <link rel="stylesheet" href="style.css?v=17.0">
+    <link rel="stylesheet" href="style.css?v=18.0">
 
     <style id="wish-inline-fx-styles">
         /* ANIMAÇÃO DO METEORO (GENSHIN IMPACT) */
@@ -2563,7 +2563,7 @@
                     <button id="btn-export-card" title="Gerar Imagem da Build em alta resolução" style="padding: 6px 12px; font-size: 11px; font-weight: 600; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3)); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
                         <i class="fa-solid fa-camera"></i> Card Imagem
                     </button>
-                    <button id="btn-close-inspector" class="close-inspector-btn">✕</button>
+                    <button id="btn-close-inspector" class="close-inspector-btn" title="Fechar Janela (Esc)">✕</button>
                 </div>
             </div>
             
@@ -2576,78 +2576,113 @@
             <div class="inspector-body">
                 <!-- PAINEL 1: DETALHES DA SUA BUILD -->
                 <div id="panel-build" class="inspector-panel active">
-                    <!-- NOVO: Otimizador IA de Build -->
-                    <div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
-                        <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                            <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-brain"></i> Otimizador de Build IA</h4>
-                            <button id="btn-ai-optimize" class="action-btn" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
-                        </div>
-                        <div id="ins-ai-loading" class="ai-opt-loading" style="display: none; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
-                            <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
-                            <span>Avaliando Roster & Metagame...</span>
-                        </div>
-                        <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding-left: 20px;"></ul>
-                    </div>
-                    
-                    <!-- NOVO: Calculadora de Ascensão -->
-                    <div class="inspector-card ascension-calc-card" style="border: 1px solid rgba(14, 165, 233, 0.25); background: rgba(14, 165, 233, 0.03); border-radius: 12px; margin-bottom: 12px; padding: 12px;">
-                        <h4 style="margin-top: 0; margin-bottom: 8px; color: #38bdf8; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-calculator"></i> Calculadora de Ascensão</h4>
-                        <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
-                            <label for="ins-asc-target" style="font-size: 11px; color: var(--text-secondary);">Nível Alvo:</label>
-                            <select id="ins-asc-target" style="font-size: 11px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 2px 4px;">
-                                <option value="80">Nível 80</option>
-                                <option value="90">Nível 90</option>
-                                <option value="70">Nível 70</option>
-                                <option value="60">Nível 60</option>
-                            </select>
-                            <button id="btn-ins-asc-calculate" class="action-btn" style="padding: 3px 8px; font-size: 11px; background: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.3); color: #38bdf8; border-radius: 6px; cursor: pointer; margin-left: auto;">Calcular</button>
-                        </div>
-                        <div id="ins-asc-results" style="display: none; font-size: 11px; color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.05); line-height: 1.5;">
-                            <!-- Inserido dinamicamente via JS -->
-                        </div>
-                    </div>
-                    
-                    <!-- Seção 1: Equipamento / Arma -->
-                    <div class="inspector-card">
-                        <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Equipamento / Arma</h4>
-                        <div class="weapon-detail">
-                            <img id="ins-weapon-icon" src="" alt="Arma" class="weapon-icon">
-                            <div>
-                                <strong id="ins-weapon-name">Nome do Equipamento</strong>
-                                <span id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
+                    <div class="inspector-grid-layout">
+                        <!-- COLUNA ESQUERDA: ARMA, STATUS DE COMBATE, SETS E UTILITÁRIOS -->
+                        <div class="inspector-col inspector-col--left">
+                            <!-- Seção 1: Equipamento / Arma -->
+                            <div class="inspector-card">
+                                <h4><i class="fa-solid fa-wand-magic-sparkles"></i> Equipamento / Arma</h4>
+                                <div class="weapon-detail">
+                                    <img id="ins-weapon-icon" src="" alt="Arma" class="weapon-icon">
+                                    <div>
+                                        <strong id="ins-weapon-name">Nome do Equipamento</strong>
+                                        <span id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Seção 2: Status Finais de Combate (Combat Stats) -->
+                            <div class="inspector-card">
+                                <h4><i class="fa-solid fa-chart-simple"></i> Status Finais de Combate <span id="ins-stats-count" style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-left: 6px;"></span></h4>
+                                <div id="ins-stats-grid" class="stats-grid">
+                                    <!-- Inserido dinamicamente -->
+                                </div>
+                            </div>
+
+                            <!-- Seção 3: Conjuntos de Relíquias -->
+                            <div class="inspector-card">
+                                <h4><i class="fa-solid fa-gem"></i> Conjuntos de Relíquias / Artefatos</h4>
+                                <div id="ins-relic-sets" class="relic-sets-list">
+                                    <!-- Inserido dinamicamente -->
+                                </div>
+                            </div>
+
+                            <!-- Otimizador IA de Build -->
+                            <div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
+                                <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                    <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-brain"></i> Otimizador de Build IA</h4>
+                                    <button id="btn-ai-optimize" class="action-btn" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
+                                </div>
+                                <div id="ins-ai-loading" class="ai-opt-loading" style="display: none; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 10px;">
+                                    <div class="typing-loader" style="margin: 0;"><span></span><span></span><span></span></div>
+                                    <span>Avaliando Roster & Metagame...</span>
+                                </div>
+                                <ul id="ins-ai-suggestions" class="ai-opt-suggestions" style="display: none; font-size: 12px; color: var(--text-secondary); line-height: 1.5; padding-left: 20px;"></ul>
+                            </div>
+                            
+                            <!-- Calculadora de Ascensão -->
+                            <div class="inspector-card ascension-calc-card" style="border: 1px solid rgba(14, 165, 233, 0.25); background: rgba(14, 165, 233, 0.03); border-radius: 12px; margin-bottom: 0; padding: 12px;">
+                                <h4 style="margin-top: 0; margin-bottom: 8px; color: #38bdf8; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-calculator"></i> Calculadora de Ascensão</h4>
+                                <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+                                    <label for="ins-asc-target" style="font-size: 11px; color: var(--text-secondary);">Nível Alvo:</label>
+                                    <select id="ins-asc-target" style="font-size: 11px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 2px 4px;">
+                                        <option value="80">Nível 80</option>
+                                        <option value="90">Nível 90</option>
+                                        <option value="70">Nível 70</option>
+                                        <option value="60">Nível 60</option>
+                                    </select>
+                                    <button id="btn-ins-asc-calculate" class="action-btn" style="padding: 3px 8px; font-size: 11px; background: rgba(14, 165, 233, 0.1); border-color: rgba(14, 165, 233, 0.3); color: #38bdf8; border-radius: 6px; cursor: pointer; margin-left: auto;">Calcular</button>
+                                </div>
+                                <div id="ins-asc-results" style="display: none; font-size: 11px; color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-top: 8px; border: 1px solid rgba(255,255,255,0.05); line-height: 1.5;">
+                                    <!-- Inserido dinamicamente via JS -->
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    
-                    <!-- Seção 2: Conjuntos de Relíquias -->
-                    <div class="inspector-card">
-                        <h4><i class="fa-solid fa-gem"></i> Conjuntos de Relíquias / Artefatos</h4>
-                        <div id="ins-relic-sets" class="relic-sets-list">
-                            <!-- Inserido dinamicamente -->
-                        </div>
-                    </div>
-                    
-                    <!-- Seção 3: Status Finais de Combate (Combat Stats) -->
-                    <div class="inspector-card">
-                        <h4><i class="fa-solid fa-chart-simple"></i> Status Finais de Combate <span id="ins-stats-count" style="font-size: 11px; color: var(--text-muted); font-weight: 400; margin-left: 6px;"></span></h4>
-                        <div id="ins-stats-grid" class="stats-grid">
-                            <!-- Inserido dinamicamente -->
-                        </div>
-                    </div>
-                    
-                    <!-- NOVO: Comparador de Metas Gerais (Benchmarks) -->
-                    <div id="ins-benchmarks-card" class="inspector-card" style="display: none; border: 1px solid rgba(245, 158, 11, 0.25); background: rgba(245, 158, 11, 0.03); border-radius: 12px; margin-bottom: 12px; padding: 12px;">
-                        <h4 style="margin-top: 0; margin-bottom: 8px; color: #f59e0b; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-gauge-high"></i> Comparador de Metas Gerais</h4>
-                        <div id="ins-benchmarks-list" style="font-size: 11px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; line-height: 1.5;">
-                            <!-- Inserido dinamicamente via JS -->
-                        </div>
-                    </div>
-                    
-                    <!-- Seção 4: Detalhamento de Peças -->
-                    <div class="inspector-card">
-                        <h4><i class="fa-solid fa-compact-disc"></i> Detalhamento de Peças e Substatus</h4>
-                        <div id="ins-relic-pieces" class="relic-pieces-list">
-                            <!-- Inserido dinamicamente -->
+
+                        <!-- COLUNA DIREITA: CONSTELAÇÕES, HABILIDADES E PEÇAS DE ARTEFATO -->
+                        <div class="inspector-col inspector-col--right">
+                            <!-- Seção: Constelações / Eidolons / Mindscapes -->
+                            <div id="ins-ranks-card" class="inspector-card ranks-card" style="border: 1px solid rgba(245, 158, 11, 0.25); background: rgba(245, 158, 11, 0.03); border-radius: 12px; margin-bottom: 0; padding: 14px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                                    <h4 id="ins-ranks-title" style="margin: 0; color: #fbbf24; display: flex; align-items: center; gap: 6px; font-size: 13px; border: none; padding: 0;">
+                                        <i class="fa-solid fa-star-of-life"></i> Constelações & Eidolons
+                                    </h4>
+                                    <span id="ins-ranks-badge" class="ins-ranks-count-badge" style="font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 10px; background: rgba(245, 158, 11, 0.2); color: #fbbf24;">C0</span>
+                                </div>
+
+                                <div id="ins-ranks-grid" class="ranks-grid">
+                                    <!-- Inserido dinamicamente via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Seção: Talentos & Habilidades / Rastros -->
+                            <div id="ins-skills-card" class="inspector-card skills-card" style="border: 1px solid rgba(168, 85, 247, 0.25); background: rgba(168, 85, 247, 0.03); border-radius: 12px; margin-bottom: 0; padding: 14px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                                    <h4 id="ins-skills-title" style="margin: 0; color: #c084fc; display: flex; align-items: center; gap: 6px; font-size: 13px; border: none; padding: 0;">
+                                        <i class="fa-solid fa-wand-magic-sparkles"></i> Talentos & Habilidades
+                                    </h4>
+                                    <span id="ins-skills-count" style="font-size: 11px; color: var(--text-muted); font-weight: 500;"></span>
+                                </div>
+                                <div id="ins-skills-grid" class="skills-grid">
+                                    <!-- Inserido dinamicamente via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Comparador de Metas Gerais (Benchmarks) -->
+                            <div id="ins-benchmarks-card" class="inspector-card" style="display: none; border: 1px solid rgba(245, 158, 11, 0.25); background: rgba(245, 158, 11, 0.03); border-radius: 12px; margin-bottom: 0; padding: 12px;">
+                                <h4 style="margin-top: 0; margin-bottom: 8px; color: #f59e0b; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-gauge-high"></i> Comparador de Metas Gerais</h4>
+                                <div id="ins-benchmarks-list" style="font-size: 11px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; line-height: 1.5;">
+                                    <!-- Inserido dinamicamente via JS -->
+                                </div>
+                            </div>
+                            
+                            <!-- Seção 4: Detalhamento de Peças -->
+                            <div class="inspector-card">
+                                <h4><i class="fa-solid fa-compact-disc"></i> Detalhamento de Peças e Substatus</h4>
+                                <div id="ins-relic-pieces" class="relic-pieces-list">
+                                    <!-- Inserido dinamicamente -->
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -3140,7 +3175,7 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js?v=17.0"></script>
+    <script src="app.js?v=18.0"></script>
 </body>
 </html>
 

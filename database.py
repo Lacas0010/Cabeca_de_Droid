@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import json
+import re
 from datetime import datetime
 from typing import Dict, List, Optional, Any
 from extractor import clean_relic_name
@@ -181,6 +182,11 @@ def init_db() -> None:
             
         try:
             cursor.execute("ALTER TABLE characters ADD COLUMN stats_json TEXT")
+        except sqlite3.OperationalError:
+            pass
+            
+        try:
+            cursor.execute("ALTER TABLE characters ADD COLUMN ranks_json TEXT")
         except sqlite3.OperationalError:
             pass
         
@@ -815,7 +821,7 @@ def save_character(
     element: str, icon: str, weapon_name: str, weapon_level: int, 
     weapon_rank: int, weapon_icon: str, raw_md: str, char_id: Optional[str] = None, 
     gacha_art: Optional[str] = None, skills_json: Optional[str] = None,
-    stats_json: Optional[str] = None
+    stats_json: Optional[str] = None, ranks_json: Optional[str] = None
 ) -> None:
     """Salva ou atualiza as informações de um personagem no SQLite."""
     with get_connection() as conn:
@@ -823,10 +829,10 @@ def save_character(
         cursor.execute("""
         INSERT OR REPLACE INTO characters (
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
-            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json, ranks_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
-              weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json))
+              weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json, ranks_json))
 
 def clear_character_relics(uid: str, character_name: str) -> None:
     """Remove todas as relíquias/artefatos cadastrados de um personagem para atualização."""
@@ -888,6 +894,27 @@ def get_roster_data(game_id: str) -> List[Dict[str, Any]]:
             if not stats_dict and r["raw_md"]:
                 stats_dict = parse_stats_from_raw_md(r["raw_md"])
             
+            ranks_list = []
+            if "ranks_json" in r_keys and r["ranks_json"]:
+                try:
+                    ranks_list = json.loads(r["ranks_json"])
+                except Exception:
+                    ranks_list = []
+            
+            if not ranks_list:
+                rank_str_val = r["rank_str"] if "rank_str" in r_keys and r["rank_str"] else "C0"
+                m_rank = re.search(r'\d+', str(rank_str_val))
+                char_rank_num = int(m_rank.group(0)) if m_rank else 0
+                name_prefix = "Constelação" if game_id == "genshin" else ("Cinema Mental" if game_id == "zzz" else "Eidolon")
+                for p in range(1, 7):
+                    ranks_list.append({
+                        "pos": p,
+                        "name": f"{name_prefix} {p}",
+                        "icon": "",
+                        "desc": "",
+                        "is_unlocked": p <= char_rank_num
+                    })
+
             char_dict = {
                 "id": r["char_id"] if "char_id" in r_keys and r["char_id"] else "",
                 "uid": r["uid"],
@@ -906,6 +933,9 @@ def get_roster_data(game_id: str) -> List[Dict[str, Any]]:
                 } if r["weapon_name"] else None,
                 "relics": relics_list,
                 "skills": skills_list,
+                "ranks": ranks_list,
+                "constellations": ranks_list,
+                "mindscapes": ranks_list,
                 "stats": stats_dict
             }
             roster.append(char_dict)

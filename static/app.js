@@ -84,8 +84,11 @@ const STAT_SHORT_NAMES = {
     "Taxa de Regeneração de Energia": "Regen. Energia",
 
     // Genshin Impact
-    "Proficiência Elemental": "Prof. Element.",
+    "Proficiência Elemental": "Prof. Elementar",
+    "Proficiência Elementar": "Prof. Elementar",
     "Recarga de Energia": "Recarga",
+    "Bônus de Cura Recebida": "Cura Recebida",
+    "Bônus de Cura": "Bônus Cura",
     "Bônus de Dano Anemo": "Dano Anemo",
     "Bônus de Dano Pyro": "Dano Pyro",
     "Bônus de Dano Hydro": "Dano Hydro",
@@ -366,10 +369,16 @@ function setupSidebarToggle() {
 
 function closeInspector() {
     try {
-        const drawer = document.getElementById("inspector-drawer") || document.getElementById("build-inspector");
-        if (drawer) drawer.style.display = "none";
+        const inspector = document.getElementById("build-inspector");
         const overlay = document.getElementById("inspector-overlay");
-        if (overlay) overlay.style.display = "none";
+        if (inspector) {
+            inspector.classList.remove("open");
+            inspector.style.display = "";
+        }
+        if (overlay) {
+            overlay.classList.remove("active");
+            overlay.style.display = "";
+        }
     } catch (e) {}
 }
 
@@ -1585,6 +1594,142 @@ async function loadRoster(gameId) {
 // ==========================================================================
 // COLLAPSIBLE BUILD INSPECTOR (DETALHES DA BUILD)
 // ==========================================================================
+function cleanHoyoverseText(str) {
+    if (!str) return "";
+    let clean = String(str);
+    clean = clean.replace(/\\r/g, "")
+                 .replace(/\\n/g, "\n")
+                 .replace(/<br\s*\/?>/gi, "\n");
+    clean = clean.replace(/\{M#([^}]*)\}\{F#([^}]*)\}/gi, "$1");
+    clean = clean.replace(/\{F#([^}]*)\}/gi, "$1");
+    clean = clean.replace(/\{M#([^}]*)\}/gi, "$1");
+    clean = clean.replace(/\{LINK#[^}]*\}/gi, "");
+    clean = clean.replace(/\{\/LINK\}/gi, "");
+    clean = clean.replace(/\{[A-Z0-9_#]+(?::[^}]*)?\}/gi, "");
+    clean = clean.replace(/<color=[^>]*>/gi, "");
+    clean = clean.replace(/<\/color>/gi, "");
+    clean = clean.replace(/<IconMap:[^>]+>/gi, "");
+    clean = clean.replace(/<\/?Term(?:\s+[^>]*)?>/gi, "");
+    clean = clean.replace(/<\/?[a-z0-9:_-]+(?:\s+[^>]*)?>/gi, "");
+    clean = clean.replace(/&nbsp;/gi, " ")
+                 .replace(/&quot;/gi, '"')
+                 .replace(/&amp;/gi, "&")
+                 .replace(/&lt;/gi, "<")
+                 .replace(/&gt;/gi, ">")
+                 .replace(/&#39;/gi, "'")
+                 .replace(/&apos;/gi, "'");
+    clean = clean.replace(/[ \t]+/g, " ");
+    clean = clean.replace(/\n\s*\n\s*\n+/g, "\n\n");
+    return clean.trim();
+}
+
+function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+let hoyoTooltipInitialized = false;
+function setupHoyoCustomTooltip() {
+    if (hoyoTooltipInitialized) return;
+    hoyoTooltipInitialized = true;
+
+    let tooltipEl = document.getElementById("hoyo-custom-tooltip");
+    if (!tooltipEl) {
+        tooltipEl = document.createElement("div");
+        tooltipEl.id = "hoyo-custom-tooltip";
+        tooltipEl.className = "hoyo-hover-tooltip";
+        document.body.appendChild(tooltipEl);
+    }
+
+    let activeTarget = null;
+
+    document.addEventListener("mouseover", (e) => {
+        const target = e.target.closest("[data-hoyo-tooltip]");
+        if (!target) return;
+        activeTarget = target;
+
+        if (target.title) {
+            target.dataset.originalTitle = target.title;
+            target.title = "";
+        }
+
+        const title = target.getAttribute("data-tooltip-title") || "";
+        const type = target.getAttribute("data-tooltip-type") || "";
+        const status = target.getAttribute("data-tooltip-status") || "";
+        const statusClass = target.getAttribute("data-tooltip-status-class") || "active";
+        const desc = target.getAttribute("data-tooltip-desc") || "";
+
+        tooltipEl.innerHTML = `
+            <div class="hoyo-hover-tooltip__header">
+                <div class="hoyo-hover-tooltip__title-group">
+                    ${type ? `<span class="hoyo-hover-tooltip__type">${escapeHtml(type)}</span>` : ''}
+                    <span class="hoyo-hover-tooltip__title">${escapeHtml(title)}</span>
+                </div>
+                ${status ? `<span class="hoyo-hover-tooltip__status hoyo-hover-tooltip__status--${statusClass}">${escapeHtml(status)}</span>` : ''}
+            </div>
+            ${desc ? `<div class="hoyo-hover-tooltip__body">${escapeHtml(desc)}</div>` : ''}
+        `;
+
+        tooltipEl.classList.add("visible");
+        positionTooltip(e);
+    }, true);
+
+    document.addEventListener("mousemove", (e) => {
+        if (!activeTarget) return;
+        positionTooltip(e);
+    }, true);
+
+    document.addEventListener("mouseout", (e) => {
+        const target = e.target.closest("[data-hoyo-tooltip]");
+        if (target) {
+            if (target.dataset.originalTitle) {
+                target.title = target.dataset.originalTitle;
+                delete target.dataset.originalTitle;
+            }
+            if (target === activeTarget) {
+                activeTarget = null;
+                tooltipEl.classList.remove("visible");
+            }
+        }
+    }, true);
+
+    function positionTooltip(e) {
+        const pad = 14;
+        let x = e.clientX + 16;
+        let y = e.clientY + 16;
+
+        const w = tooltipEl.offsetWidth || 340;
+        const h = tooltipEl.offsetHeight || 120;
+
+        if (x + w > window.innerWidth - pad) {
+            x = e.clientX - w - 16;
+        }
+        if (x < pad) x = pad;
+
+        if (y + h > window.innerHeight - pad) {
+            y = e.clientY - h - 16;
+        }
+        if (y < pad) y = pad;
+
+        tooltipEl.style.left = `${x}px`;
+        tooltipEl.style.top = `${y}px`;
+    }
+}
+
+// Inicializa tooltip imediatamente
+if (typeof document !== "undefined") {
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", setupHoyoCustomTooltip);
+    } else {
+        setupHoyoCustomTooltip();
+    }
+}
+
 async function inspectCharacter(gameId, char) {
     const inspector = document.getElementById("build-inspector");
     const inspectorOverlay = document.getElementById("inspector-overlay");
@@ -1738,6 +1883,231 @@ async function inspectCharacter(gameId, char) {
         const res = await fetch(`/api/build/${gameId}/${encodeURIComponent(char.name)}`);
         const build = await res.json();
         
+        // 0. Renderiza Constelações / Eidolons / Mindscapes
+        const ranksCardEl = document.getElementById("ins-ranks-card");
+        const ranksTitleEl = document.getElementById("ins-ranks-title");
+        const ranksBadgeEl = document.getElementById("ins-ranks-badge");
+        const ranksGridEl = document.getElementById("ins-ranks-grid");
+
+        let rankPrefix = "C";
+        let rankGameTitle = '<i class="fa-solid fa-star-of-life"></i> Constelações';
+        if (gameId === "hsr") {
+            rankPrefix = "E";
+            rankGameTitle = '<i class="fa-solid fa-dna"></i> Eidolons';
+        } else if (gameId === "zzz") {
+            rankPrefix = "M";
+            rankGameTitle = '<i class="fa-solid fa-film"></i> Mindscapes';
+        }
+        if (ranksTitleEl) ranksTitleEl.innerHTML = rankGameTitle;
+
+        let charRanks = build.ranks || char.ranks || char.constellations || char.mindscapes || [];
+        const rankStrVal = char.rank_str || `${rankPrefix}0`;
+        const mRank = String(rankStrVal).match(/\d+/);
+        const unlockedCount = mRank ? parseInt(mRank[0]) : 0;
+
+        if (!charRanks || charRanks.length === 0) {
+            charRanks = [];
+            const namePrefix = gameId === "genshin" ? "Constelação" : (gameId === "zzz" ? "Mindscape" : "Eidolon");
+            for (let p = 1; p <= 6; p++) {
+                charRanks.push({
+                    pos: p,
+                    name: `${namePrefix} ${p}`,
+                    icon: "",
+                    desc: "",
+                    is_unlocked: p <= unlockedCount
+                });
+            }
+        }
+        
+        // Atualiza referências locais e globais
+        char.ranks = charRanks;
+        char.constellations = charRanks;
+        char.mindscapes = charRanks;
+        if (build.id) {
+            char.id = build.id;
+            char.character_id = build.id;
+        }
+        if (build.portrait) char.portrait = build.portrait;
+        if (build.splash_art) char.splash_art = build.splash_art;
+        if (build.eidolon_art) char.eidolon_art = build.eidolon_art;
+        if (build.gacha_art) char.gacha_art = build.gacha_art;
+
+        if (window.currentInspectorChar) {
+            window.currentInspectorChar.ranks = charRanks;
+            window.currentInspectorChar.constellations = charRanks;
+            window.currentInspectorChar.mindscapes = charRanks;
+            if (build.id) {
+                window.currentInspectorChar.id = build.id;
+                window.currentInspectorChar.character_id = build.id;
+            }
+            if (build.portrait) window.currentInspectorChar.portrait = build.portrait;
+            if (build.splash_art) window.currentInspectorChar.splash_art = build.splash_art;
+            if (build.eidolon_art) window.currentInspectorChar.eidolon_art = build.eidolon_art;
+            if (build.gacha_art) window.currentInspectorChar.gacha_art = build.gacha_art;
+        }
+
+        if (ranksBadgeEl) {
+            ranksBadgeEl.textContent = `${rankPrefix}${unlockedCount} / ${rankPrefix}6`;
+        }
+
+        if (ranksGridEl) {
+            ranksGridEl.innerHTML = "";
+            charRanks.slice(0, 6).forEach((rk, idx) => {
+                const posNum = rk.pos || (idx + 1);
+                const isUnlocked = rk.is_unlocked !== undefined ? Boolean(rk.is_unlocked) : (posNum <= unlockedCount);
+                const rkName = rk.name || `${rankPrefix}${posNum}`;
+                const nodeCard = document.createElement("div");
+                nodeCard.className = `rank-node-card ${isUnlocked ? 'rank-node--active' : 'rank-node--locked'}`;
+                
+                const cleanDesc = cleanHoyoverseText(rk.desc);
+                const statusText = isUnlocked ? 'Ativo' : 'Bloqueado';
+                const rankTypeLabel = gameId === 'genshin' ? 'Constelação' : (gameId === 'zzz' ? 'Cinema Mental' : 'Eidolon');
+
+                nodeCard.setAttribute('data-hoyo-tooltip', 'true');
+                nodeCard.setAttribute('data-tooltip-title', `${rankPrefix}${posNum} • ${rkName}`);
+                nodeCard.setAttribute('data-tooltip-type', rankTypeLabel);
+                nodeCard.setAttribute('data-tooltip-status', statusText);
+                nodeCard.setAttribute('data-tooltip-status-class', isUnlocked ? 'active' : 'locked');
+                nodeCard.setAttribute('data-tooltip-desc', cleanDesc || 'Nenhum detalhe adicional informado.');
+                nodeCard.title = cleanDesc ? `${rankPrefix}${posNum} • ${rkName} (${statusText})\n\n${cleanDesc}` : `${rankPrefix}${posNum} • ${rkName} (${statusText})`;
+
+                const elemKey = (char.element || "").toLowerCase();
+                const defaultElemIcon = `/assets/elements/${gameId}_${elemKey}.png`;
+                let iconSrc = rk.icon;
+                if (!iconSrc || (gameId === 'zzz' && iconSrc.includes('/assets/elements/'))) {
+                    iconSrc = gameId === 'zzz' ? `/assets/mindscapes/zzz/m${posNum}.png` : defaultElemIcon;
+                }
+                const rankFallbackIcon = gameId === 'zzz' ? `/assets/mindscapes/zzz/m${posNum}.png` : defaultElemIcon;
+                const iconHtml = `<img src="${iconSrc}" class="rank-icon-img" alt="${rkName}" loading="eager" onerror="if(!this.dataset.retried && !this.src.includes('/assets/elements/') && !this.src.includes('/assets/mindscapes/')){this.dataset.retried='1'; const orig=this.src; setTimeout(()=>{ this.src = orig + (orig.includes('?') ? '&retry=1' : '?retry=1'); }, 400);} else { this.onerror=null; this.src='${rankFallbackIcon}'; }">`;
+
+                nodeCard.innerHTML = `
+                    <div class="rank-icon-frame">
+                        ${iconHtml}
+                    </div>
+                    <div class="rank-node-details">
+                        <span class="rank-node-pos">${rankPrefix}${posNum}</span>
+                        <span class="rank-node-name" title="${rkName}">${rkName}</span>
+                        <span class="rank-status-pill ${isUnlocked ? 'rank-status-pill--active' : 'rank-status-pill--locked'}">
+                            ${isUnlocked ? '<i class="fa-solid fa-circle-check"></i> Ativo' : '<i class="fa-solid fa-lock"></i> Bloqueado'}
+                        </span>
+                    </div>
+                `;
+                ranksGridEl.appendChild(nodeCard);
+            });
+        }
+
+        // 0.5 Renderiza Talentos & Habilidades / Traços
+        const skillsTitleEl = document.getElementById("ins-skills-title");
+        const skillsCountEl = document.getElementById("ins-skills-count");
+        const skillsGridEl = document.getElementById("ins-skills-grid");
+
+        let skillsTitleText = '<i class="fa-solid fa-wand-magic-sparkles"></i> Talentos';
+        if (gameId === "hsr") {
+            skillsTitleText = '<i class="fa-solid fa-crosshairs"></i> Traços';
+        } else if (gameId === "zzz") {
+            skillsTitleText = '<i class="fa-solid fa-bolt"></i> Habilidades';
+        }
+        if (skillsTitleEl) skillsTitleEl.innerHTML = skillsTitleText;
+
+        const charSkills = build.skills || char.skills || char.talents || char.traces || [];
+        char.skills = charSkills;
+        if (window.currentInspectorChar) {
+            window.currentInspectorChar.skills = charSkills;
+        }
+
+        if (skillsCountEl) {
+            skillsCountEl.textContent = charSkills.length > 0 ? `(${charSkills.length} habilidades)` : "";
+        }
+
+        if (skillsGridEl) {
+            skillsGridEl.innerHTML = "";
+            if (charSkills.length > 0) {
+                charSkills.forEach((sk, sIdx) => {
+                    const skCard = document.createElement("div");
+                    skCard.className = "skill-card";
+                    const skLvl = parseInt(sk.level) || 1;
+                    const skMax = parseInt(sk.max_level) || (skLvl > 10 ? 15 : 10);
+                    const isBoosted = skLvl >= 10;
+                    const progressPct = Math.min(100, Math.round((skLvl / skMax) * 100));
+                    const rawType = sk.type || "";
+
+                    let fallbackSkillType = "Habilidade";
+                    if (gameId === "hsr") fallbackSkillType = "Rastro";
+                    else if (gameId === "genshin") fallbackSkillType = "Talento";
+                    else if (gameId === "zzz") fallbackSkillType = "Habilidade";
+
+                    const skType = (rawType && rawType !== "Habilidade" && !/^\d+$/.test(rawType)) ? rawType : fallbackSkillType;
+                    const cleanSkDesc = cleanHoyoverseText(sk.desc);
+                    const skillLvlText = `Nv. ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}${isBoosted ? ' 👑' : ''}`;
+                    const descFallback = `Aprimoramento de ${skType}. Nível atual: ${skLvl} de ${skMax} (${progressPct}% do progresso máximo).`;
+                    const effectiveDesc = cleanSkDesc || descFallback;
+
+                    skCard.setAttribute('data-hoyo-tooltip', 'true');
+                    skCard.setAttribute('data-tooltip-title', sk.name);
+                    skCard.setAttribute('data-tooltip-type', skType);
+                    skCard.setAttribute('data-tooltip-status', `Nv. ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}`);
+                    skCard.setAttribute('data-tooltip-status-class', isBoosted ? 'boosted' : 'active');
+                    skCard.setAttribute('data-tooltip-desc', effectiveDesc);
+                    skCard.title = `${skType} • ${sk.name} (${skillLvlText})\n\n${effectiveDesc}`;
+
+                    let skIconSrc = sk.icon || "";
+                    if (gameId === "zzz") {
+                        const sLow = (sk.name || "").toLowerCase();
+                        const tStr = String(sk.type || "");
+                        if (!skIconSrc || skIconSrc.includes("sparkles") || skIconSrc.includes("magic") || !skIconSrc.startsWith("/")) {
+                            if (sLow.includes("básico") || sLow.includes("basico") || tStr === "1" || sIdx === 0) {
+                                skIconSrc = "/assets/skills/zzz/basic_attack.png";
+                            } else if (sLow.includes("esquiva") || tStr === "2") {
+                                skIconSrc = "/assets/skills/zzz/dodge.png";
+                            } else if (sLow.includes("suporte") || sLow.includes("assist") || tStr === "3") {
+                                skIconSrc = "/assets/skills/zzz/assist.png";
+                            } else if (sLow.includes("especial") || tStr === "4") {
+                                skIconSrc = "/assets/skills/zzz/special.png";
+                            } else if (sLow.includes("cadeia") || sLow.includes("suprema") || tStr === "5") {
+                                skIconSrc = "/assets/skills/zzz/ultimate.png";
+                            } else if (sLow.includes("passiva") || sLow.includes("núcleo") || sLow.includes("principal") || tStr === "6") {
+                                skIconSrc = "/assets/skills/zzz/core.png";
+                            } else {
+                                skIconSrc = "/assets/skills/zzz/basic_attack.png";
+                            }
+                        }
+                    }
+
+                    const iconHtml = skIconSrc
+                        ? `<img src="${skIconSrc}" class="skill-icon-img" alt="${sk.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><i class="fa-solid fa-wand-magic-sparkles" style="display:none; color: #c084fc; font-size: 16px;"></i>`
+                        : `<i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc; font-size: 16px;"></i>`;
+
+                    skCard.innerHTML = `
+                        <div class="skill-icon-frame">
+                            ${iconHtml}
+                        </div>
+                        <div class="skill-info">
+                            <div class="skill-header-row">
+                                <span class="skill-name" title="${sk.name}">${sk.name}</span>
+                                <span class="skill-type-tag">${skType}</span>
+                            </div>
+                            <div class="skill-level-row">
+                                <span class="skill-level-badge ${isBoosted ? 'skill-level--boosted' : ''}">
+                                    ${isBoosted ? '<i class="fa-solid fa-crown"></i> ' : ''}Nv. ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}
+                                </span>
+                                <div class="skill-progress-track">
+                                    <div class="skill-progress-bar" style="width: ${progressPct}%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    skillsGridEl.appendChild(skCard);
+                });
+            } else {
+                skillsGridEl.innerHTML = `
+                    <div style="text-align: center; padding: 12px; color: var(--text-muted); font-size: 11px;">
+                        <i class="fa-solid fa-sparkles" style="margin-bottom: 4px; display: block; opacity: 0.5;"></i>
+                        Detalhes de habilidades sincronizados no próximo refresh de dados.
+                    </div>
+                `;
+            }
+        }
+        
         // 1. Renderiza Arma / Equipamento
         const lblWeaponName = document.getElementById("ins-weapon-name");
         const lblWeaponMeta = document.getElementById("ins-weapon-meta");
@@ -1793,7 +2163,7 @@ async function inspectCharacter(gameId, char) {
                 const statCard = document.createElement("div");
                 statCard.className = "stat-card" + (isRec ? " stat-card--crit" : "");
                 statCard.innerHTML = `
-                    <span class="stat-label">${sanitizeStatName(key)}</span>
+                    <span class="stat-label" title="${sanitizeStatName(key)}">${sanitizeStatName(key)}</span>
                     <span class="stat-value${isRec ? ' stat-value--crit' : ''}">${build.stats[key]}</span>
                 `;
                 statsGrid.appendChild(statCard);
@@ -2017,14 +2387,30 @@ function getSlotIcon(slotName) {
 function closeInspector() {
     const inspector = document.getElementById("build-inspector");
     const inspectorOverlay = document.getElementById("inspector-overlay");
-    if (inspector) inspector.classList.remove("open");
-    if (inspectorOverlay) inspectorOverlay.classList.remove("active");
+    if (inspector) {
+        inspector.classList.remove("open");
+        inspector.style.display = "";
+    }
+    if (inspectorOverlay) {
+        inspectorOverlay.classList.remove("active");
+        inspectorOverlay.style.display = "";
+    }
 }
 
 const btnCloseInspector = document.getElementById("btn-close-inspector");
 if (btnCloseInspector) btnCloseInspector.addEventListener("click", closeInspector);
 const inspectorOverlay = document.getElementById("inspector-overlay");
 if (inspectorOverlay) inspectorOverlay.addEventListener("click", closeInspector);
+
+// Fechar modal ao pressionar a tecla Escape
+window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+        const inspector = document.getElementById("build-inspector");
+        if (inspector && inspector.classList.contains("open")) {
+            closeInspector();
+        }
+    }
+});
 
 // ==========================================================================
 // ASSISTENTE DE CHAT IA RAG (GROQ ENGINE)
@@ -3544,16 +3930,7 @@ async function generateBuildCardCanvas(char, gameId) {
             const img = new Image();
             img.crossOrigin = "anonymous";
             img.onload = () => resolve(img);
-            img.onerror = () => {
-                if (finalUrl !== url) {
-                    const fallbackImg = new Image();
-                    fallbackImg.onload = () => resolve(fallbackImg);
-                    fallbackImg.onerror = () => resolve(null);
-                    fallbackImg.src = url;
-                } else {
-                    resolve(null);
-                }
-            };
+            img.onerror = () => resolve(null);
             img.src = finalUrl;
         });
     }
@@ -3599,10 +3976,54 @@ async function generateBuildCardCanvas(char, gameId) {
     // Container base da Hero Column
     drawRoundedRect(hx, hy, hw, hh, 16, "rgba(15, 23, 42, 0.65)", "rgba(255, 255, 255, 0.12)", 1.5);
 
-    // Carregamento da Splash Art / Gacha Art
-    let splashUrl = char.gacha_art || char.splash_art || char.portrait || char.draw || char.art_url || char.gacha_card || char.gacha_slice || char.display_image || char.image || char.banner_icon;
-    if (gameId === 'hsr' && char.id && !char.gacha_art) {
-        splashUrl = `https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${char.id}.png`;
+    // Carregamento da Splash Art / Gacha Art / Eidolon Art
+    let splashUrl = char.portrait || char.splash_art || char.eidolon_art || char.gacha_art || char.draw || char.art_url || char.gacha_card || char.gacha_slice || char.display_image || char.image || char.banner_icon;
+    if (gameId === 'hsr') {
+        const rawGacha = String(char.gacha_art || char.splash_art || char.portrait || "");
+        if (rawGacha.includes("avatar_skin_image")) {
+            splashUrl = rawGacha.startsWith("/api/proxy_image") ? rawGacha : `/api/proxy_image?url=${encodeURIComponent(rawGacha)}`;
+        } else {
+            const checkStr = `${char.name || ''} ${char.id || ''} ${char.character_id || ''} ${char.icon || ''} ${char.gacha_art || ''} ${char.portrait || ''} ${char.splash_art || ''}`.toLowerCase();
+            let skinId = null;
+            const skinMatch = checkStr.match(/\b(150[1-9]|151[0-5]|1414)\b/);
+            if (skinMatch) {
+                skinId = skinMatch[1];
+            } else if (checkStr.includes("summeretto") || checkStr.includes("robin summer") || checkStr.includes("robin verão")) {
+                skinId = "1512";
+            } else if (checkStr.includes("himeko - nova") || checkStr.includes("himeko nova") || checkStr.includes(" nova")) {
+                skinId = "1510";
+            } else if (checkStr.includes("999") || checkStr.includes("loba prateada nv.")) {
+                skinId = "1506";
+            } else if (checkStr.includes("permansor")) {
+                skinId = checkStr.includes("terrae") ? "1414" : "1505";
+            } else if (checkStr.includes("veraneio")) {
+                skinId = "1513";
+            } else if (checkStr.includes("noite de inverno") || checkStr.includes("winter") || checkStr.includes("sparxie")) {
+                skinId = "1501";
+            } else if (checkStr.includes("evanescia")) {
+                skinId = "1505";
+            } else if (checkStr.includes("mortenax")) {
+                skinId = "1507";
+            } else if (checkStr.includes("tohsaka")) {
+                skinId = "1508";
+            } else if (checkStr.includes("gilgamesh")) {
+                skinId = "1509";
+            }
+
+            const effectiveId = skinId || char.id || (char.character_id ? String(char.character_id) : null);
+            if (effectiveId === "1505" || effectiveId === "1501" || checkStr.includes("evanescia") || checkStr.includes("sparxie")) {
+                const actId = (effectiveId === "1505" || checkStr.includes("evanescia")) ? "1505" : "1501";
+                splashUrl = `/api/proxy_image?url=${encodeURIComponent(`https://act-webstatic.hoyoverse.com/game_record/hkrpg/custom/avatar_skin_image/${actId}@2x.png`)}`;
+            } else if (effectiveId) {
+                const portraitUrl = `/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${effectiveId}.png`)}`;
+                const previewUrl = `/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/${effectiveId}.png`)}`;
+                splashUrl = portraitUrl || previewUrl || char.portrait || char.splash_art;
+            } else if (char.portrait || char.splash_art) {
+                splashUrl = char.portrait || char.splash_art;
+            } else if (char.eidolon_art) {
+                splashUrl = char.eidolon_art;
+            }
+        }
     } else if (gameId === 'zzz') {
         const iconStr = String(char.icon || "");
         const gArtStr = String(char.gacha_art || "");
@@ -3642,6 +4063,14 @@ async function generateBuildCardCanvas(char, gameId) {
     let isAvatarFallback = false;
     let charImg = await loadImage(splashUrl);
 
+    if (!charImg && gameId === 'hsr') {
+        const charId = effectiveId || char.id || (char.character_id ? String(char.character_id) : null);
+        if (charId) {
+            charImg = (await loadImage(`/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${charId}.png`)}`))
+                   || (await loadImage(`/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/${charId}.png`)}`));
+        }
+    }
+
     if (!charImg && gameId === 'zzz' && char.name) {
         const zzzSlug = getZzzPrydwenSlug(char.name);
         if (zzzSlug) {
@@ -3676,7 +4105,7 @@ async function generateBuildCardCanvas(char, gameId) {
     } else {
         const imgRatio = charImg.width / charImg.height;
         if ((charImg.width <= 300 && charImg.height <= 300 && imgRatio >= 0.75 && imgRatio <= 1.3) ||
-            (splashUrl && (splashUrl.includes("role_square_avatar") || splashUrl.includes("UI_AvatarIcon_")) && !splashUrl.includes("Gacha") && !splashUrl.includes("painting") && !splashUrl.includes("Costume"))) {
+            (splashUrl && (splashUrl.includes("role_square_avatar") || splashUrl.includes("UI_AvatarIcon_")) && !splashUrl.includes("Gacha") && !splashUrl.includes("painting") && !splashUrl.includes("Costume") && !splashUrl.includes("character_preview") && !splashUrl.includes("character_portrait"))) {
             isAvatarFallback = true;
         }
     }
@@ -3789,14 +4218,105 @@ async function generateBuildCardCanvas(char, gameId) {
     const elemName = formatElementDisplayName(char.element || "Físico").toUpperCase();
     ctx.fillText(`Nv. ${char.level} • ${elemName}`, hx + 18, hy + 76);
 
-    // Pill de Constelação / Eidolon em Vermelho Crimson (Red Badge)
-    const rankStr = char.rank_str || "C0";
-    drawRoundedRect(hx + 18, hy + 86, 56, 24, 6, "rgba(225, 29, 72, 0.9)", "#f43f5e", 1);
-    ctx.font = "bold 12px sans-serif";
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.fillText(rankStr, hx + 46, hy + 102);
-    ctx.textAlign = "left";
+    // 2.2 Constelações / Eidolons / Mindscapes (6 Nódulos Visuais com Ícones e Destaque Ativo/Inativo)
+    const rankPrefix = gameId === "genshin" ? "C" : (gameId === "zzz" ? "M" : "E");
+    const rankStrVal = char.rank_str || `${rankPrefix}0`;
+    const mRank = String(rankStrVal).match(/\d+/);
+    const unlockedNum = mRank ? parseInt(mRank[0]) : 0;
+
+    let cardRanks = char.ranks || char.constellations || char.mindscapes || [];
+    if (!cardRanks || cardRanks.length === 0) {
+        cardRanks = [];
+        const namePrefix = gameId === "genshin" ? "Constelação" : (gameId === "zzz" ? "Mindscape" : "Eidolon");
+        for (let p = 1; p <= 6; p++) {
+            cardRanks.push({
+                pos: p,
+                name: `${namePrefix} ${p}`,
+                icon: "",
+                desc: "",
+                is_unlocked: p <= unlockedNum
+            });
+        }
+    }
+
+    const defaultElemIcon = `/assets/elements/${gameId}_${elemKey}.png`;
+    const rankImgs = await Promise.all(cardRanks.slice(0, 6).map(async rk => {
+        const iconUrl = rk && rk.icon ? rk.icon : defaultElemIcon;
+        return (await loadImage(iconUrl)) || (await loadImage(defaultElemIcon));
+    }));
+
+    // Desenha os 6 nódulos de Constelação/Eidolon em uma barra horizontal elegante com base glassmorphism
+    const rkBoxX = hx + 12;
+    const rkBoxY = hy + 84;
+    const rkTotalW = hw - 24;
+    const rkNodeH = 34;
+    const rkNodeW = Math.floor((rkTotalW - 5 * 6) / 6); // ~56px
+
+    // Placa de fundo semi-transparente para destaque sobre a Splash Art
+    drawRoundedRect(rkBoxX - 4, rkBoxY - 4, rkTotalW + 8, rkNodeH + 8, 10, "rgba(8, 12, 22, 0.78)", "rgba(255, 255, 255, 0.10)", 1);
+
+    cardRanks.slice(0, 6).forEach((rk, idx) => {
+        const pos = rk.pos || (idx + 1);
+        const isUnlocked = rk.is_unlocked !== undefined ? Boolean(rk.is_unlocked) : (pos <= unlockedNum);
+        const nx = rkBoxX + idx * (rkNodeW + 6);
+        const ny = rkBoxY;
+        const rkImg = rankImgs[idx];
+
+        if (isUnlocked) {
+            // Nódulo Desbloqueado: Cor total, borda temática e leve destaque (Glow)
+            drawRoundedRect(nx, ny, rkNodeW, rkNodeH, 8, "rgba(245, 158, 11, 0.22)", "rgba(245, 158, 11, 0.85)", 1.5);
+            
+            if (rkImg) {
+                ctx.save();
+                ctx.drawImage(rkImg, nx + 4, ny + 4, 26, 26);
+                ctx.restore();
+            } else {
+                ctx.font = "bold 11px sans-serif";
+                ctx.fillStyle = "#fbbf24";
+                ctx.textAlign = "center";
+                ctx.fillText(`${rankPrefix}${pos}`, nx + 16, ny + 21);
+                ctx.textAlign = "left";
+            }
+
+            // Indicador / Texto Pos
+            ctx.font = "bold 10px sans-serif";
+            ctx.fillStyle = "#fbbf24";
+            ctx.textAlign = "center";
+            ctx.fillText(`${rankPrefix}${pos}`, nx + rkNodeW - 13, ny + 21);
+            ctx.textAlign = "left";
+
+            // Ponto de luz no canto superior
+            ctx.beginPath();
+            ctx.arc(nx + rkNodeW - 6, ny + 6, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = "#34d399";
+            ctx.fill();
+        } else {
+            // Nódulo Bloqueado: Desaturado (grayscale), opacidade reduzida (~35%) e sem borda ativa
+            drawRoundedRect(nx, ny, rkNodeW, rkNodeH, 8, "rgba(15, 23, 42, 0.45)", "rgba(255, 255, 255, 0.05)", 1);
+
+            if (rkImg) {
+                ctx.save();
+                ctx.globalAlpha = 0.35;
+                if (ctx.filter !== undefined) {
+                    ctx.filter = "grayscale(100%)";
+                }
+                ctx.drawImage(rkImg, nx + 4, ny + 4, 26, 26);
+                ctx.restore();
+            } else {
+                ctx.font = "bold 10px sans-serif";
+                ctx.fillStyle = "rgba(148, 163, 184, 0.45)";
+                ctx.textAlign = "center";
+                ctx.fillText(`${rankPrefix}${pos}`, nx + 16, ny + 21);
+                ctx.textAlign = "left";
+            }
+
+            ctx.font = "500 10px sans-serif";
+            ctx.fillStyle = "rgba(148, 163, 184, 0.35)";
+            ctx.textAlign = "center";
+            ctx.fillText(`${rankPrefix}${pos}`, nx + rkNodeW - 13, ny + 21);
+            ctx.textAlign = "left";
+        }
+    });
 
     // Badge de Nota Geral no canto superior direito da Hero Column
     drawRoundedRect(hx + hw - 108, hy + 16, 92, 42, 10, gc.bg, gc.border, 1.5);
@@ -3811,25 +4331,23 @@ async function generateBuildCardCanvas(char, gameId) {
     ctx.textAlign = "left";
 
     // ==========================================
-    // 2.5 PAINEL DE STATUS FINAIS (COMBAT STATS) — Hero Column
+    // 2.3 PAINEL DE STATUS FINAIS (COMBAT STATS) — Hero Column
     // ==========================================
     const charStats = char.stats || {};
     const statKeys = Object.keys(charStats);
     if (statKeys.length > 0) {
         const statsPanelX = hx + 12;
         const statsPanelW = hw - 24;
-        const statsPanelH = 110;
-        const statsPanelY = hy + hh - 122 - statsPanelH - 12;
+        const statsPanelH = 92;
+        const statsPanelY = hy + hh - 276;
 
         // Background glassmorphism do painel
-        drawRoundedRect(statsPanelX, statsPanelY, statsPanelW, statsPanelH, 12,
+        drawRoundedRect(statsPanelX, statsPanelY, statsPanelW, statsPanelH, 10,
             "rgba(10, 15, 26, 0.80)", "rgba(255, 255, 255, 0.10)", 1);
 
-        ctx.font = "bold 10px sans-serif";
+        ctx.font = "bold 9px sans-serif";
         ctx.fillStyle = "#38bdf8";
-        ctx.fillText("STATUS FINAIS DE COMBATE", statsPanelX + 14, statsPanelY + 20);
-
-
+        ctx.fillText("STATUS FINAIS DE COMBATE", statsPanelX + 12, statsPanelY + 16);
 
         // Ordena para que os status recomendados apareçam primeiro no grid do Card
         const sortedStatKeys = [...statKeys].sort((a, b) => {
@@ -3843,44 +4361,114 @@ async function generateBuildCardCanvas(char, gameId) {
         const displayStats = sortedStatKeys.slice(0, 8);
         const cols = 4;
         const rows = 2;
-        const cellW = (statsPanelW - 28) / cols;
-        const cellH = (statsPanelH - 30) / rows;
+        const cellW = (statsPanelW - 24) / cols;
+        const cellH = (statsPanelH - 24) / rows;
 
         displayStats.forEach((key, idx) => {
             const col = idx % cols;
             const row = Math.floor(idx / cols);
-            const cx = statsPanelX + 14 + col * cellW;
-            const cy = statsPanelY + 28 + row * cellH;
+            const cx = statsPanelX + 12 + col * cellW;
+            const cy = statsPanelY + 22 + row * cellH;
             const isRec = isStatRecommendedForChar(key, char);
             const val = charStats[key];
 
-            // Mini card glassmorphism com Highlight Dourado Dinâmico para atributos recomendados
             const cardBg = isRec ? "rgba(245, 158, 11, 0.12)" : "rgba(15, 23, 42, 0.55)";
             const cardBorder = isRec ? "rgba(245, 158, 11, 0.35)" : "rgba(255, 255, 255, 0.06)";
-            drawRoundedRect(cx, cy, cellW - 4, cellH - 4, 5, cardBg, cardBorder, 1);
+            drawRoundedRect(cx, cy, cellW - 4, cellH - 4, 4, cardBg, cardBorder, 1);
 
-            // Label do Atributo
-            ctx.font = "500 9px sans-serif";
+            ctx.font = "500 8px sans-serif";
             ctx.fillStyle = isRec ? "#d97706" : "#64748b";
             ctx.textAlign = "left";
             const cleanKey = sanitizeStatName(key);
-            const shortKey = cleanKey.length > 12 ? cleanKey.substring(0, 11) + "." : cleanKey;
-            ctx.fillText(shortKey.toUpperCase(), cx + 5, cy + 13);
+            const shortKey = cleanKey.length > 11 ? cleanKey.substring(0, 10) + "." : cleanKey;
+            ctx.fillText(shortKey.toUpperCase(), cx + 4, cy + 11);
 
-            // Valor do Atributo
-            ctx.font = "bold 12px sans-serif";
+            ctx.font = "bold 11px sans-serif";
             ctx.fillStyle = isRec ? "#fbbf24" : "#e2e8f0";
-            ctx.fillText(val, cx + 5, cy + 29);
+            ctx.fillText(val, cx + 4, cy + 24);
         });
     }
 
-    // Card da Arma Acoplado na Base da Hero Column
-    const wx = hx + 12, wy = hy + hh - 122, ww = hw - 24, wh = 110;
-    drawRoundedRect(wx, wy, ww, wh, 12, "rgba(10, 15, 26, 0.85)", "rgba(255, 255, 255, 0.12)", 1);
+    // ==========================================
+    // 2.4 BARRA DE HABILIDADES / TALENTOS / TRAÇOS COM ÍCONES E NÍVEIS
+    // ==========================================
+    const charSkills = char.skills || [];
+    const skillImgs = await Promise.all(charSkills.slice(0, 5).map(async sk => {
+        if (!sk || !sk.icon) return null;
+        return await loadImage(sk.icon);
+    }));
 
-    ctx.font = "bold 10px sans-serif";
-    ctx.fillStyle = "#38bdf8";
-    ctx.fillText("EQUIPAMENTO / ARMA", wx + 14, wy + 20);
+    const kx = hx + 12;
+    const ky = hy + hh - 176;
+    const kw = hw - 24;
+    const kh = 50;
+
+    drawRoundedRect(kx, ky, kw, kh, 10, "rgba(10, 15, 26, 0.85)", "rgba(168, 85, 247, 0.25)", 1);
+
+    let skillsMainTitle = "TALENTOS";
+    let skillsSubTitle = "HABILIDADES";
+    if (gameId === "hsr") {
+        skillsMainTitle = "TRAÇOS";
+        skillsSubTitle = "HABILIDADES";
+    } else if (gameId === "zzz") {
+        skillsMainTitle = "HABILIDADES";
+        skillsSubTitle = "AGENTE";
+    }
+
+    ctx.font = "bold 9px sans-serif";
+    ctx.fillStyle = "#c084fc";
+    ctx.fillText(skillsMainTitle, kx + 12, ky + 19);
+
+    ctx.font = "500 8px sans-serif";
+    ctx.fillStyle = "#94a3b8";
+    ctx.fillText(skillsSubTitle, kx + 12, ky + 33);
+
+    const maxDisplaySkills = Math.min(5, charSkills.length);
+    if (maxDisplaySkills > 0) {
+        const skStart = kx + 88;
+        const availW = kw - 96;
+        const skW = Math.floor((availW - (maxDisplaySkills - 1) * 6) / maxDisplaySkills);
+
+        charSkills.slice(0, maxDisplaySkills).forEach((sk, sIdx) => {
+            const sx = skStart + sIdx * (skW + 6);
+            const sy = ky + 6;
+            const skImg = skillImgs[sIdx];
+            const skLvl = parseInt(sk.level) || 1;
+            const isBoosted = skLvl >= 10;
+
+            const cardBorder = isBoosted ? "rgba(245, 158, 11, 0.5)" : "rgba(168, 85, 247, 0.3)";
+            const cardBg = isBoosted ? "rgba(245, 158, 11, 0.15)" : "rgba(15, 23, 42, 0.75)";
+            drawRoundedRect(sx, sy, skW, 38, 6, cardBg, cardBorder, 1);
+
+            if (skImg) {
+                ctx.drawImage(skImg, sx + (skW - 24) / 2, sy + 3, 24, 24);
+            }
+
+            // Badge de nível sobreposta na parte inferior do ícone
+            const badgeW = 32;
+            const badgeH = 13;
+            const badgeX = sx + (skW - badgeW) / 2;
+            const badgeY = sy + 23;
+            const badgeBg = isBoosted ? "rgba(245, 158, 11, 0.95)" : "rgba(168, 85, 247, 0.9)";
+            drawRoundedRect(badgeX, badgeY, badgeW, badgeH, 4, badgeBg, isBoosted ? "#fbbf24" : "#c084fc", 0.8);
+
+            ctx.font = "bold 9px sans-serif";
+            ctx.fillStyle = "#ffffff";
+            ctx.textAlign = "center";
+            ctx.fillText(`Nv.${skLvl}`, badgeX + badgeW / 2, badgeY + 10);
+            ctx.textAlign = "left";
+        });
+    } else {
+        ctx.font = "italic 10px sans-serif";
+        ctx.fillStyle = "#64748b";
+        ctx.fillText("Habilidades sincronizadas no roster", kx + 92, ky + 28);
+    }
+
+    // ==========================================
+    // 2.5 CARD DA ARMA ACOPLADO NA BASE DA HERO COLUMN
+    // ==========================================
+    const wx = hx + 12, wy = hy + hh - 120, ww = hw - 24, wh = 56;
+    drawRoundedRect(wx, wy, ww, wh, 10, "rgba(10, 15, 26, 0.85)", "rgba(255, 255, 255, 0.12)", 1);
 
     const weapon = char.weapon;
     if (weapon && weapon.name) {
@@ -3889,30 +4477,21 @@ async function generateBuildCardCanvas(char, gameId) {
         const weaponImg = (await loadImage(weapon.icon)) || (await loadImage(weaponUrl));
 
         if (weaponImg) {
-            drawRoundedRect(wx + 14, wy + 28, 68, 68, 8, "rgba(0,0,0,0.5)", "rgba(255,255,255,0.1)", 1);
-            ctx.drawImage(weaponImg, wx + 16, wy + 30, 64, 64);
+            drawRoundedRect(wx + 8, wy + 8, 40, 40, 6, "rgba(0,0,0,0.5)", "rgba(255,255,255,0.1)", 1);
+            ctx.drawImage(weaponImg, wx + 10, wy + 10, 36, 36);
         }
-        const textX = weaponImg ? wx + 92 : wx + 14;
-        ctx.font = "bold 14px sans-serif";
+        const textX = weaponImg ? wx + 54 : wx + 12;
+        ctx.font = "bold 12px sans-serif";
         ctx.fillStyle = "#ffffff";
-        ctx.fillText(weapon.name.length > 18 ? weapon.name.substring(0, 18) + "..." : weapon.name, textX, wy + 52);
+        ctx.fillText(weapon.name.length > 22 ? weapon.name.substring(0, 22) + "..." : weapon.name, textX, wy + 24);
 
-        ctx.font = "500 12px sans-serif";
+        ctx.font = "500 11px sans-serif";
         ctx.fillStyle = "#cbd5e1";
-        ctx.fillText(`Nível ${weapon.level || 90} • Refinamento R${weapon.rank || 1}`, textX, wy + 74);
+        ctx.fillText(`Nv. ${weapon.level || 90} • Refinamento R${weapon.rank || 1}`, textX, wy + 42);
     } else {
-        ctx.font = "italic 12px sans-serif";
+        ctx.font = "italic 11px sans-serif";
         ctx.fillStyle = "#64748b";
-        ctx.fillText("Nenhuma arma equipada", wx + 14, wy + 55);
-    }
-
-    const charSkills = char.skills || [];
-    if (charSkills.length > 0) {
-        const skillsSummary = charSkills.map(s => `${s.level || 1}`).join(" / ");
-        const textX = (weapon && weapon.name) ? wx + 92 : wx + 14;
-        ctx.font = "bold 11px sans-serif";
-        ctx.fillStyle = "#a855f7";
-        ctx.fillText(`Habilidades: ${skillsSummary}`, textX, wy + 94);
+        ctx.fillText("Nenhuma arma equipada", wx + 12, wy + 32);
     }
 
     // ==========================================
@@ -4355,6 +4934,23 @@ document.addEventListener("DOMContentLoaded", () => {
         btnCopyCardImg.disabled = true;
 
         try {
+            // Garante dados completos de ranks, skills e artwork caso ainda não sincronizados
+            try {
+                const bRes = await fetch(`/api/build/${window.currentInspectorGameId}/${encodeURIComponent(window.currentInspectorChar.name)}`);
+                const bData = await bRes.json();
+                if (bData) {
+                    if (bData.ranks && bData.ranks.length > 0) window.currentInspectorChar.ranks = bData.ranks;
+                    if (bData.skills && bData.skills.length > 0) window.currentInspectorChar.skills = bData.skills;
+                    if (bData.eidolon_art) window.currentInspectorChar.eidolon_art = bData.eidolon_art;
+                    if (bData.portrait) window.currentInspectorChar.portrait = bData.portrait;
+                    if (bData.splash_art) window.currentInspectorChar.splash_art = bData.splash_art;
+                    if (bData.gacha_art) window.currentInspectorChar.gacha_art = bData.gacha_art;
+                    if (bData.id) window.currentInspectorChar.id = bData.id;
+                }
+            } catch (bErr) {
+                console.warn("Auto-sync build data for export:", bErr);
+            }
+
             currentGeneratedCanvas = await generateBuildCardCanvas(window.currentInspectorChar, window.currentInspectorGameId);
             currentGeneratedBlob = await new Promise(resolve => currentGeneratedCanvas.toBlob(resolve, "image/png"));
             const dataUrl = currentGeneratedCanvas.toDataURL("image/png");
@@ -4365,7 +4961,7 @@ document.addEventListener("DOMContentLoaded", () => {
             btnCopyCardImg.disabled = false;
         } catch (err) {
             console.error("Erro ao gerar card de build:", err);
-            exportCardStatus.innerHTML = `<span style="color: var(--color-danger);">Erro ao gerar imagem da build: ${err.message}</span>`;
+            exportCardStatus.innerHTML = `<span style="color: var(--color-danger);"><i class="fa-solid fa-triangle-exclamation"></i> Erro ao gerar imagem da build: ${err.message}</span>`;
         }
     };
 

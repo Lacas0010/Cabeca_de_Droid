@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 70 Passed](https://img.shields.io/badge/tests-70%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Tests: 74 Passed](https://img.shields.io/badge/tests-74%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
 
 Suíte local inteligente com interface gráfica **Web Glassmorphism** (HTML5/CSS3/ES6+) e backend modular em Python (**FastAPI + Clean Architecture + SQLite + Playwright + Groq Cloud RAG + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
@@ -32,13 +32,11 @@ python main.py
 
 * **Acesso Local (PC):** `http://127.0.0.1:8000`
 * **Acesso no Celular/Tablet (Rede Wi-Fi):** `http://<IP_DO_SEU_PC>:8000` *(habilitável em Configurações)*
-* **Rodar Testes:** `.\.venv\Scripts\python.exe -m unittest discover` *(70 testes unitários inclusos)*
-
-
+* **Rodar Testes:** `.\.venv\Scripts\python.exe -m unittest discover` *(74 testes unitários inclusos)*
 
 ---
 
-## 🌟 20 Recursos Principais
+## 🌟 Recursos Principais
 
 | Módulo | Ícone | O que faz? |
 | :--- | :---: | :--- |
@@ -51,17 +49,20 @@ python main.py
 | **7. Galeria com Ícones Oficiais** | 🎨 | Filtros por Elemento (incluindo *Lumiflux* de ZZZ) e Raridade com avatares em cache local. |
 | **8. Proxy Anti-CORS** | 🖼️ | Endpoint `/api/proxy_image` para carregamento seguro de imagens em Canvas 2D. |
 | **9. Tracker de Endgame** | ⚔️ | Histórico de Abismo Espiral, Teatro Imaginário, MoC, Pura Ficção, Sombra e Defesa Shiyu. |
-| **10. Inspetor de Builds & RV** | 🗡️ | Avaliação matemática por Roll Value (RV), Main Stat Forgiveness e notas de **SSS** a **D**. |
-| **11. Exportação em Imagem HD** | 📷 | Renderização em **4K (2400 × 1350 px)** de Cards de Build, Tier List e Diffs de Evolução. |
-| **12. Breakpoints de Combate** | ⚖️ | Comparador de metas de combate recomendadas no metagame (verde = meta atingida). |
-| **13. Calculadora de Ascensão** | 🧮 | Cálculo exato de Mora, XP e materiais com caps reais (**Genshin 90**, **HSR 80**, **ZZZ 60**). |
-| **14. Otimizador IA Groq** | 🧠 | Consultoria instantânea com Llama 3.3 70B gerando 3 melhorias prioritárias para a build. |
-| **15. Diagnóstico de Lacunas** | 🔥 | Mapeamento de fraquezas da conta (DPS/Sustento/Elemento) e modo Roast sarcástico. |
-| **16. Índice de Sorte (Luck Score)** | 🍀 | Medidor de RNG da conta (SSS+ a F), destacando a peça **God Roll #1** e a **Cursed Roll**. |
-| **17. Gacha Monte Carlo** | 🎲 | Simulação de 10.000 tiros com Soft Pity real (74+), desconto de cópias e projeção de metas. |
-| **18. Central de Farm & OS Diária** | 🌾 | Domínios abertos hoje e Ordem de Serviço Diária com alocação inteligente de resina. |
-| **19. Trash Finder & Síntese** | 🗑️ | Varredura de relíquias sem utilidade no meta e conselheiro de criação com Resina Automodeladora. |
-| **20. Chat IA & Montador de Times**| 💬 | Chat RAG conversacional e montador de times de 4 slots com análise SSE Streaming. |
+| **10. Inspetor de Builds Centralizado** | 🗡️ | Janela modal centralizada em 2 colunas, avaliação por Roll Value (RV), Main Stat Forgiveness e notas de **SSS** a **D**. |
+| **11. Eidolons & Shards (HSR)** | 💎 | Fragmentos de arte in-game nos nós de Eidolon e suporte a splash arts de skins (Sparkle, Robin). |
+| **12. Mindscapes & Habilidades (ZZZ)** | ⚡ | Ícones de Cinema Mental 01-06 em neon e categorias oficiais de combate (Básico, Especial, Esquiva, etc.). |
+| **13. Tooltips & Descrições Ricas** | ✨ | Hover action com descrições detalhadas e completas de Talentos, Rastros e Habilidades sem tags HTML. |
+| **14. Exportação em Imagem HD** | 📷 | Renderização em **4K (2400 × 1350 px)** de Cards de Build, Tier List e Diffs de Evolução. |
+| **15. Breakpoints de Combate** | ⚖️ | Comparador de metas de combate recomendadas no metagame (verde = meta atingida). |
+| **16. Calculadora de Ascensão** | 🧮 | Cálculo exato de Mora, XP e materiais com caps reais (**Genshin 90**, **HSR 80**, **ZZZ 60**). |
+| **17. Otimizador IA Groq** | 🧠 | Consultoria instantânea com Llama 3.3 70B gerando 3 melhorias prioritárias para a build. |
+| **18. Diagnóstico de Lacunas** | 🔥 | Mapeamento de fraquezas da conta (DPS/Sustento/Elemento) e modo Roast sarcástico. |
+| **19. Índice de Sorte (Luck Score)** | 🍀 | Medidor de RNG da conta (SSS+ a F), destacando a peça **God Roll #1** e a **Cursed Roll**. |
+| **20. Gacha Monte Carlo** | 🎲 | Simulação de 10.000 tiros com Soft Pity real (74+), desconto de cópias e projeção de metas. |
+| **21. Central de Farm & OS Diária** | 🌾 | Domínios abertos hoje e Ordem de Serviço Diária com alocação inteligente de resina. |
+| **22. Trash Finder & Síntese** | 🗑️ | Varredura de relíquias sem utilidade no meta e conselheiro de criação com Resina Automodeladora. |
+| **23. Chat IA & Montador de Times**| 💬 | Chat RAG conversacional e montador de times de 4 slots com análise SSE Streaming. |
 
 ---
 
@@ -146,6 +147,9 @@ $$
 | `GET` | `/api/security/status` | Status do cofre DPAPI, autenticação por PIN e isolamento LAN |
 | `POST` | `/api/security/pin/verify` | Validação de PIN e emissão de sessão segura |
 | `GET` | `/api/roster/{game_id}` | Roster completo com builds, notas RV e relíquias |
+| `GET` | `/api/build/{game_id}/{char_name}` | Dados completos da build (armas, relíquias, status, habilidades e ranks) |
+| `GET` | `/api/compare/{game_id}/{char_name}` | Comparador da build do jogador com a meta recomendada |
+| `GET` | `/api/optimize/{game_id}/{char_name}` | Sugestões inteligentes de otimização de build geradas via IA |
 | `POST` | `/api/sync/{game_id}` | Inicia sincronização assíncrona de Roster e Metagame |
 | `GET` | `/api/notes` | Monitor de energia/resina/bateria em tempo real |
 | `POST` | `/api/checkin/run` | Executa o check-in diário na HoYoLAB |

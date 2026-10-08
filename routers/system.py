@@ -1,7 +1,9 @@
 import os
 import io
+import time
 import shutil
 import zipfile
+import hashlib
 import asyncio
 import traceback
 from typing import Optional
@@ -12,6 +14,36 @@ import database
 from core.config import get_resource_path
 
 router = APIRouter(tags=["System & Utilities"])
+
+_IMAGE_CACHE_DIR = get_resource_path(os.path.join("assets", "cache", "images"))
+_PROXY_SESSION = None
+
+def _get_proxy_session():
+    global _PROXY_SESSION
+    if _PROXY_SESSION is None:
+        try:
+            from curl_cffi import requests
+            _PROXY_SESSION = requests.Session(impersonate="chrome")
+        except Exception:
+            _PROXY_SESSION = None
+    return _PROXY_SESSION
+
+def _detect_image_mime(data: bytes, default: str = "image/png") -> str:
+    if not data or len(data) < 4:
+        return default
+    if data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return "image/png"
+    if data.startswith(b"\xff\xd8\xff"):
+        return "image/jpeg"
+    if data.startswith(b"GIF87a") or data.startswith(b"GIF89a"):
+        return "image/gif"
+    if data.startswith(b"RIFF") and len(data) >= 12 and data[8:12] == b"WEBP":
+        return "image/webp"
+    if b"ftypavif" in data[:24]:
+        return "image/avif"
+    if data.lstrip().startswith(b"<svg") or (data.lstrip().startswith(b"<?xml") and b"<svg" in data[:250]):
+        return "image/svg+xml"
+    return default
 
 @router.get("/api/proxy_image")
 async def proxy_image(url: str):
@@ -26,30 +58,79 @@ async def proxy_image(url: str):
     except Exception:
         pass
 
+    # 1. Verifica cache local em disco
+    os.makedirs(_IMAGE_CACHE_DIR, exist_ok=True)
+    cache_key = hashlib.sha256(url.encode("utf-8")).hexdigest()
+    cache_path = os.path.join(_IMAGE_CACHE_DIR, f"{cache_key}.bin")
+    
+    if os.path.exists(cache_path) and os.path.getsize(cache_path) > 100:
+        try:
+            with open(cache_path, "rb") as cf:
+                content = cf.read()
+            media_type = _detect_image_mime(content)
+            return Response(
+                content=content,
+                media_type=media_type,
+                headers={
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, OPTIONS",
+                    "Cache-Control": "public, max-age=604800",
+                    "X-Cache-Status": "HIT"
+                }
+            )
+        except Exception:
+            pass
+
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "Referer": "https://act.hoyoverse.com/"
+        "Referer": "https://honkai-star-rail.fandom.com/" if ("wikia" in url or "fandom" in url) else "https://act.hoyoverse.com/"
     }
     
     try:
         from curl_cffi import requests
-        def fetch():
-            return requests.get(url, headers=headers, impersonate="chrome", timeout=30)
+        session = _get_proxy_session() or requests
+
+        def fetch_with_retry():
+            last_resp = None
+            for attempt in range(3):
+                try:
+                    resp = session.get(url, headers=headers, impersonate="chrome", timeout=20)
+                    if resp.status_code == 200 and len(resp.content) > 100:
+                        return resp
+                    last_resp = resp
+                    if resp.status_code in (403, 429, 502, 503, 504):
+                        time.sleep(0.35 * (attempt + 1))
+                except Exception:
+                    time.sleep(0.35 * (attempt + 1))
+            return last_resp
             
-        resp = await asyncio.to_thread(fetch)
+        resp = await asyncio.to_thread(fetch_with_retry)
         
-        if resp.status_code != 200:
-            raise HTTPException(status_code=resp.status_code, detail=f"Falha ao obter imagem da origem: {resp.status_code}")
+        if not resp or resp.status_code != 200:
+            status_code = resp.status_code if resp else 502
+            raise HTTPException(status_code=status_code, detail=f"Falha ao obter imagem da origem: {status_code}")
             
-        content_type = resp.headers.get("content-type", "image/png")
+        content_bytes = resp.content
+        content_type = _detect_image_mime(content_bytes, resp.headers.get("content-type", "image/png"))
+
+        # Salva em cache local de forma atômica
+        try:
+            tmp_path = f"{cache_path}.tmp"
+            with open(tmp_path, "wb") as f:
+                f.write(content_bytes)
+            os.replace(tmp_path, cache_path)
+        except Exception:
+            pass
+
         return Response(
-            content=resp.content,
+            content=content_bytes,
             media_type=content_type,
             headers={
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, OPTIONS",
-                "Cache-Control": "public, max-age=86400"
+                "Cache-Control": "public, max-age=604800",
+                "X-Cache-Status": "MISS"
             }
         )
     except HTTPException as he:

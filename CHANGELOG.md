@@ -6,6 +6,31 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.1.0] - 2026-10-08
+
+- **Janela Modal Centralizada de Build & Dashboard 2 Colunas:**
+  - Substituição da antiga aba lateral por uma janela modal flutuante centralizada na tela (`top: 50%; left: 50%`) com backdrop escuro e desfoque suave (`backdrop-filter: blur(14px)`).
+  - Reorganização do layout interno em um dashboard de 2 colunas:
+    - **Coluna Esquerda:** Equipamento/Arma, Status Finais de Combate com destaque CRIT/Velocidade, Conjuntos de Artefatos, Otimizador IA e Calculadora de Ascensão.
+    - **Coluna Direita:** Constelações/Eidolons em grid 3×2 limpo, Talentos & Habilidades em 2 colunas com barras de progresso, e detalhamento completo de peças/substatus.
+  - Fechamento intuitivo via botão `✕`, clique no overlay de fundo ou tecla `Escape` (`Esc`).
+  - Totalmente responsivo para smartphones e tablets, convertendo suavemente para coluna única com scroll.
+- **Eidolons com Shards Visuais (HSR):**
+  - Nós de Eidolon no inspetor agora exibem os fragmentos visuais com a arte do rosto do personagem in-game em vez de ícones genéricos.
+  - Suporte inteligente a splash arts alternativas para personagens com skins (ex: Sparkle, Robin).
+- **Ícones Oficiais de ZZZ:**
+  - Ícones oficiais padronizados para todas as 6 categorias de combate: Ataque Básico, Esquiva, Assistência/Suporte, Especial/EX, Suprema/Cadeia e Passiva Central.
+  - Ícones customizados de nós de Cinema Mental (01 a 06) no estilo industrial neon cyberpunk (`assets/mindscapes/zzz/m1.png` a `m6.png`).
+- **Tooltips Glassmorphism & Descrições Ricas:**
+  - Hover action flutuante em glassmorphism com descrições detalhadas e completas de Talentos, Rastros e Habilidades.
+  - Higienização e remoção total de tags internas (`<color>`, `{param}`, `{M#o}{F#a}`, etc.).
+- **Bases Estáticas Offline & Fallbacks Resilientes:**
+  - Datamines locais em português em `static_data/` para Genshin, HSR e ZZZ com enriquecimento automático caso a API não retorne o texto explicativo.
+- **Testes Unitários:**
+  - Suíte expandida para 74 testes unitários automatizados passando 100%.
+
+---
+
 ## [5.0.0] - 2026-09-30
 
 ### 🚀 Destaques da Versão (Clean Architecture & Modularização Total)
