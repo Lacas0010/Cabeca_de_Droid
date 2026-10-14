@@ -789,102 +789,101 @@ class HSRExtractor(BaseExtractor):
             
             lines.append(f"| {char.name} | {char.level} | {stars} | {eidolon} | {path} | {element} |")
             
-        # Seção de Builds para Personagens Nível 70 ou mais
+        # Seção de Builds para Personagens
         lines.append("")
-        lines.append("## Detalhes de Builds (Personagens Nv. 70 ou mais)")
+        lines.append("## Detalhes de Builds")
         lines.append("")
         
         for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
-            if char.level >= 70:
-                # 1. Cone de Luz
-                if char.equip:
-                    equip_text = f"{char.equip.name} (Sobreposição {char.equip.rank})"
-                else:
-                    equip_text = "Nenhum cone de luz equipado"
-                
-                # 2. Relíquias e Ornamentos
-                relics_list = []
-                try:
-                    detail = await self.client.get_starrail_character_details(char.id)
-                    if hasattr(detail, "relics") and detail.relics:
-                        relics_list.extend(detail.relics)
-                    if hasattr(detail, "ornaments") and detail.ornaments:
-                        relics_list.extend(detail.ornaments)
-                except Exception:
-                    if hasattr(char, "relics") and char.relics:
-                        relics_list.extend(char.relics)
-                    if hasattr(char, "ornaments") and char.ornaments:
-                        relics_list.extend(char.ornaments)
-                
-                set_counts = {}
-                for r in relics_list:
-                    # Tenta extrair o nome do conjunto amigável via mapeamento do HoYoWiki
-                    set_name = clean_relic_name(r.name)  # Fallback
-                    if hasattr(r, "wiki") and r.wiki:
-                        match = re.search(r'/entry/(\d+)', r.wiki)
-                        if match:
-                            w_id = match.group(1)
-                            set_name = clean_relic_name(wiki_map.get(w_id, f"Conjunto {w_id}"))
-                    set_counts[set_name] = set_counts.get(set_name, 0) + 1
-                
-                set_strings = []
-                for s_name, count in sorted(set_counts.items(), key=lambda x: x[1], reverse=True):
-                    set_strings.append(f"{s_name} ({count} peças)")
-                relics_text = " + ".join(set_strings) if set_strings else "Nenhuma relíquia equipada"
-                
-                # 3. Status Finais
-                properties_list = []
-                if hasattr(char, "properties") and char.properties:
-                    for prop in char.properties:
-                        name = prop.info.name if (prop.info and prop.info.name) else "Atributo"
-                        val = getattr(prop, "display_value", getattr(prop, "final", ""))
-                        if name and val:
-                            properties_list.append(f"{name}: {val}")
-                properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
-                
-                # Escreve o bloco do personagem em linguagem natural para LLMs
-                eidolon = f"E{char.rank}"
-                char_skills = extract_hsr_character_skills(char)
-                skills_str_list = [f"{s['name']}: Nv. {s['level']}/{s['max_level']}" for s in char_skills]
-                skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de rastros"
+            # 1. Cone de Luz
+            if char.equip:
+                equip_text = f"{char.equip.name} (Sobreposição {char.equip.rank})"
+            else:
+                equip_text = "Nenhum cone de luz equipado"
+            
+            # 2. Relíquias e Ornamentos
+            relics_list = []
+            try:
+                detail = await self.client.get_starrail_character_details(char.id)
+                if hasattr(detail, "relics") and detail.relics:
+                    relics_list.extend(detail.relics)
+                if hasattr(detail, "ornaments") and detail.ornaments:
+                    relics_list.extend(detail.ornaments)
+            except Exception:
+                if hasattr(char, "relics") and char.relics:
+                    relics_list.extend(char.relics)
+                if hasattr(char, "ornaments") and char.ornaments:
+                    relics_list.extend(char.ornaments)
+            
+            set_counts = {}
+            for r in relics_list:
+                # Tenta extrair o nome do conjunto amigável via mapeamento do HoYoWiki
+                set_name = clean_relic_name(r.name)  # Fallback
+                if hasattr(r, "wiki") and r.wiki:
+                    match = re.search(r'/entry/(\d+)', r.wiki)
+                    if match:
+                        w_id = match.group(1)
+                        set_name = clean_relic_name(wiki_map.get(w_id, f"Conjunto {w_id}"))
+                set_counts[set_name] = set_counts.get(set_name, 0) + 1
+            
+            set_strings = []
+            for s_name, count in sorted(set_counts.items(), key=lambda x: x[1], reverse=True):
+                set_strings.append(f"{s_name} ({count} peças)")
+            relics_text = " + ".join(set_strings) if set_strings else "Nenhuma relíquia equipada"
+            
+            # 3. Status Finais
+            properties_list = []
+            if hasattr(char, "properties") and char.properties:
+                for prop in char.properties:
+                    name = prop.info.name if (prop.info and prop.info.name) else "Atributo"
+                    val = getattr(prop, "display_value", getattr(prop, "final", ""))
+                    if name and val:
+                        properties_list.append(f"{name}: {val}")
+            properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
+            
+            # Escreve o bloco do personagem em linguagem natural para LLMs
+            eidolon = f"E{char.rank}"
+            char_skills = extract_hsr_character_skills(char)
+            skills_str_list = [f"{s['name']}: Nv. {s['level']}/{s['max_level']}" for s in char_skills]
+            skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de rastros"
 
-                lines.append(f"**Personagem:** {char.name} | **Nível:** {char.level} | **Eidolon:** {eidolon}")
-                lines.append(f"- **Cone de Luz:** {equip_text}")
-                lines.append(f"- **Relíquias:** {relics_text}")
-                lines.append(f"- **Rastros / Habilidades:** {skills_text}")
-                lines.append(f"- **Status Finais:** {properties_text}")
-                
-                if relics_list:
-                    lines.append("\n  **Detalhamento de Peças (Substatus):**")
-                    for relic in relics_list:
-                        main_prop = getattr(relic, "main_property", getattr(relic, "main_stat", None))
-                        if main_prop:
-                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                            main_stat = f"{m_name} ({m_val})"
-                        else:
-                            main_stat = "Desconhecido"
-                            
-                        substats_str = "Sem substatus"
-                        sub_props = getattr(relic, "properties", getattr(relic, "sub_properties", getattr(relic, "sub_stats", getattr(relic, "sub_property_list", []))))
-                        if sub_props:
-                            subs = []
-                            for sub in sub_props:
-                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                                subs.append(f"{s_name}: {s_val}")
-                            substats_str = ", ".join(subs)
+            lines.append(f"**Personagem:** {char.name} | **Nível:** {char.level} | **Eidolon:** {eidolon}")
+            lines.append(f"- **Cone de Luz:** {equip_text}")
+            lines.append(f"- **Relíquias:** {relics_text}")
+            lines.append(f"- **Rastros / Habilidades:** {skills_text}")
+            lines.append(f"- **Status Finais:** {properties_text}")
+            
+            if relics_list:
+                lines.append("\n  **Detalhamento de Peças (Substatus):**")
+                for relic in relics_list:
+                    main_prop = getattr(relic, "main_property", getattr(relic, "main_stat", None))
+                    if main_prop:
+                        m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                        m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                        main_stat = f"{m_name} ({m_val})"
+                    else:
+                        main_stat = "Desconhecido"
                         
-                        hsr_slot_map = {1: "Cabeça", 2: "Mãos", 3: "Corpo", 4: "Pés", 5: "Esfera Plana", 6: "Corda de Ligação"}
-                        pos = getattr(relic, 'pos', '?')
-                        pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
-                        lines.append(f"  • [{pos_name}] {clean_relic_name(relic.name)}")
-                        lines.append(f"    - Principal: {main_stat}")
-                        lines.append(f"    - Substatus: {substats_str}")
-                        
-                lines.append("")
-                lines.append("---")
-                lines.append("")
+                    substats_str = "Sem substatus"
+                    sub_props = getattr(relic, "properties", getattr(relic, "sub_properties", getattr(relic, "sub_stats", getattr(relic, "sub_property_list", []))))
+                    if sub_props:
+                        subs = []
+                        for sub in sub_props:
+                            s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                            s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                            subs.append(f"{s_name}: {s_val}")
+                        substats_str = ", ".join(subs)
+                    
+                    hsr_slot_map = {1: "Cabeça", 2: "Mãos", 3: "Corpo", 4: "Pés", 5: "Esfera Plana", 6: "Corda de Ligação"}
+                    pos = getattr(relic, 'pos', '?')
+                    pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
+                    lines.append(f"  • [{pos_name}] {clean_relic_name(relic.name)}")
+                    lines.append(f"    - Principal: {main_stat}")
+                    lines.append(f"    - Substatus: {substats_str}")
+                    
+            lines.append("")
+            lines.append("---")
+            lines.append("")
 
         # Salva dados estruturados em JSON para a Galeria Visual da UI
         roster_json_path = "hsr/roster_data_hsr.json"
@@ -1241,103 +1240,102 @@ class GenshinExtractor(BaseExtractor):
             except Exception as row_err:
                 print(f"[AVISO] Erro ao formatar linha markdown de personagem Genshin: {row_err}")
             
-        # Seção de Builds para Personagens Nível 70 ou mais
+        # Seção de Builds para Personagens
         lines.append("")
-        lines.append("## Detalhes de Builds (Personagens Nv. 70 ou mais)")
+        lines.append("## Detalhes de Builds")
         lines.append("")
         
         for char in sorted(chars, key=lambda c: (safe_char_rarity(c), getattr(c, "level", 1)), reverse=True):
-            if getattr(char, "level", 0) >= 70:
-                try:
-                    c_name = safe_char_name(char)
-                    # 1. Arma
-                    if hasattr(char, "weapon") and char.weapon:
-                        refinement = getattr(char.weapon, "refinement", 1)
-                        weapon_text = f"{char.weapon.name} (Nv. {char.weapon.level}, R{refinement})"
+            try:
+                c_name = safe_char_name(char)
+                # 1. Arma
+                if hasattr(char, "weapon") and char.weapon:
+                    refinement = getattr(char.weapon, "refinement", 1)
+                    weapon_text = f"{char.weapon.name} (Nv. {char.weapon.level}, R{refinement})"
+                else:
+                    weapon_text = "Nenhuma arma equipada"
+                
+                # 2. Artefatos
+                art_sets = {}
+                for art in getattr(char, "artifacts", []):
+                    if hasattr(art, "set") and art.set:
+                        s_n = getattr(art.set, "name", "Desconhecido")
+                        art_sets[s_n] = art_sets.get(s_n, 0) + 1
+                
+                set_strings = []
+                for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
+                    set_strings.append(f"{s_name} ({count} peças)")
+                artifacts_text = " + ".join(set_strings) if set_strings else "Nenhum artefato equipado"
+                
+                # 3. Status Finais
+                properties_list = []
+                if hasattr(char, "selected_properties") and char.selected_properties:
+                    for prop in char.selected_properties:
+                        name = prop.info.name if (hasattr(prop, "info") and prop.info and prop.info.name) else "Atributo"
+                        val = getattr(prop, "final", "")
+                        if name and val:
+                            properties_list.append(f"{name}: {val}")
+                properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
+                
+                # Escreve o bloco do personagem
+                constellation = f"C{getattr(char, 'constellation', 0)}"
+                char_skills = extract_genshin_character_skills(char)
+                skills_str_list = []
+                for s in char_skills:
+                    if s.get("max_level", 10) > 1:
+                        skills_str_list.append(f"{s['name']}: Nv. {s['level']}/{s['max_level']}")
                     else:
-                        weapon_text = "Nenhuma arma equipada"
-                    
-                    # 2. Artefatos
-                    art_sets = {}
-                    for art in getattr(char, "artifacts", []):
-                        if hasattr(art, "set") and art.set:
-                            s_n = getattr(art.set, "name", "Desconhecido")
-                            art_sets[s_n] = art_sets.get(s_n, 0) + 1
-                    
-                    set_strings = []
-                    for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
-                        set_strings.append(f"{s_name} ({count} peças)")
-                    artifacts_text = " + ".join(set_strings) if set_strings else "Nenhum artefato equipado"
-                    
-                    # 3. Status Finais
-                    properties_list = []
-                    if hasattr(char, "selected_properties") and char.selected_properties:
-                        for prop in char.selected_properties:
-                            name = prop.info.name if (hasattr(prop, "info") and prop.info and prop.info.name) else "Atributo"
-                            val = getattr(prop, "final", "")
-                            if name and val:
-                                properties_list.append(f"{name}: {val}")
-                    properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
-                    
-                    # Escreve o bloco do personagem
-                    constellation = f"C{getattr(char, 'constellation', 0)}"
-                    char_skills = extract_genshin_character_skills(char)
-                    skills_str_list = []
-                    for s in char_skills:
-                        if s.get("max_level", 10) > 1:
-                            skills_str_list.append(f"{s['name']}: Nv. {s['level']}/{s['max_level']}")
-                        else:
-                            skills_str_list.append(f"{s['name']}: Desbloqueado" if s.get("level", 1) > 0 else f"{s['name']}: Bloqueado")
-                    skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de talentos"
+                        skills_str_list.append(f"{s['name']}: Desbloqueado" if s.get("level", 1) > 0 else f"{s['name']}: Bloqueado")
+                skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de talentos"
 
-                    lines.append(f"**Personagem:** {c_name} | **Nível:** {getattr(char, 'level', 1)} | **Constelação:** {constellation}")
-                    lines.append(f"- **Arma:** {weapon_text}")
-                    lines.append(f"- **Artefatos:** {artifacts_text}")
-                    lines.append(f"- **Talentos / Habilidades:** {skills_text}")
-                    lines.append(f"- **Status Finais:** {properties_text}")
-                    
-                    if hasattr(char, "artifacts") and char.artifacts:
-                        lines.append("\n  **Detalhamento de Peças (Substatus):**")
-                        for art in char.artifacts:
-                            main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
-                            if main_prop:
-                                m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                                m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                                main_stat = f"{m_name} ({m_val})"
-                            else:
-                                main_stat = "Desconhecido"
-                                
-                            substats_str = "Sem substatus"
-                            sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
-                            if sub_props:
-                                subs = []
-                                for sub in sub_props:
-                                    s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                    s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                                    subs.append(f"{s_name}: {s_val}")
-                                substats_str = ", ".join(subs)
+                lines.append(f"**Personagem:** {c_name} | **Nível:** {getattr(char, 'level', 1)} | **Constelação:** {constellation}")
+                lines.append(f"- **Arma:** {weapon_text}")
+                lines.append(f"- **Artefatos:** {artifacts_text}")
+                lines.append(f"- **Talentos / Habilidades:** {skills_text}")
+                lines.append(f"- **Status Finais:** {properties_text}")
+                
+                if hasattr(char, "artifacts") and char.artifacts:
+                    lines.append("\n  **Detalhamento de Peças (Substatus):**")
+                    for art in char.artifacts:
+                        main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
+                        if main_prop:
+                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            main_stat = f"{m_name} ({m_val})"
+                        else:
+                            main_stat = "Desconhecido"
                             
-                            genshin_slot_map = {
-                                "EQUIP_BRACER": "Flor da Vida",
-                                "EQUIP_NECKLACE": "Pluma da Morte",
-                                "EQUIP_SHOES": "Areia do Tempo",
-                                "EQUIP_RING": "Cálice de Eonothem",
-                                "EQUIP_DRESS": "Tiara de Logos"
-                            }
-                            # Genshin usa equip_type, mas tem um formato de string as vezes
-                            pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
-                            if hasattr(pos, "name"): pos = pos.name # caso seja enum
-                            pos_name = genshin_slot_map.get(str(pos), str(pos))
-                            art_name = getattr(art, "name", "Artefato")
-                            lines.append(f"  • [{pos_name}] {clean_relic_name(art_name)}")
-                            lines.append(f"    - Principal: {main_stat}")
-                            lines.append(f"    - Substatus: {substats_str}")
-                            
-                    lines.append("")
-                    lines.append("---")
-                    lines.append("")
-                except Exception as build_err:
-                    print(f"[AVISO] Erro ao formatar build do personagem Genshin ID {getattr(char, 'id', '?')}: {build_err}")
+                        substats_str = "Sem substatus"
+                        sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
+                        if sub_props:
+                            subs = []
+                            for sub in sub_props:
+                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                subs.append(f"{s_name}: {s_val}")
+                            substats_str = ", ".join(subs)
+                        
+                        genshin_slot_map = {
+                            "EQUIP_BRACER": "Flor da Vida",
+                            "EQUIP_NECKLACE": "Pluma da Morte",
+                            "EQUIP_SHOES": "Areia do Tempo",
+                            "EQUIP_RING": "Cálice de Eonothem",
+                            "EQUIP_DRESS": "Tiara de Logos"
+                        }
+                        # Genshin usa equip_type, mas tem um formato de string as vezes
+                        pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
+                        if hasattr(pos, "name"): pos = pos.name # caso seja enum
+                        pos_name = genshin_slot_map.get(str(pos), str(pos))
+                        art_name = getattr(art, "name", "Artefato")
+                        lines.append(f"  • [{pos_name}] {clean_relic_name(art_name)}")
+                        lines.append(f"    - Principal: {main_stat}")
+                        lines.append(f"    - Substatus: {substats_str}")
+                        
+                lines.append("")
+                lines.append("---")
+                lines.append("")
+            except Exception as build_err:
+                print(f"[AVISO] Erro ao formatar build do personagem Genshin ID {getattr(char, 'id', '?')}: {build_err}")
                 
         # Salva dados estruturados em JSON para a Galeria Visual da UI
         roster_json_path = "genshin/roster_data_genshin.json"
@@ -1645,85 +1643,84 @@ class ZZZExtractor(BaseExtractor):
             
             lines.append(f"| {agent.name} | Nv. {agent.level} | {agent.rarity} ({stars}) | M{agent.rank} | {w_engine} | {disc_str} |")
             
-        # Seção de Builds para Agentes Nível 50 ou mais
+        # Seção de Builds para Agentes
         lines.append("")
-        lines.append("## Detalhes de Builds (Agentes Nv. 50 ou mais)")
+        lines.append("## Detalhes de Builds")
         lines.append("")
         
         for agent in sorted(agents, key=lambda a: (a.rarity, a.level), reverse=True):
-            if agent.level >= 50:
-                # 1. W-Engine
-                if agent.w_engine:
-                    refinement = getattr(agent.w_engine, "refinement", 1)
-                    w_engine_text = f"{agent.w_engine.name} (Nv. {agent.w_engine.level}, R{refinement})"
-                else:
-                    w_engine_text = "Nenhum W-Engine equipado"
-                
-                # 2. Discos de Áudio
-                disc_sets = {}
+            # 1. W-Engine
+            if agent.w_engine:
+                refinement = getattr(agent.w_engine, "refinement", 1)
+                w_engine_text = f"{agent.w_engine.name} (Nv. {agent.w_engine.level}, R{refinement})"
+            else:
+                w_engine_text = "Nenhum W-Engine equipado"
+            
+            # 2. Discos de Áudio
+            disc_sets = {}
+            for disc in agent.discs:
+                if hasattr(disc, "set_effect") and disc.set_effect:
+                    disc_sets[disc.set_effect.name] = disc.set_effect.owned_num
+            
+            set_strings = []
+            for s_name, count in sorted(disc_sets.items(), key=lambda x: x[1], reverse=True):
+                set_strings.append(f"{s_name} ({count} peças)")
+            discs_text = " + ".join(set_strings) if set_strings else "Nenhum disco equipado"
+            
+            # 3. Status Finais
+            properties_list = []
+            if hasattr(agent, "properties") and agent.properties:
+                for prop in agent.properties:
+                    name = getattr(prop, "name", "Atributo")
+                    val = getattr(prop, "final", "")
+                    if name and val:
+                        properties_list.append(f"{name}: {val}")
+            properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
+            
+            # Escreve o bloco do agente
+            cinema = f"M{agent.rank}"
+            agent_skills = extract_zzz_agent_skills(agent)
+            skills_str_list = [f"{s['name']}: Nv. {s['level']}/{s['max_level']}" for s in agent_skills]
+            skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de habilidades"
+
+            lines.append(f"**Agente:** {agent.name} | **Nível:** {agent.level} | **Cinema:** {cinema}")
+            lines.append(f"- **W-Engine:** {w_engine_text}")
+            lines.append(f"- **Discos:** {discs_text}")
+            lines.append(f"- **Habilidades / Talentos:** {skills_text}")
+            lines.append(f"- **Status Finais:** {properties_text}")
+            
+            if hasattr(agent, "discs") and agent.discs:
+                lines.append("\n  **Detalhamento de Peças (Substatus):**")
                 for disc in agent.discs:
-                    if hasattr(disc, "set_effect") and disc.set_effect:
-                        disc_sets[disc.set_effect.name] = disc.set_effect.owned_num
-                
-                set_strings = []
-                for s_name, count in sorted(disc_sets.items(), key=lambda x: x[1], reverse=True):
-                    set_strings.append(f"{s_name} ({count} peças)")
-                discs_text = " + ".join(set_strings) if set_strings else "Nenhum disco equipado"
-                
-                # 3. Status Finais
-                properties_list = []
-                if hasattr(agent, "properties") and agent.properties:
-                    for prop in agent.properties:
-                        name = getattr(prop, "name", "Atributo")
-                        val = getattr(prop, "final", "")
-                        if name and val:
-                            properties_list.append(f"{name}: {val}")
-                properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
-                
-                # Escreve o bloco do agente
-                cinema = f"M{agent.rank}"
-                agent_skills = extract_zzz_agent_skills(agent)
-                skills_str_list = [f"{s['name']}: Nv. {s['level']}/{s['max_level']}" for s in agent_skills]
-                skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de habilidades"
-
-                lines.append(f"**Agente:** {agent.name} | **Nível:** {agent.level} | **Cinema:** {cinema}")
-                lines.append(f"- **W-Engine:** {w_engine_text}")
-                lines.append(f"- **Discos:** {discs_text}")
-                lines.append(f"- **Habilidades / Talentos:** {skills_text}")
-                lines.append(f"- **Status Finais:** {properties_text}")
-                
-                if hasattr(agent, "discs") and agent.discs:
-                    lines.append("\n  **Detalhamento de Peças (Substatus):**")
-                    for disc in agent.discs:
-                        main_props_list = getattr(disc, "main_properties", getattr(disc, "main_stat", []))
-                        if not isinstance(main_props_list, list): main_props_list = [main_props_list]
-                        main_prop = main_props_list[0] if main_props_list else None
+                    main_props_list = getattr(disc, "main_properties", getattr(disc, "main_stat", []))
+                    if not isinstance(main_props_list, list): main_props_list = [main_props_list]
+                    main_prop = main_props_list[0] if main_props_list else None
+                    
+                    if main_prop:
+                        m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
+                        m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                        main_stat = f"{m_name} ({m_val})"
+                    else:
+                        main_stat = "Desconhecido"
                         
-                        if main_prop:
-                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
-                            main_stat = f"{m_name} ({m_val})"
-                        else:
-                            main_stat = "Desconhecido"
-                            
-                        substats_str = "Sem substatus"
-                        sub_props = getattr(disc, "properties", getattr(disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))))
-                        if sub_props:
-                            subs = []
-                            for sub in sub_props:
-                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
-                                subs.append(f"{s_name}: {s_val}")
-                            substats_str = ", ".join(subs)
-                        
-                        pos = getattr(disc, 'position', getattr(disc, 'pos', '?'))
-                        lines.append(f"  • [Disco {pos}] {clean_relic_name(disc.name)}")
-                        lines.append(f"    - Principal: {main_stat}")
-                        lines.append(f"    - Substatus: {substats_str}")
+                    substats_str = "Sem substatus"
+                    sub_props = getattr(disc, "properties", getattr(disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))))
+                    if sub_props:
+                        subs = []
+                        for sub in sub_props:
+                            s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                            s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                            subs.append(f"{s_name}: {s_val}")
+                        substats_str = ", ".join(subs)
+                    
+                    pos = getattr(disc, 'position', getattr(disc, 'pos', '?'))
+                    lines.append(f"  • [Disco {pos}] {clean_relic_name(disc.name)}")
+                    lines.append(f"    - Principal: {main_stat}")
+                    lines.append(f"    - Substatus: {substats_str}")
 
-                lines.append("")
-                lines.append("---")
-                lines.append("")
+            lines.append("")
+            lines.append("---")
+            lines.append("")
                 
         # Salva dados estruturados em JSON para a Galeria Visual da UI
         roster_json_path = "zzz/roster_data_zzz.json"

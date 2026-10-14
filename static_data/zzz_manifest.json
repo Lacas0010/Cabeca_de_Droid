@@ -741,6 +741,54 @@
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
       "url": "https://www.prydwen.gg/zenless/characters/zhao"
+    },
+    "kafkahsr": {
+      "id": "kafkahsr",
+      "name": "KafkaHSR",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/kafka"
+    },
+    "phoenix3.3": {
+      "id": "phoenix3.3",
+      "name": "Phoenix3.3",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/phoenix"
+    },
+    "robinhsr": {
+      "id": "robinhsr",
+      "name": "RobinHSR",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/robin"
+    },
+    "severian3.3": {
+      "id": "severian3.3",
+      "name": "Severian3.3",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/severian"
     }
   }
 }
