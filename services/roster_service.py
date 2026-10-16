@@ -1097,7 +1097,7 @@ def get_overview() -> Dict[str, Any]:
 
     overview = {}
     for game in ["hsr", "genshin", "zzz"]:
-        fallback_info = {"active": False, "uid": "Não sincronizado", "level": "N/A", "char_count": 0, "five_stars": 0}
+        fallback_info = {"active": False, "uid": "Não sincronizado", "nickname": "Jogador", "level": "N/A", "char_count": 0, "five_stars": 0}
         
         json_path = f"{game}/roster_data_{game}.json"
         md_path = f"{game}/roster_{game}.md"
@@ -1124,6 +1124,10 @@ def get_overview() -> Dict[str, Any]:
                 if m_uid:
                     fallback_info["uid"] = m_uid.group(1)
                     
+                m_nick = re.search(r'\*\*Usu[áa]rio:\*\*\s*([^\n\(\*]+)', content)
+                if m_nick:
+                    fallback_info["nickname"] = m_nick.group(1).strip()
+                    
                 if game == "hsr":
                     m_lvl = re.search(r'Nível de Desbravamento[:\*]*\s*(\d+)', content)
                 elif game == "genshin":
@@ -1138,11 +1142,18 @@ def get_overview() -> Dict[str, Any]:
 
         db_game = db_overview.get(game, {})
         if db_game and db_game.get("active") and db_game.get("char_count", 0) > 0:
+            if not db_game.get("nickname") and fallback_info.get("nickname") and fallback_info.get("nickname") != "Jogador":
+                db_game["nickname"] = fallback_info["nickname"]
+            elif not db_game.get("nickname"):
+                db_game["nickname"] = "Jogador"
             overview[game] = db_game
         elif fallback_info["active"] and fallback_info.get("char_count", 0) > 0:
             overview[game] = fallback_info
         else:
-            overview[game] = db_game if db_game else fallback_info
+            ov = db_game if db_game else fallback_info
+            if ov.get("active") and not ov.get("nickname"):
+                ov["nickname"] = "Jogador"
+            overview[game] = ov
             
     return overview
 

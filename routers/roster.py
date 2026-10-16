@@ -30,6 +30,37 @@ async def get_overview_endpoint():
     """Gera dados resumidos consolidados dos 3 jogos mesclando SQLite e arquivos locais."""
     return get_overview()
 
+@router.get("/api/account/{game_id}")
+async def get_account_endpoint(game_id: str):
+    """Retorna os dados da conta do jogador (UID, nickname, nível) para um jogo específico."""
+    game_id = game_id.lower().strip()
+    if game_id not in ["hsr", "genshin", "zzz"]:
+        raise HTTPException(status_code=400, detail="Jogo inválido.")
+    
+    acc = database.get_game_account(game_id)
+    if acc:
+        return {
+            "game_id": game_id,
+            "uid": acc.get("uid", ""),
+            "nickname": acc.get("nickname") or "Jogador",
+            "level": str(acc.get("level", "0")),
+            "active_days": acc.get("active_days", 0),
+            "updated_at": acc.get("updated_at", "")
+        }
+    
+    # Fallback para overview se não houver registro específico no SQLite
+    ov = get_overview().get(game_id, {})
+    return {
+        "game_id": game_id,
+        "uid": ov.get("uid", "Não sincronizado"),
+        "nickname": ov.get("nickname") or "Jogador",
+        "level": str(ov.get("level", "N/A")),
+        "active_days": 0,
+        "updated_at": ""
+    }
+
+
+
 @router.get("/api/build/{game_id}/{char_name}")
 async def get_build_detail_endpoint(game_id: str, char_name: str):
     """Retorna os dados detalhados da build de um personagem, parseando o MD consolidado ou SQLite."""

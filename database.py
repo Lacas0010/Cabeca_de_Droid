@@ -1037,12 +1037,27 @@ def get_overview_data() -> Dict[str, Dict[str, Any]]:
                 overview[game_id] = {
                     "active": True,
                     "uid": r["uid"],
+                    "nickname": r["nickname"] or "Jogador",
                     "level": str(r["level"]),
                     "char_count": count_all,
                     "five_stars": count_five or 0
                 }
                 
         return overview
+
+def get_game_account(game_id: str) -> Optional[Dict[str, Any]]:
+    """Retorna a conta principal de um jogo específico com nickname, UID e nível."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT uid, game_id, nickname, level, active_days, updated_at 
+            FROM game_accounts 
+            WHERE game_id = ? 
+            ORDER BY level DESC, updated_at DESC 
+            LIMIT 1
+        """, (game_id,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
 
 def get_all_saved_accounts() -> List[Dict[str, Any]]:
     """Retorna uma lista de todas as contas salvas no banco de dados."""

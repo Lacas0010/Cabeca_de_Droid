@@ -12,8 +12,10 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <!-- FontAwesome 6 Premium Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- html2canvas para renderização de cards e infográficos em alta resolução -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <!-- CSS Estilos Customizados -->
-    <link rel="stylesheet" href="style.css?v=18.0">
+    <link rel="stylesheet" href="style.css?v=22.0">
 
     <style id="wish-inline-fx-styles">
         /* ANIMAÇÃO DO METEORO (GENSHIN IMPACT) */
@@ -721,6 +723,10 @@
                     <button class="game-subnav-btn" data-game="zzz" data-view="charts">
                         <i class="fa-solid fa-chart-pie"></i> Estatísticas
                     </button>
+                    <button class="game-subnav-btn" data-game="zzz" data-view="teamcard">
+                        <i class="fa-solid fa-users-rectangle"></i> Montar Card de Time
+                        <span class="subnav-badge" id="team-badge-count-zzz">0/3</span>
+                    </button>
                 </div>
 
                 <!-- SUBVIEW 1: Galeria de Agentes (Padrão) -->
@@ -779,6 +785,65 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- SUBVIEW 4: Montar Card de Time ZZZ (3 Slots) -->
+                <div id="view-teamcard-zzz" class="game-subview">
+                    <div class="team-builder-panel" data-game="zzz">
+                        <div class="team-builder-header">
+                            <div class="team-builder-title-row">
+                                <div class="team-builder-title">
+                                    <i class="fa-solid fa-users-viewfinder" style="color: var(--color-zzz);"></i>
+                                    <div>
+                                        <h3>Montar Card de Time (Zenless Zone Zero)</h3>
+                                        <p>Selecione até 3 agentes abaixo para compor o card oficial. Clique nos avatares para adicionar ou remover.</p>
+                                    </div>
+                                </div>
+                                <div class="team-builder-actions">
+                                    <button class="action-btn" onclick="window.clearTeam('zzz')">
+                                        <i class="fa-solid fa-trash-can"></i> Limpar Time
+                                    </button>
+                                    <button class="primary-btn export-team-btn" onclick="window.exportTeamCardPNG('zzz')">
+                                        <i class="fa-solid fa-camera"></i> Exportar PNG (Canvas 2x)
+                                    </button>
+                                    <button class="secondary-btn copy-team-btn" onclick="window.copyTeamCardClipboard('zzz')">
+                                        <i class="fa-solid fa-copy"></i> Copiar Imagem
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="team-builder-controls-bar">
+                                <div class="team-name-field">
+                                    <label for="team-name-input-zzz"><i class="fa-solid fa-pen-nib"></i> Nome da Composição:</label>
+                                    <input type="text" id="team-name-input-zzz" class="team-name-input" value="Section 6 Disorder Anomaly" placeholder="Ex: Miyabi Hyper Anomaly" oninput="window.updateTeamName('zzz', this.value)">
+                                </div>
+                                <div class="team-selection-counter">
+                                    <span class="counter-label">Agentes no Time:</span>
+                                    <span class="counter-badge" id="team-counter-zzz">0 / 3</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grade Visual de Seleção dos Agentes Obtidos -->
+                        <div class="team-roster-selector-card">
+                            <div class="selector-header">
+                                <span><i class="fa-solid fa-hand-pointer"></i> Clique nos Agentes para Montar o Time:</span>
+                                <div class="selector-filters">
+                                    <input type="text" placeholder="Filtrar por nome..." class="selector-search-input" data-game="zzz" oninput="window.filterTeamRoster('zzz', this.value)">
+                                </div>
+                            </div>
+                            <div class="team-roster-avatar-grid" id="team-roster-grid-zzz">
+                                <!-- Preenchido dinamicamente com os personagens reais -->
+                            </div>
+                        </div>
+
+                        <!-- Preview em Tempo Real do Card Exportável (1200px) -->
+                        <div class="team-card-export-wrapper">
+                            <div id="team-export-card-zzz" class="team-export-card zzz-theme" data-game="zzz">
+                                <!-- Renderizado dinamicamente via renderTeamExportCard('zzz') -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- ABA GENSHIN -->
@@ -827,6 +892,10 @@
                     </button>
                     <button class="game-subnav-btn" data-game="genshin" data-view="charts">
                         <i class="fa-solid fa-chart-pie"></i> Estatísticas
+                    </button>
+                    <button class="game-subnav-btn" data-game="genshin" data-view="teamcard">
+                        <i class="fa-solid fa-users-rectangle"></i> Montar Card de Time
+                        <span class="subnav-badge" id="team-badge-count-genshin">0/4</span>
                     </button>
                 </div>
 
@@ -887,6 +956,65 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- SUBVIEW 4: Montar Card de Time Genshin (4 Slots) -->
+                <div id="view-teamcard-genshin" class="game-subview">
+                    <div class="team-builder-panel" data-game="genshin">
+                        <div class="team-builder-header">
+                            <div class="team-builder-title-row">
+                                <div class="team-builder-title">
+                                    <i class="fa-solid fa-users-viewfinder" style="color: var(--color-genshin);"></i>
+                                    <div>
+                                        <h3>Montar Card de Time (Genshin Impact)</h3>
+                                        <p>Selecione até 4 personagens abaixo para compor o card oficial. Clique nos avatares para adicionar ou remover.</p>
+                                    </div>
+                                </div>
+                                <div class="team-builder-actions">
+                                    <button class="action-btn" onclick="window.clearTeam('genshin')">
+                                        <i class="fa-solid fa-trash-can"></i> Limpar Time
+                                    </button>
+                                    <button class="primary-btn export-team-btn" onclick="window.exportTeamCardPNG('genshin')">
+                                        <i class="fa-solid fa-camera"></i> Exportar PNG (Canvas 2x)
+                                    </button>
+                                    <button class="secondary-btn copy-team-btn" onclick="window.copyTeamCardClipboard('genshin')">
+                                        <i class="fa-solid fa-copy"></i> Copiar Imagem
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="team-builder-controls-bar">
+                                <div class="team-name-field">
+                                    <label for="team-name-input-genshin"><i class="fa-solid fa-pen-nib"></i> Nome da Composição:</label>
+                                    <input type="text" id="team-name-input-genshin" class="team-name-input" value="Hypercarry Mavuika Overvape" placeholder="Ex: Vaporize National Team" oninput="window.updateTeamName('genshin', this.value)">
+                                </div>
+                                <div class="team-selection-counter">
+                                    <span class="counter-label">Personagens no Time:</span>
+                                    <span class="counter-badge" id="team-counter-genshin">0 / 4</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grade Visual de Seleção dos Personagens Obtidos -->
+                        <div class="team-roster-selector-card">
+                            <div class="selector-header">
+                                <span><i class="fa-solid fa-hand-pointer"></i> Clique nos Personagens para Montar o Time:</span>
+                                <div class="selector-filters">
+                                    <input type="text" placeholder="Filtrar por nome..." class="selector-search-input" data-game="genshin" oninput="window.filterTeamRoster('genshin', this.value)">
+                                </div>
+                            </div>
+                            <div class="team-roster-avatar-grid" id="team-roster-grid-genshin">
+                                <!-- Preenchido dinamicamente com os personagens reais -->
+                            </div>
+                        </div>
+
+                        <!-- Preview em Tempo Real do Card Exportável (1200px) -->
+                        <div class="team-card-export-wrapper">
+                            <div id="team-export-card-genshin" class="team-export-card genshin-theme" data-game="genshin">
+                                <!-- Renderizado dinamicamente via renderTeamExportCard('genshin') -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- ABA HSR -->
@@ -935,6 +1063,10 @@
                     </button>
                     <button class="game-subnav-btn" data-game="hsr" data-view="charts">
                         <i class="fa-solid fa-chart-pie"></i> Estatísticas
+                    </button>
+                    <button class="game-subnav-btn" data-game="hsr" data-view="teamcard">
+                        <i class="fa-solid fa-users-rectangle"></i> Montar Card de Time
+                        <span class="subnav-badge" id="team-badge-count-hsr">0/4</span>
                     </button>
                 </div>
 
@@ -991,6 +1123,65 @@
                                     <svg id="chart-rarity-hsr" viewBox="0 0 200 200" width="100%" height="150"></svg>
                                     <div id="legend-rarity-hsr" class="chart-legend"></div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SUBVIEW 4: Montar Card de Time HSR (4 Slots) -->
+                <div id="view-teamcard-hsr" class="game-subview">
+                    <div class="team-builder-panel" data-game="hsr">
+                        <div class="team-builder-header">
+                            <div class="team-builder-title-row">
+                                <div class="team-builder-title">
+                                    <i class="fa-solid fa-users-viewfinder" style="color: var(--color-hsr);"></i>
+                                    <div>
+                                        <h3>Montar Card de Time (Honkai: Star Rail)</h3>
+                                        <p>Selecione até 4 personagens abaixo para compor o card oficial. Clique nos avatares para adicionar ou remover.</p>
+                                    </div>
+                                </div>
+                                <div class="team-builder-actions">
+                                    <button class="action-btn" onclick="window.clearTeam('hsr')">
+                                        <i class="fa-solid fa-trash-can"></i> Limpar Time
+                                    </button>
+                                    <button class="primary-btn export-team-btn" onclick="window.exportTeamCardPNG('hsr')">
+                                        <i class="fa-solid fa-camera"></i> Exportar PNG (Canvas 2x)
+                                    </button>
+                                    <button class="secondary-btn copy-team-btn" onclick="window.copyTeamCardClipboard('hsr')">
+                                        <i class="fa-solid fa-copy"></i> Copiar Imagem
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="team-builder-controls-bar">
+                                <div class="team-name-field">
+                                    <label for="team-name-input-hsr"><i class="fa-solid fa-pen-nib"></i> Nome da Composição:</label>
+                                    <input type="text" id="team-name-input-hsr" class="team-name-input" value="Acheron Nihility Supreme" placeholder="Ex: DoT Kafka Swan Team" oninput="window.updateTeamName('hsr', this.value)">
+                                </div>
+                                <div class="team-selection-counter">
+                                    <span class="counter-label">Personagens no Time:</span>
+                                    <span class="counter-badge" id="team-counter-hsr">0 / 4</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grade Visual de Seleção dos Personagens Obtidos -->
+                        <div class="team-roster-selector-card">
+                            <div class="selector-header">
+                                <span><i class="fa-solid fa-hand-pointer"></i> Clique nos Personagens para Montar o Time:</span>
+                                <div class="selector-filters">
+                                    <input type="text" placeholder="Filtrar por nome..." class="selector-search-input" data-game="hsr" oninput="window.filterTeamRoster('hsr', this.value)">
+                                </div>
+                            </div>
+                            <div class="team-roster-avatar-grid" id="team-roster-grid-hsr">
+                                <!-- Preenchido dinamicamente com os personagens reais -->
+                            </div>
+                        </div>
+
+                        <!-- Preview em Tempo Real do Card Exportável (1200px) -->
+                        <div class="team-card-export-wrapper">
+                            <div id="team-export-card-hsr" class="team-export-card hsr-theme" data-game="hsr">
+                                <!-- Renderizado dinamicamente via renderTeamExportCard('hsr') -->
                             </div>
                         </div>
                     </div>
@@ -3175,7 +3366,7 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js?v=18.0"></script>
+    <script src="app.js?v=22.0"></script>
 </body>
 </html>
 

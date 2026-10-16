@@ -5974,4 +5974,1028 @@ h1, h2, h3, h4, h5, h6 {
     word-break: break-word;
 }
 
+/* ==========================================================================
+   SISTEMA DE MONTAR CARD DE TIME & BUILDS EXPORTÁVEL (GLASSMORPHISM)
+   ========================================================================== */
+
+.team-builder-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 4px;
+}
+
+.team-builder-header {
+    background: rgba(18, 18, 24, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    padding: 18px 22px;
+    backdrop-filter: blur(14px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.team-builder-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.team-builder-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.team-builder-title i {
+    font-size: 26px;
+}
+
+.team-builder-title h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Outfit', sans-serif;
+}
+
+.team-builder-title p {
+    margin: 3px 0 0 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.team-builder-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.team-builder-controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    flex-wrap: wrap;
+}
+
+.team-name-field {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 280px;
+}
+
+.team-name-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #cbd5e1;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.team-name-input {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 8px 14px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    flex: 1;
+    max-width: 480px;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.team-name-input:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.35);
+}
+
+.team-selection-counter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 5px 14px;
+    border-radius: 20px;
+}
+
+.counter-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.counter-badge {
+    font-family: 'Rajdhani', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #38bdf8;
+}
+
+/* --- Grade de Seleção de Personagens Obtidos --- */
+.team-roster-selector-card {
+    background: rgba(18, 18, 24, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.selector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.selector-search-input {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 5px 12px;
+    color: #fff;
+    font-size: 12px;
+    outline: none;
+    width: 220px;
+}
+
+.team-roster-avatar-grid {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 6px 2px 10px 2px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.team-roster-avatar-grid::-webkit-scrollbar {
+    height: 6px;
+}
+.team-roster-avatar-grid::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.team-picker-item {
+    width: 76px;
+    flex-shrink: 0;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.team-picker-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.team-picker-item.in-team {
+    border-color: #E9A13B !important;
+    background: rgba(233, 161, 59, 0.12) !important;
+    box-shadow: 0 0 14px rgba(233, 161, 59, 0.5) !important;
+}
+
+.team-picker-avatar-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 8px;
+    background: #0f121a;
+    overflow: hidden;
+    position: relative;
+    border: 1.5px solid #64748b;
+}
+
+.team-picker-avatar-box.rarity-5 {
+    border-color: #E9A13B;
+}
+
+.team-picker-avatar-box.rarity-4 {
+    border-color: #A256E0;
+}
+
+.team-picker-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.team-picker-elem-icon {
+    position: absolute;
+    bottom: 1px;
+    right: 1px;
+    width: 14px;
+    height: 14px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 3px;
+    padding: 1px;
+}
+
+.team-picker-pos-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, #E9A13B, #d97706);
+    color: #0b0d14;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+    border: 1.5px solid #fff;
+    z-index: 3;
+    animation: popBadge 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popBadge {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.team-picker-name {
+    font-size: 10px;
+    font-weight: 600;
+    color: #e2e8f0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    text-align: center;
+}
+
+.team-picker-rank {
+    font-family: 'Rajdhani', monospace;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+/* Destaque nos cards da Galeria Geral */
+.char-card.in-team-selected {
+    border-color: #E9A13B !important;
+    box-shadow: 0 0 16px rgba(233, 161, 59, 0.45) !important;
+}
+
+.char-card .gallery-team-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: #E9A13B;
+    color: #0b0d14;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    z-index: 4;
+}
+
+/* --- Container Exportável 1200px (Canvas HD Ready) --- */
+.team-card-export-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    padding: 10px 0 24px 0;
+    display: flex;
+    justify-content: center;
+}
+
+.team-export-card {
+    width: 1200px;
+    min-width: 1200px; /* Largura estrita para estabilidade matemática de renderização */
+    background: rgba(15, 18, 28, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.42);
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    position: relative;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+    color: #FFFFFF;
+}
+
+.team-export-card::before {
+    content: "";
+    position: absolute;
+    top: -120px;
+    left: 15%;
+    width: 500px;
+    height: 250px;
+    background: radial-gradient(circle, var(--team-glow, rgba(56, 189, 248, 0.14)) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Topbar do Card */
+.team-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    z-index: 1;
+}
+
+.team-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.game-title-badge {
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #E2E8F0;
+    white-space: nowrap;
+}
+
+.team-name-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.team-elem-pill {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid var(--elem-border, #38BDF8);
+    color: var(--elem-border, #38BDF8);
+}
+
+.team-topbar-right {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.team-player-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: #E2E8F0;
+}
+
+.team-player-uid {
+    font-family: 'Rajdhani', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+}
+
+/* Grids de Slots */
+.team-slots-grid {
+    display: grid;
+    gap: 14px;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.team-slots-grid.grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.team-slots-grid.grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+/* Sub-card do Personagem com Splash Art em Camadas */
+.team-char-subcard {
+    background: #0d111a;
+    border: 1px solid var(--char-border, rgba(255, 255, 255, 0.1));
+    border-radius: 16px;
+    padding: 12px 10px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.team-char-subcard:hover {
+    border-color: rgba(255, 255, 255, 0.24);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+.team-char-subcard::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--char-elem-color, #38BDF8) 0%, transparent 100%);
+    z-index: 3;
+}
+
+/* Splash Art no Fundo do Card Todo */
+.subcard-splash-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+}
+
+.subcard-splash-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transform: scale(1.02);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    filter: brightness(0.95);
+}
+
+.team-char-subcard:hover .subcard-splash-img {
+    transform: scale(1.06);
+    filter: brightness(1.02);
+}
+
+/* Degradê Suave: Topo Límpido para ver a Arte e Base Escura com Legibilidade Total */
+.subcard-splash-gradient {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: linear-gradient(
+        180deg,
+        rgba(10, 13, 20, 0.02) 0%,
+        rgba(10, 13, 20, 0.05) 25%,
+        rgba(10, 13, 20, 0.45) 40%,
+        rgba(10, 13, 20, 0.88) 55%,
+        rgba(8, 10, 16, 0.96) 75%,
+        rgba(6, 8, 13, 0.99) 100%
+    );
+}
+
+/* Camada de Conteúdo */
+.subcard-top-float-row,
+.subcard-splash-view-spacer,
+.subcard-hero-title-box,
+.subcard-equip-strip,
+.subcard-relic-box,
+.subcard-stats-matrix-2x4 {
+    position: relative;
+    z-index: 2;
+}
+
+.slot-remove-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #94A3B8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    z-index: 5;
+    transition: all 0.2s ease;
+}
+
+.slot-remove-btn:hover {
+    background: #ef4444;
+    color: #fff;
+    border-color: #ef4444;
+    transform: scale(1.1);
+}
+
+/* Linha Superior Flutuante (Elemento, Nível e Rank) */
+.subcard-top-float-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    padding-right: 26px; /* Evita sobreposição com slot-remove-btn */
+}
+
+.subcard-elem-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 2px 7px;
+    border-radius: 9999px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #F8FAFC;
+    letter-spacing: 0.5px;
+}
+
+.subcard-elem-pill-icon {
+    width: 13px;
+    height: 13px;
+    object-fit: contain;
+}
+
+.subcard-top-right-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.subcard-lvl-pill {
+    font-family: 'Rajdhani', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(0, 0, 0, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    padding: 1px 6px;
+    border-radius: 4px;
+    color: #E2E8F0;
+}
+
+.subcard-rank-badge {
+    font-family: 'Rajdhani', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--char-rarity-color, #E9A13B);
+    color: #0b0d14;
+    flex-shrink: 0;
+}
+
+/* Espaço em Branco na Parte Superior para Visualizar a Splash Art */
+.subcard-splash-view-spacer {
+    height: 130px;
+    pointer-events: none;
+}
+
+/* Identificação do Personagem */
+.subcard-hero-title-box {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 2px;
+}
+
+.subcard-char-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14.5px;
+    font-weight: 800;
+    color: #FFFFFF;
+    margin: 0;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.2;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+    letter-spacing: -0.2px;
+}
+
+.subcard-char-submeta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    font-size: 10.5px;
+    color: #94A3B8;
+    white-space: normal;
+    flex-wrap: wrap;
+}
+
+.subcard-char-role {
+    white-space: normal;
+    color: #CBD5E1;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.subcard-char-stars {
+    color: var(--char-rarity-color, #E9A13B);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 6px var(--char-rarity-glow, rgba(233, 161, 59, 0.35));
+}
+
+/* Slot Vazio Placeholder */
+.empty-slot-card {
+    min-height: 480px;
+    border: 2px dashed rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.015);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    cursor: pointer;
+    color: #94A3B8;
+    text-align: center;
+    padding: 20px;
+    transition: all 0.2s ease;
+}
+
+.empty-slot-card:hover {
+    border-color: rgba(56, 189, 248, 0.5);
+    background: rgba(56, 189, 248, 0.04);
+    color: #FFFFFF;
+}
+
+.empty-slot-card i {
+    font-size: 28px;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.empty-slot-card span {
+    font-family: 'Outfit', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.empty-slot-card small {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+/* Bloco de Arma / Equipamento */
+.subcard-equip-strip {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    padding: 5px 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.subcard-equip-icon-box {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: #1e2433;
+    border: 1px solid var(--equip-border, #E9A13B);
+    flex-shrink: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.subcard-equip-icon-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.subcard-equip-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.subcard-equip-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+}
+
+.subcard-equip-name {
+    font-size: 11px;
+    font-weight: 600;
+    color: #F3F4F6;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.25;
+    flex: 1;
+}
+
+.subcard-equip-refine {
+    font-family: 'Rajdhani', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: #E9A13B;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+.subcard-equip-lvl {
+    font-size: 10px;
+    color: var(--text-muted);
+}
+
+/* Bloco de Relíquias / Artefatos / Discos com Ícone do Set */
+.subcard-relic-box {
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    border-radius: 8px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.subcard-relic-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.subcard-set-icon-box {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+}
+
+.subcard-set-icon-img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+}
+
+.subcard-set-icon-secondary {
+    position: absolute;
+    right: -4px;
+    bottom: -3px;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.subcard-relic-title-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.subcard-relic-category-tag {
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #64748B;
+    line-height: 1;
+}
+
+.subcard-relic-title {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #6EE7B7;
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.3;
+    overflow: visible;
+}
+
+.subcard-set-line-item {
+    display: inline;
+}
+
+.subcard-set-sep {
+    color: #94A3B8;
+    font-weight: 700;
+    margin: 0 2px;
+}
+
+.subcard-relic-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #10B981;
+    flex-shrink: 0;
+}
+
+.subcard-mainstats-row {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.subcard-mainstat-chip {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9.5px;
+    color: #E2E8F0;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: visible;
+    letter-spacing: -0.2px;
+}
+
+.subcard-mainstat-slot {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 9px;
+}
+
+/* Grid 2x4 de Atributos Finais */
+.subcard-stats-matrix-2x4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, auto);
+    gap: 3px;
+    margin-top: 2px;
+}
+
+.subcard-stat-cell {
+    background: rgba(0, 0, 0, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 5px;
+    padding: 3px 1px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-width: 0;
+}
+
+.subcard-stat-label {
+    font-size: 8.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.05;
+    text-align: center;
+    overflow: visible;
+    max-width: 100%;
+    letter-spacing: -0.2px;
+}
+
+.subcard-stat-val {
+    font-family: 'Rajdhani', monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #FFFFFF;
+    white-space: nowrap;
+    overflow: visible;
+    letter-spacing: -0.3px;
+    margin-top: 1px;
+}
+
+.subcard-stat-val.highlight {
+    color: #38BDF8;
+}
+
+.subcard-stat-val.crit {
+    color: #FCD34D;
+}
+
+/* Rodapé do Card */
+.team-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    z-index: 1;
+}
+
+.team-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.team-synergy-pill {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    color: #38BDF8;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.team-synergy-desc {
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.team-footer-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.team-pity-badge {
+    font-family: 'Rajdhani', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: #E2E8F0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    padding: 3px 10px;
+    border-radius: 6px;
+}
+
+.team-watermark {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+
 
