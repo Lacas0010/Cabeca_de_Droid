@@ -1299,7 +1299,7 @@ function renderEndgame(gameId, data) {
                     <i class="fa-solid fa-table-columns"></i> Modo Focado
                 </button>
                 <button class="endgame-view-toggle-btn ${currentView === 'all' ? 'active' : ''}" data-view="all" data-game="${gameId}">
-                    <i class="fa-solid fa-grip"></i> Visão Geral (${data.modes.length})
+                    <i class="fa-solid fa-list-ul"></i> Visão Geral (${data.modes.length})
                 </button>
             </div>
         </div>
@@ -1311,7 +1311,7 @@ function renderEndgame(gameId, data) {
     // Botão Visão Geral
     pillsHtml += `
         <button class="endgame-mode-tab-btn ${currentView === 'all' ? 'active' : ''}" data-mode-idx="all" data-game="${gameId}">
-            <i class="fa-solid fa-grip"></i>
+            <i class="fa-solid fa-list-ul"></i>
             <span>Todos os Modos</span>
             <span class="tab-star-pill">${starsDisplay}</span>
         </button>
@@ -1339,7 +1339,7 @@ function renderEndgame(gameId, data) {
     let contentHtml = "";
 
     if (currentView === "all") {
-        // VISÃO GERAL: TODOS OS MODOS LADO A LADO EM CARDS COMPACTOS
+        // VISÃO GERAL: TODOS OS MODOS EM LISTA (UM EMBAIXO DO OUTRO)
         let overviewCardsHtml = `<div class="endgame-overview-matrix">`;
         data.modes.forEach((mode, mIdx) => {
             const icon = getEndgameModeIcon(mode.id);
@@ -1371,6 +1371,7 @@ function renderEndgame(gameId, data) {
                         <div class="endgame-overview-title">
                             <i class="fa-solid ${icon}"></i>
                             <span>${mode.name}</span>
+                            ${mode.badge ? `<span style="font-size: 10px; padding: 2px 6px; border-radius: 5px; background: rgba(255,255,255,0.08); font-weight: 700;">${mode.badge}</span>` : ""}
                             ${mode.stage ? `<span class="endgame-mode-stage-desc">${mode.stage}</span>` : ""}
                         </div>
                         <div class="endgame-metrics-group">
