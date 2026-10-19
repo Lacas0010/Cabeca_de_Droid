@@ -69,8 +69,8 @@ body::before {
     border-radius: 50%;
     filter: blur(140px);
     opacity: 0.3;
-    mix-blend-mode: screen;
-    animation: float 25s infinite alternate ease-in-out;
+    /* Perf: orbs estáticos. A animação infinita + blur(140px) + mix-blend-mode forçava o navegador
+       a recompor a tela inteira (e re-borrar todo backdrop-filter acima) a cada frame. */
 }
 .orb-1 {
     width: 600px;
@@ -6300,11 +6300,10 @@ h1, h2, h3, h4, h5, h6 {
 .team-export-card {
     width: 1200px;
     min-width: 1200px; /* Largura estrita para estabilidade matemática de renderização */
-    background: rgba(15, 18, 28, 0.78);
+    background: rgba(15, 18, 28, 0.94);
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    /* Perf: sem backdrop-filter (o html2canvas também não o renderiza; fundo opaco mantém o mesmo visual) */
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.42);
     padding: 22px;
     display: flex;
@@ -6436,8 +6435,9 @@ h1, h2, h3, h4, h5, h6 {
     min-width: 0;
     position: relative;
     overflow: hidden;
-    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+    contain: paint;
 }
 
 .team-char-subcard:hover {
@@ -6478,8 +6478,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .team-char-subcard:hover .subcard-splash-img {
-    transform: scale(1.06);
-    filter: brightness(1.02);
+    transform: scale(1.05);
 }
 
 /* Degradê Suave: Topo Límpido para ver a Arte e Base Escura com Legibilidade Total */
@@ -6549,10 +6548,8 @@ h1, h2, h3, h4, h5, h6 {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.72);
     border: 1px solid rgba(255, 255, 255, 0.16);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     padding: 2px 7px;
     border-radius: 9999px;
     font-size: 10px;
@@ -6577,10 +6574,8 @@ h1, h2, h3, h4, h5, h6 {
     font-family: 'Rajdhani', monospace;
     font-size: 11px;
     font-weight: 700;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.72);
     border: 1px solid rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
     padding: 1px 6px;
     border-radius: 4px;
     color: #E2E8F0;
@@ -6699,8 +6694,6 @@ h1, h2, h3, h4, h5, h6 {
     align-items: center;
     gap: 8px;
     min-width: 0;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
 }
 
 .subcard-equip-icon-box {
@@ -6771,8 +6764,6 @@ h1, h2, h3, h4, h5, h6 {
     flex-direction: column;
     gap: 5px;
     min-width: 0;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
 }
 
 .subcard-relic-header {

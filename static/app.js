@@ -1191,7 +1191,17 @@ function renderEndgameTeamCard(team, gameId) {
     `;
 }
 
-async function loadEndgame(gameId) {
+// Deduplica requisições simultâneas de endgame (startup + loadRoster + polling chamavam em paralelo)
+const _endgameInflight = {};
+function loadEndgame(gameId) {
+    if (_endgameInflight[gameId]) return _endgameInflight[gameId];
+    _endgameInflight[gameId] = _loadEndgameImpl(gameId).finally(() => {
+        _endgameInflight[gameId] = null;
+    });
+    return _endgameInflight[gameId];
+}
+
+async function _loadEndgameImpl(gameId) {
     const container = document.getElementById(`endgame-container-${gameId}`);
     const badgeEl = document.getElementById(`endgame-badge-${gameId}`);
     if (!container) return;
@@ -1499,9 +1509,12 @@ async function loadRoster(gameId) {
         
         // Salva no estado global e atualiza os gráficos SVG e endgame
         globalRoster[gameId] = roster || [];
-        renderRosterCharts();
+        // Renderiza só os gráficos deste jogo (antes redesenhava os 3 jogos a cada roster carregado)
+        renderGameCharts(gameId);
         loadEndgame(gameId);
-        if (window.renderTeamBuilderView) {
+        // Só monta o construtor de time se a subview estiver visível; ao abrir a aba ele é renderizado sob demanda
+        const teamView = document.getElementById(`view-teamcard-${gameId}`);
+        if (window.renderTeamBuilderView && teamView && teamView.classList.contains("active")) {
             window.renderTeamBuilderView(gameId);
         }
         
@@ -1526,6 +1539,7 @@ async function loadRoster(gameId) {
         
         const renderCards = () => {
             gallery.innerHTML = "";
+            const frag = document.createDocumentFragment();
             
             // Filtra a lista local baseado na busca de texto, elemento E raridade
             const filtered = roster.filter(char => {
@@ -1579,13 +1593,13 @@ async function loadRoster(gameId) {
                     <div class="char-avatar-container">
                         ${teamPos !== -1 ? `<div class="gallery-team-badge"><i class="fa-solid fa-users"></i> #${teamPos + 1}</div>` : ''}
                         ${char.overall_grade ? `<div class="char-grade-badge badge-${char.overall_grade.toLowerCase()}">${char.overall_grade}</div>` : ''}
-                        <img class="char-avatar" src="${avatarSrc}" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
+                        <img class="char-avatar" src="${avatarSrc}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
                         <div class="char-rank-badge">${char.rank_str || 'C0'}</div>
                     </div>
 
                     <div class="char-info">
                         <div class="char-name" title="${char.name}">
-                            <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" onerror="this.style.display='none';" alt="">
+                            <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                             ${char.name}
                         </div>
                         <div class="char-lvl">Nível ${char.level}</div>
@@ -1597,8 +1611,10 @@ async function loadRoster(gameId) {
                     inspectCharacter(gameId, char);
                 });
                 
-                gallery.appendChild(card);
+                frag.appendChild(card);
             });
+            // Um único reflow em vez de um por personagem
+            gallery.appendChild(frag);
         };
         
         // Configura ouvintes de clique nos botões de filtro de elementos
@@ -1648,9 +1664,11 @@ async function loadRoster(gameId) {
         // Evento de busca em tempo real
         searchInput.replaceWith(searchInput.cloneNode(true)); // Limpa listeners antigos
         const newSearchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
+        let searchDebounce = null;
         newSearchInput.addEventListener("input", (e) => {
             searchQuery = e.target.value.toLowerCase().trim();
-            renderCards();
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(renderCards, 150);
         });
         
         // Renderização inicial do Grid
@@ -1749,10 +1767,18 @@ function setupHoyoCustomTooltip() {
         positionTooltip(e);
     }, true);
 
+    // Throttle via requestAnimationFrame: no máximo 1 reposicionamento por frame
+    let tooltipRaf = null;
+    let lastMoveEvt = null;
     document.addEventListener("mousemove", (e) => {
         if (!activeTarget) return;
-        positionTooltip(e);
-    }, true);
+        lastMoveEvt = e;
+        if (tooltipRaf) return;
+        tooltipRaf = requestAnimationFrame(() => {
+            tooltipRaf = null;
+            if (activeTarget && lastMoveEvt) positionTooltip(lastMoveEvt);
+        });
+    }, { capture: true, passive: true });
 
     document.addEventListener("mouseout", (e) => {
         const target = e.target.closest("[data-hoyo-tooltip]");
@@ -10824,8 +10850,8 @@ window.renderTeamRosterSelector = function(gameId) {
         return `
             <div class="team-picker-item ${inTeam ? 'in-team' : ''}" data-name="${char.name}" onclick="window.toggleCharacterInTeam('${gameId}', '${char.name}')">
                 <div class="team-picker-avatar-box ${rarityClass}">
-                    <img class="team-picker-avatar-img" src="${avatarSrc}" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
-                    <img class="team-picker-elem-icon" src="${elemIconUrl}" onerror="this.style.display='none';" alt="">
+                    <img class="team-picker-avatar-img" src="${avatarSrc}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
+                    <img class="team-picker-elem-icon" src="${elemIconUrl}" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                 </div>
                 ${inTeam ? `<div class="team-picker-pos-badge">${teamIdx + 1}</div>` : ''}
                 <span class="team-picker-name" title="${char.name}">${char.name}</span>
@@ -11194,7 +11220,7 @@ function renderTeamExportCard(gameId) {
                 <div class="team-char-subcard" style="--char-border: rgba(255, 255, 255, 0.12); --char-elem-color: ${rarityColor}; --char-rarity-color: ${rarityColor}; --char-rarity-glow: ${rarityGlow};">
                     <!-- Splash Art de fundo cobrindo o card todo -->
                     <div class="subcard-splash-bg">
-                        <img class="subcard-splash-img" src="${splashSrc}" onerror="this.onerror=null; this.src='${avatarSrc}';" alt="${char.name}">
+                        <img class="subcard-splash-img" src="${splashSrc}" decoding="async" onerror="this.onerror=null; this.src='${avatarSrc}';" alt="${char.name}">
                     </div>
                     <div class="subcard-splash-gradient"></div>
 
@@ -11346,26 +11372,28 @@ function renderTeamExportCard(gameId) {
             }
         };
 
-        // Tenta buscar na rota de conta específica ou lista geral de contas
-        fetch(`/api/account/${gameId}`)
-            .then(res => {
-                if (!res.ok) throw new Error("Fallback para /api/accounts");
-                return res.json();
-            })
-            .then(data => applyAccountData(data))
-            .catch(() => {
-                fetch("/api/accounts")
+        // Busca a conta uma única vez por jogo (promise em cache) — antes cada re-render disparava novas requisições
+        window._accountFetchCache = window._accountFetchCache || {};
+        if (!window._accountFetchCache[gameId]) {
+            window._accountFetchCache[gameId] = fetch(`/api/account/${gameId}`)
+                .then(res => {
+                    if (!res.ok) throw new Error("Fallback para /api/accounts");
+                    return res.json();
+                })
+                .catch(() => fetch("/api/accounts")
                     .then(res => res.json())
-                    .then(accountsList => {
-                        if (Array.isArray(accountsList)) {
-                            const matched = accountsList
-                                .filter(a => a.game_id === gameId)
-                                .sort((a, b) => (parseInt(b.level) || 0) - (parseInt(a.level) || 0))[0];
-                            if (matched) applyAccountData(matched);
-                        }
-                    })
-                    .catch(err => console.warn("Falha ao sincronizar conta via API:", err));
-            });
+                    .then(accountsList => Array.isArray(accountsList)
+                        ? accountsList
+                            .filter(a => a.game_id === gameId)
+                            .sort((a, b) => (parseInt(b.level) || 0) - (parseInt(a.level) || 0))[0] || null
+                        : null))
+                .catch(err => {
+                    console.warn("Falha ao sincronizar conta via API:", err);
+                    window._accountFetchCache[gameId] = null; // permite nova tentativa depois
+                    return null;
+                });
+        }
+        window._accountFetchCache[gameId].then(applyAccountData);
     }
 }
 
