@@ -789,6 +789,18 @@
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
       "url": "https://www.prydwen.gg/zenless/characters/severian"
+    },
+    "phoenix": {
+      "id": "phoenix",
+      "name": "Phoenix",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/phoenix"
     }
   }
 }
