@@ -801,6 +801,30 @@
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
       "url": "https://www.prydwen.gg/zenless/characters/phoenix"
+    },
+    "phoenixnew": {
+      "id": "phoenixnew",
+      "name": "PhoenixNew",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/phoenix"
+    },
+    "roxy": {
+      "id": "roxy",
+      "name": "Roxy",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/roxy"
     }
   }
 }
