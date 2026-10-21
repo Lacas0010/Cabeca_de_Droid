@@ -110,7 +110,7 @@ derive_dynamic_benchmarks = meta_comparator.derive_dynamic_benchmarks
 
 app = FastAPI(
     title="Cabeça de Droid API",
-    version="4.0",
+    version="5.1",
     description="Assistente local completo para jogos da HoYoverse (Genshin Impact, Honkai: Star Rail e Zenless Zone Zero)"
 )
 

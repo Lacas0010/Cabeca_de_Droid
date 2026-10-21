@@ -1,4 +1,4 @@
-# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v5.0)
+# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v5.1+)
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -32,7 +32,7 @@ python main.py
 
 * **Acesso Local (PC):** `http://127.0.0.1:8000`
 * **Acesso no Celular/Tablet (Rede Wi-Fi):** `http://<IP_DO_SEU_PC>:8000` *(habilitável em Configurações)*
-* **Rodar Testes:** `.\.venv\Scripts\python.exe -m unittest discover` *(74 testes unitários inclusos)*
+* **Rodar Testes:** `python -m unittest discover tests` *(74 testes unitários inclusos)*
 
 ---
 
@@ -163,6 +163,10 @@ $$
 | `POST` | `/api/codes/redeem` | Resgate em lote de códigos promocionais ativos |
 | `POST` | `/api/team/analyze` | Análise de sinergia de equipes de 4 slots via SSE Stream |
 | `POST` | `/api/chat` | Chat conversacional RAG com Groq Llama 3.3 70B (SSE) |
+| `GET` | `/api/static-data/status` | Status geral dos manifestos de dados estáticos e catálogos offline |
+| `GET` | `/api/static-data/schedule/{game_id}` | Calendário diário de materiais de farm e domínios abertos hoje |
+| `GET` | `/api/static-data/character/{game_id}/{char_name}` | Perfil detalhado de materiais, chefes e ascensão do personagem |
+| `POST` | `/api/static-data/sync` | Sincronização sob demanda dos manifestos e datamines locais |
 
 ---
 

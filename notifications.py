@@ -15,7 +15,7 @@ class NotificationService:
         description: str,
         color: int = 0x38bdf8,
         fields: Optional[List[Dict[str, Any]]] = None,
-        footer_text: str = "Cabeça de Droid • HoYo Assistant v4.5"
+        footer_text: str = "Cabeça de Droid • HoYo Assistant v5.1"
     ) -> Dict[str, Any]:
         """
         Envia uma mensagem rica com Embed para o Webhook do Discord.
@@ -134,7 +134,7 @@ class NotificationService:
                 tg_text += "\n"
                 for f in fields:
                     tg_text += f"\n• <b>{f.get('name', '')}</b>: {f.get('value', '')}"
-            tg_text += "\n\n<i>— Cabeça de Droid v4.5</i>"
+            tg_text += "\n\n<i>— Cabeça de Droid v5.1</i>"
 
             tg_res = self.send_telegram_message(
                 bot_token=tg_token,

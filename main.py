@@ -147,10 +147,10 @@ def main() -> None:
     ready = wait_for_server(port)
     
     local_ip = get_local_ip()
-    url_local = f"http://127.0.0.1:{port}/?v=4.0"
-    url_rede = f"http://{local_ip}:{port}/?v=4.0"
+    url_local = f"http://127.0.0.1:{port}/?v=5.1"
+    url_rede = f"http://{local_ip}:{port}/?v=5.1"
     
-    print("[INFO] Iniciando Cabeça de Droid v4.0 (Blindagem de Segurança Ativa)...")
+    print("[INFO] Iniciando Cabeça de Droid v5.1 (Blindagem de Segurança Ativa)...")
     print(f"[INFO] Servidor escutando em: {bind_host}:{port}")
     print(f"[INFO] Acesso local: {url_local}")
     if allow_lan or bind_host == "0.0.0.0":

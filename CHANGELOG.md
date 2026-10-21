@@ -6,6 +6,28 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [Unreleased] - 2026-10-21
+
+### ✨ Adicionado
+- **Consolidação Modular de Diretórios:**
+  - `scrapers/`: Centralização dos raspadores de metagame (`scraper_genshin.py`, `scraper_meta.py`, `scraper_prydwen.py`, `scraper_zzz.py`) com headers anti-403 via `curl_cffi` e sementes locais.
+  - `scripts/`: Centralização de utilitários de sistema e serviços Linux em background (`cabeca-de-droid.service` e `setup_service.sh`).
+  - `tests/`: Reorganização completa da suíte em 10 módulos padronizados com `tests/__init__.py` garantindo injeção limpa de `sys.path`.
+- **Manifesto Estático de Personagens Zenless Zone Zero (`static_data/zzz_manifest.json`):**
+  - Mapeamento completo de atributos base, papéis táticos (Atacante, Anomalia, Atordoamento, Suporte, Defensor), elementos (incluindo *Lumiflux*) e especialidades para agentes de ZZZ.
+- **Expansão da Cobertura de Testes (74 Testes Automatizados):**
+  - Adição de testes unitários abrangentes para sincronização de dados estáticos (`test_static_data_suite.py`), previsões de gacha (`test_gacha_forecast_suite.py`), briefing executivo e sintetizador de relíquias (`test_briefing_crafting_suite.py`).
+- **Controlador e Endpoints de Dados Estáticos (`routers/static_data.py`):**
+  - Endpoints dedicados para status dos manifestos (`/api/static-data/status`), sincronização (`/api/static-data/sync`), calendário diário de farm (`/api/static-data/schedule/{game_id}`) e catálogo completo de personagens com perfil detalhado.
+
+### 🔄 Modificado
+- **Extração de Builds sem Trava de Nível (`extractor.py`):**
+  - Remoção do filtro rígido de nível mínimo 70 (`level >= 70`), permitindo cálculo de Roll Value (RV), scoring de atributos e acompanhamento de qualquer personagem da conta desde o nível 1.
+- **Aprimoramentos de UI/UX no Dashboard Web Glassmorphism (`static/`):**
+  - Otimizações na renderização do Roster, cards visuais e estilização de componentes do ecossistema HoYoLAB.
+
+---
+
 ## [5.1.0] - 2026-10-08
 
 - **Janela Modal Centralizada de Build & Dashboard 2 Colunas:**

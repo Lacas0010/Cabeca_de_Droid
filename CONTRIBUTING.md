@@ -19,7 +19,7 @@ Obrigado pelo seu interesse em contribuir com o **Cabeça de Droid**! Este docum
 
 O Cabeça de Droid é projetado como uma suíte **100% local, autônoma, resiliente e segura**. Nossas premissas inegociáveis são:
 - **Privacidade & Segurança em Primeiro Lugar:** Tokens e cookies de sessão nunca devem trafegar para serviços de terceiros e devem ser criptografados em repouso no Windows com DPAPI e no Linux com AES-256 derivado da máquina.
-- **Zero Regressão:** Todos os 62+ testes unitários automatizados devem continuar passando a cada modificação.
+- **Zero Regressão:** Todos os 74 testes unitários automatizados devem continuar passando a cada modificação.
 - **Clean Architecture:** Desacoplamento estrito entre a camada de apresentação (`routers/`), contratos de dados (`schemas/`), regras de negócio (`services/`) e persistência/segurança (`core/` e `database.py`).
 - **Resiliência Offline:** O sistema deve sempre conter fallbacks e sementes locais (`static_data/`) para inicializar e operar mesmo sem conexão com a internet.
 
@@ -31,7 +31,7 @@ A versão **5.0** representa uma refatoração estrutural profunda, migrando o s
 
 ### Comparativo Arquitetural
 
-| Aspecto | Versão 4.5 | Versão 5.0 (Atual) |
+| **Aspecto** | **Versão 4.5** | **Versão 5.x (Atual)** |
 | :--- | :--- | :--- |
 | **Ponto Central (`server.py`)** | Monólito com >3.200 linhas contendo rotas, lógica e SQL | Orquestrador limpo de ciclo de vida com ~200 linhas |
 | **Camada de Roteamento** | Endpoints misturados em funções soltas | 15 módulos `APIRouter` especializados em [`routers/`](routers/) |
@@ -39,7 +39,7 @@ A versão **5.0** representa uma refatoração estrutural profunda, migrando o s
 | **Regras de Negócio** | Lógica acoplada dentro dos handlers HTTP | Serviços isolados e testáveis em [`services/`](services/) |
 | **Dados & Metadados** | Dicionários hardcoded em arquivos Python | JSONs desacoplados e sementes em [`static_data/`](static_data/) |
 | **Infraestrutura Core** | Funções globais espalhadas | Módulos [`core/config.py`](core/config.py) e [`core/security.py`](core/security.py) |
-| **Testes Automatizados** | 2 arquivos de teste isolados | 62 testes unitários em 9 suítes completas |
+| **Testes Automatizados** | 2 arquivos de teste isolados | 74 testes unitários em 10 suítes completas |
 | **Usabilidade Mobile** | Adaptada com alguns layouts lado a lado | Polimento v5.0 com empilhamento vertical total e safe areas |
 
 ### Novos Recursos Adicionados na v5.0
@@ -144,13 +144,13 @@ hoyo-projetos/
 Todos os testes utilizam o módulo nativo `unittest` do Python, dispensando bibliotecas adicionais:
 
 ```bash
-# Executar toda a suíte de testes (62 testes)
-python -m unittest discover
+# Executar toda a suíte de testes (74 testes)
+python -m unittest discover tests
 
 # Executar uma suíte de teste específica
-python -m unittest tests.test_security_vault
-python -m unittest tests.test_gacha_simulator
-python -m unittest tests.test_router_endpoints
+python -m unittest tests.test_security_suite
+python -m unittest tests.test_gacha_forecast_suite
+python -m unittest tests.test_static_data_suite
 ```
 
 ### Regras para Novos Testes
