@@ -2415,7 +2415,7 @@ class StaticDataManager:
         source_used = None
         
         try:
-            from scraper_zzz import PrydwenZZZScraper
+            from scrapers import PrydwenZZZScraper
             scraper = PrydwenZZZScraper()
             agent_list = scraper.get_agent_list()
             if agent_list and len(agent_list) > 0:

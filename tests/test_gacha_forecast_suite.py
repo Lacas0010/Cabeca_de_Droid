@@ -3,8 +3,8 @@ import os
 import sys
 from fastapi.testclient import TestClient
 
-# Garante importação dos módulos locais
-sys.path.insert(0, os.path.dirname(__file__))
+# Garante importação dos módulos locais da raiz
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import database
 from build_calculator import calculate_gacha_forecast, simulate_gacha_probabilities

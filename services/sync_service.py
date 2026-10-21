@@ -11,10 +11,12 @@ import database
 from core.config import get_cookies, get_config
 from log_sanitizer import sanitize_log
 from extractor import MultiGameExtractor
-from scraper_prydwen import PrydwenScraper
-from scraper_zzz import PrydwenZZZScraper
-from scraper_genshin import PrydwenGenshinScraper
-from scraper_meta import PrydwenMetaScraper
+from scrapers import (
+    PrydwenScraper,
+    PrydwenZZZScraper,
+    PrydwenGenshinScraper,
+    PrydwenMetaScraper,
+)
 
 # Estado global para progresso da sincronização
 sync_status: Dict[str, Dict[str, Any]] = {

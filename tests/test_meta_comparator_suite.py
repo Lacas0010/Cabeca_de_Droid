@@ -1,5 +1,8 @@
-import unittest
 import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+import unittest
 import json
 from fastapi.testclient import TestClient
 from server import app, parse_character_build_data, parse_meta_target

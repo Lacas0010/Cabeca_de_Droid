@@ -111,7 +111,9 @@ hoyo-projetos/
 ├── static_data/             # Bases de dados estáticas desacopladas (JSON puro)
 ├── static/                  # Frontend Web SPA (HTML5, Vanilla CSS, JS ES6+)
 ├── assets/                  # Ícones estáticos e avatares oficiais
-├── tests/                   # Suíte de 62+ testes unitários automatizados
+├── scrapers/                # Raspadores de metagame e guias do Prydwen (HSR, Genshin, ZZZ)
+├── scripts/                 # Scripts utilitários e serviços do sistema (systemd)
+├── tests/                   # Suíte de 74 testes unitários automatizados
 ├── server.py                # Orquestrador FastAPI modular e ciclo de vida
 └── main.py                  # Entrypoint principal de execução
 ```

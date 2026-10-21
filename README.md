@@ -120,7 +120,9 @@ hoyo-projetos/
 ├── static_data/             # Catálogos de personagens, domínios e regras em JSON puro
 ├── static/                  # Frontend Web SPA (index.html, style.css, app.js)
 ├── assets/                  # Ícones oficiais de elementos e avatares em cache local
-├── tests/                   # 62 testes unitários cobrindo todos os módulos
+├── scrapers/                # Raspadores de metagame e guias do Prydwen (HSR, Genshin, ZZZ)
+├── scripts/                 # Scripts utilitários e serviços do sistema (systemd)
+├── tests/                   # 74 testes unitários automatizados cobrindo todos os módulos
 ├── server.py                # Orquestrador FastAPI modular com ciclo de vida
 └── main.py                  # Entrypoint de inicialização da aplicação
 ```

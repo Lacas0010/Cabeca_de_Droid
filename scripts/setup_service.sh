@@ -6,7 +6,9 @@ echo "  Cabeça de Droid - Configuração de Serviço no Linux VM   "
 echo "=========================================================="
 
 CURRENT_USER=$(whoami)
-PROJECT_DIR=$(pwd)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+cd "${PROJECT_DIR}"
 SERVICE_NAME="cabeca-de-droid"
 SERVICE_FILE="/etc/systemd/system/${SERVICE_NAME}.service"
 
