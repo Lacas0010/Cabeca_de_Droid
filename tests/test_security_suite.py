@@ -1,8 +1,10 @@
 """
 Suite de Testes Automatizados para os 7 Pilares de Segurança do Cabeça de Droid
 """
+
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import json
 import shutil
@@ -14,25 +16,26 @@ import security_vault
 import log_sanitizer
 import database
 
+
 class TestSecurityVault(unittest.TestCase):
     def test_dpapi_or_kdf_encryption_roundtrip(self):
         sample_data = {
             "ltuid_v2": "123456789",
             "ltoken_v2": "v2_CAESECd0zSAMPLETOKENxyz987654321",
             "cookie_token_v2": "v2_SAMPLE_COOKIE_TOKEN_SECRET",
-            "account_id_v2": "123456789"
+            "account_id_v2": "123456789",
         }
         test_file = os.path.join(tempfile.gettempdir(), "test_cookies.enc")
         try:
             # Salva encriptado
             security_vault.save_secure_cookies(sample_data, filepath=test_file)
             self.assertTrue(os.path.exists(test_file))
-            
+
             # Verifica que o arquivo no disco NÃO é plaintext json
             with open(test_file, "rb") as f:
                 raw_bytes = f.read()
             self.assertNotIn(b"v2_CAESECd0zSAMPLETOKENxyz987654321", raw_bytes)
-            
+
             # Lê de volta decriptado
             loaded = security_vault.load_secure_cookies(filepath=test_file)
             self.assertEqual(loaded.get("ltuid_v2"), "123456789")
@@ -48,12 +51,12 @@ class TestSecurityVault(unittest.TestCase):
         try:
             with open(legacy_file, "w", encoding="utf-8") as f:
                 json.dump({"ltuid_v2": "999888", "ltoken_v2": "v2_LEGACY_TOKEN_TEST"}, f)
-            
+
             # Chama load_secure_cookies apontando para o arquivo legado
             data = security_vault.load_secure_cookies(filepath=enc_file, legacy_file=legacy_file)
             self.assertEqual(data.get("ltuid_v2"), "999888")
             self.assertEqual(data.get("ltoken_v2"), "v2_LEGACY_TOKEN_TEST")
-            
+
             # Verifica que o legado foi deletado e o .enc foi criado
             self.assertFalse(os.path.exists(legacy_file))
             self.assertTrue(os.path.exists(enc_file))
@@ -67,7 +70,7 @@ class TestSecurityVault(unittest.TestCase):
         cookies = {
             "ltuid_v2": "123456789",
             "ltoken_v2": "v2_CAESECd0zSAMPLETOKENxyz987654321",
-            "account_id_v2": "123456789"
+            "account_id_v2": "123456789",
         }
         res = security_vault.get_masked_cookies_preview(cookies)
         preview_str = res["preview"]
@@ -86,6 +89,7 @@ class TestSecurityVault(unittest.TestCase):
         self.assertTrue(security_vault.verify_security_pin(pin, salt, pin_hash))
         self.assertFalse(security_vault.verify_security_pin("000000", salt, pin_hash))
 
+
 class TestLogSanitizer(unittest.TestCase):
     def test_redaction(self):
         dirty_log = "Error syncing with ltoken_v2=v2_SECRET_ABCDEF_1234567890 and ltuid_v2=987654321. Groq key: gsk_abcdef1234567890xyz"
@@ -95,6 +99,7 @@ class TestLogSanitizer(unittest.TestCase):
         self.assertIn("ltoken_v2=***[LTOKEN_REDACTED]***", clean_log)
         self.assertIn("gsk_***[API_KEY_REDACTED]***", clean_log)
 
+
 class TestDatabaseSecuritySettings(unittest.TestCase):
     def test_pin_and_lan_db_flow(self):
         database.init_db()
@@ -102,7 +107,7 @@ class TestDatabaseSecuritySettings(unittest.TestCase):
         database.set_security_pin("8888")
         self.assertTrue(database.verify_security_pin_attempt("8888"))
         self.assertFalse(database.verify_security_pin_attempt("1111"))
-        
+
         database.disable_security_pin()
         settings = database.get_security_settings()
         self.assertFalse(settings["pin_enabled"])
@@ -113,10 +118,12 @@ class TestDatabaseSecuritySettings(unittest.TestCase):
         database.set_lan_access(False)
         self.assertFalse(database.is_lan_access_allowed())
 
+
 class TestServerSecurityEndpoints(unittest.TestCase):
     def setUp(self):
         from fastapi.testclient import TestClient
         from server import app
+
         self.client = TestClient(app)
 
     def test_security_status_endpoint(self):
@@ -147,7 +154,7 @@ class TestServerSecurityEndpoints(unittest.TestCase):
         self.assertEqual(bad_res.status_code, 401)
 
         # Testa middleware de bloqueio (423 Locked) em rotas protegidas
-        locked_client = self.client.__class__(self.client.app) # cliente sem cookies de sessão
+        locked_client = self.client.__class__(self.client.app)  # cliente sem cookies de sessão
         locked_res = locked_client.get("/api/overview")
         self.assertEqual(locked_res.status_code, 423)
 
@@ -166,6 +173,7 @@ class TestServerSecurityEndpoints(unittest.TestCase):
 
         # Com PIN desativado, novo cliente sem sessão acessa normalmente
         anon_client = self.client.__class__(self.client.app)
+
     def test_lan_access_env_override(self):
         # Testa se ALLOW_LAN=1 sobrepõe o banco e permite conexões externas
         old_val = os.environ.get("ALLOW_LAN")
@@ -179,6 +187,7 @@ class TestServerSecurityEndpoints(unittest.TestCase):
                 os.environ["ALLOW_LAN"] = old_val
             else:
                 os.environ.pop("ALLOW_LAN", None)
+
 
 if __name__ == "__main__":
     unittest.main()

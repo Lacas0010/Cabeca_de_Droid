@@ -8,16 +8,14 @@ from build_calculator import evaluate_general_stats
 
 router = APIRouter(tags=["Static Data & Datamines"])
 
+
 @router.get("/api/static-data/status")
 async def get_static_data_status():
     """Retorna o status geral de sincronização dos manifestos de dados estáticos."""
     manifests = database.get_static_data_manifests()
     summary = static_data_manager.get_sync_status()
-    return {
-        "status": "success",
-        "manifests": manifests,
-        "summary": summary
-    }
+    return {"status": "success", "manifests": manifests, "summary": summary}
+
 
 @router.post("/api/static-data/sync")
 async def trigger_static_data_sync(req: Optional[StaticDataSyncRequest] = None):
@@ -30,12 +28,10 @@ async def trigger_static_data_sync(req: Optional[StaticDataSyncRequest] = None):
             version="1.0",
             item_count=info.get("character_count", 0),
             status=info.get("status", "success"),
-            source=info.get("source", "seed")
+            source=info.get("source", "seed"),
         )
-    return {
-        "status": "success",
-        "results": results
-    }
+    return {"status": "success", "results": results}
+
 
 @router.get("/api/static-data/schedule/{game_id}")
 async def get_static_data_schedule(game_id: str, weekday: Optional[int] = None):
@@ -45,6 +41,7 @@ async def get_static_data_schedule(game_id: str, weekday: Optional[int] = None):
         raise HTTPException(status_code=400, detail="Jogo inválido.")
     schedule = static_data_manager.get_daily_farm_schedule(game_id, weekday)
     return schedule
+
 
 @router.get("/api/static-data/character/{game_id}/{char_name}")
 async def get_static_data_character(game_id: str, char_name: str):
@@ -57,6 +54,7 @@ async def get_static_data_character(game_id: str, char_name: str):
         raise HTTPException(status_code=404, detail="Personagem não encontrado no manifesto de dados.")
     return profile
 
+
 @router.get("/api/static-data/all-characters/{game_id}")
 async def get_all_static_data_characters(game_id: str):
     """Retorna o catálogo completo de personagens com materiais mapeados para o jogo."""
@@ -64,11 +62,8 @@ async def get_all_static_data_characters(game_id: str):
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido.")
     characters = static_data_manager.get_all_characters(game_id)
-    return {
-        "game_id": game_id,
-        "total": len(characters),
-        "characters": characters
-    }
+    return {"game_id": game_id, "total": len(characters), "characters": characters}
+
 
 @router.post("/api/evaluate-stats/{game_id}/{char_id}")
 async def evaluate_character_stats(game_id: str, char_id: str, final_stats: Dict[str, str]):

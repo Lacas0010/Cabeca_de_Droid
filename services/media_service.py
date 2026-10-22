@@ -4,6 +4,7 @@ import urllib.parse
 from typing import Dict, Any
 from core.config import get_resource_path
 
+
 def get_raw_url(url_str: str) -> str:
     """Extrai a URL original subjacente caso a string já esteja envelopada pelo proxy interno."""
     if not url_str:
@@ -13,6 +14,7 @@ def get_raw_url(url_str: str) -> str:
         raw = url_s.split("/api/proxy_image?url=")[-1]
         url_s = urllib.parse.unquote(raw)
     return url_s
+
 
 def load_element_icons_map() -> Dict[str, Dict[str, str]]:
     """Carrega o mapeamento de URLs de ícones elementais do arquivo estático JSON."""
@@ -25,7 +27,9 @@ def load_element_icons_map() -> Dict[str, Dict[str, str]]:
             print(f"[WARN] Erro ao carregar static_data/element_icons.json: {e}")
     return {}
 
+
 ELEMENT_ICONS_MAP: Dict[str, Dict[str, str]] = load_element_icons_map()
+
 
 def download_element_icons() -> None:
     """Garante que todos os ícones oficiais de elementos dos 3 jogos estejam em cache local."""
@@ -52,6 +56,7 @@ def download_element_icons() -> None:
                 except Exception as e:
                     print(f"[WARN] Falha ao baixar ícone de elemento {game}_{elem_name}: {e}")
 
+
 def download_hsr_eidolon_shards(char_names=None) -> None:
     """Garante que os fragmentos de Eidolon do HSR estejam baixados localmente na pasta assets/shards/hsr/."""
     try:
@@ -73,17 +78,17 @@ def download_hsr_eidolon_shards(char_names=None) -> None:
     target_dir = get_resource_path(os.path.join("assets", "shards", "hsr"))
     os.makedirs(target_dir, exist_ok=True)
 
-    session = requests.Session(impersonate="chrome")
+    session: Any = requests.Session(impersonate="chrome")
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "Referer": "https://honkai-star-rail.fandom.com/"
+        "Referer": "https://honkai-star-rail.fandom.com/",
     }
 
     keys_to_process = []
     if char_names:
         for cname in char_names:
-            c_clean = re.sub(r'[^a-z0-9_]', '', cname.lower().strip().replace(' ', '_'))
+            c_clean = re.sub(r"[^a-z0-9_]", "", cname.lower().strip().replace(" ", "_"))
             if cname.lower().strip() in shards_db:
                 keys_to_process.append(cname.lower().strip())
             elif c_clean in shards_db:
@@ -95,7 +100,7 @@ def download_hsr_eidolon_shards(char_names=None) -> None:
         char_shards = shards_db.get(k)
         if not isinstance(char_shards, dict):
             continue
-        clean_name = re.sub(r'[^a-z0-9_]', '', str(k).lower().replace(' ', '_'))
+        clean_name = re.sub(r"[^a-z0-9_]", "", str(k).lower().replace(" ", "_"))
         for pos_str, url in char_shards.items():
             if not url:
                 continue

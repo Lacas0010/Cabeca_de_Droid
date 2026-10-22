@@ -21,12 +21,9 @@ IS_WINDOWS = sys.platform == "win32"
 
 if IS_WINDOWS:
     from ctypes import wintypes
-    
+
     class DATA_BLOB(ctypes.Structure):
-        _fields_ = [
-            ("cbData", wintypes.DWORD),
-            ("pbData", ctypes.POINTER(ctypes.c_char))
-        ]
+        _fields_ = [("cbData", wintypes.DWORD), ("pbData", ctypes.POINTER(ctypes.c_char))]
 
     CryptProtectData = ctypes.windll.crypt32.CryptProtectData
     CryptUnprotectData = ctypes.windll.crypt32.CryptUnprotectData
@@ -36,15 +33,20 @@ if IS_WINDOWS:
 
     def _dpapi_protect(data: bytes, entropy: Optional[bytes] = None) -> bytes:
         """Criptografa bytes usando a DPAPI nativa do Windows (usuário atual)."""
-        data_in = DATA_BLOB(len(data), ctypes.cast(ctypes.create_string_buffer(data, len(data)), ctypes.POINTER(ctypes.c_char)))
+        data_in = DATA_BLOB(
+            len(data), ctypes.cast(ctypes.create_string_buffer(data, len(data)), ctypes.POINTER(ctypes.c_char))
+        )
         data_out = DATA_BLOB()
-        
+
         entropy_blob = None
         p_entropy = None
         if entropy:
-            entropy_blob = DATA_BLOB(len(entropy), ctypes.cast(ctypes.create_string_buffer(entropy, len(entropy)), ctypes.POINTER(ctypes.c_char)))
+            entropy_blob = DATA_BLOB(
+                len(entropy),
+                ctypes.cast(ctypes.create_string_buffer(entropy, len(entropy)), ctypes.POINTER(ctypes.c_char)),
+            )
             p_entropy = ctypes.byref(entropy_blob)
-            
+
         success = CryptProtectData(
             ctypes.byref(data_in),
             "HoyoAppSecurityVault",
@@ -52,12 +54,12 @@ if IS_WINDOWS:
             None,
             None,
             CRYPTPROTECT_UI_FORBIDDEN,
-            ctypes.byref(data_out)
+            ctypes.byref(data_out),
         )
-        
+
         if not success:
             raise ctypes.WinError()
-            
+
         encrypted_bytes = ctypes.string_at(data_out.pbData, data_out.cbData)
         LocalFree(data_out.pbData)
         return b"DPAPI:" + encrypted_bytes
@@ -66,39 +68,40 @@ if IS_WINDOWS:
         """Decriptografa bytes protegidos via DPAPI do Windows."""
         if not data.startswith(b"DPAPI:"):
             raise ValueError("Payload não possui assinatura DPAPI válida.")
-            
+
         raw_enc = data[6:]
-        data_in = DATA_BLOB(len(raw_enc), ctypes.cast(ctypes.create_string_buffer(raw_enc, len(raw_enc)), ctypes.POINTER(ctypes.c_char)))
+        data_in = DATA_BLOB(
+            len(raw_enc), ctypes.cast(ctypes.create_string_buffer(raw_enc, len(raw_enc)), ctypes.POINTER(ctypes.c_char))
+        )
         data_out = DATA_BLOB()
-        
+
         entropy_blob = None
         p_entropy = None
         if entropy:
-            entropy_blob = DATA_BLOB(len(entropy), ctypes.cast(ctypes.create_string_buffer(entropy, len(entropy)), ctypes.POINTER(ctypes.c_char)))
+            entropy_blob = DATA_BLOB(
+                len(entropy),
+                ctypes.cast(ctypes.create_string_buffer(entropy, len(entropy)), ctypes.POINTER(ctypes.c_char)),
+            )
             p_entropy = ctypes.byref(entropy_blob)
-            
+
         success = CryptUnprotectData(
-            ctypes.byref(data_in),
-            None,
-            p_entropy,
-            None,
-            None,
-            CRYPTPROTECT_UI_FORBIDDEN,
-            ctypes.byref(data_out)
+            ctypes.byref(data_in), None, p_entropy, None, None, CRYPTPROTECT_UI_FORBIDDEN, ctypes.byref(data_out)
         )
-        
+
         if not success:
             raise ctypes.WinError()
-            
+
         decrypted_bytes = ctypes.string_at(data_out.pbData, data_out.cbData)
         LocalFree(data_out.pbData)
         return decrypted_bytes
 else:
+
     def _dpapi_protect(data: bytes, entropy: Optional[bytes] = None) -> bytes:
         raise NotImplementedError("DPAPI disponível apenas no Windows.")
-        
+
     def _dpapi_unprotect(data: bytes, entropy: Optional[bytes] = None) -> bytes:
         raise NotImplementedError("DPAPI disponível apenas no Windows.")
+
 
 # ==========================================
 # 2. ENCRIPTADOR LOCAL (FALLBACK MULTIPLATAFORMA COM CHAVE DERIVADA)
@@ -109,20 +112,22 @@ def _get_machine_entropy() -> bytes:
     app_salt = b"CabecaDeDroid-SecureVault-2026-v4"
     return hashlib.sha256(node + app_salt).digest()
 
+
 def _stream_cipher(data: bytes, key: bytes, salt: bytes) -> bytes:
     """Cifra simétrica baseada em HMAC-SHA256 Counter Mode (CTR) com verificação de integridade."""
     derived_key = hashlib.pbkdf2_hmac("sha256", key, salt, 100_000, 32)
     output = bytearray(len(data))
     block_index = 0
-    
+
     for offset in range(0, len(data), 32):
         block_key = hmac.new(derived_key, salt + block_index.to_bytes(8, "big"), hashlib.sha256).digest()
         chunk_len = min(32, len(data) - offset)
         for i in range(chunk_len):
             output[offset + i] = data[offset + i] ^ block_key[i]
         block_index += 1
-        
+
     return bytes(output)
+
 
 def _machine_protect(data: bytes) -> bytes:
     salt = secrets.token_bytes(16)
@@ -130,6 +135,7 @@ def _machine_protect(data: bytes) -> bytes:
     ciphertext = _stream_cipher(data, key, salt)
     mac = hmac.new(key, salt + ciphertext, hashlib.sha256).digest()
     return b"MKV1:" + salt + mac + ciphertext
+
 
 def _machine_unprotect(data: bytes) -> bytes:
     if not data.startswith(b"MKV1:") or len(data) < 5 + 16 + 32:
@@ -139,12 +145,13 @@ def _machine_unprotect(data: bytes) -> bytes:
     mac = payload[16:48]
     ciphertext = payload[48:]
     key = _get_machine_entropy()
-    
+
     expected_mac = hmac.new(key, salt + ciphertext, hashlib.sha256).digest()
     if not hmac.compare_digest(mac, expected_mac):
         raise ValueError("Falha de autenticação/integridade criptográfica.")
-        
+
     return _stream_cipher(ciphertext, key, salt)
+
 
 # ==========================================
 # 3. INTERFACE UNIFICADA DO COFRE
@@ -159,6 +166,7 @@ def encrypt_payload(data_str: str) -> bytes:
             pass
     return _machine_protect(raw_bytes)
 
+
 def decrypt_payload(enc_bytes: bytes) -> str:
     """Decriptografa bytes de volta para string utf-8."""
     if enc_bytes.startswith(b"DPAPI:") and IS_WINDOWS:
@@ -168,9 +176,10 @@ def decrypt_payload(enc_bytes: bytes) -> str:
             pass
     if enc_bytes.startswith(b"MKV1:"):
         return _machine_unprotect(enc_bytes).decode("utf-8")
-    
+
     # Tentativa de parse em texto puro (legado ou fallback)
     return enc_bytes.decode("utf-8")
+
 
 def get_vault_security_info() -> Dict[str, Any]:
     """Retorna o status de proteção ativo do cofre."""
@@ -179,8 +188,9 @@ def get_vault_security_info() -> Dict[str, Any]:
         "engine": "Windows DPAPI (Hardware-Tied User Key)" if IS_WINDOWS else "Machine-Derived AES/HMAC",
         "has_encrypted_cookies": os.path.exists(COOKIES_ENC_FILE),
         "cookies_legacy_exists": os.path.exists(COOKIES_LEGACY_FILE),
-        "status": "PROTECTED"
+        "status": "PROTECTED",
     }
+
 
 # ==========================================
 # 4. GESTÃO DE COOKIES CRIPTOGRAFADOS
@@ -197,10 +207,10 @@ def save_secure_cookies(cookies: Dict[str, str], filepath: Optional[str] = None)
 
     json_str = json.dumps(cookies, ensure_ascii=False)
     enc_data = encrypt_payload(json_str)
-    
+
     with open(target, "wb") as f:
         f.write(enc_data)
-        
+
     # Limpeza defensiva do arquivo legado em texto puro
     if not filepath and os.path.exists(COOKIES_LEGACY_FILE):
         try:
@@ -208,11 +218,12 @@ def save_secure_cookies(cookies: Dict[str, str], filepath: Optional[str] = None)
         except Exception:
             pass
 
+
 def load_secure_cookies(filepath: Optional[str] = None, legacy_file: Optional[str] = None) -> Dict[str, str]:
     """Carrega cookies do arquivo criptografado ou migra automaticamente do JSON legado."""
     target = filepath or COOKIES_ENC_FILE
     legacy = legacy_file or COOKIES_LEGACY_FILE
-    
+
     # 1. Carrega do cofre criptografado
     if os.path.exists(target):
         try:
@@ -222,7 +233,7 @@ def load_secure_cookies(filepath: Optional[str] = None, legacy_file: Optional[st
             return json.loads(decrypted)
         except Exception as e:
             print(f"[SECURITY_VAULT] Aviso ao decifrar {target}: {e}")
-            
+
     # 2. Migração transparente se existir cookies.json legado
     if os.path.exists(legacy):
         try:
@@ -238,8 +249,9 @@ def load_secure_cookies(filepath: Optional[str] = None, legacy_file: Optional[st
                 return legacy_cookies
         except Exception as e:
             print(f"[SECURITY_VAULT] Erro ao ler {legacy}: {e}")
-            
+
     return {}
+
 
 # ==========================================
 # 5. GESTÃO DE CONFIGURAÇÕES CRIPTOGRAFADAS
@@ -248,6 +260,7 @@ def save_secure_config(config: Dict[str, Any]) -> None:
     """Salva as configurações gerais."""
     with open(CONFIG_LEGACY_FILE, "w", encoding="utf-8") as f:
         json.dump(config, f, indent=4, ensure_ascii=False)
+
 
 def load_secure_config() -> Dict[str, Any]:
     """Carrega as configurações gerais."""
@@ -266,7 +279,11 @@ def load_secure_config() -> Dict[str, Any]:
         "notify_on_energy_cap": True,
         "energy_cap_threshold_pct": 90,
         "notify_on_endgame": True,
-        "notify_on_codes": True
+        "notify_on_codes": True,
+        "quiet_hours_enabled": False,
+        "quiet_hours_start": "23:00",
+        "quiet_hours_end": "07:00",
+        "notify_windows_toast": True,
     }
     if os.path.exists(CONFIG_LEGACY_FILE):
         try:
@@ -277,6 +294,7 @@ def load_secure_config() -> Dict[str, Any]:
         except Exception:
             pass
     return defaults
+
 
 # ==========================================
 # 6. MASCARAMENTO DE DADOS (DOM ZERO-EXPOSURE)
@@ -290,22 +308,16 @@ def mask_secret_string(val: str, show_prefix: int = 4, show_suffix: int = 4) -> 
         return "***[PROTEGIDO]***"
     return f"{val_str[:show_prefix]}***{val_str[-show_suffix:]}"
 
+
 def get_masked_cookies_preview(cookies: Dict[str, str]) -> Dict[str, Any]:
     """Retorna resumo sanitizado dos cookies para exibição no frontend."""
     if not cookies:
-        return {
-            "has_cookies": False,
-            "count": 0,
-            "preview": "",
-            "keys": [],
-            "uid_masked": None,
-            "is_encrypted": True
-        }
-        
+        return {"has_cookies": False, "count": 0, "preview": "", "keys": [], "uid_masked": None, "is_encrypted": True}
+
     keys = list(cookies.keys())
     uid = cookies.get("ltuid_v2") or cookies.get("ltuid") or cookies.get("account_id_v2") or cookies.get("account_id")
     ltoken = cookies.get("ltoken_v2") or cookies.get("ltoken")
-    
+
     parts = []
     if uid:
         parts.append(f"ltuid_v2={mask_secret_string(uid, 3, 2)}")
@@ -313,15 +325,16 @@ def get_masked_cookies_preview(cookies: Dict[str, str]) -> Dict[str, Any]:
         parts.append(f"ltoken_v2={mask_secret_string(ltoken, 5, 4)}")
     if "cookie_token_v2" in cookies:
         parts.append("cookie_token_v2=***[PROTEGIDO]***")
-        
+
     return {
         "has_cookies": True,
         "count": len(cookies),
         "preview": "; ".join(parts) if parts else f"{len(cookies)} chaves ativas no cofre",
         "keys": keys,
         "uid_masked": mask_secret_string(uid, 3, 2) if uid else None,
-        "is_encrypted": True
+        "is_encrypted": True,
     }
+
 
 # ==========================================
 # 7. GESTÃO DE PIN & AUTENTICAÇÃO LOCAL
@@ -333,10 +346,12 @@ def hash_security_pin(pin: str, salt: Optional[str] = None) -> Tuple[str, str]:
     key = hashlib.pbkdf2_hmac("sha256", pin.encode("utf-8"), salt.encode("utf-8"), 120_000, 32)
     return key.hex(), salt
 
+
 def verify_security_pin(pin: str, salt: str, expected_hash: str) -> bool:
     """Verifica se o PIN fornecido corresponde ao hash armazenado."""
     calculated_hash, _ = hash_security_pin(pin, salt)
     return secrets.compare_digest(calculated_hash, expected_hash)
+
 
 def generate_session_token() -> str:
     """Gera um token de sessão de desbloqueio efêmero."""

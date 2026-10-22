@@ -18,15 +18,18 @@ router = APIRouter(tags=["System & Utilities"])
 _IMAGE_CACHE_DIR = get_resource_path(os.path.join("assets", "cache", "images"))
 _PROXY_SESSION = None
 
+
 def _get_proxy_session():
     global _PROXY_SESSION
     if _PROXY_SESSION is None:
         try:
             from curl_cffi import requests
+
             _PROXY_SESSION = requests.Session(impersonate="chrome")
         except Exception:
             _PROXY_SESSION = None
     return _PROXY_SESSION
+
 
 def _detect_image_mime(data: bytes, default: str = "image/png") -> str:
     if not data or len(data) < 4:
@@ -45,15 +48,17 @@ def _detect_image_mime(data: bytes, default: str = "image/png") -> str:
         return "image/svg+xml"
     return default
 
+
 @router.get("/api/proxy_image")
 async def proxy_image(url: str):
     """Proxy para carregar imagens externas no HTML5 Canvas sem sofrer bloqueio de CORS ou Tainted Canvas."""
     if not url or not url.startswith(("http://", "https://")):
         raise HTTPException(status_code=400, detail="URL de imagem inválida.")
-    
+
     # Sanitização defensiva para URLs do Genshin com .png.png ou ide_
     try:
         from extractor import sanitize_genshin_url
+
         url = sanitize_genshin_url(url)
     except Exception:
         pass
@@ -62,7 +67,7 @@ async def proxy_image(url: str):
     os.makedirs(_IMAGE_CACHE_DIR, exist_ok=True)
     cache_key = hashlib.sha256(url.encode("utf-8")).hexdigest()
     cache_path = os.path.join(_IMAGE_CACHE_DIR, f"{cache_key}.bin")
-    
+
     if os.path.exists(cache_path) and os.path.getsize(cache_path) > 100:
         try:
             with open(cache_path, "rb") as cf:
@@ -75,8 +80,8 @@ async def proxy_image(url: str):
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Methods": "GET, OPTIONS",
                     "Cache-Control": "public, max-age=604800",
-                    "X-Cache-Status": "HIT"
-                }
+                    "X-Cache-Status": "HIT",
+                },
             )
         except Exception:
             pass
@@ -84,11 +89,14 @@ async def proxy_image(url: str):
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "Referer": "https://honkai-star-rail.fandom.com/" if ("wikia" in url or "fandom" in url) else "https://act.hoyoverse.com/"
+        "Referer": "https://honkai-star-rail.fandom.com/"
+        if ("wikia" in url or "fandom" in url)
+        else "https://act.hoyoverse.com/",
     }
-    
+
     try:
         from curl_cffi import requests
+
         session = _get_proxy_session() or requests
 
         def fetch_with_retry():
@@ -104,13 +112,13 @@ async def proxy_image(url: str):
                 except Exception:
                     time.sleep(0.35 * (attempt + 1))
             return last_resp
-            
+
         resp = await asyncio.to_thread(fetch_with_retry)
-        
+
         if not resp or resp.status_code != 200:
             status_code = resp.status_code if resp else 502
             raise HTTPException(status_code=status_code, detail=f"Falha ao obter imagem da origem: {status_code}")
-            
+
         content_bytes = resp.content
         content_type = _detect_image_mime(content_bytes, resp.headers.get("content-type", "image/png"))
 
@@ -130,21 +138,14 @@ async def proxy_image(url: str):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "GET, OPTIONS",
                 "Cache-Control": "public, max-age=604800",
-                "X-Cache-Status": "MISS"
-            }
+                "X-Cache-Status": "MISS",
+            },
         )
     except HTTPException as he:
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao processar proxy de imagem: {e}")
 
-@router.get("/api/accounts")
-async def get_saved_accounts():
-    """Retorna todas as contas salvas para alternância multi-conta."""
-    try:
-        return database.get_all_saved_accounts()
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/api/download/guides-zip")
 async def download_guides_zip(game_id: Optional[str] = None):
@@ -155,7 +156,7 @@ async def download_guides_zip(game_id: Optional[str] = None):
     try:
         buffer = io.BytesIO()
         valid_games = ["genshin", "hsr", "zzz"]
-        
+
         if game_id and game_id.lower() in valid_games:
             target_folders = [game_id.lower()]
         else:
@@ -174,18 +175,21 @@ async def download_guides_zip(game_id: Optional[str] = None):
                             zf.write(full_path, arcname=rel_path)
 
         buffer.seek(0)
-        zip_filename = f"guias_{game_id.lower()}.zip" if game_id and game_id.lower() in valid_games else "guias_hoyoverse_todos.zip"
-        
+        zip_filename = (
+            f"guias_{game_id.lower()}.zip"
+            if game_id and game_id.lower() in valid_games
+            else "guias_hoyoverse_todos.zip"
+        )
+
         return Response(
             content=buffer.getvalue(),
             media_type="application/zip",
-            headers={
-                "Content-Disposition": f'attachment; filename="{zip_filename}"'
-            }
+            headers={"Content-Disposition": f'attachment; filename="{zip_filename}"'},
         )
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro ao gerar arquivo zip de guias: {e}")
+
 
 @router.api_route("/api/reset-data", methods=["GET", "POST"])
 async def reset_all_data():
@@ -199,10 +203,9 @@ async def reset_all_data():
 
         database.reset_database()
 
-        return JSONResponse({
-            "status": "success",
-            "message": "Pastas zzz, hsr, genshin e banco de dados foram apagados com sucesso!"
-        })
+        return JSONResponse(
+            {"status": "success", "message": "Pastas zzz, hsr, genshin e banco de dados foram apagados com sucesso!"}
+        )
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro ao apagar dados: {str(e)}")

@@ -8,16 +8,17 @@ import endgame_extractor
 from services.roster_service import get_roster
 from services.media_service import get_raw_url
 
+
 async def get_endgame(game_id: str) -> Dict[str, Any]:
     """Retorna os dados estruturados de Endgame (MoC, Ficção Pura, Sombra, Abismo, Teatro, Shiyu) de um jogo."""
     game_id = game_id.lower().strip()
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise ValueError("Jogo inválido. Escolha 'hsr', 'genshin' ou 'zzz'.")
-        
+
     modes = []
     updated_at = ""
     uid = ""
-    
+
     # 1. Tenta carregar do SQLite
     try:
         db_endgame = database.get_endgame_data(game_id)
@@ -27,7 +28,7 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
             uid = db_endgame.get("uid", "")
     except Exception as e:
         print(f"[Aviso] Erro ao ler endgame do SQLite para {game_id}: {e}")
-        
+
     # 2. Se não encontrou no SQLite, tenta carregar do JSON salvo
     if not modes:
         json_path = f"{game_id}/endgame_data_{game_id}.json"
@@ -37,7 +38,7 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
                     modes = json.load(ejf)
             except Exception as je:
                 print(f"[Aviso] Erro ao ler {json_path}: {je}")
-                
+
     # 3. Fallback retrocompatível: lê do Markdown de roster
     if not modes:
         md_path = f"{game_id}/roster_{game_id}.md"
@@ -50,7 +51,7 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
                     roster_data = await get_roster(game_id)
                 except Exception:
                     pass
-                modes = endgame_extractor.parse_endgame_from_markdown(game_id, md_text, roster_data)
+                modes = endgame_extractor.parse_endgame_from_markdown(game_id, md_text, roster_data or [])
             except Exception as me:
                 print(f"[Aviso] Erro ao fazer parse de endgame do MD para {game_id}: {me}")
 
@@ -61,7 +62,7 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
             roster_data = await get_roster(game_id)
         except Exception:
             pass
-            
+
         roster_map = {}
         if roster_data and isinstance(roster_data, list):
             for c in roster_data:
@@ -89,7 +90,7 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
                             char["rarity"] = 5
 
                     c_lower = cname.lower()
-                    
+
                     if c_lower in roster_map:
                         rm = roster_map[c_lower]
                         if rm.get("icon"):
@@ -107,6 +108,7 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
                     if game_id == "genshin" and char.get("icon"):
                         try:
                             from extractor import sanitize_genshin_url
+
                             raw_c_icon = get_raw_url(char["icon"])
                             char["icon"] = sanitize_genshin_url(raw_c_icon)
                         except Exception:
@@ -133,5 +135,5 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
         "has_data": bool(modes and len(modes) > 0),
         "updated_at": updated_at,
         "uid": uid,
-        "modes": modes or []
+        "modes": modes or [],
     }

@@ -4,9 +4,12 @@ from typing import Optional
 import database
 from build_calculator import simulate_gacha_probabilities, calculate_gacha_forecast
 from schemas.gacha import GachaRequest, GachaForecastRequest, GachaGoalSaveRequest
+from schemas.gacha_tracker import GachaTrackerOverviewResponse, ImportGachaRequest, ImportGachaResponse
 from services.gacha_service import get_gacha_characters
+from services.gacha_tracker_service import calculate_gacha_tracker_stats, import_gacha_log_data, export_gacha_log_uigf
 
 router = APIRouter(tags=["Gacha & Banners"])
+
 
 @router.post("/api/gacha/calculate")
 async def calculate_gacha_sim(req: GachaRequest):
@@ -20,11 +23,12 @@ async def calculate_gacha_sim(req: GachaRequest):
             target_copies=req.target_copies or 1,
             current_copies=req.current_copies or 0,
             current_rank=req.current_rank,
-            target_rank=req.target_rank
+            target_rank=req.target_rank,
         )
         return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/api/gacha/forecast/calculate")
 async def calculate_gacha_forecast_endpoint(req: GachaForecastRequest):
@@ -46,11 +50,12 @@ async def calculate_gacha_forecast_endpoint(req: GachaForecastRequest):
             has_battle_pass=bool(req.has_battle_pass),
             include_shop_resets=bool(req.include_shop_resets),
             include_events_estimate=bool(req.include_events_estimate),
-            include_endgame_resets=bool(req.include_endgame_resets)
+            include_endgame_resets=bool(req.include_endgame_resets),
         )
         return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/api/gacha/goals")
 @router.get("/api/gacha/goals/{game_id}")
@@ -61,6 +66,7 @@ async def list_gacha_goals(game_id: Optional[str] = "all"):
         return {"game_id": game_id or "all", "goals": goals}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/api/gacha/goals")
 async def save_gacha_goal_endpoint(req: GachaGoalSaveRequest):
@@ -77,11 +83,12 @@ async def save_gacha_goal_endpoint(req: GachaGoalSaveRequest):
             has_daily_pass=req.has_daily_pass,
             success_rate=req.success_rate,
             projected_pulls=req.projected_pulls,
-            notes=req.notes or ""
+            notes=req.notes or "",
         )
         return {"status": "saved", "goal_id": goal_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.delete("/api/gacha/goals/{goal_id}")
 async def delete_gacha_goal_endpoint(goal_id: int):
@@ -96,6 +103,7 @@ async def delete_gacha_goal_endpoint(goal_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/api/gacha/characters/{game_id}")
 async def get_gacha_characters_endpoint(game_id: str):
     """Retorna a lista de personagens 5★ (Lendários / Rank S) para o simulador de gacha."""
@@ -103,5 +111,65 @@ async def get_gacha_characters_endpoint(game_id: str):
         return await get_gacha_characters(game_id)
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================================================
+# RASTREADOR REAL DE TIROS / GACHA TRACKER (ETAPA 8)
+# ==========================================================================
+
+
+@router.get("/api/gacha/tracker/{game_id}", response_model=GachaTrackerOverviewResponse)
+async def get_gacha_tracker_overview(game_id: str, uid: Optional[str] = None):
+    """
+    Retorna o status exato do histórico oficial de tiros do jogador:
+    - Pity Atual em cada banner (Personagem, Arma, Padrão)
+    - Status do 50/50 (Garantido vs Disputa)
+    - Lista dos últimos 5★ com seus respectivos pities
+    - Médias e Taxa de Vitórias no 50/50
+    """
+    try:
+        return calculate_gacha_tracker_stats(game_id=game_id, uid=uid)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/gacha/tracker/import/{game_id}", response_model=ImportGachaResponse)
+async def import_gacha_tracker_endpoint(game_id: str, req: ImportGachaRequest):
+    """
+    Importa dados de histórico de tiros via JSON nos formatos UIGF v2.4+, SRGF ou lista bruta.
+    """
+    try:
+        raw_payload = req.raw_data if req.raw_data is not None else req.pulls_list
+        return import_gacha_log_data(game_id=game_id, raw_data=raw_payload, uid=req.uid)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/gacha/tracker/export/{game_id}")
+async def export_gacha_tracker_endpoint(game_id: str, uid: Optional[str] = None):
+    """
+    Exporta o histórico de tiros do usuário no formato universal UIGF v2.4 para backup e migração.
+    """
+    try:
+        return export_gacha_log_uigf(game_id=game_id, uid=uid)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/api/gacha/tracker/{game_id}")
+async def clear_gacha_tracker_endpoint(game_id: str, uid: Optional[str] = None, banner_category: Optional[str] = None):
+    """
+    Exclui o histórico de puxadas para o jogo e UID selecionados.
+    """
+    try:
+        deleted = database.delete_gacha_pulls(game_id=game_id, uid=uid, banner_category=banner_category)
+        return {
+            "status": "success",
+            "game_id": game_id,
+            "deleted_pulls": deleted,
+            "message": f"{deleted} puxadas foram removidas do histórico com sucesso.",
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

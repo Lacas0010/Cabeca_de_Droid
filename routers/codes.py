@@ -8,6 +8,7 @@ from services.promo_codes_service import redeem_promo_codes_for_game
 
 router = APIRouter(tags=["Promo Codes"])
 
+
 @router.get("/api/codes/{game_id}")
 async def get_promo_codes_endpoint(game_id: str):
     """Retorna os códigos promocionais ativos para o jogo selecionado."""
@@ -18,6 +19,7 @@ async def get_promo_codes_endpoint(game_id: str):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/api/codes/history/{game_id}")
 async def get_promo_codes_history_endpoint(game_id: str):
     """Retorna o histórico cronológico de códigos promocionais resgatados para o jogo."""
@@ -27,6 +29,7 @@ async def get_promo_codes_history_endpoint(game_id: str):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/api/codes/redeem")
 async def redeem_promo_code_endpoint(req: RedeemCodeRequest):

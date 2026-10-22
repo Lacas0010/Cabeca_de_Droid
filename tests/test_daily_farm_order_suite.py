@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import unittest
 import json
@@ -12,6 +13,7 @@ import database
 from build_calculator import generate_daily_farm_order, get_daily_farm_recommendations
 from static_data_manager import static_data_manager
 
+
 class TestDailyFarmOrderSuite(unittest.TestCase):
     def setUp(self):
         self.client = TestClient(server.app)
@@ -20,7 +22,7 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
     def test_database_farm_task_persistence(self):
         today = datetime.now().strftime("%Y-%m-%d")
         database.clear_completed_farm_tasks(today, "genshin")
-        
+
         # Inicialmente vazio
         completed = database.get_completed_farm_tasks(today, "genshin")
         self.assertEqual(len(completed), 0)
@@ -51,10 +53,10 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
                 "skills": [
                     {"name": "Ataque Normal", "level": 1, "max_level": 10},
                     {"name": "Salon Solitaire", "level": 6, "max_level": 10},
-                    {"name": "Povo Alegre", "level": 6, "max_level": 10}
+                    {"name": "Povo Alegre", "level": 6, "max_level": 10},
                 ],
                 "weapon": {"name": "Esplendor das Águas Silenciosas", "level": 70, "max_level": 90},
-                "relics": []
+                "relics": [],
             }
         ]
 
@@ -63,18 +65,13 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
                 "name": "Furina",
                 "tier": "SSS",
                 "relics": ["Golden Troupe"],
-                "talent_priority": "Burst > Skill > Normal"
+                "talent_priority": "Burst > Skill > Normal",
             }
         }
 
         # Simula Terça-feira (weekday=1), dia em que Justiça está aberta
         order = generate_daily_farm_order(
-            game_id="genshin",
-            roster=mock_roster,
-            meta_data=mock_meta,
-            current_energy=160,
-            max_energy=200,
-            weekday=1
+            game_id="genshin", roster=mock_roster, meta_data=mock_meta, current_energy=160, max_energy=200, weekday=1
         )
 
         self.assertEqual(order["game_id"], "genshin")
@@ -106,20 +103,16 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
                 "skills": [
                     {"name": "Ataque Básico", "level": 1, "max_level": 6},
                     {"name": "Perícia", "level": 4, "max_level": 10},
-                    {"name": "Perua Suprema", "level": 4, "max_level": 10}
+                    {"name": "Perua Suprema", "level": 4, "max_level": 10},
                 ],
                 "weapon": {"name": "Ao Longo da Margem Passada", "level": 60, "max_level": 80},
-                "relics": []
+                "relics": [],
             }
         ]
 
         # Jogador com apenas 30 de energia atual (menos que os passos cumulativos)
         order = generate_daily_farm_order(
-            game_id="hsr",
-            roster=mock_roster,
-            meta_data={},
-            current_energy=30,
-            max_energy=300
+            game_id="hsr", roster=mock_roster, meta_data={}, current_energy=30, max_energy=300
         )
 
         self.assertEqual(order["game_id"], "hsr")
@@ -132,13 +125,7 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
 
     def test_generate_daily_farm_order_empty_roster_fallback(self):
         # Quando o jogador não possui personagens pendentes
-        order = generate_daily_farm_order(
-            game_id="zzz",
-            roster=[],
-            meta_data={},
-            current_energy=120,
-            max_energy=240
-        )
+        order = generate_daily_farm_order(game_id="zzz", roster=[], meta_data={}, current_energy=120, max_energy=240)
 
         self.assertEqual(order["game_id"], "zzz")
         self.assertEqual(len(order["tasks"]), 1)
@@ -158,28 +145,25 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
         # 2. POST /api/farm/order-of-day/toggle-step
         if data["tasks"]:
             test_task_id = data["tasks"][0]["id"]
-            toggle_res = self.client.post("/api/farm/order-of-day/toggle-step", json={
-                "game_id": "genshin",
-                "task_id": test_task_id,
-                "completed": True
-            })
+            toggle_res = self.client.post(
+                "/api/farm/order-of-day/toggle-step",
+                json={"game_id": "genshin", "task_id": test_task_id, "completed": True},
+            )
             self.assertEqual(toggle_res.status_code, 200)
             self.assertTrue(toggle_res.json()["completed"])
 
             # Desmarca novamente
-            toggle_res_off = self.client.post("/api/farm/order-of-day/toggle-step", json={
-                "game_id": "genshin",
-                "task_id": test_task_id,
-                "completed": False
-            })
+            toggle_res_off = self.client.post(
+                "/api/farm/order-of-day/toggle-step",
+                json={"game_id": "genshin", "task_id": test_task_id, "completed": False},
+            )
             self.assertEqual(toggle_res_off.status_code, 200)
             self.assertFalse(toggle_res_off.json()["completed"])
 
         # 3. POST /api/farm/order-of-day/send-notification
         with patch.object(server.notifier, "send_notification", return_value={"status": "mock_sent", "results": {}}):
-            notify_res = self.client.post("/api/farm/order-of-day/send-notification", json={
-                "game_id": "genshin"
-            })
+            notify_res = self.client.post("/api/farm/order-of-day/send-notification", json={"game_id": "genshin"})
+
     def test_rest_api_farming_today_endpoints_all_games(self):
         for gid in ["genshin", "hsr", "zzz"]:
             res = self.client.get(f"/api/farming/today/{gid}")
@@ -218,6 +202,7 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
             # Todos os priority_targets retornados devem ser o personagem selecionado
             for pt in data_target["priority_targets"]:
                 self.assertEqual(pt["name"], target_name)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import unittest
@@ -7,6 +8,7 @@ import json
 from fastapi.testclient import TestClient
 from server import app, parse_character_build_data, parse_meta_target
 import database
+
 
 class TestMetaComparatorSuite(unittest.TestCase):
     @classmethod
@@ -20,7 +22,7 @@ class TestMetaComparatorSuite(unittest.TestCase):
             self.skipTest("Sem roster de HSR no banco")
         char_name = roster[0].get("name")
         build_data = parse_character_build_data("hsr", char_name)
-        
+
         self.assertEqual(build_data["name"], char_name)
         self.assertIn("weapon", build_data)
         self.assertIn("pieces", build_data)
@@ -39,7 +41,7 @@ class TestMetaComparatorSuite(unittest.TestCase):
             self.skipTest("Sem roster de Genshin no banco")
         char_name = roster[0].get("name")
         build_data = parse_character_build_data("genshin", char_name)
-        
+
         self.assertEqual(build_data["name"], char_name)
         self.assertIn("weapon", build_data)
         self.assertIn("pieces", build_data)
@@ -52,7 +54,7 @@ class TestMetaComparatorSuite(unittest.TestCase):
             self.skipTest("Sem roster de ZZZ no banco")
         char_name = roster[0].get("name")
         build_data = parse_character_build_data("zzz", char_name)
-        
+
         self.assertEqual(build_data["name"], char_name)
         self.assertIn("weapon", build_data)
         self.assertIn("pieces", build_data)
@@ -66,13 +68,13 @@ class TestMetaComparatorSuite(unittest.TestCase):
         self.assertIn("sets", meta)
         self.assertIn("stats", meta)
         self.assertIn("endgame_stats", meta)
-        
+
         # Garante que as armas extraídas não contêm justificativas
         for w in meta["weapons"]:
             self.assertFalse(w.lower().startswith("justificativa"))
             self.assertFalse(w.lower().startswith("review"))
             self.assertLess(len(w), 80)
-            
+
         # Garante que os sets extraídos não contêm justificativas
         for s in meta["all_sets"]:
             self.assertFalse(s.lower().startswith("justificativa"))
@@ -83,7 +85,7 @@ class TestMetaComparatorSuite(unittest.TestCase):
         meta = parse_meta_target("genshin", "Odette")
         self.assertIn("stats", meta)
         self.assertIn("endgame_stats", meta)
-        
+
         # Garante que os slots foram mapeados
         for slot in ["Areia", "Copo", "Tiara"]:
             if slot in meta["stats"]:
@@ -100,11 +102,7 @@ class TestMetaComparatorSuite(unittest.TestCase):
 
     def test_07_api_compare_endpoint_all_games(self):
         """Valida a resposta do endpoint HTTP /api/compare/{game_id}/{char_name}."""
-        test_cases = [
-            ("hsr", "Desbravador(a)"),
-            ("genshin", "Odette"),
-            ("zzz", "Sigrid")
-        ]
+        test_cases = [("hsr", "Desbravador(a)"), ("genshin", "Odette"), ("zzz", "Sigrid")]
         for gid, cname in test_cases:
             res = self.client.get(f"/api/compare/{gid}/{cname}")
             self.assertEqual(res.status_code, 200)
@@ -112,13 +110,13 @@ class TestMetaComparatorSuite(unittest.TestCase):
             self.assertEqual(data["game_id"], gid)
             self.assertIn("player_build", data)
             self.assertIn("meta_target", data)
-            
+
             pb = data["player_build"]
             self.assertIn("weapon", pb)
             self.assertIn("sets", pb)
             self.assertIn("stats", pb)
             self.assertIn("pieces", pb)
-            
+
             mt = data["meta_target"]
             self.assertIn("weapon", mt)
             self.assertIn("weapons", mt)
@@ -138,12 +136,12 @@ class TestMetaComparatorSuite(unittest.TestCase):
         self.assertIn("Vida", meta_hutao["endgame_stats"])
         self.assertIn("Taxa Crítica", meta_hutao["endgame_stats"])
         self.assertEqual(meta_hutao["endgame_stats"]["Vida"], "30.000+")
-        
+
         # Kazuha deve focar em Proficiência Elemental e Recarga
         meta_kazuha = parse_meta_target("genshin", "Kaedehara Kazuha")
         self.assertIn("Proficiência Elemental", meta_kazuha["endgame_stats"])
         self.assertEqual(meta_kazuha["endgame_stats"]["Proficiência Elemental"], "900+")
-        
+
         # Raiden deve focar em Recarga de Energia
         meta_raiden = parse_meta_target("genshin", "Shogun Raiden")
         self.assertIn("Recarga de Energia", meta_raiden["endgame_stats"])
@@ -156,12 +154,12 @@ class TestMetaComparatorSuite(unittest.TestCase):
         self.assertIn("ATQ", meta_kafka["endgame_stats"])
         self.assertIn("Acerto de Efeito", meta_kafka["endgame_stats"])
         self.assertIn("VEL", meta_kafka["endgame_stats"])
-        
+
         # Firefly (Quebra) deve focar em Efeito de Quebra e VEL
         meta_firefly = parse_meta_target("hsr", "Vaga-lume")
         self.assertIn("Efeito de Quebra", meta_firefly["endgame_stats"])
         self.assertEqual(meta_firefly["endgame_stats"]["Efeito de Quebra"], "250%+")
-        
+
         # Aventurine (Preservação/DEF) deve focar em DEF 4000+
         meta_aventurine = parse_meta_target("hsr", "Aventurine")
         self.assertIn("DEF", meta_aventurine["endgame_stats"])
@@ -173,12 +171,12 @@ class TestMetaComparatorSuite(unittest.TestCase):
         meta_jane = parse_meta_target("zzz", "Jane Doe")
         self.assertIn("Proficiência de Anomalia", meta_jane["endgame_stats"])
         self.assertEqual(meta_jane["endgame_stats"]["Proficiência de Anomalia"], "420+")
-        
+
         # Caesar (Impacto / Tanque)
         meta_caesar = parse_meta_target("zzz", "Caesar King")
         self.assertIn("Impacto", meta_caesar["endgame_stats"])
         self.assertEqual(meta_caesar["endgame_stats"]["Impacto"], "160+")
-        
+
         # Miyabi (DPS Crítico)
         meta_miyabi = parse_meta_target("zzz", "Hoshimi Miyabi")
         self.assertIn("Taxa CRIT", meta_miyabi["endgame_stats"])
@@ -189,7 +187,7 @@ class TestMetaComparatorSuite(unittest.TestCase):
         # HSR: Vaga-lume deve carregar as armas de firefly.md
         meta_vagalume = parse_meta_target("hsr", "Vaga-lume")
         self.assertTrue(len(meta_vagalume["weapons"]) > 0 or meta_vagalume["weapon"] != "Não informado")
-        
+
         # HSR: Cisne Negro deve carregar as armas de black_swan.md
         meta_cisne = parse_meta_target("hsr", "Cisne Negro")
         self.assertTrue(len(meta_cisne["weapons"]) > 0 or meta_cisne["weapon"] != "Não informado")
@@ -215,6 +213,6 @@ class TestMetaComparatorSuite(unittest.TestCase):
         self.assertEqual(meta_skirk["sets"][0], "Galerias da Sombra da Onda")
         self.assertNotIn("Recarga de Energia", meta_skirk["endgame_stats"])
 
+
 if __name__ == "__main__":
     unittest.main()
-

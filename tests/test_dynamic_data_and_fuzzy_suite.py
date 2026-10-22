@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import unittest
@@ -7,6 +8,7 @@ import shutil
 from static_data_manager import static_data_manager
 from meta_comparator import resolve_character_canonical_slug, find_best_guide_file, parse_meta_target
 from services.ai_build_generator import AIBuildGenerator, sanitize_stat_name
+
 
 class TestDynamicDataAndFuzzySuite(unittest.TestCase):
     @classmethod
@@ -20,7 +22,7 @@ class TestDynamicDataAndFuzzySuite(unittest.TestCase):
         self.assertIn("hsr", results)
         self.assertIn("genshin", results)
         self.assertIn("zzz", results)
-        
+
         # Garante que as contagens de personagens são superiores a zero
         self.assertGreater(results["hsr"].get("character_count", 0), 20)
         self.assertGreater(results["genshin"].get("character_count", 0), 30)
@@ -32,7 +34,7 @@ class TestDynamicDataAndFuzzySuite(unittest.TestCase):
         self.assertEqual(resolve_character_canonical_slug("genshin", "Raiden Shogun"), "raiden_shogun")
         self.assertIn(resolve_character_canonical_slug("genshin", "Kazuha Kaedehara"), ["kazuha", "kaedehara_kazuha"])
         self.assertEqual(resolve_character_canonical_slug("genshin", "Furina"), "furina")
-        
+
         # 2. Honkai: Star Rail
         dhil_slug = resolve_character_canonical_slug("hsr", "Dan Heng • Imbibitor Lunae")
         self.assertIn(dhil_slug, ["dan_heng_imbibitor_lunae", "dan_heng_•_imbibitor_lunae"])
@@ -116,10 +118,15 @@ class TestDynamicDataAndFuzzySuite(unittest.TestCase):
         self.assertEqual(resolve_character_canonical_slug("genshin", "Viajante", element="Dendro"), "traveler_dendro")
         self.assertEqual(resolve_character_canonical_slug("genshin", "Traveler", element="Hydro"), "traveler_hydro")
         self.assertEqual(resolve_character_canonical_slug("genshin", "Viajante", element="Pyro"), "traveler_pyro")
-        
-        self.assertEqual(resolve_character_canonical_slug("hsr", "Desbravador", element="Harmony"), "trailblazer_•_harmony")
-        self.assertEqual(resolve_character_canonical_slug("hsr", "Trailblazer", element="Preservation"), "trailblazer_•_preservation")
+
+        self.assertEqual(
+            resolve_character_canonical_slug("hsr", "Desbravador", element="Harmony"), "trailblazer_•_harmony"
+        )
+        self.assertEqual(
+            resolve_character_canonical_slug("hsr", "Trailblazer", element="Preservation"), "trailblazer_•_preservation"
+        )
         self.assertEqual(resolve_character_canonical_slug("hsr", "Desbravador", element="Ice"), "trailblazer_•_ice")
+
 
 if __name__ == "__main__":
     unittest.main()

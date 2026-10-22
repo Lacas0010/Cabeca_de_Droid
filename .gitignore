@@ -32,6 +32,7 @@ desktop.ini
 .DS_Store
 .vscode/
 .idea/
+*.code-workspace
 *.suo
 *.ntvs*
 *.njsproj

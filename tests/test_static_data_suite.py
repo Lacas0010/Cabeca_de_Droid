@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import unittest
 import json
@@ -8,8 +9,15 @@ from fastapi.testclient import TestClient
 
 import server
 import database
-from static_data_manager import static_data_manager, StaticDataManager, GENSHIN_CHARACTERS_SEED, HSR_CHARACTERS_SEED, ZZZ_CHARACTERS_SEED
+from static_data_manager import (
+    static_data_manager,
+    StaticDataManager,
+    GENSHIN_CHARACTERS_SEED,
+    HSR_CHARACTERS_SEED,
+    ZZZ_CHARACTERS_SEED,
+)
 from build_calculator import calculate_ascension
+
 
 class TestStaticDataSuite(unittest.TestCase):
     def setUp(self):
@@ -76,12 +84,7 @@ class TestStaticDataSuite(unittest.TestCase):
     def test_sync_upstream_with_mock_and_fallback(self):
         # Simula resposta bem-sucedida de GitHub/CDN para HSR
         mock_hsr_upstream = {
-            "9999": {
-                "name": "Novo Personagem Teste",
-                "rarity": 5,
-                "element": "Fire",
-                "path": "Destruction"
-            }
+            "9999": {"name": "Novo Personagem Teste", "rarity": 5, "element": "Fire", "path": "Destruction"}
         }
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -108,7 +111,7 @@ class TestStaticDataSuite(unittest.TestCase):
     def test_database_static_data_manifests(self):
         # 1. Salva manifesto no banco de dados SQLite
         database.save_static_data_manifest("genshin", "v1.2.0", 85, "success", "HoYoWiki CDN")
-        
+
         # 2. Consulta manifesto específico
         manifest = database.get_static_data_manifest("genshin")
         self.assertIsNotNone(manifest)
@@ -133,7 +136,7 @@ class TestStaticDataSuite(unittest.TestCase):
         self.assertEqual(res_furina["boss_item_name"], "Gota d'Água Não Envelhecida")
         self.assertEqual(res_furina["local_specialty"], "Lírio de Lakelight")
         self.assertIn("Justiça", res_furina["talent_material"])
-        self.assertIn(1, res_furina["domain_days"]) # Terça
+        self.assertIn(1, res_furina["domain_days"])  # Terça
 
     def test_rest_api_static_data_endpoints(self):
         # 1. GET /api/static-data/status
@@ -169,12 +172,10 @@ class TestStaticDataSuite(unittest.TestCase):
         self.assertTrue(data_all["total"] > 0)
 
         # 6. POST /api/materials/calculate com enriquecimento
-        res_mat = self.client.post("/api/materials/calculate", json={
-            "game_id": "genshin",
-            "char_name": "Furina",
-            "current_level": 50,
-            "target_level": 90
-        })
+        res_mat = self.client.post(
+            "/api/materials/calculate",
+            json={"game_id": "genshin", "char_name": "Furina", "current_level": 50, "target_level": 90},
+        )
         self.assertEqual(res_mat.status_code, 200)
         mat_data = res_mat.json()
         self.assertEqual(mat_data["boss_item_name"], "Gota d'Água Não Envelhecida")
@@ -185,7 +186,9 @@ class TestStaticDataSuite(unittest.TestCase):
         self.assertIsNotNone(acheron)
         self.assertEqual(acheron["name"], "Acheron")
         self.assertIn("Incinerador Celestial", acheron.get("talent_tier4_name", ""))
-        self.assertTrue(acheron.get("talent_tier4_icon", "").startswith("https://raw.githubusercontent.com/Mar-7th/StarRailRes"))
+        self.assertTrue(
+            acheron.get("talent_tier4_icon", "").startswith("https://raw.githubusercontent.com/Mar-7th/StarRailRes")
+        )
         self.assertIn("Estatuto", acheron.get("boss_mat_name", ""))
         self.assertIn("Monstro dos Sonhos", acheron.get("weekly_boss_mat_name", ""))
         self.assertIn("Pensamento", acheron.get("enemy_tier1_name", ""))
@@ -199,7 +202,9 @@ class TestStaticDataSuite(unittest.TestCase):
         lc_prof = static_data_manager.get_weapon_profile("hsr", "Along the Passing Shore")
         self.assertIsNotNone(lc_prof)
         self.assertIn("Incinerador Celestial", lc_prof.get("w_mat_tier4_name", ""))
-        self.assertTrue(lc_prof.get("w_mat_tier4_icon", "").startswith("https://raw.githubusercontent.com/Mar-7th/StarRailRes"))
+        self.assertTrue(
+            lc_prof.get("w_mat_tier4_icon", "").startswith("https://raw.githubusercontent.com/Mar-7th/StarRailRes")
+        )
 
     def test_zzz_specific_material_resolution(self):
         ellen = static_data_manager.get_character_profile("zzz", "ellen")
@@ -219,6 +224,7 @@ class TestStaticDataSuite(unittest.TestCase):
         self.assertIsNotNone(w_prof)
         self.assertTrue(len(w_prof.get("w_mat_tier4_name", "")) > 0)
         self.assertTrue(w_prof.get("w_mat_tier4_icon", "").startswith("https://"))
+
 
 if __name__ == "__main__":
     unittest.main()

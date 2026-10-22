@@ -1,0 +1,45 @@
+{
+  "retcode": 0,
+  "message": "OK",
+  "data": {
+    "energy": {
+      "progress": {
+        "max": 240,
+        "current": 218
+      },
+      "restore": 7920
+    },
+    "vitality": {
+      "max": 100,
+      "current": 100
+    },
+    "vhs_sale": {
+      "sale_state": "SaleStateDoing",
+      "wait_sub_avatar": false
+    },
+    "card_sign": {
+      "has_signed": true,
+      "cur_sign_days": 21
+    },
+    "abyss_refresh": 345600,
+    "video_store_state": "Operando Normalmente",
+    "scratch_card_completed": true,
+    "engagement": {
+      "current": 400,
+      "max": 400
+    },
+    "battery_charge": {
+      "current": 218,
+      "max": 240,
+      "seconds_till_full": 7920
+    },
+    "bounty_commission": {
+      "num": 3,
+      "total": 3
+    },
+    "survey_points": {
+      "num": 8000,
+      "total": 8000
+    }
+  }
+}

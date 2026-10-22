@@ -1,0 +1,190 @@
+{
+  "retcode": 0,
+  "message": "OK",
+  "data": {
+    "avatar_list": [
+      {
+        "id": 1308,
+        "name": "Acheron",
+        "element": "lightning",
+        "rarity": 5,
+        "level": 80,
+        "rank": 2,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1308.png",
+        "image": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/1308.png",
+        "figure_path": "avatar/1308.png",
+        "equip": {
+          "id": 23022,
+          "name": "Along the Passing Shore",
+          "rarity": 5,
+          "level": 80,
+          "rank": 1,
+          "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/light_cone/23022.png",
+          "desc": "Aumenta o Dano Crítico do usuário em 36%."
+        },
+        "relics": [
+          {
+            "id": 61141,
+            "name": "Mergulhadora Pioneira dos Confins Mortos",
+            "pos": 1,
+            "slot": "Cabeça",
+            "rarity": 5,
+            "level": 15,
+            "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/61141.png",
+            "main_property": {
+              "property_type": "hp_flat",
+              "property_name": "HP",
+              "value": "705"
+            },
+            "sub_property_list": [
+              { "property_type": "crit_rate", "property_name": "Taxa CRIT", "value": "9.3%" },
+              { "property_type": "crit_dmg", "property_name": "Dano CRIT", "value": "18.1%" },
+              { "property_type": "atk_pct", "property_name": "ATK", "value": "8.6%" },
+              { "property_type": "speed", "property_name": "VEL", "value": "4" }
+            ]
+          },
+          {
+            "id": 61142,
+            "name": "Mergulhadora Pioneira dos Confins Mortos",
+            "pos": 2,
+            "slot": "Mãos",
+            "rarity": 5,
+            "level": 15,
+            "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/61142.png",
+            "main_property": {
+              "property_type": "atk_flat",
+              "property_name": "ATK",
+              "value": "352"
+            },
+            "sub_property_list": [
+              { "property_type": "crit_rate", "property_name": "Taxa CRIT", "value": "8.7%" },
+              { "property_type": "crit_dmg", "property_name": "Dano CRIT", "value": "23.3%" },
+              { "property_type": "atk_pct", "property_name": "ATK", "value": "4.3%" },
+              { "property_type": "break_effect", "property_name": "Efeito de Quebra", "value": "5.8%" }
+            ]
+          },
+          {
+            "id": 61143,
+            "name": "Mergulhadora Pioneira dos Confins Mortos",
+            "pos": 3,
+            "slot": "Corpo",
+            "rarity": 5,
+            "level": 15,
+            "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/61143.png",
+            "main_property": {
+              "property_type": "crit_dmg",
+              "property_name": "Dano CRIT",
+              "value": "64.8%"
+            },
+            "sub_property_list": [
+              { "property_type": "crit_rate", "property_name": "Taxa CRIT", "value": "10.6%" },
+              { "property_type": "atk_pct", "property_name": "ATK", "value": "12.9%" },
+              { "property_type": "speed", "property_name": "VEL", "value": "5" },
+              { "property_type": "hp_flat", "property_name": "HP", "value": "76" }
+            ]
+          },
+          {
+            "id": 61144,
+            "name": "Mergulhadora Pioneira dos Confins Mortos",
+            "pos": 4,
+            "slot": "Pés",
+            "rarity": 5,
+            "level": 15,
+            "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/61144.png",
+            "main_property": {
+              "property_type": "atk_pct",
+              "property_name": "ATK",
+              "value": "43.2%"
+            },
+            "sub_property_list": [
+              { "property_type": "crit_rate", "property_name": "Taxa CRIT", "value": "6.1%" },
+              { "property_type": "crit_dmg", "property_name": "Dano CRIT", "value": "24.6%" },
+              { "property_type": "speed", "property_name": "VEL", "value": "2" },
+              { "property_type": "def_flat", "property_name": "DEF", "value": "42" }
+            ]
+          }
+        ],
+        "ornaments": [
+          {
+            "id": 61155,
+            "name": "Izumo Gensei e o Reino Divino de Takama",
+            "pos": 5,
+            "slot": "Esfera Planar",
+            "rarity": 5,
+            "level": 15,
+            "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/61155.png",
+            "main_property": {
+              "property_type": "lightning_dmg",
+              "property_name": "Bônus de Dano de Raio",
+              "value": "38.8%"
+            },
+            "sub_property_list": [
+              { "property_type": "crit_rate", "property_name": "Taxa CRIT", "value": "6.8%" },
+              { "property_type": "crit_dmg", "property_name": "Dano CRIT", "value": "19.4%" },
+              { "property_type": "atk_pct", "property_name": "ATK", "value": "8.1%" },
+              { "property_type": "hp_pct", "property_name": "HP", "value": "3.8%" }
+            ]
+          },
+          {
+            "id": 61156,
+            "name": "Izumo Gensei e o Reino Divino de Takama",
+            "pos": 6,
+            "slot": "Corda de Ligação",
+            "rarity": 5,
+            "level": 15,
+            "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/relic/61156.png",
+            "main_property": {
+              "property_type": "atk_pct",
+              "property_name": "ATK",
+              "value": "43.2%"
+            },
+            "sub_property_list": [
+              { "property_type": "crit_rate", "property_name": "Taxa CRIT", "value": "9.0%" },
+              { "property_type": "crit_dmg", "property_name": "Dano CRIT", "value": "17.4%" },
+              { "property_type": "speed", "property_name": "VEL", "value": "3" },
+              { "property_type": "effect_res", "property_name": "RES a Efeito", "value": "4.1%" }
+            ]
+          }
+        ],
+        "skills": [
+          { "point_id": 1308001, "point_type": 1, "level": 6, "max_level": 6, "name": "Ataque Básico: Três Cortes Amurchados" },
+          { "point_id": 1308002, "point_type": 2, "level": 10, "max_level": 10, "name": "Perícia: Lampejo Octogonal" },
+          { "point_id": 1308003, "point_type": 3, "level": 10, "max_level": 10, "name": "Suprema: Sonho Desvanecido em Gotas Rubras" },
+          { "point_id": 1308004, "point_type": 4, "level": 10, "max_level": 10, "name": "Talento: Flor de Chuva no Vazio" }
+        ],
+        "properties": [
+          { "property_type": 1, "name": "Vida Máx.", "base": "1125", "add": "1290", "final": "2415" },
+          { "property_type": 2, "name": "ATK", "base": "698", "add": "2850", "final": "3548" },
+          { "property_type": 3, "name": "DEF", "base": "436", "add": "450", "final": "886" },
+          { "property_type": 4, "name": "VEL", "base": "101", "add": "14", "final": "115" },
+          { "property_type": 5, "name": "Taxa Crítica", "base": "5.0%", "add": "68.2%", "final": "73.2%" },
+          { "property_type": 6, "name": "Dano Crítico", "base": "50.0%", "add": "172.6%", "final": "222.6%" }
+        ]
+      },
+      {
+        "id": 1304,
+        "name": "Aventurine",
+        "element": "imaginary",
+        "rarity": 5,
+        "level": 80,
+        "rank": 0,
+        "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/character/1304.png",
+        "image": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/1304.png",
+        "figure_path": "avatar/1304.png",
+        "equip": {
+          "id": 23023,
+          "name": "Inherently Unjust Destiny",
+          "rarity": 5,
+          "level": 80,
+          "rank": 1,
+          "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/light_cone/23023.png",
+          "desc": "Aumenta a DEF do usuário em 40%."
+        },
+        "relics": [],
+        "ornaments": [],
+        "skills": [],
+        "properties": []
+      }
+    ]
+  }
+}

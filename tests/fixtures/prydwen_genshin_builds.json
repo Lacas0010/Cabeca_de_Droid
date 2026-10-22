@@ -1,0 +1,130 @@
+{
+  "source": "Prydwen Institute",
+  "game": "genshin",
+  "updated_at": "2026-10-20T12:00:00Z",
+  "characters": {
+    "furina": {
+      "name": "Furina",
+      "slug": "furina",
+      "element": "Hydro",
+      "rarity": 5,
+      "weapon_type": "Sword",
+      "role": "Off-field DPS / Buffer",
+      "tier": "T0",
+      "weapons": [
+        {
+          "name": "Splendor of Tranquil Waters",
+          "tier": "S+",
+          "rank": 1,
+          "is_signature": true,
+          "notes": "Melhor arma geral para maximizar dano pessoal e vida máxima."
+        },
+        {
+          "name": "Fleuve Cendre Ferryman",
+          "tier": "S",
+          "rank": 5,
+          "is_signature": false,
+          "notes": "Excelente opção F2P para suprir requisitos severos de Recarga de Energia."
+        },
+        {
+          "name": "Favonius Sword",
+          "tier": "S",
+          "rank": 5,
+          "is_signature": false,
+          "notes": "Gera partículas para toda a equipe, ideal em composições sedentas de energia."
+        }
+      ],
+      "artifacts": [
+        {
+          "set_name": "Golden Troupe",
+          "pieces": 4,
+          "rating": "Bis",
+          "score_weight": 1.0,
+          "notes": "Conjunto ideal absoluto. Aumenta o dano da Perícia Elemental em até 70% fora de campo."
+        },
+        {
+          "set_name": "Tenacity of the Millelith (2-PC) + Vourukasha's Glow (2-PC)",
+          "pieces": 4,
+          "rating": "Alternative",
+          "score_weight": 0.85,
+          "notes": "Combinação de +40% HP para consistência caso não tenha 4 peças de Trupe."
+        }
+      ],
+      "stats_main": {
+        "sands": ["HP%", "Recarga de Energia"],
+        "goblet": ["HP%", "Bônus de Dano Hydro"],
+        "circlet": ["Taxa Crítica", "Dano Crítico", "HP%"]
+      },
+      "stats_sub": "Recarga de Energia (até ~160-180%) > Taxa Crítica / Dano Crítico > HP% > Maestria Elemental",
+      "benchmarks": {
+        "hp": 38000,
+        "energy_recharge": 170.0,
+        "crit_rate": 70.0,
+        "crit_dmg": 140.0
+      },
+      "talent_priority": [
+        "Suprema (Elemental Burst)",
+        "Habilidade Elemental",
+        "Ataque Básico"
+      ]
+    },
+    "neuvillette": {
+      "name": "Neuvillette",
+      "slug": "neuvillette",
+      "element": "Hydro",
+      "rarity": 5,
+      "weapon_type": "Catalyst",
+      "role": "Main DPS",
+      "tier": "T0",
+      "weapons": [
+        {
+          "name": "Tome of the Eternal Flow",
+          "tier": "S+",
+          "rank": 1,
+          "is_signature": true,
+          "notes": "Arma assinatura fornecendo Dano CRIT massivo, HP% e restauração de energia."
+        },
+        {
+          "name": "Sacrificial Jade",
+          "tier": "S",
+          "rank": 5,
+          "is_signature": false,
+          "notes": "Melhor catalisador de 4 estrelas do Passe de Batalha com Taxa CRIT e +64% HP."
+        },
+        {
+          "name": "Prototype Amber",
+          "tier": "A+",
+          "rank": 5,
+          "is_signature": false,
+          "notes": "Excelente catalisador forjável F2P com regeneração de energia e cura passiva."
+        }
+      ],
+      "artifacts": [
+        {
+          "set_name": "Marechaussee Hunter",
+          "pieces": 4,
+          "rating": "Bis",
+          "score_weight": 1.0,
+          "notes": "Garante 36% de Taxa CRIT constante através da variação contínua de HP."
+        }
+      ],
+      "stats_main": {
+        "sands": ["HP%"],
+        "goblet": ["Bônus de Dano Hydro", "HP%"],
+        "circlet": ["Dano Crítico", "HP%"]
+      },
+      "stats_sub": "HP% > Taxa Crítica / Dano Crítico > Recarga de Energia (~120%) > Maestria Elemental",
+      "benchmarks": {
+        "hp": 40000,
+        "energy_recharge": 120.0,
+        "crit_rate": 55.0,
+        "crit_dmg": 220.0
+      },
+      "talent_priority": [
+        "Ataque Básico (Ataque Carregado)",
+        "Suprema (Elemental Burst)",
+        "Habilidade Elemental"
+      ]
+    }
+  }
+}

@@ -440,6 +440,21 @@
                     </div>
                 </div>
 
+                <!-- BARRA DE SELEÇÃO E TROCA RÁPIDA DE PERFIL / MULTI-UID -->
+                <div id="account-profile-switcher-bar" style="margin-top: 16px; padding: 12px 18px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                        <span style="font-size: 13px; font-weight: 700; color: #e2e8f0; display: flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-users" style="color: #38bdf8;"></i> Perfil Ativo:
+                        </span>
+                        <select id="quick-profile-select" onchange="window.handleQuickProfileSwitch(this.value)" class="snap-select" style="padding: 6px 12px; font-size: 12px; border-radius: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer; min-width: 220px;">
+                            <option value="">Carregando perfis salvos...</option>
+                        </select>
+                    </div>
+                    <div id="quick-profile-info" style="font-size: 12px; color: #94a3b8; display: flex; align-items: center; gap: 10px;">
+                        <!-- Preenchido dinamicamente via JS -->
+                    </div>
+                </div>
+
                 <!-- WIDGET MORNING BRIEFING DIÁRIO -->
                 <div id="home-morning-briefing-widget" style="margin-top: 20px; background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65)); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; padding: 20px; box-shadow: 0 4px 20px rgba(56, 189, 248, 0.1);">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
@@ -1210,6 +1225,10 @@
                         <i class="fa-solid fa-bullseye" style="color: #10b981;"></i> Metas de Banners Salvas
                         <span class="subnav-badge" id="gacha-goals-count-badge" style="background: rgba(16, 185, 129, 0.2); color: #34d399;">0</span>
                     </button>
+                    <button class="game-subnav-btn gacha-view-btn" data-view="tracker">
+                        <i class="fa-solid fa-clock-rotate-left" style="color: #38bdf8;"></i> Histórico Real & Pity Oficial
+                        <span class="subnav-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8;">UIGF</span>
+                    </button>
                 </div>
 
                 <!-- SUBVIEW 1: SIMULADOR RÁPIDO MONTE CARLO -->
@@ -1577,6 +1596,166 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- SUBVIEW 4: RASTREADOR REAL DE TIROS & PITY OFICIAL (ETAPA 8) -->
+                <div id="gacha-view-tracker" class="gacha-subview" style="display: none; margin-top: 14px;">
+                    <div class="overview-card" style="margin-top: 0;">
+                        <!-- Barra Superior de Controle do Rastreador -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px;">
+                            <div>
+                                <h3 style="margin: 0; color: #38bdf8; font-size: 18px; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fa-solid fa-clock-rotate-left"></i> Rastreador Oficial de Histórico & Pity Real
+                                </h3>
+                                <span style="font-size: 12px; color: var(--text-muted);">Acompanhe seu Pity atual, status do 50/50 e estatísticas reais de sorte importadas dos logs oficiais (UIGF / SRGF).</span>
+                            </div>
+
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <!-- Seletor de Jogo -->
+                                <div style="display: flex; gap: 4px; background: rgba(0,0,0,0.4); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                                    <button class="filter-btn active tracker-game-btn" onclick="window.switchGachaTrackerGame('hsr')" data-game="hsr" style="padding: 4px 10px; font-size: 11px;">HSR</button>
+                                    <button class="filter-btn tracker-game-btn" onclick="window.switchGachaTrackerGame('genshin')" data-game="genshin" style="padding: 4px 10px; font-size: 11px;">Genshin</button>
+                                    <button class="filter-btn tracker-game-btn" onclick="window.switchGachaTrackerGame('zzz')" data-game="zzz" style="padding: 4px 10px; font-size: 11px;">ZZZ</button>
+                                </div>
+
+                                <!-- Ações de Importar e Exportar -->
+                                <input type="file" id="gacha-tracker-file-input" accept=".json" style="display: none;" onchange="window.handleGachaLogFileImport(this)">
+                                <button onclick="document.getElementById('gacha-tracker-file-input').click()" class="primary-btn" style="padding: 6px 12px; font-size: 11px; font-weight: 700; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fa-solid fa-file-import"></i> Importar UIGF / JSON
+                                </button>
+                                <button onclick="window.exportGachaLogUIGF()" class="secondary-btn" style="padding: 6px 12px; font-size: 11px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                                    <i class="fa-solid fa-file-export"></i> Backup UIGF
+                                </button>
+                                <button onclick="window.clearGachaLogHistory()" title="Limpar histórico deste jogo" class="secondary-btn" style="padding: 6px 10px; font-size: 11px; border-color: rgba(239, 68, 68, 0.4); color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; cursor: pointer;">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card de Resumo de Sorte Global -->
+                        <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+                            <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total de Tiros Dados:</span>
+                                    <strong id="tracker-stat-total-pulls" style="font-size: 20px; color: #fff;">0</strong>
+                                </div>
+                                <div style="width: 1px; height: 32px; background: rgba(255,255,255,0.1);"></div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">5★ Conquistados:</span>
+                                    <strong id="tracker-stat-total-fives" style="font-size: 20px; color: #fbbf24;">0</strong>
+                                </div>
+                                <div style="width: 1px; height: 32px; background: rgba(255,255,255,0.1);"></div>
+                                <div style="display: flex; flex-direction: column;">
+                                    <span style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Pity Médio por 5★:</span>
+                                    <strong id="tracker-stat-avg-pity" style="font-size: 20px; color: #38bdf8;">--</strong>
+                                </div>
+                            </div>
+                            <div>
+                                <span id="tracker-luck-badge" style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; padding: 5px 14px; border-radius: 20px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #38bdf8;">
+                                    Sem dados
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Grade dos 3 Banners Oficiais (Personagem, Arma, Padrão) -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
+                            <!-- 1. BANNER DE PERSONAGEM LIMITADO -->
+                            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-user-astronaut" style="color: #38bdf8;"></i> Personagem Limitado
+                                    </span>
+                                    <span id="tracker-char-status-badge" style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24;">50/50</span>
+                                </div>
+
+                                <!-- Contador de Pity Gigante -->
+                                <div style="text-align: center; padding: 10px 0;">
+                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">PITY ATUAL</span>
+                                    <div style="font-size: 42px; font-weight: 900; color: #fff; line-height: 1.1; margin: 4px 0;">
+                                        <span id="tracker-char-pity-current">0</span><span style="font-size: 20px; color: #64748b;"> / 90</span>
+                                    </div>
+                                    <span id="tracker-char-soft-pity-text" style="font-size: 11px; color: #94a3b8;">Faltam 74 tiros para o Soft Pity</span>
+                                </div>
+
+                                <!-- Barra de Progresso do Pity -->
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                    <div id="tracker-char-pity-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8); border-radius: 10px; transition: width 0.4s ease;"></div>
+                                </div>
+
+                                <!-- Histórico dos Últimos 5★ -->
+                                <div style="margin-top: 6px;">
+                                    <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Últimos 5★ Obtidos:</span>
+                                    <div id="tracker-char-history-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto;">
+                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum registro encontrado.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 2. BANNER DE CONES DE LUZ / ARMAS -->
+                            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc;"></i> Armas / Cones de Luz
+                                    </span>
+                                    <span style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">75/25</span>
+                                </div>
+
+                                <!-- Contador de Pity Gigante -->
+                                <div style="text-align: center; padding: 10px 0;">
+                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">PITY ATUAL</span>
+                                    <div style="font-size: 42px; font-weight: 900; color: #fff; line-height: 1.1; margin: 4px 0;">
+                                        <span id="tracker-weapon-pity-current">0</span><span style="font-size: 20px; color: #64748b;"> / 80</span>
+                                    </div>
+                                    <span id="tracker-weapon-soft-pity-text" style="font-size: 11px; color: #94a3b8;">Faltam 64 tiros para o Soft Pity</span>
+                                </div>
+
+                                <!-- Barra de Progresso do Pity -->
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                    <div id="tracker-weapon-pity-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #c084fc, #ec4899); border-radius: 10px; transition: width 0.4s ease;"></div>
+                                </div>
+
+                                <!-- Histórico dos Últimos 5★ -->
+                                <div style="margin-top: 6px;">
+                                    <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Últimos 5★ Obtidos:</span>
+                                    <div id="tracker-weapon-history-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto;">
+                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum registro encontrado.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 3. BANNER PADRÃO / MOCHILEIRO -->
+                            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-compass" style="color: #94a3b8;"></i> Banner Padrão / Mochileiro
+                                    </span>
+                                    <span style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #cbd5e1;">Permanente</span>
+                                </div>
+
+                                <!-- Contador de Pity Gigante -->
+                                <div style="text-align: center; padding: 10px 0;">
+                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">PITY ATUAL</span>
+                                    <div style="font-size: 42px; font-weight: 900; color: #fff; line-height: 1.1; margin: 4px 0;">
+                                        <span id="tracker-standard-pity-current">0</span><span style="font-size: 20px; color: #64748b;"> / 90</span>
+                                    </div>
+                                    <span id="tracker-standard-soft-pity-text" style="font-size: 11px; color: #94a3b8;">Faltam 74 tiros para o Soft Pity</span>
+                                </div>
+
+                                <!-- Barra de Progresso do Pity -->
+                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                    <div id="tracker-standard-pity-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #94a3b8, #cbd5e1); border-radius: 10px; transition: width 0.4s ease;"></div>
+                                </div>
+
+                                <!-- Histórico dos Últimos 5★ -->
+                                <div style="margin-top: 6px;">
+                                    <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Últimos 5★ Obtidos:</span>
+                                    <div id="tracker-standard-history-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto;">
+                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum registro encontrado.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <!-- ABA CENTRAL DE FARM DIÁRIO -->
@@ -1742,7 +1921,7 @@
                     <div class="chat-container" style="flex: 2; display: flex; flex-direction: column;">
                         <div class="chat-header">
                             <h2>Cabeça de Droid</h2>
-                            <div class="chat-context">
+                            <div class="chat-context" style="display: flex; align-items: center; gap: 8px;">
                                 <label for="chat-context-select">Contexto do RAG:</label>
                                 <select id="chat-context-select">
                                     <option value="todos">Todos os Jogos (Global)</option>
@@ -1750,6 +1929,9 @@
                                     <option value="genshin">Genshin Impact</option>
                                     <option value="hsr">Honkai: Star Rail</option>
                                 </select>
+                                <button id="btn-clear-chat-history" title="Limpar Histórico da Conversa" class="secondary-btn" style="padding: 4px 8px; font-size: 11px; color: var(--color-danger); border-color: rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.08); border-radius: 6px;">
+                                    <i class="fa-solid fa-trash-can"></i> Limpar
+                                </button>
                             </div>
                         </div>
                         
@@ -1838,6 +2020,21 @@
                         <div class="btn-row" style="margin-top: 10px; flex-wrap: wrap; gap: 10px;">
                             <button id="btn-auto-login" class="secondary-btn" style="border-color: #3b82f6; color: #60a5fa;"><i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright</button>
                             <button id="btn-clear-credentials" class="secondary-btn" style="border-color: #ef4444; color: #f87171; background: rgba(239, 68, 68, 0.08);"><i class="fa-solid fa-key"></i> Limpar Credenciais do Cofre</button>
+                        </div>
+                    </div>
+
+                    <!-- 2.1 GERENCIADOR DE PERFIS E MULTI-UID -->
+                    <div class="config-section">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+                            <h3 style="margin: 0;"><i class="fa-solid fa-users-gear" style="color: #38bdf8;"></i> Perfis de Contas & Multi-UID</h3>
+                            <button onclick="window.loadAccountsManagement(true)" class="secondary-btn" style="padding: 4px 10px; font-size: 11px;">
+                                <i class="fa-solid fa-rotate"></i> Atualizar Lista
+                            </button>
+                        </div>
+                        <p class="section-desc">Alterne rapidamente entre múltiplas contas do mesmo jogo salvas no SQLite ou remova perfis antigos.</p>
+                        
+                        <div id="cfg-accounts-list-container" style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px;">
+                            <div style="color: var(--text-muted); font-size: 12px;">Carregando contas...</div>
                         </div>
                     </div>
                     
@@ -1961,6 +2158,40 @@
                                     </div>
                                     <span style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: block;">Obtenha o Token via @BotFather e seu Chat ID via @userinfobot.</span>
                                 </div>
+
+                                <!-- Windows Native Toast -->
+                                <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 14px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <i class="fa-brands fa-windows" style="color: #38bdf8; font-size: 18px;"></i>
+                                            <strong style="font-size: 13px; color: #fff;">Windows 10/11 Desktop Toast</strong>
+                                        </div>
+                                        <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 11px; color: #38bdf8; font-weight: 600;">
+                                            <input type="checkbox" id="cfg-notif-windows-toast" checked style="accent-color: #38bdf8;">
+                                            Ativar
+                                        </label>
+                                    </div>
+                                    <span style="font-size: 11px; color: var(--text-muted); display: block; line-height: 1.4;">
+                                        Exibe alertas nativos na Central de Ações do Windows sem precisar do Discord ou Telegram abertos.
+                                    </span>
+                                </div>
+
+                                <!-- Web / Browser Notifications -->
+                                <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 10px; padding: 14px;">
+                                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <i class="fa-solid fa-globe" style="color: #10b981; font-size: 18px;"></i>
+                                            <strong style="font-size: 13px; color: #fff;">Alertas no Navegador (Web Notification API)</strong>
+                                        </div>
+                                        <span id="web-notif-badge" style="font-size: 10px; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.1); color: var(--text-muted);">Verificando...</span>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-top: 6px; flex-wrap: wrap;">
+                                        <button id="btn-request-web-notif" class="secondary-btn" style="border-color: #10b981; color: #10b981; padding: 4px 10px; font-size: 11px; background: rgba(16, 185, 129, 0.1);">
+                                            <i class="fa-solid fa-bell"></i> Autorizar / Testar Alerta Web
+                                        </button>
+                                        <span style="font-size: 11px; color: var(--text-muted);">Ideal para uso em abas em segundo plano e celular via LAN.</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Gatilhos de Notificação -->
@@ -1993,6 +2224,19 @@
                                         <option value="95">95% da Capacidade</option>
                                         <option value="100">100% (Cap Cheio)</option>
                                     </select>
+                                </div>
+
+                                <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                        <input type="checkbox" id="cfg-notif-quiet-hours-enabled" style="accent-color: #38bdf8;">
+                                        🌙 <strong>Horário de Silêncio / Não Perturbe</strong> (Silencia alertas sonoros de energia de madrugada)
+                                    </label>
+                                    <div style="display: flex; align-items: center; gap: 10px; margin-left: 24px; flex-wrap: wrap;">
+                                        <span style="font-size: 11px; color: var(--text-muted);">Das:</span>
+                                        <input type="time" id="cfg-notif-quiet-hours-start" value="23:00" class="config-input" style="width: 110px; padding: 4px 8px; font-size: 12px;">
+                                        <span style="font-size: 11px; color: var(--text-muted);">até:</span>
+                                        <input type="time" id="cfg-notif-quiet-hours-end" value="07:00" class="config-input" style="width: 110px; padding: 4px 8px; font-size: 12px;">
+                                    </div>
                                 </div>
                             </div>
 
@@ -2751,6 +2995,9 @@
                     </div>
                 </div>
                 <div style="display: flex; align-items: center; gap: 8px;">
+                    <button id="btn-open-relic-sandbox" onclick="window.openRelicSandboxModal()" title="Simulador de Troca de Relíquias (Sandbox)" style="padding: 6px 12px; font-size: 11px; font-weight: 600; background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(14, 165, 233, 0.3)); border: 1px solid rgba(56, 189, 248, 0.5); color: #38bdf8; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
+                        <i class="fa-solid fa-flask"></i> Sandbox ("E se?")
+                    </button>
                     <button id="btn-export-card" title="Gerar Imagem da Build em alta resolução" style="padding: 6px 12px; font-size: 11px; font-weight: 600; background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(217, 119, 6, 0.3)); border: 1px solid rgba(245, 158, 11, 0.5); color: #fbbf24; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: all 0.2s ease;">
                         <i class="fa-solid fa-camera"></i> Card Imagem
                     </button>
@@ -2863,6 +3110,20 @@
                             <div id="ins-benchmarks-card" class="inspector-card" style="display: none; border: 1px solid rgba(245, 158, 11, 0.25); background: rgba(245, 158, 11, 0.03); border-radius: 12px; margin-bottom: 0; padding: 12px;">
                                 <h4 style="margin-top: 0; margin-bottom: 8px; color: #f59e0b; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-gauge-high"></i> Comparador de Metas Gerais</h4>
                                 <div id="ins-benchmarks-list" style="font-size: 11px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 6px; line-height: 1.5;">
+                                    <!-- Inserido dinamicamente via JS -->
+                                </div>
+                            </div>
+
+                            <!-- Breakpoints de Ação & Speed Tuning (MoC / Ciclos) -->
+                            <div id="ins-breakpoints-card" class="inspector-card" style="display: none; border: 1px solid rgba(56, 189, 248, 0.35); background: linear-gradient(135deg, rgba(56, 189, 248, 0.05), rgba(168, 85, 247, 0.05)); border-radius: 12px; margin-bottom: 0; padding: 14px; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <h4 style="margin: 0; color: #38bdf8; display: flex; align-items: center; gap: 6px; font-size: 13px;">
+                                        <i class="fa-solid fa-stopwatch-20"></i> Breakpoints de Ação & Speed Tuning
+                                    </h4>
+                                    <span id="ins-breakpoints-summary-badge" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(56, 189, 248, 0.15); border: 1px solid rgba(56, 189, 248, 0.35); color: #7dd3fc; font-weight: 600;">
+                                    </span>
+                                </div>
+                                <div id="ins-breakpoints-list" style="font-size: 12px; display: flex; flex-direction: column; gap: 10px;">
                                     <!-- Inserido dinamicamente via JS -->
                                 </div>
                             </div>
@@ -3260,7 +3521,7 @@
 
             <!-- SPLASH ART GIGANTE DO PERSONAGEM EM DESTAQUE NO CENTRO (IGUAL AO JOGO) -->
             <div style="position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; max-width: 90vw; max-height: 62vh; margin-bottom: 12px;">
-                <img id="wish-card-art" src="" alt="Splash Art" style="max-width: 100%; max-height: 62vh; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.85));" onerror="window.handleWishArtError(this)">
+                <img id="wish-card-art" alt="Splash Art" style="max-width: 100%; max-height: 62vh; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.85)); display: none;" onerror="if(window.handleWishArtError) window.handleWishArtError(this); else this.style.display='none';">
             </div>
 
             <!-- INFORMAÇÕES DO PERSONAGEM (NOME, ESTRELAS, BADGE E PITY) -->
@@ -3365,8 +3626,151 @@
         </div>
     </div>
 
-    <!-- JavaScript Lógica do Frontend -->
-    <script src="app.js?v=22.0"></script>
+    <!-- MODAL DO SIMULADOR / SANDBOX DE TROCA DE RELÍQUIAS ("E SE EU TROCASSE?") -->
+    <div id="modal-relic-sandbox" class="pin-lock-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10050; padding: 16px;">
+        <div style="background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 20px; width: 100%; max-width: 960px; max-height: 90vh; overflow-y: auto; padding: 24px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.85); backdrop-filter: blur(20px); position: relative;">
+            <!-- Header do Sandbox -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 14px; margin-bottom: 18px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #38bdf8;">
+                        <i class="fa-solid fa-flask"></i>
+                    </div>
+                    <div>
+                        <h3 style="margin: 0; font-size: 18px; color: #fff; font-weight: 800; display: flex; align-items: center; gap: 8px;">
+                            Sandbox: Simulador de Troca de Peças <span style="font-size: 11px; padding: 2px 8px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-weight: 700;">Beta</span>
+                        </h3>
+                        <span id="sandbox-char-subtitle" style="font-size: 12px; color: var(--text-muted);">Simule substituição de relíquias e veja a variação no score, RV e breakpoints de combate.</span>
+                    </div>
+                </div>
+                <button onclick="window.closeRelicSandboxModal()" class="close-inspector-btn" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px;">✕</button>
+            </div>
+
+            <!-- Grade de Controle do Sandbox (2 Colunas) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+                <!-- Coluna Esquerda: Configuração da Troca -->
+                <div style="display: flex; flex-direction: column; gap: 16px;">
+                    <!-- 1. Escolha do Slot -->
+                    <div>
+                        <label style="font-size: 12px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">
+                            <i class="fa-solid fa-crosshairs" style="color: #38bdf8;"></i> 1. Selecione o Slot para Troca:
+                        </label>
+                        <select id="sandbox-slot-select" onchange="window.onSandboxSlotChanged()" class="snap-select" style="width: 100%; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 13px;">
+                            <!-- Preenchido via JS -->
+                        </select>
+                    </div>
+
+                    <!-- 2. Pré-visualização da Peça Atual Equipada -->
+                    <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px;">
+                        <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block; margin-bottom: 6px;">Peça Atualmente Equipada:</span>
+                        <div id="sandbox-current-piece-box" style="font-size: 12px; color: #e2e8f0;">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <!-- 3. Seleção da Peça Candidata / Substituta -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <label style="font-size: 12px; font-weight: 700; color: #cbd5e1;">
+                                <i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> 2. Peça Candidata (Substituta):
+                            </label>
+                            <div style="display: flex; gap: 4px;">
+                                <button id="sandbox-mode-btn-inv" type="button" onclick="window.setSandboxCandidateMode('inventory')" style="padding: 3px 8px; font-size: 11px; border-radius: 6px; border: 1px solid #38bdf8; background: rgba(56, 189, 248, 0.2); color: #38bdf8; cursor: pointer; font-weight: 600;">Inventário</button>
+                                <button id="sandbox-mode-btn-custom" type="button" onclick="window.setSandboxCandidateMode('custom')" style="padding: 3px 8px; font-size: 11px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: transparent; color: #94a3b8; cursor: pointer; font-weight: 600;">Teórica / Custom</button>
+                            </div>
+                        </div>
+
+                        <!-- Modo Inventário -->
+                        <div id="sandbox-candidate-inv-box">
+                            <select id="sandbox-inventory-select" onchange="window.onSandboxInventoryPieceSelected()" class="snap-select" style="width: 100%; padding: 8px 12px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff; font-size: 12px;">
+                                <option value="">Carregando peças salvas...</option>
+                            </select>
+                        </div>
+
+                        <!-- Modo Customizado / Peça Teórica -->
+                        <div id="sandbox-candidate-custom-box" style="display: none; background: rgba(0,0,0,0.3); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 12px;">
+                            <label style="font-size: 11px; color: #a855f7; display: block; margin-bottom: 4px; font-weight: 600;">Main Stat Desejado:</label>
+                            <input type="text" id="sandbox-custom-main" placeholder="Ex: VEL (25) ou Taxa CRIT (32.4%)" class="snap-select" style="width: 100%; padding: 6px 10px; border-radius: 8px; font-size: 12px; margin-bottom: 8px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+                            
+                            <label style="font-size: 11px; color: #a855f7; display: block; margin-bottom: 4px; font-weight: 600;">Substatus (Até 4):</label>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                                <input type="text" id="sandbox-custom-sub1" placeholder="Ex: VEL: 4" class="snap-select" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                                <input type="text" id="sandbox-custom-sub2" placeholder="Ex: Taxa CRIT: 6.2%" class="snap-select" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                                <input type="text" id="sandbox-custom-sub3" placeholder="Ex: Dano CRIT: 12.0%" class="snap-select" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                                <input type="text" id="sandbox-custom-sub4" placeholder="Ex: ATK%: 4.3%" class="snap-select" style="padding: 5px 8px; font-size: 11px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: #fff;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botão de Disparo da Simulação -->
+                    <button id="btn-run-sandbox-simulation" onclick="window.executeRelicSwapSimulation()" class="primary-btn" style="padding: 10px 18px; font-size: 13px; font-weight: 700; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);">
+                        <i class="fa-solid fa-calculator"></i> Simular Impacto da Troca
+                    </button>
+                </div>
+
+                <!-- Coluna Direita: Painel de Resultados (Antes vs Depois) -->
+                <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.1); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+                        <h4 style="margin: 0; font-size: 14px; color: #fff; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                            <i class="fa-solid fa-chart-line" style="color: #34d399;"></i> Comparativo: Antes vs Depois
+                        </h4>
+                        <span id="sandbox-delta-badge" style="display: none; font-size: 11px; font-weight: 800; padding: 2px 10px; border-radius: 12px;"></span>
+                    </div>
+
+                    <!-- Cards de Nota (Peça e Build) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Nota da Peça</span>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px;">
+                                <span id="sandbox-old-piece-grade" style="font-size: 16px; font-weight: 800; color: #94a3b8;">--</span>
+                                <i class="fa-solid fa-arrow-right" style="font-size: 11px; color: #64748b;"></i>
+                                <span id="sandbox-new-piece-grade" style="font-size: 18px; font-weight: 800; color: #38bdf8;">--</span>
+                            </div>
+                            <span id="sandbox-piece-score-lbl" style="font-size: 10px; color: #64748b; display: block; margin-top: 2px;">Score: --% ➔ --%</span>
+                        </div>
+
+                        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px; text-align: center;">
+                            <span style="font-size: 11px; color: var(--text-muted); display: block;">Score Geral da Build</span>
+                            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 4px;">
+                                <span id="sandbox-old-build-grade" style="font-size: 16px; font-weight: 800; color: #94a3b8;">--</span>
+                                <i class="fa-solid fa-arrow-right" style="font-size: 11px; color: #64748b;"></i>
+                                <span id="sandbox-new-build-grade" style="font-size: 18px; font-weight: 800; color: #34d399;">--</span>
+                            </div>
+                            <span id="sandbox-build-score-lbl" style="font-size: 10px; color: #64748b; display: block; margin-top: 2px;">Média: --% ➔ --%</span>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Variação de Atributos (Stat Diffs) -->
+                    <div>
+                        <span style="font-size: 11px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">
+                            Variação de Atributos Numéricos:
+                        </span>
+                        <div id="sandbox-stat-diffs-container" style="display: flex; flex-wrap: wrap; gap: 6px; min-height: 38px;">
+                            <span style="font-size: 11px; color: var(--text-muted);">Clique em 'Simular Impacto' para calcular os deltas.</span>
+                        </div>
+                    </div>
+
+                    <!-- Feedback de Breakpoints & Speed Tuning -->
+                    <div>
+                        <span style="font-size: 11px; font-weight: 700; color: #cbd5e1; display: block; margin-bottom: 6px;">
+                            Impacto em Breakpoints & Ações:
+                        </span>
+                        <div id="sandbox-breakpoints-container" style="display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: #e2e8f0; max-height: 140px; overflow-y: auto;">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Veredito Executivo da IA -->
+                    <div id="sandbox-verdict-box" style="margin-top: auto; padding: 10px 14px; border-radius: 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); font-size: 12px; color: #e0f2fe; line-height: 1.4;">
+                        <i class="fa-solid fa-lightbulb" style="color: #38bdf8; margin-right: 4px;"></i>
+                        <span id="sandbox-verdict-text">Selecione uma peça candidata para avaliar se a troca vale a pena antes de gastar recursos in-game.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
+    <script type="module" src="js/app.js?v=23.0"></script>
 </body>
 </html>
 

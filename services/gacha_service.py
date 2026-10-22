@@ -8,6 +8,7 @@ import database
 from core.config import get_resource_path
 from services.roster_service import get_roster
 
+
 def _load_known_4star_names() -> Set[str]:
     filepath = get_resource_path(os.path.join("static_data", "known_4star_characters.json"))
     if os.path.exists(filepath):
@@ -22,7 +23,9 @@ def _load_known_4star_names() -> Set[str]:
             print(f"[WARN] Erro ao ler known_4star_characters.json: {e}")
     return set()
 
+
 KNOWN_4STAR_NAMES: Set[str] = _load_known_4star_names()
+
 
 def _load_slug_mappings() -> Dict[str, str]:
     filepath = get_resource_path(os.path.join("static_data", "prydwen_slug_mappings.json"))
@@ -34,9 +37,13 @@ def _load_slug_mappings() -> Dict[str, str]:
             print(f"[WARN] Erro ao ler prydwen_slug_mappings.json: {e}")
     return {}
 
+
 PRYDWEN_SLUG_MAP: Dict[str, str] = _load_slug_mappings()
 
-def is_4star_char(name_str: str, rarity_val: Optional[Any] = None, db_rarities: Optional[Dict[str, int]] = None) -> bool:
+
+def is_4star_char(
+    name_str: str, rarity_val: Optional[Any] = None, db_rarities: Optional[Dict[str, int]] = None
+) -> bool:
     """Verifica se um personagem é 4★ / Rank A para exclusão do simulador de gacha."""
     name_clean = name_str.lower().strip()
     if name_clean in KNOWN_4STAR_NAMES:
@@ -53,21 +60,24 @@ def is_4star_char(name_str: str, rarity_val: Optional[Any] = None, db_rarities: 
             return True
     return False
 
+
 def make_prydwen_slug(game_id: str, name_str: str) -> str:
     """Gera o slug URL correspondente no Prydwen para o personagem."""
     if game_id == "zzz":
         from extractor import get_zzz_prydwen_slug
+
         slug = get_zzz_prydwen_slug(name_str)
         if slug:
             return slug
-    
+
     name_clean = name_str.lower().strip()
     if name_clean in PRYDWEN_SLUG_MAP:
         return PRYDWEN_SLUG_MAP[name_clean]
-        
-    clean = re.sub(r'[\.\'\`•]', '', name_clean)
-    clean = re.sub(r'\s+', '-', clean)
+
+    clean = re.sub(r"[\.\'\`•]", "", name_clean)
+    clean = re.sub(r"\s+", "-", clean)
     return clean
+
 
 def make_fallback_urls(game_id: str, name_str: str) -> Tuple[str, str]:
     """Gera URLs de fallback de ícone e imagem vertical para o personagem."""
@@ -82,6 +92,7 @@ def make_fallback_urls(game_id: str, name_str: str) -> Tuple[str, str]:
         icon = f"/api/proxy_image?url={urllib.parse.quote('https://cdn.prydwen.gg/images/zenless-zone-zero/characters/' + slug + '_icon.webp', safe='')}"
         gacha = f"/api/proxy_image?url={urllib.parse.quote('https://cdn.prydwen.gg/images/zenless-zone-zero/characters/' + slug + '_full.webp', safe='')}"
     return icon, gacha
+
 
 async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
     """
@@ -125,7 +136,7 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
         rank_num = 0
         if rank_str and len(rank_str) > 1 and rank_str[1:].isdigit():
             rank_num = int(rank_str[1:])
-            
+
         icon = c.get("icon")
         gacha_art = c.get("gacha_art")
         if not icon or not gacha_art:
@@ -142,7 +153,7 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
             "owned": True,
             "current_rank": rank_num,
             "rank_str": rank_str,
-            "level": c.get("level", 1)
+            "level": c.get("level", 1),
         }
 
     # 2. Adicionar outros personagens 5★ salvos no banco SQLite (não possuídos)
@@ -154,11 +165,15 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
             for r in db_rows:
                 r_dict = dict(r)
                 m_name = r_dict.get("name")
-                if m_name and not is_4star_char(m_name, r_dict.get("rarity"), db_rarities) and m_name not in all_chars_map:
+                if (
+                    m_name
+                    and not is_4star_char(m_name, r_dict.get("rarity"), db_rarities)
+                    and m_name not in all_chars_map
+                ):
                     fb_icon, fb_gacha = make_fallback_urls(game_id, m_name)
                     icon = r_dict.get("icon") or fb_icon
                     gacha_art = r_dict.get("gacha_art") or fb_gacha
-                    
+
                     if icon and not icon.startswith("/api/proxy_image") and icon.startswith("http"):
                         icon = f"/api/proxy_image?url={urllib.parse.quote(icon, safe='')}"
                     if gacha_art and not gacha_art.startswith("/api/proxy_image") and gacha_art.startswith("http"):
@@ -173,7 +188,7 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
                         "owned": False,
                         "current_rank": -1,
                         "rank_str": None,
-                        "level": 0
+                        "level": 0,
                     }
     except Exception as e:
         print(f"Aviso ao consultar SQLite no gacha chars: {e}")
@@ -186,8 +201,12 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
                 mdata = json.load(jf)
                 for item in mdata.values():
                     if isinstance(item, dict) and item.get("name"):
-                        m_name = item.get("name")
-                        if not is_4star_char(m_name, item.get("rarity"), db_rarities) and m_name not in all_chars_map:
+                        m_name = str(item.get("name") or "")
+                        if (
+                            m_name
+                            and not is_4star_char(m_name, item.get("rarity"), db_rarities)
+                            and m_name not in all_chars_map
+                        ):
                             fb_icon, fb_gacha = make_fallback_urls(game_id, m_name)
                             all_chars_map[m_name] = {
                                 "name": m_name,
@@ -198,7 +217,7 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
                                 "owned": False,
                                 "current_rank": -1,
                                 "rank_str": None,
-                                "level": 0
+                                "level": 0,
                             }
         except Exception:
             pass

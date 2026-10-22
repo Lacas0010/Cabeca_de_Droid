@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 74 Passed](https://img.shields.io/badge/tests-74%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Tests: 135 Passed](https://img.shields.io/badge/tests-135%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
 
 Suíte local inteligente com interface gráfica **Web Glassmorphism** (HTML5/CSS3/ES6+) e backend modular em Python (**FastAPI + Clean Architecture + SQLite + Playwright + Groq Cloud RAG + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
@@ -32,7 +32,7 @@ python main.py
 
 * **Acesso Local (PC):** `http://127.0.0.1:8000`
 * **Acesso no Celular/Tablet (Rede Wi-Fi):** `http://<IP_DO_SEU_PC>:8000` *(habilitável em Configurações)*
-* **Rodar Testes:** `python -m unittest discover tests` *(74 testes unitários inclusos)*
+* **Rodar Testes:** `python -m unittest discover tests` *(135 testes unitários inclusos)*
 
 ---
 
@@ -40,7 +40,11 @@ python main.py
 
 | Módulo | Ícone | O que faz? |
 | :--- | :---: | :--- |
-| **1. Mini-Dashboards** | 📊 | Visão geral da conta (UID, Nível, Total de Personagens e 5★/Rank S) para Genshin, HSR e ZZZ. |
+| **1. Ícone na Bandeja (System Tray)** | 🛸 | Execução minimizada em segundo plano no Windows 10/11 com menu de contexto (abrir dashboard, sincronizar roster, alternar notificações e encerrar servidor). |
+| **2. Endgame Team Matcher** | ⚔️ | Cruza as melhores composições do meta atual (MoC, Ficção Pura, Sombra, Abismo, Shiyu) com seu Roster real no SQLite, calcula % de compatibilidade e recomenda substitutos funcionais disponíveis na sua conta para membros faltantes. |
+| **3. Rastreador Oficial de Pity & Tiros** | 📜 | Importação e exportação de logs reais no padrão universal UIGF v2.4/SRGF, cálculo exato de Pity Atual, garantia 100% vs 50/50 e estatísticas de sorte. |
+| **4. Sandbox de Troca de Peças** | 🧪 | Simulação de substituição de relíquias ("E se eu trocasse a peça?") prevendo variações de score, Roll Value, deltas de atributos e novos breakpoints. |
+| **5. Multi-UID Switcher** | 👥 | Alternância instantânea entre múltiplas contas salvas no SQLite para o mesmo jogo, com isolamento de roster e peças. |
 | **2. Monitor de Energia** | 🔋 | Monitor de Resina, Poder de Desbravamento e Bateria com anéis SVG e contagem regressiva. |
 | **3. Auto Check-in 6h** | 🎁 | Resgate automático das recompensas diárias da HoYoLAB a cada 6h gravado no SQLite. |
 | **4. Auto-Sync 04:00** | ⏰ | Agendamento diário automático para atualizar Roster e guias com detecção de diffs. |
@@ -54,15 +58,15 @@ python main.py
 | **12. Mindscapes & Habilidades (ZZZ)** | ⚡ | Ícones de Cinema Mental 01-06 em neon e categorias oficiais de combate (Básico, Especial, Esquiva, etc.). |
 | **13. Tooltips & Descrições Ricas** | ✨ | Hover action com descrições detalhadas e completas de Talentos, Rastros e Habilidades sem tags HTML. |
 | **14. Exportação em Imagem HD** | 📷 | Renderização em **4K (2400 × 1350 px)** de Cards de Build, Tier List e Diffs de Evolução. |
-| **15. Breakpoints de Combate** | ⚖️ | Comparador de metas de combate recomendadas no metagame (verde = meta atingida). |
+| **15. Breakpoints & Speed Tuning** | ⚖️ | Action Value (10000/SPD), metas de 134/160.1 SPD no Ciclo 0 de MoC/PF, sincronia -1 SPD (Bronya/Sunday), checagem Favonius e proporção áurea 1:2. |
 | **16. Calculadora de Ascensão** | 🧮 | Cálculo exato de Mora, XP e materiais com caps reais (**Genshin 90**, **HSR 80**, **ZZZ 60**). |
 | **17. Otimizador IA Groq** | 🧠 | Consultoria instantânea com Llama 3.3 70B gerando 3 melhorias prioritárias para a build. |
 | **18. Diagnóstico de Lacunas** | 🔥 | Mapeamento de fraquezas da conta (DPS/Sustento/Elemento) e modo Roast sarcástico. |
 | **19. Índice de Sorte (Luck Score)** | 🍀 | Medidor de RNG da conta (SSS+ a F), destacando a peça **God Roll #1** e a **Cursed Roll**. |
 | **20. Gacha Monte Carlo** | 🎲 | Simulação de 10.000 tiros com Soft Pity real (74+), desconto de cópias e projeção de metas. |
 | **21. Central de Farm & OS Diária** | 🌾 | Domínios abertos hoje e Ordem de Serviço Diária com alocação inteligente de resina. |
-| **22. Trash Finder & Síntese** | 🗑️ | Varredura de relíquias sem utilidade no meta e conselheiro de criação com Resina Automodeladora. |
-| **23. Chat IA & Montador de Times**| 💬 | Chat RAG conversacional e montador de times de 4 slots com análise SSE Streaming. |
+| **22. Trash Finder & Peças Coringa** | 🗑️ | Varredura de relíquias sem utilidade, proteção absoluta de peças Coringa/Off-Piece (Duplo Crítico/CV) e conselheiro de síntese. |
+| **23. Chat IA & Montador de Times**| 💬 | Chat RAG conversacional com histórico persistente no SQLite por jogo, streaming SSE e montador de times. |
 
 ---
 

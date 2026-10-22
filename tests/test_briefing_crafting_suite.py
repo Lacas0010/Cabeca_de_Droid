@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import unittest
@@ -8,6 +9,7 @@ from fastapi.testclient import TestClient
 from server import app
 from build_calculator import recommend_relic_crafting
 from notifications import notifier
+
 
 class TestBriefingCraftingSuite(unittest.TestCase):
     @classmethod
@@ -19,14 +21,14 @@ class TestBriefingCraftingSuite(unittest.TestCase):
         mock_roster = [
             {"name": "Robin", "level": 80, "rarity": 5, "overall_score": 55.0, "overall_grade": "C"},
             {"name": "Acheron", "level": 80, "rarity": 5, "overall_score": 60.0, "overall_grade": "B"},
-            {"name": "March 7th", "level": 60, "rarity": 4, "overall_score": 40.0, "overall_grade": "D"}
+            {"name": "March 7th", "level": 60, "rarity": 4, "overall_score": 40.0, "overall_grade": "D"},
         ]
-        
+
         result = recommend_relic_crafting("hsr", mock_roster)
         self.assertEqual(result["game_id"], "hsr")
         self.assertIn("Resina Automodeladora", result["crafting_item_name"])
         self.assertTrue(len(result["recommendations"]) > 0)
-        
+
         top_rec = result["recommendations"][0]
         self.assertIn("character_name", top_rec)
         self.assertIn("recommended_main_stat", top_rec)
@@ -36,19 +38,24 @@ class TestBriefingCraftingSuite(unittest.TestCase):
         """Valida recomendações de Elixir Santificador para Genshin."""
         mock_roster = [
             {"name": "Neuvillette", "level": 90, "rarity": 5, "overall_score": 50.0, "overall_grade": "C"},
-            {"name": "Furina", "level": 90, "rarity": 5, "overall_score": 58.0, "overall_grade": "C"}
+            {"name": "Furina", "level": 90, "rarity": 5, "overall_score": 58.0, "overall_grade": "C"},
         ]
-        
+
         result = recommend_relic_crafting("genshin", mock_roster)
         self.assertEqual(result["game_id"], "genshin")
         self.assertIn("Elixir Santificador", result["crafting_item_name"])
         self.assertTrue(len(result["recommendations"]) > 0)
-        self.assertTrue(any("Hydro" in r["recommended_main_stat"] or "Recarga" in r["recommended_main_stat"] for r in result["recommendations"]))
+        self.assertTrue(
+            any(
+                "Hydro" in r["recommended_main_stat"] or "Recarga" in r["recommended_main_stat"]
+                for r in result["recommendations"]
+            )
+        )
 
     def test_morning_briefing_generation(self):
         """Valida a consolidação correta do relatório Morning Briefing."""
         briefing = notifier.generate_morning_briefing()
-        
+
         self.assertIn("title", briefing)
         self.assertIn("Morning Briefing", briefing["title"])
         self.assertIn("games", briefing)
@@ -81,6 +88,7 @@ class TestBriefingCraftingSuite(unittest.TestCase):
         data = res.json()
         self.assertIn("briefing", data)
         self.assertIn("delivery", data)
+
 
 if __name__ == "__main__":
     unittest.main()

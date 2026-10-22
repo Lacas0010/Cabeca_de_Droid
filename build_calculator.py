@@ -2,7 +2,6 @@ import os
 import re
 import json
 import random
-import datetime
 from datetime import datetime, timedelta
 import unicodedata
 import time
@@ -12,17 +11,19 @@ from typing import Dict, List, Tuple, Optional, Any
 
 
 # Expressões regulares pré-compiladas para alta performance
-RE_MULTIPLE_SPACES = re.compile(r'\s+')
-RE_PARENTHESES = re.compile(r'\([^)]*\)')
-RE_CLEAN_CHARS = re.compile(r'[#*\-]+')
-RE_EQUAL_SPLIT = re.compile(r'\s*=\s*')
+RE_MULTIPLE_SPACES = re.compile(r"\s+")
+RE_PARENTHESES = re.compile(r"\([^)]*\)")
+RE_CLEAN_CHARS = re.compile(r"[#*\-]+")
+RE_EQUAL_SPLIT = re.compile(r"\s*=\s*")
+
 
 def remove_accents(input_str: str) -> str:
     """Remove acentos e diacríticos de uma string."""
     if not input_str:
         return ""
-    nfkd_form = unicodedata.normalize('NFKD', input_str)
-    return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
+    nfkd_form = unicodedata.normalize("NFKD", input_str)
+    return "".join([c for c in nfkd_form if not unicodedata.combining(c)])
+
 
 def normalize_slot_name(slot_str: str, game_id: str = "") -> str:
     """Normaliza nomes de slots em português, inglês ou numéricos para chaves padrão do jogo."""
@@ -30,46 +31,85 @@ def normalize_slot_name(slot_str: str, game_id: str = "") -> str:
         return ""
     s = remove_accents(str(slot_str).lower().strip())
     g = game_id.lower().strip() if game_id else ""
-    
+
     # 1. Normalização contextual por jogo para slots numéricos
     if g == "genshin":
-        if s in ["1", "flor", "flower"]: return "flower"
-        if s in ["2", "pena", "plume", "feather"]: return "plume"
-        if s in ["3", "areia", "relogio", "sands"]: return "sands"
-        if s in ["4", "copo", "calice", "goblet"]: return "goblet"
-        if s in ["5", "tiara", "coroa", "circlet"]: return "circlet"
+        if s in ["1", "flor", "flower"]:
+            return "flower"
+        if s in ["2", "pena", "plume", "feather"]:
+            return "plume"
+        if s in ["3", "areia", "relogio", "sands"]:
+            return "sands"
+        if s in ["4", "copo", "calice", "goblet"]:
+            return "goblet"
+        if s in ["5", "tiara", "coroa", "circlet"]:
+            return "circlet"
     elif g == "hsr":
-        if s in ["1", "cabeca", "head"]: return "head"
-        if s in ["2", "mao", "maos", "hands"]: return "hands"
-        if s in ["3", "corpo", "body"]: return "body"
-        if s in ["4", "pe", "pes", "bota", "feet"]: return "feet"
-        if s in ["5", "esfera", "planar_sphere", "sphere"]: return "planar_sphere"
-        if s in ["6", "corda", "link_rope", "rope"]: return "link_rope"
+        if s in ["1", "cabeca", "head"]:
+            return "head"
+        if s in ["2", "mao", "maos", "hands"]:
+            return "hands"
+        if s in ["3", "corpo", "body"]:
+            return "body"
+        if s in ["4", "pe", "pes", "bota", "feet"]:
+            return "feet"
+        if s in ["5", "esfera", "planar_sphere", "sphere"]:
+            return "planar_sphere"
+        if s in ["6", "corda", "link_rope", "rope"]:
+            return "link_rope"
     elif g == "zzz":
         for i in range(1, 7):
-            if f'disco {i}' in s or f'slot_{i}' in s or f'slot {i}' in s or f'disc {i}' in s or f'disco_{i}' in s or f'disc_{i}' in s or s == str(i):
-                return f'slot_{i}'
+            if (
+                f"disco {i}" in s
+                or f"slot_{i}" in s
+                or f"slot {i}" in s
+                or f"disc {i}" in s
+                or f"disco_{i}" in s
+                or f"disc_{i}" in s
+                or s == str(i)
+            ):
+                return f"slot_{i}"
 
     # 2. Prioriza mapeamento por nome de slot
-    if any(k in s for k in ['copo', 'calice', 'goblet']): return 'goblet'
-    if any(k in s for k in ['areia', 'relogio', 'sands']): return 'sands'
-    if any(k in s for k in ['tiara', 'coroa', 'circlet']): return 'circlet'
-    if any(k in s for k in ['flor', 'flower']): return 'flower'
-    if any(k in s for k in ['pena', 'plume', 'feather']): return 'plume'
+    if any(k in s for k in ["copo", "calice", "goblet"]):
+        return "goblet"
+    if any(k in s for k in ["areia", "relogio", "sands"]):
+        return "sands"
+    if any(k in s for k in ["tiara", "coroa", "circlet"]):
+        return "circlet"
+    if any(k in s for k in ["flor", "flower"]):
+        return "flower"
+    if any(k in s for k in ["pena", "plume", "feather"]):
+        return "plume"
 
-    if any(k in s for k in ['esfera', 'planar_sphere', 'sphere']): return 'planar_sphere'
-    if any(k in s for k in ['corda', 'link_rope', 'rope']): return 'link_rope'
-    if any(k in s for k in ['cabeca', 'head']): return 'head'
-    if any(k in s for k in ['mao', 'maos', 'hands']): return 'hands'
-    if any(k in s for k in ['corpo', 'body']): return 'body'
-    if any(k in s for k in ['bota', 'botas', 'feet']) or s in ['pe', 'pes', 'pés', 'pé']: return 'feet'
-    
+    if any(k in s for k in ["esfera", "planar_sphere", "sphere"]):
+        return "planar_sphere"
+    if any(k in s for k in ["corda", "link_rope", "rope"]):
+        return "link_rope"
+    if any(k in s for k in ["cabeca", "head"]):
+        return "head"
+    if any(k in s for k in ["mao", "maos", "hands"]):
+        return "hands"
+    if any(k in s for k in ["corpo", "body"]):
+        return "body"
+    if any(k in s for k in ["bota", "botas", "feet"]) or s in ["pe", "pes", "pés", "pé"]:
+        return "feet"
+
     # 3. Fallback genérico por número para ZZZ
     for i in range(1, 7):
-        if f'disco {i}' in s or f'slot_{i}' in s or f'slot {i}' in s or f'disc {i}' in s or f'disco_{i}' in s or f'disc_{i}' in s or s == str(i):
-            return f'slot_{i}'
+        if (
+            f"disco {i}" in s
+            or f"slot_{i}" in s
+            or f"slot {i}" in s
+            or f"disc {i}" in s
+            or f"disco_{i}" in s
+            or f"disc_{i}" in s
+            or s == str(i)
+        ):
+            return f"slot_{i}"
 
     return s
+
 
 # ==========================================
 # FONTE MESTRE DE IDS DE PERSONAGENS
@@ -101,7 +141,6 @@ CHAR_ALIASES = {
     "desbravador jubilo": "trailblazer_elation",
     "desbravador o jubilo": "trailblazer_elation",
     "trailblazer elation": "trailblazer_elation",
-
     # March 7th / 7 de Março
     "7 de marco": "march_7th",
     "7 de marco preservacao": "march_7th",
@@ -116,16 +155,13 @@ CHAR_ALIASES = {
     "7 de marco a noite eterna": "march_7th_evernight",
     "march 7th evernight": "march_7th_evernight",
     "noite eterna": "march_7th_evernight",
-
     # Black Swan / Cisne Negro
     "cisne negro": "black_swan",
     "black swan": "black_swan",
-
     # Firefly / Vagalume
     "vagalume": "firefly",
     "vaga lume": "firefly",
     "firefly": "firefly",
-
     # Silver Wolf / Loba Prateada
     "loba prateada": "silver_wolf",
     "silver wolf": "silver_wolf",
@@ -133,7 +169,6 @@ CHAR_ALIASES = {
     "loba prateada 999": "silver_wolf_999",
     "silver wolf lv 999": "silver_wolf_999",
     "silver wolf 999": "silver_wolf_999",
-
     # Tingyun / Fugue
     "tingyun": "tingyun",
     "tingyun fuga": "tingyun_fugue",
@@ -141,7 +176,6 @@ CHAR_ALIASES = {
     "tingyun fugue": "tingyun_fugue",
     "fuga": "tingyun_fugue",
     "fugue": "tingyun_fugue",
-
     # Dan Heng
     "dan heng": "dan_heng",
     "dan heng imbibitor lunae": "dan_heng_imbibitor_lunae",
@@ -150,34 +184,28 @@ CHAR_ALIASES = {
     "dhil": "dan_heng_imbibitor_lunae",
     "dan heng permansor terrae": "dan_heng_permansor_terrae",
     "permansor terrae": "dan_heng_permansor_terrae",
-
     # Himeko
     "himeko": "himeko",
     "himeko nova": "himeko_nova",
-
     # Hertas
     "herta": "herta",
     "a herta": "the_herta",
     "the herta": "the_herta",
-
     # Dahlia
     "a dalia": "the_dahlia",
     "the dahlia": "the_dahlia",
     "dalia": "the_dahlia",
     "dahlia": "the_dahlia",
-
     # Topaz
     "topaz": "topaz",
     "topaz e dinheirinho": "topaz",
     "topaz numby": "topaz",
     "topaz & numby": "topaz",
-
     # Dr. Ratio
     "dr ratio": "dr_ratio",
     "dr. ratio": "dr_ratio",
     "doctor ratio": "dr_ratio",
     "doutor ratio": "dr_ratio",
-
     # Genshin Aliases
     "raiden": "raiden_shogun",
     "raiden shogun": "raiden_shogun",
@@ -202,7 +230,6 @@ CHAR_ALIASES = {
     "hutao": "hu_tao",
     "mochileiro": "wanderer",
     "wanderer": "wanderer",
-
     # ZZZ Aliases
     "von lycaon": "lycaon",
     "lycaon": "lycaon",
@@ -248,7 +275,7 @@ CHAR_ALIASES = {
     "grace howard": "grace",
     "sigrid": "sigrid",
     "sigridnew": "sigrid",
-    "sigrid new": "sigrid"
+    "sigrid new": "sigrid",
 }
 
 CHAR_DISPLAY_NAMES_PT = {
@@ -337,7 +364,6 @@ CHAR_DISPLAY_NAMES_PT = {
     "hysilens": "Hysilens",
     "mydei": "Mydei",
     "phainon": "Phainon",
-
     # Genshin Impact
     "neuvillette": "Neuvillette",
     "arlecchino": "Arlecchino",
@@ -404,7 +430,6 @@ CHAR_DISPLAY_NAMES_PT = {
     "mika": "Mika",
     "jean": "Jean",
     "dehya": "Dehya",
-
     # ZZZ
     "ellen": "Ellen Joe",
     "lycaon": "Von Lycaon",
@@ -443,8 +468,9 @@ CHAR_DISPLAY_NAMES_PT = {
     "alice": "Alice",
     "vivian": "Vivian",
     "dialyn": "Dialyn",
-    "sigrid": "Sigrid"
+    "sigrid": "Sigrid",
 }
+
 
 def get_char_display_name(norm_name: str, fallback: str = "") -> str:
     """Retorna o nome em português limpo e traduzido para exibição na interface."""
@@ -455,6 +481,7 @@ def get_char_display_name(norm_name: str, fallback: str = "") -> str:
         return fallback
     return norm.replace("_", " ").title()
 
+
 def normalize_char_name(name: str) -> str:
     """
     Normaliza o nome do personagem resolvendo tradução Português <-> Inglês,
@@ -463,9 +490,18 @@ def normalize_char_name(name: str) -> str:
     if not name:
         return ""
     clean = str(name).lower()
-    clean = clean.replace("•", " ").replace("-", " ").replace("(", " ").replace(")", " ").replace(".", " ").replace(",", " ").replace(":", " ").replace("#", " ")
+    clean = (
+        clean.replace("•", " ")
+        .replace("-", " ")
+        .replace("(", " ")
+        .replace(")", " ")
+        .replace(".", " ")
+        .replace(",", " ")
+        .replace(":", " ")
+        .replace("#", " ")
+    )
     clean = remove_accents(clean)
-    clean = RE_MULTIPLE_SPACES.sub(' ', clean).strip()
+    clean = RE_MULTIPLE_SPACES.sub(" ", clean).strip()
 
     if clean in CHAR_ALIASES:
         return CHAR_ALIASES[clean]
@@ -473,8 +509,9 @@ def normalize_char_name(name: str) -> str:
     clean_underscore = clean.replace(" ", "_")
     if clean_underscore in CHAR_ALIASES:
         return CHAR_ALIASES[clean_underscore]
-        
+
     return clean_underscore
+
 
 def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     """
@@ -559,7 +596,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "xueyi": "1214",
             "yanqing": "1209",
             "yukong": "1207",
-            "yunli": "1221"
+            "yunli": "1221",
         },
         "genshin": {
             "ayaka": "10000002",
@@ -588,7 +625,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "lan yan": "10000108",
             "viajante": "10000005",
             "traveler": "10000005",
-            "manequina": "10000118"
+            "manequina": "10000118",
         },
         "zzz": {
             "anby": "1011",
@@ -638,8 +675,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "sigrid": "1591",
             "sigridnew": "1591",
             "sigrid_new": "1591",
-            "sigrid new": "1591"
-        }
+            "sigrid new": "1591",
+        },
     }
 
     # Preenche primeiro com a tabela oficial de conhecidos (para evitar colisões/sobrescritas incorretas)
@@ -655,6 +692,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     if game_id == "genshin":
         try:
             from genshin.models.genshin.constants import CHARACTER_NAMES
+
             for lang in ["en-us", "pt-pt"]:
                 if lang in CHARACTER_NAMES:
                     for cid, db_char in CHARACTER_NAMES[lang].items():
@@ -678,7 +716,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
         "noite eterna": "march 7th evernight",
         "desbravador(a)": "trailblazer",
         "a herta": "the herta",
-        "fugue": "tingyun fugue"
+        "fugue": "tingyun fugue",
     }
 
     # 2. Carrega roster local como fallback
@@ -693,28 +731,28 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
                     if c_name and c_id:
                         c_name_lower = c_name.lower()
                         norm_c_name = normalize_char_name(c_name)
-                        
+
                         if c_name_lower not in master_map:
                             master_map[c_name_lower] = str(c_id)
                         if norm_c_name not in master_map:
                             master_map[norm_c_name] = str(c_id)
-                            
+
                         # Cria o alias em inglês apontando para o ID real se não existir
                         if c_name_lower in aliases_pt_to_en:
                             en_alias = aliases_pt_to_en[c_name_lower]
                             en_alias_lower = en_alias.lower()
                             norm_en_alias = normalize_char_name(en_alias)
-                            
+
                             if en_alias_lower not in master_map:
                                 master_map[en_alias_lower] = str(c_id)
                             if norm_en_alias not in master_map:
                                 master_map[norm_en_alias] = str(c_id)
-                                
+
                         if norm_c_name in aliases_pt_to_en:
                             en_alias = aliases_pt_to_en[norm_c_name]
                             en_alias_lower = en_alias.lower()
                             norm_en_alias = normalize_char_name(en_alias)
-                            
+
                             if en_alias_lower not in master_map:
                                 master_map[en_alias_lower] = str(c_id)
                             if norm_en_alias not in master_map:
@@ -736,7 +774,7 @@ def get_meta_data(game_id: str) -> dict:
     game_id = game_id.lower().strip()
     if game_id in META_DATA_CACHE:
         return META_DATA_CACHE[game_id]
-        
+
     path = f"{game_id}/meta_data_{game_id}.json"
     if not os.path.exists(path):
         old_path = f"{game_id}/meta_data.json"
@@ -767,6 +805,7 @@ def get_meta_data(game_id: str) -> dict:
             print(f"[WARN] Erro ao ler {path}: {e}")
     return {}
 
+
 # ==========================================
 # ESPECIFICAÇÃO DE ROLLS / PROCS DE SUBSTATUS POR JOGO
 # ==========================================
@@ -774,137 +813,410 @@ GAME_ROLL_SPECS = {
     "genshin": {
         "max_possible_rolls": 9,
         "stats": {
-            "crit_rate":  {"min": 2.72, "avg": 3.305, "max": 3.89},
-            "crit_dmg":   {"min": 5.44, "avg": 6.61,  "max": 7.77},
-            "atk_pct":    {"min": 4.08, "avg": 4.955, "max": 5.83},
-            "hp_pct":     {"min": 4.08, "avg": 4.955, "max": 5.83},
-            "def_pct":    {"min": 5.10, "avg": 6.195, "max": 7.29},
-            "em":         {"min": 16.32, "avg": 19.815, "max": 23.31},
-            "er":         {"min": 4.53, "avg": 5.505, "max": 6.48},
-            "atk_flat":   {"min": 13.62, "avg": 16.535, "max": 19.45},
-            "hp_flat":    {"min": 209.13, "avg": 253.94, "max": 298.75},
-            "def_flat":   {"min": 16.20, "avg": 19.675, "max": 23.15},
-        }
+            "crit_rate": {"min": 2.72, "avg": 3.305, "max": 3.89},
+            "crit_dmg": {"min": 5.44, "avg": 6.61, "max": 7.77},
+            "atk_pct": {"min": 4.08, "avg": 4.955, "max": 5.83},
+            "hp_pct": {"min": 4.08, "avg": 4.955, "max": 5.83},
+            "def_pct": {"min": 5.10, "avg": 6.195, "max": 7.29},
+            "em": {"min": 16.32, "avg": 19.815, "max": 23.31},
+            "er": {"min": 4.53, "avg": 5.505, "max": 6.48},
+            "atk_flat": {"min": 13.62, "avg": 16.535, "max": 19.45},
+            "hp_flat": {"min": 209.13, "avg": 253.94, "max": 298.75},
+            "def_flat": {"min": 16.20, "avg": 19.675, "max": 23.15},
+        },
     },
     "hsr": {
         "max_possible_rolls": 9,
         "stats": {
-            "crit_rate":    {"min": 2.59, "avg": 2.91, "max": 3.24},
-            "crit_dmg":     {"min": 5.18, "avg": 5.83, "max": 6.48},
-            "atk_pct":      {"min": 3.45, "avg": 3.88, "max": 4.32},
-            "hp_pct":       {"min": 3.45, "avg": 3.88, "max": 4.32},
-            "def_pct":      {"min": 4.32, "avg": 4.86, "max": 5.40},
+            "crit_rate": {"min": 2.59, "avg": 2.91, "max": 3.24},
+            "crit_dmg": {"min": 5.18, "avg": 5.83, "max": 6.48},
+            "atk_pct": {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "hp_pct": {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "def_pct": {"min": 4.32, "avg": 4.86, "max": 5.40},
             "break_effect": {"min": 5.18, "avg": 5.83, "max": 6.48},
-            "spd":          {"min": 2.00, "avg": 2.30, "max": 2.60},
-            "ehr":          {"min": 3.45, "avg": 3.88, "max": 4.32},
-            "res":          {"min": 3.45, "avg": 3.88, "max": 4.32},
-            "atk_flat":     {"min": 17.00, "avg": 19.15, "max": 21.30},
-            "hp_flat":      {"min": 33.80, "avg": 38.05, "max": 42.30},
-            "def_flat":     {"min": 17.00, "avg": 19.15, "max": 21.30},
-        }
+            "spd": {"min": 2.00, "avg": 2.30, "max": 2.60},
+            "ehr": {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "res": {"min": 3.45, "avg": 3.88, "max": 4.32},
+            "atk_flat": {"min": 17.00, "avg": 19.15, "max": 21.30},
+            "hp_flat": {"min": 33.80, "avg": 38.05, "max": 42.30},
+            "def_flat": {"min": 17.00, "avg": 19.15, "max": 21.30},
+        },
     },
     "zzz": {
         "max_possible_rolls": 9,
         "stats": {
-            "crit_rate":    {"min": 2.40, "avg": 2.70, "max": 3.00},
-            "crit_dmg":     {"min": 4.80, "avg": 5.40, "max": 6.00},
-            "atk_pct":      {"min": 2.40, "avg": 2.70, "max": 3.00},
-            "hp_pct":       {"min": 2.40, "avg": 2.70, "max": 3.00},
-            "def_pct":      {"min": 3.84, "avg": 4.32, "max": 4.80},
+            "crit_rate": {"min": 2.40, "avg": 2.70, "max": 3.00},
+            "crit_dmg": {"min": 4.80, "avg": 5.40, "max": 6.00},
+            "atk_pct": {"min": 2.40, "avg": 2.70, "max": 3.00},
+            "hp_pct": {"min": 2.40, "avg": 2.70, "max": 3.00},
+            "def_pct": {"min": 3.84, "avg": 4.32, "max": 4.80},
             "anomaly_prof": {"min": 7.20, "avg": 8.10, "max": 9.00},
-            "pen_flat":     {"min": 7.20, "avg": 8.10, "max": 9.00},
-            "atk_flat":     {"min": 12.00, "avg": 13.50, "max": 15.00},
-            "hp_flat":      {"min": 89.60, "avg": 100.80, "max": 112.00},
-            "def_flat":     {"min": 12.00, "avg": 13.50, "max": 15.00},
-        }
-    }
+            "pen_flat": {"min": 7.20, "avg": 8.10, "max": 9.00},
+            "atk_flat": {"min": 12.00, "avg": 13.50, "max": 15.00},
+            "hp_flat": {"min": 89.60, "avg": 100.80, "max": 112.00},
+            "def_flat": {"min": 12.00, "avg": 13.50, "max": 15.00},
+        },
+    },
 }
 
-MAX_ROLL_VALUES = {
-    g: {s: spec["max"] for s, spec in data["stats"].items()}
-    for g, data in GAME_ROLL_SPECS.items()
-}
+MAX_ROLL_VALUES = {g: {s: spec["max"] for s, spec in data["stats"].items()} for g, data in GAME_ROLL_SPECS.items()}
 
 # ==========================================
 # MAPEAMENTO PARA NORMALIZAÇÃO DE NOMES DE ATRIBUTOS
 # ==========================================
 STAT_NAME_MAP = {
     # Taxa Crítica
-    "taxa crítica": "crit_rate", "taxa critica": "crit_rate", "taxa crit": "crit_rate", "crit rate": "crit_rate", "crit_rate": "crit_rate", "rate": "crit_rate", "taxa": "crit_rate",
-    "chance de crit": "crit_rate", "chance de crit%": "crit_rate", "taxa de crit": "crit_rate", "taxa de crit%": "crit_rate",
-    "taxa crítica%": "crit_rate", "taxa critica%": "crit_rate", "taxa crit%": "crit_rate", "chance de crt": "crit_rate", "chance de crt%": "crit_rate",
-    "chance de crítico": "crit_rate", "chance de critico": "crit_rate", "chance de crítico%": "crit_rate", "chance de critico%": "crit_rate", "taxa de crítico": "crit_rate", "taxa de critico": "crit_rate", "taxa de crítico%": "crit_rate", "taxa de critico%": "crit_rate",
-    "taxa crt": "crit_rate", "taxa crt%": "crit_rate", "crit rate%": "crit_rate", "critical rate": "crit_rate",
-    
+    "taxa crítica": "crit_rate",
+    "taxa critica": "crit_rate",
+    "taxa crit": "crit_rate",
+    "crit rate": "crit_rate",
+    "crit_rate": "crit_rate",
+    "rate": "crit_rate",
+    "taxa": "crit_rate",
+    "chance de crit": "crit_rate",
+    "chance de crit%": "crit_rate",
+    "taxa de crit": "crit_rate",
+    "taxa de crit%": "crit_rate",
+    "taxa crítica%": "crit_rate",
+    "taxa critica%": "crit_rate",
+    "taxa crit%": "crit_rate",
+    "chance de crt": "crit_rate",
+    "chance de crt%": "crit_rate",
+    "chance de crítico": "crit_rate",
+    "chance de critico": "crit_rate",
+    "chance de crítico%": "crit_rate",
+    "chance de critico%": "crit_rate",
+    "taxa de crítico": "crit_rate",
+    "taxa de critico": "crit_rate",
+    "taxa de crítico%": "crit_rate",
+    "taxa de critico%": "crit_rate",
+    "taxa crt": "crit_rate",
+    "taxa crt%": "crit_rate",
+    "crit rate%": "crit_rate",
+    "critical rate": "crit_rate",
     # Dano Crítico
-    "dano crítico": "crit_dmg", "dano critico": "crit_dmg", "dano crit": "crit_dmg", "crit dmg": "crit_dmg", "crit_dmg": "crit_dmg", "dmg": "crit_dmg", "dano": "crit_dmg", "damage": "crit_dmg",
-    "dano crit%": "crit_dmg", "dano de crit": "crit_dmg", "dano de crit%": "crit_dmg", "dano crítico%": "crit_dmg", "dano critico%": "crit_dmg",
-    "dano crt": "crit_dmg", "dano crt%": "crit_dmg", "dano de crt": "crit_dmg", "dano de crt%": "crit_dmg",
-    "dano de crítico": "crit_dmg", "dano de critico": "crit_dmg", "dano de crítico%": "crit_dmg", "dano de critico%": "crit_dmg", "crit dmg%": "crit_dmg", "critical damage": "crit_dmg",
-    
+    "dano crítico": "crit_dmg",
+    "dano critico": "crit_dmg",
+    "dano crit": "crit_dmg",
+    "crit dmg": "crit_dmg",
+    "crit_dmg": "crit_dmg",
+    "dmg": "crit_dmg",
+    "dano": "crit_dmg",
+    "damage": "crit_dmg",
+    "dano crit%": "crit_dmg",
+    "dano de crit": "crit_dmg",
+    "dano de crit%": "crit_dmg",
+    "dano crítico%": "crit_dmg",
+    "dano critico%": "crit_dmg",
+    "dano crt": "crit_dmg",
+    "dano crt%": "crit_dmg",
+    "dano de crt": "crit_dmg",
+    "dano de crt%": "crit_dmg",
+    "dano de crítico": "crit_dmg",
+    "dano de critico": "crit_dmg",
+    "dano de crítico%": "crit_dmg",
+    "dano de critico%": "crit_dmg",
+    "crit dmg%": "crit_dmg",
+    "critical damage": "crit_dmg",
     # Velocidade
-    "velocidade": "spd", "vel": "spd", "spd": "spd", "speed": "spd",
-    
+    "velocidade": "spd",
+    "vel": "spd",
+    "spd": "spd",
+    "speed": "spd",
     # Efeito de Quebra
-    "efeito de quebra": "break_effect", "quebra": "break_effect", "break effect": "break_effect", "break_effect": "break_effect", "be": "break_effect",
-    "efeito de quebra%": "break_effect", "break_effect%": "break_effect", "break": "break_effect",
-    
+    "efeito de quebra": "break_effect",
+    "quebra": "break_effect",
+    "break effect": "break_effect",
+    "break_effect": "break_effect",
+    "be": "break_effect",
+    "efeito de quebra%": "break_effect",
+    "break_effect%": "break_effect",
+    "break": "break_effect",
     # Proficiência Elemental / Anomalia
-    "proficiência elemental": "em", "proficiencia elemental": "em", "maestria elemental": "em", "maestria": "em", "maestria_elemental": "em", "proficiência": "em", "proficiencia": "em", "elemental mastery": "em", "em": "em", "prof": "em", "prof. elemental": "em", "prof. eleme.": "em", "prof eleme": "em", "prof eleme.": "em", "prof. element.": "em", "prof element": "em", "prof element.": "em", "mastery": "em",
-    "anomaly proficiency": "anomaly_prof", "proficiência em anomalia": "anomaly_prof", "proficiencia em anomalia": "anomaly_prof", "proficiência de anomalia": "anomaly_prof", "proficiencia de anomalia": "anomaly_prof", "prof. anomalia": "anomaly_prof", "prof anomalia": "anomaly_prof", "anomaly_prof": "anomaly_prof",
-    "proficiência de anomalia%": "anomaly_prof", "proficiencia de anomalia%": "anomaly_prof", "anomalia": "anomaly_prof",
-    
+    "proficiência elemental": "em",
+    "proficiencia elemental": "em",
+    "maestria elemental": "em",
+    "maestria": "em",
+    "maestria_elemental": "em",
+    "proficiência": "em",
+    "proficiencia": "em",
+    "elemental mastery": "em",
+    "em": "em",
+    "prof": "em",
+    "prof. elemental": "em",
+    "prof. eleme.": "em",
+    "prof eleme": "em",
+    "prof eleme.": "em",
+    "prof. element.": "em",
+    "prof element": "em",
+    "prof element.": "em",
+    "mastery": "em",
+    "anomaly proficiency": "anomaly_prof",
+    "proficiência em anomalia": "anomaly_prof",
+    "proficiencia em anomalia": "anomaly_prof",
+    "proficiência de anomalia": "anomaly_prof",
+    "proficiencia de anomalia": "anomaly_prof",
+    "prof. anomalia": "anomaly_prof",
+    "prof anomalia": "anomaly_prof",
+    "anomaly_prof": "anomaly_prof",
+    "proficiência de anomalia%": "anomaly_prof",
+    "proficiencia de anomalia%": "anomaly_prof",
+    "anomalia": "anomaly_prof",
     # Recarga de Energia / Taxa de Regeneração de Energia
-    "recarga de energia": "er", "recarga": "er", "energy recharge": "er", "er": "er", "recharge": "er", "recarga de energia%": "er",
-    "taxa de regeneração de energia": "err", "taxa de regeneracao de energia": "err", "taxa de regen. energia": "err", "taxa de regen energia": "err", "taxa de regen. de energia": "err", "taxa de regen de energia": "err", "recuperação de energia": "err", "recuperacao de energia": "err", "regen. energia": "err", "regen energia": "err", "taxa de reg. de energia": "err", "recup. energia": "err", "recup energia": "err", "energy regen rate": "err", "energy regen": "err", "energy regeneration rate": "err", "err": "err",
-    
+    "recarga de energia": "er",
+    "recarga": "er",
+    "energy recharge": "er",
+    "er": "er",
+    "recharge": "er",
+    "recarga de energia%": "er",
+    "taxa de regeneração de energia": "err",
+    "taxa de regeneracao de energia": "err",
+    "taxa de regen. energia": "err",
+    "taxa de regen energia": "err",
+    "taxa de regen. de energia": "err",
+    "taxa de regen de energia": "err",
+    "recuperação de energia": "err",
+    "recuperacao de energia": "err",
+    "regen. energia": "err",
+    "regen energia": "err",
+    "taxa de reg. de energia": "err",
+    "recup. energia": "err",
+    "recup energia": "err",
+    "energy regen rate": "err",
+    "energy regen": "err",
+    "energy regeneration rate": "err",
+    "err": "err",
     # Bônus de Cura
-    "bônus de cura": "healing_bonus", "bonus de cura": "healing_bonus", "cura bônus": "healing_bonus", "cura bonus": "healing_bonus", "bônus de cura%": "healing_bonus", "bonus de cura%": "healing_bonus", "healing bonus": "healing_bonus", "outgoing healing boost": "healing_bonus", "healing": "healing_bonus", "healing_bonus": "healing_bonus",
-    
+    "bônus de cura": "healing_bonus",
+    "bonus de cura": "healing_bonus",
+    "cura bônus": "healing_bonus",
+    "cura bonus": "healing_bonus",
+    "bônus de cura%": "healing_bonus",
+    "bonus de cura%": "healing_bonus",
+    "healing bonus": "healing_bonus",
+    "outgoing healing boost": "healing_bonus",
+    "healing": "healing_bonus",
+    "healing_bonus": "healing_bonus",
     # Atributos Percentuais
-    "atq %": "atk_pct", "atq%": "atk_pct", "atk%": "atk_pct", "atk %": "atk_pct", "ataque%": "atk_pct", "attack%": "atk_pct", "atk_pct": "atk_pct",
-    "vida %": "hp_pct", "vida%": "hp_pct", "hp%": "hp_pct", "hp %": "hp_pct", "hp_pct": "hp_pct", "vida_pct": "hp_pct", "pv%": "hp_pct",
-    "defesa %": "def_pct", "defesa%": "def_pct", "def%": "def_pct", "def %": "def_pct", "defesa_pct": "def_pct", "def_pct": "def_pct",
-    
+    "atq %": "atk_pct",
+    "atq%": "atk_pct",
+    "atk%": "atk_pct",
+    "atk %": "atk_pct",
+    "ataque%": "atk_pct",
+    "attack%": "atk_pct",
+    "atk_pct": "atk_pct",
+    "vida %": "hp_pct",
+    "vida%": "hp_pct",
+    "hp%": "hp_pct",
+    "hp %": "hp_pct",
+    "hp_pct": "hp_pct",
+    "vida_pct": "hp_pct",
+    "pv%": "hp_pct",
+    "defesa %": "def_pct",
+    "defesa%": "def_pct",
+    "def%": "def_pct",
+    "def %": "def_pct",
+    "defesa_pct": "def_pct",
+    "def_pct": "def_pct",
     # Atributos Planos (Flats)
-    "atq": "atk_flat", "atk": "atk_flat", "ataque": "atk_flat", "attack": "atk_flat", "atk_flat": "atk_flat",
-    "vida": "hp_flat", "hp": "hp_flat", "hp_flat": "hp_flat", "pv": "hp_flat", "pontos de vida": "hp_flat",
-    "defesa": "def_flat", "def": "def_flat", "defesa_flat": "def_flat", "def_flat": "def_flat",
-    
+    "atq": "atk_flat",
+    "atk": "atk_flat",
+    "ataque": "atk_flat",
+    "attack": "atk_flat",
+    "atk_flat": "atk_flat",
+    "vida": "hp_flat",
+    "hp": "hp_flat",
+    "hp_flat": "hp_flat",
+    "pv": "hp_flat",
+    "pontos de vida": "hp_flat",
+    "defesa": "def_flat",
+    "def": "def_flat",
+    "defesa_flat": "def_flat",
+    "def_flat": "def_flat",
     # Bônus Elementais (Genshin / HSR / ZZZ)
-    "pyro dmg": "pyro_dmg", "pyro dmg bonus": "pyro_dmg", "bônus de dano pyro": "pyro_dmg", "bonus de dano pyro": "pyro_dmg", "dano pyro": "pyro_dmg", "dano de pyro": "pyro_dmg", "pyro": "pyro_dmg",
-    "fire dmg": "fire_dmg", "fire dmg bonus": "fire_dmg", "bônus de dano de fogo": "fire_dmg", "bonus de dano de fogo": "fire_dmg", "bônus de dano fogo": "fire_dmg", "bonus de dano fogo": "fire_dmg", "dano de fogo": "fire_dmg", "dano fogo": "fire_dmg", "fogo": "fire_dmg",
-    
-    "hydro dmg": "hydro_dmg", "hydro dmg bonus": "hydro_dmg", "bônus de dano hydro": "hydro_dmg", "bonus de dano hydro": "hydro_dmg", "dano hydro": "hydro_dmg", "dano de hydro": "hydro_dmg", "hydro": "hydro_dmg", "bônus de dano de água": "hydro_dmg", "bonus de dano de agua": "hydro_dmg", "dano de agua": "hydro_dmg", "dano agua": "hydro_dmg", "bônus de dano agua": "hydro_dmg", "bonus de dano agua": "hydro_dmg",
-    
-    "electro dmg": "electro_dmg", "electro dmg bonus": "electro_dmg", "bônus de dano electro": "electro_dmg", "bonus de dano electro": "electro_dmg", "dano electro": "electro_dmg", "dano de electro": "electro_dmg", "electro": "electro_dmg", "eletro": "electro_dmg",
-    "lightning dmg": "lightning_dmg", "lightning dmg bonus": "lightning_dmg", "bônus de dano de raio": "lightning_dmg", "bonus de dano de raio": "lightning_dmg", "bônus de dano raio": "lightning_dmg", "bonus de dano raio": "lightning_dmg", "dano de raio": "lightning_dmg", "dano raio": "lightning_dmg", "raio": "lightning_dmg",
-    "electric dmg": "electric_dmg", "electric dmg bonus": "electric_dmg", "bônus de dano elétrico": "electric_dmg", "bonus de dano eletrico": "electric_dmg", "bônus de dano de elétrico": "electric_dmg", "bonus de dano de eletrico": "electric_dmg", "dano elétrico": "electric_dmg", "dano eletrico": "electric_dmg", "dano de eletrico": "electric_dmg",
-    
-    "cryo dmg": "cryo_dmg", "cryo dmg bonus": "cryo_dmg", "bônus de dano cryo": "cryo_dmg", "bonus de dano cryo": "cryo_dmg", "dano cryo": "cryo_dmg", "dano de cryo": "cryo_dmg", "cryo": "cryo_dmg",
-    "ice dmg": "ice_dmg", "ice dmg bonus": "ice_dmg", "bônus de dano de gelo": "ice_dmg", "bonus de dano de gelo": "ice_dmg", "bônus de dano gelo": "ice_dmg", "bonus de dano gelo": "ice_dmg", "dano de gelo": "ice_dmg", "dano gelo": "ice_dmg", "gelo": "ice_dmg",
-    
-    "anemo dmg": "anemo_dmg", "anemo dmg bonus": "anemo_dmg", "bônus de dano anemo": "anemo_dmg", "bonus de dano anemo": "anemo_dmg", "dano anemo": "anemo_dmg", "dano de anemo": "anemo_dmg", "anemo": "anemo_dmg",
-    "wind dmg": "wind_dmg", "wind dmg bonus": "wind_dmg", "bônus de dano de vento": "wind_dmg", "bonus de dano de vento": "wind_dmg", "bônus de dano vento": "wind_dmg", "bonus de dano vento": "wind_dmg", "dano de vento": "wind_dmg", "dano vento": "wind_dmg", "vento": "wind_dmg",
-    
-    "geo dmg": "geo_dmg", "geo dmg bonus": "geo_dmg", "bônus de dano geo": "geo_dmg", "bonus de dano geo": "geo_dmg", "dano geo": "geo_dmg", "dano de geo": "geo_dmg", "geo": "geo_dmg",
-    "dendro dmg": "dendro_dmg", "dendro dmg bonus": "dendro_dmg", "bônus de dano dendro": "dendro_dmg", "bonus de dano dendro": "dendro_dmg", "dano dendro": "dendro_dmg", "dano de dendro": "dendro_dmg", "dendro": "dendro_dmg",
-    
-    "physical dmg": "physical_dmg", "physical dmg bonus": "physical_dmg", "bônus de dano físico": "physical_dmg", "bonus de dano fisico": "physical_dmg", "dano físico": "physical_dmg", "dano fisico": "physical_dmg", "físico": "physical_dmg", "fisico": "physical_dmg", "physical": "physical_dmg",
-    "quantum dmg": "quantum_dmg", "quantum dmg bonus": "quantum_dmg", "bônus de dano quântico": "quantum_dmg", "bonus de dano quantico": "quantum_dmg", "dano quântico": "quantum_dmg", "dano quantico": "quantum_dmg", "quântico": "quantum_dmg", "quantico": "quantum_dmg", "quantum": "quantum_dmg",
-    "imaginary dmg": "imaginary_dmg", "imaginary dmg bonus": "imaginary_dmg", "bônus de dano imaginário": "imaginary_dmg", "bonus de dano imaginario": "imaginary_dmg", "dano imaginário": "imaginary_dmg", "dano imaginario": "imaginary_dmg", "imaginário": "imaginary_dmg", "imaginario": "imaginary_dmg", "imaginary": "imaginary_dmg",
-    "ether dmg": "ether_dmg", "ether dmg bonus": "ether_dmg", "bônus de dano de éter": "ether_dmg", "bonus de dano de eter": "ether_dmg", "bônus de dano éter": "ether_dmg", "bonus de dano eter": "ether_dmg", "dano de éter": "ether_dmg", "dano de eter": "ether_dmg", "dano éter": "ether_dmg", "dano eter": "ether_dmg", "éter": "ether_dmg", "eter": "ether_dmg",
-    
+    "pyro dmg": "pyro_dmg",
+    "pyro dmg bonus": "pyro_dmg",
+    "bônus de dano pyro": "pyro_dmg",
+    "bonus de dano pyro": "pyro_dmg",
+    "dano pyro": "pyro_dmg",
+    "dano de pyro": "pyro_dmg",
+    "pyro": "pyro_dmg",
+    "fire dmg": "fire_dmg",
+    "fire dmg bonus": "fire_dmg",
+    "bônus de dano de fogo": "fire_dmg",
+    "bonus de dano de fogo": "fire_dmg",
+    "bônus de dano fogo": "fire_dmg",
+    "bonus de dano fogo": "fire_dmg",
+    "dano de fogo": "fire_dmg",
+    "dano fogo": "fire_dmg",
+    "fogo": "fire_dmg",
+    "hydro dmg": "hydro_dmg",
+    "hydro dmg bonus": "hydro_dmg",
+    "bônus de dano hydro": "hydro_dmg",
+    "bonus de dano hydro": "hydro_dmg",
+    "dano hydro": "hydro_dmg",
+    "dano de hydro": "hydro_dmg",
+    "hydro": "hydro_dmg",
+    "bônus de dano de água": "hydro_dmg",
+    "bonus de dano de agua": "hydro_dmg",
+    "dano de agua": "hydro_dmg",
+    "dano agua": "hydro_dmg",
+    "bônus de dano agua": "hydro_dmg",
+    "bonus de dano agua": "hydro_dmg",
+    "electro dmg": "electro_dmg",
+    "electro dmg bonus": "electro_dmg",
+    "bônus de dano electro": "electro_dmg",
+    "bonus de dano electro": "electro_dmg",
+    "dano electro": "electro_dmg",
+    "dano de electro": "electro_dmg",
+    "electro": "electro_dmg",
+    "eletro": "electro_dmg",
+    "lightning dmg": "lightning_dmg",
+    "lightning dmg bonus": "lightning_dmg",
+    "bônus de dano de raio": "lightning_dmg",
+    "bonus de dano de raio": "lightning_dmg",
+    "bônus de dano raio": "lightning_dmg",
+    "bonus de dano raio": "lightning_dmg",
+    "dano de raio": "lightning_dmg",
+    "dano raio": "lightning_dmg",
+    "raio": "lightning_dmg",
+    "electric dmg": "electric_dmg",
+    "electric dmg bonus": "electric_dmg",
+    "bônus de dano elétrico": "electric_dmg",
+    "bonus de dano eletrico": "electric_dmg",
+    "bônus de dano de elétrico": "electric_dmg",
+    "bonus de dano de eletrico": "electric_dmg",
+    "dano elétrico": "electric_dmg",
+    "dano eletrico": "electric_dmg",
+    "dano de eletrico": "electric_dmg",
+    "cryo dmg": "cryo_dmg",
+    "cryo dmg bonus": "cryo_dmg",
+    "bônus de dano cryo": "cryo_dmg",
+    "bonus de dano cryo": "cryo_dmg",
+    "dano cryo": "cryo_dmg",
+    "dano de cryo": "cryo_dmg",
+    "cryo": "cryo_dmg",
+    "ice dmg": "ice_dmg",
+    "ice dmg bonus": "ice_dmg",
+    "bônus de dano de gelo": "ice_dmg",
+    "bonus de dano de gelo": "ice_dmg",
+    "bônus de dano gelo": "ice_dmg",
+    "bonus de dano gelo": "ice_dmg",
+    "dano de gelo": "ice_dmg",
+    "dano gelo": "ice_dmg",
+    "gelo": "ice_dmg",
+    "anemo dmg": "anemo_dmg",
+    "anemo dmg bonus": "anemo_dmg",
+    "bônus de dano anemo": "anemo_dmg",
+    "bonus de dano anemo": "anemo_dmg",
+    "dano anemo": "anemo_dmg",
+    "dano de anemo": "anemo_dmg",
+    "anemo": "anemo_dmg",
+    "wind dmg": "wind_dmg",
+    "wind dmg bonus": "wind_dmg",
+    "bônus de dano de vento": "wind_dmg",
+    "bonus de dano de vento": "wind_dmg",
+    "bônus de dano vento": "wind_dmg",
+    "bonus de dano vento": "wind_dmg",
+    "dano de vento": "wind_dmg",
+    "dano vento": "wind_dmg",
+    "vento": "wind_dmg",
+    "geo dmg": "geo_dmg",
+    "geo dmg bonus": "geo_dmg",
+    "bônus de dano geo": "geo_dmg",
+    "bonus de dano geo": "geo_dmg",
+    "dano geo": "geo_dmg",
+    "dano de geo": "geo_dmg",
+    "geo": "geo_dmg",
+    "dendro dmg": "dendro_dmg",
+    "dendro dmg bonus": "dendro_dmg",
+    "bônus de dano dendro": "dendro_dmg",
+    "bonus de dano dendro": "dendro_dmg",
+    "dano dendro": "dendro_dmg",
+    "dano de dendro": "dendro_dmg",
+    "dendro": "dendro_dmg",
+    "physical dmg": "physical_dmg",
+    "physical dmg bonus": "physical_dmg",
+    "bônus de dano físico": "physical_dmg",
+    "bonus de dano fisico": "physical_dmg",
+    "dano físico": "physical_dmg",
+    "dano fisico": "physical_dmg",
+    "físico": "physical_dmg",
+    "fisico": "physical_dmg",
+    "physical": "physical_dmg",
+    "quantum dmg": "quantum_dmg",
+    "quantum dmg bonus": "quantum_dmg",
+    "bônus de dano quântico": "quantum_dmg",
+    "bonus de dano quantico": "quantum_dmg",
+    "dano quântico": "quantum_dmg",
+    "dano quantico": "quantum_dmg",
+    "quântico": "quantum_dmg",
+    "quantico": "quantum_dmg",
+    "quantum": "quantum_dmg",
+    "imaginary dmg": "imaginary_dmg",
+    "imaginary dmg bonus": "imaginary_dmg",
+    "bônus de dano imaginário": "imaginary_dmg",
+    "bonus de dano imaginario": "imaginary_dmg",
+    "dano imaginário": "imaginary_dmg",
+    "dano imaginario": "imaginary_dmg",
+    "imaginário": "imaginary_dmg",
+    "imaginario": "imaginary_dmg",
+    "imaginary": "imaginary_dmg",
+    "ether dmg": "ether_dmg",
+    "ether dmg bonus": "ether_dmg",
+    "bônus de dano de éter": "ether_dmg",
+    "bonus de dano de eter": "ether_dmg",
+    "bônus de dano éter": "ether_dmg",
+    "bonus de dano eter": "ether_dmg",
+    "dano de éter": "ether_dmg",
+    "dano de eter": "ether_dmg",
+    "dano éter": "ether_dmg",
+    "dano eter": "ether_dmg",
+    "éter": "ether_dmg",
+    "eter": "ether_dmg",
     # HSR Específicos
-    "effect hit rate": "ehr", "ehr": "ehr", "taxa de acerto de efeito": "ehr", "chance de acerto de efeito": "ehr", "chance de acerto": "ehr", "acerto de efeito": "ehr", "acerto efeito": "ehr",
-    "effect res": "res", "res": "res", "resistência a efeito": "res", "resistencia a efeito": "res", "res_efeito": "res", "res a efeito": "res", "res efeito": "res",
-    "outgoing healing": "healing_bonus", "outgoing_healing": "healing_bonus",
-    
+    "effect hit rate": "ehr",
+    "ehr": "ehr",
+    "taxa de acerto de efeito": "ehr",
+    "chance de acerto de efeito": "ehr",
+    "chance de acerto": "ehr",
+    "acerto de efeito": "ehr",
+    "acerto efeito": "ehr",
+    "effect res": "res",
+    "res": "res",
+    "resistência a efeito": "res",
+    "resistencia a efeito": "res",
+    "res_efeito": "res",
+    "res a efeito": "res",
+    "res efeito": "res",
+    "outgoing healing": "healing_bonus",
+    "outgoing_healing": "healing_bonus",
     # ZZZ Específicos
-    "pen flat": "pen_flat", "pen": "pen_flat", "pen flat bonus": "pen_flat", "perfuração": "pen_flat", "perfuracao": "pen_flat", "perfuração flat": "pen_flat", "perfuracao flat": "pen_flat",
-    "pen ratio": "pen_pct", "pen_pct": "pen_pct", "taxa de perfuração": "pen_pct", "taxa de perfuracao": "pen_pct", "perfuração%": "pen_pct", "perfuracao%": "pen_pct", "perfuracao ratio": "pen_pct", "perfuração ratio": "pen_pct",
-    "impacto": "impact", "impact": "impact", "impact_pct": "impact",
-    "taxa de controle de anomalia": "anomaly_mastery", "controle de anomalia": "anomaly_mastery", "anomaly mastery": "anomaly_mastery", "anomaly_mastery": "anomaly_mastery", "maestria de anomalia": "anomaly_mastery", "maest. anomalia": "anomaly_mastery", "maest anomalia": "anomaly_mastery"
+    "pen flat": "pen_flat",
+    "pen": "pen_flat",
+    "pen flat bonus": "pen_flat",
+    "perfuração": "pen_flat",
+    "perfuracao": "pen_flat",
+    "perfuração flat": "pen_flat",
+    "perfuracao flat": "pen_flat",
+    "pen ratio": "pen_pct",
+    "pen_pct": "pen_pct",
+    "taxa de perfuração": "pen_pct",
+    "taxa de perfuracao": "pen_pct",
+    "perfuração%": "pen_pct",
+    "perfuracao%": "pen_pct",
+    "perfuracao ratio": "pen_pct",
+    "perfuração ratio": "pen_pct",
+    "impacto": "impact",
+    "impact": "impact",
+    "impact_pct": "impact",
+    "taxa de controle de anomalia": "anomaly_mastery",
+    "controle de anomalia": "anomaly_mastery",
+    "anomaly mastery": "anomaly_mastery",
+    "anomaly_mastery": "anomaly_mastery",
+    "maestria de anomalia": "anomaly_mastery",
+    "maest. anomalia": "anomaly_mastery",
+    "maest anomalia": "anomaly_mastery",
 }
 
 _unaccented_map = {}
@@ -916,50 +1228,73 @@ STAT_NAME_MAP = _unaccented_map
 # ==========================================
 # WHITELIST ESTRITA DE SUBSTATS VÁLIDOS
 # ==========================================
-VALID_SUBSTATS = frozenset({
-    "spd", "crit_rate", "crit_dmg", "atk_pct", "hp_pct", "def_pct",
-    "break_effect", "ehr", "res", "em", "er", "err",
-    "atk_flat", "hp_flat", "def_flat",
-    "anomaly_prof", "anomaly_mastery", "pen_flat", "pen_pct", "impact",
-})
+VALID_SUBSTATS = frozenset(
+    {
+        "spd",
+        "crit_rate",
+        "crit_dmg",
+        "atk_pct",
+        "hp_pct",
+        "def_pct",
+        "break_effect",
+        "ehr",
+        "res",
+        "em",
+        "er",
+        "err",
+        "atk_flat",
+        "hp_flat",
+        "def_flat",
+        "anomaly_prof",
+        "anomaly_mastery",
+        "pen_flat",
+        "pen_pct",
+        "impact",
+    }
+)
 
 # Fallbacks genéricos por jogo, usados quando o parser não extrai substats válidos
 DEFAULT_SUBSTATS_FALLBACK = {
-    "hsr":     ["crit_rate", "crit_dmg", "spd", "atk_pct"],
+    "hsr": ["crit_rate", "crit_dmg", "spd", "atk_pct"],
     "genshin": ["crit_rate", "crit_dmg", "atk_pct", "er"],
-    "zzz":     ["crit_rate", "crit_dmg", "atk_pct"],
+    "zzz": ["crit_rate", "crit_dmg", "atk_pct"],
 }
+
 
 def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
     """Normaliza o nome do atributo para chaves padrão do motor de cálculo, ignorando acentos, case e pontuação."""
     if not raw_name:
         return ""
     s = str(raw_name).strip()
-    
+
     if "%" in s:
         has_percent = True
         s = s.replace("%", "")
-        
-    s = re.sub(r'\([^)]*\)', '', s)
+
+    s = re.sub(r"\([^)]*\)", "", s)
     if ":" in s:
         s = s.split(":")[0]
     s = s.strip()
-    
+
     clean = remove_accents(s.lower())
-    clean = re.sub(r'\s+', ' ', clean).strip()
-    
+    clean = re.sub(r"\s+", " ", clean).strip()
+
     mapped = STAT_NAME_MAP.get(clean)
     if not mapped:
         clean_no_dots = clean.replace(".", "").strip()
-        clean_no_dots = re.sub(r'\s+', ' ', clean_no_dots)
+        clean_no_dots = re.sub(r"\s+", " ", clean_no_dots)
         mapped = STAT_NAME_MAP.get(clean_no_dots, clean)
-        
+
     if has_percent:
-        if mapped == "atk_flat": return "atk_pct"
-        if mapped == "hp_flat" or mapped == "pv": return "hp_pct"
-        if mapped == "def_flat": return "def_pct"
-        
+        if mapped == "atk_flat":
+            return "atk_pct"
+        if mapped == "hp_flat" or mapped == "pv":
+            return "hp_pct"
+        if mapped == "def_flat":
+            return "def_pct"
+
     return mapped
+
 
 def is_stat_equivalent(stat1: str, stat2: str) -> bool:
     """Verifica equivalência entre variantes de nomes de atributos."""
@@ -972,12 +1307,13 @@ def is_stat_equivalent(stat1: str, stat2: str) -> bool:
         {"pyro_dmg", "fire_dmg"},
         {"er", "err"},
         {"pen_flat", "pen_pct"},
-        {"em", "anomaly_prof"}
+        {"em", "anomaly_prof"},
     ]
     for group in eq_groups:
         if stat1 in group and stat2 in group:
             return True
     return False
+
 
 def sanitize_substats(raw_tokens: list, game_id: str) -> list:
     """
@@ -987,36 +1323,40 @@ def sanitize_substats(raw_tokens: list, game_id: str) -> list:
     """
     cleaned = []
     seen = set()
-    
+
     for raw in raw_tokens:
-        token = re.sub(r'\([^)]*\)', '', raw)
-        token = re.sub(r'[#*\-]+', '', token)
+        token = re.sub(r"\([^)]*\)", "", raw)
+        token = re.sub(r"[#*\-]+", "", token)
         token = token.strip()
-        
+
         if not token:
             continue
-        
-        sub_tokens = re.split(r'\s*=\s*', token)
-        
+
+        sub_tokens = re.split(r"\s*=\s*", token)
+
         for st in sub_tokens:
             st = st.strip()
             if not st:
                 continue
-            
+
             if len(st.split()) > 4:
                 continue
-            
+
             norm = normalize_stat_name(st)
             # Em guias de build, mencoes genéricas como "ATK", "HP", "DEF" representam os percentuais %
-            if norm == "atk_flat": norm = "atk_pct"
-            elif norm == "hp_flat": norm = "hp_pct"
-            elif norm == "def_flat": norm = "def_pct"
-            
+            if norm == "atk_flat":
+                norm = "atk_pct"
+            elif norm == "hp_flat":
+                norm = "hp_pct"
+            elif norm == "def_flat":
+                norm = "def_pct"
+
             if norm in VALID_SUBSTATS and norm not in seen:
                 seen.add(norm)
                 cleaned.append(norm)
-    
+
     return cleaned[:5]
+
 
 # ==========================================
 # EXTRATOR DE PESOS DINÂMICOS BASEADO NO GUIA
@@ -1030,7 +1370,7 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
     """
     game_id = game_id.lower().strip()
     meta_db = get_meta_data(game_id)
-    
+
     char_meta = meta_db.get(str(char_id))
     if char_meta:
         subs = char_meta.get("substats_priority", [])
@@ -1041,19 +1381,19 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
                 norm_name = normalize_stat_name(s)
                 weight_val = scale[i] if i < len(scale) else 0.30
                 weights[norm_name] = weight_val
-                
+
             if "crit_rate" in weights or "crit_dmg" in weights:
                 top_crit = max(weights.get("crit_rate", 0.0), weights.get("crit_dmg", 0.0), 1.0)
                 weights["crit_rate"] = top_crit
                 weights["crit_dmg"] = top_crit
-                
+
             if "hp_pct" in weights and "hp_flat" not in weights:
                 weights["hp_flat"] = round(weights["hp_pct"] * 0.5, 3)
             if "atk_pct" in weights and "atk_flat" not in weights:
                 weights["atk_flat"] = round(weights["atk_pct"] * 0.5, 3)
             if "def_pct" in weights and "def_flat" not in weights:
                 weights["def_flat"] = round(weights["def_pct"] * 0.5, 3)
-                
+
             return weights
 
     return {
@@ -1067,8 +1407,9 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
         "er": 0.5,
         "hp_flat": 0.3,
         "atk_flat": 0.3,
-        "def_flat": 0.2
+        "def_flat": 0.2,
     }
+
 
 # ==========================================
 # MOTOR DINÂMICO DE SCORES COM MAIN STAT E SUBSTAT WEIGHTING
@@ -1076,9 +1417,10 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
 def clean_value(val_str: str) -> Tuple[float, bool]:
     """Extrai o valor numérico de uma string de status e indica se é percentual."""
     has_pct = "%" in val_str
-    match = re.search(r'([\d\.]+)', val_str)
+    match = re.search(r"([\d\.]+)", val_str)
     val = float(match.group(1)) if match else 0.0
     return val, has_pct
+
 
 def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_str: str) -> Tuple[str, float]:
     """
@@ -1087,17 +1429,17 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     game_id = game_id.lower().strip()
     if game_id not in MAX_ROLL_VALUES:
         return "D", 0.0
-        
+
     if not substats_str or substats_str.strip() in ["Sem substatus", "Status não disponíveis", ""]:
         return "D", 0.0
-        
+
     weights = extract_weights_from_guide(game_id, str(char_id))
     meta_db = get_meta_data(game_id)
     char_meta = meta_db.get(str(char_id), {})
-    
+
     main_clean = main_stat.lower()
     norm_slot = normalize_slot_name(slot, game_id)
-    
+
     # 1. Identifica se o slot possui Main Stat Fixo
     is_fixed_main = False
     if norm_slot in ["flower", "plume", "head", "hands", "slot_1", "slot_2", "slot_3"]:
@@ -1107,7 +1449,7 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
     raw_main_name = main_clean.split("(")[0].strip()
     has_pct = "%" in main_clean or "%" in main_stat
     main_stat_norm = normalize_stat_name(raw_main_name, has_percent=has_pct)
-    
+
     # 2. Avalia a validade do Main Stat (Sistema de 3 Níveis: 1.0 Ideal, 0.6 Útil/Alternativo, 0.0 Inútil)
     main_stat_tier = 0.0
     if is_fixed_main:
@@ -1120,16 +1462,36 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
             if norm_k == norm_slot or norm_k in norm_slot or norm_slot in norm_k:
                 slot_key = k
                 break
-                
+
         rec_mains = guide_mains.get(slot_key, []) if slot_key else []
         elemental_stats = {
-            "pyro_dmg", "hydro_dmg", "electro_dmg", "cryo_dmg", "anemo_dmg", "geo_dmg", "dendro_dmg", "physical_dmg",
-            "fire_dmg", "ice_dmg", "lightning_dmg", "electric_dmg", "wind_dmg", "ether_dmg", "quantum_dmg", "imaginary_dmg"
+            "pyro_dmg",
+            "hydro_dmg",
+            "electro_dmg",
+            "cryo_dmg",
+            "anemo_dmg",
+            "geo_dmg",
+            "dendro_dmg",
+            "physical_dmg",
+            "fire_dmg",
+            "ice_dmg",
+            "lightning_dmg",
+            "electric_dmg",
+            "wind_dmg",
+            "ether_dmg",
+            "quantum_dmg",
+            "imaginary_dmg",
         }
-        
+
         if rec_mains:
             norm_rec = [normalize_stat_name(m) for m in rec_mains]
-            if "anything" in norm_rec or "any" in norm_rec or "qualquer" in norm_rec or any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec) or main_stat_norm in elemental_stats:
+            if (
+                "anything" in norm_rec
+                or "any" in norm_rec
+                or "qualquer" in norm_rec
+                or any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec)
+                or main_stat_norm in elemental_stats
+            ):
                 main_stat_tier = 1.0
             elif weights.get(main_stat_norm, 0.0) > 0.3:
                 main_stat_tier = 0.6
@@ -1143,21 +1505,20 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
             else:
                 main_stat_tier = 0.0
 
-
     # 3. Pontuação de Substatus (RV - Roll Value) com suporte a Procs
     sorted_priorities = [k for k, v in sorted(weights.items(), key=lambda item: item[1], reverse=True) if v > 0.0]
-    
+
     if not is_fixed_main and main_stat_norm in sorted_priorities:
         available_substats = [s for s in sorted_priorities if s != main_stat_norm]
     else:
         available_substats = sorted_priorities
-        
+
     # Substatus prioritários ativos (com peso > 0.30 pós-exclusão do Main Stat)
     priority_substats = [s for s in available_substats if weights.get(s, 0.0) > 0.30]
     num_priority = len(priority_substats)
-    
+
     max_possible_sub_score = 0.0
-    
+
     if num_priority == 1:
         # Caso 1: Apenas 1 substatus prioritário pós-exclusão (ex: apenas ER)
         # 4.0 rolagens nele + 5.0 rolagens no pool de "Outros Atributos" (peso base 0.30)
@@ -1185,20 +1546,20 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
             w = weights.get(sub, 0.0)
             dist = roll_distribution[i] if i < len(roll_distribution) else 1.0
             max_possible_sub_score += w * dist
-            
+
     if max_possible_sub_score <= 0:
         max_possible_sub_score = 3.5
-        
+
     game_specs = GAME_ROLL_SPECS[game_id]["stats"]
     actual_sub_score = 0.0
-    
+
     parts = substats_str.split(",")
     for p in parts:
         if ":" in p:
             name, val_str = p.split(":", 1)
             val, has_p = clean_value(val_str)
             sub_name_norm = normalize_stat_name(name, has_percent=has_p)
-            
+
             spec = game_specs.get(sub_name_norm)
             if spec:
                 max_roll = spec["max"]
@@ -1207,7 +1568,7 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
                     actual_sub_score += rv * weights.get(sub_name_norm, 0.0)
 
     sub_ratio = min(1.0, actual_sub_score / max_possible_sub_score)
-    
+
     # 4. Composição da Nota Final
     if is_fixed_main:
         rating_pct = (0.30 + 0.70 * sub_ratio) * 100.0
@@ -1216,16 +1577,24 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
         rating_pct = (main_stat_credit + 0.60 * sub_ratio) * 100.0
 
     rating_pct = round(rating_pct, 1)
-    
-    if rating_pct >= 90.0: grade = "SSS"
-    elif rating_pct >= 75.0: grade = "SS"
-    elif rating_pct >= 60.0: grade = "S"
-    elif rating_pct >= 45.0: grade = "A"
-    elif rating_pct >= 30.0: grade = "B"
-    elif rating_pct >= 15.0: grade = "C"
-    else: grade = "D"
-    
+
+    if rating_pct >= 90.0:
+        grade = "SSS"
+    elif rating_pct >= 75.0:
+        grade = "SS"
+    elif rating_pct >= 60.0:
+        grade = "S"
+    elif rating_pct >= 45.0:
+        grade = "A"
+    elif rating_pct >= 30.0:
+        grade = "B"
+    elif rating_pct >= 15.0:
+        grade = "C"
+    else:
+        grade = "D"
+
     return grade, rating_pct
+
 
 def estimate_relic_procs(game_id: str, substats_str: str) -> Dict[str, Dict[str, float]]:
     """
@@ -1235,17 +1604,17 @@ def estimate_relic_procs(game_id: str, substats_str: str) -> Dict[str, Dict[str,
     game_id = game_id.lower().strip()
     if game_id not in GAME_ROLL_SPECS:
         return {}
-        
+
     specs = GAME_ROLL_SPECS[game_id]["stats"]
     result = {}
-    
+
     parts = substats_str.split(",")
     for p in parts:
         if ":" in p:
             name, val_str = p.split(":", 1)
             val, has_p = clean_value(val_str)
             sub_name_norm = normalize_stat_name(name, has_percent=has_p)
-            
+
             spec = specs.get(sub_name_norm)
             if spec and spec["max"] > 0:
                 avg_roll = spec["avg"]
@@ -1259,14 +1628,17 @@ def estimate_relic_procs(game_id: str, substats_str: str) -> Dict[str, Dict[str,
                     "roll_value": rv,
                     "min_roll": spec["min"],
                     "avg_roll": spec["avg"],
-                    "max_roll": spec["max"]
+                    "max_roll": spec["max"],
                 }
     return result
+
 
 # ==========================================
 # MOTOR DE ÍNDICE DE SORTE E EFICIÊNCIA DE ROLAGENS (LUCK SCORE)
 # ==========================================
-def calculate_relic_luck_index(game_id: str, char_id: str, slot: str, main_stat: str, substats_str: str) -> Dict[str, Any]:
+def calculate_relic_luck_index(
+    game_id: str, char_id: str, slot: str, main_stat: str, substats_str: str
+) -> Dict[str, Any]:
     """
     Calcula a Eficiência de Rolagens e o Índice de Sorte (Luck Score) de uma relíquia individual.
     Retorna métricas detalhadas com análise visual de cada substatus (bom vs ruim).
@@ -1283,31 +1655,31 @@ def calculate_relic_luck_index(game_id: str, char_id: str, slot: str, main_stat:
             "procs": {},
             "substats_analyzed": [],
             "useful_procs": 0,
-            "wasted_procs": 0
+            "wasted_procs": 0,
         }
-        
+
     procs = estimate_relic_procs(game_id, substats_str)
     weights = extract_weights_from_guide(game_id, str(char_id))
-    
+
     total_rv = sum(p["roll_value"] for p in procs.values())
-    
+
     useful_procs = 0
     wasted_procs = 0
     useful_weight_sum = 0.0
     substats_analyzed = []
-    
+
     parts = [s.strip() for s in substats_str.split(",") if s.strip()]
     for p in parts:
         if ":" in p:
             name, val_str = p.split(":", 1)
             val, has_p = clean_value(val_str)
             sub_name_norm = normalize_stat_name(name, has_percent=has_p)
-            
+
             pdata = procs.get(sub_name_norm, {})
             est_p = pdata.get("estimated_procs", 1)
             rv_val = pdata.get("roll_value", 0.0)
             w = weights.get(sub_name_norm, 0.0)
-            
+
             if w >= 0.70:
                 if est_p >= 3:
                     status = "god"
@@ -1327,34 +1699,36 @@ def calculate_relic_luck_index(game_id: str, char_id: str, slot: str, main_stat:
                 useful_weight_sum += rv_val * w
             else:
                 status = "bad"
-                badge = f"💀 Desperdício" if est_p <= 1 else f"💀 Lixo (+{est_p})"
+                badge = "💀 Desperdício" if est_p <= 1 else f"💀 Lixo (+{est_p})"
                 color = "#f87171"
                 wasted_procs += est_p
-                
-            substats_analyzed.append({
-                "raw_text": p,
-                "stat_name": sub_name_norm,
-                "display_name": name.strip(),
-                "value_str": val_str.strip(),
-                "procs": est_p,
-                "roll_value": rv_val,
-                "weight": round(w, 2),
-                "status": status,
-                "status_badge": badge,
-                "status_color": color
-            })
-            
+
+            substats_analyzed.append(
+                {
+                    "raw_text": p,
+                    "stat_name": sub_name_norm,
+                    "display_name": name.strip(),
+                    "value_str": val_str.strip(),
+                    "procs": est_p,
+                    "roll_value": rv_val,
+                    "weight": round(w, 2),
+                    "status": status,
+                    "status_badge": badge,
+                    "status_color": color,
+                }
+            )
+
     # Max RV teórico para 5-6 rolagens de 5★ é cerca de 5.0 a 6.0 RV
     rv_pct = round(min(100.0, (total_rv / 5.0) * 100.0), 1) if total_rv > 0 else 0.0
-    
+
     # Synergistic Roll Ratio: % do valor que caiu em status úteis
     useful_ratio = (useful_weight_sum / total_rv) if total_rv > 0 else 0.0
     useful_ratio = min(1.0, useful_ratio)
-    
+
     # Pontuação de Sorte (0.0 a 100.0)
     luck_score = round((useful_ratio * 65.0) + (rv_pct * 0.35), 1)
     luck_score = min(100.0, max(0.0, luck_score))
-    
+
     if luck_score >= 93.0:
         grade, badge, title = "SSS+", "🦄 Deus do RNG", "Top 0.1% God-tier"
     elif luck_score >= 85.0:
@@ -1380,7 +1754,7 @@ def calculate_relic_luck_index(game_id: str, char_id: str, slot: str, main_stat:
         "procs": procs,
         "substats_analyzed": substats_analyzed,
         "useful_procs": useful_procs,
-        "wasted_procs": wasted_procs
+        "wasted_procs": wasted_procs,
     }
 
 
@@ -1388,14 +1762,14 @@ def format_slot_display_name(slot_str: str, game_id: str = "") -> str:
     """Formatador de nome de exibição de slot de relíquia/artefato por jogo."""
     norm = normalize_slot_name(slot_str, game_id)
     g = game_id.lower().strip()
-    
+
     if g == "genshin":
         mapping = {
             "flower": "🌸 Flor da Vida",
             "plume": "🪶 Pluma da Morte",
             "sands": "⏳ Ampulheta",
             "goblet": "🍷 Cálice",
-            "circlet": "👑 Tiara"
+            "circlet": "👑 Tiara",
         }
         return mapping.get(norm, f"Slot {slot_str}")
     elif g == "hsr":
@@ -1405,7 +1779,7 @@ def format_slot_display_name(slot_str: str, game_id: str = "") -> str:
             "body": "🛡️ Corpo",
             "feet": "👢 Botas",
             "planar_sphere": "🔮 Esfera Plana",
-            "link_rope": "🪢 Corda de Ligação"
+            "link_rope": "🪢 Corda de Ligação",
         }
         return mapping.get(norm, f"Slot {slot_str}")
     elif g == "zzz":
@@ -1415,10 +1789,10 @@ def format_slot_display_name(slot_str: str, game_id: str = "") -> str:
             "slot_3": "💿 Disco Slot 3 (DEF)",
             "slot_4": "💿 Disco Slot 4",
             "slot_5": "💿 Disco Slot 5",
-            "slot_6": "💿 Disco Slot 6"
+            "slot_6": "💿 Disco Slot 6",
         }
         return mapping.get(norm, f"Disco Slot {slot_str}")
-        
+
     return f"Slot {slot_str}"
 
 
@@ -1431,12 +1805,12 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
     total_relics = 0
     all_relic_entries = []
     char_luck_map = {}
-    
+
     for char in roster_data:
         char_name = char.get("name", "Desconhecido")
         char_id = str(char.get("id") or char.get("character_id") or char_name)
         relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
-        
+
         char_scores = []
         for relic in relics:
             slot = str(relic.get("slot", ""))
@@ -1444,7 +1818,7 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
             substats_str = relic.get("sub", "")
             if not substats_str:
                 continue
-                
+
             luck_data = calculate_relic_luck_index(game_id, char_id, slot, main_stat, substats_str)
             if luck_data["luck_score"] > 0 or luck_data["total_rv"] > 0:
                 total_relics += 1
@@ -1466,11 +1840,11 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
                     "luck_badge": luck_data["luck_badge"],
                     "luck_title": luck_data["luck_title"],
                     "useful_procs": luck_data["useful_procs"],
-                    "wasted_procs": luck_data["wasted_procs"]
+                    "wasted_procs": luck_data["wasted_procs"],
                 }
                 all_relic_entries.append(entry)
                 char_scores.append(luck_data["luck_score"])
-                
+
         if char_scores:
             avg_char_luck = round(sum(char_scores) / len(char_scores), 1)
             char_luck_map[char_name] = {
@@ -1479,7 +1853,7 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
                 "rank_str": char.get("rank_str", "C0"),
                 "level": char.get("level", 1),
                 "avg_luck": avg_char_luck,
-                "relic_count": len(char_scores)
+                "relic_count": len(char_scores),
             }
 
     if not all_relic_entries:
@@ -1493,15 +1867,15 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
             "cursed_roll": None,
             "luckiest_character": None,
             "cursed_character": None,
-            "character_breakdown": []
+            "character_breakdown": [],
         }
 
     all_relic_entries.sort(key=lambda x: x["luck_score"], reverse=True)
     god_roll = all_relic_entries[0]
     cursed_roll = all_relic_entries[-1]
-    
+
     account_luck_avg = round(sum(r["luck_score"] for r in all_relic_entries) / len(all_relic_entries), 1)
-    
+
     if account_luck_avg >= 85.0:
         account_title = "👑 Rei da Sorte do Servidor (Top 1%)"
         account_badge = "SSS Luck Account"
@@ -1523,7 +1897,7 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
 
     char_list = list(char_luck_map.values())
     char_list.sort(key=lambda x: x["avg_luck"], reverse=True)
-    
+
     luckiest_char = char_list[0] if char_list else None
     cursed_char = char_list[-1] if char_list else None
 
@@ -1538,8 +1912,9 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
         "luckiest_character": luckiest_char,
         "cursed_character": cursed_char,
         "character_breakdown": char_list,
-        "all_relics": all_relic_entries[:30]
+        "all_relics": all_relic_entries[:30],
     }
+
 
 # ==========================================
 # AVALIADOR DE STATUS GERAIS DO PERSONAGEM
@@ -1551,55 +1926,57 @@ def evaluate_general_stats(game_id: str, char_id: str, final_stats: Dict[str, st
     """
     game_id = game_id.lower().strip()
     meta_db = get_meta_data(game_id)
-    
+
     char_meta = meta_db.get(str(char_id))
     if not char_meta or "general_benchmarks" not in char_meta:
         return []
-        
+
     benchmarks = char_meta.get("general_benchmarks", {})
     results = []
-    
+
     normalized_player_stats = {}
     for p_name, p_val in final_stats.items():
         norm_key = normalize_stat_name(p_name)
         normalized_player_stats[norm_key] = (p_name, p_val)
-        
+
     for bench_key, target_expr in benchmarks.items():
         player_stat_info = normalized_player_stats.get(bench_key)
         if not player_stat_info:
             continue
-            
+
         p_name, p_val_str = player_stat_info
-        
+
         target_val = clean_value(target_expr)[0]
         actual_val = clean_value(p_val_str)[0]
-        
+
         operator = ">="
-        if "<=" in target_expr: operator = "<="
-        elif "<" in target_expr: operator = "<"
-        elif ">" in target_expr: operator = ">"
-        
+        if "<=" in target_expr:
+            operator = "<="
+        elif "<" in target_expr:
+            operator = "<"
+        elif ">" in target_expr:
+            operator = ">"
+
         is_good = False
-        if operator == ">=": is_good = (actual_val >= target_val)
-        elif operator == "<=": is_good = (actual_val <= target_val)
-        elif operator == ">": is_good = (actual_val > target_val)
-        elif operator == "<": is_good = (actual_val < target_val)
-        
+        if operator == ">=":
+            is_good = actual_val >= target_val
+        elif operator == "<=":
+            is_good = actual_val <= target_val
+        elif operator == ">":
+            is_good = actual_val > target_val
+        elif operator == "<":
+            is_good = actual_val < target_val
+
         status = "GOOD" if is_good else "LOW"
         if status == "GOOD":
             msg = f"Sua {p_name} ({p_val_str}) atingiu a meta recomendada ({target_expr})!"
         else:
             msg = f"Aumente sua {p_name} ({p_val_str}), a meta recomendada é {target_expr}."
-            
-        results.append({
-            "stat": p_name,
-            "target": target_expr,
-            "actual": p_val_str,
-            "status": status,
-            "message": msg
-        })
-        
+
+        results.append({"stat": p_name, "target": target_expr, "actual": p_val_str, "status": status, "message": msg})
+
     return results
+
 
 # ==========================================
 # GERADOR DE ARQUIVOS META_DATA.JSON (EXTRATOR DE IDS)
@@ -1614,48 +1991,51 @@ def generate_meta_json_from_markdown(game_id: str):
     guias_dir = f"{game_id}/guias"
     meta_db = {}
     master_ids = fetch_master_id_list(game_id)
-    
+
     def parse_hsr(content):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
         matches = re.findall(r"-\s*(Body|Feet|Planar Sphere|Link Rope):\s*(.*)", content)
         for slot, val in matches:
-            tokens = re.split(r'\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*', val, flags=re.IGNORECASE)
+            tokens = re.split(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*", val, flags=re.IGNORECASE)
             stats = []
             for t in tokens:
-                t_clean = re.sub(r'\([^)]*\)', '', t).strip()
+                t_clean = re.sub(r"\([^)]*\)", "", t).strip()
                 if t_clean:
                     norm = normalize_stat_name(t_clean)
                     if norm and norm not in stats:
                         stats.append(norm)
             meta["main_stats"][slot.lower().replace(" ", "_")] = stats
-            
+
         sub_match = re.search(
             r"(?:subatributos prioritários|sub-stats|substats)[^\n]*\n"
             r"([^\n#]+)",
-            content, re.I
+            content,
+            re.I,
         )
         if sub_match:
             sub_line = sub_match.group(1).strip()
             if not sub_line:
-                lines = content[sub_match.start(1):].split("\n")
+                lines = content[sub_match.start(1) :].split("\n")
                 for l in lines:
                     l_stripped = l.strip()
                     if l_stripped and not l_stripped.startswith("#"):
                         sub_line = l_stripped
                         break
-            raw_tokens = [tok.strip() for tok in re.split(r'[>,\/;]', sub_line) if tok.strip()]
+            raw_tokens = [tok.strip() for tok in re.split(r"[>,\/;]", sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "hsr")
-            
+
         benchmarks = {}
-        speed_goal = re.search(r'(\d+)\s*speed\s*goal|speed\s*goal\s*of\s*(\d+)|breakpoint\s*of\s*(\d+)\s*spd|(\d+)\s*spd', content, re.I)
+        speed_goal = re.search(
+            r"(\d+)\s*speed\s*goal|speed\s*goal\s*of\s*(\d+)|breakpoint\s*of\s*(\d+)\s*spd|(\d+)\s*spd", content, re.I
+        )
         if speed_goal:
             val = next(v for v in speed_goal.groups() if v)
             benchmarks["spd"] = f">= {val}"
-        crit_goal = re.search(r'crit\s*rate\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*crit\s*rate', content, re.I)
+        crit_goal = re.search(r"crit\s*rate\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*crit\s*rate", content, re.I)
         if crit_goal:
             val = next(v for v in crit_goal.groups() if v)
             benchmarks["crit_rate"] = f">= {val}%"
-        be_goal = re.search(r'break\s*effect\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*break\s*effect', content, re.I)
+        be_goal = re.search(r"break\s*effect\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*break\s*effect", content, re.I)
         if be_goal:
             val = next(v for v in be_goal.groups() if v)
             benchmarks["break_effect"] = f">= {val}%"
@@ -1666,26 +2046,26 @@ def generate_meta_json_from_markdown(game_id: str):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
         matches = re.findall(r"(?:Disk|Slot|Disco)\s*(4|5|6)[:\- ]\s*(.*)", content, re.I)
         for slot, val in matches:
-            tokens = re.split(r'\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*', val, flags=re.IGNORECASE)
+            tokens = re.split(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*", val, flags=re.IGNORECASE)
             stats = []
             for t in tokens:
-                t_clean = re.sub(r'\([^)]*\)', '', t).strip()
+                t_clean = re.sub(r"\([^)]*\)", "", t).strip()
                 if t_clean:
                     norm = normalize_stat_name(t_clean)
                     if norm and norm not in stats:
                         stats.append(norm)
             meta["main_stats"][f"slot_{slot}"] = stats
-            
+
         sub_match = re.search(r"(?:substatus prioritários|substats):\s*(.*)", content, re.I)
         if sub_match:
             sub_line = sub_match.group(1).strip()
-            raw_tokens = [tok.strip() for tok in re.split(r'[>,\/;]', sub_line) if tok.strip()]
+            raw_tokens = [tok.strip() for tok in re.split(r"[>,\/;]", sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "zzz")
         return meta
 
     def parse_genshin(content):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
-        
+
         main_sec_match = re.search(r"### Atributos Principais[^\n]*\n(.*?)(?:###|##|$)", content, re.S | re.I)
         if main_sec_match:
             main_sec = main_sec_match.group(1)
@@ -1704,10 +2084,10 @@ def generate_meta_json_from_markdown(game_id: str):
                     else:
                         slot_key = slot_label.replace(" ", "_")
 
-                    tokens = re.split(r'\s*(?:/|\||\bor\b|,|>=|>|<=|<|=|&)\s*', val, flags=re.IGNORECASE)
+                    tokens = re.split(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=|&)\s*", val, flags=re.IGNORECASE)
                     stats = []
                     for t in tokens:
-                        t_clean = re.sub(r'\([^)]*\)', '', t).strip()
+                        t_clean = re.sub(r"\([^)]*\)", "", t).strip()
                         if t_clean:
                             norm = normalize_stat_name(t_clean)
                             if norm and norm not in stats:
@@ -1716,11 +2096,13 @@ def generate_meta_json_from_markdown(game_id: str):
 
         sub_match = re.search(r"### Subatributos Prioritários[^\n]*\n([^\n#]+)", content, re.I)
         if not sub_match:
-            sub_match = re.search(r"(?:subatributos|substatus|sub-stats|substats)[^\n]*[:\n]\s*([^\n#]+)", content, re.I)
-            
+            sub_match = re.search(
+                r"(?:subatributos|substatus|sub-stats|substats)[^\n]*[:\n]\s*([^\n#]+)", content, re.I
+            )
+
         if sub_match:
             sub_line = sub_match.group(1).strip()
-            raw_tokens = [tok.strip() for tok in re.split(r'[>,\/;=]', sub_line) if tok.strip()]
+            raw_tokens = [tok.strip() for tok in re.split(r"[>,\/;=]", sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "genshin")
         return meta
 
@@ -1730,7 +2112,7 @@ def generate_meta_json_from_markdown(game_id: str):
         parse_fn = parse_zzz
     else:
         parse_fn = parse_genshin
-    
+
     if os.path.exists(guias_dir):
         try:
             files = os.listdir(guias_dir)
@@ -1740,10 +2122,12 @@ def generate_meta_json_from_markdown(game_id: str):
                     display_name = raw_name.title()
                     if display_name.lower().startswith("dan heng"):
                         display_name = display_name.replace("•", "•")
-                    
+
                     # Cruza com a fonte mestre de IDs
                     normalized_raw = normalize_char_name(raw_name)
-                    char_id = master_ids.get(normalized_raw, master_ids.get(raw_name.lower(), raw_name.lower().replace(" ", "_")))
+                    char_id = master_ids.get(
+                        normalized_raw, master_ids.get(raw_name.lower(), raw_name.lower().replace(" ", "_"))
+                    )
                     filepath = os.path.join(guias_dir, f)
                     try:
                         with open(filepath, "r", encoding="utf-8") as file:
@@ -1754,12 +2138,12 @@ def generate_meta_json_from_markdown(game_id: str):
                         print(f"[WARN] Erro ao parsear {filepath}: {ex}")
         except Exception as e:
             print(f"[WARN] Erro ao listar diretório {guias_dir}: {e}")
-            
+
     output_path = f"{game_id}/meta_data_{game_id}.json"
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as out:
         json.dump(meta_db, out, indent=4, ensure_ascii=False)
-        
+
     if game_id in META_DATA_CACHE:
         del META_DATA_CACHE[game_id]
 
@@ -1769,35 +2153,36 @@ def generate_meta_json_from_markdown(game_id: str):
 # ==========================================================================
 ASCENSION_TABLES = {
     "genshin": {
-        1:  {"xp": 0, "currency": 0, "boss": 0},
+        1: {"xp": 0, "currency": 0, "boss": 0},
         20: {"xp": 120000, "currency": 24000, "boss": 0},
         40: {"xp": 400000, "currency": 120000, "boss": 2},
         50: {"xp": 750000, "currency": 240000, "boss": 6},
         60: {"xp": 1300000, "currency": 450000, "boss": 14},
         70: {"xp": 2100000, "currency": 750000, "boss": 26},
         80: {"xp": 3600000, "currency": 1250000, "boss": 46},
-        90: {"xp": 5800000, "currency": 2090000, "boss": 46}
+        90: {"xp": 5800000, "currency": 2090000, "boss": 46},
     },
     "hsr": {
-        1:  {"xp": 0, "currency": 0, "boss": 0},
+        1: {"xp": 0, "currency": 0, "boss": 0},
         20: {"xp": 110000, "currency": 15000, "boss": 0},
         30: {"xp": 280000, "currency": 45000, "boss": 0},
         40: {"xp": 600000, "currency": 110000, "boss": 4},
         50: {"xp": 1100000, "currency": 220000, "boss": 12},
         60: {"xp": 1900000, "currency": 420000, "boss": 28},
         70: {"xp": 3100000, "currency": 750000, "boss": 50},
-        80: {"xp": 5100000, "currency": 1300000, "boss": 65}
+        80: {"xp": 5100000, "currency": 1300000, "boss": 65},
     },
     "zzz": {
-        1:  {"xp": 0, "currency": 0, "boss": 0},
+        1: {"xp": 0, "currency": 0, "boss": 0},
         10: {"xp": 25000, "currency": 5000, "boss": 0},
         20: {"xp": 80000, "currency": 15000, "boss": 0},
         30: {"xp": 200000, "currency": 40000, "boss": 2},
         40: {"xp": 450000, "currency": 100000, "boss": 8},
         50: {"xp": 900000, "currency": 250000, "boss": 20},
-        60: {"xp": 1800000, "currency": 600000, "boss": 40}
-    }
+        60: {"xp": 1800000, "currency": 600000, "boss": 40},
+    },
 }
+
 
 def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[str] = None):
     """
@@ -1807,9 +2192,9 @@ def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[st
     game_id = game_id.lower().strip()
     if game_id not in ASCENSION_TABLES:
         return None
-        
+
     table = ASCENSION_TABLES[game_id]
-    
+
     def get_closest_values(lvl):
         sorted_keys = sorted(table.keys())
         xp, curr, boss = 0, 0, 0
@@ -1826,16 +2211,16 @@ def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[st
                 boss = table[prev_key]["boss"]
                 break
         return {"xp": xp, "currency": curr, "boss": boss}
-        
+
     current_res = get_closest_values(current_lvl)
     target_res = get_closest_values(target_lvl)
-    
+
     xp_diff = max(0, target_res["xp"] - current_res["xp"])
     currency_diff = max(0, target_res["currency"] - current_res["currency"])
     boss_diff = max(0, target_res["boss"] - current_res["boss"])
-    
+
     xp_books = int(xp_diff / 20000)
-    
+
     currency_name = "Mora" if game_id == "genshin" else ("Créditos" if game_id == "hsr" else "Dennys")
     boss_item_name = "Materiais de Chefe"
     local_specialty = None
@@ -1848,6 +2233,7 @@ def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[st
     if char_name:
         try:
             from static_data_manager import static_data_manager
+
             char_profile = static_data_manager.get_character_profile(game_id, char_name)
             if char_profile:
                 if char_profile.get("boss_mat"):
@@ -1856,15 +2242,17 @@ def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[st
                     boss_item_name = char_profile["stagnant_shadow_mat"]
                 elif char_profile.get("core_skill_mat"):
                     boss_item_name = char_profile["core_skill_mat"]
-                    
+
                 local_specialty = char_profile.get("local_specialty")
-                talent_material = char_profile.get("talent_book") or char_profile.get("calyx_mat") or char_profile.get("chip_type")
+                talent_material = (
+                    char_profile.get("talent_book") or char_profile.get("calyx_mat") or char_profile.get("chip_type")
+                )
                 weekly_boss_mat = char_profile.get("weekly_boss_mat")
                 domain_days = char_profile.get("domain_days")
                 open_today = char_profile.get("open_today", True)
         except Exception:
             pass
-    
+
     daily_energy = 180 if game_id == "genshin" else 240
     boss_cost_per_run = 40 if game_id in ["genshin", "zzz"] else 30
     energy_factor = 16 if game_id == "genshin" else (6 if game_id == "hsr" else 8)
@@ -1885,8 +2273,9 @@ def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[st
         "open_today": open_today,
         "energy_needed": total_energy_needed,
         "daily_energy_limit": daily_energy,
-        "estimated_farming_days": estimated_days
+        "estimated_farming_days": estimated_days,
     }
+
 
 def optimize_character_relics(game_id: str, char_id: str, relics_list: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
@@ -1895,7 +2284,12 @@ def optimize_character_relics(game_id: str, char_id: str, relics_list: List[Dict
     """
     game_id = game_id.lower().strip()
     if not relics_list:
-        return {"best_pieces": {}, "overall_score": 0.0, "overall_grade": "D", "recommendations": ["Nenhuma relíquia encontrada no inventário."]}
+        return {
+            "best_pieces": {},
+            "overall_score": 0.0,
+            "overall_grade": "D",
+            "recommendations": ["Nenhuma relíquia encontrada no inventário."],
+        }
 
     best_by_slot = {}
     for r in relics_list:
@@ -1907,7 +2301,9 @@ def optimize_character_relics(game_id: str, char_id: str, relics_list: List[Dict
         main_stat = r.get("main_stat") or r.get("main") or ""
         sub_stats = r.get("sub_stats") or r.get("substats") or r.get("sub") or ""
         if isinstance(sub_stats, list):
-            sub_stats_str = ", ".join([f"{s.get('name','')}: {s.get('val','')}" if isinstance(s, dict) else str(s) for s in sub_stats])
+            sub_stats_str = ", ".join(
+                [f"{s.get('name', '')}: {s.get('val', '')}" if isinstance(s, dict) else str(s) for s in sub_stats]
+            )
         else:
             sub_stats_str = str(sub_stats)
 
@@ -1922,44 +2318,60 @@ def optimize_character_relics(game_id: str, char_id: str, relics_list: List[Dict
             "grade": grade,
             "score": score,
             "icon": r.get("icon", ""),
-            "character_equipped": r.get("character_name", "")
+            "character_equipped": r.get("character_name", ""),
         }
 
         if norm_slot not in best_by_slot or score > best_by_slot[norm_slot]["score"]:
             best_by_slot[norm_slot] = piece_entry
 
     if not best_by_slot:
-        return {"best_pieces": {}, "overall_score": 0.0, "overall_grade": "D", "recommendations": ["Nenhuma relíquia válida foi avaliada."]}
+        return {
+            "best_pieces": {},
+            "overall_score": 0.0,
+            "overall_grade": "D",
+            "recommendations": ["Nenhuma relíquia válida foi avaliada."],
+        }
 
     scores = [p["score"] for p in best_by_slot.values()]
     avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
 
-    if avg_score >= 90: overall_grade = "SS"
-    elif avg_score >= 80: overall_grade = "S+"
-    elif avg_score >= 70: overall_grade = "S"
-    elif avg_score >= 60: overall_grade = "A"
-    elif avg_score >= 50: overall_grade = "B"
-    elif avg_score >= 40: overall_grade = "C"
-    else: overall_grade = "D"
+    if avg_score >= 90:
+        overall_grade = "SS"
+    elif avg_score >= 80:
+        overall_grade = "S+"
+    elif avg_score >= 70:
+        overall_grade = "S"
+    elif avg_score >= 60:
+        overall_grade = "A"
+    elif avg_score >= 50:
+        overall_grade = "B"
+    elif avg_score >= 40:
+        overall_grade = "C"
+    else:
+        overall_grade = "D"
 
     recommendations = []
     for slot, piece in best_by_slot.items():
         if piece["score"] < 60:
-            recommendations.append(f"Slot {slot.upper()}: A melhor peça no inventário possui nota {piece['grade']} ({piece['score']}%). Recomendado buscar upgrades.")
+            recommendations.append(
+                f"Slot {slot.upper()}: A melhor peça no inventário possui nota {piece['grade']} ({piece['score']}%). Recomendado buscar upgrades."
+            )
 
     return {
         "character": char_id,
         "best_pieces": best_by_slot,
         "overall_score": avg_score,
         "overall_grade": overall_grade,
-        "recommendations": recommendations if recommendations else ["Sua build ótima de inventário está muito bem estruturada!"]
+        "recommendations": recommendations
+        if recommendations
+        else ["Sua build ótima de inventário está muito bem estruturada!"],
     }
 
 
 # ==========================================
 # 1. SIMULADOR MONTE CARLO DE GACHA / WISH
 # ==========================================
-import random
+
 
 def simulate_gacha_probabilities(
     game_id: str,
@@ -1970,7 +2382,7 @@ def simulate_gacha_probabilities(
     current_copies: int = 0,
     current_rank: Optional[int] = None,
     target_rank: Optional[int] = None,
-    num_simulations: int = 10000
+    num_simulations: int = 10000,
 ) -> dict:
     """
     Executa uma Simulação Monte Carlo para calcular a chance real (%) de obter N cópias do personagem alvo
@@ -1979,7 +2391,7 @@ def simulate_gacha_probabilities(
     game_id = (game_id or "genshin").lower().strip()
     current_pity = max(0, min(current_pity, 89))
     pulls_available = max(0, pulls_available)
-    
+
     # Determina o prefixo e terminologia de acordo com o jogo
     if game_id == "genshin":
         prefix = "C"
@@ -1987,10 +2399,10 @@ def simulate_gacha_probabilities(
     elif game_id == "hsr":
         prefix = "E"
         term = "Eidolon"
-    else: # zzz
+    else:  # zzz
         prefix = "M"
         term = "Mindscape Cinema"
-        
+
     # Converter current_rank e target_rank com suporte a fallback de current_copies / target_copies
     if current_rank is not None:
         curr_r = max(-1, min(current_rank, 6))
@@ -2016,9 +2428,7 @@ def simulate_gacha_probabilities(
 
     # Se a meta já foi alcançada ou superada
     if needed_new_copies == 0:
-        dist_meta = {
-            f"Já possui {curr_rank_label} (Meta {target_rank_label} já alcançada)": 100.0
-        }
+        dist_meta = {f"Já possui {curr_rank_label} (Meta {target_rank_label} já alcançada)": 100.0}
         return {
             "success_rate": 100.0,
             "target_copies": 0,
@@ -2034,37 +2444,37 @@ def simulate_gacha_probabilities(
             "avg_pulls_spent": 0,
             "distribution": dist_meta,
             "num_simulations": num_simulations,
-            "game_id": game_id
+            "game_id": game_id,
         }
-    
+
     # Parâmetros da mecânica de Gacha por jogo
     soft_pity_start = 74 if game_id in ["genshin", "hsr"] else 75
     base_rate = 0.006  # 0.6%
     soft_pity_increment = 0.06
-    
+
     successful_runs = 0
     total_pulls_spent_list = []
     copies_obtained_distribution = {i: 0 for i in range(needed_new_copies + 1)}
-    
+
     for _ in range(num_simulations):
         pity = current_pity
         guaranteed = is_guaranteed
         copies = 0
         pulls_left = pulls_available
         pulls_spent = 0
-        
+
         while pulls_left > 0 and copies < needed_new_copies:
             pulls_left -= 1
             pulls_spent += 1
             pity += 1
-            
+
             # Cálculo de probabilidade do tiro atual com soft pity
             if pity < soft_pity_start:
                 chance = base_rate
             else:
                 chance = base_rate + (pity - soft_pity_start + 1) * soft_pity_increment
             chance = min(1.0, chance)
-            
+
             if random.random() < chance:
                 # Tirou um 5★ / Rank S
                 pity = 0
@@ -2073,21 +2483,23 @@ def simulate_gacha_probabilities(
                     guaranteed = False
                 else:
                     guaranteed = True
-                    
+
         copies_obtained_distribution[copies] = copies_obtained_distribution.get(copies, 0) + 1
         if copies >= needed_new_copies:
             successful_runs += 1
             total_pulls_spent_list.append(pulls_spent)
-            
+
     success_rate = (successful_runs / num_simulations) * 100.0
-    avg_pulls_needed = round(sum(total_pulls_spent_list) / len(total_pulls_spent_list), 1) if total_pulls_spent_list else None
-    
+    avg_pulls_needed = (
+        round(sum(total_pulls_spent_list) / len(total_pulls_spent_list), 1) if total_pulls_spent_list else None
+    )
+
     # Converter distribuição em porcentagens com nomenclaturas reais dos jogos
     dist_pct = {}
     for k in range(needed_new_copies + 1):
         count = copies_obtained_distribution.get(k, 0)
         pct = round((count / num_simulations) * 100.0, 1)
-        
+
         if k == 0:
             if curr_r < 0:
                 lbl = "0 cópias (Não obtém o personagem)"
@@ -2117,7 +2529,7 @@ def simulate_gacha_probabilities(
         "avg_pulls_spent": avg_pulls_needed,
         "distribution": dist_pct,
         "num_simulations": num_simulations,
-        "game_id": game_id
+        "game_id": game_id,
     }
 
 
@@ -2135,7 +2547,7 @@ def calculate_gacha_forecast(
     include_events_estimate: bool = True,
     include_endgame_resets: bool = True,
     character_name: str = "",
-    num_simulations: int = 10000
+    num_simulations: int = 10000,
 ) -> dict:
     """
     Calcula a projeção completa de acúmulo de tiros/gemas futuras (diárias, passe, eventos, resets)
@@ -2150,9 +2562,24 @@ def calculate_gacha_forecast(
 
     # Nomenclaturas oficiais por jogo
     game_terms = {
-        "genshin": {"term": "Constelação", "prefix": "C", "currency": "Gemas Essenciais", "pass_name": "Bênção da Lua Nova"},
-        "hsr": {"term": "Eidolon", "prefix": "E", "currency": "Jades Estelares", "pass_name": "Passe de Suprimentos do Expresso"},
-        "zzz": {"term": "Mindscape Cinema", "prefix": "M", "currency": "Policromos", "pass_name": "Associação Inter-Nó"}
+        "genshin": {
+            "term": "Constelação",
+            "prefix": "C",
+            "currency": "Gemas Essenciais",
+            "pass_name": "Bênção da Lua Nova",
+        },
+        "hsr": {
+            "term": "Eidolon",
+            "prefix": "E",
+            "currency": "Jades Estelares",
+            "pass_name": "Passe de Suprimentos do Expresso",
+        },
+        "zzz": {
+            "term": "Mindscape Cinema",
+            "prefix": "M",
+            "currency": "Policromos",
+            "pass_name": "Associação Inter-Nó",
+        },
     }
     t_info = game_terms.get(game_id, game_terms["genshin"])
 
@@ -2198,7 +2625,7 @@ def calculate_gacha_forecast(
         pulls_available=total_projected_pulls,
         current_rank=current_rank,
         target_rank=target_rank,
-        num_simulations=num_simulations
+        num_simulations=num_simulations,
     )
 
     # Simulação de Comparação F2P (Apenas Saldo Atual + Diárias Puras)
@@ -2210,7 +2637,7 @@ def calculate_gacha_forecast(
         pulls_available=f2p_pure_pulls,
         current_rank=current_rank,
         target_rank=target_rank,
-        num_simulations=3000
+        num_simulations=3000,
     )
 
     # 8. Cálculo Matemático de Pior Cenário (Worst-case para 100% de Garantia)
@@ -2267,39 +2694,41 @@ def calculate_gacha_forecast(
             "days": target_days,
             "gems": daily_gems,
             "pulls": round(daily_pulls, 1),
-            "label": f"Missões Diárias ({target_days}d × 60)"
+            "label": f"Missões Diárias ({target_days}d × 60)",
         },
         "daily_pass": {
             "active": has_daily_pass,
             "gems": pass_gems,
             "pulls": round(pass_pulls, 1),
-            "label": f"{t_info['pass_name']} ({target_days}d × 90)" if has_daily_pass else f"{t_info['pass_name']} (Inativo)"
+            "label": f"{t_info['pass_name']} ({target_days}d × 90)"
+            if has_daily_pass
+            else f"{t_info['pass_name']} (Inativo)",
         },
         "battle_pass": {
             "active": has_battle_pass,
             "pulls": round(bp_pulls, 1),
-            "label": "Passe de Batalha (Prorrateado)" if has_battle_pass else "Passe de Batalha (Inativo)"
+            "label": "Passe de Batalha (Prorrateado)" if has_battle_pass else "Passe de Batalha (Inativo)",
         },
         "shop_resets": {
             "count": shop_resets_count,
             "pulls": shop_pulls,
-            "label": f"Reset de Loja ({shop_resets_count} mês(es) × 5)"
+            "label": f"Reset de Loja ({shop_resets_count} mês(es) × 5)",
         },
         "events": {
             "active": include_events_estimate,
             "gems": events_gems,
             "pulls": round(events_pulls, 1),
-            "label": f"Eventos de Versão (~{events_gems} gemas)"
+            "label": f"Eventos de Versão (~{events_gems} gemas)",
         },
         "endgame": {
             "cycles": endgame_cycles,
             "gems": endgame_gems,
             "pulls": round(endgame_pulls, 1),
-            "label": f"Endgame ({endgame_cycles} ciclos × 800 gemas)"
+            "label": f"Endgame ({endgame_cycles} ciclos × 800 gemas)",
         },
         "total_future_pulls": future_pulls_total,
         "total_projected_pulls": total_projected_pulls,
-        "total_projected_gems_equiv": total_projected_pulls * 160
+        "total_projected_gems_equiv": total_projected_pulls * 160,
     }
 
     return {
@@ -2325,12 +2754,7 @@ def calculate_gacha_forecast(
         "pulls_needed_for_guarantee": pulls_needed_for_guarantee,
         "gems_needed_for_guarantee": gems_needed_for_guarantee,
         "distribution": sim_result.get("distribution", {}),
-        "verdict": {
-            "status": verdict_status,
-            "badge": verdict_badge,
-            "color": verdict_color,
-            "text": verdict_text
-        }
+        "verdict": {"status": verdict_status, "badge": verdict_badge, "color": verdict_color, "text": verdict_text},
     }
 
 
@@ -2339,13 +2763,37 @@ def calculate_gacha_forecast(
 # ==========================================
 FARM_CALENDAR = {
     "genshin": {
-        0: {"days": "Segunda-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem", "Contenda (Natlan)"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro", "Madeira Sagrada (Natlan)"]},
-        1: {"days": "Terça-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade", "Ignição (Natlan)"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora", "Chama Noturna (Natlan)"]},
-        2: {"days": "Quarta-feira", "talents": ["Balada", "Ouro", "Luz", "Justiça", "Conflito (Natlan)"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico", "Vontade Deliberada (Natlan)"]},
-        3: {"days": "Quinta-feira", "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem", "Contenda (Natlan)"], "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro", "Madeira Sagrada (Natlan)"]},
-        4: {"days": "Sexta-feira", "talents": ["Resistência", "Diligência", "Elegância", "Equidade", "Ignição (Natlan)"], "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora", "Chama Noturna (Natlan)"]},
-        5: {"days": "Sábado", "talents": ["Balada", "Ouro", "Luz", "Justiça", "Conflito (Natlan)"], "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico", "Vontade Deliberada (Natlan)"]},
-        6: {"days": "Domingo", "talents": ["Todos os materiais abertos"], "weapons": ["Todos os materiais abertos"]}
+        0: {
+            "days": "Segunda-feira",
+            "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem", "Contenda (Natlan)"],
+            "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro", "Madeira Sagrada (Natlan)"],
+        },
+        1: {
+            "days": "Terça-feira",
+            "talents": ["Resistência", "Diligência", "Elegância", "Equidade", "Ignição (Natlan)"],
+            "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora", "Chama Noturna (Natlan)"],
+        },
+        2: {
+            "days": "Quarta-feira",
+            "talents": ["Balada", "Ouro", "Luz", "Justiça", "Conflito (Natlan)"],
+            "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico", "Vontade Deliberada (Natlan)"],
+        },
+        3: {
+            "days": "Quinta-feira",
+            "talents": ["Liberdade", "Prosperidade", "Transitoriedade", "Ordem", "Contenda (Natlan)"],
+            "weapons": ["Decara", "Guyun", "Coral", "Densa Nevoeiro", "Madeira Sagrada (Natlan)"],
+        },
+        4: {
+            "days": "Sexta-feira",
+            "talents": ["Resistência", "Diligência", "Elegância", "Equidade", "Ignição (Natlan)"],
+            "weapons": ["Dente de Leão", "Elixir", "Grama", "Gota Purificadora", "Chama Noturna (Natlan)"],
+        },
+        5: {
+            "days": "Sábado",
+            "talents": ["Balada", "Ouro", "Luz", "Justiça", "Conflito (Natlan)"],
+            "weapons": ["Gladiador", "Aerosiderite", "Máscara", "Cálice Rúnico", "Vontade Deliberada (Natlan)"],
+        },
+        6: {"days": "Domingo", "talents": ["Todos os materiais abertos"], "weapons": ["Todos os materiais abertos"]},
     },
     "hsr": {
         0: {"days": "Segunda-feira", "note": "Reset Semanal do Universo Simulado e Eco da Guerra (3x recompensas)."},
@@ -2354,7 +2802,7 @@ FARM_CALENDAR = {
         3: {"days": "Quinta-feira", "note": "Calyx de Traço & Ascensão."},
         4: {"days": "Sexta-feira", "note": "Foco recomendado: Ornamentos Planares (Universo Divergente/Simulado)."},
         5: {"days": "Sábado", "note": "Farm livre de Relíquias e Materiais de Ascensão."},
-        6: {"days": "Domingo", "note": "Preparação de Energia para o Reset de Segunda."}
+        6: {"days": "Domingo", "note": "Preparação de Energia para o Reset de Segunda."},
     },
     "zzz": {
         0: {"days": "Segunda-feira", "note": "Reset Semanal do Notorious Hunt (3x Caça aos Chefes de Dano)."},
@@ -2363,21 +2811,19 @@ FARM_CALENDAR = {
         3: {"days": "Quinta-feira", "note": "Foco recomendado: Drive Disc Tuning & Limpeza de Rótulo."},
         4: {"days": "Sexta-feira", "note": "HIA Club - Materiais de Agente."},
         5: {"days": "Sábado", "note": "Farm livre de Discos e Materiais na Cavidade Zero."},
-        6: {"days": "Domingo", "note": "Preparação de Bateria para o Reset Semanal."}
-    }
+        6: {"days": "Domingo", "note": "Preparação de Bateria para o Reset Semanal."},
+    },
 }
 
-GAME_MAX_LEVELS = {
-    "genshin": 90,
-    "hsr": 80,
-    "zzz": 60
-}
+GAME_MAX_LEVELS = {"genshin": 90, "hsr": 80, "zzz": 60}
+
 
 def is_genshin_farmable_today(char_name: str, day_of_week: int) -> bool:
     if day_of_week == 6:  # Domingo tudo aberto
         return True
     try:
         from static_data_manager import static_data_manager
+
         sched = static_data_manager.get_daily_farm_schedule("genshin", day_of_week)
         farmable_chars = [c.lower() for c in sched.get("farmable_characters", [])]
         c_clean = char_name.lower().strip()
@@ -2386,9 +2832,98 @@ def is_genshin_farmable_today(char_name: str, day_of_week: int) -> bool:
     except Exception:
         pass
 
-    mon_thu = {"amber", "barbara", "klee", "diona", "aloy", "sucrose", "keqing", "ningguang", "qiqi", "xiao", "yelan", "shenhe", "thoma", "yoimiya", "heizou", "kokomi", "tighnari", "candace", "cyno", "faruzan", "lyney", "neuvillette", "navia", "xianyun", "mualani", "kachina", "kinich", "xilonen", "mavuika", "citlali", "ororon"}
-    tue_fri = {"bennett", "diluc", "jean", "noelle", "mona", "eula", "ganyu", "hu tao", "hu_tao", "xiangling", "chongyun", "yun jin", "yun_jin", "yaoyao", "ayaka", "ayato", "sara", "araki", "itto", "nahida", "alhaitham", "dori", "layla", "kaveh", "freminet", "charlotte", "clorinde", "furina", "chasca", "ifa"}
-    wed_sat = {"fischl", "kaeya", "lisa", "venti", "rosaria", "albedo", "beidou", "xingqiu", "zhongli", "yanfei", "baizhu", "raiden", "raiden shogun", "yae miko", "sayu", "gorou", "collei", "nilou", "wanderer", "dehya", "wriothesley", "chevreuse", "arlecchino", "emilie", "lan yan"}
+    mon_thu = {
+        "amber",
+        "barbara",
+        "klee",
+        "diona",
+        "aloy",
+        "sucrose",
+        "keqing",
+        "ningguang",
+        "qiqi",
+        "xiao",
+        "yelan",
+        "shenhe",
+        "thoma",
+        "yoimiya",
+        "heizou",
+        "kokomi",
+        "tighnari",
+        "candace",
+        "cyno",
+        "faruzan",
+        "lyney",
+        "neuvillette",
+        "navia",
+        "xianyun",
+        "mualani",
+        "kachina",
+        "kinich",
+        "xilonen",
+        "mavuika",
+        "citlali",
+        "ororon",
+    }
+    tue_fri = {
+        "bennett",
+        "diluc",
+        "jean",
+        "noelle",
+        "mona",
+        "eula",
+        "ganyu",
+        "hu tao",
+        "hu_tao",
+        "xiangling",
+        "chongyun",
+        "yun jin",
+        "yun_jin",
+        "yaoyao",
+        "ayaka",
+        "ayato",
+        "sara",
+        "araki",
+        "itto",
+        "nahida",
+        "alhaitham",
+        "dori",
+        "layla",
+        "kaveh",
+        "freminet",
+        "charlotte",
+        "clorinde",
+        "furina",
+        "chasca",
+        "ifa",
+    }
+    wed_sat = {
+        "fischl",
+        "kaeya",
+        "lisa",
+        "venti",
+        "rosaria",
+        "albedo",
+        "beidou",
+        "xingqiu",
+        "zhongli",
+        "yanfei",
+        "baizhu",
+        "raiden",
+        "raiden shogun",
+        "yae miko",
+        "sayu",
+        "gorou",
+        "collei",
+        "nilou",
+        "wanderer",
+        "dehya",
+        "wriothesley",
+        "chevreuse",
+        "arlecchino",
+        "emilie",
+        "lan yan",
+    }
 
     c_clean = char_name.lower().strip()
     if day_of_week in (0, 3):
@@ -2399,6 +2934,7 @@ def is_genshin_farmable_today(char_name: str, day_of_week: int) -> bool:
         return any(k in c_clean for k in wed_sat)
     return True
 
+
 ITEM_ICONS = {
     "genshin": {
         "mora": "https://enka.network/ui/UI_ItemIcon_202.png",
@@ -2408,7 +2944,7 @@ ITEM_ICONS = {
         "weekly_boss": "https://enka.network/ui/UI_ItemIcon_113021.png",
         "crown": "https://enka.network/ui/UI_ItemIcon_104319.png",
         "weapon_ore": "https://enka.network/ui/UI_ItemIcon_104013.png",
-        "weapon_mat": "https://enka.network/ui/UI_ItemIcon_114004.png"
+        "weapon_mat": "https://enka.network/ui/UI_ItemIcon_114004.png",
     },
     "hsr": {
         "mora": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/2.png",
@@ -2418,7 +2954,7 @@ ITEM_ICONS = {
         "weekly_boss": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/3.png",
         "crown": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/11.png",
         "weapon_ore": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/102.png",
-        "weapon_mat": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png"
+        "weapon_mat": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
     },
     "zzz": {
         "mora": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/4fde02b5f3a4c790dcbef6c74cb4fabf.png",
@@ -2428,8 +2964,8 @@ ITEM_ICONS = {
         "weekly_boss": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/2196659ee41fc22d1533519c53644f37.png",
         "crown": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/faeebca44b20e03ee23b610c4f8ea03d.png",
         "weapon_ore": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/4f1444b51f52e8e0ad4a8dc13432b04f.png",
-        "weapon_mat": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/ba07d11da190b24386fca2f75b4581a0.png"
-    }
+        "weapon_mat": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u8d5de/ba07d11da190b24386fca2f75b4581a0.png",
+    },
 }
 
 GAME_SPECIFIC_TERMS = {
@@ -2450,7 +2986,7 @@ GAME_SPECIFIC_TERMS = {
         "w_mat_green": "Material de Domínio de Arma (2★)",
         "w_mat_blue": "Material de Domínio de Arma (3★)",
         "w_mat_purple": "Material de Domínio de Arma (4★)",
-        "w_mat_gold": "Material de Domínio de Arma (5★)"
+        "w_mat_gold": "Material de Domínio de Arma (5★)",
     },
     "hsr": {
         "currency_name": "Créditos",
@@ -2469,7 +3005,7 @@ GAME_SPECIFIC_TERMS = {
         "w_mat_green": "Componente de Cone de Luz (2★)",
         "w_mat_blue": "Módulo de Cone de Luz (3★)",
         "w_mat_purple": "Núcleo de Cone de Luz (4★)",
-        "w_mat_gold": "Matriz de Cone de Luz (5★)"
+        "w_mat_gold": "Matriz de Cone de Luz (5★)",
     },
     "zzz": {
         "currency_name": "Dennys",
@@ -2488,11 +3024,14 @@ GAME_SPECIFIC_TERMS = {
         "w_mat_green": "Componente Básico de W-Engine (2★)",
         "w_mat_blue": "Componente Avançado de W-Engine (3★)",
         "w_mat_purple": "Componente Especializado (4★)",
-        "w_mat_gold": "Componente Mestre (5★)"
-    }
+        "w_mat_gold": "Componente Mestre (5★)",
+    },
 }
 
-def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_week: int = None, selected_chars: list = None) -> dict:
+
+def get_daily_farm_recommendations(
+    game_id: str, roster: list = None, day_of_week: int = None, selected_chars: list = None
+) -> dict:
     """
     Retorna o calendário de farm do dia atual e gera sugestões personalizadas de gasto de energia
     com base nos personagens selecionados da conta que possuem RV < S ou níveis pendentes.
@@ -2504,25 +3043,25 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
     max_weapon_lvl = 90 if game_id == "genshin" else (80 if game_id == "hsr" else 60)
     icons = ITEM_ICONS.get(game_id, ITEM_ICONS["genshin"])
     terms = GAME_SPECIFIC_TERMS.get(game_id, GAME_SPECIFIC_TERMS["genshin"])
-    
+
     if day_of_week is None:
         day_of_week = datetime.now().weekday()  # 0=Segunda, 6=Domingo
-        
+
     game_calendar = FARM_CALENDAR.get(game_id, {}).get(day_of_week, {"days": "Hoje", "note": "Farm Livre"})
 
     meta_db = get_meta_data(game_id)
-    
+
     recommendations = []
     all_roster_names = []
-    
+
     if roster:
         all_roster_names = [char.get("name") for char in roster if char.get("name")]
-        
+
         filtered_roster = roster
         if selected_chars and isinstance(selected_chars, list) and len(selected_chars) > 0:
             selected_set = set(selected_chars)
             filtered_roster = [c for c in roster if c.get("name") in selected_set]
-            
+
         for char in filtered_roster:
             name = char.get("name", "Desconhecido")
             char_id = str(char.get("id", ""))
@@ -2536,24 +3075,25 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             if not skills and char.get("raw_md"):
                 try:
                     from database import parse_skills_from_raw_md
+
                     skills = parse_skills_from_raw_md(char["raw_md"])
                 except Exception:
                     pass
-            
+
             # Se a lista de skills vier vazia do backend, injeta habilidades padrões oficiais do jogo
             if not skills:
                 if game_id == "genshin":
                     skills = [
                         {"name": "Ataque Normal", "level": 6, "max_level": 10},
                         {"name": "Habilidade Elemental", "level": 8, "max_level": 10},
-                        {"name": "Suprema (Elemental Burst)", "level": 8, "max_level": 10}
+                        {"name": "Suprema (Elemental Burst)", "level": 8, "max_level": 10},
                     ]
                 elif game_id == "hsr":
                     skills = [
                         {"name": "Ataque Básico", "level": 5, "max_level": 10},
                         {"name": "Perícia Elemental", "level": 8, "max_level": 10},
                         {"name": "Suprema", "level": 8, "max_level": 10},
-                        {"name": "Talento Passivo", "level": 8, "max_level": 10}
+                        {"name": "Talento Passivo", "level": 8, "max_level": 10},
                     ]
                 else:
                     skills = [
@@ -2561,9 +3101,9 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                         {"name": "Esquiva", "level": 6, "max_level": 12},
                         {"name": "Ataque Especial", "level": 9, "max_level": 12},
                         {"name": "Ataque de Cadeia / Suprema", "level": 9, "max_level": 12},
-                        {"name": "Ataque de Suporte", "level": 6, "max_level": 12}
+                        {"name": "Ataque de Suporte", "level": 6, "max_level": 12},
                     ]
-            
+
             # Busca prioridade Prydwen
             char_meta = meta_db.get(char_id, {})
             if not char_meta and isinstance(meta_db, dict):
@@ -2572,15 +3112,15 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                         char_meta = v
                         break
             talent_priority = char_meta.get("talent_priority", "") if isinstance(char_meta, dict) else ""
-            
+
             talent_domain_open = True
             if game_id == "genshin":
                 talent_domain_open = is_genshin_farmable_today(name, day_of_week)
-                
+
             w_lvl = weapon.get("level", 1) if isinstance(weapon, dict) and weapon else max_weapon_lvl
             w_name = weapon.get("name", "Arma Equipada") if isinstance(weapon, dict) and weapon else "Arma Equipada"
             w_icon = weapon.get("icon", "") if isinstance(weapon, dict) and weapon else ""
-            
+
             # Verifica se possui algum item/nível pendente
             has_pending_talents = False
             if skills:
@@ -2601,7 +3141,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                 has_pending_talents = True
 
             has_pending_weapon = w_lvl < max_weapon_lvl
-            
+
             if grade in ["B", "C", "D", "A"] or level < max_level or has_pending_talents or has_pending_weapon:
                 reason_parts = []
                 if level < max_level:
@@ -2612,12 +3152,13 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     reason_parts.append(f"{terms['talent_category']} A Evoluir")
                 if grade in ["B", "C", "D", "A"]:
                     reason_parts.append(f"Build nota {grade} (RV: {rv:.1f}%)")
-                    
+
                 reason = " | ".join(reason_parts)
-                
+
                 # Resolução do perfil detalhado do personagem e materiais de farm
                 try:
                     from static_data_manager import static_data_manager
+
                     char_profile = static_data_manager.get_character_profile(game_id, name)
                     if not char_profile:
                         char_profile = static_data_manager._enrich_character_profile(game_id, dict(char))
@@ -2625,7 +3166,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     pass
 
                 items_needed = {"icons": icons, "terms": terms}
-                
+
                 # 1. Ascensão de Personagem
                 if level < max_level:
                     asc_calc = calculate_ascension(game_id, level, max_level, char_name=name)
@@ -2644,10 +3185,10 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     items_needed["ascension"] = asc_calc
                 else:
                     items_needed["ascension"] = None
-                    
+
                 # 2. Detalhamento por Talento / Habilidade
                 talent_details = []
-                
+
                 # Nomes e ícones específicos para talentos
                 t2_name = (char_profile.get("talent_tier2_name") if char_profile else None) or terms["green_book"]
                 t2_icon = (char_profile.get("talent_tier2_icon") if char_profile else None) or icons["talent_book"]
@@ -2661,7 +3202,9 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                 e2_icon = (char_profile.get("enemy_tier2_icon") if char_profile else None) or icons["boss"]
                 e3_name = (char_profile.get("enemy_tier3_name") if char_profile else None) or terms["enemy_t3"]
                 e3_icon = (char_profile.get("enemy_tier3_icon") if char_profile else None) or icons["boss"]
-                wb_name = (char_profile.get("weekly_boss_mat_name") if char_profile else None) or terms["weekly_boss_mat"]
+                wb_name = (char_profile.get("weekly_boss_mat_name") if char_profile else None) or terms[
+                    "weekly_boss_mat"
+                ]
                 wb_icon = (char_profile.get("weekly_boss_mat_icon") if char_profile else None) or icons["weekly_boss"]
 
                 for sk_idx, sk in enumerate(skills):
@@ -2679,37 +3222,39 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                         if s_l >= 1:
                             continue
                         else:
-                            talent_details.append({
-                                "skill_name": s_n,
-                                "skill_icon": s_icon,
-                                "current_level": 0,
-                                "target_level": 1,
-                                "green_books": 1,
-                                "green_book_name": t2_name,
-                                "green_book_icon": t2_icon,
-                                "blue_books": 0,
-                                "blue_book_name": t3_name,
-                                "blue_book_icon": t3_icon,
-                                "purple_books": 0,
-                                "purple_book_name": t4_name,
-                                "purple_book_icon": t4_icon,
-                                "enemy_tier1": 2,
-                                "enemy_t1_name": e1_name,
-                                "enemy_t1_icon": e1_icon,
-                                "enemy_tier2": 0,
-                                "enemy_t2_name": e2_name,
-                                "enemy_t2_icon": e2_icon,
-                                "enemy_tier3": 0,
-                                "enemy_t3_name": e3_name,
-                                "enemy_t3_icon": e3_icon,
-                                "weekly_boss_mats": 0,
-                                "weekly_boss_mat_name": wb_name,
-                                "weekly_boss_mat_icon": wb_icon,
-                                "crowns_needed": 0,
-                                "crown_mat_name": terms["crown_mat"],
-                                "crown_icon": icons["crown"],
-                                "currency_needed": 5000
-                            })
+                            talent_details.append(
+                                {
+                                    "skill_name": s_n,
+                                    "skill_icon": s_icon,
+                                    "current_level": 0,
+                                    "target_level": 1,
+                                    "green_books": 1,
+                                    "green_book_name": t2_name,
+                                    "green_book_icon": t2_icon,
+                                    "blue_books": 0,
+                                    "blue_book_name": t3_name,
+                                    "blue_book_icon": t3_icon,
+                                    "purple_books": 0,
+                                    "purple_book_name": t4_name,
+                                    "purple_book_icon": t4_icon,
+                                    "enemy_tier1": 2,
+                                    "enemy_t1_name": e1_name,
+                                    "enemy_t1_icon": e1_icon,
+                                    "enemy_tier2": 0,
+                                    "enemy_t2_name": e2_name,
+                                    "enemy_t2_icon": e2_icon,
+                                    "enemy_tier3": 0,
+                                    "enemy_t3_name": e3_name,
+                                    "enemy_t3_icon": e3_icon,
+                                    "weekly_boss_mats": 0,
+                                    "weekly_boss_mat_name": wb_name,
+                                    "weekly_boss_mat_icon": wb_icon,
+                                    "crowns_needed": 0,
+                                    "crown_mat_name": terms["crown_mat"],
+                                    "crown_icon": icons["crown"],
+                                    "currency_needed": 5000,
+                                }
+                            )
                     elif s_l < s_m:
                         is_normal = (sk_idx == 0) or any(w in s_n.lower() for w in ["normal", "básico", "basico"])
                         if is_normal and s_l == 1 and talent_priority:
@@ -2728,52 +3273,54 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                         crowns_needed = 1 if s_m in [10, 12] and s_l < s_m else 0
                         currency_needed = lvl_diff * 150000
 
-                        talent_details.append({
-                            "skill_name": s_n,
-                            "skill_icon": s_icon,
-                            "current_level": s_l,
-                            "target_level": s_m,
-                            "green_books": green_books,
-                            "green_book_name": t2_name,
-                            "green_book_icon": t2_icon,
-                            "blue_books": blue_books,
-                            "blue_book_name": t3_name,
-                            "blue_book_icon": t3_icon,
-                            "purple_books": purple_books,
-                            "purple_book_name": t4_name,
-                            "purple_book_icon": t4_icon,
-                            "enemy_tier1": enemy_tier1,
-                            "enemy_t1_name": e1_name,
-                            "enemy_t1_icon": e1_icon,
-                            "enemy_tier2": enemy_tier2,
-                            "enemy_t2_name": e2_name,
-                            "enemy_t2_icon": e2_icon,
-                            "enemy_tier3": enemy_tier3,
-                            "enemy_t3_name": e3_name,
-                            "enemy_t3_icon": e3_icon,
-                            "weekly_boss_mats": weekly_boss_mats,
-                            "weekly_boss_mat_name": wb_name,
-                            "weekly_boss_mat_icon": wb_icon,
-                            "crowns_needed": crowns_needed,
-                            "crown_mat_name": terms["crown_mat"],
-                            "crown_icon": icons["crown"],
-                            "currency_needed": currency_needed
-                        })
+                        talent_details.append(
+                            {
+                                "skill_name": s_n,
+                                "skill_icon": s_icon,
+                                "current_level": s_l,
+                                "target_level": s_m,
+                                "green_books": green_books,
+                                "green_book_name": t2_name,
+                                "green_book_icon": t2_icon,
+                                "blue_books": blue_books,
+                                "blue_book_name": t3_name,
+                                "blue_book_icon": t3_icon,
+                                "purple_books": purple_books,
+                                "purple_book_name": t4_name,
+                                "purple_book_icon": t4_icon,
+                                "enemy_tier1": enemy_tier1,
+                                "enemy_t1_name": e1_name,
+                                "enemy_t1_icon": e1_icon,
+                                "enemy_tier2": enemy_tier2,
+                                "enemy_t2_name": e2_name,
+                                "enemy_t2_icon": e2_icon,
+                                "enemy_tier3": enemy_tier3,
+                                "enemy_t3_name": e3_name,
+                                "enemy_t3_icon": e3_icon,
+                                "weekly_boss_mats": weekly_boss_mats,
+                                "weekly_boss_mat_name": wb_name,
+                                "weekly_boss_mat_icon": wb_icon,
+                                "crowns_needed": crowns_needed,
+                                "crown_mat_name": terms["crown_mat"],
+                                "crown_icon": icons["crown"],
+                                "currency_needed": currency_needed,
+                            }
+                        )
 
                 items_needed["talent_upgrade_details"] = talent_details
-                
+
                 # 3. Detalhamento de Arma / W-Engine Equipado
                 weapon_details = None
                 if has_pending_weapon or weapon:
                     w_lvl_diff = max(0, max_weapon_lvl - w_lvl)
                     ores_needed = int(w_lvl_diff * 3.5)
                     w_currency_needed = w_lvl_diff * 10000
-                    
+
                     w_mat_green = 3 if w_lvl < 40 else 0
                     w_mat_blue = 9 if w_lvl < 60 else 0
                     w_mat_purple = 9 if w_lvl < 80 else 0
                     w_mat_gold = 4 if w_lvl < 90 else 0
-                    
+
                     w_enemy_t1 = 15 if w_lvl < 40 else 0
                     w_enemy_t2 = 18 if w_lvl < 60 else 0
                     w_enemy_t3 = 27 if w_lvl < 90 else 0
@@ -2781,6 +3328,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                     w_prof = {}
                     try:
                         from static_data_manager import static_data_manager
+
                         w_prof = static_data_manager.get_weapon_profile(game_id, w_name)
                     except Exception:
                         pass
@@ -2816,14 +3364,14 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                         "w_enemy_t2_icon": w_prof.get("enemy_tier2_icon", icons["boss"]),
                         "w_enemy_t3": w_enemy_t3,
                         "w_enemy_t3_name": w_prof.get("enemy_tier3_name", terms["enemy_t3"]),
-                        "w_enemy_t3_icon": w_prof.get("enemy_tier3_icon", icons["boss"])
+                        "w_enemy_t3_icon": w_prof.get("enemy_tier3_icon", icons["boss"]),
                     }
                 items_needed["weapon_upgrade_details"] = weapon_details
-                
+
                 # 4. Relíquias / Discos
                 relic_info = f"Farm de Relíquias/Artefatos/Discos (Otimizar Nota {grade})"
                 items_needed["relics"] = relic_info
-                
+
                 # Se o personagem precisa de ascensão de nível, materiais de chefe, especialidades ou drops de monstros,
                 # todos esses itens de mundo aberto estão abertos 24/7 (hoje!).
                 # Se faltam apenas talentos, o farm depende do domínio de talentos estar aberto hoje.
@@ -2835,24 +3383,26 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
                 else:
                     farmable_today = True
 
-                recommendations.append({
-                    "name": name,
-                    "level": level,
-                    "max_level": max_level,
-                    "grade": grade,
-                    "score": rv,
-                    "element": element,
-                    "icon": icon,
-                    "weapon_info": weapon,
-                    "skills_info": skills,
-                    "talent_priority": talent_priority,
-                    "talent_domain_open": talent_domain_open,
-                    "farmable_today": farmable_today,
-                    "reason": reason,
-                    "items_needed": items_needed,
-                    "action": f"Evoluir Nível/{terms['talent_category']}/Arma de {name}"
-                })
-    
+                recommendations.append(
+                    {
+                        "name": name,
+                        "level": level,
+                        "max_level": max_level,
+                        "grade": grade,
+                        "score": rv,
+                        "element": element,
+                        "icon": icon,
+                        "weapon_info": weapon,
+                        "skills_info": skills,
+                        "talent_priority": talent_priority,
+                        "talent_domain_open": talent_domain_open,
+                        "farmable_today": farmable_today,
+                        "reason": reason,
+                        "items_needed": items_needed,
+                        "action": f"Evoluir Nível/{terms['talent_category']}/Arma de {name}",
+                    }
+                )
+
     summary_totals = {
         "currency": 0,
         "xp_books": 0,
@@ -2862,7 +3412,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
         "boss_mats": 0,
         "weekly_boss_mats": 0,
         "crowns": 0,
-        "ores": 0
+        "ores": 0,
     }
 
     for rec in recommendations:
@@ -2872,7 +3422,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             summary_totals["currency"] += asc.get("mora_needed", 0)
             summary_totals["xp_books"] += asc.get("purple_books", 0)
             summary_totals["boss_mats"] += asc.get("boss_mats_needed", 0)
-            
+
         for td in in_dict.get("talent_upgrade_details", []):
             summary_totals["currency"] += td.get("currency_needed", 0)
             summary_totals["green_books"] += td.get("green_books", 0)
@@ -2880,7 +3430,7 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             summary_totals["purple_books"] += td.get("purple_books", 0)
             summary_totals["weekly_boss_mats"] += td.get("weekly_boss_mats", 0)
             summary_totals["crowns"] += td.get("crowns_needed", 0)
-            
+
         wd = in_dict.get("weapon_upgrade_details")
         if wd and isinstance(wd, dict):
             summary_totals["currency"] += wd.get("currency_needed", 0)
@@ -2898,19 +3448,21 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
             c_icon = char.get("icon", "")
             c_grade = char.get("overall_grade", char.get("build_grade", "N/A"))
             c_score = char.get("overall_score", char.get("build_score", 0.0))
-            
-            all_roster_characters.append({
-                "name": c_name,
-                "level": c_lvl,
-                "rarity": c_rarity,
-                "element": c_elem,
-                "icon": c_icon,
-                "grade": c_grade,
-                "score": c_score,
-                "needs_ascension": c_lvl < max_level,
-                "needs_relics": c_grade in ["B", "C", "D", "A"]
-            })
-                
+
+            all_roster_characters.append(
+                {
+                    "name": c_name,
+                    "level": c_lvl,
+                    "rarity": c_rarity,
+                    "element": c_elem,
+                    "icon": c_icon,
+                    "grade": c_grade,
+                    "score": c_score,
+                    "needs_ascension": c_lvl < max_level,
+                    "needs_relics": c_grade in ["B", "C", "D", "A"],
+                }
+            )
+
     return {
         "game_id": game_id,
         "max_level": max_level,
@@ -2919,26 +3471,78 @@ def get_daily_farm_recommendations(game_id: str, roster: list = None, day_of_wee
         "all_roster_names": all_roster_names,
         "all_roster_characters": all_roster_characters,
         "priority_targets": recommendations,
-        "summary_totals": summary_totals
+        "summary_totals": summary_totals,
+    }
+
+
+def extract_relic_substats_data(raw_substats: list) -> dict:
+    """
+    Analisa os substatus de uma relíquia, normalizando nomes e extraindo valores numéricos de Crítico e Velocidade.
+    Retorna dicionário contendo métricas calculadas de Crit Value (CV = 2*CR + CD).
+    """
+    formatted_subs = []
+    normalized_subs = []
+    crit_rate_val = None
+    crit_dmg_val = None
+    speed_val = None
+
+    for s in raw_substats:
+        sub_str = s.get("name", "") if isinstance(s, dict) else str(s)
+        sub_str = sub_str.strip()
+        if not sub_str:
+            continue
+        formatted_subs.append(sub_str)
+        norm_name = normalize_stat_name(sub_str)
+        normalized_subs.append(norm_name)
+
+        val_match = re.search(r"([0-9]+(?:\.[0-9]+)?)", sub_str)
+        num_val = float(val_match.group(1)) if val_match else None
+
+        if norm_name == "crit_rate" and num_val is not None:
+            crit_rate_val = num_val
+        elif norm_name == "crit_dmg" and num_val is not None:
+            crit_dmg_val = num_val
+        elif norm_name == "spd" and num_val is not None:
+            speed_val = num_val
+
+    has_double_crit = (crit_rate_val is not None and crit_dmg_val is not None) or (
+        "crit_rate" in normalized_subs and "crit_dmg" in normalized_subs
+    )
+
+    cv = None
+    if crit_rate_val is not None or crit_dmg_val is not None:
+        cr = crit_rate_val or 0.0
+        cd = crit_dmg_val or 0.0
+        cv = round((cr * 2.0) + cd, 1)
+
+    return {
+        "formatted_subs": formatted_subs,
+        "normalized_subs": normalized_subs,
+        "crit_rate_val": crit_rate_val,
+        "crit_dmg_val": crit_dmg_val,
+        "speed_val": speed_val,
+        "cv": cv,
+        "has_double_crit": has_double_crit,
     }
 
 
 # ==========================================
-# 3. ANALISADOR DE RELÍQUIAS LIXO (TRASH FINDER)
+# 3. ANALISADOR DE RELÍQUIAS LIXO & PEÇAS CORINGA (OFF-PIECE FINDER)
 # ==========================================
 def find_trash_relics(game_id: str, relics: list, meta_data: dict) -> dict:
     """
     Analisa a lista de relíquias do jogador contra todos os guias de meta.
-    Retorna relíquias que possuem combinação de Atributo Principal + Substatus que NENHUM personagem aproveita.
+    Identifica com segurança peças lixo e PROTEGE peças 'Coringa / Off-Piece' com alto valor universal.
     """
     game_id = (game_id or "genshin").lower().strip()
     trash_candidates = []
+    coringa_candidates = []
     good_relics_count = 0
-    
+
     # Coletar todas as combinações de Main Stat + Substats prioritários de TODOS os guias
     all_useful_mains = set()
     all_useful_subs = set()
-    
+
     for char_key, guide in meta_data.items():
         if isinstance(guide, dict):
             mains = guide.get("main_stats", {})
@@ -2950,37 +3554,145 @@ def find_trash_relics(game_id: str, relics: list, meta_data: dict) -> dict:
             if isinstance(subs, list):
                 for s in subs:
                     all_useful_subs.add(normalize_stat_name(s))
-                    
+
+    # Advice estratégico por jogo
+    if game_id == "genshin":
+        game_advice = "Perfeita como 5ª peça Off-Piece da equipe sem quebrar o bônus de 4 peças do set."
+    elif game_id == "hsr":
+        game_advice = "Excelente para combinações 2pc + 2pc de Caverna ou Ornamentos Planares híbridos."
+    else:
+        game_advice = "Ideal para composições híbridas 4pc + 2pc em Discos de Acionamento."
+
+    noble_main_stats = {
+        "pyro_dmg",
+        "hydro_dmg",
+        "cryo_dmg",
+        "electro_dmg",
+        "anemo_dmg",
+        "geo_dmg",
+        "dendro_dmg",
+        "physical_dmg",
+        "quantum_dmg",
+        "imaginary_dmg",
+        "ether_dmg",
+        "lightning_dmg",
+        "ice_dmg",
+        "wind_dmg",
+        "fire_dmg",
+        "electric_dmg",
+        "crit_rate",
+        "crit_dmg",
+        "spd",
+        "er",
+        "err",
+    }
+
     for relic in relics:
         name = relic.get("name", "Relíquia Desconhecida")
         slot = relic.get("slot", "")
-        main_stat = normalize_stat_name(relic.get("main_stat", ""))
-        substats = [normalize_stat_name(s.get("name", "")) for s in relic.get("substats", [])]
-        
-        # Quantos substatus dessa relíquia são úteis globalmente?
-        useful_subs_count = sum(1 for s in substats if s in all_useful_subs or "crit" in s)
-        
-        # Critério de Lixo: Main Stat irrelevante para o slot + 0 ou 1 substatus útil com rolls baixos
-        is_def_flat_heavy = any("def_flat" in s or "hp_flat" in s for s in substats)
-        
-        if (useful_subs_count == 0 and is_def_flat_heavy) or (useful_subs_count <= 1 and main_stat in ["def_pct", "hp_pct"] and "crit_rate" not in substats and "crit_dmg" not in substats):
-            trash_candidates.append({
-                "name": name,
-                "slot": slot,
-                "main_stat": relic.get("main_stat", ""),
-                "substats": [s.get("name", "") for s in relic.get("substats", [])],
-                "reason": "Substatus sem acertos de Crítico/Recarga e atributos irrelevantes para o meta atual.",
-                "recommendation": "Converter em EXP ou Reciclar no Sintetizador"
-            })
+        main_stat_raw = relic.get("main_stat", relic.get("main", ""))
+        main_stat = normalize_stat_name(main_stat_raw)
+        character_name = relic.get("character_name")
+        icon = relic.get("icon")
+
+        sub_info = extract_relic_substats_data(relic.get("substats", []))
+        normalized_subs = sub_info["normalized_subs"]
+        formatted_subs = sub_info["formatted_subs"]
+        cv = sub_info["cv"]
+        has_double_crit = sub_info["has_double_crit"]
+        has_crit = "crit_rate" in normalized_subs or "crit_dmg" in normalized_subs or (cv is not None and cv > 0)
+        has_spd = "spd" in normalized_subs or (sub_info["speed_val"] is not None and sub_info["speed_val"] > 0)
+
+        # ----------------------------------------------------
+        # 1. VERIFICAÇÃO DE PEÇA CORINGA / OFF-PIECE (PROTEÇÃO)
+        # ----------------------------------------------------
+        is_coringa = False
+        coringa_tier = ""
+        coringa_reason = ""
+
+        # Caso 1: Duplo Crítico (Taxa CRIT + Dano CRIT)
+        if has_double_crit:
+            is_coringa = True
+            if cv is not None and cv >= 30.0:
+                coringa_tier = "God-Tier Coringa (CV 30+)"
+                coringa_reason = f"Duplo Crítico supremo com {cv:.1f} Crit Value! Raridade máxima. {game_advice}"
+            elif cv is not None and cv >= 20.0:
+                coringa_tier = "Excelente Peça Coringa (CV 20+)"
+                coringa_reason = f"Duplo Crítico de alto impacto ({cv:.1f} CV). {game_advice}"
+            else:
+                cv_str = f" ({cv:.1f} CV)" if cv is not None else ""
+                coringa_tier = "Peça Coringa com Duplo Crítico"
+                coringa_reason = f"Contém Taxa CRIT e Dano CRIT simultâneos{cv_str}. {game_advice}"
+
+        # Caso 2: Crit Value Concentrado Alto (CV >= 18.0)
+        elif cv is not None and cv >= 18.0:
+            is_coringa = True
+            coringa_tier = "Peça de Alto Crítico Acumulado"
+            coringa_reason = f"Múltiplos rolls no atributo crítico resultando em {cv:.1f} CV. {game_advice}"
+
+        # Caso 3: Main Stat Nobre + Crítico ou Velocidade
+        elif (main_stat in noble_main_stats or any(n in main_stat for n in ["dmg", "crit", "spd", "er"])) and (
+            has_crit or has_spd
+        ):
+            is_coringa = True
+            coringa_tier = "Peça Híbrida Nobre"
+            stat_label = relic.get("main_stat", main_stat)
+            coringa_reason = f"Atributo Principal nobre ({stat_label}) com substatus crítico/velocidade. {game_advice}"
+
+        if is_coringa:
+            coringa_candidates.append(
+                {
+                    "name": name,
+                    "slot": slot,
+                    "main_stat": main_stat_raw,
+                    "substats": formatted_subs,
+                    "crit_value": cv,
+                    "coringa_tier": coringa_tier,
+                    "reason": coringa_reason,
+                    "character_name": character_name,
+                    "icon": icon,
+                }
+            )
+            good_relics_count += 1
+            continue  # NUNCA VAI PARA LIXO! PROTEÇÃO ABSOLUTA.
+
+        # ----------------------------------------------------
+        # 2. VERIFICAÇÃO DE RELÍQUIAS LIXO
+        # ----------------------------------------------------
+        useful_subs_count = sum(1 for s in normalized_subs if s in all_useful_subs or "crit" in s or "spd" in s)
+        is_def_flat_heavy = any("def_flat" in s or "hp_flat" in s for s in normalized_subs)
+        is_noble_main = main_stat in noble_main_stats or any(n in main_stat for n in ["dmg", "crit", "spd", "er"])
+
+        if not is_noble_main and (
+            (useful_subs_count == 0 and is_def_flat_heavy)
+            or (useful_subs_count <= 1 and main_stat in ["def_pct", "hp_pct"] and not has_crit and not has_spd)
+        ):
+            trash_candidates.append(
+                {
+                    "name": name,
+                    "slot": slot,
+                    "main_stat": main_stat_raw,
+                    "substats": formatted_subs,
+                    "reason": "Substatus sem acertos de Crítico/Recarga/VEL e atributos irrelevantes para o meta atual.",
+                    "recommendation": "Converter em EXP ou Reciclar no Sintetizador",
+                    "character_name": character_name,
+                    "icon": icon,
+                }
+            )
         else:
             good_relics_count += 1
-            
+
+    # Ordena coringas: God-Tier e maiores CVs primeiro
+    coringa_candidates.sort(key=lambda x: x.get("crit_value") or 0.0, reverse=True)
+
     return {
         "game_id": game_id,
         "total_analyzed": len(relics),
         "good_relics_count": good_relics_count,
         "trash_count": len(trash_candidates),
-        "trash_relics": trash_candidates[:15]  # Top 15 candidatas a lixo
+        "trash_relics": trash_candidates[:15],
+        "coringa_count": len(coringa_candidates),
+        "coringa_relics": coringa_candidates[:15],
     }
 
 
@@ -2989,86 +3701,243 @@ def find_trash_relics(game_id: str, relics: list, meta_data: dict) -> dict:
 # ==========================================
 def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dict:
     """
-    Avalia se os status atuais de um personagem atingiram os limiares (breakpoints) vitais de combate.
+    Avalia se os status atuais de um personagem atingiram os limiares (breakpoints) vitais de combate,
+    incluindo Speed Tuning e Action Value por ciclos de MoC/PF/Endgame.
     """
     game_id = (game_id or "hsr").lower().strip()
+    char_lower = (char_name or "").lower().strip()
     breakpoints = []
-    
-    speed = float(stats.get("speed", stats.get("spd", 0.0)))
-    ehr = float(stats.get("ehr", stats.get("effect_hit_rate", 0.0)))
-    er = float(stats.get("er", stats.get("energy_recharge", 0.0)))
-    crit_rate = float(stats.get("crit_rate", stats.get("crit_pct", 0.0)))
-    crit_dmg = float(stats.get("crit_dmg", stats.get("crit_dmg_pct", 0.0)))
-    
+
+    def _parse_val(k_list, default=0.0):
+        for k in k_list:
+            if k in stats and stats[k] is not None:
+                val = stats[k]
+                if isinstance(val, (int, float)):
+                    return float(val)
+                m = re.search(r"([0-9]+(?:\.[0-9]+)?)", str(val))
+                if m:
+                    return float(m.group(1))
+        return default
+
+    speed = _parse_val(["speed", "spd", "velocidade"])
+    ehr = _parse_val(["ehr", "effect_hit_rate", "taxa_acerto_efeito"])
+    er = _parse_val(["er", "err", "energy_recharge", "recarga_energia", "recarga"])
+    crit_rate = _parse_val(["crit_rate", "crit_pct", "taxa_critica", "taxa_crit"])
+    crit_dmg = _parse_val(["crit_dmg", "crit_dmg_pct", "dano_critico", "dano_crit"])
+    impact = _parse_val(["impact", "impacto"])
+    ap = _parse_val(["anomaly_prof", "anomaly_proficiency", "proficiencia_anomalia", "ap"])
+
+    speed_av = round(10000.0 / speed, 1) if speed > 0 else None
+    cycles_summary = None
+
     if game_id == "hsr":
-        # Check Breakpoints de SPD
-        spd_tiers = [
-            (134.0, "134 SPD (2 turnos no Ciclo 1 do MoC/PF)"),
-            (142.0, "142 SPD (5 turnos em 3 Ciclos)"),
-            (156.0, "156 SPD (3 turnos em 2 Ciclos)"),
-            (160.1, "160.1 SPD (4 turnos em 2 Ciclos - Ruan Mei / Sparkle Speed Tier)")
-        ]
-        reached_spd = "Abaixo de 134 (Sem turnos extras)"
-        next_spd = None
-        for tier_val, desc in spd_tiers:
-            if speed >= tier_val:
-                reached_spd = desc
-            elif next_spd is None:
-                next_spd = f"Faltam {tier_val - speed:.1f} de VEL para atingir {desc}"
-                
-        breakpoints.append({
-            "stat": "Velocidade (SPD)",
-            "current": f"{speed:.1f}",
-            "status": reached_spd,
-            "next_goal": next_spd or "Breakpoint Máximo atingido!"
-        })
-        
-        # Check EHR para Debuffers
-        if ehr > 0 or "silver" in char_name.lower() or "pela" in char_name.lower() or "jiaoqiu" in char_name.lower():
-            target_ehr = 67.0 if "silver" in char_name.lower() or "pela" in char_name.lower() else 140.0
-            status_ehr = " 100% de Aplicação de Debuff garantida contra Inimigos Lvl 95" if ehr >= target_ehr else f" Risco de Errar Debuff (Alvo: {target_ehr}%)"
-            breakpoints.append({
-                "stat": "Efetividade de Acerto (EHR)",
-                "current": f"{ehr:.1f}%",
-                "status": status_ehr,
-                "next_goal": f"Faltam {max(0.0, target_ehr - ehr):.1f}% de EHR" if ehr < target_ehr else "Meta atingida!"
-            })
+        if speed > 0:
+            spd_tiers = [
+                (120.0, "120.0 SPD", "Ativação de Orbes Planares (Frota dos Eternos, Penacony, Vonwacq)"),
+                (134.0, "134.0 SPD", "2 Ações no Ciclo 0 (150 AV) do MoC / Pura Ficção"),
+                (142.9, "143.0 SPD", "5 Ações nos Primeiros 3 Ciclos"),
+                (160.1, "160.1 SPD", "4 Ações em 2 Ciclos (Tier Supremo: Sparkle, Ruan Mei, Robin)"),
+                (200.0, "200.0 SPD", "2 Ações por Ciclo garantidas (50 AV)"),
+            ]
+
+            reached_tier_desc = "Abaixo de 120 (Sem turnos extras)"
+            next_goal_desc = "Breakpoint Máximo atingido!"
+            is_reached = speed >= 134.0
+            tier_prog = 0.0
+
+            for val, title, desc in spd_tiers:
+                if speed >= val:
+                    reached_tier_desc = f"{title}: {desc}"
+                elif next_goal_desc == "Breakpoint Máximo atingido!":
+                    diff = val - speed
+                    next_goal_desc = f"Faltam {diff:.1f} de VEL para atingir {title} ({desc})"
+                    prev_val = (
+                        100.0 if val == 120.0 else (120.0 if val == 134.0 else (134.0 if val == 142.9 else 142.9))
+                    )
+                    tier_prog = min(100.0, max(0.0, round(((speed - prev_val) / (val - prev_val)) * 100.0, 1)))
+
+            # Dica de Speed Tuning personalizada
+            tuning_tip = "Para DPS padrão, atingir 134.0 SPD garante 2 turnos no ciclo 0. Suportes de buffer/debuff devem idealmente agir antes do DPS."
+            if "bronya" in char_lower or "sunday" in char_lower:
+                tuning_tip = "Speed Tuning -1 SPD: Mantenha a velocidade de 1 a 2 pontos logo ABAIXO do seu DPS para agir imediatamente após ele e conceder turno duplo instantâneo."
+            elif "sparkle" in char_lower or "hanabi" in char_lower:
+                tuning_tip = "Hyper-Speed Tuning (160.1+ SPD para Sparkle/Hanabi): Permite que seu DPS use Botas de ATQ% com zero velocidade e ainda assim aja como se tivesse 160+ de VEL."
+            elif "robin" in char_lower:
+                tuning_tip = "Robin Tuning: Mantenha por volta de 120-125 SPD com o conjunto Vonwacq para avançar a ação no início da batalha e abrir o Concerto rapidamente."
+
+            turnos_ciclo0 = 2 if speed >= 134.0 else 1
+            if speed >= 200.0:
+                turnos_ciclo0 = 3
+            cycles_summary = f"{speed_av} AV/turno • Ciclo 0 (150 AV): {turnos_ciclo0} Ação(ões) • Meta 134 SPD: {'Atingida' if speed >= 134.0 else 'Incompleta'}"
+
+            breakpoints.append(
+                {
+                    "stat": "Velocidade & Ciclos MoC (SPD)",
+                    "current": f"{speed:.1f} SPD ({speed_av} AV)",
+                    "status": reached_tier_desc,
+                    "next_goal": next_goal_desc,
+                    "is_reached": is_reached,
+                    "tier_progress": tier_prog if not (speed >= 200.0) else 100.0,
+                    "action_value": speed_av,
+                    "category": "speed",
+                    "speed_tuning_tip": tuning_tip,
+                }
+            )
+
+        # Check EHR para debuffers
+        debuffers_67 = ["silver", "pela", "welt", "guinaifen"]
+        debuffers_120 = ["black swan", "cisne negro", "jiaoqiu"]
+        if ehr > 0 or any(d in char_lower for d in debuffers_67 + debuffers_120):
+            target_ehr = 120.0 if any(d in char_lower for d in debuffers_120) else 67.0
+            is_ehr_ok = ehr >= target_ehr
+            status_ehr = (
+                f"100% de Aplicação garantida contra chefes Lvl 95 (Meta: {target_ehr}%)"
+                if is_ehr_ok
+                else f"Risco de falha na aplicação de debuffs (Meta: {target_ehr}%)"
+            )
+            breakpoints.append(
+                {
+                    "stat": "Efetividade de Acerto (EHR)",
+                    "current": f"{ehr:.1f}%",
+                    "status": status_ehr,
+                    "next_goal": f"Faltam {max(0.0, target_ehr - ehr):.1f}% de EHR"
+                    if not is_ehr_ok
+                    else "Meta de EHR atingida!",
+                    "is_reached": is_ehr_ok,
+                    "tier_progress": min(100.0, round((ehr / target_ehr) * 100.0, 1)),
+                    "category": "debuff",
+                    "speed_tuning_tip": "Debuffs aplicados com sucesso reduzem as defesas dos inimigos antes das ações do DPS.",
+                }
+            )
 
     elif game_id == "genshin":
-        # Check ER (Recarga de Energia)
-        target_er = 160.0  # Média global de suporte
-        if "xiangling" in char_name.lower() or "faruzan" in char_name.lower():
+        # Check Recarga de Energia (ER)
+        target_er = 160.0
+        if "xiangling" in char_lower:
             target_er = 200.0
-        elif "raiden" in char_name.lower() or "yelan" in char_name.lower():
+        elif "faruzan" in char_lower:
+            target_er = 250.0
+        elif "raiden" in char_lower:
+            target_er = 220.0
+        elif "xingqiu" in char_lower or "yelan" in char_lower:
             target_er = 180.0
-            
-        status_er = " Supremo disponível em todas as rotações sem atraso" if er >= target_er else f" Recarga insuficiente para rotações perfeitas (Meta: {target_er}%)"
-        breakpoints.append({
-            "stat": "Recarga de Energia (ER)",
-            "current": f"{er:.1f}%",
-            "status": status_er,
-            "next_goal": f"Faltam {max(0.0, target_er - er):.1f}% de ER" if er < target_er else "Meta atingida!"
-        })
-        
-    # Razão de Crítico
+        elif "furina" in char_lower or "bennett" in char_lower:
+            target_er = 180.0
+        elif "neuvillette" in char_lower:
+            target_er = 125.0
+
+        is_er_ok = er >= target_er
+        status_er = (
+            f"Supremo carregado a cada rotação de 20s (Meta: {target_er}%)"
+            if is_er_ok
+            else f"Rotação truncada por falta de energia (Meta: {target_er}%)"
+        )
+        breakpoints.append(
+            {
+                "stat": "Recarga de Energia (ER)",
+                "current": f"{er:.1f}%",
+                "status": status_er,
+                "next_goal": f"Faltam {max(0.0, target_er - er):.1f}% de ER para rotação fluida"
+                if not is_er_ok
+                else "Meta de Recarga atingida!",
+                "is_reached": is_er_ok,
+                "tier_progress": min(100.0, round((er / target_er) * 100.0, 1)) if target_er > 0 else 100.0,
+                "category": "energy",
+                "speed_tuning_tip": "Alinhe partículas com o Supremo para evitar perda de DPS por rotações estagnadas.",
+            }
+        )
+
+        # Checagem de Favonius Weapon Procs
+        if (
+            crit_rate > 0
+            and crit_rate < 40.0
+            and any(s in char_lower for s in ["bennett", "kazuha", "faruzan", "diona", "gorou", "thoma"])
+        ):
+            breakpoints.append(
+                {
+                    "stat": "Geração de Partículas (Favonius Check)",
+                    "current": f"{crit_rate:.1f}% Taxa CRIT",
+                    "status": "Taxa crítica baixa para ativação consistente da Arma de Favonius (Alvo: 40% - 50%)",
+                    "next_goal": f"Aumente a Taxa CRIT em {40.0 - crit_rate:.1f}% para garantir partículas neutras para a equipe.",
+                    "is_reached": False,
+                    "tier_progress": min(100.0, round((crit_rate / 40.0) * 100.0, 1)),
+                    "category": "energy",
+                    "speed_tuning_tip": "Armas de Favonius só geram partículas em acertos críticos dentro de campo.",
+                }
+            )
+
+    elif game_id == "zzz":
+        if "jane" in char_lower or ap > 0:
+            target_ap = 420.0 if "jane" in char_lower else 300.0
+            is_ap_ok = ap >= target_ap
+            breakpoints.append(
+                {
+                    "stat": "Proficiência em Anomalia (AP)",
+                    "current": f"{ap:.0f} AP",
+                    "status": f"100% Taxa CRIT de Assalto e dano de anomalia amplificado (Meta: {target_ap} AP)"
+                    if is_ap_ok
+                    else f"Abaixo do limiar ideal de Anomalia (Meta: {target_ap} AP)",
+                    "next_goal": f"Faltam {max(0.0, target_ap - ap):.0f} AP"
+                    if not is_ap_ok
+                    else "Meta de Anomalia atingida!",
+                    "is_reached": is_ap_ok,
+                    "tier_progress": min(100.0, round((ap / target_ap) * 100.0, 1)),
+                    "category": "anomaly",
+                    "speed_tuning_tip": "Jane Doe converte AP em Taxa Crítica para o gatilho de Assalto até o cap de 420.",
+                }
+            )
+
+        if impact > 0 or any(s in char_lower for s in ["anby", "lycaon", "qingyi", "koleda"]):
+            is_imp_ok = impact >= 130.0
+            breakpoints.append(
+                {
+                    "stat": "Impacto / Atordoamento (Stun Rate)",
+                    "current": f"{impact:.0f} Impacto",
+                    "status": "Excelente multiplicador de atordoamento para quebra rápida de postura"
+                    if is_imp_ok
+                    else "Impacto pode ser aumentado no Disco 6 para atordoar chefes mais rápido",
+                    "next_goal": "Equipar Disco 6 com Impacto %" if not is_imp_ok else "Limiar de Stunner atingido!",
+                    "is_reached": is_imp_ok,
+                    "tier_progress": min(100.0, round((impact / 140.0) * 100.0, 1)) if impact > 0 else 50.0,
+                    "category": "impact",
+                    "speed_tuning_tip": "Quanto maior o Impacto do Atordoador, mais cedo o time entra na janela de Chain Attacks.",
+                }
+            )
+
+    # Proporção Crítica 1:2 Universal
     if crit_rate > 0 and crit_dmg > 0:
-        ratio = crit_dmg / max(1.0, crit_rate)
-        ideal = "Proporção Ideal 1:2 mantida!" if 1.8 <= ratio <= 2.2 else f"Proporção atual 1:{ratio:.1f} (Ideal é 1:2)"
-        breakpoints.append({
-            "stat": "Taxa/Dano Crítico",
-            "current": f"{crit_rate:.1f}% / {crit_dmg:.1f}%",
-            "status": ideal,
-            "next_goal": "Ajustar capacete ou substatus para aproximação de 1:2" if not (1.8 <= ratio <= 2.2) else "Equilíbrio Perfeito"
-        })
-        
+        ratio = round(crit_dmg / max(1.0, crit_rate), 2)
+        is_ratio_ok = 1.7 <= ratio <= 2.3
+        status_crit = (
+            f"Proporção Áurea 1:{ratio} (Muito próxima do ideal 1:2)"
+            if is_ratio_ok
+            else f"Proporção atual 1:{ratio} (Desvio do equilíbrio 1:2)"
+        )
+        goal_crit = (
+            "Equilíbrio de Crítico excelente!"
+            if is_ratio_ok
+            else ("Invista mais em Taxa CRIT" if ratio > 2.3 else "Invista mais em Dano CRIT")
+        )
+        breakpoints.append(
+            {
+                "stat": "Proporção Crítica (1:2)",
+                "current": f"{crit_rate:.1f}% CR / {crit_dmg:.1f}% CD",
+                "status": status_crit,
+                "next_goal": goal_crit,
+                "is_reached": is_ratio_ok,
+                "tier_progress": 100.0 if is_ratio_ok else 65.0,
+                "category": "crit",
+                "speed_tuning_tip": "Manter a relação 1:2 maximiza matematicamente o Dano Médio esperado (Expectation Value).",
+            }
+        )
+
     return {
         "char_name": char_name,
         "game_id": game_id,
-        "breakpoints": breakpoints
+        "speed_action_value": speed_av,
+        "cycles_summary": cycles_summary,
+        "breakpoints": breakpoints,
     }
-
-
-
 
 
 # ==========================================
@@ -3080,110 +3949,107 @@ CACHE_TTL_SECONDS = 1800  # Cache de 30 minutos
 FALLBACK_PROMO_CODES = {
     "hsr": [
         {"code": "STARRAILGIFT", "rewards": "50 Stellar Jade, 10,000 Credit", "status": "Ativo permanente"},
-        {"code": "OMEGA", "rewards": "60 Stellar Jade, 1 Fuel", "status": "Ativo de versão"}
+        {"code": "OMEGA", "rewards": "60 Stellar Jade, 1 Fuel", "status": "Ativo de versão"},
     ],
     "genshin": [
         {"code": "GENSHINGIFT", "rewards": "50 Primogem, 3 Hero's Wit", "status": "Ativo permanente"},
-        {"code": "2BJ64QRZ7RT8", "rewards": "60 Primogem, 5 Adventurer's Experience", "status": "Ativo de versão"}
+        {"code": "2BJ64QRZ7RT8", "rewards": "60 Primogem, 5 Adventurer's Experience", "status": "Ativo de versão"},
     ],
     "zzz": [
         {"code": "ZENLESSGIFT", "rewards": "50 Polychrome, 2 Official Investigator Log", "status": "Ativo permanente"},
-        {"code": "ZZZMEIJI", "rewards": "30,000 Denny, 3 Senior Investigator Log", "status": "Ativo de evento"}
-    ]
+        {"code": "ZZZMEIJI", "rewards": "30,000 Denny, 3 Senior Investigator Log", "status": "Ativo de evento"},
+    ],
 }
+
 
 def fetch_live_promo_codes(game_id: str) -> List[Dict[str, Any]]:
     """Realiza raspagem em tempo real via MediaWiki API dos códigos de resgate ativos."""
     wiki_map = {
-        'genshin': ('genshin-impact', 'Promotional_Code'),
-        'hsr': ('honkai-star-rail', 'Redemption_Code'),
-        'zzz': ('zenless-zone-zero', 'Redemption_Code')
+        "genshin": ("genshin-impact", "Promotional_Code"),
+        "hsr": ("honkai-star-rail", "Redemption_Code"),
+        "zzz": ("zenless-zone-zero", "Redemption_Code"),
     }
     g = game_id.lower().strip()
     if g not in wiki_map:
         return []
-    
+
     wiki_name, page_name = wiki_map[g]
     url = f"https://{wiki_name}.fandom.com/api.php?action=parse&page={page_name}&format=json"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
-    
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+
     try:
         r = requests.get(url, headers=headers, timeout=6)
         if r.status_code != 200:
             return []
-        
-        html = r.json().get('parse', {}).get('text', {}).get('*', '')
-        soup = BeautifulSoup(html, 'html.parser')
-        tables = soup.find_all('table', class_='wikitable')
-        
+
+        html = r.json().get("parse", {}).get("text", {}).get("*", "")
+        soup = BeautifulSoup(html, "html.parser")
+        tables = soup.find_all("table", class_="wikitable")
+
         codes = []
         seen = set()
-        
+
         for t in tables[:2]:
-            for tr in t.find_all('tr'):
-                cols = [td.text.strip().replace('\n', ' ') for td in tr.find_all(['td', 'th'])]
+            for tr in t.find_all("tr"):
+                cols = [td.text.strip().replace("\n", " ") for td in tr.find_all(["td", "th"])]
                 if len(cols) >= 3:
                     raw_code_col = cols[0]
                     raw_rewards_col = cols[2] if len(cols) >= 3 else cols[1]
-                    raw_duration_col = cols[3] if len(cols) >= 4 else ''
-                    
-                    raw_code_clean = re.sub(r'(Quick|Redeem|\[\d+\])', '', raw_code_col, flags=re.IGNORECASE).strip()
-                    code_match = re.search(r'[A-Za-z0-9]{5,30}', raw_code_clean)
+                    raw_duration_col = cols[3] if len(cols) >= 4 else ""
+
+                    raw_code_clean = re.sub(r"(Quick|Redeem|\[\d+\])", "", raw_code_col, flags=re.IGNORECASE).strip()
+                    code_match = re.search(r"[A-Za-z0-9]{5,30}", raw_code_clean)
                     if not code_match:
                         continue
-                    
+
                     code = code_match.group(0).upper()
-                    
-                    if code in ('CODE', 'SERVER', 'REWARDS', 'DURATION', 'EXPIRED') or code in seen:
+
+                    if code in ("CODE", "SERVER", "REWARDS", "DURATION", "EXPIRED") or code in seen:
                         continue
-                    
-                    if 'expired:' in raw_duration_col.lower():
+
+                    if "expired:" in raw_duration_col.lower():
                         continue
-                    
-                    rewards = re.sub(r'\[\d+\]', '', raw_rewards_col).replace('×', 'x').replace('Ã—', 'x').strip()
-                    rewards = ' '.join(rewards.split())
-                    
-                    status = 'Ativo (Ao vivo)'
-                    if 'valid until:' in raw_duration_col.lower():
-                        valid_match = re.search(r'valid until:\s*([^V\n\r]+)', raw_duration_col, re.IGNORECASE)
+
+                    rewards = re.sub(r"\[\d+\]", "", raw_rewards_col).replace("×", "x").replace("Ã—", "x").strip()
+                    rewards = " ".join(rewards.split())
+
+                    status = "Ativo (Ao vivo)"
+                    if "valid until:" in raw_duration_col.lower():
+                        valid_match = re.search(r"valid until:\s*([^V\n\r]+)", raw_duration_col, re.IGNORECASE)
                         if valid_match:
                             val_str = valid_match.group(1).strip()
-                            val_str = re.sub(r'([A-Za-z]+\s+\d+,\s+\d{4}).*', r'\1', val_str)
-                            status = f'Ativo até {val_str}'
-                    elif 'indefinite' in raw_duration_col.lower():
-                        status = 'Ativo Permanente'
-                    
+                            val_str = re.sub(r"([A-Za-z]+\s+\d+,\s+\d{4}).*", r"\1", val_str)
+                            status = f"Ativo até {val_str}"
+                    elif "indefinite" in raw_duration_col.lower():
+                        status = "Ativo Permanente"
+
                     seen.add(code)
-                    codes.append({
-                        'code': code,
-                        'rewards': rewards if rewards else 'Recompensas de Evento',
-                        'status': status
-                    })
+                    codes.append(
+                        {"code": code, "rewards": rewards if rewards else "Recompensas de Evento", "status": status}
+                    )
         return codes
     except Exception as e:
         print(f"Erro ao buscar códigos promocionais ao vivo para {game_id}: {e}")
         return []
 
+
 def fetch_active_promo_codes(game_id: str) -> List[Dict[str, Any]]:
     """Busca dinamicamente os códigos promocionais ativos para o jogo solicitado, com suporte a cache e fallback."""
     g = game_id.lower().strip()
     now = time.time()
-    
+
     # Verifica cache em memória
     if g in PROMO_CODES_CACHE:
         entry = PROMO_CODES_CACHE[g]
         if (now - entry["timestamp"]) < CACHE_TTL_SECONDS and entry["codes"]:
             return entry["codes"]
-            
+
     # Busca ao vivo via MediaWiki API
     live_codes = fetch_live_promo_codes(g)
     if live_codes:
-        PROMO_CODES_CACHE[g] = {
-            "timestamp": now,
-            "codes": live_codes
-        }
+        PROMO_CODES_CACHE[g] = {"timestamp": now, "codes": live_codes}
         return live_codes
-        
+
     # Fallback caso a busca ao vivo falhe ou dê timeout
     return FALLBACK_PROMO_CODES.get(g, [])
 
@@ -3198,7 +4064,7 @@ def generate_daily_farm_order(
     current_energy: Optional[int] = None,
     max_energy: Optional[int] = None,
     weekday: Optional[int] = None,
-    selected_chars: Optional[List[str]] = None
+    selected_chars: Optional[List[str]] = None,
 ) -> Dict[str, Any]:
     """
     Gera a 'Ordem de Serviço do Dia' inteligente e otimizada.
@@ -3232,7 +4098,7 @@ def generate_daily_farm_order(
             "relic_run_cost": 20,
             "relic_runs_default": 2,
             "currency_name": "Mora",
-            "max_level": 90
+            "max_level": 90,
         },
         "hsr": {
             "energy_name": "Poder de Desbravamento",
@@ -3247,7 +4113,7 @@ def generate_daily_farm_order(
             "relic_run_cost": 40,
             "relic_runs_default": 1,
             "currency_name": "Créditos",
-            "max_level": 80
+            "max_level": 80,
         },
         "zzz": {
             "energy_name": "Carga de Bateria",
@@ -3262,8 +4128,8 @@ def generate_daily_farm_order(
             "relic_run_cost": 60,
             "relic_runs_default": 1,
             "currency_name": "Dennys",
-            "max_level": 60
-        }
+            "max_level": 60,
+        },
     }
 
     cfg = game_configs[g]
@@ -3272,6 +4138,7 @@ def generate_daily_farm_order(
     if roster is None:
         try:
             import database
+
             roster = database.get_roster_data(g)
         except Exception:
             roster = []
@@ -3286,6 +4153,7 @@ def generate_daily_farm_order(
     if current_energy is None or max_energy is None:
         try:
             import database
+
             cached_notes = database.get_cached_daily_notes()
             if g in cached_notes and cached_notes[g].get("current_energy") is not None:
                 if current_energy is None:
@@ -3304,16 +4172,20 @@ def generate_daily_farm_order(
     completed_task_ids = set()
     try:
         import database
+
         completed_task_ids = set(database.get_completed_farm_tasks(today_str, g))
     except Exception:
         pass
 
     # Consulta de recomendações de farm diárias
-    recs_data = get_daily_farm_recommendations(game_id=g, roster=roster, day_of_week=weekday, selected_chars=selected_chars)
+    recs_data = get_daily_farm_recommendations(
+        game_id=g, roster=roster, day_of_week=weekday, selected_chars=selected_chars
+    )
     targets = recs_data.get("priority_targets", [])
     cal_info = recs_data.get("calendar_info", {})
 
     from static_data_manager import static_data_manager
+
     static_schedule = static_data_manager.get_daily_farm_schedule(g, weekday=weekday)
 
     # Construção da lista de tarefas priorizadas
@@ -3377,7 +4249,7 @@ def generate_daily_farm_order(
             "priority_badge": "⭐ Aberto Hoje",
             "badge_color": "#10b981",
             "description": f"Faça {runs}x {location} para obter {talent_mat_name} e avançar os talentos prioritários de {c_name} (Nota {c_grade}).",
-            "completed": sig in completed_task_ids
+            "completed": sig in completed_task_ids,
         }
 
         # Cálculo de tempo até disponibilidade de energia
@@ -3412,7 +4284,7 @@ def generate_daily_farm_order(
 
         profile = static_data_manager.get_character_profile(g, c_name)
         boss_name = profile.get("boss_mat", "") if profile else "Chefe do Mundo"
-        
+
         sig = f"boss_{c_name}_{boss_name}"
         if sig in seen_task_signatures:
             continue
@@ -3442,7 +4314,7 @@ def generate_daily_farm_order(
             "priority_badge": "🔥 Ascensão Pendente",
             "badge_color": "#f59e0b",
             "description": f"Derrote {location} para avançar {c_name} do Nv. {c_lvl} rumo ao Nv. {c_max}.",
-            "completed": sig in completed_task_ids
+            "completed": sig in completed_task_ids,
         }
 
         accumulated_energy += cost
@@ -3477,8 +4349,10 @@ def generate_daily_farm_order(
         runs = cfg["relic_runs_default"]
         cost = runs * cfg["relic_run_cost"]
 
-        domain_label = "Domínio de Artefatos" if g == "genshin" else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
-        
+        domain_label = (
+            "Domínio de Artefatos" if g == "genshin" else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
+        )
+
         task_item = {
             "id": sig,
             "step": task_idx,
@@ -3496,7 +4370,7 @@ def generate_daily_farm_order(
             "priority_badge": "💎 Otimização de Build",
             "badge_color": "#ec4899",
             "description": f"Realize {runs}x {domain_label} buscando peças com Atributos Ideais para maximizar a nota de {c_name}.",
-            "completed": sig in completed_task_ids
+            "completed": sig in completed_task_ids,
         }
 
         accumulated_energy += cost
@@ -3522,29 +4396,31 @@ def generate_daily_farm_order(
     if not tasks:
         sig = f"calyx_currency_{g}"
         cost = cfg["talent_run_cost"] * 2
-        tasks.append({
-            "id": sig,
-            "step": 1,
-            "type": "currency",
-            "type_label": f"Reserva de {cfg['currency_name']}",
-            "type_icon": "fa-coins",
-            "target_character": "Conta Geral",
-            "character_icon": None,
-            "character_grade": "S",
-            "material_name": cfg["currency_name"],
-            "location": "Linhas Ley / Cálice Dourado",
-            "runs": 2,
-            "cost_energy": cost,
-            "energy_name": cfg["energy_name"],
-            "priority_badge": "🪙 Reserva Econômica",
-            "badge_color": "#eab308",
-            "description": f"Todos os seus personagens principais estão no nível máximo! Farme {cfg['currency_name']} para futuras versões.",
-            "completed": sig in completed_task_ids,
-            "cumulative_energy": cost,
-            "available_now": True,
-            "status_text": "Pronto para Executar",
-            "time_estimate": "Disponível Agora"
-        })
+        tasks.append(
+            {
+                "id": sig,
+                "step": 1,
+                "type": "currency",
+                "type_label": f"Reserva de {cfg['currency_name']}",
+                "type_icon": "fa-coins",
+                "target_character": "Conta Geral",
+                "character_icon": None,
+                "character_grade": "S",
+                "material_name": cfg["currency_name"],
+                "location": "Linhas Ley / Cálice Dourado",
+                "runs": 2,
+                "cost_energy": cost,
+                "energy_name": cfg["energy_name"],
+                "priority_badge": "🪙 Reserva Econômica",
+                "badge_color": "#eab308",
+                "description": f"Todos os seus personagens principais estão no nível máximo! Farme {cfg['currency_name']} para futuras versões.",
+                "completed": sig in completed_task_ids,
+                "cumulative_energy": cost,
+                "available_now": True,
+                "status_text": "Pronto para Executar",
+                "time_estimate": "Disponível Agora",
+            }
+        )
         accumulated_energy = cost
 
     completed_count = sum(1 for t in tasks if t["completed"])
@@ -3557,15 +4433,19 @@ def generate_daily_farm_order(
         f"⚡ **Energia Atual:** {current_energy} / {max_energy} {cfg['energy_name']}",
         f"📅 **Dia:** {weekday_name} ({today_str})",
         "",
-        "🎯 **Roteiro de Farm Prioritário:**"
+        "🎯 **Roteiro de Farm Prioritário:**",
     ]
     for t in tasks:
         check_box = "[x]" if t["completed"] else "[ ]"
         status_disp = "(Disponível Agora)" if t["available_now"] else f"({t['time_estimate']})"
-        summary_lines.append(f"{t['step']}. {check_box} **{t['target_character']}** | {t['type_label']}: {t['material_name']} ({t['cost_energy']} {cfg['energy_name']}) - *{status_disp}*")
+        summary_lines.append(
+            f"{t['step']}. {check_box} **{t['target_character']}** | {t['type_label']}: {t['material_name']} ({t['cost_energy']} {cfg['energy_name']}) - *{status_disp}*"
+        )
 
     summary_lines.append("")
-    summary_lines.append(f"💡 *Total Planejado: {accumulated_energy} {cfg['energy_name']} | Progresso Hoje: {completed_count}/{len(tasks)} ({completion_pct}%)*")
+    summary_lines.append(
+        f"💡 *Total Planejado: {accumulated_energy} {cfg['energy_name']} | Progresso Hoje: {completed_count}/{len(tasks)} ({completion_pct}%)*"
+    )
     quick_summary_text = "\n".join(summary_lines)
 
     return {
@@ -3580,19 +4460,20 @@ def generate_daily_farm_order(
             "name": cfg["energy_name"],
             "icon": cfg["energy_icon"],
             "allocated_total": accumulated_energy,
-            "usage_pct": min(100, int((current_energy / max_energy) * 100)) if max_energy > 0 else 0
+            "usage_pct": min(100, int((current_energy / max_energy) * 100)) if max_energy > 0 else 0,
         },
         "tasks": tasks,
         "completed_count": completed_count,
         "total_tasks": len(tasks),
         "completion_percentage": completion_pct,
-        "quick_summary_text": quick_summary_text
+        "quick_summary_text": quick_summary_text,
     }
 
 
 def _norm_str(text: str) -> str:
     """Normaliza strings removendo acentos, pontuação e espaços em excesso."""
     import unicodedata, re
+
     if not text:
         return ""
     text = unicodedata.normalize("NFKD", str(text)).encode("ASCII", "ignore").decode("utf-8").lower()
@@ -3635,7 +4516,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 "rarity": c_rarity,
                 "rank": c_rank,
                 "element": c_elem,
-                "is_built": c_lvl >= (70 if g != "zzz" else 50)
+                "is_built": c_lvl >= (70 if g != "zzz" else 50),
             }
 
     def has_any(alias_list: list, min_built: bool = False) -> tuple[bool, list]:
@@ -3676,7 +4557,21 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
     if g == "genshin":
         # Arquétipos
         sustain_t0 = ["zhongli", "kokomi", "baizhu", "xianyun", "bennett", "kuki shinobu", "sigewinne"]
-        sustain_others = ["diona", "layla", "kirara", "jean", "charlotte", "yaoyao", "barbara", "noelle", "sayu", "chevreuse", "mika", "thoma", "qiqi"]
+        sustain_others = [
+            "diona",
+            "layla",
+            "kirara",
+            "jean",
+            "charlotte",
+            "yaoyao",
+            "barbara",
+            "noelle",
+            "sayu",
+            "chevreuse",
+            "mika",
+            "thoma",
+            "qiqi",
+        ]
         owned_sustain_t0 = count_in_group(sustain_t0)
         owned_sustain_all = count_in_group(sustain_t0 + sustain_others)
 
@@ -3692,10 +4587,30 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         owned_offfield_subdps = count_in_group(offfield_subdps)
 
         main_dps_list = [
-            "neuvillette", "arlecchino", "alhaitham", "raiden shogun", "hu tao", "navia",
-            "mualani", "kinich", "clorinde", "lyney", "wriothesley", "xiao", "wanderer",
-            "kamisato ayaka", "ganyu", "arataki itto", "tartaglia", "cyno", "tighnari",
-            "diluc", "keqing", "gaming", "yanfei", "sethos"
+            "neuvillette",
+            "arlecchino",
+            "alhaitham",
+            "raiden shogun",
+            "hu tao",
+            "navia",
+            "mualani",
+            "kinich",
+            "clorinde",
+            "lyney",
+            "wriothesley",
+            "xiao",
+            "wanderer",
+            "kamisato ayaka",
+            "ganyu",
+            "arataki itto",
+            "tartaglia",
+            "cyno",
+            "tighnari",
+            "diluc",
+            "keqing",
+            "gaming",
+            "yanfei",
+            "sethos",
         ]
         owned_main_dps = count_in_group(main_dps_list)
 
@@ -3711,175 +4626,282 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 return "Crítico", "#ef4444"
 
         st_sust, col_sust = get_status_data(len(owned_sustain_all), len(owned_sustain_t0), 2)
-        archetypes_summary.append({
-            "key": "sustain",
-            "title": "Sustentação (Shield / Healer)",
-            "icon": "fa-shield-halved",
-            "status": st_sust,
-            "status_color": col_sust,
-            "owned_count": len(owned_sustain_all),
-            "target_count": 2,
-            "owned_characters": owned_sustain_all,
-            "description": "Essencial para sobrevivência nos 2 lados do Abismo 12."
-        })
+        archetypes_summary.append(
+            {
+                "key": "sustain",
+                "title": "Sustentação (Shield / Healer)",
+                "icon": "fa-shield-halved",
+                "status": st_sust,
+                "status_color": col_sust,
+                "owned_count": len(owned_sustain_all),
+                "target_count": 2,
+                "owned_characters": owned_sustain_all,
+                "description": "Essencial para sobrevivência nos 2 lados do Abismo 12.",
+            }
+        )
 
         st_buff, col_buff = get_status_data(len(owned_buffers_all), len(owned_buffers_t0), 2)
-        archetypes_summary.append({
-            "key": "buffers",
-            "title": "Buffers & Redução de RES (VV / Suportes)",
-            "icon": "fa-wand-magic-sparkles",
-            "status": st_buff,
-            "status_color": col_buff,
-            "owned_count": len(owned_buffers_all),
-            "target_count": 2,
-            "owned_characters": owned_buffers_all,
-            "description": "Multiplicadores de dano e reações elementais da equipe."
-        })
+        archetypes_summary.append(
+            {
+                "key": "buffers",
+                "title": "Buffers & Redução de RES (VV / Suportes)",
+                "icon": "fa-wand-magic-sparkles",
+                "status": st_buff,
+                "status_color": col_buff,
+                "owned_count": len(owned_buffers_all),
+                "target_count": 2,
+                "owned_characters": owned_buffers_all,
+                "description": "Multiplicadores de dano e reações elementais da equipe.",
+            }
+        )
 
         st_hydro, col_hydro = get_status_data(len(owned_offfield_hydro), len(owned_offfield_hydro), 2)
-        archetypes_summary.append({
-            "key": "offfield_hydro",
-            "title": "Aplicadores Hydro Off-Field",
-            "icon": "fa-droplet",
-            "status": st_hydro,
-            "status_color": col_hydro,
-            "owned_count": len(owned_offfield_hydro),
-            "target_count": 2,
-            "owned_characters": owned_offfield_hydro,
-            "description": "Coluna vertebral para Vaporize, Hyperbloom, Taser e Freeze."
-        })
+        archetypes_summary.append(
+            {
+                "key": "offfield_hydro",
+                "title": "Aplicadores Hydro Off-Field",
+                "icon": "fa-droplet",
+                "status": st_hydro,
+                "status_color": col_hydro,
+                "owned_count": len(owned_offfield_hydro),
+                "target_count": 2,
+                "owned_characters": owned_offfield_hydro,
+                "description": "Coluna vertebral para Vaporize, Hyperbloom, Taser e Freeze.",
+            }
+        )
 
         st_dps, col_dps = get_status_data(len(owned_main_dps), len(owned_main_dps), 2)
-        archetypes_summary.append({
-            "key": "main_dps",
-            "title": "DPS Principal (Hypercarries / Reaction)",
-            "icon": "fa-khanda",
-            "status": st_dps,
-            "status_color": col_dps,
-            "owned_count": len(owned_main_dps),
-            "target_count": 2,
-            "owned_characters": owned_main_dps,
-            "description": "Pilares de dano para as duas metades das câmaras de combate."
-        })
+        archetypes_summary.append(
+            {
+                "key": "main_dps",
+                "title": "DPS Principal (Hypercarries / Reaction)",
+                "icon": "fa-khanda",
+                "status": st_dps,
+                "status_color": col_dps,
+                "owned_count": len(owned_main_dps),
+                "target_count": 2,
+                "owned_characters": owned_main_dps,
+                "description": "Pilares de dano para as duas metades das câmaras de combate.",
+            }
+        )
 
         # Cobertura Elemental
         elements_cfg = [
-            ("Pyro", "fa-fire", "#ef4444", ["arlecchino", "hu tao", "bennett", "xiangling", "diluc", "gaming", "lyney", "yoimiya", "thoma", "chevreuse", "yanfei", "dehya"]),
-            ("Hydro", "fa-droplet", "#0284c7", ["neuvillette", "furina", "yelan", "xingqiu", "kokomi", "mualani", "ayato", "tartaglia", "mona", "sigewinne", "barbara", "candace"]),
-            ("Dendro", "fa-leaf", "#10b981", ["nahida", "alhaitham", "baizhu", "kinich", "emilie", "tighnari", "yaoyao", "kirara", "collei", "kaveh"]),
-            ("Electro", "fa-bolt", "#a855f7", ["raiden shogun", "clorinde", "yae miko", "fischl", "kuki shinobu", "cyno", "beidou", "keqing", "sethos", "kujou sara"]),
-            ("Anemo", "fa-wind", "#14b8a6", ["kazuha", "xianyun", "sucrose", "xiao", "wanderer", "jean", "faruzan", "lynette", "heizou", "sayu"]),
-            ("Cryo", "fa-snowflake", "#38bdf8", ["ayaka", "ganyu", "wriothesley", "shenhe", "charlotte", "diona", "layla", "rosaria", "mika", "qiqi"]),
-            ("Geo", "fa-mountain", "#f59e0b", ["zhongli", "navia", "xilonen", "chiori", "itto", "albedo", "noelle", "kachina", "gorou", "yun jin"])
+            (
+                "Pyro",
+                "fa-fire",
+                "#ef4444",
+                [
+                    "arlecchino",
+                    "hu tao",
+                    "bennett",
+                    "xiangling",
+                    "diluc",
+                    "gaming",
+                    "lyney",
+                    "yoimiya",
+                    "thoma",
+                    "chevreuse",
+                    "yanfei",
+                    "dehya",
+                ],
+            ),
+            (
+                "Hydro",
+                "fa-droplet",
+                "#0284c7",
+                [
+                    "neuvillette",
+                    "furina",
+                    "yelan",
+                    "xingqiu",
+                    "kokomi",
+                    "mualani",
+                    "ayato",
+                    "tartaglia",
+                    "mona",
+                    "sigewinne",
+                    "barbara",
+                    "candace",
+                ],
+            ),
+            (
+                "Dendro",
+                "fa-leaf",
+                "#10b981",
+                [
+                    "nahida",
+                    "alhaitham",
+                    "baizhu",
+                    "kinich",
+                    "emilie",
+                    "tighnari",
+                    "yaoyao",
+                    "kirara",
+                    "collei",
+                    "kaveh",
+                ],
+            ),
+            (
+                "Electro",
+                "fa-bolt",
+                "#a855f7",
+                [
+                    "raiden shogun",
+                    "clorinde",
+                    "yae miko",
+                    "fischl",
+                    "kuki shinobu",
+                    "cyno",
+                    "beidou",
+                    "keqing",
+                    "sethos",
+                    "kujou sara",
+                ],
+            ),
+            (
+                "Anemo",
+                "fa-wind",
+                "#14b8a6",
+                ["kazuha", "xianyun", "sucrose", "xiao", "wanderer", "jean", "faruzan", "lynette", "heizou", "sayu"],
+            ),
+            (
+                "Cryo",
+                "fa-snowflake",
+                "#38bdf8",
+                ["ayaka", "ganyu", "wriothesley", "shenhe", "charlotte", "diona", "layla", "rosaria", "mika", "qiqi"],
+            ),
+            (
+                "Geo",
+                "fa-mountain",
+                "#f59e0b",
+                ["zhongli", "navia", "xilonen", "chiori", "itto", "albedo", "noelle", "kachina", "gorou", "yun jin"],
+            ),
         ]
         for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
             elem_chars = count_in_group(char_pool)
             elem_built = count_in_group(char_pool, min_built=True)
             status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
-            elemental_coverage.append({
-                "element": elem_name,
-                "icon": elem_icon,
-                "color": elem_color,
-                "count": len(elem_chars),
-                "built_count": len(elem_built),
-                "characters": elem_chars,
-                "status": status
-            })
+            elemental_coverage.append(
+                {
+                    "element": elem_name,
+                    "icon": elem_icon,
+                    "color": elem_color,
+                    "count": len(elem_chars),
+                    "built_count": len(elem_built),
+                    "characters": elem_chars,
+                    "status": status,
+                }
+            )
 
         # Lacunas Críticas
         if len(owned_sustain_t0) == 0:
             overall_score -= 22
-            critical_gaps.append({
-                "id": "genshin_no_t0_sustain",
-                "severity": "CRÍTICA",
-                "severity_color": "#ef4444",
-                "badge": "🛡️ Sobrevivência em Risco",
-                "title": "Falta de Sustentador Premium Tier 0",
-                "description": "Você não possui nenhum curandeiro/escudo de elite (Zhongli, Kokomi, Baizhu, Xianyun ou Bennett).",
-                "endgame_impact": "Alta dificuldade para manter a rotação viva e evitar interrupções no Abismo 12.",
-                "suggested_archetype": "Shielder Indestrutível ou Healer Global com utilidade de Buff",
-                "recommended_characters": ["Zhongli", "Kokomi", "Baizhu", "Xianyun"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "genshin_no_t0_sustain",
+                    "severity": "CRÍTICA",
+                    "severity_color": "#ef4444",
+                    "badge": "🛡️ Sobrevivência em Risco",
+                    "title": "Falta de Sustentador Premium Tier 0",
+                    "description": "Você não possui nenhum curandeiro/escudo de elite (Zhongli, Kokomi, Baizhu, Xianyun ou Bennett).",
+                    "endgame_impact": "Alta dificuldade para manter a rotação viva e evitar interrupções no Abismo 12.",
+                    "suggested_archetype": "Shielder Indestrutível ou Healer Global com utilidade de Buff",
+                    "recommended_characters": ["Zhongli", "Kokomi", "Baizhu", "Xianyun"],
+                }
+            )
 
         if len(owned_offfield_hydro) < 2:
             overall_score -= 18
-            critical_gaps.append({
-                "id": "genshin_lack_hydro",
-                "severity": "ALTA",
-                "severity_color": "#f97316",
-                "badge": "💧 Carência de Aplicação Hydro",
-                "title": "Falta de Aplicador Hydro Off-Field para 2 Times",
-                "description": "Possui menos de 2 aplicadores Hydro (Xingqiu, Yelan, Furina).",
-                "endgame_impact": "Limita severamente a formação de times simultâneos de Vaporize, Hyperbloom ou Freeze.",
-                "suggested_archetype": "Sub-DPS / Buffer Hydro Off-Field",
-                "recommended_characters": ["Yelan", "Furina", "Xingqiu"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "genshin_lack_hydro",
+                    "severity": "ALTA",
+                    "severity_color": "#f97316",
+                    "badge": "💧 Carência de Aplicação Hydro",
+                    "title": "Falta de Aplicador Hydro Off-Field para 2 Times",
+                    "description": "Possui menos de 2 aplicadores Hydro (Xingqiu, Yelan, Furina).",
+                    "endgame_impact": "Limita severamente a formação de times simultâneos de Vaporize, Hyperbloom ou Freeze.",
+                    "suggested_archetype": "Sub-DPS / Buffer Hydro Off-Field",
+                    "recommended_characters": ["Yelan", "Furina", "Xingqiu"],
+                }
+            )
 
         has_vv, _ = has_any(["kazuha", "sucrose"])
         if not has_vv:
             overall_score -= 15
-            critical_gaps.append({
-                "id": "genshin_no_vv_shred",
-                "severity": "ALTA",
-                "severity_color": "#f97316",
-                "badge": "🌪️ Sem Redução Elemental VV",
-                "title": "Ausência de Buffer Anemo Sombra Verde (VV)",
-                "description": "Você não tem Kazuha ou Sacarose para aplicar o debuff de 40% de RES Shred.",
-                "endgame_impact": "Perda direta de ~25% a 30% do DPS final em composições de reação elemental.",
-                "suggested_archetype": "Buffer / Agrupador Anemo",
-                "recommended_characters": ["Kaedehara Kazuha", "Sucrose"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "genshin_no_vv_shred",
+                    "severity": "ALTA",
+                    "severity_color": "#f97316",
+                    "badge": "🌪️ Sem Redução Elemental VV",
+                    "title": "Ausência de Buffer Anemo Sombra Verde (VV)",
+                    "description": "Você não tem Kazuha ou Sacarose para aplicar o debuff de 40% de RES Shred.",
+                    "endgame_impact": "Perda direta de ~25% a 30% do DPS final em composições de reação elemental.",
+                    "suggested_archetype": "Buffer / Agrupador Anemo",
+                    "recommended_characters": ["Kaedehara Kazuha", "Sucrose"],
+                }
+            )
 
         if len(owned_main_dps) < 2:
             overall_score -= 20
-            critical_gaps.append({
-                "id": "genshin_lack_main_dps",
-                "severity": "CRÍTICA",
-                "severity_color": "#ef4444",
-                "badge": "⚔️ Carência de Dano Principal",
-                "title": "Menos de 2 Hypercarries/Drivers Construídos",
-                "description": "Faltam carregadores de dano principais para cobrir as duas câmaras do Abismo 12.",
-                "endgame_impact": "Incapacidade de atingir as metas de DPS para fechar com 36 estrelas.",
-                "suggested_archetype": "DPS Principal Top-Tier",
-                "recommended_characters": ["Neuvillette", "Arlecchino", "Alhaitham", "Navia"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "genshin_lack_main_dps",
+                    "severity": "CRÍTICA",
+                    "severity_color": "#ef4444",
+                    "badge": "⚔️ Carência de Dano Principal",
+                    "title": "Menos de 2 Hypercarries/Drivers Construídos",
+                    "description": "Faltam carregadores de dano principais para cobrir as duas câmaras do Abismo 12.",
+                    "endgame_impact": "Incapacidade de atingir as metas de DPS para fechar com 36 estrelas.",
+                    "suggested_archetype": "DPS Principal Top-Tier",
+                    "recommended_characters": ["Neuvillette", "Arlecchino", "Alhaitham", "Navia"],
+                }
+            )
 
         # Recomendações de Puxadas
         rank_idx = 1
         if len(owned_sustain_t0) == 0:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "Sustentador / Shielder Tier 0",
-                "badge": "Prioridade Máxima",
-                "tag": "Sobrevivência & Conforto",
-                "characters": ["Zhongli", "Xilonen", "Kokomi"],
-                "reason": "Garante estabilidade absoluta de rotação no Abismo 12 sem interrupções de golpes inimigos.",
-                "impact_score": "+35% Conforto & Consistência de Clear"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "Sustentador / Shielder Tier 0",
+                    "badge": "Prioridade Máxima",
+                    "tag": "Sobrevivência & Conforto",
+                    "characters": ["Zhongli", "Xilonen", "Kokomi"],
+                    "reason": "Garante estabilidade absoluta de rotação no Abismo 12 sem interrupções de golpes inimigos.",
+                    "impact_score": "+35% Conforto & Consistência de Clear",
+                }
+            )
             rank_idx += 1
 
         if not has_any(["furina", "kazuha"])[0]:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "Universal Damage Buffer",
-                "badge": "Alta Prioridade",
-                "tag": "Salto de DPS Global",
-                "characters": ["Furina", "Kaedehara Kazuha"],
-                "reason": "Aumenta drasticamente o dano de quase todas as equipes do jogo através de buffs globais e RES shred.",
-                "impact_score": "+30% a 40% Dano Global da Equipe"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "Universal Damage Buffer",
+                    "badge": "Alta Prioridade",
+                    "tag": "Salto de DPS Global",
+                    "characters": ["Furina", "Kaedehara Kazuha"],
+                    "reason": "Aumenta drasticamente o dano de quase todas as equipes do jogo através de buffs globais e RES shred.",
+                    "impact_score": "+30% a 40% Dano Global da Equipe",
+                }
+            )
             rank_idx += 1
 
         if len(owned_main_dps) < 2:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "Hypercarry On-Field",
-                "badge": "Alta Prioridade",
-                "tag": "DPS de Fechamento",
-                "characters": ["Neuvillette", "Arlecchino"],
-                "reason": "Unidades independentes e com multiplicadores colossais para carregar um lado inteiro do Abismo.",
-                "impact_score": "Garante 1 lado completo do Abismo 12"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "Hypercarry On-Field",
+                    "badge": "Alta Prioridade",
+                    "tag": "DPS de Fechamento",
+                    "characters": ["Neuvillette", "Arlecchino"],
+                    "reason": "Unidades independentes e com multiplicadores colossais para carregar um lado inteiro do Abismo.",
+                    "impact_score": "Garante 1 lado completo do Abismo 12",
+                }
+            )
             rank_idx += 1
 
     # ==========================================
@@ -3895,10 +4917,31 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         owned_sustain_5star = count_in_group(sustain_5star)
         owned_sustain_all = count_in_group(sustain_all)
 
-        break_archetype = ["firefly", "boothill", "rappa", "trailblazer", "xueyi", "fugue", "ruan mei", "gallagher", "lingsha"]
+        break_archetype = [
+            "firefly",
+            "boothill",
+            "rappa",
+            "trailblazer",
+            "xueyi",
+            "fugue",
+            "ruan mei",
+            "gallagher",
+            "lingsha",
+        ]
         owned_break = count_in_group(break_archetype)
 
-        fua_archetype = ["feixiao", "aventurine", "robin", "topaz", "dr. ratio", "yunli", "clara", "moze", "march 7th", "jade"]
+        fua_archetype = [
+            "feixiao",
+            "aventurine",
+            "robin",
+            "topaz",
+            "dr. ratio",
+            "yunli",
+            "clara",
+            "moze",
+            "march 7th",
+            "jade",
+        ]
         owned_fua = count_in_group(fua_archetype)
 
         pf_erudition = ["herta", "himeko", "jade", "argenti", "acheron"]
@@ -3907,7 +4950,19 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         dot_archetype = ["kafka", "black swan", "jiaoqiu", "guinaifen", "sampo", "luka"]
         owned_dot = count_in_group(dot_archetype)
 
-        crit_hypercarries = ["acheron", "feixiao", "dan heng il", "jingliu", "dr. ratio", "yunli", "argenti", "blade", "jing yuan", "clara", "seele"]
+        crit_hypercarries = [
+            "acheron",
+            "feixiao",
+            "dan heng il",
+            "jingliu",
+            "dr. ratio",
+            "yunli",
+            "argenti",
+            "blade",
+            "jing yuan",
+            "clara",
+            "seele",
+        ]
         owned_crit_dps = count_in_group(crit_hypercarries)
 
         # Status dos Arquétipos
@@ -3922,161 +4977,226 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 return "Crítico", "#ef4444"
 
         st_harm, col_harm = get_hsr_status(len(owned_harmony_t0), len(owned_harmony_t0), 2)
-        archetypes_summary.append({
-            "key": "harmony",
-            "title": "Harmonia & Manipulação de Ação (Tier 0)",
-            "icon": "fa-music",
-            "status": st_harm,
-            "status_color": col_harm,
-            "owned_count": len(owned_harmony_t0),
-            "target_count": 2,
-            "owned_characters": owned_harmony_t0,
-            "description": "Peças fundamentais para turnos extras, penetração de resistência e buffs de crítico."
-        })
+        archetypes_summary.append(
+            {
+                "key": "harmony",
+                "title": "Harmonia & Manipulação de Ação (Tier 0)",
+                "icon": "fa-music",
+                "status": st_harm,
+                "status_color": col_harm,
+                "owned_count": len(owned_harmony_t0),
+                "target_count": 2,
+                "owned_characters": owned_harmony_t0,
+                "description": "Peças fundamentais para turnos extras, penetração de resistência e buffs de crítico.",
+            }
+        )
 
         st_sust, col_sust = get_hsr_status(len(owned_sustain_all), len(owned_sustain_5star), 2)
-        archetypes_summary.append({
-            "key": "sustain",
-            "title": "Sustentadores de Elite (Preservação / Abundância)",
-            "icon": "fa-shield-halved",
-            "status": st_sust,
-            "status_color": col_sust,
-            "owned_count": len(owned_sustain_all),
-            "target_count": 2,
-            "owned_characters": owned_sustain_5star if owned_sustain_5star else owned_sustain_all,
-            "description": "Imunidade a controle (CC), escudos inquebráveis e cura reativa para MoC 12 e AS 4."
-        })
+        archetypes_summary.append(
+            {
+                "key": "sustain",
+                "title": "Sustentadores de Elite (Preservação / Abundância)",
+                "icon": "fa-shield-halved",
+                "status": st_sust,
+                "status_color": col_sust,
+                "owned_count": len(owned_sustain_all),
+                "target_count": 2,
+                "owned_characters": owned_sustain_5star if owned_sustain_5star else owned_sustain_all,
+                "description": "Imunidade a controle (CC), escudos inquebráveis e cura reativa para MoC 12 e AS 4.",
+            }
+        )
 
-        st_break, col_break = ("Excelente", "#10b981") if len(owned_break) >= 3 else (("Suficiente", "#3b82f6") if len(owned_break) >= 2 else ("Atenção", "#f59e0b"))
-        archetypes_summary.append({
-            "key": "break",
-            "title": "Núcleo de Quebra / Super Break",
-            "icon": "fa-burst",
-            "status": st_break,
-            "status_color": col_break,
-            "owned_count": len(owned_break),
-            "target_count": 3,
-            "owned_characters": owned_break,
-            "description": "Dominância contra fraquezas e velocidade de limpeza em Sombra Apocalíptica."
-        })
+        st_break, col_break = (
+            ("Excelente", "#10b981")
+            if len(owned_break) >= 3
+            else (("Suficiente", "#3b82f6") if len(owned_break) >= 2 else ("Atenção", "#f59e0b"))
+        )
+        archetypes_summary.append(
+            {
+                "key": "break",
+                "title": "Núcleo de Quebra / Super Break",
+                "icon": "fa-burst",
+                "status": st_break,
+                "status_color": col_break,
+                "owned_count": len(owned_break),
+                "target_count": 3,
+                "owned_characters": owned_break,
+                "description": "Dominância contra fraquezas e velocidade de limpeza em Sombra Apocalíptica.",
+            }
+        )
 
-        st_pf, col_pf = ("Excelente", "#10b981") if len(owned_pf) >= 2 else (("Suficiente", "#3b82f6") if len(owned_pf) >= 1 else ("Crítico", "#ef4444"))
-        archetypes_summary.append({
-            "key": "pure_fiction",
-            "title": "Especialistas em AoE / Pura Ficção",
-            "icon": "fa-meteor",
-            "status": st_pf,
-            "status_color": col_pf,
-            "owned_count": len(owned_pf),
-            "target_count": 2,
-            "owned_characters": owned_pf,
-            "description": "Erudição e dano em área contínuo para bater 60.000+ pontos na Pura Ficção."
-        })
+        st_pf, col_pf = (
+            ("Excelente", "#10b981")
+            if len(owned_pf) >= 2
+            else (("Suficiente", "#3b82f6") if len(owned_pf) >= 1 else ("Crítico", "#ef4444"))
+        )
+        archetypes_summary.append(
+            {
+                "key": "pure_fiction",
+                "title": "Especialistas em AoE / Pura Ficção",
+                "icon": "fa-meteor",
+                "status": st_pf,
+                "status_color": col_pf,
+                "owned_count": len(owned_pf),
+                "target_count": 2,
+                "owned_characters": owned_pf,
+                "description": "Erudição e dano em área contínuo para bater 60.000+ pontos na Pura Ficção.",
+            }
+        )
 
         # Cobertura Elemental
         elements_cfg = [
-            ("Físico", "fa-hand-fist", "#e2e8f0", ["boothill", "feixiao", "robin", "yunli", "argenti", "clara", "luka", "sushang", "natasha"]),
-            ("Fogo", "fa-fire", "#ef4444", ["firefly", "topaz", "jiaoqiu", "gallagher", "lingsha", "himeko", "guinaifen", "asta", "hook"]),
-            ("Gelo", "fa-snowflake", "#38bdf8", ["jingliu", "ruan mei", "herta", "gepard", "pela", "march 7th", "yanqing", "misha"]),
-            ("Raio", "fa-bolt", "#a855f7", ["acheron", "kafka", "jing yuan", "tingyun", "bailu", "moze", "serval", "arlan"]),
-            ("Vento", "fa-wind", "#10b981", ["black swan", "feixiao", "huohuo", "blade", "bronya", "dan heng", "sampo"]),
-            ("Quântico", "fa-atom", "#6366f1", ["sparkle", "jade", "fu xuan", "seele", "silver wolf", "xueyi", "lynx", "qingque"]),
-            ("Imaginário", "fa-sun", "#f59e0b", ["aventurine", "sunday", "dan heng il", "dr. ratio", "luocha", "trailblazer", "yukong", "welt"])
+            (
+                "Físico",
+                "fa-hand-fist",
+                "#e2e8f0",
+                ["boothill", "feixiao", "robin", "yunli", "argenti", "clara", "luka", "sushang", "natasha"],
+            ),
+            (
+                "Fogo",
+                "fa-fire",
+                "#ef4444",
+                ["firefly", "topaz", "jiaoqiu", "gallagher", "lingsha", "himeko", "guinaifen", "asta", "hook"],
+            ),
+            (
+                "Gelo",
+                "fa-snowflake",
+                "#38bdf8",
+                ["jingliu", "ruan mei", "herta", "gepard", "pela", "march 7th", "yanqing", "misha"],
+            ),
+            (
+                "Raio",
+                "fa-bolt",
+                "#a855f7",
+                ["acheron", "kafka", "jing yuan", "tingyun", "bailu", "moze", "serval", "arlan"],
+            ),
+            (
+                "Vento",
+                "fa-wind",
+                "#10b981",
+                ["black swan", "feixiao", "huohuo", "blade", "bronya", "dan heng", "sampo"],
+            ),
+            (
+                "Quântico",
+                "fa-atom",
+                "#6366f1",
+                ["sparkle", "jade", "fu xuan", "seele", "silver wolf", "xueyi", "lynx", "qingque"],
+            ),
+            (
+                "Imaginário",
+                "fa-sun",
+                "#f59e0b",
+                ["aventurine", "sunday", "dan heng il", "dr. ratio", "luocha", "trailblazer", "yukong", "welt"],
+            ),
         ]
         for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
             elem_chars = count_in_group(char_pool)
             elem_built = count_in_group(char_pool, min_built=True)
             status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
-            elemental_coverage.append({
-                "element": elem_name,
-                "icon": elem_icon,
-                "color": elem_color,
-                "count": len(elem_chars),
-                "built_count": len(elem_built),
-                "characters": elem_chars,
-                "status": status
-            })
+            elemental_coverage.append(
+                {
+                    "element": elem_name,
+                    "icon": elem_icon,
+                    "color": elem_color,
+                    "count": len(elem_chars),
+                    "built_count": len(elem_built),
+                    "characters": elem_chars,
+                    "status": status,
+                }
+            )
 
         # Lacunas Críticas
         if len(owned_harmony_t0) < 2:
             overall_score -= 22
-            critical_gaps.append({
-                "id": "hsr_lack_tier0_harmony",
-                "severity": "CRÍTICA",
-                "severity_color": "#ef4444",
-                "badge": "🎵 Déficit de Harmonia Tier 0",
-                "title": "Menos de 2 Suportes Harmonia Premium",
-                "description": "Você possui menos de 2 buffers de alta geração de turnos (Ruan Mei, Robin, Sparkle, Sunday).",
-                "endgame_impact": "Queda drástica de ciclos no MoC e dificuldade de alcançar os 40.000 pts na Pura Ficção.",
-                "suggested_archetype": "Harmonia Limitada (Avanço de Ação / Penetração de RES / DMG%)",
-                "recommended_characters": ["Robin", "Ruan Mei", "Sunday", "Sparkle"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "hsr_lack_tier0_harmony",
+                    "severity": "CRÍTICA",
+                    "severity_color": "#ef4444",
+                    "badge": "🎵 Déficit de Harmonia Tier 0",
+                    "title": "Menos de 2 Suportes Harmonia Premium",
+                    "description": "Você possui menos de 2 buffers de alta geração de turnos (Ruan Mei, Robin, Sparkle, Sunday).",
+                    "endgame_impact": "Queda drástica de ciclos no MoC e dificuldade de alcançar os 40.000 pts na Pura Ficção.",
+                    "suggested_archetype": "Harmonia Limitada (Avanço de Ação / Penetração de RES / DMG%)",
+                    "recommended_characters": ["Robin", "Ruan Mei", "Sunday", "Sparkle"],
+                }
+            )
 
         if len(owned_sustain_5star) < 2:
             overall_score -= 20
-            critical_gaps.append({
-                "id": "hsr_lack_5star_sustain",
-                "severity": "ALTA",
-                "severity_color": "#f97316",
-                "badge": "🛡️ Sustentação de Alto Nível",
-                "title": "Falta de 2 Sustentadores Limitados 5★",
-                "description": "Você não possui 2 sustentadores premium (Aventurine, Huohuo, Fu Xuan, Lingsha).",
-                "endgame_impact": "Vulnerabilidade a debuffs de controle (Crowd Control) e one-shots nos andares 11 e 12.",
-                "suggested_archetype": "Preservação / Abundância Limitada",
-                "recommended_characters": ["Aventurine", "Huohuo", "Lingsha", "Fu Xuan"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "hsr_lack_5star_sustain",
+                    "severity": "ALTA",
+                    "severity_color": "#f97316",
+                    "badge": "🛡️ Sustentação de Alto Nível",
+                    "title": "Falta de 2 Sustentadores Limitados 5★",
+                    "description": "Você não possui 2 sustentadores premium (Aventurine, Huohuo, Fu Xuan, Lingsha).",
+                    "endgame_impact": "Vulnerabilidade a debuffs de controle (Crowd Control) e one-shots nos andares 11 e 12.",
+                    "suggested_archetype": "Preservação / Abundância Limitada",
+                    "recommended_characters": ["Aventurine", "Huohuo", "Lingsha", "Fu Xuan"],
+                }
+            )
 
-        has_herta_himeko = ("Herta" in owned_pf or "Himeko" in owned_pf or "Jade" in owned_pf)
+        has_herta_himeko = "Herta" in owned_pf or "Himeko" in owned_pf or "Jade" in owned_pf
         if not has_herta_himeko:
             overall_score -= 15
-            critical_gaps.append({
-                "id": "hsr_no_pure_fiction_core",
-                "severity": "ALTA",
-                "severity_color": "#f97316",
-                "badge": "📖 Fraqueza em Pura Ficção",
-                "title": "Falta de Núcleo Especialista em AoE",
-                "description": "Herta ou Himeko não estão construídas na conta.",
-                "endgame_impact": "Dificuldade constante para obter a pontuação máxima (60.000 / 80.000) na Pura Ficção.",
-                "suggested_archetype": "Erudição / AoE Follow-Up",
-                "recommended_characters": ["Herta (Construir)", "Himeko", "Jade"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "hsr_no_pure_fiction_core",
+                    "severity": "ALTA",
+                    "severity_color": "#f97316",
+                    "badge": "📖 Fraqueza em Pura Ficção",
+                    "title": "Falta de Núcleo Especialista em AoE",
+                    "description": "Herta ou Himeko não estão construídas na conta.",
+                    "endgame_impact": "Dificuldade constante para obter a pontuação máxima (60.000 / 80.000) na Pura Ficção.",
+                    "suggested_archetype": "Erudição / AoE Follow-Up",
+                    "recommended_characters": ["Herta (Construir)", "Himeko", "Jade"],
+                }
+            )
 
         # Recomendações de Puxadas
         rank_idx = 1
         if len(owned_harmony_t0) < 2:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "Suporte Harmonia Universal (Robin / Sunday / Ruan Mei)",
-                "badge": "Prioridade Máxima",
-                "tag": "Multiplicador de Conta",
-                "characters": ["Robin", "Sunday", "Ruan Mei"],
-                "reason": "O maior upgrade de poder possível em Honkai: Star Rail. Transforma qualquer DPS em uma máquina de ciclos zero.",
-                "impact_score": "-2 a 4 Ciclos no Caos da Memória (MoC)"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "Suporte Harmonia Universal (Robin / Sunday / Ruan Mei)",
+                    "badge": "Prioridade Máxima",
+                    "tag": "Multiplicador de Conta",
+                    "characters": ["Robin", "Sunday", "Ruan Mei"],
+                    "reason": "O maior upgrade de poder possível em Honkai: Star Rail. Transforma qualquer DPS em uma máquina de ciclos zero.",
+                    "impact_score": "-2 a 4 Ciclos no Caos da Memória (MoC)",
+                }
+            )
             rank_idx += 1
 
         if len(owned_sustain_5star) < 2:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "Sustentador 5★ de Elite (Aventurine / Huohuo)",
-                "badge": "Alta Prioridade",
-                "tag": "Segurança & Utilidade",
-                "characters": ["Aventurine", "Huohuo", "Lingsha"],
-                "reason": "Aventurine traz sinergia colossal com FuA/Acheron e escudos infinitos. Huohuo recarrega energia globalmente.",
-                "impact_score": "100% de Taxa de Sobrevivência no MoC 12"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "Sustentador 5★ de Elite (Aventurine / Huohuo)",
+                    "badge": "Alta Prioridade",
+                    "tag": "Segurança & Utilidade",
+                    "characters": ["Aventurine", "Huohuo", "Lingsha"],
+                    "reason": "Aventurine traz sinergia colossal com FuA/Acheron e escudos infinitos. Huohuo recarrega energia globalmente.",
+                    "impact_score": "100% de Taxa de Sobrevivência no MoC 12",
+                }
+            )
             rank_idx += 1
 
         if len(owned_crit_dps) == 0 and len(owned_break) < 2:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "DPS de Elite (Acheron / Firefly / Feixiao)",
-                "badge": "Alta Prioridade",
-                "tag": "Finalizador de Endgame",
-                "characters": ["Acheron", "Firefly", "Feixiao"],
-                "reason": "Mecanismos de quebra que ignoram fraquezas ou rajadas de dano absurdas com escalonamento moderno.",
-                "impact_score": "Garante 36★ no MoC e 12★ na Sombra Apocalíptica"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "DPS de Elite (Acheron / Firefly / Feixiao)",
+                    "badge": "Alta Prioridade",
+                    "tag": "Finalizador de Endgame",
+                    "characters": ["Acheron", "Firefly", "Feixiao"],
+                    "reason": "Mecanismos de quebra que ignoram fraquezas ou rajadas de dano absurdas com escalonamento moderno.",
+                    "impact_score": "Garante 36★ no MoC e 12★ na Sombra Apocalíptica",
+                }
+            )
             rank_idx += 1
 
     # ==========================================
@@ -4101,137 +5221,170 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         owned_anomaly_dps = count_in_group(anomaly_dps)
 
         # Status
-        st_stun = "Excelente" if len(owned_stunners_s) >= 2 else ("Suficiente" if len(owned_stunners_all) >= 2 else "Atenção")
+        st_stun = (
+            "Excelente" if len(owned_stunners_s) >= 2 else ("Suficiente" if len(owned_stunners_all) >= 2 else "Atenção")
+        )
         col_stun = "#10b981" if st_stun == "Excelente" else ("#3b82f6" if st_stun == "Suficiente" else "#f59e0b")
-        archetypes_summary.append({
-            "key": "stunners",
-            "title": "Atordoadores (Stun / Daze)",
-            "icon": "fa-bolt",
-            "status": st_stun,
-            "status_color": col_stun,
-            "owned_count": len(owned_stunners_all),
-            "target_count": 2,
-            "owned_characters": owned_stunners_all,
-            "description": "Multiplica o dano em 150%+ durante a janela de Atordoamento (Stun Window)."
-        })
+        archetypes_summary.append(
+            {
+                "key": "stunners",
+                "title": "Atordoadores (Stun / Daze)",
+                "icon": "fa-bolt",
+                "status": st_stun,
+                "status_color": col_stun,
+                "owned_count": len(owned_stunners_all),
+                "target_count": 2,
+                "owned_characters": owned_stunners_all,
+                "description": "Multiplica o dano em 150%+ durante a janela de Atordoamento (Stun Window).",
+            }
+        )
 
-        st_supp = "Excelente" if len(owned_supports_all) >= 3 else ("Suficiente" if len(owned_supports_all) >= 2 else "Atenção")
+        st_supp = (
+            "Excelente"
+            if len(owned_supports_all) >= 3
+            else ("Suficiente" if len(owned_supports_all) >= 2 else "Atenção")
+        )
         col_supp = "#10b981" if st_supp == "Excelente" else ("#3b82f6" if st_supp == "Suficiente" else "#f59e0b")
-        archetypes_summary.append({
-            "key": "supports",
-            "title": "Suportes & Defesa (Buff de ATK / DEF Shred)",
-            "icon": "fa-shield-halved",
-            "status": st_supp,
-            "status_color": col_supp,
-            "owned_count": len(owned_supports_all),
-            "target_count": 2,
-            "owned_characters": owned_supports_all,
-            "description": "Gera pontos de assistência, buffs de ATK puro e debuffs defensivos no inimigo."
-        })
+        archetypes_summary.append(
+            {
+                "key": "supports",
+                "title": "Suportes & Defesa (Buff de ATK / DEF Shred)",
+                "icon": "fa-shield-halved",
+                "status": st_supp,
+                "status_color": col_supp,
+                "owned_count": len(owned_supports_all),
+                "target_count": 2,
+                "owned_characters": owned_supports_all,
+                "description": "Gera pontos de assistência, buffs de ATK puro e debuffs defensivos no inimigo.",
+            }
+        )
 
-        st_atk = "Excelente" if len(owned_attack_dps) >= 2 else ("Suficiente" if len(owned_attack_dps) >= 1 else "Atenção")
+        st_atk = (
+            "Excelente" if len(owned_attack_dps) >= 2 else ("Suficiente" if len(owned_attack_dps) >= 1 else "Atenção")
+        )
         col_atk = "#10b981" if st_atk == "Excelente" else ("#3b82f6" if st_atk == "Suficiente" else "#f59e0b")
-        archetypes_summary.append({
-            "key": "attack_dps",
-            "title": "Agentes de Ataque (Burst / Dano Direto)",
-            "icon": "fa-crosshairs",
-            "status": st_atk,
-            "status_color": col_atk,
-            "owned_count": len(owned_attack_dps),
-            "target_count": 2,
-            "owned_characters": owned_attack_dps,
-            "description": "Descarregam dano massivo durante as janelas de Chain Attack e Stun."
-        })
+        archetypes_summary.append(
+            {
+                "key": "attack_dps",
+                "title": "Agentes de Ataque (Burst / Dano Direto)",
+                "icon": "fa-crosshairs",
+                "status": st_atk,
+                "status_color": col_atk,
+                "owned_count": len(owned_attack_dps),
+                "target_count": 2,
+                "owned_characters": owned_attack_dps,
+                "description": "Descarregam dano massivo durante as janelas de Chain Attack e Stun.",
+            }
+        )
 
-        st_anom = "Excelente" if len(owned_anomaly_dps) >= 2 else ("Suficiente" if len(owned_anomaly_dps) >= 1 else "Atenção")
+        st_anom = (
+            "Excelente" if len(owned_anomaly_dps) >= 2 else ("Suficiente" if len(owned_anomaly_dps) >= 1 else "Atenção")
+        )
         col_anom = "#10b981" if st_anom == "Excelente" else ("#3b82f6" if st_anom == "Suficiente" else "#f59e0b")
-        archetypes_summary.append({
-            "key": "anomaly_dps",
-            "title": "Agentes de Anomalia (DoT / Desordem)",
-            "icon": "fa-flask-vial",
-            "status": st_anom,
-            "status_color": col_anom,
-            "owned_count": len(owned_anomaly_dps),
-            "target_count": 2,
-            "owned_characters": owned_anomaly_dps,
-            "description": "Acumulam anomalia e causam Desordem contínua sem depender do atordoamento."
-        })
+        archetypes_summary.append(
+            {
+                "key": "anomaly_dps",
+                "title": "Agentes de Anomalia (DoT / Desordem)",
+                "icon": "fa-flask-vial",
+                "status": st_anom,
+                "status_color": col_anom,
+                "owned_count": len(owned_anomaly_dps),
+                "target_count": 2,
+                "owned_characters": owned_anomaly_dps,
+                "description": "Acumulam anomalia e causam Desordem contínua sem depender do atordoamento.",
+            }
+        )
 
         # Cobertura de Atributos ZZZ
         elements_cfg = [
-            ("Físico", "fa-hand-fist", "#e2e8f0", ["jane doe", "caesar", "nekomata", "piper", "corin", "billy", "seth"]),
+            (
+                "Físico",
+                "fa-hand-fist",
+                "#e2e8f0",
+                ["jane doe", "caesar", "nekomata", "piper", "corin", "billy", "seth"],
+            ),
             ("Fogo", "fa-fire", "#ef4444", ["burnice", "soldier 11", "koleda", "lucy", "lighter"]),
             ("Gelo", "fa-snowflake", "#38bdf8", ["ellen", "lycaon", "soukaku", "miyabi"]),
             ("Elétrico", "fa-bolt", "#a855f7", ["qingyi", "yanagi", "rina", "grace", "anby", "anton", "harumasa"]),
-            ("Éter", "fa-circle-radiation", "#10b981", ["zhu yuan", "nicole", "astra yao"])
+            ("Éter", "fa-circle-radiation", "#10b981", ["zhu yuan", "nicole", "astra yao"]),
         ]
         for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
             elem_chars = count_in_group(char_pool)
             elem_built = count_in_group(char_pool, min_built=True)
             status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
-            elemental_coverage.append({
-                "element": elem_name,
-                "icon": elem_icon,
-                "color": elem_color,
-                "count": len(elem_chars),
-                "built_count": len(elem_built),
-                "characters": elem_chars,
-                "status": status
-            })
+            elemental_coverage.append(
+                {
+                    "element": elem_name,
+                    "icon": elem_icon,
+                    "color": elem_color,
+                    "count": len(elem_chars),
+                    "built_count": len(elem_built),
+                    "characters": elem_chars,
+                    "status": status,
+                }
+            )
 
         # Lacunas Críticas
         if len(owned_stunners_s) == 0:
             overall_score -= 22
-            critical_gaps.append({
-                "id": "zzz_no_s_stunner",
-                "severity": "CRÍTICA",
-                "severity_color": "#ef4444",
-                "badge": "⚡ Lentidão no Atordoamento",
-                "title": "Falta de Atordoador S-Rank (Qingyi / Lycaon / Caesar)",
-                "description": "Você depende exclusivamente da Anby como atordoadora nos 2 lados do Shiyu Defense.",
-                "endgame_impact": "Demora excessiva para atingir o estado de Stun nos Chefes da Shiyu Crítica (Nível 5-7).",
-                "suggested_archetype": "Atordoador S-Rank de Alto Impacto",
-                "recommended_characters": ["Qingyi", "Caesar", "Von Lycaon"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "zzz_no_s_stunner",
+                    "severity": "CRÍTICA",
+                    "severity_color": "#ef4444",
+                    "badge": "⚡ Lentidão no Atordoamento",
+                    "title": "Falta de Atordoador S-Rank (Qingyi / Lycaon / Caesar)",
+                    "description": "Você depende exclusivamente da Anby como atordoadora nos 2 lados do Shiyu Defense.",
+                    "endgame_impact": "Demora excessiva para atingir o estado de Stun nos Chefes da Shiyu Crítica (Nível 5-7).",
+                    "suggested_archetype": "Atordoador S-Rank de Alto Impacto",
+                    "recommended_characters": ["Qingyi", "Caesar", "Von Lycaon"],
+                }
+            )
 
         if len(owned_attack_dps) + len(owned_anomaly_dps) < 2:
             overall_score -= 25
-            critical_gaps.append({
-                "id": "zzz_lack_dps",
-                "severity": "CRÍTICA",
-                "severity_color": "#ef4444",
-                "badge": "⚔️ Carência de Finalizadores",
-                "title": "Falta de DPSs Principais para 2 Equipes",
-                "description": "Menos de 2 agentes de Ataque ou Anomalia de alto investimento.",
-                "endgame_impact": "Inviabiliza a obtenção de Rank S na Shiyu Defense dos dois lados.",
-                "suggested_archetype": "DPS S-Rank de Ataque ou Anomalia",
-                "recommended_characters": ["Ellen Joe", "Jane Doe", "Zhu Yuan", "Miyabi", "Burnice"]
-            })
+            critical_gaps.append(
+                {
+                    "id": "zzz_lack_dps",
+                    "severity": "CRÍTICA",
+                    "severity_color": "#ef4444",
+                    "badge": "⚔️ Carência de Finalizadores",
+                    "title": "Falta de DPSs Principais para 2 Equipes",
+                    "description": "Menos de 2 agentes de Ataque ou Anomalia de alto investimento.",
+                    "endgame_impact": "Inviabiliza a obtenção de Rank S na Shiyu Defense dos dois lados.",
+                    "suggested_archetype": "DPS S-Rank de Ataque ou Anomalia",
+                    "recommended_characters": ["Ellen Joe", "Jane Doe", "Zhu Yuan", "Miyabi", "Burnice"],
+                }
+            )
 
         # Recomendações de Puxadas
         rank_idx = 1
         if len(owned_stunners_s) == 0:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "Atordoador S-Rank (Qingyi / Caesar)",
-                "badge": "Prioridade Máxima",
-                "tag": "Velocidade de Stun",
-                "characters": ["Qingyi", "Caesar"],
-                "reason": "Qingyi eleva o multiplicador de atordoamento para 200%+ e atordoa chefes na metade do tempo da Anby.",
-                "impact_score": "-40s no Tempo de Clear do Shiyu 7"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "Atordoador S-Rank (Qingyi / Caesar)",
+                    "badge": "Prioridade Máxima",
+                    "tag": "Velocidade de Stun",
+                    "characters": ["Qingyi", "Caesar"],
+                    "reason": "Qingyi eleva o multiplicador de atordoamento para 200%+ e atordoa chefes na metade do tempo da Anby.",
+                    "impact_score": "-40s no Tempo de Clear do Shiyu 7",
+                }
+            )
             rank_idx += 1
 
         if len(owned_anomaly_dps) == 0:
-            pull_recommendations.append({
-                "priority_rank": rank_idx,
-                "archetype": "Especialista em Anomalia / Desordem",
-                "badge": "Alta Prioridade",
-                "tag": "Novo Arquétipo Meta",
-                "characters": ["Jane Doe", "Burnice", "Yanagi"],
-                "reason": "Permite ignorar mecânicas de atordoamento e derreter inimigos com Desordem de alto escalonamento.",
-                "impact_score": "+30% Flexibilidade contra Chefes com Alta Resistência a Stun"
-            })
+            pull_recommendations.append(
+                {
+                    "priority_rank": rank_idx,
+                    "archetype": "Especialista em Anomalia / Desordem",
+                    "badge": "Alta Prioridade",
+                    "tag": "Novo Arquétipo Meta",
+                    "characters": ["Jane Doe", "Burnice", "Yanagi"],
+                    "reason": "Permite ignorar mecânicas de atordoamento e derreter inimigos com Desordem de alto escalonamento.",
+                    "impact_score": "+30% Flexibilidade contra Chefes com Alta Resistência a Stun",
+                }
+            )
             rank_idx += 1
 
     # Normalização final da pontuação
@@ -4260,12 +5413,12 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         "teams_ready": endgame_teams_ready,
         "summary": (
             "Sua conta possui fundações completas para fechar o conteúdo mais difícil do jogo com nota máxima."
-            if endgame_teams_ready == 2 else
-            "Você tem 1 time competitivo consolidado, mas a segunda equipe precisa de reforços nos arquétipos sinalizados."
-            if endgame_teams_ready == 1 else
-            "Concentre seus recursos e energia em elevar o nível e fechar as builds da sua equipe principal primeiro."
+            if endgame_teams_ready == 2
+            else "Você tem 1 time competitivo consolidado, mas a segunda equipe precisa de reforços nos arquétipos sinalizados."
+            if endgame_teams_ready == 1
+            else "Concentre seus recursos e energia em elevar o nível e fechar as builds da sua equipe principal primeiro."
         ),
-        "details": [gap["title"] for gap in critical_gaps]
+        "details": [gap["title"] for gap in critical_gaps],
     }
 
     # Resumo formatado em Markdown para injeção rápida no Groq RAG
@@ -4273,19 +5426,23 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         f"### DIAGNÓSTICO DE LACUNAS DA CONTA ({game_names.get(g, g.upper())}):",
         f"- **Pontuação de Saúde da Conta:** {overall_score}/100 (Classificação: {score_grade} - {score_label})",
         f"- **Personagens Construídos (Prontos p/ Batalha):** {built_chars} de {total_chars}",
-        f"- **Equipes Prontas p/ Endgame:** {endgame_teams_ready}/2 times"
+        f"- **Equipes Prontas p/ Endgame:** {endgame_teams_ready}/2 times",
     ]
     if critical_gaps:
         rag_lines.append("- **Lacunas Estratégicas Críticas Detectadas:**")
         for cg in critical_gaps:
-            rag_lines.append(f"  * [{cg['severity']}] {cg['title']}: {cg['description']} -> *Recomendado buscar:* {', '.join(cg['recommended_characters'])}")
+            rag_lines.append(
+                f"  * [{cg['severity']}] {cg['title']}: {cg['description']} -> *Recomendado buscar:* {', '.join(cg['recommended_characters'])}"
+            )
     else:
         rag_lines.append("- **Lacunas:** Nenhuma carência grave detectada! Conta muito bem balanceada.")
 
     if pull_recommendations:
         rag_lines.append("- **Prioridades de Puxada no Gacha / Banners Futuros:**")
         for pr in pull_recommendations:
-            rag_lines.append(f"  {pr['priority_rank']}. **{pr['archetype']}** ({', '.join(pr['characters'])}): {pr['reason']}")
+            rag_lines.append(
+                f"  {pr['priority_rank']}. **{pr['archetype']}** ({', '.join(pr['characters'])}): {pr['reason']}"
+            )
 
     rag_summary_markdown = "\n".join(rag_lines)
 
@@ -4303,7 +5460,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         "critical_gaps": critical_gaps,
         "pull_recommendations": pull_recommendations,
         "endgame_readiness": endgame_readiness,
-        "rag_summary_markdown": rag_summary_markdown
+        "rag_summary_markdown": rag_summary_markdown,
     }
 
 
@@ -4319,14 +5476,10 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
     item_names = {
         "genshin": "Elixir Santificador & Relic Strongbox",
         "hsr": "Resina Automodeladora & Síntese Omnipotente",
-        "zzz": "Sintetizador de Discos & Calibrador Hi-Fi"
+        "zzz": "Sintetizador de Discos & Calibrador Hi-Fi",
     }
 
-    item_icons = {
-        "genshin": "fa-flask-round-potion",
-        "hsr": "fa-cube",
-        "zzz": "fa-compact-disc"
-    }
+    item_icons = {"genshin": "fa-flask-round-potion", "hsr": "fa-cube", "zzz": "fa-compact-disc"}
 
     # Ordena personagens por nível / raridade / prioridade de investimento
     top_candidates = []
@@ -4340,15 +5493,17 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
             c_icon = item.get("icon")
             relics = item.get("relics") or []
             if c_lvl >= 50 or c_rarity == 5:
-                top_candidates.append({
-                    "name": c_name,
-                    "level": c_lvl,
-                    "rarity": c_rarity,
-                    "score": c_score,
-                    "grade": c_grade,
-                    "icon": c_icon,
-                    "relics": relics
-                })
+                top_candidates.append(
+                    {
+                        "name": c_name,
+                        "level": c_lvl,
+                        "rarity": c_rarity,
+                        "score": c_score,
+                        "grade": c_grade,
+                        "icon": c_icon,
+                        "relics": relics,
+                    }
+                )
 
     # Prioriza quem tem score baixo ou nota B/C/D mas é personagem forte
     top_candidates.sort(key=lambda x: (x["rarity"], -x["score"]), reverse=True)
@@ -4367,43 +5522,43 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                 "slot": "Cálice de Eonothem (Slot 4)",
                 "main": "Bônus de Dano Hydro (ou HP%)",
                 "substats": ["Dano Crítico", "Taxa Crítica", "HP%", "Recarga de Energia"],
-                "gain": "+25% Dano no Ataque Carregado Notável"
+                "gain": "+25% Dano no Ataque Carregado Notável",
             },
             "furina": {
                 "set": "Trompete do Éter / Companhia Dourada",
                 "slot": "Ampulheta / Cálice (Slot 3 ou 4)",
                 "main": "Recarga de Energia ou HP%",
                 "substats": ["Taxa Crítica", "Dano Crítico", "HP%", "Recarga de Energia"],
-                "gain": "Garante 100% de Uptime no Supremo Fanfarra"
+                "gain": "Garante 100% de Uptime no Supremo Fanfarra",
             },
             "arlecchino": {
                 "set": "Fragmento da Harmonia Caprichosa",
                 "slot": "Cálice de Bônus Pyro (Slot 4)",
                 "main": "Bônus de Dano Pyro",
                 "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Proficiência Elemental"],
-                "gain": "+30% Eficiência em Golpes de Vaporize"
+                "gain": "+30% Eficiência em Golpes de Vaporize",
             },
             "kaedehara kazuha": {
                 "set": "Sombra Verde (VV)",
                 "slot": "Cálice / Tiara (Slot 4 ou 5)",
                 "main": "Proficiência Elemental (EM)",
                 "substats": ["Recarga de Energia", "Proficiência Elemental", "ATK%"],
-                "gain": "Atinge a meta de 1.000 EM para buffer máximo de 40% DMG"
+                "gain": "Atinge a meta de 1.000 EM para buffer máximo de 40% DMG",
             },
             "nahida": {
                 "set": "Memórias da Floresta (Deepwood)",
                 "slot": "Tiara / Cálice (Slot 4 ou 5)",
                 "main": "Proficiência Elemental (ou Taxa Crítica)",
                 "substats": ["Proficiência Elemental", "Taxa Crítica", "Dano Crítico", "Recarga de Energia"],
-                "gain": "Maximiza dano de Tri-Karma e bônus da cúpula"
+                "gain": "Maximiza dano de Tri-Karma e bônus da cúpula",
             },
             "yelan": {
                 "set": "Selo da Insulação (Emblem)",
                 "slot": "Cálice de Dano Hydro ou Tiara Crítica",
                 "main": "Bônus de Dano Hydro (ou Taxa/Dano Crítico)",
                 "substats": ["Taxa Crítica", "Dano Crítico", "Recarga de Energia", "HP%"],
-                "gain": "+20% Dano Coordenado do Supremo"
-            }
+                "gain": "+20% Dano Coordenado do Supremo",
+            },
         }
 
         for cand in top_candidates:
@@ -4414,32 +5569,38 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                     matched_key = mk
                     break
 
-            cfg = meta_craft_genshin.get(matched_key) if matched_key else {
-                "set": "Set Bis Recomendado",
-                "slot": "Cálice Elemental (Slot 4) ou Tiara Crítica (Slot 5)",
-                "main": "Bônus Elemental ou Taxa/Dano Crítico",
-                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%/HP%", "Recarga"],
-                "gain": "+15% a +25% Dano Total do Personagem"
-            }
+            cfg = (
+                meta_craft_genshin.get(matched_key)
+                if matched_key
+                else {
+                    "set": "Set Bis Recomendado",
+                    "slot": "Cálice Elemental (Slot 4) ou Tiara Crítica (Slot 5)",
+                    "main": "Bônus Elemental ou Taxa/Dano Crítico",
+                    "substats": ["Taxa Crítica", "Dano Crítico", "ATK%/HP%", "Recarga"],
+                    "gain": "+15% a +25% Dano Total do Personagem",
+                }
+            )
 
             # Encontra se alguma peça equipada tem nota baixa
             lowest_piece = "Nenhuma relíquia equipada"
             if cand["relics"]:
                 lowest_piece = f"Peça atual subótima (Build: {cand['grade']})"
 
-            recommendations.append({
-                "priority_rank": rank_counter,
-                "character_name": cand["name"],
-                "character_icon": cand["icon"],
-                "target_set_name": cfg["set"],
-                "slot_name": cfg["slot"],
-                "slot_icon": "fa-wand-magic-sparkles",
-                "recommended_main_stat": cfg["main"],
-                "recommended_substats": cfg["substats"],
-                "current_piece_status": lowest_piece,
-                "expected_gain": cfg["gain"],
-                "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA"
-            })
+            recommendations.append(
+                {
+                    "priority_rank": rank_counter,
+                    "character_name": cand["name"],
+                    "character_icon": cand["icon"],
+                    "target_set_name": cfg["set"],
+                    "slot_name": cfg["slot"],
+                    "slot_icon": "fa-wand-magic-sparkles",
+                    "recommended_main_stat": cfg["main"],
+                    "recommended_substats": cfg["substats"],
+                    "current_piece_status": lowest_piece,
+                    "expected_gain": cfg["gain"],
+                    "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA",
+                }
+            )
             rank_counter += 1
             if rank_counter > 5:
                 break
@@ -4452,50 +5613,50 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                 "slot": "Corda de Ligação (Slot 6)",
                 "main": "Taxa de Recuperação de Energia (ERR)",
                 "substats": ["Velocidade (SPD)", "ATK%", "HP%", "RES a Efeito"],
-                "gain": "Recarrega o Concerto do Supremo em 1 rotação"
+                "gain": "Recarrega o Concerto do Supremo em 1 rotação",
             },
             "sunday": {
                 "set": "Lushaka das Águas Afundadas",
                 "slot": "Corda de ERR (Slot 6) ou Pés de SPD (Slot 4)",
                 "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade",
                 "substats": ["Dano Crítico", "Velocidade", "RES a Efeito", "HP%"],
-                "gain": "Sincroniza avanço de ação imediato no turno do Hypercarry"
+                "gain": "Sincroniza avanço de ação imediato no turno do Hypercarry",
             },
             "ruan mei": {
                 "set": "Talia: Reino dos Bandidos / Vonwacq",
                 "slot": "Corda de ERR (Slot 6) ou Pés de SPD (Slot 4)",
                 "main": "Taxa de Recuperação de Energia ou Velocidade",
                 "substats": ["Efeito de Quebra (Break Effect)", "Velocidade", "HP%"],
-                "gain": "Alcança 160% de Efeito de Quebra para buff de 68% DMG global"
+                "gain": "Alcança 160% de Efeito de Quebra para buff de 68% DMG global",
             },
             "acheron": {
                 "set": "Pioneiro Mergulhador no Mar Morto / Izumo Gensei",
                 "slot": "Esfera de ATK% / Raio (Slot 5) ou Corpo de Dano Crítico",
                 "main": "Dano Crítico (Corpo) ou ATK% (Esfera)",
                 "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Velocidade"],
-                "gain": "+35% Dano Bruto no Supremo dos Nove Cortes"
+                "gain": "+35% Dano Bruto no Supremo dos Nove Cortes",
             },
             "firefly": {
                 "set": "Cavalaria de Ferro dos Flagelos / Kalpagni",
                 "slot": "Pés de SPD (Slot 4) ou Esfera de ATK% (Slot 5)",
                 "main": "Velocidade (150+ SPD) e ATK%",
                 "substats": ["Efeito de Quebra (Break Effect)", "Velocidade", "ATK%"],
-                "gain": "Garante 4 ações completas no estado Combustão Completa"
+                "gain": "Garante 4 ações completas no estado Combustão Completa",
             },
             "feixiao": {
                 "set": "Corajoso ao Vento / Duran: Dinastia dos Lobos",
                 "slot": "Corpo de Taxa Crítica (Slot 3) ou Esfera de Dano Físico",
                 "main": "Taxa Crítica (Corpo) ou Dano Físico (Esfera)",
                 "substats": ["Dano Crítico", "Taxa Crítica", "Velocidade", "ATK%"],
-                "gain": "Consistência de 95%+ Crítico nos Ataques Extras e Supremo"
+                "gain": "Consistência de 95%+ Crítico nos Ataques Extras e Supremo",
             },
             "aventurine": {
                 "set": "Palácio dos Cavaleiros da Pureza / Salsotto",
                 "slot": "Corpo de DEF% ou Dano Crítico (Slot 3)",
                 "main": "DEF% (para 4.000 DEF) ou Dano Crítico",
                 "substats": ["DEF%", "Velocidade", "Dano Crítico", "Taxa Crítica"],
-                "gain": "Escudo perpétuo de 100% e ativação do buff de 48% Crítico"
-            }
+                "gain": "Escudo perpétuo de 100% e ativação do buff de 48% Crítico",
+            },
         }
 
         for cand in top_candidates:
@@ -4506,31 +5667,37 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                     matched_key = mk
                     break
 
-            cfg = meta_craft_hsr.get(matched_key) if matched_key else {
-                "set": "Set de Ornamentos Planares Meta",
-                "slot": "Corda de Recuperação de Energia (Slot 6) ou Pés de SPD (Slot 4)",
-                "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade (SPD)",
-                "substats": ["Velocidade", "Taxa Crítica", "Dano Crítico", "HP%/ATK%"],
-                "gain": "+20% Eficiência de Ciclos no Caos da Memória (MoC)"
-            }
+            cfg = (
+                meta_craft_hsr.get(matched_key)
+                if matched_key
+                else {
+                    "set": "Set de Ornamentos Planares Meta",
+                    "slot": "Corda de Recuperação de Energia (Slot 6) ou Pés de SPD (Slot 4)",
+                    "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade (SPD)",
+                    "substats": ["Velocidade", "Taxa Crítica", "Dano Crítico", "HP%/ATK%"],
+                    "gain": "+20% Eficiência de Ciclos no Caos da Memória (MoC)",
+                }
+            )
 
             lowest_piece = "Peça atual subótima"
             if cand["relics"]:
                 lowest_piece = f"Build Atual: Nota {cand['grade']} ({cand['score']}%)"
 
-            recommendations.append({
-                "priority_rank": rank_counter,
-                "character_name": cand["name"],
-                "character_icon": cand["icon"],
-                "target_set_name": cfg["set"],
-                "slot_name": cfg["slot"],
-                "slot_icon": "fa-cube",
-                "recommended_main_stat": cfg["main"],
-                "recommended_substats": cfg["substats"],
-                "current_piece_status": lowest_piece,
-                "expected_gain": cfg["gain"],
-                "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA"
-            })
+            recommendations.append(
+                {
+                    "priority_rank": rank_counter,
+                    "character_name": cand["name"],
+                    "character_icon": cand["icon"],
+                    "target_set_name": cfg["set"],
+                    "slot_name": cfg["slot"],
+                    "slot_icon": "fa-cube",
+                    "recommended_main_stat": cfg["main"],
+                    "recommended_substats": cfg["substats"],
+                    "current_piece_status": lowest_piece,
+                    "expected_gain": cfg["gain"],
+                    "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA",
+                }
+            )
             rank_counter += 1
             if rank_counter > 5:
                 break
@@ -4543,29 +5710,29 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                 "slot": "Disco 6 (Impacto %)",
                 "main": "Impacto %",
                 "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Proficiência de Anomalia"],
-                "gain": "Atordoa chefes de Shiyu em menos de 15 segundos"
+                "gain": "Atordoa chefes de Shiyu em menos de 15 segundos",
             },
             "ellen": {
                 "set": "Pica-Pau Polar / Metal Polar",
                 "slot": "Disco 4 (Taxa/Dano Crítico) ou Disco 5 (Bônus Gelo)",
                 "main": "Dano Crítico ou Bônus de Dano de Gelo",
                 "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
-                "gain": "+30% Dano Crítico nas Tesouradas de Gelo"
+                "gain": "+30% Dano Crítico nas Tesouradas de Gelo",
             },
             "jane doe": {
                 "set": "Presa Furiosa / Jazz da Liberdade",
                 "slot": "Disco 4 (Proficiência de Anomalia) ou Disco 5 (Dano Físico)",
                 "main": "Proficiência de Anomalia ou Bônus Físico",
                 "substats": ["Proficiência de Anomalia", "Taxa de Anomalia", "ATK%"],
-                "gain": "Desencadeia Assalto Crítico contínuo de 500k+ dano"
+                "gain": "Desencadeia Assalto Crítico contínuo de 500k+ dano",
             },
             "caesar": {
                 "set": "Protetor da Proto-Faixa / Jazz",
                 "slot": "Disco 6 (Impacto %) ou Disco 4 (DEF%)",
                 "main": "Impacto % (ou DEF%)",
                 "substats": ["DEF%", "HP%", "Impacto", "ATK%"],
-                "gain": "Concede +1.000 de ATK instantâneo para todo o time com escudo"
-            }
+                "gain": "Concede +1.000 de ATK instantâneo para todo o time com escudo",
+            },
         }
 
         for cand in top_candidates:
@@ -4576,48 +5743,56 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                     matched_key = mk
                     break
 
-            cfg = meta_craft_zzz.get(matched_key) if matched_key else {
-                "set": "Discos de Música Recomendados",
-                "slot": "Disco 6 (Impacto ou Regeneração de Energia)",
-                "main": "Impacto % ou Regeneração de Energia",
-                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
-                "gain": "+20% Velocidade de Stun ou Dano de Burst"
-            }
+            cfg = (
+                meta_craft_zzz.get(matched_key)
+                if matched_key
+                else {
+                    "set": "Discos de Música Recomendados",
+                    "slot": "Disco 6 (Impacto ou Regeneração de Energia)",
+                    "main": "Impacto % ou Regeneração de Energia",
+                    "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
+                    "gain": "+20% Velocidade de Stun ou Dano de Burst",
+                }
+            )
 
             lowest_piece = f"Build Atual: Nota {cand['grade']}"
 
-            recommendations.append({
-                "priority_rank": rank_counter,
-                "character_name": cand["name"],
-                "character_icon": cand["icon"],
-                "target_set_name": cfg["set"],
-                "slot_name": cfg["slot"],
-                "slot_icon": "fa-compact-disc",
-                "recommended_main_stat": cfg["main"],
-                "recommended_substats": cfg["substats"],
-                "current_piece_status": lowest_piece,
-                "expected_gain": cfg["gain"],
-                "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA"
-            })
+            recommendations.append(
+                {
+                    "priority_rank": rank_counter,
+                    "character_name": cand["name"],
+                    "character_icon": cand["icon"],
+                    "target_set_name": cfg["set"],
+                    "slot_name": cfg["slot"],
+                    "slot_icon": "fa-compact-disc",
+                    "recommended_main_stat": cfg["main"],
+                    "recommended_substats": cfg["substats"],
+                    "current_piece_status": lowest_piece,
+                    "expected_gain": cfg["gain"],
+                    "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA",
+                }
+            )
             rank_counter += 1
             if rank_counter > 5:
                 break
 
     # Fallback se roster estiver vazio
     if not recommendations:
-        recommendations.append({
-            "priority_rank": 1,
-            "character_name": "Suporte / Buffer Principal",
-            "character_icon": None,
-            "target_set_name": "Set de Energia ou Velocidade",
-            "slot_name": "Corda de ERR / Cálice Elemental / Disco 6",
-            "slot_icon": item_icons.get(g, "fa-gem"),
-            "recommended_main_stat": "Recuperação de Energia / Dano Elemental / Impacto",
-            "recommended_substats": ["Velocidade", "Taxa Crítica", "Dano Crítico"],
-            "current_piece_status": "Nenhum personagem de alto nível sincronizado",
-            "expected_gain": "Otimização de Rotação Global",
-            "urgency": "ALTA"
-        })
+        recommendations.append(
+            {
+                "priority_rank": 1,
+                "character_name": "Suporte / Buffer Principal",
+                "character_icon": None,
+                "target_set_name": "Set de Energia ou Velocidade",
+                "slot_name": "Corda de ERR / Cálice Elemental / Disco 6",
+                "slot_icon": item_icons.get(g, "fa-gem"),
+                "recommended_main_stat": "Recuperação de Energia / Dano Elemental / Impacto",
+                "recommended_substats": ["Velocidade", "Taxa Crítica", "Dano Crítico"],
+                "current_piece_status": "Nenhum personagem de alto nível sincronizado",
+                "expected_gain": "Otimização de Rotação Global",
+                "urgency": "ALTA",
+            }
+        )
 
     summary_tip = (
         f"💡 **Dica de Ouro:** Guarde sua {item_names.get(g, 'Resina')} para peças de **Recuperação de Energia (ERR)** "
@@ -4630,9 +5805,5 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
         "crafting_item_name": item_names.get(g, "Item de Síntese"),
         "crafting_item_icon": item_icons.get(g, "fa-wand-magic-sparkles"),
         "recommendations": recommendations,
-        "summary_tip": summary_tip
+        "summary_tip": summary_tip,
     }
-
-
-
-

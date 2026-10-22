@@ -1,5 +1,6 @@
 import sys
 import os
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import unittest
 from unittest.mock import patch, MagicMock
@@ -9,6 +10,7 @@ import server
 from notifications import NotificationService, notifier
 import security_vault
 import database
+
 
 class TestNotificationSuite(unittest.TestCase):
     def setUp(self):
@@ -25,8 +27,8 @@ class TestNotificationSuite(unittest.TestCase):
                 webhook_url="https://discord.com/api/webhooks/12345/abcdef",
                 title="Teste Discord",
                 description="Descrição de teste",
-                color=0x10b981,
-                fields=[{"name": "Campo 1", "value": "Valor 1", "inline": True}]
+                color=0x10B981,
+                fields=[{"name": "Campo 1", "value": "Valor 1", "inline": True}],
             )
             self.assertTrue(res["success"])
             mock_post.assert_called_once()
@@ -34,7 +36,7 @@ class TestNotificationSuite(unittest.TestCase):
             payload = kwargs["json"]
             self.assertEqual(payload["username"], "Cabeça de Droid (HoYoBot)")
             self.assertEqual(payload["embeds"][0]["title"], "Teste Discord")
-            self.assertEqual(payload["embeds"][0]["color"], 0x10b981)
+            self.assertEqual(payload["embeds"][0]["color"], 0x10B981)
 
     def test_telegram_message_formatting(self):
         with patch("curl_cffi.requests.post") as mock_post:
@@ -45,9 +47,7 @@ class TestNotificationSuite(unittest.TestCase):
             mock_post.return_value = mock_resp
 
             res = self.service.send_telegram_message(
-                bot_token="123456:TEST_TOKEN",
-                chat_id="987654321",
-                text="<b>Mensagem de Teste</b>"
+                bot_token="123456:TEST_TOKEN", chat_id="987654321", text="<b>Mensagem de Teste</b>"
             )
             self.assertTrue(res["success"])
             mock_post.assert_called_once()
@@ -56,19 +56,12 @@ class TestNotificationSuite(unittest.TestCase):
             self.assertEqual(kwargs["json"]["chat_id"], "987654321")
 
     def test_energy_alert_and_anti_spam(self):
-        mock_notes = {
-            "hsr": {
-                "uid": "700123456",
-                "current_energy": 225,
-                "max_energy": 240,
-                "recovery_time": "1h 30m"
-            }
-        }
+        mock_notes = {"hsr": {"uid": "700123456", "current_energy": 225, "max_energy": 240, "recovery_time": "1h 30m"}}
         mock_config = {
             "notifications_enabled": True,
             "notify_on_energy_cap": True,
             "energy_cap_threshold_pct": 90,
-            "discord_webhook_url": "https://discord.com/api/webhooks/123/abc"
+            "discord_webhook_url": "https://discord.com/api/webhooks/123/abc",
         }
 
         with patch.object(self.service, "send_notification") as mock_send:
@@ -109,7 +102,7 @@ class TestNotificationSuite(unittest.TestCase):
             "telegram_chat_id": "999888777",
             "notify_on_checkin": True,
             "notify_on_energy_cap": True,
-            "energy_cap_threshold_pct": 95
+            "energy_cap_threshold_pct": 95,
         }
         save_res = self.client.post("/api/config", json=post_payload)
         self.assertEqual(save_res.status_code, 200)
@@ -128,19 +121,176 @@ class TestNotificationSuite(unittest.TestCase):
         with patch.object(notifier, "test_channels") as mock_test_channels:
             mock_test_channels.return_value = {
                 "discord": {"attempted": True, "success": True, "message": "OK"},
-                "telegram": {"attempted": True, "success": True, "message": "OK"}
+                "telegram": {"attempted": True, "success": True, "message": "OK"},
             }
 
-            resp = self.client.post("/api/notifications/test", json={
-                "discord_webhook_url": "https://discord.com/api/webhooks/999/test",
-                "telegram_bot_token": "123456:TEST",
-                "telegram_chat_id": "111222333"
-            })
+            resp = self.client.post(
+                "/api/notifications/test",
+                json={
+                    "discord_webhook_url": "https://discord.com/api/webhooks/999/test",
+                    "telegram_bot_token": "123456:TEST",
+                    "telegram_chat_id": "111222333",
+                },
+            )
             self.assertEqual(resp.status_code, 200)
             res_data = resp.json()
             self.assertEqual(res_data["status"], "success")
             self.assertTrue(res_data["results"]["discord"]["success"])
             self.assertTrue(res_data["results"]["telegram"]["success"])
+
+    def test_quiet_hours_detection(self):
+        """Valida a lógica matemática de janelas de Horário de Silêncio (incluindo travessia de meia-noite)."""
+        import datetime
+
+        # 1. Desativado
+        cfg_disabled = {"quiet_hours_enabled": False, "quiet_hours_start": "23:00", "quiet_hours_end": "07:00"}
+        self.assertFalse(self.service.is_in_quiet_hours(cfg_disabled, datetime.time(23, 30)))
+
+        # 2. Ativado com travessia de meia-noite (23:00 às 07:00)
+        cfg_overnight = {"quiet_hours_enabled": True, "quiet_hours_start": "23:00", "quiet_hours_end": "07:00"}
+        self.assertTrue(self.service.is_in_quiet_hours(cfg_overnight, datetime.time(23, 0)))
+        self.assertTrue(self.service.is_in_quiet_hours(cfg_overnight, datetime.time(23, 45)))
+        self.assertTrue(self.service.is_in_quiet_hours(cfg_overnight, datetime.time(3, 15)))
+        self.assertTrue(self.service.is_in_quiet_hours(cfg_overnight, datetime.time(7, 0)))
+        self.assertFalse(self.service.is_in_quiet_hours(cfg_overnight, datetime.time(7, 1)))
+        self.assertFalse(self.service.is_in_quiet_hours(cfg_overnight, datetime.time(14, 30)))
+        self.assertFalse(self.service.is_in_quiet_hours(cfg_overnight, datetime.time(22, 59)))
+
+        # 3. Ativado no mesmo dia (13:00 às 15:00)
+        cfg_sameday = {"quiet_hours_enabled": True, "quiet_hours_start": "13:00", "quiet_hours_end": "15:00"}
+        self.assertTrue(self.service.is_in_quiet_hours(cfg_sameday, datetime.time(13, 0)))
+        self.assertTrue(self.service.is_in_quiet_hours(cfg_sameday, datetime.time(14, 0)))
+        self.assertTrue(self.service.is_in_quiet_hours(cfg_sameday, datetime.time(15, 0)))
+        self.assertFalse(self.service.is_in_quiet_hours(cfg_sameday, datetime.time(12, 59)))
+        self.assertFalse(self.service.is_in_quiet_hours(cfg_sameday, datetime.time(15, 1)))
+
+    def test_notification_suppression_in_quiet_hours(self):
+        """Garante que notificações não-urgentes são silenciadas durante quiet hours mas permitidas se force=True."""
+        import datetime
+
+        cfg = {
+            "notifications_enabled": True,
+            "quiet_hours_enabled": True,
+            "quiet_hours_start": "22:00",
+            "quiet_hours_end": "08:00",
+            "discord_webhook_url": "https://discord.com/api/webhooks/123/mock",
+        }
+
+        # Teste com is_in_quiet_hours = True
+        with patch.object(self.service, "is_in_quiet_hours", return_value=True):
+            # Envio normal -> Deve ser suprimido
+            res = self.service.send_notification("Alerta", "Mensagem", cfg)
+            self.assertEqual(res["status"], "suppressed_quiet_hours")
+
+            # Envio forçado (force=True) -> Deve tentar disparar
+            with patch.object(self.service, "send_discord_webhook") as mock_disc:
+                mock_disc.return_value = {"success": True}
+                res_forced = self.service.send_notification("Alerta", "Mensagem", cfg, force=True)
+                self.assertEqual(res_forced["status"], "sent")
+                mock_disc.assert_called_once()
+
+    def test_energy_alert_suppressed_during_quiet_hours(self):
+        """Garante que o watchdog de energia não dispara notificações durante horário de silêncio."""
+        mock_notes = {"hsr": {"uid": "700999111", "current_energy": 240, "max_energy": 240, "recovery_time": "Cheia"}}
+        cfg = {
+            "notifications_enabled": True,
+            "notify_on_energy_cap": True,
+            "energy_cap_threshold_pct": 90,
+            "quiet_hours_enabled": True,
+            "quiet_hours_start": "23:00",
+            "quiet_hours_end": "07:00",
+            "discord_webhook_url": "https://discord.com/api/webhooks/test/mock",
+        }
+
+        with patch.object(self.service, "is_in_quiet_hours", return_value=True):
+            with patch.object(self.service, "send_notification") as mock_send:
+                self.service.check_energy_and_alert(mock_notes, cfg)
+                mock_send.assert_not_called()
+
+    def test_morning_briefing_dynamic_energy_extraction(self):
+        """Valida que o Morning Briefing recupera e reflete a energia real do cache dinâmico de daily notes."""
+        mock_cached_notes = {
+            "hsr": {"current_energy": 215, "max_energy": 240},
+            "genshin": {"current_energy": 190, "max_energy": 200},
+            "zzz": {"current_energy": 235, "max_energy": 240},
+        }
+        with patch("database.get_cached_daily_notes", return_value=mock_cached_notes):
+            briefing = self.service.generate_morning_briefing()
+            hsr_status = next(g for g in briefing["games"] if g["game_id"] == "hsr")
+            genshin_status = next(g for g in briefing["games"] if g["game_id"] == "genshin")
+
+            self.assertEqual(hsr_status["current_energy"], 215)
+            self.assertEqual(hsr_status["max_energy"], 240)
+            self.assertEqual(genshin_status["current_energy"], 190)
+            self.assertEqual(genshin_status["max_energy"], 200)
+
+            # Verifica se o badge de energia foi formatado nas linhas do Discord
+            discord_farm_field = next(f for f in briefing["discord_fields"] if "Farm Prioritário" in f["name"])
+            self.assertIn("215/240", discord_farm_field["value"])
+            self.assertIn("190/200", discord_farm_field["value"])
+
+    def test_api_config_quiet_hours_roundtrip(self):
+        """Valida salvamento e leitura dos campos de quiet hours na API REST."""
+        save_res = self.client.post(
+            "/api/config", json={"quiet_hours_enabled": True, "quiet_hours_start": "22:30", "quiet_hours_end": "06:45"}
+        )
+        self.assertEqual(save_res.status_code, 200)
+
+        get_res = self.client.get("/api/config")
+        self.assertEqual(get_res.status_code, 200)
+        data = get_res.json()
+        self.assertTrue(data["quiet_hours_enabled"])
+        self.assertEqual(data["quiet_hours_start"], "22:30")
+        self.assertEqual(data["quiet_hours_end"], "06:45")
+
+    def test_windows_toast_success(self):
+        """Valida execução bem-sucedida do toast nativo do Windows com mock de subprocess."""
+        with patch("sys.platform", "win32"):
+            with patch("subprocess.run") as mock_sub:
+                mock_proc = MagicMock()
+                mock_proc.returncode = 0
+                mock_sub.return_value = mock_proc
+
+                res = self.service.send_windows_toast("Título Teste", "Corpo da Notificação")
+                self.assertTrue(res["success"])
+                mock_sub.assert_called_once()
+                args, kwargs = mock_sub.call_args
+                self.assertEqual(args[0][0], "powershell")
+                self.assertIn("-EncodedCommand", args[0])
+
+    def test_windows_toast_non_windows_skipped(self):
+        """Garante que em plataformas não-Windows (ex: Linux) o toast é ignorado graciosamente."""
+        with patch("sys.platform", "linux"):
+            res = self.service.send_windows_toast("Título", "Mensagem")
+            self.assertFalse(res["success"])
+            self.assertTrue(res.get("skipped"))
+
+    def test_send_notification_dispatches_windows_toast(self):
+        """Valida que send_notification despacha para windows_toast quando configurado e em win32."""
+        cfg = {"notifications_enabled": True, "notify_windows_toast": True, "quiet_hours_enabled": False}
+        with patch("sys.platform", "win32"):
+            with patch.object(self.service, "send_windows_toast") as mock_toast:
+                mock_toast.return_value = {"success": True}
+                res = self.service.send_notification("Alerta Toast", "Mensagem com <b>negrito</b>", cfg)
+                self.assertEqual(res["status"], "sent")
+                self.assertTrue(res["results"]["windows_toast"]["attempted"])
+                self.assertTrue(res["results"]["windows_toast"]["success"])
+                mock_toast.assert_called_once()
+                # Verifica que tags HTML foram limpas para o Toast nativo
+                call_args = mock_toast.call_args[1]
+                self.assertEqual(call_args["message"], "Mensagem com negrito")
+
+    def test_api_config_windows_toast_roundtrip(self):
+        """Valida salvamento e leitura da flag notify_windows_toast na API REST."""
+        save_res = self.client.post("/api/config", json={"notify_windows_toast": True})
+        self.assertEqual(save_res.status_code, 200)
+
+        get_res = self.client.get("/api/config")
+        self.assertEqual(get_res.status_code, 200)
+        data = get_res.json()
+        self.assertIn("notify_windows_toast", data)
+        self.assertTrue(data["notify_windows_toast"])
+
 
 if __name__ == "__main__":
     unittest.main()

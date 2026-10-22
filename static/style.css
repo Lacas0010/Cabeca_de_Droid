@@ -6990,5 +6990,300 @@ h1, h2, h3, h4, h5, h6 {
     color: var(--text-muted);
 }
 
+/* ==========================================================================
+   ENDGAME TEAM MATCHER (METAGAME X ROSTER REAL)
+   ========================================================================== */
+.team-matcher-section {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.team-matcher-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 10px 14px;
+}
+
+.team-matcher-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.team-matcher-select {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.team-matcher-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr));
+    gap: 16px;
+}
+
+.team-matcher-card {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.65));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.team-matcher-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.4);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.team-matcher-card.ready-100 {
+    border-color: rgba(16, 185, 129, 0.4);
+    box-shadow: 0 8px 30px rgba(16, 185, 129, 0.12);
+}
+
+.team-matcher-card.ready-100::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7);
+}
+
+.team-matcher-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.team-matcher-title-box h4 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.team-matcher-meta-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 11px;
+}
+
+.team-match-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 800;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.team-match-badge.pct-100 {
+    background: rgba(16, 185, 129, 0.2);
+    border: 1px solid rgba(16, 185, 129, 0.5);
+    color: #34d399;
+}
+
+.team-match-badge.pct-75 {
+    background: rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    color: #38bdf8;
+}
+
+.team-match-badge.pct-mid {
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.5);
+    color: #fbbf24;
+}
+
+.team-matcher-slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 95px), 1fr));
+    gap: 10px;
+}
+
+.team-matcher-slot {
+    background: rgba(0, 0, 0, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 8px 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+    position: relative;
+}
+
+.team-matcher-slot.owned {
+    border-color: rgba(56, 189, 248, 0.35);
+    background: rgba(56, 189, 248, 0.05);
+}
+
+.team-matcher-slot.missing {
+    border: 1px dashed rgba(248, 113, 113, 0.4);
+    background: rgba(239, 68, 68, 0.04);
+}
+
+.team-matcher-avatar-box {
+    position: relative;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.team-matcher-slot.owned .team-matcher-avatar-box {
+    border-color: #38bdf8;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+}
+
+.team-matcher-slot.missing .team-matcher-avatar-box {
+    filter: grayscale(80%) opacity(0.65);
+    border-color: rgba(248, 113, 113, 0.4);
+}
+
+.team-matcher-avatar-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.team-matcher-slot-name {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #e2e8f0;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 90px;
+}
+
+.team-matcher-slot-role {
+    font-size: 10px;
+    color: #94a3b8;
+    line-height: 1.1;
+}
+
+.team-matcher-slot-badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.team-matcher-slot-badge.owned {
+    background: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.team-matcher-slot-badge.missing {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.team-matcher-substitutes-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.team-matcher-subs-header {
+    font-size: 11px;
+    font-weight: 700;
+    color: #38bdf8;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.team-matcher-subs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.team-matcher-sub-chip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+.team-matcher-sub-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.team-matcher-sub-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.team-matcher-synergy-text {
+    font-size: 11.5px;
+    color: #cbd5e1;
+    line-height: 1.4;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 8px 10px;
+    border-radius: 8px;
+    border-left: 3px solid #38bdf8;
+}
+
+@media (max-width: 768px) {
+    .team-matcher-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .team-matcher-slots-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
 
 

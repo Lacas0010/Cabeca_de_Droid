@@ -4,6 +4,7 @@ import time
 from groq import Groq
 import groq
 
+
 class GroqRAG:
     def __init__(self, api_key: str = None):
         """
@@ -11,7 +12,7 @@ class GroqRAG:
         Carrega a chave do argumento, arquivo config.json ou variável de ambiente.
         """
         self.api_key = api_key
-        
+
         # Tenta carregar do config.json se não fornecida por parâmetro
         if not self.api_key:
             config_path = "config.json"
@@ -23,11 +24,11 @@ class GroqRAG:
                         self.api_key = config.get("groq_api_key") or config.get("gemini_api_key")
                 except Exception as e:
                     print(f"[WARN] Erro ao ler config.json no GroqRAG: {e}")
-                    
+
         # Tenta carregar da variável de ambiente
         if not self.api_key:
             self.api_key = os.environ.get("GROQ_API_KEY")
-            
+
         self.client = None
         if self.api_key:
             try:
@@ -42,27 +43,25 @@ class GroqRAG:
         """
         if not self.api_key:
             return False, "Chave API não configurada. Configure e salve a chave nas Configurações."
-            
+
         try:
             # Garante que o cliente esteja instanciado com a chave fornecida
             test_client = Groq(api_key=self.api_key)
-            
+
             # Executa uma chamada rápida de teste
             completion = test_client.chat.completions.create(
                 model="groq/compound-mini",
-                messages=[
-                    {"role": "user", "content": "ping"}
-                ],
+                messages=[{"role": "user", "content": "ping"}],
                 max_tokens=5,
-                temperature=0.0
+                temperature=0.0,
             )
-            
+
             if completion and completion.choices:
-                self.client = test_client # Atualiza o cliente ativo
+                self.client = test_client  # Atualiza o cliente ativo
                 return True, "Conexão com a Groq estabelecida com sucesso!"
             else:
                 return False, "A API da Groq retornou uma resposta sem conteúdo."
-                
+
         except (groq.APIStatusError, groq.APIConnectionError, groq.APIError, groq.RateLimitError) as e:
             err_msg = f"Erro na API Groq: {e.message if hasattr(e, 'message') else str(e)}"
             print(f"[ERROR] Falha de conexão: {err_msg}")
@@ -78,14 +77,14 @@ class GroqRAG:
         mantendo o tamanho estritamente dentro dos limites da cota básica da Groq (máx 6000 tokens).
         """
         game_id = game_id.lower().strip()
-        
+
         # Define os limites de caracteres (orçamento de tokens) para evitar estouro de limite da API
         if game_id == "todos":
             # Limites ultra-conservadores para consolidar todos os 3 jogos sem truncar
             roster_limit = 1800
             meta_limit = 1200
             guide_limit = 1800
-            
+
             contexts = []
             for g in ["genshin", "hsr", "zzz"]:
                 # Chamada interna para cada jogo passando limites customizados
@@ -95,21 +94,23 @@ class GroqRAG:
             # Limites mais amplos para um jogo individual
             return self._load_single_game_context(game_id, query, roster_limit=6000, meta_limit=8000, guide_limit=6000)
 
-    def _load_single_game_context(self, game_id: str, query: str, roster_limit: int, meta_limit: int, guide_limit: int) -> str:
+    def _load_single_game_context(
+        self, game_id: str, query: str, roster_limit: int, meta_limit: int, guide_limit: int
+    ) -> str:
         lines = []
         lines.append(f"# CONTEXTO DO JOGO: {game_id.upper()}")
-        
+
         # 1. Roster do jogador (Otimizado: tabela filtrada para nível >= 70, builds detalhadas sob demanda)
         roster_path = f"{game_id}/roster_{game_id}.md"
         if os.path.exists(roster_path):
             try:
                 with open(roster_path, "r", encoding="utf-8") as f:
                     roster_content = f.read()
-                    
+
                 # Separa tabela de detalhes das builds
                 parts = roster_content.split("## Detalhes de Builds")
                 overview = parts[0].strip()
-                
+
                 # Filtra a tabela geral para manter apenas personagens com nível >= 70 (reduz o overhead de 4 estrelas de nv baixo)
                 filtered_rows = []
                 for line in overview.split("\n"):
@@ -132,25 +133,38 @@ class GroqRAG:
                             filtered_rows.append(line)
                     else:
                         filtered_rows.append(line)
-                
+
                 filtered_overview = "\n".join(filtered_rows)
                 lines.append("## INFORMAÇÕES DO ROSTER DO JOGADOR (TABELA DE PERSONAGENS ATIVOS >= NV. 70)")
                 lines.append(filtered_overview[:roster_limit])
-                
+
                 # Verifica se o usuário pergunta por builds
                 is_asking_build = False
                 if query:
                     query_lower = query.lower()
-                    build_keywords = ["build", "status", "reliquia", "relíquia", "cone", "equip", "status", "equipar", "detalhe", "melhorar", "artefato", "artefatos"]
+                    build_keywords = [
+                        "build",
+                        "status",
+                        "reliquia",
+                        "relíquia",
+                        "cone",
+                        "equip",
+                        "status",
+                        "equipar",
+                        "detalhe",
+                        "melhorar",
+                        "artefato",
+                        "artefatos",
+                    ]
                     if any(kw in query_lower for kw in build_keywords):
                         is_asking_build = True
-                
+
                 # Se estiver perguntando sobre builds, carrega as builds específicas dos personagens mencionados
                 if is_asking_build and len(parts) > 1:
                     details = parts[1]
                     build_blocks = details.split("\n\n---\n\n")
                     mentioned_builds = []
-                    
+
                     if query:
                         query_lower = query.lower()
                         for block in build_blocks:
@@ -160,7 +174,7 @@ class GroqRAG:
                                 # Se o personagem é mencionado na pergunta
                                 if char_name in query_lower or char_name.replace("(a)", "").strip() in query_lower:
                                     mentioned_builds.append(block.strip())
-                                    
+
                     if mentioned_builds:
                         lines.append("## DETALHES DE BUILDS DOS PERSONAGENS SELECIONADOS")
                         lines.append("\n\n---\n\n".join(mentioned_builds))
@@ -170,11 +184,12 @@ class GroqRAG:
                         lines.append("\n\n---\n\n".join(build_blocks[:2]))
             except Exception as e:
                 print(f"[WARN] Erro ao ler roster de {game_id}: {e}")
-                
+
         # 1.5 Diagnóstico Estratégico de Lacunas e Prioridades de Banners
         try:
             import database
             from build_calculator import analyze_account_gaps
+
             roster_db = database.get_roster_data(game_id)
             if roster_db:
                 endgame_db = database.get_endgame_data(game_id)
@@ -195,15 +210,15 @@ class GroqRAG:
                     lines.append(f.read(meta_limit))
             except Exception as e:
                 print(f"[WARN] Erro ao ler meta de {game_id}: {e}")
-                
+
         # 3. Guias de Personagens (Busca inteligente e truncamento seguro)
         guias_dir = f"{game_id}/guias"
         loaded_specific_guide = False
-        
+
         # Tenta carregar guias de personagens mencionados na pergunta ou roster ativo
         if query and os.path.exists(guias_dir) and os.path.isdir(guias_dir):
             query_normalized = query.lower()
-            
+
             # A. Tenta carregar guias cujos nomes de arquivos estão na query
             for file in os.listdir(guias_dir):
                 if file.endswith(".md"):
@@ -218,7 +233,7 @@ class GroqRAG:
                             print(f"[INFO] Guia específico carregado para {char_name} no contexto ({game_id}).")
                         except Exception as e:
                             print(f"[WARN] Erro ao ler guia específico {file}: {e}")
-            
+
             # B. Se não carregou nenhum guia específico e a pergunta for sobre times/comps,
             # busca automaticamente guias dos principais DPSs do meta que o jogador possui no roster
             if not loaded_specific_guide:
@@ -232,23 +247,25 @@ class GroqRAG:
                         meta_chars = ["neuvillette", "arlecchino", "alhaitham", "raiden", "hu_tao", "ganyu"]
                     elif game_id == "zzz":
                         meta_chars = ["ellen", "zhu_yuan", "jane_doe", "miyabi", "caesar"]
-                        
+
                     loaded_count = 0
                     for char in meta_chars:
                         # Extrai o texto do roster nas linhas anteriores para verificar posse
-                        roster_text = "".join([l for l in lines if "ROSTER" in l or "personagens" in l.lower() or "agentes" in l.lower()])
-                        
-                        has_char = (char in roster_text.lower())
+                        roster_text = "".join(
+                            [l for l in lines if "ROSTER" in l or "personagens" in l.lower() or "agentes" in l.lower()]
+                        )
+
+                        has_char = char in roster_text.lower()
                         if char == "vaga-lume" and "firefly" in roster_text.lower():
                             has_char = True
                         if char == "firefly" and "vaga-lume" in roster_text.lower():
                             has_char = True
-                            
+
                         if has_char and loaded_count < 2:  # Carrega no máximo 2 guias para economizar tokens
                             filename = f"{char}.md"
                             if char == "vaga-lume" or char == "firefly":
                                 filename = "firefly.md"
-                                
+
                             filepath = os.path.join(guias_dir, filename)
                             if os.path.exists(filepath):
                                 try:
@@ -260,7 +277,7 @@ class GroqRAG:
                                     print(f"[INFO] Guia meta auto-carregado para {char} no contexto ({game_id}).")
                                 except Exception as e:
                                     print(f"[WARN] Erro ao ler guia auto-carregado {filename}: {e}")
-                            
+
         if not loaded_specific_guide:
             bundled_path = f"{game_id}/todos_os_guias_{game_id}.md"
             if os.path.exists(bundled_path):
@@ -283,19 +300,19 @@ class GroqRAG:
                             count += 1
                         except Exception as e:
                             print(f"[WARN] Erro ao ler guia {file}: {e}")
-                            
+
         return "\n\n".join(lines)
 
     def ask_assistant(self, prompt_usuario: str, contexto_rag: str | list, historico_chat: list = None) -> str:
         """
         Gera resposta utilizando a API da Groq com suporte a RAG, histórico e modelos de fallback.
-        
+
         Parâmetros:
             - prompt_usuario (str): Pergunta do usuário.
             - contexto_rag (str ou list): Dados de contexto para embasar a resposta.
             - historico_chat (opcional): Lista contendo dicionários de histórico.
               Ex: [{"role": "user", "text": "olá"}, {"role": "model", "text": "olá! em que posso ajudar?"}]
-              
+
         Retorna:
             - str: Texto puro da resposta gerada ou mensagem de erro formatada.
         """
@@ -314,20 +331,23 @@ class GroqRAG:
             "Responda com base no contexto fornecido e formate em Markdown claro para a interface gráfica.\n\n"
             "Você tem acesso aos recordes de Endgame (Caos da Memória / Abismo Espiral) do jogador. Se o jogador não tiver alcançado as 36 estrelas ou travado em um andar específico, analise os times e as builds fornecidas para dar conselhos táticos: sugira trocas de composição de time para quebrar fraquezas e indique qual personagem precisa de melhoria urgente para passar daquela fase."
         )
-        
+
         if contexto_str.strip():
             system_prompt += f"\n\n## CONTEXTO DE DADOS LOCAIS DO JOGADOR E GUIAS:\n{contexto_str}"
 
         # Limite de segurança geral rígido para a API da Groq no plano básico/on_demand (Limite de 6000 tokens)
         MAX_SYSTEM_PROMPT_CHARS = 18000  # Aprox. 4.000 tokens
         if len(system_prompt) > MAX_SYSTEM_PROMPT_CHARS:
-            print(f"[INFO] Truncando contexto de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres por segurança.")
-            system_prompt = system_prompt[:MAX_SYSTEM_PROMPT_CHARS] + "\n\n... (Contexto local truncado por limite de tokens da API) ..."
+            print(
+                f"[INFO] Truncando contexto de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres por segurança."
+            )
+            system_prompt = (
+                system_prompt[:MAX_SYSTEM_PROMPT_CHARS]
+                + "\n\n... (Contexto local truncado por limite de tokens da API) ..."
+            )
 
         # 3. Formatar o histórico e mensagens
-        messages = [
-            {"role": "system", "content": system_prompt}
-        ]
+        messages = [{"role": "system", "content": system_prompt}]
 
         if historico_chat:
             for msg in historico_chat:
@@ -347,7 +367,7 @@ class GroqRAG:
             "groq/compound",
             "groq/compound-mini",
             "openai/gpt-oss-20b",
-            "qwen/qwen3.6-27b"
+            "qwen/qwen3.6-27b",
         ]
 
         last_exception = None
@@ -356,11 +376,7 @@ class GroqRAG:
                 print(f"[INFO] Chamando API da Groq com o modelo: {model}...")
                 # Modelos de raciocínio como GPT-OSS funcionam melhor com temperaturas um pouco menores (ex: 0.6)
                 temp = 0.1 if "gpt-oss" in model or "deepseek" in model else 0.1
-                completion = self.client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=temp
-                )
+                completion = self.client.chat.completions.create(model=model, messages=messages, temperature=temp)
                 if completion and completion.choices:
                     msg = completion.choices[0].message
                     response_text = msg.content
@@ -369,17 +385,17 @@ class GroqRAG:
                         reasoning_text = getattr(msg, "reasoning", None) or getattr(msg, "reasoning_content", None)
                         if reasoning_text:
                             model_display = "GPT-OSS 120B" if "gpt-oss" in model else model.split("/")[-1].upper()
-                            response_text = f"<details class='think-details'><summary> Ver Processo de Pensamento ({model_display})</summary><div class='think-content'>{reasoning_text}</div></details>\n\n" + response_text
-                        
+                            response_text = (
+                                f"<details class='think-details'><summary> Ver Processo de Pensamento ({model_display})</summary><div class='think-content'>{reasoning_text}</div></details>\n\n"
+                                + response_text
+                            )
+
                         # Fallback para tags de pensamento embutidas no texto (ex: DeepSeek se reativado)
                         elif "<think>" in response_text and "</think>" in response_text:
                             response_text = response_text.replace(
-                                "<think>", 
-                                "<details class='think-details'><summary> Ver Processo de Pensamento</summary><div class='think-content'>"
-                            ).replace(
-                                "</think>", 
-                                "</div></details>"
-                            )
+                                "<think>",
+                                "<details class='think-details'><summary> Ver Processo de Pensamento</summary><div class='think-content'>",
+                            ).replace("</think>", "</div></details>")
                         return response_text
                     else:
                         raise Exception("A resposta retornada estava vazia.")
@@ -426,20 +442,23 @@ class GroqRAG:
             "Responda com base no contexto fornecido e formate em Markdown claro para a interface gráfica.\n\n"
             "Você tem acesso aos recordes de Endgame (Caos da Memória / Abismo Espiral) do jogador. Se o jogador não tiver alcançado as 36 estrelas ou travado em um andar específico, analise os times e as builds fornecidas para dar conselhos táticos: sugira trocas de composição de time para quebrar fraquezas e indique qual personagem precisa de melhoria urgente para passar daquela fase."
         )
-        
+
         if contexto_str.strip():
             system_prompt += f"\n\n## CONTEXTO DE DADOS LOCAIS DO JOGADOR E GUIAS:\n{contexto_str}"
 
         # Limite de segurança geral rígido para a API da Groq
         MAX_SYSTEM_PROMPT_CHARS = 18000
         if len(system_prompt) > MAX_SYSTEM_PROMPT_CHARS:
-            print(f"[INFO] Truncando contexto de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres por segurança.")
-            system_prompt = system_prompt[:MAX_SYSTEM_PROMPT_CHARS] + "\n\n... (Contexto local truncado por limite de tokens da API) ..."
+            print(
+                f"[INFO] Truncando contexto de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres por segurança."
+            )
+            system_prompt = (
+                system_prompt[:MAX_SYSTEM_PROMPT_CHARS]
+                + "\n\n... (Contexto local truncado por limite de tokens da API) ..."
+            )
 
         # 3. Formatar o histórico e mensagens
-        messages = [
-            {"role": "system", "content": system_prompt}
-        ]
+        messages = [{"role": "system", "content": system_prompt}]
 
         if historico_chat:
             for msg in historico_chat:
@@ -458,19 +477,16 @@ class GroqRAG:
             "groq/compound",
             "openai/gpt-oss-120b",
             "openai/gpt-oss-20b",
-            "qwen/qwen3.6-27b"
+            "qwen/qwen3.6-27b",
         ]
 
         for model in modelos:
             try:
                 print(f"[INFO] Iniciando stream com o modelo: {model}...")
                 completion = self.client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=0.1,
-                    stream=True
+                    model=model, messages=messages, temperature=0.1, stream=True
                 )
-                
+
                 # Iterar e retornar tokens em stream
                 for chunk in completion:
                     if chunk.choices and chunk.choices[0].delta.content:
@@ -479,10 +495,12 @@ class GroqRAG:
             except Exception as e:
                 print(f"[WARN] Falha de streaming com o modelo {model}: {e}. Tentando fallback...")
                 continue
-        
+
         yield "Erro: Não foi possível obter resposta de nenhum modelo de streaming da Groq."
 
-    def generate_account_roast_stream(self, game_id: str, account_summary: str, trash_relics_info: str = "", luck_info: str = ""):
+    def generate_account_roast_stream(
+        self, game_id: str, account_summary: str, trash_relics_info: str = "", luck_info: str = ""
+    ):
         """
         Gera um Roast da conta em streaming utilizando a persona da Herta & Nous (Cabeça de Droid).
         Analisa os dados da conta do jogador com um tom sarcástico, debochado, porém incrivelmente perspicaz.
@@ -491,11 +509,7 @@ class GroqRAG:
             yield "Erro: Chave API da Groq não configurada. Configure sua chave nas Configurações para que o Nous e a Herta possam julgar sua conta!"
             return
 
-        game_names = {
-            "hsr": "Honkai: Star Rail",
-            "zzz": "Zenless Zone Zero",
-            "genshin": "Genshin Impact"
-        }
+        game_names = {"hsr": "Honkai: Star Rail", "zzz": "Zenless Zone Zero", "genshin": "Genshin Impact"}
         nome_jogo = game_names.get(game_id.lower(), game_id.upper())
 
         system_prompt = (
@@ -519,12 +533,19 @@ class GroqRAG:
 
         MAX_SYSTEM_PROMPT_CHARS = 16000
         if len(system_prompt) > MAX_SYSTEM_PROMPT_CHARS:
-            print(f"[INFO] Truncando contexto do Roast de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres.")
-            system_prompt = system_prompt[:MAX_SYSTEM_PROMPT_CHARS] + "\n\n... (Resumo truncado para otimização de tokens) ..."
+            print(
+                f"[INFO] Truncando contexto do Roast de {len(system_prompt)} para {MAX_SYSTEM_PROMPT_CHARS} caracteres."
+            )
+            system_prompt = (
+                system_prompt[:MAX_SYSTEM_PROMPT_CHARS] + "\n\n... (Resumo truncado para otimização de tokens) ..."
+            )
 
         messages = [
             {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Faça o Roast definitivo e sem piedade da minha conta de {nome_jogo}! Mostre todo o deboche da Herta e o cálculo cirúrgico do Nous!"}
+            {
+                "role": "user",
+                "content": f"Faça o Roast definitivo e sem piedade da minha conta de {nome_jogo}! Mostre todo o deboche da Herta e o cálculo cirúrgico do Nous!",
+            },
         ]
 
         modelos = [
@@ -532,7 +553,7 @@ class GroqRAG:
             "groq/compound",
             "openai/gpt-oss-120b",
             "openai/gpt-oss-20b",
-            "qwen/qwen3.6-27b"
+            "qwen/qwen3.6-27b",
         ]
 
         last_err = None
@@ -540,10 +561,7 @@ class GroqRAG:
             try:
                 print(f"[INFO] Gerando Roast stream com modelo: {model}...")
                 completion = self.client.chat.completions.create(
-                    model=model,
-                    messages=messages,
-                    temperature=0.8,
-                    stream=True
+                    model=model, messages=messages, temperature=0.8, stream=True
                 )
                 has_yielded = False
                 for chunk in completion:
@@ -559,5 +577,3 @@ class GroqRAG:
 
         err_detail = f" Detalhes do erro: {last_err}" if last_err else ""
         yield f"Erro: Não foi possível obter resposta dos modelos da Groq para realizar o Roast.{err_detail}"
-
-

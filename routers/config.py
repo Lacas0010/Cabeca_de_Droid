@@ -9,16 +9,17 @@ from auth import capturar_cookies_hoyolab
 
 router = APIRouter(tags=["Config & Notifications"])
 
+
 @router.get("/api/config")
 async def get_configuration():
     """Retorna as configurações sanitizadas e o resumo criptografado dos cookies."""
     cookies_dict = get_cookies()
     config_dict = get_config()
-    
+
     cookies_summary = security_vault.get_masked_cookies_preview(cookies_dict)
     raw_api_key = config_dict.get("groq_api_key") or config_dict.get("gemini_api_key") or ""
     masked_key = security_vault.mask_secret_string(raw_api_key, 6, 4) if raw_api_key else ""
-    
+
     raw_tg_token = config_dict.get("telegram_bot_token", "")
     masked_tg_token = security_vault.mask_secret_string(raw_tg_token, 4, 3) if raw_tg_token else ""
 
@@ -45,8 +46,13 @@ async def get_configuration():
         "energy_cap_threshold_pct": config_dict.get("energy_cap_threshold_pct", 90),
         "notify_on_endgame": config_dict.get("notify_on_endgame", True),
         "notify_on_codes": config_dict.get("notify_on_codes", True),
-        "vault_info": security_vault.get_vault_security_info()
+        "quiet_hours_enabled": config_dict.get("quiet_hours_enabled", False),
+        "quiet_hours_start": config_dict.get("quiet_hours_start", "23:00"),
+        "quiet_hours_end": config_dict.get("quiet_hours_end", "07:00"),
+        "notify_windows_toast": config_dict.get("notify_windows_toast", True),
+        "vault_info": security_vault.get_vault_security_info(),
     }
+
 
 @router.post("/api/config")
 async def save_configuration(req: ConfigSaveRequest):
@@ -62,7 +68,7 @@ async def save_configuration(req: ConfigSaveRequest):
         elif not key_val:
             config["groq_api_key"] = ""
             changed = True
-            
+
     if req.auto_sync_enabled is not None:
         config["auto_sync_enabled"] = req.auto_sync_enabled
         changed = True
@@ -109,10 +115,22 @@ async def save_configuration(req: ConfigSaveRequest):
     if req.notify_on_codes is not None:
         config["notify_on_codes"] = req.notify_on_codes
         changed = True
+    if req.quiet_hours_enabled is not None:
+        config["quiet_hours_enabled"] = req.quiet_hours_enabled
+        changed = True
+    if req.quiet_hours_start is not None:
+        config["quiet_hours_start"] = req.quiet_hours_start.strip()
+        changed = True
+    if req.quiet_hours_end is not None:
+        config["quiet_hours_end"] = req.quiet_hours_end.strip()
+        changed = True
+    if req.notify_windows_toast is not None:
+        config["notify_windows_toast"] = req.notify_windows_toast
+        changed = True
 
     if changed:
         security_vault.save_secure_config(config)
-            
+
     if req.cookies_raw is not None:
         c_raw = req.cookies_raw.strip()
         if c_raw and "REDACTED" not in c_raw and "***" not in c_raw:
@@ -121,23 +139,35 @@ async def save_configuration(req: ConfigSaveRequest):
                 security_vault.save_secure_cookies(cookies)
         elif not c_raw:
             security_vault.save_secure_cookies({})
-                
+
     return {"status": "success", "message": "Configurações salvas e criptografadas localmente com segurança."}
+
 
 @router.post("/api/notifications/test")
 async def test_notifications_endpoint(req: NotificationTestRequest):
-    """Dispara notificações de teste em tempo real para validar o canal Discord e Telegram."""
+    """Dispara notificações de teste em tempo real para validar o canal Discord, Telegram e Windows Toast."""
     config = get_config()
-    discord_url = req.discord_webhook_url if req.discord_webhook_url is not None and not req.discord_webhook_url.startswith("***") else config.get("discord_webhook_url", "")
-    tg_token = req.telegram_bot_token if req.telegram_bot_token is not None and not req.telegram_bot_token.startswith("***") else config.get("telegram_bot_token", "")
+    discord_url = (
+        req.discord_webhook_url
+        if req.discord_webhook_url is not None and not req.discord_webhook_url.startswith("***")
+        else config.get("discord_webhook_url", "")
+    )
+    tg_token = (
+        req.telegram_bot_token
+        if req.telegram_bot_token is not None and not req.telegram_bot_token.startswith("***")
+        else config.get("telegram_bot_token", "")
+    )
     tg_chat = req.telegram_chat_id if req.telegram_chat_id is not None else config.get("telegram_chat_id", "")
+    test_win = req.test_windows if req.test_windows is not None else True
 
-    res = notifier.test_channels(discord_url=discord_url, tg_token=tg_token, tg_chat=tg_chat)
+    res = notifier.test_channels(discord_url=discord_url, tg_token=tg_token, tg_chat=tg_chat, test_windows=test_win)
     return {"status": "success", "results": res}
+
 
 @router.post("/api/login/auto")
 async def auto_login_hoyolab(background_tasks: BackgroundTasks):
     """Dispara a janela do navegador via Playwright para capturar os cookies e salvá-los no cofre criptografado."""
+
     def _run_login():
         print("[INFO] Abrindo navegador Playwright para capturar cookies...")
         try:
@@ -145,12 +175,12 @@ async def auto_login_hoyolab(background_tasks: BackgroundTasks):
             asyncio.set_event_loop(loop)
             cookies_captured = loop.run_until_complete(capturar_cookies_hoyolab())
             loop.close()
-            
+
             if cookies_captured:
                 security_vault.save_secure_cookies(cookies_captured)
                 print("[SUCCESS] Cookies capturados, criptografados e salvos com sucesso no cofre DPAPI!")
         except Exception as e:
             print(f"[ERROR] Falha na captura automática de cookies: {e}")
-            
+
     background_tasks.add_task(_run_login)
     return {"status": "started", "message": "Navegador de Login Automático iniciado em segundo plano."}

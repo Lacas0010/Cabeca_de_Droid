@@ -6,6 +6,7 @@ import subprocess
 import webbrowser
 import uvicorn
 
+
 def setup_playwright() -> None:
     """
     Garante que o executável Chromium do Playwright esteja disponível no ambiente do usuário.
@@ -28,26 +29,29 @@ def setup_playwright() -> None:
     if not has_browser:
         try:
             from playwright._impl._driver import compute_driver_executable, get_driver_env
+
             driver_executable, driver_cli = compute_driver_executable()
             env = get_driver_env()
             env["PLAYWRIGHT_BROWSERS_PATH"] = pw_path
-            
+
             creationflags = subprocess.CREATE_NO_WINDOW
-                
+
             subprocess.run(
-                [driver_executable, driver_cli, "install", "chromium"], 
+                [driver_executable, driver_cli, "install", "chromium"],
                 env=env,
                 creationflags=creationflags,
-                check=False
+                check=False,
             )
         except Exception as e:
             print(f"[WARN] Não foi possível verificar/instalar o Chromium do Playwright automaticamente: {e}")
+
 
 setup_playwright()
 
 from server import app
 
 import socket
+
 
 def get_local_ip() -> str:
     """Obtém o IP local da máquina na rede Wi-Fi/Ethernet."""
@@ -60,6 +64,7 @@ def get_local_ip() -> str:
     except Exception:
         return "127.0.0.1"
 
+
 def find_available_port(start_port: int = 8000, max_attempts: int = 20) -> int:
     """Encontra uma porta TCP disponível a partir da porta inicial informada."""
     for port in range(start_port, start_port + max_attempts):
@@ -70,6 +75,7 @@ def find_available_port(start_port: int = 8000, max_attempts: int = 20) -> int:
             except OSError:
                 continue
     return start_port
+
 
 def wait_for_server(port: int, timeout: float = 10.0) -> bool:
     """Realiza polling ativamente até a API aceitar conexões TCP na porta especificada."""
@@ -85,21 +91,42 @@ def wait_for_server(port: int, timeout: float = 10.0) -> bool:
         time.sleep(0.1)
     return False
 
+
 import argparse
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Cabeça de Droid - Assistente HoYoLAB")
-    parser.add_argument("--host", "-H", type=str, default=None, help="Endereço IP para bind do servidor (ex: 0.0.0.0 ou 127.0.0.1)")
+    parser.add_argument(
+        "--host", "-H", type=str, default=None, help="Endereço IP para bind do servidor (ex: 0.0.0.0 ou 127.0.0.1)"
+    )
     parser.add_argument("--port", "-p", type=int, default=None, help="Porta TCP do servidor (padrão: 8000)")
-    parser.add_argument("--lan", "--allow-lan", "--tailscale", action="store_true", help="Permite acesso via rede local (LAN), Tailscale ou VPN")
-    parser.add_argument("--no-browser", action="store_true", help="Não abre a janela do navegador automaticamente (ideal para servidores Linux/VMs)")
+    parser.add_argument(
+        "--lan",
+        "--allow-lan",
+        "--tailscale",
+        action="store_true",
+        help="Permite acesso via rede local (LAN), Tailscale ou VPN",
+    )
+    parser.add_argument(
+        "--no-browser",
+        action="store_true",
+        help="Não abre a janela do navegador automaticamente (ideal para servidores Linux/VMs)",
+    )
+    parser.add_argument(
+        "--no-tray",
+        action="store_true",
+        help="Não inicializa o ícone na bandeja do sistema (ideal para servidores ou modo CLI)",
+    )
     return parser.parse_args()
+
 
 def start_server(host: str, port: int) -> None:
     """Inicia o servidor web FastAPI usando Uvicorn com binding configurado."""
     config = uvicorn.Config(app, host=host, port=port, log_level="info")
     server = uvicorn.Server(config)
     server.run()
+
 
 def main() -> None:
     """
@@ -116,7 +143,9 @@ def main() -> None:
         except Exception:
             pass
 
-    allow_lan = is_lan_access_allowed() or args.lan or os.environ.get("ALLOW_LAN", "").lower() in ("1", "true", "yes", "on")
+    allow_lan = (
+        is_lan_access_allowed() or args.lan or os.environ.get("ALLOW_LAN", "").lower() in ("1", "true", "yes", "on")
+    )
 
     # Define o host de binding
     if args.host:
@@ -139,26 +168,40 @@ def main() -> None:
         port = int(os.environ["PORT"])
     else:
         port = find_available_port(8000)
-    
+
     server_thread = threading.Thread(target=start_server, args=(bind_host, port), daemon=True)
     server_thread.start()
-    
+
     # Aguarda ativamente o servidor responder no socket antes de prosseguir
     ready = wait_for_server(port)
-    
+
     local_ip = get_local_ip()
     url_local = f"http://127.0.0.1:{port}/?v=5.1"
     url_rede = f"http://{local_ip}:{port}/?v=5.1"
-    
+
     print("[INFO] Iniciando Cabeça de Droid v5.1 (Blindagem de Segurança Ativa)...")
     print(f"[INFO] Servidor escutando em: {bind_host}:{port}")
     print(f"[INFO] Acesso local: {url_local}")
     if allow_lan or bind_host == "0.0.0.0":
         print(f"[SUCCESS] Acesso LAN / Tailscale / VPN HABILITADO na porta {port} (IP local: {local_ip})")
     else:
-        print(f"[SECURITY] Isolamento de Rede Ativo: Servidor vinculado exclusivamente a 127.0.0.1 (Loopback).")
-        print(f"[TIP] Para liberar o acesso via Tailscale/VPN na VM, inicie com: python main.py --lan (ou --host 0.0.0.0)")
-    
+        print("[SECURITY] Isolamento de Rede Ativo: Servidor vinculado exclusivamente a 127.0.0.1 (Loopback).")
+        print(
+            "[TIP] Para liberar o acesso via Tailscale/VPN na VM, inicie com: python main.py --lan (ou --host 0.0.0.0)"
+        )
+
+    # Inicialização do Ícone na Bandeja do Sistema (Windows System Tray)
+    stop_event = threading.Event()
+    tray_manager = None
+    if not args.no_tray:
+        try:
+            from core.tray import SystemTrayManager
+
+            tray_manager = SystemTrayManager(port=port, host=bind_host, on_stop=lambda: stop_event.set())
+            tray_manager.start()
+        except Exception as tray_err:
+            print(f"[INFO] System Tray indisponível: {tray_err}")
+
     should_open_browser = not args.no_browser and (sys.platform == "win32" or bool(os.environ.get("DISPLAY")))
     if ready and should_open_browser:
         try:
@@ -167,10 +210,14 @@ def main() -> None:
             pass
 
     try:
-        while server_thread.is_alive():
+        while server_thread.is_alive() and not stop_event.is_set():
             time.sleep(0.5)
     except KeyboardInterrupt:
         print("\n[INFO] Servidor encerrado com sucesso pelo usuário.")
+    finally:
+        if tray_manager:
+            tray_manager.stop()
+
 
 if __name__ == "__main__":
     main()

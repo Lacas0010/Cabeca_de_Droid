@@ -10,6 +10,7 @@ import database
 from build_calculator import calculate_gacha_forecast, simulate_gacha_probabilities
 from server import app
 
+
 class TestGachaForecastSuite(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -32,7 +33,7 @@ class TestGachaForecastSuite(unittest.TestCase):
             include_events_estimate=True,
             include_endgame_resets=True,
             character_name="Mavuika",
-            num_simulations=2000
+            num_simulations=2000,
         )
 
         self.assertEqual(res["game_id"], "genshin")
@@ -56,15 +57,15 @@ class TestGachaForecastSuite(unittest.TestCase):
             current_pulls=50,
             current_pity=40,
             is_guaranteed=True,
-            target_rank=1, # E1
-            current_rank=0, # E0 já possuído
+            target_rank=1,  # E1
+            current_rank=0,  # E0 já possuído
             target_days=42,
             has_daily_pass=True,
             has_battle_pass=True,
             include_shop_resets=True,
             include_events_estimate=True,
             character_name="Sunday",
-            num_simulations=2000
+            num_simulations=2000,
         )
 
         self.assertEqual(res["game_id"], "hsr")
@@ -88,12 +89,12 @@ class TestGachaForecastSuite(unittest.TestCase):
             current_pulls=10,
             current_pity=0,
             is_guaranteed=False,
-            target_rank=2, # M2 (3 cópias no total)
-            current_rank=-1, # Não possui
+            target_rank=2,  # M2 (3 cópias no total)
+            current_rank=-1,  # Não possui
             target_days=21,
             has_daily_pass=False,
             character_name="Miyabi",
-            num_simulations=1000
+            num_simulations=1000,
         )
 
         self.assertEqual(res["term"], "Mindscape Cinema")
@@ -117,7 +118,7 @@ class TestGachaForecastSuite(unittest.TestCase):
             has_daily_pass=True,
             success_rate=98.5,
             projected_pulls=85,
-            notes="Teste automatizado de meta"
+            notes="Teste automatizado de meta",
         )
         self.assertIsInstance(goal_id, int)
         self.assertGreater(goal_id, 0)
@@ -153,7 +154,7 @@ class TestGachaForecastSuite(unittest.TestCase):
             "target_days": 21,
             "has_daily_pass": True,
             "include_shop_resets": True,
-            "include_events_estimate": True
+            "include_events_estimate": True,
         }
         resp = self.client.post("/api/gacha/forecast/calculate", json=payload)
         self.assertEqual(resp.status_code, 200)
@@ -178,7 +179,7 @@ class TestGachaForecastSuite(unittest.TestCase):
             "has_daily_pass": True,
             "success_rate": 82.4,
             "projected_pulls": 95,
-            "notes": "Planejamento Jane Doe"
+            "notes": "Planejamento Jane Doe",
         }
         resp_post = self.client.post("/api/gacha/goals", json=post_payload)
         self.assertEqual(resp_post.status_code, 200)
@@ -195,6 +196,7 @@ class TestGachaForecastSuite(unittest.TestCase):
         resp_del = self.client.delete(f"/api/gacha/goals/{goal_id}")
         self.assertEqual(resp_del.status_code, 200)
         self.assertEqual(resp_del.json().get("status"), "deleted")
+
 
 if __name__ == "__main__":
     unittest.main()

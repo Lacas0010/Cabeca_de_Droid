@@ -1,0 +1,275 @@
+{
+  "hsr": [
+    {
+      "team_id": "hsr_castorice_cyrene",
+      "team_name": "Castorice & Cyrene Hypercarry",
+      "mode": "Memory of Chaos",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "8.74 ciclos",
+      "usage_rate": "34.46%",
+      "synergy_notes": "Composição líder absoluta do ciclo atual de MoC. Aproveita a mecânica de dano elevado e avanço de ações sincronizadas.",
+      "recommended_buffs_bosses": "Favorece fases com bônus de fraqueza e chefes de alto HP como Netherwing Husk e Pollux.",
+      "members": [
+        {"name": "Castorice", "role": "DPS Principal", "element": "Quantum"},
+        {"name": "March 7th • Evernight", "role": "Sub-DPS / Amplificação", "element": "Ice"},
+        {"name": "Cyrene", "role": "Buffer / Harmonia", "element": "Imaginary"},
+        {"name": "Hyacine", "role": "Sustento / Defesa", "element": "Wind"}
+      ]
+    },
+    {
+      "team_id": "hsr_acheron_nihility",
+      "team_name": "Acheron Nihility Blast",
+      "mode": "Memory of Chaos",
+      "tier_or_rank": "Rank 2",
+      "avg_performance": "8.90 ciclos",
+      "usage_rate": "22.50%",
+      "synergy_notes": "Ativa a passiva A4 com 2 personagens de Inexistência, maximizando o multiplicador de dano independente de 160% na Suprema.",
+      "recommended_buffs_bosses": "Dano massivo ignorando fraqueza elementar durante a Suprema. Ideal contra múltiplos alvos.",
+      "members": [
+        {"name": "Acheron", "role": "DPS Principal", "element": "Lightning"},
+        {"name": "Jiaoqiu", "role": "Debuffer / Inexistência", "element": "Fire"},
+        {"name": "Pela", "role": "Debuffer / Inexistência", "element": "Ice"},
+        {"name": "Gallagher", "role": "Sustento / Cura", "element": "Fire"}
+      ]
+    },
+    {
+      "team_id": "hsr_firefly_superbreak",
+      "team_name": "Firefly Super Break",
+      "mode": "Memory of Chaos",
+      "tier_or_rank": "Rank 3",
+      "avg_performance": "9.86 ciclos",
+      "usage_rate": "18.95%",
+      "synergy_notes": "Explosão massiva de Super Break através da combinação com o Desbravador da Harmonia e extensão de fraqueza da Ruan Mei.",
+      "recommended_buffs_bosses": "Excelente contra inimigos com fraqueza de Fogo ou alvos com escudo de resistência durável.",
+      "members": [
+        {"name": "Firefly", "role": "DPS Principal", "element": "Fire"},
+        {"name": "Trailblazer • Harmony", "role": "Buffer / Harmonia", "element": "Imaginary"},
+        {"name": "Ruan Mei", "role": "Buffer / Harmonia", "element": "Ice"},
+        {"name": "Gallagher", "role": "Sustento / Cura", "element": "Fire"}
+      ]
+    },
+    {
+      "team_id": "hsr_feixiao_fua",
+      "team_name": "Feixiao FUA Premium",
+      "mode": "Apocalyptic Shadow",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "3580 pontos",
+      "usage_rate": "28.10%",
+      "synergy_notes": "Bateria de ataques extras contínuos acelerando a geração de cargas de Suprema da Feixiao com o buff de dano crítico da Robin.",
+      "recommended_buffs_bosses": "Perfeito para Sombra Apocalíptica contra chefes com vulnerabilidade a ataques frequentes.",
+      "members": [
+        {"name": "Feixiao", "role": "DPS Principal", "element": "Wind"},
+        {"name": "Robin", "role": "Buffer / Harmonia", "element": "Physical"},
+        {"name": "Topaz & Numby", "role": "Sub-DPS / FUA Debuff", "element": "Fire"},
+        {"name": "Aventurine", "role": "Sustento / Escudo", "element": "Imaginary"}
+      ]
+    },
+    {
+      "team_id": "hsr_dot_supremo",
+      "team_name": "DoT Supremo (Kafka + Black Swan)",
+      "mode": "Memory of Chaos",
+      "tier_or_rank": "Rank 4",
+      "avg_performance": "10.26 ciclos",
+      "usage_rate": "14.20%",
+      "synergy_notes": "Detonação cíclica contínua de Epiphany e Arcana com a Suprema e Perícia de Kafka, impulsionada por ATK e velocidade.",
+      "recommended_buffs_bosses": "Especialmente efetivo em ondas consecutivas de inimigos com fraquezas Elétrica e Vento.",
+      "members": [
+        {"name": "Kafka", "role": "DPS Principal", "element": "Lightning"},
+        {"name": "Black Swan", "role": "Debuffer / DoT", "element": "Wind"},
+        {"name": "Ruan Mei", "role": "Buffer / Harmonia", "element": "Ice"},
+        {"name": "Huohuo", "role": "Sustento / Cura", "element": "Wind"}
+      ]
+    },
+    {
+      "team_id": "hsr_pf_himeko_herta",
+      "team_name": "Himeko & Herta Erudição Giratória",
+      "mode": "Pure Fiction",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "40000 pontos",
+      "usage_rate": "42.10%",
+      "synergy_notes": "Loop infinito de Quebra de Fraqueza e Kuru-Kuru que limpa ondas inteiras instantaneamente na Ficção Pura.",
+      "recommended_buffs_bosses": "O padrão ouro de Ficção Pura para qualquer estágio com fraquezas Fogo/Gelo.",
+      "members": [
+        {"name": "Himeko", "role": "DPS Principal", "element": "Fire"},
+        {"name": "Herta", "role": "Sub-DPS / AoE", "element": "Ice"},
+        {"name": "Robin", "role": "Buffer / Harmonia", "element": "Physical"},
+        {"name": "Lingsha", "role": "Sustento / AoE", "element": "Fire"}
+      ]
+    },
+    {
+      "team_id": "hsr_silver_sparxie",
+      "team_name": "Silver Wolf & Sparxie Quantum Engine",
+      "mode": "Memory of Chaos",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "8.23 ciclos",
+      "usage_rate": "24.73%",
+      "synergy_notes": "Alta penetração de resistência e bônus de vulnerabilidade com debuffs garantidos em cadeia.",
+      "recommended_buffs_bosses": "Estágios 11 e 12 de MoC do patch 4.6.",
+      "members": [
+        {"name": "Silver Wolf • Lv. 999", "role": "Debuffer / Inexistência", "element": "Quantum"},
+        {"name": "Sparxie", "role": "DPS Principal", "element": "Fire"},
+        {"name": "Yao Guang", "role": "Buffer / Harmonia", "element": "Quantum"},
+        {"name": "Pearl", "role": "Sustento / Defesa", "element": "Ice"}
+      ]
+    }
+  ],
+  "genshin": [
+    {
+      "team_id": "genshin_hyperbloom_alhaitham",
+      "team_name": "Alhaitham Hyperbloom",
+      "mode": "Abismo Espiral",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "90s câmara 12",
+      "usage_rate": "38.50%",
+      "synergy_notes": "Aplicação contínua de Dendro e Hydro gerando sementes que Kuki Shinobu detona com Maestria Elemental.",
+      "recommended_buffs_bosses": "Dano unitário avassalador contra chefes individuais e multi-alvo consistente.",
+      "members": [
+        {"name": "Alhaitham", "role": "DPS Principal", "element": "Dendro"},
+        {"name": "Nahida", "role": "Buffer / Suporte", "element": "Dendro"},
+        {"name": "Xingqiu", "role": "Sub-DPS / Aplicação", "element": "Hydro"},
+        {"name": "Kuki Shinobu", "role": "Sustento / Ativador", "element": "Electro"}
+      ]
+    },
+    {
+      "team_id": "genshin_neuvillette_hyper",
+      "team_name": "Neuvillette Hydro Sovereign",
+      "mode": "Abismo Espiral",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "80s câmara 12",
+      "usage_rate": "44.20%",
+      "synergy_notes": "Canhão hidro de Neuvillette amplificado por Fanfarra da Furina e redução de resistência do Kazuha.",
+      "recommended_buffs_bosses": "Devastador em qualquer conteúdo que não possua imunidade a dano Hydro.",
+      "members": [
+        {"name": "Neuvillette", "role": "DPS Principal", "element": "Hydro"},
+        {"name": "Furina", "role": "Buffer / Sub-DPS", "element": "Hydro"},
+        {"name": "Kaedehara Kazuha", "role": "Buffer / Controle", "element": "Anemo"},
+        {"name": "Baizhu", "role": "Sustento / Cura", "element": "Dendro"}
+      ]
+    },
+    {
+      "team_id": "genshin_hu_tao_vape",
+      "team_name": "Hu Tao Vaporizar Duplo Hydro",
+      "mode": "Abismo Espiral",
+      "tier_or_rank": "Rank 2",
+      "avg_performance": "95s câmara 12",
+      "usage_rate": "29.70%",
+      "synergy_notes": "Ressonância Hydro aumentando o HP de Hu Tao e Zhongli, permitindo Vaporizar constante com Xingqiu e Yelan.",
+      "recommended_buffs_bosses": "Excelente para derrotar chefes de câmara única com escudos de alta durabilidade.",
+      "members": [
+        {"name": "Hu Tao", "role": "DPS Principal", "element": "Pyro"},
+        {"name": "Xingqiu", "role": "Sub-DPS / Aplicação", "element": "Hydro"},
+        {"name": "Yelan", "role": "Sub-DPS / Buffer", "element": "Hydro"},
+        {"name": "Zhongli", "role": "Sustento / Escudo", "element": "Geo"}
+      ]
+    },
+    {
+      "team_id": "genshin_raiden_national",
+      "team_name": "Raiden Shogun National (Rational)",
+      "mode": "Abismo Espiral",
+      "tier_or_rank": "Rank 2",
+      "avg_performance": "98s câmara 12",
+      "usage_rate": "27.40%",
+      "synergy_notes": "Recarga de energia infinita fornecida pela Raiden Shogun para rotações contínuas de Pyronado e Guará.",
+      "recommended_buffs_bosses": "Composição extremamente versátil com Vaporizar, Sobrecarga e Eletrocarga simultâneos.",
+      "members": [
+        {"name": "Raiden Shogun", "role": "DPS Principal", "element": "Electro"},
+        {"name": "Xiangling", "role": "Sub-DPS / Aplicação", "element": "Pyro"},
+        {"name": "Bennett", "role": "Buffer / Cura", "element": "Pyro"},
+        {"name": "Xingqiu", "role": "Sub-DPS / Aplicação", "element": "Hydro"}
+      ]
+    },
+    {
+      "team_id": "genshin_mavuika_natlan",
+      "team_name": "Mavuika Natlan Overdrive",
+      "mode": "Abismo Espiral",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "82s câmara 12",
+      "usage_rate": "32.10%",
+      "synergy_notes": "Sinergia de bênção da Alma da Noite de Natlan amplificada pela presença de Xilonen e Bennett.",
+      "recommended_buffs_bosses": "Favorecido pelas mecânicas do patch 5.x do Abismo.",
+      "members": [
+        {"name": "Mavuika", "role": "DPS Principal", "element": "Pyro"},
+        {"name": "Xilonen", "role": "Buffer / Shred", "element": "Geo"},
+        {"name": "Bennett", "role": "Buffer / Cura", "element": "Pyro"},
+        {"name": "Furina", "role": "Sub-DPS / Buffer", "element": "Hydro"}
+      ]
+    }
+  ],
+  "zzz": [
+    {
+      "team_id": "zzz_remielle_velina",
+      "team_name": "Remielle Anomalia Vortex",
+      "mode": "Shiyu Defense",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "1m45s Shiyu 7",
+      "usage_rate": "36.20%",
+      "synergy_notes": "Acúmulo acelerado de Anomalia e dano maciço de Vortex induzido pela combinação de Remielle e Velina.",
+      "recommended_buffs_bosses": "Melhor composição para o estágio 7 de Shiyu Defense e Deadly Assault.",
+      "members": [
+        {"name": "Remielle", "role": "DPS Principal", "element": "Lumiflux"},
+        {"name": "Velina", "role": "Sub-DPS / Anomalia", "element": "Wind"},
+        {"name": "Phoenix", "role": "Sub-DPS / Anomalia", "element": "Fire"}
+      ]
+    },
+    {
+      "team_id": "zzz_sigrid_ice_burst",
+      "team_name": "Sigrid Frost Impact",
+      "mode": "Shiyu Defense",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "1m52s Shiyu 7",
+      "usage_rate": "28.40%",
+      "synergy_notes": "Atordoamento rápido com Lycaon aumentando o multiplicador de atordoamento seguido por rajada crítica de Sigrid.",
+      "recommended_buffs_bosses": "Ideal contra inimigos fracos a Gelo com barras de atordoamento extensas.",
+      "members": [
+        {"name": "Sigrid", "role": "DPS Principal", "element": "Ice"},
+        {"name": "Lycaon", "role": "Atordoamento (Stun)", "element": "Ice"},
+        {"name": "Soukaku", "role": "Suporte / Buffer", "element": "Ice"}
+      ]
+    },
+    {
+      "team_id": "zzz_ye_shunguang_phys",
+      "team_name": "Ye Shunguang Physical Stun",
+      "mode": "Shiyu Defense",
+      "tier_or_rank": "Rank 1",
+      "avg_performance": "1m49s Shiyu 7",
+      "usage_rate": "26.70%",
+      "synergy_notes": "Dano físico explosivo com sinergia de atordoamento de Dialyn e suporte universal de Sunna.",
+      "recommended_buffs_bosses": "Eficiente contra chefes de armadura pesada com resistência elementar mista.",
+      "members": [
+        {"name": "Ye Shunguang", "role": "DPS Principal", "element": "Physical"},
+        {"name": "Dialyn", "role": "Atordoamento (Stun)", "element": "Physical"},
+        {"name": "Sunna", "role": "Suporte / Buffer", "element": "Physical"}
+      ]
+    },
+    {
+      "team_id": "zzz_ellen_victoria",
+      "team_name": "Ellen Joe Victoria Monogelo",
+      "mode": "Shiyu Defense",
+      "tier_or_rank": "Rank 2",
+      "avg_performance": "2m10s Shiyu 7",
+      "usage_rate": "21.30%",
+      "synergy_notes": "Sinergia de facção Victoria Housekeeping ativando bônus passivo adicional de Dano de Gelo.",
+      "recommended_buffs_bosses": "Excelente controle de campo e congelamento constante de inimigos agressivos.",
+      "members": [
+        {"name": "Ellen Joe", "role": "DPS Principal", "element": "Ice"},
+        {"name": "Lycaon", "role": "Atordoamento (Stun)", "element": "Ice"},
+        {"name": "Soukaku", "role": "Suporte / Buffer", "element": "Ice"}
+      ]
+    },
+    {
+      "team_id": "zzz_zhu_yuan_neps",
+      "team_name": "Zhu Yuan Burst Éter",
+      "mode": "Shiyu Defense",
+      "tier_or_rank": "Rank 2",
+      "avg_performance": "2m15s Shiyu 7",
+      "usage_rate": "19.50%",
+      "synergy_notes": "Janela de atordoamento gerada por Qingyi permitindo Zhu Yuan descarregar todos os cartuchos de dano crítico com o shred de DEF da Nicole.",
+      "recommended_buffs_bosses": "Altamente recomendada contra alvos vulneráveis a Éter ou com janelas de atordoamento vulneráveis.",
+      "members": [
+        {"name": "Zhu Yuan", "role": "DPS Principal", "element": "Ether"},
+        {"name": "Qingyi", "role": "Atordoamento (Stun)", "element": "Electric"},
+        {"name": "Nicole", "role": "Suporte / Shred", "element": "Ether"}
+      ]
+    }
+  ]
+}

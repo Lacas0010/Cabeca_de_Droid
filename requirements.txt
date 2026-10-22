@@ -25,3 +25,8 @@ rapidfuzz>=3.0.0
 
 # Executable Packaging (Compilação para executável portable .exe no Windows)
 pyinstaller>=6.3.0
+
+# Windows System Tray & Background Daemon (Ícone na bandeja do sistema com menu de contexto)
+pystray>=0.19.5
+Pillow>=10.0.0
+

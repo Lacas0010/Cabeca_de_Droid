@@ -14,6 +14,7 @@ from schemas.gacha import StrategyAskAIRequest
 
 router = APIRouter(tags=["Strategy & Account Audit"])
 
+
 @router.get("/api/strategy/account-gaps/{game_id}")
 async def get_account_gaps_endpoint(game_id: str):
     """
@@ -27,7 +28,7 @@ async def get_account_gaps_endpoint(game_id: str):
     game_id = game_id.lower().strip()
     if game_id not in ["genshin", "hsr", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido. Use 'genshin', 'hsr' ou 'zzz'.")
-    
+
     try:
         roster_data = database.get_roster_data(game_id)
         endgame_data = database.get_endgame_data(game_id)
@@ -35,6 +36,7 @@ async def get_account_gaps_endpoint(game_id: str):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.post("/api/strategy/ask-ai-gaps")
 async def ask_ai_account_gaps(req: StrategyAskAIRequest):
@@ -65,26 +67,27 @@ async def ask_ai_account_gaps(req: StrategyAskAIRequest):
             return {
                 "analysis": gap_analysis,
                 "ai_response": "⚠️ **Chave da IA Groq não configurada.** Vá até a aba **Configurações** e insira sua chave gratuita da Groq para habilitar as recomendações estratégicas inteligentes da IA em tempo real.",
-                "has_ai": False
+                "has_ai": False,
             }
 
-        user_query = req.custom_question.strip() if req.custom_question else (
-            f"Faça um parecer estratégico profundo sobre as lacunas da minha conta em {game_id.upper()}. "
-            "Destaque: 1) Quais arquétipos devo priorizar nos próximos banners do Gacha; "
-            "2) Quais personagens do meu Roster devo investir hoje para acelerar meu fechamento de Endgame; "
-            "3) Como estruturar 2 composições equilibradas com o que tenho disponível."
+        user_query = (
+            req.custom_question.strip()
+            if req.custom_question
+            else (
+                f"Faça um parecer estratégico profundo sobre as lacunas da minha conta em {game_id.upper()}. "
+                "Destaque: 1) Quais arquétipos devo priorizar nos próximos banners do Gacha; "
+                "2) Quais personagens do meu Roster devo investir hoje para acelerar meu fechamento de Endgame; "
+                "3) Como estruturar 2 composições equilibradas com o que tenho disponível."
+            )
         )
 
         context = gap_analysis.get("rag_summary_markdown", "")
         ai_response = rag.ask_assistant(prompt_usuario=user_query, contexto_rag=context)
 
-        return {
-            "analysis": gap_analysis,
-            "ai_response": ai_response,
-            "has_ai": True
-        }
+        return {"analysis": gap_analysis, "ai_response": ai_response, "has_ai": True}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/api/luck-index/{game_id}")
 async def get_luck_index(game_id: str):
@@ -92,17 +95,18 @@ async def get_luck_index(game_id: str):
     game_id = game_id.lower().strip()
     if game_id not in ["genshin", "hsr", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido.")
-        
+
     try:
         roster_data = await get_roster(game_id)
         if not isinstance(roster_data, list):
             roster_data = []
-            
+
         res = build_calculator.analyze_account_luck(game_id, roster_data)
         return res
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @router.get("/api/audit/{game_id}")
 async def get_account_audit_endpoint(game_id: str):
@@ -113,10 +117,8 @@ async def get_account_audit_endpoint(game_id: str):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @router.get("/api/roast/{game_id}")
 async def get_account_roast_stream(game_id: str):
     """Endpoint de streaming SSE para o Roast sarcástico da conta de um jogo (Persona Herta/Nous)."""
-    return StreamingResponse(
-        generate_account_roast_stream(game_id),
-        media_type="text/event-stream"
-    )
+    return StreamingResponse(generate_account_roast_stream(game_id), media_type="text/event-stream")

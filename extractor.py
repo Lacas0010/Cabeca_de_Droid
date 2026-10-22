@@ -7,6 +7,7 @@ import unicodedata
 import genshin
 import endgame_extractor
 
+
 def patch_genshin_enums():
     """
     Registra dinamicamente novos valores de enum no genshin.py para ZZZ/HSR/Genshin
@@ -14,6 +15,7 @@ def patch_genshin_enums():
     """
     try:
         from genshin.models.zzz.character import ZZZElementType, ZZZSpecialty
+
         for val in range(200, 350):
             if val not in ZZZElementType._value2member_map_:
                 member_name = f"ELEMENT_{val}"
@@ -33,6 +35,7 @@ def patch_genshin_enums():
                 ZZZSpecialty._value2member_map_[val] = new_member
     except Exception as err:
         print(f"[AVISO] Falha ao aplicar patch nos enums do genshin.py: {err}")
+
 
 patch_genshin_enums()
 
@@ -62,8 +65,9 @@ GENSHIN_SKIN_MAP = {
     206301: "UI_AvatarIcon_ShenheCostumeDai",
     207001: "UI_AvatarIcon_NilouCostumeFairy",
     210701: "UI_AvatarIcon_CitlaliCostumeXia",
-    212301: "UI_AvatarIcon_DurinCostumeWic"
+    212301: "UI_AvatarIcon_DurinCostumeWic",
 }
+
 
 def get_genshin_costume_info(costume_id):
     """Busca com segurança o nome da skin e arte de splash para Genshin Impact."""
@@ -78,13 +82,11 @@ def get_genshin_costume_info(costume_id):
         pass
     if not c_name and str(costume_id) in GENSHIN_SKIN_MAP:
         c_name = GENSHIN_SKIN_MAP[str(costume_id)]
-    
+
     if c_name:
-        return {
-            "icon": c_name,
-            "art": c_name.replace("UI_AvatarIcon_", "UI_Costume_")
-        }
+        return {"icon": c_name, "art": c_name.replace("UI_AvatarIcon_", "UI_Costume_")}
     return None
+
 
 def sanitize_genshin_url(url_str: str) -> str:
     """Sanitiza URLs de ícones e splash art do Genshin eliminando .png.png e ide_ de URLs do Enka/Yatta."""
@@ -93,17 +95,18 @@ def sanitize_genshin_url(url_str: str) -> str:
     clean = str(url_str).strip()
     while clean.endswith(".png.png"):
         clean = clean[:-4]
-    clean = re.sub(r'/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_', r'/\1', clean)
+    clean = re.sub(r"/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_", r"/\1", clean)
     if "gi.yatta.moe/assets/UI/" in clean:
         clean = clean.replace("https://gi.yatta.moe/assets/UI/", "https://enka.network/ui/")
     return clean
+
 
 def get_zzz_prydwen_slug(agent_name: str) -> str:
     """Converte o nome de um Agente do ZZZ para o slug de imagem HD no Prydwen."""
     if not agent_name:
         return ""
-    nfkd = unicodedata.normalize('NFKD', agent_name)
-    no_accents = ''.join([c for c in nfkd if not unicodedata.combining(c)])
+    nfkd = unicodedata.normalize("NFKD", agent_name)
+    no_accents = "".join([c for c in nfkd if not unicodedata.combining(c)])
     clean = no_accents.lower().strip()
     special_cases = {
         "anby demara": "anby-demara",
@@ -134,7 +137,6 @@ def get_zzz_prydwen_slug(agent_name: str) -> str:
         "n.o 11": "soldier-11",
         "von lycaon": "lycaon",
         "zhu yuan": "zhu-yuan",
-
         # Mapeamento PT-BR de ZZZ
         "císsia": "cissia",
         "cissia": "cissia",
@@ -158,14 +160,14 @@ def get_zzz_prydwen_slug(agent_name: str) -> str:
         "pulchra": "pulchra",
         "koleda": "koleda",
         "remielle": "remielle",
-        "remielle new": "remielle"
+        "remielle new": "remielle",
     }
     if clean in special_cases:
         return special_cases[clean]
     for k, v in special_cases.items():
         if clean == k or k in clean:
             return v
-    return clean.replace('&', '').replace(' ', '-').replace('_', '-')
+    return clean.replace("&", "").replace(" ", "-").replace("_", "-")
 
 
 # Dicionários de mapeamento para traduzir Elementos e Caminhos para Português em HSR
@@ -197,7 +199,7 @@ ELEMENT_MAP = {
     "lumiflux": "Lumiflux",
     "Lumiflux": "Lumiflux",
     "Ether": "Éter",
-    "Electric": "Elétrico"
+    "Electric": "Elétrico",
 }
 
 PATH_MAP = {
@@ -219,8 +221,9 @@ PATH_MAP = {
     "Preservation": "Preservação",
     "Abundance": "Abundância",
     "Remembrance": "Recordação",
-    "Elation": "Euforia"
+    "Elation": "Euforia",
 }
+
 
 def clean_relic_name(text: str) -> str:
     """
@@ -237,21 +240,17 @@ def clean_relic_name(text: str) -> str:
 
     def replace_gender_block(match):
         block = match.group(0)
-        tags = re.findall(r'\{([fFmM])\s*#\s*([^}]*)\}', block)
+        tags = re.findall(r"\{([fFmM])\s*#\s*([^}]*)\}", block)
         if not tags:
             return ""
         for gender, content in tags:
-            if gender.upper() == 'F':
+            if gender.upper() == "F":
                 return content.strip()
         return tags[0][1].strip()
 
-    cleaned = re.sub(
-        r'(\{[fFmM]\s*#\s*[^}]*\}\s*)+',
-        replace_gender_block,
-        text
-    )
+    cleaned = re.sub(r"(\{[fFmM]\s*#\s*[^}]*\}\s*)+", replace_gender_block, text)
 
-    return re.sub(r'\s+', ' ', cleaned).strip()
+    return re.sub(r"\s+", " ", cleaned).strip()
 
 
 # Mapeamento oficial de sanitização e abreviação compacta de nomes de atributos (Stats / Substats)
@@ -283,7 +282,6 @@ STAT_SHORT_NAMES = {
     "Regeneração de Energia": "Regen. Energia",
     "Taxa de Reg. de Energia": "Regen. Energia",
     "Taxa de Regeneração de Energia": "Regen. Energia",
-
     # Genshin Impact
     "Proficiência Elemental": "Prof. Element.",
     "Recarga de Energia": "Recarga",
@@ -295,7 +293,6 @@ STAT_SHORT_NAMES = {
     "Bônus de Dano Geo": "Dano Geo",
     "Bônus de Dano Dendro": "Dano Dendro",
     "Bônus de Dano Elemental": "Dano Elem.",
-
     # Zenless Zone Zero (ZZZ)
     "Proficiência de Anomalia": "Prof. Anomalia",
     "Taxa de Acerto de Anomalia": "Maest. Anomalia",
@@ -307,7 +304,6 @@ STAT_SHORT_NAMES = {
     "Bônus de Dano de Elétrico": "Dano Elétrico",
     "Bônus de Dano Éter": "Dano Éter",
     "Bônus de Dano de Éter": "Dano Éter",
-
     # Inglês (API HSR, ZZZ retorna em inglês em alguns idiomas)
     "CRIT Rate": "Taxa CRIT",
     "CRIT DMG": "Dano CRIT",
@@ -342,6 +338,7 @@ STAT_SHORT_NAMES = {
     "Dendro DMG Bonus": "Dano Dendro",
 }
 
+
 def sanitize_stat_name(stat_text: str) -> str:
     """
     Substitui nomes longos de atributos por siglas e versões compactas (máx 12-14 caracteres),
@@ -355,7 +352,7 @@ def sanitize_stat_name(stat_text: str) -> str:
     for k, v in STAT_SHORT_NAMES.items():
         if k in s:
             s = s.replace(k, v)
-    s = re.sub(r'Bônus de Dano (?:de )?([A-Za-zÀ-ÿ]+)', r'Dano \1', s, flags=re.IGNORECASE)
+    s = re.sub(r"Bônus de Dano (?:de )?([A-Za-zÀ-ÿ]+)", r"Dano \1", s, flags=re.IGNORECASE)
     return s
 
 
@@ -366,27 +363,29 @@ def clean_hoyoverse_desc(text: str) -> str:
     s = str(text)
     s = s.replace("\r", "").replace("\\r", "")
     s = s.replace("\\n", "\n")
-    s = re.sub(r'<br\s*/?>', '\n', s, flags=re.I)
-    s = re.sub(r'\{M#([^}]*)\}\{F#([^}]*)\}', r'\1', s, flags=re.I)
-    s = re.sub(r'\{F#([^}]*)\}', r'\1', s, flags=re.I)
-    s = re.sub(r'\{M#([^}]*)\}', r'\1', s, flags=re.I)
-    s = re.sub(r'\{LINK#[^}]*\}', '', s, flags=re.I)
-    s = re.sub(r'\{/LINK\}', '', s, flags=re.I)
-    s = re.sub(r'\{[A-Z0-9_#]+(?::[^}]*)?\}', '', s)
-    s = re.sub(r'<color=[^>]*>', '', s, flags=re.I)
-    s = re.sub(r'</color>', '', s, flags=re.I)
-    s = re.sub(r'<IconMap:[^>]+>', '', s, flags=re.I)
-    s = re.sub(r'</?Term(?:\s+[^>]*)?>', '', s, flags=re.I)
-    s = re.sub(r'</?[a-zA-Z0-9:_-]+(?:\s+[^>]*)?>', '', s)
-    s = (s.replace('&nbsp;', ' ')
-          .replace('&quot;', '"')
-          .replace('&amp;', '&')
-          .replace('&lt;', '<')
-          .replace('&gt;', '>')
-          .replace('&#39;', "'")
-          .replace('&apos;', "'"))
-    s = re.sub(r'[ \t]+', ' ', s)
-    s = re.sub(r'\n\s*\n\s*\n+', '\n\n', s)
+    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
+    s = re.sub(r"\{M#([^}]*)\}\{F#([^}]*)\}", r"\1", s, flags=re.I)
+    s = re.sub(r"\{F#([^}]*)\}", r"\1", s, flags=re.I)
+    s = re.sub(r"\{M#([^}]*)\}", r"\1", s, flags=re.I)
+    s = re.sub(r"\{LINK#[^}]*\}", "", s, flags=re.I)
+    s = re.sub(r"\{/LINK\}", "", s, flags=re.I)
+    s = re.sub(r"\{[A-Z0-9_#]+(?::[^}]*)?\}", "", s)
+    s = re.sub(r"<color=[^>]*>", "", s, flags=re.I)
+    s = re.sub(r"</color>", "", s, flags=re.I)
+    s = re.sub(r"<IconMap:[^>]+>", "", s, flags=re.I)
+    s = re.sub(r"</?Term(?:\s+[^>]*)?>", "", s, flags=re.I)
+    s = re.sub(r"</?[a-zA-Z0-9:_-]+(?:\s+[^>]*)?>", "", s)
+    s = (
+        s.replace("&nbsp;", " ")
+        .replace("&quot;", '"')
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
+    )
+    s = re.sub(r"[ \t]+", " ", s)
+    s = re.sub(r"\n\s*\n\s*\n+", "\n\n", s)
     return s.strip()
 
 
@@ -436,7 +435,7 @@ def extract_hsr_character_skills(char) -> list:
             "max_level": int(max_lvl),
             "type": str(order),
             "icon": str(s_icon),
-            "desc": clean_hoyoverse_desc(s_desc)
+            "desc": clean_hoyoverse_desc(s_desc),
         }
     skills_json = [res[k] for k in sorted(res.keys())]
     return skills_json
@@ -474,14 +473,16 @@ def extract_genshin_character_skills(char) -> list:
         s_max = 1 if is_passive else getattr(sk, "max_level", 10)
         s_icon = getattr(sk, "icon", getattr(sk, "image", getattr(sk, "icon_url", "")))
         s_desc = getattr(sk, "description", getattr(sk, "desc", getattr(sk, "effect", "")))
-        skills_json.append({
-            "name": str(s_name),
-            "level": int(s_lvl),
-            "max_level": int(s_max) if s_max else (1 if is_passive else 10),
-            "type": str(s_type),
-            "icon": str(s_icon),
-            "desc": clean_hoyoverse_desc(s_desc)
-        })
+        skills_json.append(
+            {
+                "name": str(s_name),
+                "level": int(s_lvl),
+                "max_level": int(s_max) if s_max else (1 if is_passive else 10),
+                "type": str(s_type),
+                "icon": str(s_icon),
+                "desc": clean_hoyoverse_desc(s_desc),
+            }
+        )
     return skills_json
 
 
@@ -513,7 +514,7 @@ def extract_zzz_agent_skills(agent) -> list:
             3: "Ataque de Suporte",
             4: "Ataque Especial",
             5: "Ataque de Cadeia / Suprema",
-            6: "Habilidade Passiva Central"
+            6: "Habilidade Passiva Central",
         }
         s_name = getattr(sk, "title", getattr(sk, "name", None))
         if not s_name and hasattr(sk, "items") and sk.items:
@@ -544,14 +545,16 @@ def extract_zzz_agent_skills(agent) -> list:
         if not s_desc and hasattr(sk, "items") and sk.items:
             s_desc = getattr(sk.items[0], "text", "")
 
-        skills_json.append({
-            "name": str(s_name),
-            "level": int(s_lvl),
-            "max_level": int(s_max),
-            "type": str(t_type if t_type else ""),
-            "icon": str(s_icon),
-            "desc": clean_hoyoverse_desc(s_desc)
-        })
+        skills_json.append(
+            {
+                "name": str(s_name),
+                "level": int(s_lvl),
+                "max_level": int(s_max),
+                "type": str(t_type if t_type else ""),
+                "icon": str(s_icon),
+                "desc": clean_hoyoverse_desc(s_desc),
+            }
+        )
     return skills_json
 
 
@@ -560,7 +563,7 @@ def extract_hsr_character_ranks(char) -> list:
     ranks_json = []
     char_rank = int(getattr(char, "rank", 0) or 0)
     raw_ranks = getattr(char, "ranks", getattr(char, "eidolons", []))
-    
+
     if raw_ranks and len(raw_ranks) > 0:
         for r in raw_ranks:
             pos = int(getattr(r, "pos", getattr(r, "position", getattr(r, "id", len(ranks_json) + 1))))
@@ -568,22 +571,12 @@ def extract_hsr_character_ranks(char) -> list:
             icon = str(getattr(r, "icon", getattr(r, "icon_url", getattr(r, "image", ""))))
             desc = clean_hoyoverse_desc(getattr(r, "desc", getattr(r, "description", "")))
             is_unlocked = bool(getattr(r, "is_unlocked", getattr(r, "unlocked", pos <= char_rank)))
-            ranks_json.append({
-                "pos": pos,
-                "name": name,
-                "icon": icon,
-                "desc": desc,
-                "is_unlocked": is_unlocked
-            })
+            ranks_json.append({"pos": pos, "name": name, "icon": icon, "desc": desc, "is_unlocked": is_unlocked})
     else:
         for pos in range(1, 7):
-            ranks_json.append({
-                "pos": pos,
-                "name": f"Eidolon {pos}",
-                "icon": "",
-                "desc": "",
-                "is_unlocked": pos <= char_rank
-            })
+            ranks_json.append(
+                {"pos": pos, "name": f"Eidolon {pos}", "icon": "", "desc": "", "is_unlocked": pos <= char_rank}
+            )
     return ranks_json
 
 
@@ -592,30 +585,30 @@ def extract_genshin_character_constellations(char) -> list:
     constellations_json = []
     char_constellation = int(getattr(char, "constellation", getattr(char, "actived_constellation_num", 0)) or 0)
     raw_constellations = getattr(char, "constellations", [])
-    
+
     if raw_constellations and len(raw_constellations) > 0:
         for idx, c in enumerate(raw_constellations):
             pos = int(getattr(c, "pos", getattr(c, "position", idx + 1)))
             name = str(getattr(c, "name", f"Constelação {pos}"))
             icon = str(getattr(c, "icon", getattr(c, "icon_url", getattr(c, "image", ""))))
             desc = clean_hoyoverse_desc(getattr(c, "effect", getattr(c, "desc", getattr(c, "description", ""))))
-            is_unlocked = bool(getattr(c, "is_actived", getattr(c, "activated", getattr(c, "is_unlocked", pos <= char_constellation))))
-            constellations_json.append({
-                "pos": pos,
-                "name": name,
-                "icon": icon,
-                "desc": desc,
-                "is_unlocked": is_unlocked
-            })
+            is_unlocked = bool(
+                getattr(c, "is_actived", getattr(c, "activated", getattr(c, "is_unlocked", pos <= char_constellation)))
+            )
+            constellations_json.append(
+                {"pos": pos, "name": name, "icon": icon, "desc": desc, "is_unlocked": is_unlocked}
+            )
     else:
         for pos in range(1, 7):
-            constellations_json.append({
-                "pos": pos,
-                "name": f"Constelação {pos}",
-                "icon": "",
-                "desc": "",
-                "is_unlocked": pos <= char_constellation
-            })
+            constellations_json.append(
+                {
+                    "pos": pos,
+                    "name": f"Constelação {pos}",
+                    "icon": "",
+                    "desc": "",
+                    "is_unlocked": pos <= char_constellation,
+                }
+            )
     return constellations_json
 
 
@@ -624,7 +617,7 @@ def extract_zzz_agent_ranks(agent) -> list:
     ranks_json = []
     agent_rank = int(getattr(agent, "rank", 0) or 0)
     raw_ranks = getattr(agent, "ranks", getattr(agent, "mindscapes", []))
-    
+
     if raw_ranks and len(raw_ranks) > 0:
         for idx, r in enumerate(raw_ranks):
             pos = int(getattr(r, "position", getattr(r, "pos", idx + 1)))
@@ -634,25 +627,19 @@ def extract_zzz_agent_ranks(agent) -> list:
                 icon = f"/assets/mindscapes/zzz/m{pos}.png"
             desc = clean_hoyoverse_desc(getattr(r, "description", getattr(r, "desc", "")))
             is_unlocked = bool(getattr(r, "unlocked", getattr(r, "is_unlocked", pos <= agent_rank)))
-            ranks_json.append({
-                "pos": pos,
-                "name": name,
-                "icon": icon,
-                "desc": desc,
-                "is_unlocked": is_unlocked
-            })
+            ranks_json.append({"pos": pos, "name": name, "icon": icon, "desc": desc, "is_unlocked": is_unlocked})
     else:
         for pos in range(1, 7):
-            ranks_json.append({
-                "pos": pos,
-                "name": f"Cinema Mental {pos}",
-                "icon": f"/assets/mindscapes/zzz/m{pos}.png",
-                "desc": "",
-                "is_unlocked": pos <= agent_rank
-            })
+            ranks_json.append(
+                {
+                    "pos": pos,
+                    "name": f"Cinema Mental {pos}",
+                    "icon": f"/assets/mindscapes/zzz/m{pos}.png",
+                    "desc": "",
+                    "is_unlocked": pos <= agent_rank,
+                }
+            )
     return ranks_json
-
-
 
 
 class BaseExtractor:
@@ -675,7 +662,7 @@ class BaseExtractor:
             accounts = await self.client.get_game_accounts()
         except Exception as e:
             raise Exception(f"Erro ao obter contas vinculadas no HoYoLAB: {e}")
-            
+
         for acc in accounts:
             if acc.game_biz.startswith(game_biz_prefix):
                 return acc
@@ -695,9 +682,9 @@ class HSRExtractor(BaseExtractor):
         hsr_account = await self.get_account("hkrpg")
         if not hsr_account:
             raise Exception("Nenhuma conta ativa de Honkai: Star Rail encontrada vinculada a este perfil HoYoLAB.")
-            
+
         uid = hsr_account.uid
-        
+
         # 2. Obtém os dados de Battle Chronicle e a lista detalhada de personagens
         try:
             user_data = await self.client.get_starrail_user(uid)
@@ -710,7 +697,7 @@ class HSRExtractor(BaseExtractor):
                 )
             else:
                 raise Exception(f"Não foi possível obter dados para o UID {uid}: {e}")
-        
+
         # 2.5. Coleta e traduz os nomes dos conjuntos de relíquias via API do HoYoWiki
         wiki_ids = set()
         for char in characters_data.avatar_list:
@@ -721,7 +708,7 @@ class HSRExtractor(BaseExtractor):
                 relics_list.extend(char.ornaments)
             for r in relics_list:
                 if hasattr(r, "wiki") and r.wiki:
-                    match = re.search(r'/entry/(\d+)', r.wiki)
+                    match = re.search(r"/entry/(\d+)", r.wiki)
                     if match:
                         wiki_ids.add(match.group(1))
 
@@ -730,9 +717,9 @@ class HSRExtractor(BaseExtractor):
             ids_str = ",".join(wiki_ids)
             url = f"https://sg-act-public-api-static.hoyolab.com/hoyowiki/hsr/wapi/entry_pages?str_entry_page_ids={ids_str}"
             headers = {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-                'x-rpc-language': 'pt-pt',
-                'x-rpc-wiki_app': 'hsr'
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "x-rpc-language": "pt-pt",
+                "x-rpc-wiki_app": "hsr",
             }
             try:
                 res = requests.get(url, headers=headers, timeout=10)
@@ -747,7 +734,7 @@ class HSRExtractor(BaseExtractor):
         # 3. Formata e gera o conteúdo em Markdown
         stats = user_data.stats
         info = user_data.info
-        
+
         lines = []
         lines.append("# Relatório de Personagens - Honkai: Star Rail")
         lines.append(f"**Usuário:** {info.nickname} (UID: {uid})")
@@ -757,7 +744,7 @@ class HSRExtractor(BaseExtractor):
         lines.append(f"**Conquistas Desbloqueadas:** {stats.achievement_num}")
         lines.append(f"**Baús Abertos:** {stats.chest_num}")
         lines.append(f"**Salão Esquecido:** {stats.abyss_process}")
-        
+
         endgame_modes_data = []
         endgame_text = ""
         try:
@@ -773,34 +760,34 @@ class HSRExtractor(BaseExtractor):
         lines.append("")
         lines.append("| Personagem | Nível | Raridade | Eidolon | Caminho | Elemento |")
         lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
-        
+
         # Ordena por raridade (decrescente) e nível (decrescente)
         for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
             stars = "⭐" * char.rarity
             eidolon = f"E{char.rank}"
-            
+
             # Tradução e tratamento do Caminho
             p_name = char.path.name if hasattr(char.path, "name") else str(char.path)
             path = PATH_MAP.get(p_name, p_name)
-            
+
             # Tradução e tratamento do Elemento
             e_name = char.element.name if hasattr(char.element, "name") else str(char.element)
             element = ELEMENT_MAP.get(e_name, e_name)
-            
+
             lines.append(f"| {char.name} | {char.level} | {stars} | {eidolon} | {path} | {element} |")
-            
+
         # Seção de Builds para Personagens
         lines.append("")
         lines.append("## Detalhes de Builds")
         lines.append("")
-        
+
         for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
             # 1. Cone de Luz
             if char.equip:
                 equip_text = f"{char.equip.name} (Sobreposição {char.equip.rank})"
             else:
                 equip_text = "Nenhum cone de luz equipado"
-            
+
             # 2. Relíquias e Ornamentos
             relics_list = []
             try:
@@ -814,23 +801,23 @@ class HSRExtractor(BaseExtractor):
                     relics_list.extend(char.relics)
                 if hasattr(char, "ornaments") and char.ornaments:
                     relics_list.extend(char.ornaments)
-            
+
             set_counts = {}
             for r in relics_list:
                 # Tenta extrair o nome do conjunto amigável via mapeamento do HoYoWiki
                 set_name = clean_relic_name(r.name)  # Fallback
                 if hasattr(r, "wiki") and r.wiki:
-                    match = re.search(r'/entry/(\d+)', r.wiki)
+                    match = re.search(r"/entry/(\d+)", r.wiki)
                     if match:
                         w_id = match.group(1)
                         set_name = clean_relic_name(wiki_map.get(w_id, f"Conjunto {w_id}"))
                 set_counts[set_name] = set_counts.get(set_name, 0) + 1
-            
+
             set_strings = []
             for s_name, count in sorted(set_counts.items(), key=lambda x: x[1], reverse=True):
                 set_strings.append(f"{s_name} ({count} peças)")
             relics_text = " + ".join(set_strings) if set_strings else "Nenhuma relíquia equipada"
-            
+
             # 3. Status Finais
             properties_list = []
             if hasattr(char, "properties") and char.properties:
@@ -840,7 +827,7 @@ class HSRExtractor(BaseExtractor):
                     if name and val:
                         properties_list.append(f"{name}: {val}")
             properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
-            
+
             # Escreve o bloco do personagem em linguagem natural para LLMs
             eidolon = f"E{char.rank}"
             char_skills = extract_hsr_character_skills(char)
@@ -852,35 +839,62 @@ class HSRExtractor(BaseExtractor):
             lines.append(f"- **Relíquias:** {relics_text}")
             lines.append(f"- **Rastros / Habilidades:** {skills_text}")
             lines.append(f"- **Status Finais:** {properties_text}")
-            
+
             if relics_list:
                 lines.append("\n  **Detalhamento de Peças (Substatus):**")
                 for relic in relics_list:
                     main_prop = getattr(relic, "main_property", getattr(relic, "main_stat", None))
                     if main_prop:
-                        m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                        m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                        m_name = getattr(
+                            getattr(main_prop, "info", main_prop),
+                            "name",
+                            getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")),
+                        )
+                        m_val = getattr(
+                            main_prop,
+                            "value",
+                            getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")),
+                        )
                         main_stat = f"{m_name} ({m_val})"
                     else:
                         main_stat = "Desconhecido"
-                        
+
                     substats_str = "Sem substatus"
-                    sub_props = getattr(relic, "properties", getattr(relic, "sub_properties", getattr(relic, "sub_stats", getattr(relic, "sub_property_list", []))))
+                    sub_props = getattr(
+                        relic,
+                        "properties",
+                        getattr(
+                            relic,
+                            "sub_properties",
+                            getattr(relic, "sub_stats", getattr(relic, "sub_property_list", [])),
+                        ),
+                    )
                     if sub_props:
                         subs = []
                         for sub in sub_props:
-                            s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                            s_name = getattr(
+                                getattr(sub, "info", sub),
+                                "name",
+                                getattr(sub, "property_name", getattr(sub, "type", "Atributo")),
+                            )
                             s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
                             subs.append(f"{s_name}: {s_val}")
                         substats_str = ", ".join(subs)
-                    
-                    hsr_slot_map = {1: "Cabeça", 2: "Mãos", 3: "Corpo", 4: "Pés", 5: "Esfera Plana", 6: "Corda de Ligação"}
-                    pos = getattr(relic, 'pos', '?')
+
+                    hsr_slot_map = {
+                        1: "Cabeça",
+                        2: "Mãos",
+                        3: "Corpo",
+                        4: "Pés",
+                        5: "Esfera Plana",
+                        6: "Corda de Ligação",
+                    }
+                    pos = getattr(relic, "pos", "?")
                     pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
                     lines.append(f"  • [{pos_name}] {clean_relic_name(relic.name)}")
                     lines.append(f"    - Principal: {main_stat}")
                     lines.append(f"    - Substatus: {substats_str}")
-                    
+
             lines.append("")
             lines.append("---")
             lines.append("")
@@ -893,49 +907,69 @@ class HSRExtractor(BaseExtractor):
             for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
                 e_name = char.element.name if hasattr(char.element, "name") else str(char.element)
                 element = ELEMENT_MAP.get(e_name, e_name)
-                
+
                 w_info = {}
                 if hasattr(char, "equip") and char.equip:
                     w_info = {
                         "name": char.equip.name,
                         "level": getattr(char.equip, "level", 80),
                         "rank": getattr(char.equip, "rank", 1),
-                        "icon": getattr(char.equip, "icon", "")
+                        "icon": getattr(char.equip, "icon", ""),
                     }
-                    
+
                 relics_json = []
                 r_list = []
-                if hasattr(char, "relics") and char.relics: r_list.extend(char.relics)
-                if hasattr(char, "ornaments") and char.ornaments: r_list.extend(char.ornaments)
+                if hasattr(char, "relics") and char.relics:
+                    r_list.extend(char.relics)
+                if hasattr(char, "ornaments") and char.ornaments:
+                    r_list.extend(char.ornaments)
                 for r in r_list:
-                    pos = getattr(r, 'pos', '?')
+                    pos = getattr(r, "pos", "?")
                     pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
                     main_prop = getattr(r, "main_property", getattr(r, "main_stat", None))
                     main_stat = "Desconhecido"
                     if main_prop:
-                        m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                        m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                        m_name = getattr(
+                            getattr(main_prop, "info", main_prop),
+                            "name",
+                            getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")),
+                        )
+                        m_val = getattr(
+                            main_prop,
+                            "value",
+                            getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")),
+                        )
                         main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
-                        
-                    sub_props = getattr(r, "properties", getattr(r, "sub_properties", getattr(r, "sub_stats", getattr(r, "sub_property_list", []))))
+
+                    sub_props = getattr(
+                        r,
+                        "properties",
+                        getattr(r, "sub_properties", getattr(r, "sub_stats", getattr(r, "sub_property_list", []))),
+                    )
                     subs = []
                     if sub_props:
                         for sub in sub_props:
-                            s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                            s_name = getattr(
+                                getattr(sub, "info", sub),
+                                "name",
+                                getattr(sub, "property_name", getattr(sub, "type", "Atributo")),
+                            )
                             s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
                             s_clean = sanitize_stat_name(s_name)
                             subs.append(f"{s_clean}: {s_val}")
-                    relics_json.append({
-                        "name": clean_relic_name(r.name),
-                        "icon": getattr(r, "icon", ""),
-                        "slot": pos_name,
-                        "main": main_stat,
-                        "sub": ", ".join(subs) if subs else "Sem substatus"
-                    })
-                    
+                    relics_json.append(
+                        {
+                            "name": clean_relic_name(r.name),
+                            "icon": getattr(r, "icon", ""),
+                            "slot": pos_name,
+                            "main": main_stat,
+                            "sub": ", ".join(subs) if subs else "Sem substatus",
+                        }
+                    )
+
                 char_icon = getattr(char, "icon", getattr(char, "image", ""))
                 char_id_str = str(getattr(char, "id", ""))
-                
+
                 # Resolução de skins e costumes do HSR
                 effective_id = char_id_str
                 costumes = getattr(char, "costumes", getattr(char, "skins", getattr(char, "outfits", None)))
@@ -945,11 +979,11 @@ class HSRExtractor(BaseExtractor):
                     if c_id and str(c_id).isdigit():
                         effective_id = str(c_id)
                     char_icon = getattr(c_item, "icon", getattr(c_item, "image", char_icon))
-                    
+
                 raw_image = str(getattr(char, "image", "") or "")
                 raw_figure = str(getattr(char, "figure_path", "") or "")
                 check_str = f"{getattr(char, 'name', '')} {char_id_str} {char_icon} {raw_image} {raw_figure}".lower()
-                skin_m = re.search(r'\b(150[1-9]|151[0-5]|1414)\b', check_str)
+                skin_m = re.search(r"\b(150[1-9]|151[0-5]|1414)\b", check_str)
                 if skin_m:
                     effective_id = skin_m.group(1)
                 elif "summeretto" in check_str or "robin summer" in check_str:
@@ -965,8 +999,16 @@ class HSRExtractor(BaseExtractor):
                 elif "noite de inverno" in check_str or "winter" in check_str or "sparxie" in check_str:
                     effective_id = "1501"
 
-                eidolon_art_url = f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/{effective_id}.png" if effective_id else ""
-                hsr_splash = f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/{effective_id}.png" if effective_id else ""
+                eidolon_art_url = (
+                    f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/{effective_id}.png"
+                    if effective_id
+                    else ""
+                )
+                hsr_splash = (
+                    f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/{effective_id}.png"
+                    if effective_id
+                    else ""
+                )
                 if "avatar_skin_image" in raw_image:
                     hsr_splash = raw_image
                 elif "avatar_skin_image" in raw_figure:
@@ -975,34 +1017,36 @@ class HSRExtractor(BaseExtractor):
                 # Extrai Status Finais (Final Stats) do personagem HSR
                 hsr_stats = {}
                 props = getattr(char, "properties", [])
-                for prop in (props or []):
+                for prop in props or []:
                     p_name = getattr(getattr(prop, "info", prop), "name", getattr(prop, "property_name", None))
                     p_final = getattr(prop, "final", getattr(prop, "value", ""))
-                    if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
+                    if p_name and p_final and str(p_final) not in ("", "0", "0.0%", "0.0"):
                         label = sanitize_stat_name(p_name)
                         hsr_stats[label] = str(p_final)
 
                 skills_json = extract_hsr_character_skills(char)
                 ranks_json = extract_hsr_character_ranks(char)
 
-                char_json_list.append({
-                    "id": str(effective_id or char.id),
-                    "name": char.name,
-                    "level": char.level,
-                    "rarity": char.rarity,
-                    "rank_str": f"E{char.rank}",
-                    "element": element,
-                    "icon": char_icon,
-                    "gacha_art": hsr_splash,
-                    "portrait": hsr_splash,
-                    "splash_art": hsr_splash,
-                    "eidolon_art": eidolon_art_url,
-                    "weapon": w_info,
-                    "relics": relics_json,
-                    "skills": skills_json,
-                    "ranks": ranks_json,
-                    "stats": hsr_stats
-                })
+                char_json_list.append(
+                    {
+                        "id": str(effective_id or char.id),
+                        "name": char.name,
+                        "level": char.level,
+                        "rarity": char.rarity,
+                        "rank_str": f"E{char.rank}",
+                        "element": element,
+                        "icon": char_icon,
+                        "gacha_art": hsr_splash,
+                        "portrait": hsr_splash,
+                        "splash_art": hsr_splash,
+                        "eidolon_art": eidolon_art_url,
+                        "weapon": w_info,
+                        "relics": relics_json,
+                        "skills": skills_json,
+                        "ranks": ranks_json,
+                        "stats": hsr_stats,
+                    }
+                )
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
                 json.dump(char_json_list, jf, ensure_ascii=False, indent=2)
@@ -1019,14 +1063,15 @@ class HSRExtractor(BaseExtractor):
             print(f"Aviso ao salvar endgame_data_hsr.json: {e_err}")
 
         markdown_content = "\n".join(lines)
-        
+
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
         with open(filename, "w", encoding="utf-8") as f:
             f.write(markdown_content)
-            
+
         # Salva no SQLite
         try:
             import database
+
             nickname = getattr(info, "nickname", "Desbravador") if info else "Desbravador"
             acc_level = getattr(info, "level", 70) if info else 70
             act_days = getattr(stats, "active_days", 0) if stats else 0
@@ -1034,7 +1079,7 @@ class HSRExtractor(BaseExtractor):
             database.save_endgame_data(str(uid), "hsr", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
-                pattern = rf'(\*\*(?:Personagem):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)'
+                pattern = rf"(\*\*(?:Personagem):\*\*\s*{re.escape(c['name'])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)"
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
@@ -1057,7 +1102,7 @@ class HSRExtractor(BaseExtractor):
                     raw_md=char_md,
                     skills_json=json.dumps(c.get("skills", [])),
                     stats_json=json.dumps(c.get("stats", {})),
-                    ranks_json=json.dumps(c.get("ranks", []))
+                    ranks_json=json.dumps(c.get("ranks", [])),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1068,7 +1113,7 @@ class HSRExtractor(BaseExtractor):
                         slot=r["slot"],
                         main_stat=r["main"],
                         sub_stats=r["sub"],
-                        icon=r["icon"]
+                        icon=r["icon"],
                     )
             print("[INFO] Roster HSR salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
@@ -1089,9 +1134,9 @@ class GenshinExtractor(BaseExtractor):
         genshin_acc = await self.get_account("hk4e")
         if not genshin_acc:
             raise Exception("Nenhuma conta ativa de Genshin Impact encontrada vinculada a este perfil HoYoLAB.")
-            
+
         uid = genshin_acc.uid
-        
+
         try:
             try:
                 await genshin.utility.update_characters_any()
@@ -1139,7 +1184,7 @@ class GenshinExtractor(BaseExtractor):
                 )
             else:
                 raise Exception(f"Não foi possível obter dados detalhados para o UID {uid}: {e}")
-            
+
         def safe_char_name(c) -> str:
             try:
                 name = c.name
@@ -1198,7 +1243,7 @@ class GenshinExtractor(BaseExtractor):
         lines.append(f"**UID:** {uid}")
         lines.append(f"**Rank de Aventura:** {genshin_acc.level}")
         lines.append(f"**Personagens Obtidos:** {len(chars)}")
-        
+
         endgame_modes_data = []
         endgame_text = ""
         try:
@@ -1208,43 +1253,49 @@ class GenshinExtractor(BaseExtractor):
                 lines.append(endgame_text)
         except Exception as e:
             print(f"Aviso: Não foi possível puxar dados de Endgame Genshin: {e}")
-            
+
         lines.append("")
         lines.append("## Detalhes do Roster de Personagens")
         lines.append("")
         lines.append("| Personagem | Nível | Raridade | Constelação | Arma | Artefatos |")
         lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
-        
+
         for char in sorted(chars, key=lambda c: (safe_char_rarity(c), getattr(c, "level", 1)), reverse=True):
             try:
                 c_name = safe_char_name(char)
                 stars = "⭐" * safe_char_rarity(char)
-                w_name = char.weapon.name if (hasattr(char, "weapon") and char.weapon and hasattr(char.weapon, "name")) else "Nenhuma"
+                w_name = (
+                    char.weapon.name
+                    if (hasattr(char, "weapon") and char.weapon and hasattr(char.weapon, "name"))
+                    else "Nenhuma"
+                )
                 w_lvl = getattr(char.weapon, "level", 90) if hasattr(char, "weapon") and char.weapon else 1
                 w_ref = getattr(char.weapon, "refinement", 1) if hasattr(char, "weapon") and char.weapon else 1
                 weapon = f"{w_name} (Nv. {w_lvl}, R{w_ref})" if hasattr(char, "weapon") and char.weapon else "Nenhuma"
-                
+
                 # Conta conjuntos de artefatos
                 art_sets = {}
                 for art in getattr(char, "artifacts", []):
                     if hasattr(art, "set") and art.set:
                         s_n = getattr(art.set, "name", "Desconhecido")
                         art_sets[s_n] = art_sets.get(s_n, 0) + 1
-                        
+
                 art_strings = []
                 for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
                     art_strings.append(f"{s_name} ({count} peças)")
                 art_str = " + ".join(art_strings) if art_strings else "Sem artefatos"
-                
-                lines.append(f"| {c_name} | Nv. {getattr(char, 'level', 1)} | {stars} | C{getattr(char, 'constellation', 0)} | {weapon} | {art_str} |")
+
+                lines.append(
+                    f"| {c_name} | Nv. {getattr(char, 'level', 1)} | {stars} | C{getattr(char, 'constellation', 0)} | {weapon} | {art_str} |"
+                )
             except Exception as row_err:
                 print(f"[AVISO] Erro ao formatar linha markdown de personagem Genshin: {row_err}")
-            
+
         # Seção de Builds para Personagens
         lines.append("")
         lines.append("## Detalhes de Builds")
         lines.append("")
-        
+
         for char in sorted(chars, key=lambda c: (safe_char_rarity(c), getattr(c, "level", 1)), reverse=True):
             try:
                 c_name = safe_char_name(char)
@@ -1254,29 +1305,31 @@ class GenshinExtractor(BaseExtractor):
                     weapon_text = f"{char.weapon.name} (Nv. {char.weapon.level}, R{refinement})"
                 else:
                     weapon_text = "Nenhuma arma equipada"
-                
+
                 # 2. Artefatos
                 art_sets = {}
                 for art in getattr(char, "artifacts", []):
                     if hasattr(art, "set") and art.set:
                         s_n = getattr(art.set, "name", "Desconhecido")
                         art_sets[s_n] = art_sets.get(s_n, 0) + 1
-                
+
                 set_strings = []
                 for s_name, count in sorted(art_sets.items(), key=lambda x: x[1], reverse=True):
                     set_strings.append(f"{s_name} ({count} peças)")
                 artifacts_text = " + ".join(set_strings) if set_strings else "Nenhum artefato equipado"
-                
+
                 # 3. Status Finais
                 properties_list = []
                 if hasattr(char, "selected_properties") and char.selected_properties:
                     for prop in char.selected_properties:
-                        name = prop.info.name if (hasattr(prop, "info") and prop.info and prop.info.name) else "Atributo"
+                        name = (
+                            prop.info.name if (hasattr(prop, "info") and prop.info and prop.info.name) else "Atributo"
+                        )
                         val = getattr(prop, "final", "")
                         if name and val:
                             properties_list.append(f"{name}: {val}")
                 properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
-                
+
                 # Escreve o bloco do personagem
                 constellation = f"C{getattr(char, 'constellation', 0)}"
                 char_skills = extract_genshin_character_skills(char)
@@ -1285,58 +1338,85 @@ class GenshinExtractor(BaseExtractor):
                     if s.get("max_level", 10) > 1:
                         skills_str_list.append(f"{s['name']}: Nv. {s['level']}/{s['max_level']}")
                     else:
-                        skills_str_list.append(f"{s['name']}: Desbloqueado" if s.get("level", 1) > 0 else f"{s['name']}: Bloqueado")
+                        skills_str_list.append(
+                            f"{s['name']}: Desbloqueado" if s.get("level", 1) > 0 else f"{s['name']}: Bloqueado"
+                        )
                 skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de talentos"
 
-                lines.append(f"**Personagem:** {c_name} | **Nível:** {getattr(char, 'level', 1)} | **Constelação:** {constellation}")
+                lines.append(
+                    f"**Personagem:** {c_name} | **Nível:** {getattr(char, 'level', 1)} | **Constelação:** {constellation}"
+                )
                 lines.append(f"- **Arma:** {weapon_text}")
                 lines.append(f"- **Artefatos:** {artifacts_text}")
                 lines.append(f"- **Talentos / Habilidades:** {skills_text}")
                 lines.append(f"- **Status Finais:** {properties_text}")
-                
+
                 if hasattr(char, "artifacts") and char.artifacts:
                     lines.append("\n  **Detalhamento de Peças (Substatus):**")
                     for art in char.artifacts:
                         main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
                         if main_prop:
-                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            m_name = getattr(
+                                getattr(main_prop, "info", main_prop),
+                                "name",
+                                getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")),
+                            )
+                            m_val = getattr(
+                                main_prop,
+                                "value",
+                                getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")),
+                            )
                             main_stat = f"{m_name} ({m_val})"
                         else:
                             main_stat = "Desconhecido"
-                            
+
                         substats_str = "Sem substatus"
-                        sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
+                        sub_props = getattr(
+                            art,
+                            "properties",
+                            getattr(
+                                art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))
+                            ),
+                        )
                         if sub_props:
                             subs = []
                             for sub in sub_props:
-                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                s_name = getattr(
+                                    getattr(sub, "info", sub),
+                                    "name",
+                                    getattr(sub, "property_name", getattr(sub, "type", "Atributo")),
+                                )
+                                s_val = getattr(
+                                    sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", ""))
+                                )
                                 subs.append(f"{s_name}: {s_val}")
                             substats_str = ", ".join(subs)
-                        
+
                         genshin_slot_map = {
                             "EQUIP_BRACER": "Flor da Vida",
                             "EQUIP_NECKLACE": "Pluma da Morte",
                             "EQUIP_SHOES": "Areia do Tempo",
                             "EQUIP_RING": "Cálice de Eonothem",
-                            "EQUIP_DRESS": "Tiara de Logos"
+                            "EQUIP_DRESS": "Tiara de Logos",
                         }
                         # Genshin usa equip_type, mas tem um formato de string as vezes
-                        pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
-                        if hasattr(pos, "name"): pos = pos.name # caso seja enum
+                        pos = getattr(art, "pos", getattr(art, "equip_type", "?"))
+                        if hasattr(pos, "name"):
+                            pos = pos.name  # caso seja enum
                         pos_name = genshin_slot_map.get(str(pos), str(pos))
                         art_name = getattr(art, "name", "Artefato")
                         lines.append(f"  • [{pos_name}] {clean_relic_name(art_name)}")
                         lines.append(f"    - Principal: {main_stat}")
                         lines.append(f"    - Substatus: {substats_str}")
-                        
+
                 lines.append("")
                 lines.append("---")
                 lines.append("")
             except Exception as build_err:
-                print(f"[AVISO] Erro ao formatar build do personagem Genshin ID {getattr(char, 'id', '?')}: {build_err}")
-                
+                print(
+                    f"[AVISO] Erro ao formatar build do personagem Genshin ID {getattr(char, 'id', '?')}: {build_err}"
+                )
+
         # Salva dados estruturados em JSON para a Galeria Visual da UI
         roster_json_path = "genshin/roster_data_genshin.json"
         try:
@@ -1346,7 +1426,7 @@ class GenshinExtractor(BaseExtractor):
                 "EQUIP_NECKLACE": "Pluma da Morte",
                 "EQUIP_SHOES": "Areia do Tempo",
                 "EQUIP_RING": "Cálice de Eonothem",
-                "EQUIP_DRESS": "Tiara de Logos"
+                "EQUIP_DRESS": "Tiara de Logos",
             }
             for char in sorted(chars, key=lambda c: (safe_char_rarity(c), getattr(c, "level", 1)), reverse=True):
                 try:
@@ -1357,38 +1437,63 @@ class GenshinExtractor(BaseExtractor):
                             "name": getattr(char.weapon, "name", "Nenhuma"),
                             "level": getattr(char.weapon, "level", 90),
                             "rank": getattr(char.weapon, "refinement", 1),
-                            "icon": getattr(char.weapon, "icon", "")
+                            "icon": getattr(char.weapon, "icon", ""),
                         }
                     artifacts_json = []
                     if hasattr(char, "artifacts") and char.artifacts:
                         for art in char.artifacts:
-                            pos = getattr(art, 'pos', getattr(art, 'equip_type', '?'))
-                            if hasattr(pos, "name"): pos = pos.name
+                            pos = getattr(art, "pos", getattr(art, "equip_type", "?"))
+                            if hasattr(pos, "name"):
+                                pos = pos.name
                             pos_name = genshin_slot_map.get(str(pos), str(pos))
                             main_prop = getattr(art, "main_stat", getattr(art, "main_property", None))
                             main_stat = "Desconhecido"
                             if main_prop:
-                                m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                                m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                                m_name = getattr(
+                                    getattr(main_prop, "info", main_prop),
+                                    "name",
+                                    getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")),
+                                )
+                                m_val = getattr(
+                                    main_prop,
+                                    "value",
+                                    getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")),
+                                )
                                 main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
-                                
-                            sub_props = getattr(art, "properties", getattr(art, "sub_stats", getattr(art, "sub_properties", getattr(art, "sub_property_list", []))))
+
+                            sub_props = getattr(
+                                art,
+                                "properties",
+                                getattr(
+                                    art,
+                                    "sub_stats",
+                                    getattr(art, "sub_properties", getattr(art, "sub_property_list", [])),
+                                ),
+                            )
                             subs = []
                             if sub_props:
                                 for sub in sub_props:
-                                    s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                    s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                    s_name = getattr(
+                                        getattr(sub, "info", sub),
+                                        "name",
+                                        getattr(sub, "property_name", getattr(sub, "type", "Atributo")),
+                                    )
+                                    s_val = getattr(
+                                        sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", ""))
+                                    )
                                     s_clean = sanitize_stat_name(s_name)
                                     subs.append(f"{s_clean}: {s_val}")
                             art_name = getattr(art, "name", "Artefato")
-                            artifacts_json.append({
-                                "name": clean_relic_name(art_name),
-                                "icon": getattr(art, "icon", ""),
-                                "slot": pos_name,
-                                "main": main_stat,
-                                "sub": ", ".join(subs) if subs else "Sem substatus"
-                            })
-                            
+                            artifacts_json.append(
+                                {
+                                    "name": clean_relic_name(art_name),
+                                    "icon": getattr(art, "icon", ""),
+                                    "slot": pos_name,
+                                    "main": main_stat,
+                                    "sub": ", ".join(subs) if subs else "Sem substatus",
+                                }
+                            )
+
                     char_icon = ""
                     try:
                         char_icon = getattr(char, "icon", "")
@@ -1405,7 +1510,7 @@ class GenshinExtractor(BaseExtractor):
                             char_rarity = basic_chars_map[char.id].get("rarity", 4)
 
                     genshin_splash = None
-                    
+
                     if hasattr(char, "costumes") and char.costumes:
                         costume = char.costumes[0]
                         costume_id = getattr(costume, "id", None)
@@ -1415,18 +1520,38 @@ class GenshinExtractor(BaseExtractor):
                             genshin_splash = f"https://enka.network/ui/{c_info['art']}.png"
                         elif hasattr(costume, "icon") and costume.icon:
                             c_icon_str = str(costume.icon)
-                            skin_match = re.search(r'(UI_AvatarIcon_[A-Za-z0-9_]+)', c_icon_str)
+                            skin_match = re.search(r"(UI_AvatarIcon_[A-Za-z0-9_]+)", c_icon_str)
                             if skin_match:
                                 skin_fn = skin_match.group(1)
                                 char_icon = f"https://enka.network/ui/{skin_fn}.png"
-                                genshin_splash = f"https://enka.network/ui/{skin_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
+                                genshin_splash = (
+                                    f"https://enka.network/ui/{skin_fn.replace('UI_AvatarIcon_', 'UI_Costume_')}.png"
+                                )
                             else:
                                 char_icon = c_icon_str
-                                genshin_splash = getattr(costume, "gacha_art", getattr(costume, "splash_art", c_icon_str))
+                                genshin_splash = getattr(
+                                    costume, "gacha_art", getattr(costume, "splash_art", c_icon_str)
+                                )
 
                     if not genshin_splash:
                         try:
-                            genshin_splash = getattr(char, "gacha_card", getattr(char, "gacha_slice", getattr(char, "gacha_art", getattr(char, "splash_art", getattr(char, "display_image", getattr(char, "card_icon", char_icon))))))
+                            genshin_splash = getattr(
+                                char,
+                                "gacha_card",
+                                getattr(
+                                    char,
+                                    "gacha_slice",
+                                    getattr(
+                                        char,
+                                        "gacha_art",
+                                        getattr(
+                                            char,
+                                            "splash_art",
+                                            getattr(char, "display_image", getattr(char, "card_icon", char_icon)),
+                                        ),
+                                    ),
+                                ),
+                            )
                         except Exception:
                             genshin_splash = char_icon
                         if not genshin_splash or "UI_AvatarIcon_" in str(genshin_splash):
@@ -1440,23 +1565,42 @@ class GenshinExtractor(BaseExtractor):
                     genshin_stats = {}
                     props = getattr(char, "properties", getattr(char, "fight_props", None))
                     if props:
-                        for prop in (props or []):
+                        for prop in props or []:
                             p_name = getattr(getattr(prop, "info", prop), "name", getattr(prop, "property_name", None))
                             p_final = getattr(prop, "final", getattr(prop, "value", ""))
-                            if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
+                            if p_name and p_final and str(p_final) not in ("", "0", "0.0%", "0.0"):
                                 label = sanitize_stat_name(p_name)
                                 genshin_stats[label] = str(p_final)
                     else:
                         # Genshin API de Battle Chronicle não retorna fight_props diretamente;
                         # Extraímos o que está disponível no objeto do personagem
-                        for attr_name in ['hp', 'max_hp', 'atk', 'base_atk', 'def_', 'base_def', 'crit_rate', 'crit_dmg', 'healing_bonus', 'elemental_mastery', 'energy_recharge']:
+                        for attr_name in [
+                            "hp",
+                            "max_hp",
+                            "atk",
+                            "base_atk",
+                            "def_",
+                            "base_def",
+                            "crit_rate",
+                            "crit_dmg",
+                            "healing_bonus",
+                            "elemental_mastery",
+                            "energy_recharge",
+                        ]:
                             v = getattr(char, attr_name, None)
-                            if v is not None and v not in (0, 0.0, '', None):
+                            if v is not None and v not in (0, 0.0, "", None):
                                 label_map = {
-                                    'hp': 'HP', 'max_hp': 'HP', 'atk': 'ATQ', 'base_atk': 'ATQ Base',
-                                    'def_': 'DEF', 'base_def': 'DEF Base', 'crit_rate': 'Taxa CRIT',
-                                    'crit_dmg': 'Dano CRIT', 'healing_bonus': 'Cura Bônus',
-                                    'elemental_mastery': 'Prof. Element.', 'energy_recharge': 'Recarga'
+                                    "hp": "HP",
+                                    "max_hp": "HP",
+                                    "atk": "ATQ",
+                                    "base_atk": "ATQ Base",
+                                    "def_": "DEF",
+                                    "base_def": "DEF Base",
+                                    "crit_rate": "Taxa CRIT",
+                                    "crit_dmg": "Dano CRIT",
+                                    "healing_bonus": "Cura Bônus",
+                                    "elemental_mastery": "Prof. Element.",
+                                    "energy_recharge": "Recarga",
                                 }
                                 genshin_stats[label_map.get(attr_name, attr_name)] = str(v)
 
@@ -1470,24 +1614,28 @@ class GenshinExtractor(BaseExtractor):
                         if hasattr(char, "id") and char.id in basic_chars_map:
                             char_constellation = basic_chars_map[char.id].get("constellation", 0)
 
-                    char_json_list.append({
-                        "id": str(getattr(char, "id", "")),
-                        "name": c_name,
-                        "level": getattr(char, "level", 1),
-                        "rarity": char_rarity,
-                        "rank_str": f"C{char_constellation}",
-                        "element": safe_char_element(char),
-                        "icon": sanitize_genshin_url(char_icon),
-                        "gacha_art": sanitize_genshin_url(genshin_splash),
-                        "weapon": w_info,
-                        "relics": artifacts_json,
-                        "skills": skills_json,
-                        "constellations": constellations_json,
-                        "ranks": constellations_json,
-                        "stats": genshin_stats
-                    })
+                    char_json_list.append(
+                        {
+                            "id": str(getattr(char, "id", "")),
+                            "name": c_name,
+                            "level": getattr(char, "level", 1),
+                            "rarity": char_rarity,
+                            "rank_str": f"C{char_constellation}",
+                            "element": safe_char_element(char),
+                            "icon": sanitize_genshin_url(char_icon),
+                            "gacha_art": sanitize_genshin_url(genshin_splash),
+                            "weapon": w_info,
+                            "relics": artifacts_json,
+                            "skills": skills_json,
+                            "constellations": constellations_json,
+                            "ranks": constellations_json,
+                            "stats": genshin_stats,
+                        }
+                    )
                 except Exception as c_json_err:
-                    print(f"[AVISO] Erro ao extrair JSON do personagem Genshin ID {getattr(char, 'id', '?')}: {c_json_err}")
+                    print(
+                        f"[AVISO] Erro ao extrair JSON do personagem Genshin ID {getattr(char, 'id', '?')}: {c_json_err}"
+                    )
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
                 json.dump(char_json_list, jf, ensure_ascii=False, indent=2)
@@ -1504,21 +1652,22 @@ class GenshinExtractor(BaseExtractor):
             print(f"Aviso ao salvar endgame_data_genshin.json: {e_err}")
 
         markdown_content = "\n".join(lines)
-        
+
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
         with open(filename, "w", encoding="utf-8") as f:
             f.write(markdown_content)
-            
+
         # Salva no SQLite
         try:
             import database
+
             nickname = getattr(genshin_acc, "nickname", "Viajante") if genshin_acc else "Viajante"
             acc_level = getattr(genshin_acc, "level", 60) if genshin_acc else 60
             database.save_game_account(uid, "genshin", nickname, acc_level, 0)
             database.save_endgame_data(str(uid), "genshin", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
-                pattern = rf'(\*\*(?:Personagem):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)'
+                pattern = rf"(\*\*(?:Personagem):\*\*\s*{re.escape(c['name'])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)"
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
@@ -1541,7 +1690,7 @@ class GenshinExtractor(BaseExtractor):
                     raw_md=char_md,
                     skills_json=json.dumps(c.get("skills", [])),
                     stats_json=json.dumps(c.get("stats", {})),
-                    ranks_json=json.dumps(c.get("constellations", []))
+                    ranks_json=json.dumps(c.get("constellations", [])),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1552,7 +1701,7 @@ class GenshinExtractor(BaseExtractor):
                         slot=r["slot"],
                         main_stat=r["main"],
                         sub_stats=r["sub"],
-                        icon=r["icon"]
+                        icon=r["icon"],
                     )
             print("[INFO] Roster Genshin salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
@@ -1572,16 +1721,18 @@ class ZZZExtractor(BaseExtractor):
         """
         zzz_acc = await self.get_account("nap")
         if not zzz_acc:
-            raise Exception("Nenhuma conta ativa de Zenless Zone Zero (ZZZ) encontrada vinculada a este perfil HoYoLAB.")
-            
+            raise Exception(
+                "Nenhuma conta ativa de Zenless Zone Zero (ZZZ) encontrada vinculada a este perfil HoYoLAB."
+            )
+
         uid = zzz_acc.uid
-        
+
         try:
             user_data = await self.client.get_zzz_user(uid)
             # Para obter W-Engines e discos, precisamos buscar os detalhes completos de cada agente
             partial_agents = await self.client.get_zzz_agents(uid)
             agent_ids = [agent.id for agent in partial_agents]
-            
+
             if agent_ids:
                 agents = await self.client.get_zzz_agent_info(agent_ids, uid=uid)
                 # Garante que seja tratado como lista se retornar apenas um
@@ -1597,7 +1748,7 @@ class ZZZExtractor(BaseExtractor):
                 )
             else:
                 raise Exception(f"Não foi possível obter dados detalhados para o UID {uid}: {e}")
-            
+
         lines = []
         lines.append("# Relatório de Agentes - Zenless Zone Zero")
         lines.append(f"**UID:** {uid}")
@@ -1607,7 +1758,7 @@ class ZZZExtractor(BaseExtractor):
         lines.append(f"**Agentes Obtidos:** {user_data.stats.character_num}")
         lines.append(f"**Bangboos Obtidos:** {user_data.stats.bangboo_obtained}")
         lines.append(f"**Conquistas:** {user_data.stats.achievement_count}")
-        
+
         endgame_modes_data = []
         endgame_text = ""
         try:
@@ -1617,37 +1768,39 @@ class ZZZExtractor(BaseExtractor):
                 lines.append(endgame_text)
         except Exception as e:
             print(f"Aviso: Não foi possível puxar dados de Endgame ZZZ: {e}")
-            
+
         lines.append("")
         lines.append("## Detalhes do Roster de Agentes")
         lines.append("")
         lines.append("| Agente | Nível | Raridade | Cinema | W-Engine Equipado | Discos Equipados |")
         lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
-        
+
         for agent in sorted(agents, key=lambda a: (a.rarity, a.level), reverse=True):
-            stars = "⭐" * (5 if agent.rarity == "S" else 4) # ZZZ usa S e A para raridade
-            
+            stars = "⭐" * (5 if agent.rarity == "S" else 4)  # ZZZ usa S e A para raridade
+
             w_engine = "Nenhum"
             if agent.w_engine:
                 w_engine = f"{agent.w_engine.name} (Nv. {agent.w_engine.level}, R{agent.w_engine.refinement})"
-                
+
             disc_sets = {}
             for disc in agent.discs:
                 if hasattr(disc, "set_effect") and disc.set_effect:
                     disc_sets[disc.set_effect.name] = disc.set_effect.owned_num
-            
+
             disc_strings = []
             for s_name, count in sorted(disc_sets.items(), key=lambda x: x[1], reverse=True):
                 disc_strings.append(f"{s_name} ({count} peças)")
             disc_str = " + ".join(disc_strings) if disc_strings else "Sem discos"
-            
-            lines.append(f"| {agent.name} | Nv. {agent.level} | {agent.rarity} ({stars}) | M{agent.rank} | {w_engine} | {disc_str} |")
-            
+
+            lines.append(
+                f"| {agent.name} | Nv. {agent.level} | {agent.rarity} ({stars}) | M{agent.rank} | {w_engine} | {disc_str} |"
+            )
+
         # Seção de Builds para Agentes
         lines.append("")
         lines.append("## Detalhes de Builds")
         lines.append("")
-        
+
         for agent in sorted(agents, key=lambda a: (a.rarity, a.level), reverse=True):
             # 1. W-Engine
             if agent.w_engine:
@@ -1655,18 +1808,18 @@ class ZZZExtractor(BaseExtractor):
                 w_engine_text = f"{agent.w_engine.name} (Nv. {agent.w_engine.level}, R{refinement})"
             else:
                 w_engine_text = "Nenhum W-Engine equipado"
-            
+
             # 2. Discos de Áudio
             disc_sets = {}
             for disc in agent.discs:
                 if hasattr(disc, "set_effect") and disc.set_effect:
                     disc_sets[disc.set_effect.name] = disc.set_effect.owned_num
-            
+
             set_strings = []
             for s_name, count in sorted(disc_sets.items(), key=lambda x: x[1], reverse=True):
                 set_strings.append(f"{s_name} ({count} peças)")
             discs_text = " + ".join(set_strings) if set_strings else "Nenhum disco equipado"
-            
+
             # 3. Status Finais
             properties_list = []
             if hasattr(agent, "properties") and agent.properties:
@@ -1676,7 +1829,7 @@ class ZZZExtractor(BaseExtractor):
                     if name and val:
                         properties_list.append(f"{name}: {val}")
             properties_text = ", ".join(properties_list) if properties_list else "Status não disponíveis"
-            
+
             # Escreve o bloco do agente
             cinema = f"M{agent.rank}"
             agent_skills = extract_zzz_agent_skills(agent)
@@ -1688,32 +1841,51 @@ class ZZZExtractor(BaseExtractor):
             lines.append(f"- **Discos:** {discs_text}")
             lines.append(f"- **Habilidades / Talentos:** {skills_text}")
             lines.append(f"- **Status Finais:** {properties_text}")
-            
+
             if hasattr(agent, "discs") and agent.discs:
                 lines.append("\n  **Detalhamento de Peças (Substatus):**")
                 for disc in agent.discs:
                     main_props_list = getattr(disc, "main_properties", getattr(disc, "main_stat", []))
-                    if not isinstance(main_props_list, list): main_props_list = [main_props_list]
+                    if not isinstance(main_props_list, list):
+                        main_props_list = [main_props_list]
                     main_prop = main_props_list[0] if main_props_list else None
-                    
+
                     if main_prop:
-                        m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                        m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                        m_name = getattr(
+                            getattr(main_prop, "info", main_prop),
+                            "name",
+                            getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")),
+                        )
+                        m_val = getattr(
+                            main_prop,
+                            "value",
+                            getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")),
+                        )
                         main_stat = f"{m_name} ({m_val})"
                     else:
                         main_stat = "Desconhecido"
-                        
+
                     substats_str = "Sem substatus"
-                    sub_props = getattr(disc, "properties", getattr(disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))))
+                    sub_props = getattr(
+                        disc,
+                        "properties",
+                        getattr(
+                            disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))
+                        ),
+                    )
                     if sub_props:
                         subs = []
                         for sub in sub_props:
-                            s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
+                            s_name = getattr(
+                                getattr(sub, "info", sub),
+                                "name",
+                                getattr(sub, "property_name", getattr(sub, "type", "Atributo")),
+                            )
                             s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
                             subs.append(f"{s_name}: {s_val}")
                         substats_str = ", ".join(subs)
-                    
-                    pos = getattr(disc, 'position', getattr(disc, 'pos', '?'))
+
+                    pos = getattr(disc, "position", getattr(disc, "pos", "?"))
                     lines.append(f"  • [Disco {pos}] {clean_relic_name(disc.name)}")
                     lines.append(f"    - Principal: {main_stat}")
                     lines.append(f"    - Substatus: {substats_str}")
@@ -1721,7 +1893,7 @@ class ZZZExtractor(BaseExtractor):
             lines.append("")
             lines.append("---")
             lines.append("")
-                
+
         # Salva dados estruturados em JSON para a Galeria Visual da UI
         roster_json_path = "zzz/roster_data_zzz.json"
         try:
@@ -1733,47 +1905,92 @@ class ZZZExtractor(BaseExtractor):
                         "name": agent.w_engine.name,
                         "level": getattr(agent.w_engine, "level", 60),
                         "rank": getattr(agent.w_engine, "refinement", 1),
-                        "icon": getattr(agent.w_engine, "icon", "")
+                        "icon": getattr(agent.w_engine, "icon", ""),
                     }
                 discs_json = []
                 if hasattr(agent, "discs") and agent.discs:
                     for disc in agent.discs:
-                        pos = getattr(disc, 'position', getattr(disc, 'pos', '?'))
+                        pos = getattr(disc, "position", getattr(disc, "pos", "?"))
                         pos_name = f"Disco {pos}"
                         main_props_list = getattr(disc, "main_properties", getattr(disc, "main_stat", []))
-                        if not isinstance(main_props_list, list): main_props_list = [main_props_list]
+                        if not isinstance(main_props_list, list):
+                            main_props_list = [main_props_list]
                         main_prop = main_props_list[0] if main_props_list else None
                         main_stat = "Desconhecido"
                         if main_prop:
-                            m_name = getattr(getattr(main_prop, "info", main_prop), "name", getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")))
-                            m_val = getattr(main_prop, "value", getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")))
+                            m_name = getattr(
+                                getattr(main_prop, "info", main_prop),
+                                "name",
+                                getattr(main_prop, "property_name", getattr(main_prop, "type", "Atributo")),
+                            )
+                            m_val = getattr(
+                                main_prop,
+                                "value",
+                                getattr(main_prop, "display_value", getattr(main_prop, "stat_value", "")),
+                            )
                             main_stat = sanitize_stat_name(f"{m_name} ({m_val})" if m_val else m_name)
-                            
-                        sub_props = getattr(disc, "properties", getattr(disc, "sub_stats", getattr(disc, "sub_properties", getattr(disc, "sub_property_list", []))))
+
+                        sub_props = getattr(
+                            disc,
+                            "properties",
+                            getattr(
+                                disc,
+                                "sub_stats",
+                                getattr(disc, "sub_properties", getattr(disc, "sub_property_list", [])),
+                            ),
+                        )
                         subs = []
                         if sub_props:
                             for sub in sub_props:
-                                s_name = getattr(getattr(sub, "info", sub), "name", getattr(sub, "property_name", getattr(sub, "type", "Atributo")))
-                                s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
+                                s_name = getattr(
+                                    getattr(sub, "info", sub),
+                                    "name",
+                                    getattr(sub, "property_name", getattr(sub, "type", "Atributo")),
+                                )
+                                s_val = getattr(
+                                    sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", ""))
+                                )
                                 s_clean = sanitize_stat_name(s_name)
                                 subs.append(f"{s_clean}: {s_val}")
-                        discs_json.append({
-                            "name": clean_relic_name(disc.name),
-                            "icon": getattr(disc, "icon", ""),
-                            "slot": pos_name,
-                            "main": main_stat,
-                            "sub": ", ".join(subs) if subs else "Sem substatus"
-                        })
+                        discs_json.append(
+                            {
+                                "name": clean_relic_name(disc.name),
+                                "icon": getattr(disc, "icon", ""),
+                                "slot": pos_name,
+                                "main": main_stat,
+                                "sub": ", ".join(subs) if subs else "Sem substatus",
+                            }
+                        )
                 icon_url = getattr(agent, "square_icon", getattr(agent, "rectangle_icon", getattr(agent, "icon", "")))
-                hoyolab_splash = getattr(agent, "portrait", getattr(agent, "draw", getattr(agent, "art_url", getattr(agent, "banner_icon", getattr(agent, "rectangle_icon", getattr(agent, "full_icon", icon_url))))))
-                
+                hoyolab_splash = getattr(
+                    agent,
+                    "portrait",
+                    getattr(
+                        agent,
+                        "draw",
+                        getattr(
+                            agent,
+                            "art_url",
+                            getattr(
+                                agent,
+                                "banner_icon",
+                                getattr(agent, "rectangle_icon", getattr(agent, "full_icon", icon_url)),
+                            ),
+                        ),
+                    ),
+                )
+
                 check_str = str(icon_url) + " " + str(hoyolab_splash)
-                skin_match = re.search(r'(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png', check_str)
+                skin_match = re.search(r"(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png", check_str)
                 if skin_match:
                     splash_url = f"https://act-webstatic.hoyoverse.com/game_record/zzzv2/role_vertical_painting/role_vertical_painting_{skin_match.group(1)}_{skin_match.group(2)}.png"
                 else:
                     zzz_slug = get_zzz_prydwen_slug(agent.name)
-                    prydwen_splash = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{zzz_slug}_full.webp" if zzz_slug else ""
+                    prydwen_splash = (
+                        f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{zzz_slug}_full.webp"
+                        if zzz_slug
+                        else ""
+                    )
                     splash_url = prydwen_splash if prydwen_splash else hoyolab_splash
                 rarity_num = 5 if str(agent.rarity).upper() in ["S", "5"] else 4
 
@@ -1781,13 +1998,14 @@ class ZZZExtractor(BaseExtractor):
                 zzz_stats = {}
                 try:
                     full_agents = await self.client.get_zzz_agent_info([agent.id], uid=zzz_acc.uid)
-                    if not isinstance(full_agents, list): full_agents = [full_agents]
+                    if not isinstance(full_agents, list):
+                        full_agents = [full_agents]
                     full_agent = full_agents[0] if full_agents else None
                     if full_agent:
-                        for prop in (getattr(full_agent, "properties", []) or []):
+                        for prop in getattr(full_agent, "properties", []) or []:
                             p_name = getattr(prop, "name", None)
                             p_final = getattr(prop, "final", getattr(prop, "value", ""))
-                            if p_name and p_final and str(p_final) not in ('', '0', '0.0%', '0.0'):
+                            if p_name and p_final and str(p_final) not in ("", "0", "0.0%", "0.0"):
                                 label = sanitize_stat_name(p_name)
                                 zzz_stats[label] = str(p_final)
                 except Exception:
@@ -1796,22 +2014,24 @@ class ZZZExtractor(BaseExtractor):
                 skills_json = extract_zzz_agent_skills(agent)
                 ranks_json = extract_zzz_agent_ranks(agent)
 
-                char_json_list.append({
-                    "id": str(agent.id),
-                    "name": agent.name,
-                    "level": agent.level,
-                    "rarity": rarity_num,
-                    "rank_str": f"M{agent.rank}",
-                    "element": getattr(agent.element, "name", str(agent.element)),
-                    "icon": icon_url,
-                    "gacha_art": splash_url,
-                    "weapon": w_info,
-                    "relics": discs_json,
-                    "skills": skills_json,
-                    "ranks": ranks_json,
-                    "mindscapes": ranks_json,
-                    "stats": zzz_stats
-                })
+                char_json_list.append(
+                    {
+                        "id": str(agent.id),
+                        "name": agent.name,
+                        "level": agent.level,
+                        "rarity": rarity_num,
+                        "rank_str": f"M{agent.rank}",
+                        "element": getattr(agent.element, "name", str(agent.element)),
+                        "icon": icon_url,
+                        "gacha_art": splash_url,
+                        "weapon": w_info,
+                        "relics": discs_json,
+                        "skills": skills_json,
+                        "ranks": ranks_json,
+                        "mindscapes": ranks_json,
+                        "stats": zzz_stats,
+                    }
+                )
             os.makedirs(os.path.dirname(roster_json_path) or ".", exist_ok=True)
             with open(roster_json_path, "w", encoding="utf-8") as jf:
                 json.dump(char_json_list, jf, ensure_ascii=False, indent=2)
@@ -1828,14 +2048,15 @@ class ZZZExtractor(BaseExtractor):
             print(f"Aviso ao salvar endgame_data_zzz.json: {e_err}")
 
         markdown_content = "\n".join(lines)
-        
+
         os.makedirs(os.path.dirname(filename) or ".", exist_ok=True)
         with open(filename, "w", encoding="utf-8") as f:
             f.write(markdown_content)
-            
+
         # Salva no SQLite
         try:
             import database
+
             nickname = getattr(zzz_acc, "nickname", "Proxy") if zzz_acc else "Proxy"
             acc_level = getattr(zzz_acc, "level", 60) if zzz_acc else 60
             act_days = getattr(user_data.stats, "active_days", 0) if (user_data and user_data.stats) else 0
@@ -1843,7 +2064,7 @@ class ZZZExtractor(BaseExtractor):
             database.save_endgame_data(str(uid), "zzz", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
-                pattern = rf'(\*\*(?:Agente):\*\*\s*{re.escape(c["name"])}.*?)(?=\n\*\*(?:Agente)|\n## |\Z)'
+                pattern = rf"(\*\*(?:Agente):\*\*\s*{re.escape(c['name'])}.*?)(?=\n\*\*(?:Agente)|\n## |\Z)"
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
@@ -1866,7 +2087,7 @@ class ZZZExtractor(BaseExtractor):
                     raw_md=char_md,
                     skills_json=json.dumps(c.get("skills", [])),
                     stats_json=json.dumps(c.get("stats", {})),
-                    ranks_json=json.dumps(c.get("ranks", []))
+                    ranks_json=json.dumps(c.get("ranks", [])),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1877,7 +2098,7 @@ class ZZZExtractor(BaseExtractor):
                         slot=r["slot"],
                         main_stat=r["main"],
                         sub_stats=r["sub"],
-                        icon=r["icon"]
+                        icon=r["icon"],
                     )
             print("[INFO] Roster ZZZ salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
@@ -1889,15 +2110,15 @@ class ZZZExtractor(BaseExtractor):
 class MultiGameExtractor:
     def __init__(self, cookies: dict):
         self.cookies = cookies
-        
+
     async def extrair_jogo(self, game: str, output_file: str = None) -> str:
         """
         Extrai os dados do jogo especificado e salva no arquivo.
-        
+
         Args:
             game (str): 'hsr', 'genshin' ou 'zzz'.
             output_file (str, opcional): Caminho do arquivo de saída.
-            
+
         Retorna:
             str: Caminho do arquivo de saída gerado.
         """
@@ -1925,21 +2146,29 @@ async def redeem_promo_code(cookies: dict, game_id: str, code: str) -> dict:
         game_enum = genshin.Game.STARRAIL
     elif g == "zzz":
         game_enum = genshin.Game.ZZZ
-        
+
     client = genshin.Client(cookies=cookies)
     for attempt in range(2):
         try:
             await client.redeem_code(code, game=game_enum)
             return {"code": code, "status": "success", "message": f"Código {code} resgatado com sucesso!"}
         except genshin.RedemptionClaimed:
-            return {"code": code, "status": "claimed", "message": f"O código {code} já foi resgatado anteriormente nesta conta."}
+            return {
+                "code": code,
+                "status": "claimed",
+                "message": f"O código {code} já foi resgatado anteriormente nesta conta.",
+            }
         except genshin.RedemptionInvalid:
             return {"code": code, "status": "invalid", "message": f"O código {code} é inválido ou expirou."}
         except genshin.RedemptionCooldown:
             if attempt == 0:
                 await asyncio.sleep(5.0)
                 continue
-            return {"code": code, "status": "cooldown", "message": f"A HoYoLAB solicitou aguardar (cooldown). Tente novamente em instantes."}
+            return {
+                "code": code,
+                "status": "cooldown",
+                "message": "A HoYoLAB solicitou aguardar (cooldown). Tente novamente em instantes.",
+            }
         except genshin.GenshinException as ge:
             return {"code": code, "status": "error", "message": str(ge)}
         except Exception as e:

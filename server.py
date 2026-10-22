@@ -111,14 +111,16 @@ derive_dynamic_benchmarks = meta_comparator.derive_dynamic_benchmarks
 app = FastAPI(
     title="Cabeça de Droid API",
     version="5.1",
-    description="Assistente local completo para jogos da HoYoverse (Genshin Impact, Honkai: Star Rail e Zenless Zone Zero)"
+    description="Assistente local completo para jogos da HoYoverse (Genshin Impact, Honkai: Star Rail e Zenless Zone Zero)",
 )
+
 
 # Inicialização de banco de dados e migração transparente de cofre seguro
 @app.on_event("startup")
 def startup_event():
     database.init_db()
     security_vault.load_secure_cookies()
+
 
 # Agendadores em segundo plano
 @app.on_event("startup")
@@ -127,6 +129,7 @@ def startup_schedulers():
     start_auto_sync_scheduler()
     start_energy_watchdog_scheduler()
     start_auto_code_redeemer()
+
 
 @app.on_event("startup")
 def startup_static_data_sync_scheduler():
@@ -140,7 +143,7 @@ def startup_static_data_sync_scheduler():
                     version="1.0",
                     item_count=info.get("character_count", 0),
                     status=info.get("status", "success"),
-                    source=info.get("source", "seed")
+                    source=info.get("source", "seed"),
                 )
             print("[STATIC-DATA] Manifestos de dados estáticos e datamines inicializados com sucesso.")
         except Exception as s_err:
@@ -156,12 +159,13 @@ def startup_static_data_sync_scheduler():
                         version="1.0",
                         item_count=info.get("character_count", 0),
                         status=info.get("status", "success"),
-                        source=info.get("source", "seed")
+                        source=info.get("source", "seed"),
                     )
             except Exception as loop_err:
                 print(f"[STATIC-DATA] Erro no loop diário de sincronização estática: {loop_err}")
 
     threading.Thread(target=static_sync_loop, daemon=True).start()
+
 
 # Middlewares
 app.add_middleware(
@@ -201,6 +205,6 @@ if __name__ == "__main__":
         time.sleep(3.5)
         print("[INFO] Abrindo Cabeça de Droid no navegador...")
         webbrowser.open("http://127.0.0.1:8000")
-        
+
     threading.Thread(target=open_browser, daemon=True).start()
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=False)

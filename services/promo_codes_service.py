@@ -11,11 +11,13 @@ import extractor
 from core.config import get_cookies, get_config
 from notifications import notifier
 
+
 def _get_active_cookies() -> Dict[str, Any]:
     server_mod = sys.modules.get("server")
     if server_mod and hasattr(server_mod, "get_cookies"):
         return server_mod.get_cookies()
     return get_cookies()
+
 
 async def perform_auto_promo_code_redeem() -> Dict[str, Any]:
     """
@@ -60,7 +62,9 @@ async def perform_auto_promo_code_redeem() -> Dict[str, Any]:
         if not pending_codes:
             continue
 
-        print(f"[AUTO-CODES] {game_key.upper()} (UID {uid}): Encontrados {len(pending_codes)} novos códigos pendentes para resgate automático!")
+        print(
+            f"[AUTO-CODES] {game_key.upper()} (UID {uid}): Encontrados {len(pending_codes)} novos códigos pendentes para resgate automático!"
+        )
         newly_claimed = []
 
         for c_entry in pending_codes:
@@ -92,19 +96,20 @@ async def perform_auto_promo_code_redeem() -> Dict[str, Any]:
 
     return {"status": "success", "redeemed": all_redeemed_results}
 
+
 async def redeem_promo_codes_for_game(game_id: str, code: Optional[str] = None) -> Dict[str, Any]:
     """Resgata código(s) para um jogo específico e atualiza banco SQLite e notificações."""
     cookies = _get_active_cookies()
     if not cookies:
         raise ValueError("Cookies da HoYoLAB ausentes. Configure-os na aba de Configurações.")
-        
+
     codes_to_redeem = []
     if code:
         codes_to_redeem.append(code)
     else:
         active = build_calculator.fetch_active_promo_codes(game_id)
         codes_to_redeem = [c["code"] for c in active]
-        
+
     if not codes_to_redeem:
         return {"status": "info", "message": "Nenhum código para resgatar.", "results": []}
 
@@ -113,14 +118,16 @@ async def redeem_promo_codes_for_game(game_id: str, code: Optional[str] = None) 
     try:
         accounts = await client.get_game_accounts()
         for acc in accounts:
-            if (game_id == "genshin" and acc.game_biz.startswith("hk4e")) or \
-               (game_id == "hsr" and acc.game_biz.startswith("hkrpg")) or \
-               (game_id == "zzz" and acc.game_biz.startswith("nap")):
+            if (
+                (game_id == "genshin" and acc.game_biz.startswith("hk4e"))
+                or (game_id == "hsr" and acc.game_biz.startswith("hkrpg"))
+                or (game_id == "zzz" and acc.game_biz.startswith("nap"))
+            ):
                 uid = str(acc.uid)
                 break
     except Exception:
         pass
-        
+
     results = []
     newly_claimed = []
     for c in codes_to_redeem:
@@ -139,11 +146,13 @@ async def redeem_promo_codes_for_game(game_id: str, code: Optional[str] = None) 
             notifier.notify_promo_codes(game_id, newly_claimed, config)
         except Exception:
             pass
-        
+
     return {"game_id": game_id, "results": results}
+
 
 def start_auto_code_redeemer() -> None:
     """Inicia thread de verificação e resgate autônomo de códigos promocionais a cada 3 horas."""
+
     def auto_codes_loop():
         time.sleep(45)
         while True:

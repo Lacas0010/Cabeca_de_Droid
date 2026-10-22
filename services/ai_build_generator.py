@@ -12,43 +12,93 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 CANONICAL_STAT_MAP = {
     # Ofensivos
-    "crit rate": "Taxa Crítica", "crit rate%": "Taxa Crítica", "taxa critica": "Taxa Crítica", "taxa crítica": "Taxa Crítica",
-    "crit dmg": "Dano Crítico", "crit dmg%": "Dano Crítico", "dano critico": "Dano Crítico", "dano crítico": "Dano Crítico",
-    "atk%": "ATK%", "atk_pct": "ATK%", "atk": "ATK%", "ataque%": "ATK%",
-    "speed": "Velocidade", "spd": "Velocidade", "vel": "Velocidade", "velocidade": "Velocidade",
-    "elemental mastery": "Maestria Elemental", "em": "Maestria Elemental", "maestria elemental": "Maestria Elemental",
+    "crit rate": "Taxa Crítica",
+    "crit rate%": "Taxa Crítica",
+    "taxa critica": "Taxa Crítica",
+    "taxa crítica": "Taxa Crítica",
+    "crit dmg": "Dano Crítico",
+    "crit dmg%": "Dano Crítico",
+    "dano critico": "Dano Crítico",
+    "dano crítico": "Dano Crítico",
+    "atk%": "ATK%",
+    "atk_pct": "ATK%",
+    "atk": "ATK%",
+    "ataque%": "ATK%",
+    "speed": "Velocidade",
+    "spd": "Velocidade",
+    "vel": "Velocidade",
+    "velocidade": "Velocidade",
+    "elemental mastery": "Maestria Elemental",
+    "em": "Maestria Elemental",
+    "maestria elemental": "Maestria Elemental",
     # Defensivos e Suporte
-    "hp%": "HP%", "hp_pct": "HP%", "vida%": "HP%",
-    "def%": "DEF%", "def_pct": "DEF%", "defesa%": "DEF%",
-    "energy recharge": "Recarga de Energia", "er": "Recarga de Energia", "recarga de energia": "Recarga de Energia",
-    "energy regeneration rate": "Taxa de Regeneração de Energia", "err": "Taxa de Regeneração de Energia",
-    "healing bonus": "Bônus de Cura", "bonus de cura": "Bônus de Cura", "bônus de cura": "Bônus de Cura",
+    "hp%": "HP%",
+    "hp_pct": "HP%",
+    "vida%": "HP%",
+    "def%": "DEF%",
+    "def_pct": "DEF%",
+    "defesa%": "DEF%",
+    "energy recharge": "Recarga de Energia",
+    "er": "Recarga de Energia",
+    "recarga de energia": "Recarga de Energia",
+    "energy regeneration rate": "Taxa de Regeneração de Energia",
+    "err": "Taxa de Regeneração de Energia",
+    "healing bonus": "Bônus de Cura",
+    "bonus de cura": "Bônus de Cura",
+    "bônus de cura": "Bônus de Cura",
     # Elementais
-    "pyro dmg": "Bônus de Dano Pyro", "pyro dmg bonus": "Bônus de Dano Pyro", "dano pyro": "Bônus de Dano Pyro",
-    "hydro dmg": "Bônus de Dano Hydro", "hydro dmg bonus": "Bônus de Dano Hydro", "dano hydro": "Bônus de Dano Hydro",
-    "electro dmg": "Bônus de Dano Electro", "electro dmg bonus": "Bônus de Dano Electro", "dano electro": "Bônus de Dano Electro",
-    "cryo dmg": "Bônus de Dano Cryo", "cryo dmg bonus": "Bônus de Dano Cryo", "dano cryo": "Bônus de Dano Cryo",
-    "anemo dmg": "Bônus de Dano Anemo", "anemo dmg bonus": "Bônus de Dano Anemo", "dano anemo": "Bônus de Dano Anemo",
-    "geo dmg": "Bônus de Dano Geo", "geo dmg bonus": "Bônus de Dano Geo", "dano geo": "Bônus de Dano Geo",
-    "dendro dmg": "Bônus de Dano Dendro", "dendro dmg bonus": "Bônus de Dano Dendro", "dano dendro": "Bônus de Dano Dendro",
-    "physical dmg": "Bônus de Dano Físico", "physical dmg bonus": "Bônus de Dano Físico", "dano fisico": "Bônus de Dano Físico", "dano físico": "Bônus de Dano Físico",
-    "lightning dmg": "Bônus de Dano de Raio", "lightning dmg bonus": "Bônus de Dano de Raio",
-    "fire dmg": "Bônus de Dano de Fogo", "fire dmg bonus": "Bônus de Dano de Fogo",
-    "ice dmg": "Bônus de Dano de Gelo", "ice dmg bonus": "Bônus de Dano de Gelo",
-    "wind dmg": "Bônus de Dano de Vento", "wind dmg bonus": "Bônus de Dano de Vento",
-    "quantum dmg": "Bônus de Dano Quântico", "quantum dmg bonus": "Bônus de Dano Quântico",
-    "imaginary dmg": "Bônus de Dano Imaginário", "imaginary dmg bonus": "Bônus de Dano Imaginário",
-    "ether dmg": "Bônus de Dano de Éter", "ether dmg bonus": "Bônus de Dano de Éter",
-    "pen ratio": "Taxa de PEN", "pen": "Taxa de PEN",
-    "anomaly proficiency": "Proficiência em Anomalia", "anomaly mastery": "Controle de Anomalia"
+    "pyro dmg": "Bônus de Dano Pyro",
+    "pyro dmg bonus": "Bônus de Dano Pyro",
+    "dano pyro": "Bônus de Dano Pyro",
+    "hydro dmg": "Bônus de Dano Hydro",
+    "hydro dmg bonus": "Bônus de Dano Hydro",
+    "dano hydro": "Bônus de Dano Hydro",
+    "electro dmg": "Bônus de Dano Electro",
+    "electro dmg bonus": "Bônus de Dano Electro",
+    "dano electro": "Bônus de Dano Electro",
+    "cryo dmg": "Bônus de Dano Cryo",
+    "cryo dmg bonus": "Bônus de Dano Cryo",
+    "dano cryo": "Bônus de Dano Cryo",
+    "anemo dmg": "Bônus de Dano Anemo",
+    "anemo dmg bonus": "Bônus de Dano Anemo",
+    "dano anemo": "Bônus de Dano Anemo",
+    "geo dmg": "Bônus de Dano Geo",
+    "geo dmg bonus": "Bônus de Dano Geo",
+    "dano geo": "Bônus de Dano Geo",
+    "dendro dmg": "Bônus de Dano Dendro",
+    "dendro dmg bonus": "Bônus de Dano Dendro",
+    "dano dendro": "Bônus de Dano Dendro",
+    "physical dmg": "Bônus de Dano Físico",
+    "physical dmg bonus": "Bônus de Dano Físico",
+    "dano fisico": "Bônus de Dano Físico",
+    "dano físico": "Bônus de Dano Físico",
+    "lightning dmg": "Bônus de Dano de Raio",
+    "lightning dmg bonus": "Bônus de Dano de Raio",
+    "fire dmg": "Bônus de Dano de Fogo",
+    "fire dmg bonus": "Bônus de Dano de Fogo",
+    "ice dmg": "Bônus de Dano de Gelo",
+    "ice dmg bonus": "Bônus de Dano de Gelo",
+    "wind dmg": "Bônus de Dano de Vento",
+    "wind dmg bonus": "Bônus de Dano de Vento",
+    "quantum dmg": "Bônus de Dano Quântico",
+    "quantum dmg bonus": "Bônus de Dano Quântico",
+    "imaginary dmg": "Bônus de Dano Imaginário",
+    "imaginary dmg bonus": "Bônus de Dano Imaginário",
+    "ether dmg": "Bônus de Dano de Éter",
+    "ether dmg bonus": "Bônus de Dano de Éter",
+    "pen ratio": "Taxa de PEN",
+    "pen": "Taxa de PEN",
+    "anomaly proficiency": "Proficiência em Anomalia",
+    "anomaly mastery": "Controle de Anomalia",
 }
+
 
 def sanitize_stat_name(stat_str: str) -> str:
     """Normaliza e sanitiza um nome de atributo contra o vocabulário oficial."""
     if not stat_str:
         return "ATK%"
     clean = stat_str.strip().lower()
-    clean = re.sub(r'[\*\(\)\[\]]', '', clean)
+    clean = re.sub(r"[\*\(\)\[\]]", "", clean)
     if clean in CANONICAL_STAT_MAP:
         return CANONICAL_STAT_MAP[clean]
     for k, v in CANONICAL_STAT_MAP.items():
@@ -56,8 +106,10 @@ def sanitize_stat_name(stat_str: str) -> str:
             return v
     return stat_str.strip()
 
+
 class AIBuildPayload(BaseModel):
     """Schema Pydantic rígido para validação de saídas estruturadas de IA."""
+
     character_name: str = Field(..., description="Nome oficial do personagem")
     weapons: List[str] = Field(default_factory=list, description="Lista de armas/cones recomendados")
     relic_sets: List[str] = Field(default_factory=list, description="Lista de conjuntos recomendados")
@@ -67,6 +119,7 @@ class AIBuildPayload(BaseModel):
     pros: List[str] = Field(default_factory=list, description="Pontos fortes do personagem")
     cons: List[str] = Field(default_factory=list, description="Pontos fracos do personagem")
     optimization_summary: str = Field(default="", description="Resumo de otimização de combate")
+
 
 class AIBuildGenerator:
     """
@@ -111,6 +164,7 @@ class AIBuildGenerator:
         guide_md = None
         try:
             from groq_rag import GroqRAG
+
             groq = GroqRAG()
             if groq.client:
                 prompt = (
@@ -135,19 +189,16 @@ class AIBuildGenerator:
                     "groq/compound",
                     "groq/compound-mini",
                     "openai/gpt-oss-20b",
-                    "qwen/qwen3.6-27b"
+                    "qwen/qwen3.6-27b",
                 ]
                 for mod in models:
                     try:
                         resp = groq.client.chat.completions.create(
-                            model=mod,
-                            messages=[{"role": "user", "content": prompt}],
-                            temperature=0.1,
-                            max_tokens=1000
+                            model=mod, messages=[{"role": "user", "content": prompt}], temperature=0.1, max_tokens=1000
                         )
                         if resp and resp.choices and resp.choices[0].message.content:
                             raw_txt = resp.choices[0].message.content.strip()
-                            json_match = re.search(r'\{.*\}', raw_txt, re.DOTALL)
+                            json_match = re.search(r"\{.*\}", raw_txt, re.DOTALL)
                             if json_match:
                                 parsed = json.loads(json_match.group(0))
                                 validated = AIBuildPayload(**parsed)
@@ -176,6 +227,7 @@ class AIBuildGenerator:
             # Atualizar cache estruturado do build_calculator
             try:
                 from build_calculator import generate_meta_json_from_markdown
+
                 generate_meta_json_from_markdown(g)
             except Exception:
                 pass
@@ -189,14 +241,29 @@ class AIBuildGenerator:
     def _build_markdown_from_payload(game_id: str, p: AIBuildPayload, element: str, role: str) -> str:
         """Constrói Markdown padronizado e sanitizado a partir de um AIBuildPayload validado."""
         now_iso = datetime.now().isoformat()
-        weapons_md = "\n".join([f"- **{w}** (100.00% de eficácia)" if i == 0 else f"- **{w}** (90.00% de eficácia)" for i, w in enumerate(p.weapons or ["Arma Principal 5★", "Arma F2P 4★"])])
-        sets_md = "\n".join([f"- **{s}** (100.00% de eficácia)" for s in (p.relic_sets or ["Conjunto Principal (4-PC)"])])
-        
+        weapons_md = "\n".join(
+            [
+                f"- **{w}** (100.00% de eficácia)" if i == 0 else f"- **{w}** (90.00% de eficácia)"
+                for i, w in enumerate(p.weapons or ["Arma Principal 5★", "Arma F2P 4★"])
+            ]
+        )
+        sets_md = "\n".join(
+            [f"- **{s}** (100.00% de eficácia)" for s in (p.relic_sets or ["Conjunto Principal (4-PC)"])]
+        )
+
         planar_md = ""
         if game_id == "hsr" and p.planar_sets:
-            planar_md = "### Melhores Ornamentos Planares (2 Peças)\n" + "\n".join([f"- **{pl}** (100.00% de eficácia)" for pl in p.planar_sets]) + "\n\n"
+            planar_md = (
+                "### Melhores Ornamentos Planares (2 Peças)\n"
+                + "\n".join([f"- **{pl}** (100.00% de eficácia)" for pl in p.planar_sets])
+                + "\n\n"
+            )
 
-        sanitized_sub = " > ".join([sanitize_stat_name(s) for s in p.sub_stats]) if p.sub_stats else "Taxa Crítica > Dano Crítico > ATK% > Velocidade"
+        sanitized_sub = (
+            " > ".join([sanitize_stat_name(s) for s in p.sub_stats])
+            if p.sub_stats
+            else "Taxa Crítica > Dano Crítico > ATK% > Velocidade"
+        )
 
         if game_id == "genshin":
             main_block = f"- Areia do Tempo: {sanitize_stat_name(p.main_stats.get('sands', p.main_stats.get('slot_1', 'ATK%')))}\n- Cálice de Eonóthemo: {sanitize_stat_name(p.main_stats.get('goblet', p.main_stats.get('slot_2', f'Bônus de Dano {element}')))}\n- Tiara de Logos: {sanitize_stat_name(p.main_stats.get('circlet', p.main_stats.get('slot_3', 'Taxa Crítica / Dano Crítico')))}"
@@ -215,7 +282,7 @@ class AIBuildGenerator:
         cons_md = "\n".join([f"- {cn}" for cn in (p.cons or ["Exige balanceamento de status para rendimento ótimo."])])
 
         return (
-            f"<!-- METADATA: {{\"source\": \"ai_preliminary\", \"game_id\": \"{game_id}\", \"generated_at\": \"{now_iso}\"}} -->\n"
+            f'<!-- METADATA: {{"source": "ai_preliminary", "game_id": "{game_id}", "generated_at": "{now_iso}"}} -->\n'
             f"# Guia de Build - {p.character_name}\n"
             f"> [!NOTE]\n"
             f"> **Guia Preliminar IA (Llama 3.3 / GPT-OSS)**: Gerado automaticamente no Day-1 com base nas mecânicas de {element} / {role}.\n\n"
@@ -243,10 +310,28 @@ class AIBuildGenerator:
     def _generate_template_guide(game_id: str, name: str, element: str, role: str, rarity: int) -> str:
         """Template determinístico inteligente baseado no arquétipo do personagem."""
         now_iso = datetime.now().isoformat()
-        is_support = any(k in str(role).lower() for k in ["harmony", "harmonia", "support", "suporte", "abundance", "abundancia", "heal", "curador", "defense", "preservation"])
-        
+        is_support = any(
+            k in str(role).lower()
+            for k in [
+                "harmony",
+                "harmonia",
+                "support",
+                "suporte",
+                "abundance",
+                "abundancia",
+                "heal",
+                "curador",
+                "defense",
+                "preservation",
+            ]
+        )
+
         main_stat_1 = "Recarga de Energia / HP%" if is_support else "Taxa Crítica / Dano Crítico"
-        sub_stats = "Recarga de Energia > Velocidade > HP% > DEF%" if is_support else "Taxa Crítica > Dano Crítico > ATK% > Velocidade"
+        sub_stats = (
+            "Recarga de Energia > Velocidade > HP% > DEF%"
+            if is_support
+            else "Taxa Crítica > Dano Crítico > ATK% > Velocidade"
+        )
 
         if game_id == "genshin":
             main_block = f"- Areia do Tempo: {'Recarga de Energia / HP%' if is_support else 'ATK% / Recarga de Energia'}\n- Cálice de Eonóthemo: Bônus de Dano {element} / HP%\n- Tiara de Logos: {main_stat_1}"
@@ -261,11 +346,13 @@ class AIBuildGenerator:
         else:
             main_block = f"- Slot 4: {main_stat_1}\n- Slot 5: Bônus de Dano {element} / Taxa de PEN\n- Slot 6: {'Taxa de Regeneração de Energia' if is_support else 'ATK%'}"
             weapon_sec = "### Melhores Motores-W (W-Engines)\n- **Motor-W Assinatura** (100.00% de eficácia)\n- **Opção 4★ Alternativa** (90.00% de eficácia)"
-            set_sec = "### Melhores Discos de Drive (4 Peças)\n- **Conjunto Geral Recomendado (4-PC)** (100.00% de eficácia)"
+            set_sec = (
+                "### Melhores Discos de Drive (4 Peças)\n- **Conjunto Geral Recomendado (4-PC)** (100.00% de eficácia)"
+            )
             planar_sec = ""
 
         return (
-            f"<!-- METADATA: {{\"source\": \"ai_preliminary\", \"game_id\": \"{game_id}\", \"generated_at\": \"{now_iso}\"}} -->\n"
+            f'<!-- METADATA: {{"source": "ai_preliminary", "game_id": "{game_id}", "generated_at": "{now_iso}"}} -->\n'
             f"# Guia de Build - {name}\n"
             f"> [!NOTE]\n"
             f"> **Guia Preliminar Automático (Day-1)**: Recomendações calibradas pelo arquétipo oficial de {element} / {role}.\n\n"
