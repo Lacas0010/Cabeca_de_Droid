@@ -1251,11 +1251,90 @@
                             </div>
                             <input type="hidden" id="tab-gacha-game-select" value="genshin">
 
+                            <!-- Categoria de Banner no Simulador: Personagens vs Armas/Cones/Motores -->
+                            <div class="gacha-type-pill-container" id="gacha-sim-type-pills">
+                                <button type="button" class="gacha-type-pill active sim-type-btn" data-type="character">
+                                    <i class="fa-solid fa-user-astronaut"></i> Personagens
+                                </button>
+                                <button type="button" class="gacha-type-pill sim-type-btn" data-type="weapon" id="btn-gacha-type-weapon">
+                                    <i class="fa-solid fa-shield-halved"></i> Armas / Cones / Motores-W
+                                </button>
+                            </div>
+                            <input type="hidden" id="tab-gacha-banner-type" value="character">
+
+                            <!-- Banner Promocional Oficial In-Game em Destaque -->
+                            <div id="gacha-active-banner-container" class="gacha-active-banner-wrapper">
+                                <!-- Cabeçalho com Versão e Fase -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <label style="font-size: 13px; color: #f8fafc; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fa-solid fa-fire" style="color: #f59e0b;"></i> Banner Promocional In-Game
+                                    </label>
+                                    <span id="gacha-banner-patch-badge" style="font-size: 11px; padding: 3px 10px; border-radius: 20px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">
+                                        Carregando...
+                                    </span>
+                                </div>
+
+                                <!-- Seletor de Banners Ativos da Fase (Pills) -->
+                                <div id="gacha-banner-switcher" class="gacha-banner-switcher" style="display: none;">
+                                    <!-- Populado via JS caso haja múltiplos banners na fase -->
+                                </div>
+
+                                <!-- Frame do Banner Oficial In-Game -->
+                                <div id="gacha-banner-frame" class="gacha-banner-ingame-frame">
+                                    <img id="gacha-banner-art-img" class="gacha-banner-ingame-img" src="" alt="Banner In-Game" style="display: none;" onerror="this.style.display='none';">
+                                    <div class="gacha-banner-ingame-overlay"></div>
+                                    <div id="gacha-banner-ingame-badge-top" class="gacha-banner-ingame-badge-top">
+                                        <i class="fa-solid fa-sparkles"></i> <span id="gacha-banner-type-badge">Evento Promocional</span>
+                                    </div>
+                                    <div class="gacha-banner-ingame-caption">
+                                        <div>
+                                            <div id="gacha-banner-char-title" class="gacha-banner-title-text">
+                                                Título do Banner
+                                            </div>
+                                            <div id="gacha-banner-subtitle" class="gacha-banner-sub-text">
+                                                Taxa Aumentada de 5★ no Banner Limitado
+                                            </div>
+                                        </div>
+                                        <button type="button" id="btn-select-active-banner-char" onclick="window.selectActiveBannerChar()" style="background: rgba(245, 158, 11, 0.25); border: 1px solid #f59e0b; color: #fbbf24; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer; backdrop-filter: blur(4px); display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                                            <i class="fa-solid fa-bullseye"></i> Simular Este Banner
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Painel com Foto do 5★ e Fotos dos 4★ Ativos -->
+                                <div id="gacha-banner-roster-bar" class="gacha-banner-roster-bar">
+                                    <!-- Personagem 5★ Promocional -->
+                                    <div class="gacha-banner-5star-section">
+                                        <div class="gacha-banner-5star-avatar-wrap">
+                                            <img id="gacha-banner-5star-avatar" src="" alt="5★ Destaque" onerror="this.style.display='none';">
+                                        </div>
+                                        <div class="gacha-banner-5star-details">
+                                            <span class="gacha-banner-5star-label">
+                                                <i class="fa-solid fa-star"></i> 5★ em Destaque
+                                            </span>
+                                            <span id="gacha-banner-5star-name" class="gacha-banner-5star-name">
+                                                Personagem 5★
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Personagens 4★ Ativos -->
+                                    <div class="gacha-banner-4stars-section">
+                                        <span class="gacha-banner-4stars-label">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> 4★ Ativos (Taxa UP):
+                                        </span>
+                                        <div id="gacha-banner-4stars-grid" class="gacha-banner-4stars-grid">
+                                            <!-- Populado via JS com fotos e nomes dos 4★ ativos -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Seleção de Personagem -->
                             <div style="margin-bottom: 16px;">
-                                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Personagem Alvo:</label>
+                                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;" id="lbl-gacha-target-item">Item Alvo do Banner:</label>
                                 <select id="tab-gacha-char-select" class="search-input" style="width: 100%; margin-top: 4px; padding: 10px;">
-                                    <option value="">Carregando lista de personagens...</option>
+                                    <option value="">Carregando lista de itens...</option>
                                 </select>
                             </div>
 
@@ -1269,7 +1348,7 @@
                                     </div>
                                 </div>
                                 <div class="gacha-char-info">
-                                    <div class="gacha-char-name" id="gacha-hero-name">Personagem Genérico 5★</div>
+                                    <div class="gacha-char-name" id="gacha-hero-name">Item Genérico 5★</div>
                                     <div class="gacha-rarity-stars" id="gacha-hero-stars">★★★★★</div>
                                     <div id="gacha-hero-badge" class="gacha-char-badge-unowned">
                                         <i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)
@@ -1310,12 +1389,13 @@
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                                 <div>
                                     <div style="display:flex; justify-content:space-between; align-items:center;">
-                                        <label style="font-size: 12px; color: #94a3b8;">Pity Atual (0-89):</label>
+                                        <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-pity-title">Pity Atual (0-89):</label>
+                                        <span id="gacha-pity-source-badge" style="font-size: 10px; color: #38bdf8; font-weight: 600;">Sincronizado da Conta</span>
                                     </div>
-                                    <input type="number" id="tab-gacha-pity" value="35" min="0" max="89" class="search-input" style="width: 100%; margin-top: 4px;">
+                                    <input type="number" id="tab-gacha-pity" value="0" min="0" max="89" class="search-input" style="width: 100%; margin-top: 4px;">
                                 </div>
                                 <div>
-                                    <label style="font-size: 12px; color: #94a3b8;">Estado do 50/50:</label>
+                                    <label style="font-size: 12px; color: #94a3b8;" id="lbl-gacha-guaranteed-title">Estado do 50/50:</label>
                                     <select id="tab-gacha-guaranteed" class="search-input" style="width: 100%; margin-top: 4px;">
                                         <option value="false">50/50 Ativo (Normal)</option>
                                         <option value="true">Garantido (Perdeu 50/50 anterior)</option>
@@ -1407,9 +1487,20 @@
                                 </div>
                             </div>
 
-                            <!-- Personagem Alvo -->
+                            <!-- Categoria no Forecast: Personagens vs Armas/Cones -->
+                            <div class="gacha-type-pill-container" id="forecast-type-pills">
+                                <button type="button" class="gacha-type-pill active forecast-type-btn" data-type="character">
+                                    <i class="fa-solid fa-user-astronaut"></i> Personagem
+                                </button>
+                                <button type="button" class="gacha-type-pill forecast-type-btn" data-type="weapon" id="btn-forecast-type-weapon">
+                                    <i class="fa-solid fa-shield-halved"></i> Arma / Cone / Motor-W
+                                </button>
+                            </div>
+                            <input type="hidden" id="forecast-banner-type" value="character">
+
+                            <!-- Item Alvo -->
                             <div style="margin-bottom: 14px;">
-                                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Personagem Alvo:</label>
+                                <label style="font-size: 12px; color: #94a3b8; font-weight: 600;" id="lbl-forecast-target-item">Item Alvo do Planejamento:</label>
                                 <select id="forecast-char-select" class="search-input" style="width: 100%; margin-top: 4px; padding: 10px;">
                                     <option value="">Carregando lista...</option>
                                 </select>
@@ -1656,102 +1747,66 @@
                             </div>
                         </div>
 
-                        <!-- Grade dos 3 Banners Oficiais (Personagem, Arma, Padrão) -->
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
-                            <!-- 1. BANNER DE PERSONAGEM LIMITADO -->
-                            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-user-astronaut" style="color: #38bdf8;"></i> Personagem Limitado
-                                    </span>
-                                    <span id="tracker-char-status-badge" style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(251, 191, 36, 0.15); border: 1px solid rgba(251, 191, 36, 0.3); color: #fbbf24;">50/50</span>
-                                </div>
+                        <!-- Grade Dinâmica dos Banners do Jogo Atual (Personagem, Arma, Mochileiro, Iniciante, Collab, Bangboos) -->
+                        <div id="tracker-banners-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
+                            <!-- Renderizado dinamicamente via JS de acordo com o jogo (Genshin, HSR ou ZZZ) -->
+                        </div>
 
-                                <!-- Contador de Pity Gigante -->
-                                <div style="text-align: center; padding: 10px 0;">
-                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">PITY ATUAL</span>
-                                    <div style="font-size: 42px; font-weight: 900; color: #fff; line-height: 1.1; margin: 4px 0;">
-                                        <span id="tracker-char-pity-current">0</span><span style="font-size: 20px; color: #64748b;"> / 90</span>
+                        <!-- Seção: Histórico Completo de Tiros com Miniaturas de Itens e Filtros -->
+                        <div style="margin-top: 28px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 16px; padding: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #0284c7, #38bdf8); display: flex; align-items: center; justify-content: center; color: #fff;">
+                                        <i class="fa-solid fa-clock-rotate-left"></i>
                                     </div>
-                                    <span id="tracker-char-soft-pity-text" style="font-size: 11px; color: #94a3b8;">Faltam 74 tiros para o Soft Pity</span>
-                                </div>
-
-                                <!-- Barra de Progresso do Pity -->
-                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                                    <div id="tracker-char-pity-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #38bdf8, #818cf8); border-radius: 10px; transition: width 0.4s ease;"></div>
-                                </div>
-
-                                <!-- Histórico dos Últimos 5★ -->
-                                <div style="margin-top: 6px;">
-                                    <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Últimos 5★ Obtidos:</span>
-                                    <div id="tracker-char-history-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto;">
-                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum registro encontrado.</span>
+                                    <div>
+                                        <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">Histórico Completo de Tiros</h3>
+                                        <span id="tracker-history-total-label" style="font-size: 11px; color: var(--text-muted);">Exibindo registros oficiais sincronizados</span>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- 2. BANNER DE CONES DE LUZ / ARMAS -->
-                            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc;"></i> Armas / Cones de Luz
-                                    </span>
-                                    <span style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.3); color: #c084fc;">75/25</span>
-                                </div>
-
-                                <!-- Contador de Pity Gigante -->
-                                <div style="text-align: center; padding: 10px 0;">
-                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">PITY ATUAL</span>
-                                    <div style="font-size: 42px; font-weight: 900; color: #fff; line-height: 1.1; margin: 4px 0;">
-                                        <span id="tracker-weapon-pity-current">0</span><span style="font-size: 20px; color: #64748b;"> / 80</span>
+                                <!-- Filtros de Banner e Raridade -->
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 700;">Banner:</span>
+                                        <select id="tracker-history-filter-banner" onchange="window.filterGachaTrackerHistory()" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 12px; padding: 6px 10px;">
+                                            <option value="all">Todos os Banners</option>
+                                            <option value="character">Personagem</option>
+                                            <option value="weapon">Arma / Cone / Motor</option>
+                                            <option value="standard">Padrão / Mochileiro</option>
+                                            <option value="beginner">Iniciante / Novatos</option>
+                                            <option value="collab">Colaboração (Fate)</option>
+                                            <option value="bangboo">Bangboos (ZZZ)</option>
+                                            <option value="chronicled">Crônicas / Regional</option>
+                                        </select>
                                     </div>
-                                    <span id="tracker-weapon-soft-pity-text" style="font-size: 11px; color: #94a3b8;">Faltam 64 tiros para o Soft Pity</span>
-                                </div>
 
-                                <!-- Barra de Progresso do Pity -->
-                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                                    <div id="tracker-weapon-pity-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #c084fc, #ec4899); border-radius: 10px; transition: width 0.4s ease;"></div>
-                                </div>
-
-                                <!-- Histórico dos Últimos 5★ -->
-                                <div style="margin-top: 6px;">
-                                    <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Últimos 5★ Obtidos:</span>
-                                    <div id="tracker-weapon-history-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto;">
-                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum registro encontrado.</span>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <span style="font-size: 11px; color: var(--text-muted); font-weight: 700;">Raridade:</span>
+                                        <select id="tracker-history-filter-rarity" onchange="window.filterGachaTrackerHistory()" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff; font-size: 12px; padding: 6px 10px;">
+                                            <option value="all">Todas as Raridades</option>
+                                            <option value="5">⭐⭐⭐⭐⭐ (5 Estrelas)</option>
+                                            <option value="4">⭐⭐⭐⭐ (4 Estrelas)</option>
+                                            <option value="3">⭐⭐⭐ (3 Estrelas)</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- 3. BANNER PADRÃO / MOCHILEIRO -->
-                            <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.4);">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-size: 13px; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-compass" style="color: #94a3b8;"></i> Banner Padrão / Mochileiro
-                                    </span>
-                                    <span style="font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #cbd5e1;">Permanente</span>
-                                </div>
+                            <!-- Tabela / Lista de Histórico de Tiros com Miniaturas -->
+                            <div id="tracker-history-container" style="min-height: 180px;">
+                                <!-- Carregado via JS -->
+                            </div>
 
-                                <!-- Contador de Pity Gigante -->
-                                <div style="text-align: center; padding: 10px 0;">
-                                    <span style="font-size: 11px; color: var(--text-muted); display: block;">PITY ATUAL</span>
-                                    <div style="font-size: 42px; font-weight: 900; color: #fff; line-height: 1.1; margin: 4px 0;">
-                                        <span id="tracker-standard-pity-current">0</span><span style="font-size: 20px; color: #64748b;"> / 90</span>
-                                    </div>
-                                    <span id="tracker-standard-soft-pity-text" style="font-size: 11px; color: #94a3b8;">Faltam 74 tiros para o Soft Pity</span>
-                                </div>
-
-                                <!-- Barra de Progresso do Pity -->
-                                <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.5); border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                                    <div id="tracker-standard-pity-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #94a3b8, #cbd5e1); border-radius: 10px; transition: width 0.4s ease;"></div>
-                                </div>
-
-                                <!-- Histórico dos Últimos 5★ -->
-                                <div style="margin-top: 6px;">
-                                    <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; display: block; margin-bottom: 6px;">Últimos 5★ Obtidos:</span>
-                                    <div id="tracker-standard-history-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 130px; overflow-y: auto;">
-                                        <span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum registro encontrado.</span>
-                                    </div>
-                                </div>
+                            <!-- Controles de Paginação -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.08);">
+                                <button id="tracker-history-prev-btn" onclick="window.paginateGachaHistory(-1)" class="secondary-btn" style="padding: 6px 14px; font-size: 11px; border-radius: 8px; cursor: pointer;">
+                                    <i class="fa-solid fa-chevron-left"></i> Anterior
+                                </button>
+                                <span id="tracker-history-page-info" style="font-size: 12px; color: var(--text-muted); font-weight: 700;">Página 1</span>
+                                <button id="tracker-history-next-btn" onclick="window.paginateGachaHistory(1)" class="secondary-btn" style="padding: 6px 14px; font-size: 11px; border-radius: 8px; cursor: pointer;">
+                                    Próxima <i class="fa-solid fa-chevron-right"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -3770,7 +3825,7 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-    <script type="module" src="js/app.js?v=23.0"></script>
+    <script type="module" src="js/app.js?v=23.2"></script>
 </body>
 </html>
 

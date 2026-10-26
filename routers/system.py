@@ -86,12 +86,20 @@ async def proxy_image(url: str):
         except Exception:
             pass
 
+    referer = "https://act.hoyoverse.com/"
+    if "prydwen.gg" in url:
+        referer = "https://www.prydwen.gg/"
+    elif "zenless" in url:
+        referer = "https://zenless-zone-zero.fandom.com/"
+    elif "genshin" in url or "gensin" in url:
+        referer = "https://genshin-impact.fandom.com/"
+    elif "wikia" in url or "fandom" in url:
+        referer = "https://honkai-star-rail.fandom.com/"
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
-        "Referer": "https://honkai-star-rail.fandom.com/"
-        if ("wikia" in url or "fandom" in url)
-        else "https://act.hoyoverse.com/",
+        "Referer": referer,
     }
 
     try:

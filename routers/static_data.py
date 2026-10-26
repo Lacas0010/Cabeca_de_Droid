@@ -30,6 +30,12 @@ async def trigger_static_data_sync(req: Optional[StaticDataSyncRequest] = None):
             status=info.get("status", "success"),
             source=info.get("source", "seed"),
         )
+    try:
+        from scrapers.scraper_prydwen import PrydwenScraper
+
+        PrydwenScraper().get_current_banners(target_game)
+    except Exception as e:
+        print(f"[WARN] Erro ao sincronizar banners em trigger_static_data_sync: {e}")
     return {"status": "success", "results": results}
 
 

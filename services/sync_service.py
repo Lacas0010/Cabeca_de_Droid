@@ -297,6 +297,20 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
         except Exception as arch_err:
             log_game(game_id, f"Aviso ao atualizar arquétipos de endgame: {arch_err}", "WARN")
 
+        # Atualiza os banners atuais e imagens oficiais de gacha
+        try:
+            from scrapers.scraper_prydwen import PrydwenScraper
+
+            PrydwenScraper().get_current_banners(game_id)
+            log_game(
+                game_id,
+                f"Banners atuais e artes oficiais de {game_id.upper()} sincronizados com sucesso!",
+                "INFO",
+                progresso=0.99,
+            )
+        except Exception as banner_err:
+            log_game(game_id, f"Aviso ao sincronizar banners atuais: {banner_err}", "WARN")
+
         log_game(game_id, "Sincronização concluída com sucesso!", "SUCCESS", progresso=1.0)
     except Exception as general_err:
         log_game(game_id, f"Erro crítico na sincronização: {general_err}", "ERROR", progresso=0.0)

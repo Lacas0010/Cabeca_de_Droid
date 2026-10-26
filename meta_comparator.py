@@ -237,6 +237,7 @@ def clean_meta_item_name(s: str) -> str:
     s = re.sub(r"\s*\(\s*\d+\s*de eficácia\s*\)", "", s, flags=re.I)
     s = re.sub(r"\s*-\s*—\s*$", "", s)
     s = re.sub(r"\s*-\s*$", "", s)
+    s = re.sub(r"\s*[1-5]\s*[\*★]\s*$", "", s)
     return s.strip()
 
 
@@ -376,6 +377,9 @@ def parse_meta_target(
                 "armas recomendadas",
                 "melhores armas",
                 "melhores w-engines",
+                "melhores motores",
+                "motores-w",
+                "motores",
                 "best light cone",
                 "best weapon",
                 "best w-engine",

@@ -78,7 +78,9 @@ assets/relics/
 assets/elements/
 assets/shards/
 assets/mindscapes/zzz/focus/
+assets/banners/
 assets/logo.ico
+static/assets/
 
 # Logs, Compressed Archives & Temporary Scratch Scripts
 *.log

@@ -10,11 +10,11 @@
 window.GACHA_TERMS = {
     genshin: {
         gameName: "Genshin Impact",
+        currency: "Gemas",
+        gemCostPerPull: 160,
         term: "Constelação",
         termPlural: "Constelações",
         prefix: "C",
-        currency: "Gemas",
-        gemCostPerPull: 160,
         unownedLabel: "Não possui (0 cópias)",
         ranks: [
             { val: 0, label: "C0 (Personagem Base)" },
@@ -24,15 +24,51 @@ window.GACHA_TERMS = {
             { val: 4, label: "C4 (4ª Constelação)" },
             { val: 5, label: "C5 (5ª Constelação)" },
             { val: 6, label: "C6 (Constelação Máxima)" }
-        ]
+        ],
+        character: {
+            term: "Constelação",
+            termPlural: "Constelações",
+            prefix: "C",
+            unownedLabel: "Não possui (0 cópias)",
+            maxPity: 89,
+            pityTitle: "Pity de Personagem (0-89):",
+            guaranteedNormal: "50/50 Ativo (Normal)",
+            guaranteedWon: "Garantido (Perdeu 50/50 anterior)",
+            ranks: [
+                { val: 0, label: "C0 (Personagem Base)" },
+                { val: 1, label: "C1 (1ª Constelação)" },
+                { val: 2, label: "C2 (2ª Constelação)" },
+                { val: 3, label: "C3 (3ª Constelação)" },
+                { val: 4, label: "C4 (4ª Constelação)" },
+                { val: 5, label: "C5 (5ª Constelação)" },
+                { val: 6, label: "C6 (Constelação Máxima)" }
+            ]
+        },
+        weapon: {
+            term: "Refinamento",
+            termPlural: "Refinamentos",
+            prefix: "R",
+            unownedLabel: "Não possui a arma (0 cópias)",
+            maxPity: 79,
+            pityTitle: "Pity de Arma (0-79):",
+            guaranteedNormal: "Caminho Divino / 75/25 Ativo",
+            guaranteedWon: "Garantido (Destino / 100%)",
+            ranks: [
+                { val: 0, label: "R1 (Arma Base)" },
+                { val: 1, label: "R2 (Refinamento 2)" },
+                { val: 2, label: "R3 (Refinamento 3)" },
+                { val: 3, label: "R4 (Refinamento 4)" },
+                { val: 4, label: "R5 (Refinamento Máximo)" }
+            ]
+        }
     },
     hsr: {
         gameName: "Honkai: Star Rail",
+        currency: "Jades",
+        gemCostPerPull: 160,
         term: "Eidolon",
         termPlural: "Eidolons",
         prefix: "E",
-        currency: "Jades",
-        gemCostPerPull: 160,
         unownedLabel: "Não possui (0 cópias)",
         ranks: [
             { val: 0, label: "E0 (Personagem Base)" },
@@ -42,15 +78,51 @@ window.GACHA_TERMS = {
             { val: 4, label: "E4 (4º Eidolon)" },
             { val: 5, label: "E5 (5º Eidolon)" },
             { val: 6, label: "E6 (Eidolon Máximo)" }
-        ]
+        ],
+        character: {
+            term: "Eidolon",
+            termPlural: "Eidolons",
+            prefix: "E",
+            unownedLabel: "Não possui (0 cópias)",
+            maxPity: 89,
+            pityTitle: "Pity de Personagem (0-89):",
+            guaranteedNormal: "50/50 Ativo (Normal)",
+            guaranteedWon: "Garantido (Perdeu 50/50 anterior)",
+            ranks: [
+                { val: 0, label: "E0 (Personagem Base)" },
+                { val: 1, label: "E1 (1º Eidolon)" },
+                { val: 2, label: "E2 (2º Eidolon)" },
+                { val: 3, label: "E3 (3º Eidolon)" },
+                { val: 4, label: "E4 (4º Eidolon)" },
+                { val: 5, label: "E5 (5º Eidolon)" },
+                { val: 6, label: "E6 (Eidolon Máximo)" }
+            ]
+        },
+        weapon: {
+            term: "Sobreposição",
+            termPlural: "Sobreposições",
+            prefix: "S",
+            unownedLabel: "Não possui o Cone de Luz (0 cópias)",
+            maxPity: 79,
+            pityTitle: "Pity de Cone de Luz (0-79):",
+            guaranteedNormal: "75/25 Ativo (Normal)",
+            guaranteedWon: "Garantido (Perdeu 75/25 anterior)",
+            ranks: [
+                { val: 0, label: "S1 (Cone de Luz Base)" },
+                { val: 1, label: "S2 (Sobreposição 2)" },
+                { val: 2, label: "S3 (Sobreposição 3)" },
+                { val: 3, label: "S4 (Sobreposição 4)" },
+                { val: 4, label: "S5 (Sobreposição Máxima)" }
+            ]
+        }
     },
     zzz: {
         gameName: "Zenless Zone Zero",
+        currency: "Policromos",
+        gemCostPerPull: 160,
         term: "Mindscape Cinema",
         termPlural: "Mindscapes",
         prefix: "M",
-        currency: "Policromos",
-        gemCostPerPull: 160,
         unownedLabel: "Não possui (0 cópias)",
         ranks: [
             { val: 0, label: "M0 (Agente Base)" },
@@ -60,12 +132,69 @@ window.GACHA_TERMS = {
             { val: 4, label: "M4 (4º Cinema)" },
             { val: 5, label: "M5 (5º Cinema)" },
             { val: 6, label: "M6 (Mindscape Máximo)" }
-        ]
+        ],
+        character: {
+            term: "Mindscape Cinema",
+            termPlural: "Mindscapes",
+            prefix: "M",
+            unownedLabel: "Não possui (0 cópias)",
+            maxPity: 89,
+            pityTitle: "Pity de Agente (0-89):",
+            guaranteedNormal: "50/50 Ativo (Normal)",
+            guaranteedWon: "Garantido (Perdeu 50/50 anterior)",
+            ranks: [
+                { val: 0, label: "M0 (Agente Base)" },
+                { val: 1, label: "M1 (1º Cinema)" },
+                { val: 2, label: "M2 (2º Cinema)" },
+                { val: 3, label: "M3 (3º Cinema)" },
+                { val: 4, label: "M4 (4º Cinema)" },
+                { val: 5, label: "M5 (5º Cinema)" },
+                { val: 6, label: "M6 (Mindscape Máximo)" }
+            ]
+        },
+        weapon: {
+            term: "Modificação de Motor",
+            termPlural: "Modificações",
+            prefix: "★",
+            unownedLabel: "Não possui o Motor-W (0 cópias)",
+            maxPity: 79,
+            pityTitle: "Pity de Motor-W (0-79):",
+            guaranteedNormal: "75/25 Ativo (Normal)",
+            guaranteedWon: "Garantido (Perdeu 75/25 anterior)",
+            ranks: [
+                { val: 0, label: "★1 (Motor-W Base)" },
+                { val: 1, label: "★2 (Modificação 2)" },
+                { val: 2, label: "★3 (Modificação 3)" },
+                { val: 3, label: "★4 (Modificação 4)" },
+                { val: 4, label: "★5 (Modificação Máxima)" }
+            ]
+        }
     }
+};
+
+window.getGachaTerms = function(gameId, bannerType = "character") {
+    const g = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const bType = (bannerType || "character").toLowerCase();
+    const typeTerms = g[bType] || g.character || g;
+    return {
+        gameName: g.gameName,
+        currency: g.currency,
+        gemCostPerPull: g.gemCostPerPull,
+        term: typeTerms.term,
+        termPlural: typeTerms.termPlural,
+        prefix: typeTerms.prefix,
+        unownedLabel: typeTerms.unownedLabel,
+        maxPity: typeTerms.maxPity || 89,
+        pityTitle: typeTerms.pityTitle || "Pity Atual (0-89):",
+        guaranteedNormal: typeTerms.guaranteedNormal || "50/50 Ativo (Normal)",
+        guaranteedWon: typeTerms.guaranteedWon || "Garantido",
+        ranks: typeTerms.ranks || []
+    };
 };
 
 window.gachaState = {
     gameId: "genshin",
+    bannerType: "character",
     charList: [],
     selectedChar: null
 };
@@ -92,6 +221,8 @@ window.updateGachaGemConversion = function() {
 window.initGachaSimulator = async function() {
     const gamePills = document.querySelectorAll("#gacha-game-pills .gacha-game-pill");
     const gameSelectHidden = document.getElementById("tab-gacha-game-select");
+    const simTypePills = document.querySelectorAll("#gacha-sim-type-pills .sim-type-btn");
+    const bannerTypeHidden = document.getElementById("tab-gacha-banner-type");
     const charSelect = document.getElementById("tab-gacha-char-select");
     const currentRankSelect = document.getElementById("tab-gacha-current-rank");
     const pullsInput = document.getElementById("tab-gacha-pulls");
@@ -101,6 +232,7 @@ window.initGachaSimulator = async function() {
         pullsInput.addEventListener("input", window.updateGachaGemConversion);
     }
 
+    // Toggle de Jogos (Genshin, HSR, ZZZ)
     gamePills.forEach(pill => {
         pill.addEventListener("click", async () => {
             gamePills.forEach(p => p.classList.remove("active"));
@@ -108,9 +240,24 @@ window.initGachaSimulator = async function() {
             const gameId = pill.dataset.game;
             if (gameSelectHidden) gameSelectHidden.value = gameId;
             window.gachaState.gameId = gameId;
-            window.updateGachaLabels(gameId);
-            await window.loadGachaCharacters(gameId);
+            const bType = bannerTypeHidden ? bannerTypeHidden.value : "character";
+            window.updateGachaLabels(gameId, bType);
+            await window.loadGachaCharacters(gameId, bType);
             window.updateGachaGemConversion();
+        });
+    });
+
+    // Toggle de Categoria de Banner (Personagens vs Armas/Cones/Motores-W)
+    simTypePills.forEach(pill => {
+        pill.addEventListener("click", async () => {
+            simTypePills.forEach(p => p.classList.remove("active"));
+            pill.classList.add("active");
+            const bType = pill.dataset.type || "character";
+            if (bannerTypeHidden) bannerTypeHidden.value = bType;
+            window.gachaState.bannerType = bType;
+            const gameId = gameSelectHidden ? gameSelectHidden.value : "genshin";
+            window.updateGachaLabels(gameId, bType);
+            await window.loadGachaCharacters(gameId, bType);
         });
     });
 
@@ -139,18 +286,41 @@ window.initGachaSimulator = async function() {
         };
     }
 
-    window.updateGachaLabels("genshin");
-    await window.loadGachaCharacters("genshin");
+    window.updateGachaLabels("genshin", "character");
+    await window.loadGachaCharacters("genshin", "character");
     window.updateGachaGemConversion();
 };
 
-window.updateGachaLabels = function(gameId) {
-    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+window.updateGachaLabels = function(gameId, bannerType = "character") {
+    const terms = window.getGachaTerms(gameId, bannerType);
     
     const lblCurrent = document.getElementById("lbl-gacha-current-rank");
     const lblTarget = document.getElementById("lbl-gacha-target-rank");
     if (lblCurrent) lblCurrent.innerText = `${terms.term} Atual:`;
     if (lblTarget) lblTarget.innerText = `Meta de ${terms.term}:`;
+
+    const lblPity = document.getElementById("lbl-gacha-pity-title");
+    if (lblPity) lblPity.innerText = terms.pityTitle;
+
+    const lblGuaranteed = document.getElementById("lbl-gacha-guaranteed-title");
+    if (lblGuaranteed) {
+        lblGuaranteed.innerText = bannerType === "weapon" ? "Garantido / Caminho Divino:" : "Estado do 50/50:";
+    }
+
+    const pityInput = document.getElementById("tab-gacha-pity");
+    if (pityInput) {
+        pityInput.max = String(terms.maxPity);
+    }
+
+    const guaranteedSelect = document.getElementById("tab-gacha-guaranteed");
+    if (guaranteedSelect) {
+        const curVal = guaranteedSelect.value;
+        guaranteedSelect.innerHTML = `
+            <option value="false">${terms.guaranteedNormal}</option>
+            <option value="true">${terms.guaranteedWon}</option>
+        `;
+        guaranteedSelect.value = curVal;
+    }
 
     const currentRankSelect = document.getElementById("tab-gacha-current-rank");
     if (currentRankSelect) {
@@ -168,12 +338,13 @@ window.updateGachaLabels = function(gameId) {
 
 window.updateTargetRankOptions = function() {
     const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
-    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const bannerType = document.getElementById("tab-gacha-banner-type")?.value || "character";
+    const terms = window.getGachaTerms(gameId, bannerType);
     const currentRank = parseInt(document.getElementById("tab-gacha-current-rank")?.value ?? -1);
     const targetRankSelect = document.getElementById("tab-gacha-target-rank");
 
     if (!targetRankSelect) return;
-    const prevTargetVal = parseInt(targetRankSelect.value ?? 6);
+    const prevTargetVal = parseInt(targetRankSelect.value ?? (bannerType === "weapon" ? 4 : 6));
 
     targetRankSelect.innerHTML = "";
     terms.ranks.forEach(r => {
@@ -183,12 +354,14 @@ window.updateTargetRankOptions = function() {
             
             let extraStr = "";
             if (currentRank < 0) {
-                extraStr = r.val === 0 ? " (Garantir 1º Personagem)" : ` (+${r.val + 1} cópias)`;
+                extraStr = r.val === 0 
+                    ? (bannerType === "weapon" ? " (Garantir 1ª Arma/Cone)" : " (Garantir 1º Personagem)") 
+                    : ` (+${r.val + 1} cópias)`;
             } else {
                 const needed = r.val - currentRank;
                 extraStr = needed === 1 ? " (+1 cópia adicional)" : ` (+${needed} cópias adicionais)`;
             }
-            opt.innerText = `${terms.prefix}${r.val}${extraStr}`;
+            opt.innerText = `${terms.prefix}${bannerType === "weapon" ? r.val + 1 : r.val}${extraStr}`;
             targetRankSelect.appendChild(opt);
         }
     });
@@ -201,69 +374,332 @@ window.updateTargetRankOptions = function() {
     }
 };
 
-window.loadGachaCharacters = async function(gameId) {
+window.loadGachaCharacters = async function(gameId, requestedBannerType = null) {
     const charSelect = document.getElementById("tab-gacha-char-select");
+    const lblTargetItem = document.getElementById("lbl-gacha-target-item");
     if (!charSelect) return;
 
-    charSelect.innerHTML = `<option value="">Carregando lista de personagens 5★...</option>`;
+    const bannerType = requestedBannerType || document.getElementById("tab-gacha-banner-type")?.value || "character";
+    if (lblTargetItem) {
+        lblTargetItem.innerText = bannerType === "weapon" ? "Arma / Cone de Luz / Motor-W Alvo:" : "Personagem Alvo:";
+    }
+    charSelect.innerHTML = `<option value="">Carregando dados do simulador e banner atual (${bannerType === 'weapon' ? 'Armas' : 'Personagens'})...</option>`;
 
     try {
-        const res = await fetch(`/api/gacha/characters/${gameId}`);
-        const data = await res.json();
-        const chars = data.characters || [];
-        window.gachaState.charList = chars;
+        const [charsRes, defaultsRes] = await Promise.allSettled([
+            fetch(`/api/gacha/characters/${gameId}`).then(r => r.json()),
+            fetch(`/api/gacha/defaults/${gameId}?banner_type=${bannerType}`).then(r => r.json())
+        ]);
 
+        const charsData = charsRes.status === "fulfilled" ? charsRes.value : {};
+        const defaultsData = defaultsRes.status === "fulfilled" ? defaultsRes.value : {};
+        window.gachaState.currentBannerData = defaultsData;
+        window.gachaState.bannerType = bannerType;
+
+        // 1. Atualiza Pity Atual e Status 50/50 ou 75/25 com dados reais da conta
+        const pityInput = document.getElementById("tab-gacha-pity");
+        const guaranteedSelect = document.getElementById("tab-gacha-guaranteed");
+        const pityBadge = document.getElementById("gacha-pity-source-badge");
+
+        const curPity = bannerType === "weapon" ? (defaultsData.weapon_pity ?? defaultsData.current_pity ?? 0) : (defaultsData.character_pity ?? defaultsData.current_pity ?? 0);
+        const curGuaranteed = bannerType === "weapon" ? !!(defaultsData.weapon_guaranteed ?? defaultsData.is_guaranteed) : !!(defaultsData.character_guaranteed ?? defaultsData.is_guaranteed);
+
+        if (pityInput) {
+            pityInput.value = curPity;
+            pityInput.max = bannerType === "weapon" ? "79" : "89";
+        }
+        if (guaranteedSelect) {
+            guaranteedSelect.value = curGuaranteed ? "true" : "false";
+        }
+        if (pityBadge) {
+            pityBadge.textContent = curPity > 0 
+                ? `Sincronizado: ${curPity} tiros (${bannerType === 'weapon' ? 'Arma/Cone' : 'Personagem'})`
+                : `Sincronizado (0 Tiros • ${bannerType === 'weapon' ? 'Arma/Cone' : 'Personagem'})`;
+        }
+
+        // 2. Atualiza Card Visual do Banner Oficial Promocional In-Game
+        window.renderActiveBannerCard(defaultsData, 0, bannerType);
+
+        // 3. Monta Opções do Select de Itens
         charSelect.innerHTML = "";
 
-        const genericOpt = document.createElement("option");
-        genericOpt.value = "";
-        genericOpt.innerText = "✨ Personagem 5★ Genérico / Qualquer Banner";
-        charSelect.appendChild(genericOpt);
+        if (bannerType === "weapon") {
+            const genericOpt = document.createElement("option");
+            genericOpt.value = "";
+            genericOpt.innerText = "⚔️ Arma / Cone de Luz / Motor-W 5★ Genérico";
+            charSelect.appendChild(genericOpt);
 
-        const ownedChars = chars.filter(c => c.owned);
-        const unownedChars = chars.filter(c => !c.owned);
+            const weaponBanners = defaultsData.available_weapon_banners || [];
+            if (weaponBanners.length > 0) {
+                const grpWeapon = document.createElement("optgroup");
+                grpWeapon.label = "⚔️ Banners de Armas/Cones em Destaque";
+                weaponBanners.forEach(b => {
+                    const opt = document.createElement("option");
+                    opt.value = b.character_name;
+                    opt.innerText = `⚔️ ${b.character_name}${b.banner_title ? ` (${b.banner_title})` : ''} (Banner In-Game)`;
+                    grpWeapon.appendChild(opt);
+                });
+                charSelect.appendChild(grpWeapon);
+            }
 
-        if (ownedChars.length > 0) {
-            const grpOwned = document.createElement("optgroup");
-            grpOwned.label = "🟢 Seus Personagens 5★ (no Roster)";
-            ownedChars.forEach(c => {
-                const opt = document.createElement("option");
-                opt.value = c.name;
-                opt.innerText = `✓ ${c.name} (Nv. ${c.level} • ${c.rank_str || 'C0'})`;
-                grpOwned.appendChild(opt);
-            });
-            charSelect.appendChild(grpOwned);
-        }
+            const defaultWeapon = weaponBanners[0]?.character_name || "";
+            charSelect.value = defaultWeapon;
+            window.updateGachaCharPreview(defaultWeapon);
 
-        if (unownedChars.length > 0) {
-            const grpUnowned = document.createElement("optgroup");
-            grpUnowned.label = "⚪ Outros Personagens 5★ do Jogo";
-            unownedChars.forEach(c => {
-                const opt = document.createElement("option");
-                opt.value = c.name;
-                opt.innerText = `${c.name} (Não Obtido)`;
-                grpUnowned.appendChild(opt);
-            });
-            charSelect.appendChild(grpUnowned);
-        }
-
-        if (ownedChars.length > 0) {
-            charSelect.value = ownedChars[0].name;
-            window.updateGachaCharPreview(ownedChars[0].name);
         } else {
-            charSelect.value = "";
-            window.updateGachaCharPreview("");
+            const chars = charsData.characters || [];
+            const activeCharName = defaultsData.active_banner_character;
+
+            const bannerChars = defaultsData.available_banners || [];
+            bannerChars.forEach(b => {
+                const bName = b.character_name;
+                if (!bName) return;
+                const exists = chars.some(c => c.name.toLowerCase() === bName.toLowerCase());
+                if (!exists) {
+                    chars.push({
+                        name: bName,
+                        rarity: 5,
+                        element: b.character_info?.element || "",
+                        icon: b.character_info?.icon || b.banner_image || "",
+                        gacha_art: b.banner_image || "",
+                        owned: false,
+                        current_rank: -1,
+                        rank_str: null,
+                        level: 0,
+                        is_current_banner: true
+                    });
+                } else {
+                    const existing = chars.find(c => c.name.toLowerCase() === bName.toLowerCase());
+                    if (existing) {
+                        existing.is_current_banner = true;
+                        if (!existing.gacha_art) existing.gacha_art = b.banner_image;
+                    }
+                }
+            });
+            window.gachaState.charList = chars;
+
+            const genericOpt = document.createElement("option");
+            genericOpt.value = "";
+            genericOpt.innerText = "✨ Personagem 5★ Genérico / Qualquer Banner";
+            charSelect.appendChild(genericOpt);
+
+            if (bannerChars.length > 0) {
+                const grpBanner = document.createElement("optgroup");
+                grpBanner.label = "⭐ Banners Oficiais Ativos (Destaque Atual)";
+                bannerChars.forEach(b => {
+                    const opt = document.createElement("option");
+                    opt.value = b.character_name;
+                    opt.innerText = `⭐ ${b.character_name}${b.banner_title ? ` (${b.banner_title})` : ''} (Banner In-Game)`;
+                    grpBanner.appendChild(opt);
+                });
+                charSelect.appendChild(grpBanner);
+            }
+
+            const ownedChars = chars.filter(c => c.owned);
+            const unownedChars = chars.filter(c => !c.owned);
+
+            if (ownedChars.length > 0) {
+                const grpOwned = document.createElement("optgroup");
+                grpOwned.label = "🟢 Seus Personagens 5★ (no Roster)";
+                ownedChars.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.name;
+                    opt.innerText = `✓ ${c.name} (Nv. ${c.level} • ${c.rank_str || 'C0'})`;
+                    grpOwned.appendChild(opt);
+                });
+                charSelect.appendChild(grpOwned);
+            }
+
+            if (unownedChars.length > 0) {
+                const grpUnowned = document.createElement("optgroup");
+                grpUnowned.label = "⚪ Outros Personagens 5★ do Jogo";
+                unownedChars.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.name;
+                    opt.innerText = `${c.name} (Não Obtido)`;
+                    grpUnowned.appendChild(opt);
+                });
+                charSelect.appendChild(grpUnowned);
+            }
+
+            let selectedDefault = "";
+            if (activeCharName && chars.some(c => c.name.toLowerCase() === activeCharName.toLowerCase())) {
+                const found = chars.find(c => c.name.toLowerCase() === activeCharName.toLowerCase());
+                selectedDefault = found ? found.name : activeCharName;
+            } else if (ownedChars.length > 0) {
+                selectedDefault = ownedChars[0].name;
+            }
+
+            charSelect.value = selectedDefault;
+            window.updateGachaCharPreview(selectedDefault);
         }
 
     } catch (e) {
-        console.error("Erro ao carregar lista de personagens gacha:", e);
-        charSelect.innerHTML = `<option value="">Erro ao carregar personagens</option>`;
+        console.error("Erro ao carregar lista de itens gacha:", e);
+        charSelect.innerHTML = `<option value="">Erro ao carregar itens</option>`;
+    }
+};
+
+window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, bannerTypeOverride = null) {
+    if (!defaultsData) return;
+    window.gachaState.currentBannerData = defaultsData;
+    window.gachaState.activeBannerIndex = selectedIndex;
+
+    const bannerType = bannerTypeOverride || document.getElementById("tab-gacha-banner-type")?.value || "character";
+    const availableBanners = bannerType === "weapon"
+        ? (defaultsData.available_weapon_banners || [])
+        : (defaultsData.available_banners || []);
+
+    const currentBanner = availableBanners[selectedIndex] || (availableBanners.length > 0 ? availableBanners[0] : (defaultsData.active_banner_character ? {
+        character_name: defaultsData.active_banner_character,
+        banner_title: defaultsData.active_banner_title,
+        banner_image: defaultsData.active_banner_image,
+        character_info: defaultsData.active_character_info,
+        featured_4stars: defaultsData.featured_4stars,
+        featured_4stars_info: defaultsData.featured_4stars_info
+    } : null));
+
+    if (!currentBanner) return;
+
+    // 1. Badge de Patch/Fase
+    const patchBadge = document.getElementById("gacha-banner-patch-badge");
+    if (patchBadge) {
+        patchBadge.textContent = defaultsData.patch_info || "Fase Ativa";
+    }
+
+    // 2. Seletor de Banners da Fase (Tabs/Pills)
+    const switcherEl = document.getElementById("gacha-banner-switcher");
+    if (switcherEl) {
+        if (availableBanners.length > 1) {
+            switcherEl.style.display = "flex";
+            switcherEl.innerHTML = "";
+            availableBanners.forEach((b, idx) => {
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.className = `gacha-banner-tab-btn ${idx === selectedIndex ? "active" : ""}`;
+                const iconClass = bannerType === "weapon" ? "fa-shield-halved" : "fa-star";
+                btn.title = b.banner_title ? `${b.character_name} (${b.banner_title})` : b.character_name;
+                btn.innerHTML = `<i class="fa-solid ${iconClass}"></i> ${b.character_name}`;
+                btn.onclick = () => {
+                    window.renderActiveBannerCard(defaultsData, idx, bannerType);
+                    const charSelect = document.getElementById("tab-gacha-char-select");
+                    if (charSelect) {
+                        charSelect.value = b.character_name;
+                        window.updateGachaCharPreview(b.character_name);
+                    }
+                };
+                switcherEl.appendChild(btn);
+            });
+        } else {
+            switcherEl.style.display = "none";
+        }
+    }
+
+    // 3. Imagem Oficial In-Game e Títulos
+    const bannerArtImg = document.getElementById("gacha-banner-art-img");
+    const bannerTitle = document.getElementById("gacha-banner-char-title");
+    const bannerSubtitle = document.getElementById("gacha-banner-subtitle");
+    const bannerTypeBadge = document.getElementById("gacha-banner-type-badge");
+
+    if (bannerTitle) {
+        bannerTitle.textContent = currentBanner.banner_title || currentBanner.character_name;
+    }
+    if (bannerSubtitle) {
+        bannerSubtitle.textContent = bannerType === "weapon"
+            ? `Taxa Aumentada de Arma / Cone 5★ • ${currentBanner.character_name}`
+            : `Taxa Aumentada de 5★ • ${currentBanner.character_name}`;
+    }
+    if (bannerTypeBadge) {
+        if (bannerType === "weapon") {
+            bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Fixação Brilhante (Cones)" : (defaultsData.game_id === "zzz" ? "Sonata Dissonante (Motores-W)" : "Invocação do Epítome (Armas)");
+        } else {
+            bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Salto de Evento" : (defaultsData.game_id === "zzz" ? "Busca de Sinal" : "Oração de Evento");
+        }
+    }
+    if (currentBanner.banner_image && bannerArtImg) {
+        bannerArtImg.src = currentBanner.banner_image;
+        bannerArtImg.style.display = "block";
+        bannerArtImg.onerror = () => { bannerArtImg.style.display = "none"; };
+    } else if (bannerArtImg) {
+        bannerArtImg.style.display = "none";
+    }
+
+    // 4. Avatar e Detalhes do Item 5★ Promocional
+    const avatar5Star = document.getElementById("gacha-banner-5star-avatar");
+    const name5Star = document.getElementById("gacha-banner-5star-name");
+
+    if (name5Star) {
+        name5Star.textContent = currentBanner.character_name;
+    }
+    const charIcon = currentBanner.character_info?.icon || "";
+    if (avatar5Star && charIcon) {
+        avatar5Star.src = charIcon;
+        avatar5Star.style.display = "block";
+        avatar5Star.onerror = () => { avatar5Star.style.display = "none"; };
+    } else if (avatar5Star) {
+        avatar5Star.style.display = "none";
+    }
+
+    // 5. Grid de Itens 4★ Ativos
+    const fourStarsGrid = document.getElementById("gacha-banner-4stars-grid");
+    if (fourStarsGrid) {
+        fourStarsGrid.innerHTML = "";
+        const f4List = currentBanner.featured_4stars_info || [];
+        if (f4List.length > 0) {
+            f4List.forEach(f4 => {
+                const pill = document.createElement("div");
+                pill.className = "gacha-banner-4star-pill";
+                pill.title = `${f4.name} (Taxa Aumentada de 4★)`;
+                pill.innerHTML = `
+                    <div class="gacha-banner-4star-img-box">
+                        <img src="${f4.icon}" alt="${f4.name}" onerror="this.src='/assets/unknown_avatar.png';">
+                    </div>
+                    <div class="gacha-banner-4star-info">
+                        <span class="gacha-banner-4star-name">${f4.name}</span>
+                        <span class="gacha-banner-4star-stars">★★★★</span>
+                    </div>
+                `;
+                fourStarsGrid.appendChild(pill);
+            });
+        } else if (currentBanner.featured_4stars && currentBanner.featured_4stars.length > 0) {
+            currentBanner.featured_4stars.forEach(name => {
+                const pill = document.createElement("div");
+                pill.className = "gacha-banner-4star-pill";
+                pill.innerHTML = `
+                    <div class="gacha-banner-4star-info" style="padding: 2px 6px;">
+                        <span class="gacha-banner-4star-name">${name}</span>
+                        <span class="gacha-banner-4star-stars">★★★★</span>
+                    </div>
+                `;
+                fourStarsGrid.appendChild(pill);
+            });
+        } else {
+            fourStarsGrid.innerHTML = `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Pool oficial da fase</span>`;
+        }
+    }
+};
+
+window.selectActiveBannerChar = function() {
+    const data = window.gachaState.currentBannerData;
+    if (!data) return;
+    const bannerType = document.getElementById("tab-gacha-banner-type")?.value || "character";
+    const availableBanners = bannerType === "weapon" ? (data.available_weapon_banners || []) : (data.available_banners || []);
+    const idx = window.gachaState.activeBannerIndex || 0;
+    const b = availableBanners[idx] || availableBanners[0] || { character_name: data.active_banner_character };
+    const charName = b.character_name;
+    if (charName) {
+        const charSelect = document.getElementById("tab-gacha-char-select");
+        if (charSelect) {
+            charSelect.value = charName;
+            window.updateGachaCharPreview(charName);
+        }
     }
 };
 
 window.updateGachaCharPreview = function(charName) {
     const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
-    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const bannerType = document.getElementById("tab-gacha-banner-type")?.value || "character";
+    const terms = window.getGachaTerms(gameId, bannerType);
     const chars = window.gachaState.charList || [];
     const char = chars.find(c => c.name === charName);
 
@@ -274,6 +710,55 @@ window.updateGachaCharPreview = function(charName) {
     const avatarImg = document.getElementById("gacha-hero-avatar-img");
     const avatarFallback = document.getElementById("gacha-hero-avatar-fallback");
     const currentRankSelect = document.getElementById("tab-gacha-current-rank");
+
+    if (bannerType === "weapon") {
+        if (nameLbl) nameLbl.innerText = charName || "Arma / Cone 5★ Genérico";
+        if (starsLbl) starsLbl.innerText = "★★★★★";
+        if (badgeEl) {
+            badgeEl.className = "gacha-char-badge-unowned";
+            badgeEl.innerHTML = `<i class="fa-solid fa-shield-halved"></i> Banner de Armas / Cones de Luz`;
+        }
+        if (bgEl) bgEl.style.backgroundImage = "none";
+        if (avatarImg) avatarImg.style.display = "none";
+        if (avatarFallback) {
+            avatarFallback.style.display = "flex";
+            avatarFallback.innerHTML = `<i class="fa-solid fa-shield-halved"></i>`;
+        }
+        if (currentRankSelect) currentRankSelect.value = "-1";
+        
+        // Sincroniza arte do banner se corresponder
+        const availableWeapons = window.gachaState.currentBannerData?.available_weapon_banners || [];
+        const matchedBanner = availableWeapons.find(b => b.character_name.toLowerCase() === (charName || "").toLowerCase());
+        const bannerArtImg = document.getElementById("gacha-banner-art-img");
+        const bannerTitle = document.getElementById("gacha-banner-char-title");
+
+        if (matchedBanner && matchedBanner.banner_image && bannerArtImg) {
+            bannerArtImg.src = matchedBanner.banner_image;
+            bannerArtImg.style.display = "block";
+            if (bannerTitle) bannerTitle.textContent = `Banner: ${matchedBanner.character_name}`;
+        }
+
+        window.updateTargetRankOptions();
+        return;
+    }
+
+    if (!char && charName) {
+        const availableBanners = window.gachaState.currentBannerData?.available_banners || [];
+        const matched = availableBanners.find(b => b.character_name.toLowerCase() === charName.toLowerCase());
+        if (matched) {
+            char = {
+                name: matched.character_name,
+                rarity: 5,
+                element: matched.character_info?.element || "",
+                icon: matched.character_info?.icon || matched.banner_image || "",
+                gacha_art: matched.banner_image || "",
+                owned: false,
+                current_rank: -1,
+                rank_str: null,
+                level: 0
+            };
+        }
+    }
 
     if (!char) {
         if (nameLbl) nameLbl.innerText = "Personagem 5★ Genérico";
@@ -336,10 +821,11 @@ window.updateGachaCharPreview = function(charName) {
 
 window.runGachaSimulation = async function() {
     const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
+    const bannerType = document.getElementById("tab-gacha-banner-type")?.value || "character";
     const charSelect = document.getElementById("tab-gacha-char-select");
     const charName = charSelect ? charSelect.value : "";
     const currentRank = parseInt(document.getElementById("tab-gacha-current-rank")?.value ?? -1);
-    const targetRank = parseInt(document.getElementById("tab-gacha-target-rank")?.value ?? 6);
+    const targetRank = parseInt(document.getElementById("tab-gacha-target-rank")?.value ?? (bannerType === "weapon" ? 4 : 6));
     const currentPity = parseInt(document.getElementById("tab-gacha-pity")?.value) || 0;
     const isGuaranteed = document.getElementById("tab-gacha-guaranteed")?.value === "true";
     const pullsAvailable = parseInt(document.getElementById("tab-gacha-pulls")?.value) || 0;
@@ -356,6 +842,7 @@ window.runGachaSimulation = async function() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 game_id: gameId,
+                banner_type: bannerType,
                 current_pity: currentPity,
                 is_guaranteed: isGuaranteed,
                 pulls_available: pullsAvailable,
@@ -379,8 +866,8 @@ window.runGachaSimulation = async function() {
         }
 
         const summaryEl = document.getElementById("tab-gacha-target-summary");
-        const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
-        const charTitle = charName ? `<b>${charName}</b>` : "Personagem Alvo";
+        const terms = window.getGachaTerms(gameId, bannerType);
+        const charTitle = charName ? `<b>${charName}</b>` : (bannerType === "weapon" ? "Arma/Cone Alvo" : "Personagem Alvo");
         if (summaryEl) {
             if (data.needed_new_copies === 0) {
                 summaryEl.innerHTML = `🎉 Você já possui a meta <b>${data.target_rank_str}</b>!`;
@@ -445,6 +932,7 @@ window.runGachaSimulation = async function() {
 window.lastForecastResult = null;
 window.forecastState = {
     gameId: "genshin",
+    bannerType: "character",
     charList: []
 };
 
@@ -480,10 +968,11 @@ window.initGachaNavigation = function() {
 
 window.initGachaForecast = async function() {
     const gameBtns = document.querySelectorAll(".forecast-game-btn");
+    const typeBtns = document.querySelectorAll("#forecast-type-pills .forecast-type-btn");
+    const hiddenType = document.getElementById("forecast-banner-type");
     const slider = document.getElementById("forecast-days-slider");
     const sliderVal = document.getElementById("forecast-days-val");
     const quickDayBtns = document.querySelectorAll(".forecast-quick-day-btn");
-    const charSelect = document.getElementById("forecast-char-select");
     const curRankSelect = document.getElementById("forecast-current-rank");
     const runBtn = document.getElementById("btn-run-forecast-calc");
     const saveGoalBtn = document.getElementById("btn-save-forecast-goal");
@@ -494,8 +983,23 @@ window.initGachaForecast = async function() {
             btn.classList.add("active");
             const gId = btn.dataset.game;
             window.forecastState.gameId = gId;
-            window.updateForecastRankLabels(gId);
-            await window.loadForecastCharacters(gId);
+            const bType = hiddenType ? hiddenType.value : "character";
+            window.updateForecastRankLabels(gId, bType);
+            await window.loadForecastCharacters(gId, bType);
+            window.runGachaForecastCalculation();
+        };
+    });
+
+    typeBtns.forEach(btn => {
+        btn.onclick = async () => {
+            typeBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            const bType = btn.dataset.type || "character";
+            if (hiddenType) hiddenType.value = bType;
+            window.forecastState.bannerType = bType;
+            const gId = window.forecastState.gameId || "genshin";
+            window.updateForecastRankLabels(gId, bType);
+            await window.loadForecastCharacters(gId, bType);
             window.runGachaForecastCalculation();
         };
     });
@@ -537,18 +1041,20 @@ window.initGachaForecast = async function() {
         saveGoalBtn.onclick = window.saveCurrentGachaGoal;
     }
 
-    // Inicialização do Jogo Atual do Forecast
+    // Inicialização do Jogo e Tipo do Forecast
     const activeBtn = document.querySelector(".forecast-game-btn.active");
     const curGame = activeBtn ? activeBtn.dataset.game : "genshin";
+    const curType = hiddenType ? hiddenType.value : "character";
     window.forecastState.gameId = curGame;
-    window.updateForecastRankLabels(curGame);
-    await window.loadForecastCharacters(curGame);
+    window.forecastState.bannerType = curType;
+    window.updateForecastRankLabels(curGame, curType);
+    await window.loadForecastCharacters(curGame, curType);
     window.updateGoalsCountBadge();
     window.runGachaForecastCalculation();
 };
 
-window.updateForecastRankLabels = function(gameId) {
-    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+window.updateForecastRankLabels = function(gameId, bannerType = "character") {
+    const terms = window.getGachaTerms(gameId, bannerType);
     const lblCur = document.getElementById("lbl-forecast-current-rank");
     const lblTgt = document.getElementById("lbl-forecast-target-rank");
     if (lblCur) lblCur.innerText = `${terms.term} Atual:`;
@@ -570,12 +1076,13 @@ window.updateForecastRankLabels = function(gameId) {
 
 window.updateForecastTargetRankOptions = function() {
     const gameId = window.forecastState.gameId || "genshin";
-    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const bannerType = document.getElementById("forecast-banner-type")?.value || window.forecastState.bannerType || "character";
+    const terms = window.getGachaTerms(gameId, bannerType);
     const curRank = parseInt(document.getElementById("forecast-current-rank")?.value ?? -1);
     const tgtSelect = document.getElementById("forecast-target-rank");
     if (!tgtSelect) return;
 
-    const prevTgt = parseInt(tgtSelect.value ?? 0);
+    const prevTgt = parseInt(tgtSelect.value ?? (bannerType === "weapon" ? 0 : 0));
     tgtSelect.innerHTML = "";
 
     terms.ranks.forEach(r => {
@@ -583,9 +1090,11 @@ window.updateForecastTargetRankOptions = function() {
             const opt = document.createElement("option");
             opt.value = r.val;
             const extra = curRank < 0
-                ? (r.val === 0 ? " (Obter Personagem Base)" : ` (+${r.val + 1} cópias)`)
+                ? (r.val === 0 
+                    ? (bannerType === "weapon" ? " (Obter Arma/Cone Base)" : " (Obter Personagem Base)") 
+                    : ` (+${r.val + 1} cópias)`)
                 : ` (+${r.val - curRank} cópias)`;
-            opt.innerText = `${terms.prefix}${r.val}${extra}`;
+            opt.innerText = `${terms.prefix}${bannerType === "weapon" ? r.val + 1 : r.val}${extra}`;
             tgtSelect.appendChild(opt);
         }
     });
@@ -597,72 +1106,123 @@ window.updateForecastTargetRankOptions = function() {
     }
 };
 
-window.loadForecastCharacters = async function(gameId) {
+window.loadForecastCharacters = async function(gameId, bannerType = "character") {
     const select = document.getElementById("forecast-char-select");
+    const lblTargetItem = document.getElementById("lbl-forecast-target-item");
     if (!select) return;
-    select.innerHTML = `<option value="">Buscando personagens...</option>`;
+    
+    if (lblTargetItem) {
+        lblTargetItem.innerText = bannerType === "weapon" ? "Arma / Cone de Luz / Motor-W Alvo:" : "Personagem Alvo:";
+    }
+    select.innerHTML = `<option value="">Buscando catálogo de ${bannerType === 'weapon' ? 'armas' : 'personagens'}...</option>`;
 
     try {
-        const res = await fetch(`/api/gacha/characters/${gameId}`);
-        const data = await res.json();
-        const chars = data.characters || [];
-        window.forecastState.charList = chars;
+        const [charsRes, defaultsRes] = await Promise.allSettled([
+            fetch(`/api/gacha/characters/${gameId}`).then(r => r.json()),
+            fetch(`/api/gacha/defaults/${gameId}?banner_type=${bannerType}`).then(r => r.json())
+        ]);
+        const data = charsRes.status === "fulfilled" ? charsRes.value : {};
+        const defaultsData = defaultsRes.status === "fulfilled" ? defaultsRes.value : {};
+
+        // Sincroniza Pity do Forecast de acordo com a categoria selecionada
+        const pityInput = document.getElementById("forecast-pity-cur");
+        const guaranteedSelect = document.getElementById("forecast-guaranteed-cur");
+        if (pityInput && defaultsData.current_pity !== undefined) {
+            pityInput.value = bannerType === "weapon" ? (defaultsData.weapon_pity ?? defaultsData.current_pity) : (defaultsData.character_pity ?? defaultsData.current_pity);
+            pityInput.max = bannerType === "weapon" ? "79" : "89";
+        }
+        if (guaranteedSelect) {
+            const isG = bannerType === "weapon" ? !!defaultsData.weapon_guaranteed : !!defaultsData.is_guaranteed;
+            guaranteedSelect.value = isG ? "true" : "false";
+        }
 
         select.innerHTML = "";
-        const optGeneric = document.createElement("option");
-        optGeneric.value = "Próximo Personagem 5★ Limitado";
-        optGeneric.innerText = "✨ Próximo Banner Limitado / Novo Personagem";
-        select.appendChild(optGeneric);
 
-        const owned = chars.filter(c => c.owned);
-        const unowned = chars.filter(c => !c.owned);
+        if (bannerType === "weapon") {
+            const optGeneric = document.createElement("option");
+            optGeneric.value = "Próxima Arma / Cone 5★ Limitado";
+            optGeneric.innerText = "⚔️ Próximo Banner de Armas / Cones Limitado";
+            select.appendChild(optGeneric);
 
-        if (unowned.length > 0) {
-            const grpUnowned = document.createElement("optgroup");
-            grpUnowned.label = "⚪ Personagens 5★ Não Obtidos";
-            unowned.forEach(c => {
-                const opt = document.createElement("option");
-                opt.value = c.name;
-                opt.innerText = `${c.name} (Banner / Rerun)`;
-                grpUnowned.appendChild(opt);
-            });
-            select.appendChild(grpUnowned);
-        }
-
-        if (owned.length > 0) {
-            const grpOwned = document.createElement("optgroup");
-            grpOwned.label = "🟢 Personagens 5★ no Roster (Constelações/Eidolons)";
-            owned.forEach(c => {
-                const opt = document.createElement("option");
-                opt.value = c.name;
-                opt.innerText = `✓ ${c.name} (${c.rank_str || 'C0'})`;
-                grpOwned.appendChild(opt);
-            });
-            select.appendChild(grpOwned);
-        }
-
-        select.onchange = () => {
-            const cName = select.value;
-            const cObj = chars.find(c => c.name === cName);
-            const curRankSel = document.getElementById("forecast-current-rank");
-            if (cObj && cObj.owned && curRankSel) {
-                curRankSel.value = String(cObj.current_rank >= 0 ? cObj.current_rank : 0);
-            } else if (curRankSel) {
-                curRankSel.value = "-1";
+            const weaponBanners = defaultsData.available_weapon_banners || [];
+            if (weaponBanners.length > 0) {
+                const grpWeapons = document.createElement("optgroup");
+                grpWeapons.label = "⚔️ Armas / Cones em Destaque no Banner";
+                weaponBanners.forEach(b => {
+                    const opt = document.createElement("option");
+                    opt.value = b.character_name;
+                    opt.innerText = `⚔️ ${b.character_name}${b.banner_title ? ` (${b.banner_title})` : ''}`;
+                    grpWeapons.appendChild(opt);
+                });
+                select.appendChild(grpWeapons);
             }
-            window.updateForecastTargetRankOptions();
-        };
+
+            select.onchange = () => {
+                const curRankSel = document.getElementById("forecast-current-rank");
+                if (curRankSel) curRankSel.value = "-1";
+                window.updateForecastTargetRankOptions();
+            };
+
+        } else {
+            const chars = data.characters || [];
+            window.forecastState.charList = chars;
+
+            const optGeneric = document.createElement("option");
+            optGeneric.value = "Próximo Personagem 5★ Limitado";
+            optGeneric.innerText = "✨ Próximo Banner Limitado / Novo Personagem";
+            select.appendChild(optGeneric);
+
+            const owned = chars.filter(c => c.owned);
+            const unowned = chars.filter(c => !c.owned);
+
+            if (unowned.length > 0) {
+                const grpUnowned = document.createElement("optgroup");
+                grpUnowned.label = "⚪ Personagens 5★ Não Obtidos";
+                unowned.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.name;
+                    opt.innerText = `${c.name} (Banner / Rerun)`;
+                    grpUnowned.appendChild(opt);
+                });
+                select.appendChild(grpUnowned);
+            }
+
+            if (owned.length > 0) {
+                const grpOwned = document.createElement("optgroup");
+                grpOwned.label = "🟢 Personagens 5★ no Roster (Constelações/Eidolons)";
+                owned.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.name;
+                    opt.innerText = `✓ ${c.name} (${c.rank_str || 'C0'})`;
+                    grpOwned.appendChild(opt);
+                });
+                select.appendChild(grpOwned);
+            }
+
+            select.onchange = () => {
+                const cName = select.value;
+                const cObj = chars.find(c => c.name === cName);
+                const curRankSel = document.getElementById("forecast-current-rank");
+                if (cObj && cObj.owned && curRankSel) {
+                    curRankSel.value = String(cObj.current_rank >= 0 ? cObj.current_rank : 0);
+                } else if (curRankSel) {
+                    curRankSel.value = "-1";
+                }
+                window.updateForecastTargetRankOptions();
+            };
+        }
 
     } catch (e) {
-        console.error("Erro ao carregar personagens para forecast:", e);
+        console.error("Erro ao carregar itens para forecast:", e);
         select.innerHTML = `<option value="Próximo Banner 5★">Próximo Banner 5★</option>`;
     }
 };
 
 window.runGachaForecastCalculation = async function() {
     const gameId = window.forecastState.gameId || "genshin";
+    const bannerType = document.getElementById("forecast-banner-type")?.value || window.forecastState.bannerType || "character";
     const charSelect = document.getElementById("forecast-char-select");
-    const charName = charSelect?.value || "Personagem 5★ Alvo";
+    const charName = charSelect?.value || (bannerType === "weapon" ? "Arma 5★ Alvo" : "Personagem 5★ Alvo");
     const currentPulls = parseInt(document.getElementById("forecast-pulls-cur")?.value) || 0;
     const currentPity = parseInt(document.getElementById("forecast-pity-cur")?.value) || 0;
     const isGuaranteed = document.getElementById("forecast-guaranteed-cur")?.value === "true";
@@ -687,6 +1247,7 @@ window.runGachaForecastCalculation = async function() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 game_id: gameId,
+                banner_type: bannerType,
                 character_name: charName,
                 current_pulls: currentPulls,
                 current_pity: currentPity,

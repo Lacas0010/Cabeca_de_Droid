@@ -1234,14 +1234,17 @@
                 <h4 style="margin:0 0 12px 0; color:#a855f7; font-size:16px;"> Tier List dos seus Personagens por Nota RV</h4>
             `;
 
-            const tierColors = { "S+": "#ef4444", "S": "#f59e0b", "A": "#10b981", "B": "#38bdf8", "C/D": "#94a3b8" };
+            const tierColors = { "S+": "#ef4444", "S": "#f59e0b", "A": "#10b981", "B": "#38bdf8", "C/D": "#94a3b8", "Sem Equipamento": "#64748b" };
             const tierList = data.tier_list || {};
 
             for (const [tier, chars] of Object.entries(tierList)) {
+                if (tier === "Sem Equipamento" && (!chars || chars.length === 0)) continue;
+                const isUnequipped = tier === "Sem Equipamento";
                 const color = tierColors[tier] || '#94a3b8';
+                const badgeLabel = isUnequipped ? '<i class="fa-solid fa-box-open" style="font-size:16px;"></i>' : tier;
                 html += `
                     <div style="display:flex; align-items:center; gap:14px; margin-bottom:12px; padding:12px; background:rgba(15,23,42,0.6); border-radius:12px; border:1px solid rgba(255,255,255,0.06);">
-                        <div style="width:54px; min-width:54px; height:54px; background:${color}; color:#000; font-weight:800; display:flex; align-items:center; justify-content:center; border-radius:10px; font-size:18px; box-shadow: 0 4px 12px ${color}44;">${tier}</div>
+                        <div style="width:54px; min-width:54px; height:54px; background:${color}; color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; border-radius:10px; font-size:${isUnequipped ? '14px' : '18px'}; box-shadow: 0 4px 12px ${color}44;" title="${isUnequipped ? 'Sem Equipamentos' : tier}">${badgeLabel}</div>
                         <div style="display:flex; flex-wrap:wrap; gap:10px; flex:1; align-items:center;">
                 `;
                 if (!chars || chars.length === 0) {
@@ -1256,8 +1259,7 @@
                                 <div style="display:flex; flex-direction:column; justify-content:center;">
                                     <strong style="color:#ffffff; font-size:13px; font-weight:600; line-height:1.2;">${c.name}</strong>
                                     <div style="display:flex; align-items:center; gap:6px; margin-top:3px;">
-                                        <span style="color:${color}; font-weight:700; font-size:12px;">${c.score.toFixed(1)}%</span>
-                                        <span style="font-size:10px; color:#ffffff; font-weight:bold; background:rgba(255,255,255,0.12); padding:1px 6px; border-radius:4px;">${c.grade}</span>
+                                        ${isUnequipped ? `<span style="color:#94a3b8; font-size:11px; font-weight:500;">Sem Equipamento</span>` : `<span style="color:${color}; font-weight:700; font-size:12px;">${c.score.toFixed(1)}%</span><span style="font-size:10px; color:#ffffff; font-weight:bold; background:rgba(255,255,255,0.12); padding:1px 6px; border-radius:4px;">${c.grade}</span>`}
                                     </div>
                                 </div>
                             </div>

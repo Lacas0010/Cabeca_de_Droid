@@ -825,6 +825,18 @@
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
       "url": "https://www.prydwen.gg/zenless/characters/roxy"
+    },
+    "sunbringer3.4": {
+      "id": "sunbringer3.4",
+      "name": "Sunbringer3.4",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/sunbringer"
     }
   }
 }

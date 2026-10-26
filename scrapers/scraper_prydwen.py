@@ -1,5 +1,7 @@
 import os
 import re
+import json
+from datetime import datetime
 from curl_cffi import requests
 from bs4 import BeautifulSoup
 
@@ -670,3 +672,125 @@ class PrydwenScraper:
             f.write(markdown_content)
 
         return filepath
+
+    def get_current_banners(self, game_id: str = None) -> dict:
+        """
+        Extrai dinamicamente os banners atuais de personagens e suas imagens do Prydwen.
+        Salva e consolida o resultado no cache offline static_data/current_banners.json.
+        """
+        banner_urls = {
+            "genshin": f"{self.base_url}/genshin-impact/banners",
+            "hsr": f"{self.base_url}/star-rail/banners",
+            "zzz": f"{self.base_url}/zenless/banners",
+        }
+
+        # Carrega dados existentes do cache para não sobrescrever outros jogos
+        static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static_data")
+        cache_file = os.path.join(static_dir, "current_banners.json")
+        all_banners = {}
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, "r", encoding="utf-8") as f:
+                    all_banners = json.load(f)
+            except Exception:
+                all_banners = {}
+
+        targets = [game_id.lower().strip()] if game_id and game_id.lower().strip() in banner_urls else list(banner_urls.keys())
+
+        for g in targets:
+            url = banner_urls[g]
+            try:
+                r = requests.get(url, headers=self.headers, impersonate="chrome", timeout=20)
+                if r.status_code != 200:
+                    continue
+                soup = BeautifulSoup(r.text, "html.parser")
+                game_data = {"game_id": g, "patch_info": "", "banners": [], "last_updated": datetime.now().isoformat()}
+
+                for h in soup.find_all(["h2", "h3"]):
+                    if "current character banners" in h.get_text().strip().lower():
+                        sec_header = h.find_parent(class_="section-header") or h.parent
+                        phase_node = sec_header.find_next_sibling(class_="phase-summary")
+                        if phase_node:
+                            game_data["patch_info"] = phase_node.get_text().strip()
+
+                        grid = sec_header.find_next_sibling(class_="banner-grid") or sec_header.find_next(class_="banner-grid")
+                        cards = grid.find_all(class_="banner-card") if grid else []
+                        for idx, c in enumerate(cards):
+                            # Busca imagem da arte do banner (banner-art)
+                            art_container = c.find(class_=lambda x: x and "banner-art" in x)
+                            img = art_container.find("img") if art_container else c.find("img")
+                            img_src = img.get("src") or img.get("data-src") or "" if img else ""
+                            if img_src and not img_src.startswith("http"):
+                                img_src = "https://www.prydwen.gg" + img_src
+
+                            # Busca nome principal do personagem 5★
+                            char_links = [
+                                a
+                                for a in c.find_all("a")
+                                if "/characters/" in a.get("href", "") or "/agents/" in a.get("href", "")
+                            ]
+                            names = list(dict.fromkeys([a.get_text().strip() for a in char_links if a.get_text().strip()]))
+
+                            # Busca 4★ com taxa aumentada (Secondary Rate Up)
+                            rate_up_sec = c.find(attrs={"aria-label": lambda x: x and "secondary rate up" in x.lower()})
+                            featured_4s = []
+                            if rate_up_sec:
+                                for a in rate_up_sec.find_all("a"):
+                                    t = a.get_text().strip()
+                                    if t and t not in featured_4s:
+                                        featured_4s.append(t)
+
+                            if names:
+                                main_char = names[0]
+                                if not featured_4s and len(names) > 1:
+                                    featured_4s = names[1:]
+
+                                # Preserva imagem oficial in-game e 4★ caso o scraper venha com placeholder
+                                prev_banner = None
+                                if g in all_banners and "banners" in all_banners[g]:
+                                    for pb in all_banners[g]["banners"]:
+                                        if pb.get("character_name", "").lower() == main_char.lower():
+                                            prev_banner = pb
+                                            break
+
+                                if prev_banner:
+                                    prev_img = prev_banner.get("banner_image", "")
+                                    if prev_img and (prev_img.startswith("/assets/") or "_full.webp" in img_src or "banner1" in img_src or "banner2" in img_src or not img_src):
+                                        img_src = prev_img
+                                    if not featured_4s and prev_banner.get("featured_4stars"):
+                                        featured_4s = prev_banner.get("featured_4stars", [])
+                                    banner_title = prev_banner.get("banner_title", "")
+                                else:
+                                    banner_title = ""
+
+                                banner_entry = {
+                                    "character_name": main_char,
+                                    "banner_image": img_src,
+                                    "featured_4stars": featured_4s,
+                                    "is_primary": (idx == 0),
+                                }
+                                if banner_title:
+                                    banner_entry["banner_title"] = banner_title
+
+                                game_data["banners"].append(banner_entry)
+                        break
+
+                if game_data["banners"]:
+                    if g in all_banners and "weapon_banners" in all_banners[g]:
+                        game_data["weapon_banners"] = all_banners[g]["weapon_banners"]
+                    all_banners[g] = game_data
+            except Exception as e:
+                print(f"[WARN] Falha ao raspar banners atuais de {g}: {e}")
+
+        # Salva consolidação no manifesto JSON em static_data
+        try:
+            os.makedirs(static_dir, exist_ok=True)
+            with open(cache_file, "w", encoding="utf-8") as f:
+                json.dump(all_banners, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"[WARN] Erro ao salvar static_data/current_banners.json: {e}")
+
+        if game_id and game_id.lower().strip() in all_banners:
+            return all_banners[game_id.lower().strip()]
+        return all_banners
+

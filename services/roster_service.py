@@ -951,6 +951,10 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
             data["stats"] = dict(char_db["stats"])
 
         # Peças de Relíquias / Artefatos / Discos
+        relic_scores_bd = []
+        c_id_val = str(char_db.get("id") or char_db.get("character_id") or char_name)
+        max_slots_bd = 5 if game_id == "genshin" else 6
+
         for r in char_db.get("relics", []):
             slot = r.get("slot", "")
             slot_clean = slot
@@ -981,6 +985,15 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
             elif game_id == "zzz":
                 slot_clean = slot.replace("Disk", "Disco").replace("disk", "Disco").replace("slot_", "Disco ")
 
+            p_grade, p_score = score_relic(
+                game_id=game_id,
+                char_id=c_id_val,
+                slot=str(r.get("slot", "")),
+                main_stat=r.get("main") or r.get("main_stat") or "",
+                substats_str=r.get("sub", ""),
+            )
+            relic_scores_bd.append(p_score)
+
             data["pieces"].append(
                 {
                     "slot": slot_clean,
@@ -988,8 +1001,35 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
                     "main": r.get("main", ""),
                     "sub": r.get("sub", ""),
                     "icon": r.get("icon", ""),
+                    "grade": p_grade,
+                    "score": p_score,
                 }
             )
+
+        if relic_scores_bd:
+            avg_score_bd = round(sum(relic_scores_bd) / max_slots_bd, 1)
+            if avg_score_bd >= 90.0:
+                ov_gr = "SSS"
+            elif avg_score_bd >= 75.0:
+                ov_gr = "SS"
+            elif avg_score_bd >= 60.0:
+                ov_gr = "S"
+            elif avg_score_bd >= 45.0:
+                ov_gr = "A"
+            elif avg_score_bd >= 30.0:
+                ov_gr = "B"
+            elif avg_score_bd >= 15.0:
+                ov_gr = "C"
+            else:
+                ov_gr = "D"
+        else:
+            avg_score_bd = 0.0
+            ov_gr = "D"
+
+        data["overall_score"] = avg_score_bd
+        data["overall_grade"] = ov_gr
+        data["equipped_pieces"] = len(relic_scores_bd)
+        data["max_pieces"] = max_slots_bd
 
         # Skills & Ranks (Constelações / Eidolons / Mindscapes)
         data["skills"] = char_db.get("skills", [])
@@ -1290,7 +1330,7 @@ async def get_account_audit(game_id: str) -> Dict[str, Any]:
             "s_count": 0,
         }
 
-    tier_list: Dict[str, List[Dict[str, Any]]] = {"S+": [], "S": [], "A": [], "B": [], "C/D": []}
+    tier_list: Dict[str, List[Dict[str, Any]]] = {"S+": [], "S": [], "A": [], "B": [], "C/D": [], "Sem Equipamento": []}
     scores = []
 
     for char in roster:
@@ -1300,9 +1340,23 @@ async def get_account_audit(game_id: str) -> Dict[str, Any]:
         level = char.get("level", 1)
         score = char.get("overall_score", 0.0)
         grade = char.get("overall_grade", "D")
-        scores.append(score)
+        eq_count = char.get("equipped_pieces", len(char.get("relics", [])))
 
-        char_entry = {"name": name, "icon": icon, "rarity": rarity, "level": level, "score": score, "grade": grade}
+        char_entry = {
+            "name": name,
+            "icon": icon,
+            "rarity": rarity,
+            "level": level,
+            "score": score,
+            "grade": grade,
+            "equipped_pieces": eq_count,
+        }
+
+        if eq_count == 0 or grade == "N/A":
+            tier_list["Sem Equipamento"].append(char_entry)
+            continue
+
+        scores.append(score)
 
         if score >= 85.0 or grade in ["SSS", "SS"]:
             tier_list["S+"].append(char_entry)

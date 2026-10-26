@@ -1,0 +1,263 @@
+{
+  "genshin": {
+    "game_id": "genshin",
+    "patch_info": "Patch 7.1 Phase 2Oct 13, 2026 – Nov 3, 2026",
+    "banners": [
+      {
+        "character_name": "Escoffier",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1789223129861-11f7d61757845c545f9a1495e6a47f00.webp",
+        "featured_4stars": [],
+        "is_primary": true
+      },
+      {
+        "character_name": "Skirk",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1789223129869-8b618882ddee46cf159f5abb3e3f2db9.webp",
+        "featured_4stars": [],
+        "is_primary": false
+      }
+    ],
+    "last_updated": "2026-10-26T10:18:57.367383",
+    "weapon_banners": [
+      {
+        "character_name": "Azurelight",
+        "banner_title": "Invocação do Epítome: Azurelight & Sinfonista de Aromas",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1791908683690-d84df5c8d69bfed74b184ad5fa85f36e.webp",
+        "featured_4stars": [
+          "Sturdy Bone",
+          "Sacrificial Greatsword",
+          "Favonius Lance",
+          "The Widsith",
+          "Sacrificial Bow"
+        ],
+        "is_primary": true,
+        "banner_type": "weapon"
+      },
+      {
+        "character_name": "Symponist of Scents",
+        "banner_title": "Invocação do Epítome: Sinfonista de Aromas & Azurelight",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1791908683690-d84df5c8d69bfed74b184ad5fa85f36e.webp",
+        "featured_4stars": [
+          "Sturdy Bone",
+          "Sacrificial Greatsword",
+          "Favonius Lance",
+          "The Widsith",
+          "Sacrificial Bow"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon"
+      }
+    ]
+  },
+  "hsr": {
+    "game_id": "hsr",
+    "patch_info": "Patch 4.6Sep 28, 2026 – Nov 10, 2026",
+    "banners": [
+      {
+        "character_name": "Pearl",
+        "banner_image": "/assets/banners/banner_pearl_char.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/generic/1786437018206-dfcfa668580f040948d5b05dacaf32ca.webp",
+        "featured_4stars": [
+          "Qingque",
+          "Xueyi",
+          "Misha"
+        ],
+        "is_primary": true,
+        "banner_title": "An Ocean in a Pearl"
+      },
+      {
+        "character_name": "Mortenax Blade",
+        "banner_image": "/assets/banners/banner_mortenax_char.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/blade-mortenax_full.webp",
+        "featured_4stars": [
+          "Qingque",
+          "Xueyi",
+          "Misha"
+        ],
+        "is_primary": false,
+        "banner_title": "Now I Am Become Blade"
+      },
+      {
+        "character_name": "Gilgamesh",
+        "banner_image": "/assets/banners/banner_gilgamesh_char.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/gilgamesh_full.webp",
+        "featured_4stars": [
+          "Qingque",
+          "Xueyi",
+          "Misha"
+        ],
+        "is_primary": false,
+        "banner_title": "Of the Beginning, Enuma Elish"
+      },
+      {
+        "character_name": "Rin Tohsaka",
+        "banner_image": "/assets/banners/banner_rin_char.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/rin-tohsaka_full.webp",
+        "featured_4stars": [
+          "Qingque",
+          "Xueyi",
+          "Misha"
+        ],
+        "is_primary": false,
+        "banner_title": "The Gem Coursing in Red"
+      },
+      {
+        "character_name": "Archer",
+        "banner_image": "/assets/banners/banner_archer_char.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/archer_full.webp",
+        "featured_4stars": [
+          "Qingque",
+          "Xueyi",
+          "Misha"
+        ],
+        "is_primary": false,
+        "banner_title": "I Am the Bone of My Sword"
+      },
+      {
+        "character_name": "Saber",
+        "banner_image": "/assets/banners/banner_saber_char.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/saber_full.webp",
+        "featured_4stars": [
+          "Qingque",
+          "Xueyi",
+          "Misha"
+        ],
+        "is_primary": false,
+        "banner_title": "Excalibur Excelsior"
+      }
+    ],
+    "last_updated": "2026-10-26T09:23:14.636906",
+    "weapon_banners": [
+      {
+        "character_name": "Colors for Tomorrow",
+        "banner_title": "Brilliant Fixation: Colors for Tomorrow",
+        "banner_image": "/assets/banners/banner_colors_for_tomorrow_lc.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/banners/1789909518022-aecacc74c72446b1c3f60e34d34b9ce4.webp",
+        "featured_4stars": [
+          "Post-Op Conversation",
+          "Planetary Rendezvous",
+          "Boundless Choreo"
+        ],
+        "is_primary": true,
+        "banner_type": "weapon"
+      },
+      {
+        "character_name": "Reforged in Hellfire",
+        "banner_title": "Bygone Reminiscence: Reforged in Hellfire",
+        "banner_image": "/assets/banners/banner_reforged_in_hellfire_lc.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/reforged-in-hellfire_full.webp?v=1790244197065",
+        "featured_4stars": [
+          "Post-Op Conversation",
+          "Planetary Rendezvous",
+          "Boundless Choreo"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon"
+      },
+      {
+        "character_name": "I Am As You Behold",
+        "banner_title": "Age of Gods Golden Gate: I Am As You Behold",
+        "banner_image": "/assets/banners/banner_iamasyoubehold_lc.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/i-am-as-you-behold_full.webp?v=1787563501701",
+        "featured_4stars": [
+          "Post-Op Conversation",
+          "Planetary Rendezvous",
+          "Boundless Choreo"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon"
+      },
+      {
+        "character_name": "Flickering Stars",
+        "banner_title": "Kaleidic Coruscation: Flickering Stars",
+        "banner_image": "/assets/banners/banner_flickering_stars_lc.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/flickering-stars_full.webp?v=1787563505145",
+        "featured_4stars": [
+          "Post-Op Conversation",
+          "Planetary Rendezvous",
+          "Boundless Choreo"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon"
+      },
+      {
+        "character_name": "The Hell Where Ideals Burn",
+        "banner_title": "Red Radiance of Fuyuki: The Hell Where Ideals Burn",
+        "banner_image": "/assets/banners/banner_archer_lc.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn_full.webp?v=1778524336072",
+        "featured_4stars": [
+          "Post-Op Conversation",
+          "Planetary Rendezvous",
+          "Boundless Choreo"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon"
+      },
+      {
+        "character_name": "A Thankless Coronation",
+        "banner_title": "Birth of a King: A Thankless Coronation",
+        "banner_image": "/assets/banners/banner_saber_lc.webp",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/a-thankless-coronation_full.webp?v=1778524336072",
+        "featured_4stars": [
+          "Post-Op Conversation",
+          "Planetary Rendezvous",
+          "Boundless Choreo"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon"
+      }
+    ]
+  },
+  "zzz": {
+    "game_id": "zzz",
+    "patch_info": "Patch 3.3 Phase 1Oct 21, 2026 – Nov 11, 2026",
+    "banners": [
+      {
+        "character_name": "Phoenix",
+        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1789201787211-db3c1bcd8ee476c4799ab74001708e53.webp",
+        "featured_4stars": [
+          "Nicole",
+          "Billy",
+          "Anby"
+        ],
+        "is_primary": true,
+        "banner_title": "Into the Flames of Life"
+      },
+      {
+        "character_name": "Velina",
+        "banner_image": "https://upload-os-bbs.hoyolab.com/upload/2026/10/18/0/ab52894afd4dadd30202f7732cdc6614_342236792291687595.png",
+        "featured_4stars": [
+          "Nicole",
+          "Billy",
+          "Anby"
+        ],
+        "is_primary": false,
+        "banner_title": "Graceful Gale"
+      }
+    ],
+    "last_updated": "2026-10-26T09:23:14.931222",
+    "weapon_banners": [
+      {
+        "character_name": "Plume of Rebirth",
+        "banner_title": "Dissonant Sonata: Plume of Rebirth",
+        "banner_image": "https://upload-os-bbs.hoyolab.com/upload/2026/10/18/0/953e970ff1219261858e83b974aae49c_1301481997602712761.png",
+        "featured_4stars": [
+          "Starlight Engine",
+          "Demara Battery Mark II"
+        ],
+        "is_primary": true,
+        "banner_type": "weapon"
+      },
+      {
+        "character_name": "Joyau Dore",
+        "banner_title": "Dissonant Sonata: Joyau Dore",
+        "banner_image": "https://upload-os-bbs.hoyolab.com/upload/2026/10/18/0/65a233370b433c1b7d3126ad5155188b_2269549401582863875.png",
+        "featured_4stars": [
+          "Starlight Engine",
+          "Demara Battery Mark II"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon"
+      }
+    ]
+  }
+}

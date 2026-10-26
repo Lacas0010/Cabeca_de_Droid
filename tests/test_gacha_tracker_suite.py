@@ -277,6 +277,285 @@ class TestGachaTrackerSuite(unittest.TestCase):
         res_after_del = self.client.get("/api/gacha/tracker/hsr?uid=700777")
         self.assertEqual(res_after_del.json()["character_banner"]["total_pulls"], 0)
 
+    def test_import_uigf_v4_multi_game(self):
+        """Valida importação simultânea dos 3 jogos no padrão universal UIGF v4.1."""
+        uigf_v4_payload = {
+            "info": {"version": "v4.1", "export_app": "stardb"},
+            "hk4e": [
+                {
+                    "uid": 615929016,
+                    "list": [
+                        {
+                            "id": "0",
+                            "name": "Skyrider Sword",
+                            "gacha_type": "200",
+                            "rank_type": "3",
+                            "time": "2021-10-20 18:42:39",
+                        },
+                        {
+                            "id": "0",
+                            "name": "Sharpshooter's Oath",
+                            "gacha_type": "301",
+                            "rank_type": "3",
+                            "time": "2021-11-10 16:22:02",
+                        },
+                        {
+                            "id": "1",
+                            "name": "Keqing",
+                            "gacha_type": "301",
+                            "rank_type": "5",
+                            "time": "2022-01-25 18:15:59",
+                        },
+                    ],
+                }
+            ],
+            "hkrpg": [
+                {
+                    "uid": 600156277,
+                    "list": [
+                        {
+                            "id": "101",
+                            "name": "Asta",
+                            "gacha_type": "1",
+                            "rank_type": "4",
+                            "time": "2023-04-25 21:38:38",
+                        },
+                        {
+                            "id": "102",
+                            "name": "Seele",
+                            "gacha_type": "11",
+                            "rank_type": "5",
+                            "time": "2023-04-30 14:57:12",
+                        },
+                    ],
+                }
+            ],
+            "nap": [
+                {
+                    "uid": 1000135767,
+                    "list": [
+                        {
+                            "id": "201",
+                            "name": "Ellen",
+                            "gacha_type": "2",
+                            "rank_type": "4",
+                            "time": "2024-07-04 07:52:15",
+                        },
+                        {
+                            "id": "202",
+                            "name": "Original Transmorpher",
+                            "gacha_type": "2",
+                            "rank_type": "3",
+                            "time": "2024-07-04 08:00:00",
+                        },
+                    ],
+                }
+            ],
+        }
+
+        # 1. Importação direta via service
+        res = import_gacha_log_data("all", uigf_v4_payload)
+        self.assertTrue(res.success)
+        # Total: 3 (Genshin) + 2 (HSR) + 2 (ZZZ) = 7
+        self.assertEqual(res.total_imported, 7)
+        self.assertEqual(res.total_duplicates, 0)
+
+        # 2. Re-importação para testar deduplicação idempotente
+        res_dup = import_gacha_log_data("all", uigf_v4_payload)
+        self.assertTrue(res_dup.success)
+        self.assertEqual(res_dup.total_imported, 0)
+        self.assertEqual(res_dup.total_duplicates, 7)
+
+        # 3. Validação dos dados em cada jogo
+        genshin_pulls = database.get_gacha_pulls("genshin", uid="615929016")
+        self.assertEqual(len(genshin_pulls), 3)
+
+        hsr_pulls = database.get_gacha_pulls("hsr", uid="600156277")
+        self.assertEqual(len(hsr_pulls), 2)
+
+        zzz_pulls = database.get_gacha_pulls("zzz", uid="1000135767")
+        self.assertEqual(len(zzz_pulls), 2)
+        # Ellen em ZZZ (rank_type 4) deve ser mapeada para 5 estrelas
+        ellen = next(p for p in zzz_pulls if p["item_name"] == "Ellen")
+        self.assertEqual(ellen["rarity"], 5)
+
+        # 4. Requisição via API endpoint /api/gacha/tracker/import
+        res_api = self.client.post("/api/gacha/tracker/import", json={"raw_data": uigf_v4_payload})
+        self.assertEqual(res_api.status_code, 200)
+        self.assertTrue(res_api.json()["success"])
+        self.assertEqual(res_api.json()["total_duplicates"], 7)
+
+    def test_game_specific_banners_separation(self):
+        """Valida que Genshin e HSR possuem banner iniciante, HSR tem collab e ZZZ tem bangboo."""
+        from services.gacha_tracker_service import calculate_gacha_tracker_stats
+
+        # 1. HSR com Collab (Fate) e Iniciante (Partida)
+        hsr_pulls = [
+            {
+                "id": "c1",
+                "name": "Saber",
+                "rarity": 5,
+                "time": "2026-07-01 10:00:00",
+                "gacha_type": "21",
+                "banner_category": "collab",
+            },
+            {
+                "id": "b1",
+                "name": "Gepard",
+                "rarity": 5,
+                "time": "2026-04-26 10:00:00",
+                "gacha_type": "2",
+                "banner_category": "beginner",
+            },
+            {
+                "id": "ch1",
+                "name": "Acheron",
+                "rarity": 5,
+                "time": "2026-05-01 10:00:00",
+                "gacha_type": "11",
+                "banner_category": "character",
+            },
+        ]
+        database.save_gacha_pulls("hsr", "uid_hsr", hsr_pulls)
+        hsr_overview = calculate_gacha_tracker_stats("hsr", "uid_hsr")
+
+        self.assertIsNotNone(hsr_overview.collab_banner)
+        self.assertEqual(hsr_overview.collab_banner.banner_category, "collab")
+        self.assertEqual(hsr_overview.collab_banner.five_stars_count, 1)
+
+        self.assertIsNotNone(hsr_overview.beginner_banner)
+        self.assertEqual(hsr_overview.beginner_banner.banner_category, "beginner")
+        self.assertEqual(hsr_overview.beginner_banner.hard_pity_cap, 50)
+
+        # 2. Genshin com Iniciante (Novatos) e Crônica
+        gi_pulls = [
+            {
+                "id": "gi_b1",
+                "name": "Noelle",
+                "rarity": 4,
+                "time": "2021-10-01 10:00:00",
+                "gacha_type": "100",
+                "banner_category": "beginner",
+            },
+            {
+                "id": "gi_cr1",
+                "name": "Mona",
+                "rarity": 5,
+                "time": "2024-03-15 10:00:00",
+                "gacha_type": "500",
+                "banner_category": "chronicled",
+            },
+        ]
+        database.save_gacha_pulls("genshin", "uid_gi", gi_pulls)
+        gi_overview = calculate_gacha_tracker_stats("genshin", "uid_gi")
+
+        self.assertIsNotNone(gi_overview.beginner_banner)
+        self.assertEqual(gi_overview.beginner_banner.hard_pity_cap, 20)
+        self.assertIsNotNone(gi_overview.chronicled_banner)
+        self.assertEqual(gi_overview.chronicled_banner.five_stars_count, 1)
+
+        # 3. ZZZ com Bangboos (Boopons)
+        zzz_pulls = [
+            {
+                "id": "zb1",
+                "name": "Bangvolver",
+                "rarity": 5,
+                "time": "2024-07-05 10:00:00",
+                "gacha_type": "5",
+                "banner_category": "bangboo",
+                "item_type": "bangboo",
+            },
+            {
+                "id": "zc1",
+                "name": "Ellen",
+                "rarity": 5,
+                "time": "2024-07-06 10:00:00",
+                "gacha_type": "2",
+                "banner_category": "character",
+            },
+        ]
+        database.save_gacha_pulls("zzz", "uid_zzz", zzz_pulls)
+        zzz_overview = calculate_gacha_tracker_stats("zzz", "uid_zzz")
+
+        self.assertIsNotNone(zzz_overview.bangboo_banner)
+        self.assertEqual(zzz_overview.bangboo_banner.banner_category, "bangboo")
+        self.assertEqual(zzz_overview.bangboo_banner.five_stars_count, 1)
+        self.assertTrue(zzz_overview.bangboo_banner.recent_five_stars[0].is_win_5050)
+
+    def test_gacha_item_icon_resolution_and_proxy(self):
+        """Valida que get_gacha_item_icon retorna URLs com proxy para itens de gacha."""
+        from services.gacha_tracker_service import get_gacha_item_icon
+
+        # HSR: Cone de luz e Personagem
+        icon_lc = get_gacha_item_icon("hsr", "A Secret Vow", "weapon")
+        self.assertTrue(icon_lc.startswith("/api/proxy_image?url="))
+
+        icon_char = get_gacha_item_icon("hsr", "Saber", "character")
+        self.assertTrue(icon_char.startswith("/api/proxy_image?url="))
+
+        # ZZZ: Bangboo, W-Engine e Agente com alias
+        icon_bangboo = get_gacha_item_icon("zzz", "Bangvolver", "bangboo")
+        self.assertTrue(icon_bangboo.startswith("/api/proxy_image?url="))
+
+        icon_wengine = get_gacha_item_icon("zzz", "Kaboom the Cannon", "weapon")
+        self.assertTrue(icon_wengine.startswith("/api/proxy_image?url="))
+        self.assertIn("Kaboom_the_Cannon", icon_wengine)
+
+        icon_soldier11 = get_gacha_item_icon("zzz", "Soldier 11", "character")
+        self.assertTrue(icon_soldier11.startswith("/api/proxy_image?url="))
+
+        # Genshin: Arma
+        icon_wep = get_gacha_item_icon("genshin", "Calamity Queller", "weapon")
+        self.assertTrue(icon_wep.startswith("/api/proxy_image?url="))
+
+    def test_detailed_history_endpoint(self):
+        """Valida consulta paginada e filtrada pelo endpoint GET /api/gacha/tracker/history/{game_id}."""
+        pulls = [
+            {
+                "id": "h1",
+                "name": "Item A",
+                "rarity": 3,
+                "time": "2026-01-01 10:00:00",
+                "gacha_type": "11",
+                "banner_category": "character",
+            },
+            {
+                "id": "h2",
+                "name": "Dan Heng",
+                "rarity": 4,
+                "time": "2026-01-01 10:01:00",
+                "gacha_type": "11",
+                "banner_category": "character",
+            },
+            {
+                "id": "h3",
+                "name": "Acheron",
+                "rarity": 5,
+                "time": "2026-01-01 10:02:00",
+                "gacha_type": "11",
+                "banner_category": "character",
+            },
+        ]
+        database.save_gacha_pulls("hsr", "uid_history_test", pulls)
+
+        # 1. Consulta geral
+        res = self.client.get("/api/gacha/tracker/history/hsr?uid=uid_history_test&limit=10")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["total_pulls"], 3)
+        self.assertEqual(len(data["pulls"]), 3)
+        # Mais recente primeiro (DESC)
+        self.assertEqual(data["pulls"][0]["name"], "Acheron")
+        self.assertEqual(data["pulls"][0]["rarity"], 5)
+        self.assertTrue(data["pulls"][0]["icon"].startswith("/api/proxy_image?url="))
+
+        # 2. Filtro por raridade (apenas 5★)
+        res_5s = self.client.get("/api/gacha/tracker/history/hsr?uid=uid_history_test&rarity=5")
+        self.assertEqual(res_5s.status_code, 200)
+        data_5s = res_5s.json()
+        self.assertEqual(data_5s["total_pulls"], 1)
+        self.assertEqual(data_5s["pulls"][0]["name"], "Acheron")
+
 
 if __name__ == "__main__":
     unittest.main()

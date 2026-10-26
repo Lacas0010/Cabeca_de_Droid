@@ -14,6 +14,7 @@ class GachaPullItem(BaseModel):
     )
     pity: int = Field(default=1, description="Contador de pity calculado no momento em que o item veio")
     is_win_5050: Optional[bool] = Field(default=None, description="Indica se venceu o 50/50 em pulls 5 estrelas")
+    icon: Optional[str] = Field(default="", description="URL do ícone oficial ou imagem do item obtido")
 
 
 class FiveStarRecord(BaseModel):
@@ -24,10 +25,12 @@ class FiveStarRecord(BaseModel):
     is_win_5050: bool = Field(description="Verdadeiro se o item 5 estrelas foi ganho no 50/50")
     is_rate_up: bool = Field(description="Verdadeiro se era o item de destaque (rate-up) do banner")
     banner_category: str = Field(description="Categoria do banner onde ocorreu a obtenção")
+    icon: Optional[str] = Field(default="", description="URL do ícone oficial ou imagem do item 5 estrelas")
+    item_type: Optional[str] = Field(default="character", description="Tipo do item ('character', 'weapon', 'bangboo')")
 
 
 class BannerTrackerStats(BaseModel):
-    banner_category: str = Field(description="Categoria do banner analisado ('character', 'weapon', 'standard')")
+    banner_category: str = Field(description="Categoria do banner analisado ('character', 'weapon', 'standard', etc.)")
     display_name: str = Field(description="Nome legível para exibição visual do banner")
     current_pity: int = Field(default=0, description="Pity acumulado desde o último item 5 estrelas")
     is_guaranteed: bool = Field(default=False, description="Indica se o próximo 5 estrelas deste banner é garantido")
@@ -42,24 +45,44 @@ class BannerTrackerStats(BaseModel):
     )
     next_soft_pity_in: int = Field(default=0, description="Pulls restantes até atingir a margem de soft pity")
     pulls_to_hard_pity: int = Field(default=90, description="Pulls restantes até o hard pity absoluto (garantia)")
+    hard_pity_cap: int = Field(default=90, description="Teto de hard pity do banner")
+    soft_pity_start: int = Field(default=74, description="Margem de início do soft pity")
 
 
 class GachaTrackerOverviewResponse(BaseModel):
     game_id: str = Field(description="Identificador do jogo ('genshin', 'hsr' ou 'zzz')")
     uid: str = Field(description="UID da conta cujos dados de gacha foram calculados")
     character_banner: BannerTrackerStats = Field(
-        description="Estatísticas consolidadas do banner promocional de personagens"
+        description="Estatísticas consolidadas do banner promocional de personagens/agentes"
     )
     weapon_banner: BannerTrackerStats = Field(
         description="Estatísticas consolidadas do banner de armas / cones de luz / w-engines"
     )
     standard_banner: BannerTrackerStats = Field(description="Estatísticas consolidadas do banner permanente/mochilão")
+    beginner_banner: Optional[BannerTrackerStats] = Field(
+        default=None, description="Banner de Iniciante (Genshin e HSR)"
+    )
+    collab_banner: Optional[BannerTrackerStats] = Field(default=None, description="Banner de Collab especial (HSR)")
+    bangboo_banner: Optional[BannerTrackerStats] = Field(default=None, description="Banner de Bangboos (ZZZ)")
+    chronicled_banner: Optional[BannerTrackerStats] = Field(
+        default=None, description="Banner de Crônicas / Regional (Genshin)"
+    )
+    banners: List[BannerTrackerStats] = Field(
+        default_factory=list, description="Lista de todos os banners específicos disponíveis para o jogo"
+    )
     total_pulls_all_banners: int = Field(default=0, description="Soma total de tiros em todos os banners monitorados")
     total_five_stars_all_banners: int = Field(default=0, description="Soma total de 5 estrelas obtidos na conta")
     overall_luck_rating: str = Field(
         default="Normal",
         description="Classificação executiva de sorte da conta ('Lendária', 'Sortuda', 'Normal', 'Azarada')",
     )
+
+
+class GachaHistoryListResponse(BaseModel):
+    game_id: str = Field(description="Identificador do jogo")
+    uid: str = Field(description="UID da conta")
+    total_pulls: int = Field(description="Total de tiros filtrados")
+    pulls: List[GachaPullItem] = Field(default_factory=list, description="Lista de puxadas detalhadas")
 
 
 class ImportGachaRequest(BaseModel):

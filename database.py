@@ -1982,7 +1982,7 @@ def save_gacha_pulls(game_id: str, uid: str, pulls: List[Dict[str, Any]]) -> Tup
 
 
 def get_gacha_pulls(
-    game_id: str, uid: Optional[str] = None, banner_category: Optional[str] = None, limit: int = 5000
+    game_id: str, uid: Optional[str] = None, banner_category: Optional[str] = None, limit: int = 50000
 ) -> List[Dict[str, Any]]:
     """
     Retorna o histórico de puxadas ordenado cronologicamente (time ASC, id ASC).
@@ -2034,3 +2034,55 @@ def delete_gacha_pulls(game_id: str, uid: Optional[str] = None, banner_category:
 
         cursor.execute(query, params)
         return cursor.rowcount
+
+
+def get_gacha_pulls_filtered(
+    game_id: str,
+    uid: Optional[str] = None,
+    banner_category: Optional[str] = None,
+    rarity: Optional[int] = None,
+    order_desc: bool = True,
+    limit: int = 50,
+    offset: int = 0,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Retorna uma tupla (lista_de_puxadas, total_registros) aplicando filtros opcionais de categoria e raridade.
+    """
+    clean_game = (game_id or "").lower().strip()
+    target_uid = str(uid).strip() if uid else get_active_uid(clean_game)
+    if not target_uid:
+        return [], 0
+
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        base_where = "WHERE game_id = ? AND uid = ?"
+        params: List[Any] = [clean_game, target_uid]
+
+        if banner_category and banner_category.lower() not in ["all", "todos", ""]:
+            base_where += " AND banner_category = ?"
+            params.append(banner_category.lower().strip())
+
+        if rarity and rarity in [3, 4, 5]:
+            base_where += " AND rarity = ?"
+            params.append(rarity)
+
+        # 1. Total count
+        count_query = f"SELECT COUNT(*) FROM gacha_pulls_history {base_where}"
+        cursor.execute(count_query, params)
+        total_count = cursor.fetchone()[0]
+
+        # 2. Registros paginados
+        order_dir = "DESC" if order_desc else "ASC"
+        data_query = f"""
+        SELECT id, uid, game_id, gacha_type, banner_category, item_id, item_name,
+               item_type, rarity, time, pity_count, created_at
+        FROM gacha_pulls_history
+        {base_where}
+        ORDER BY time {order_dir}, id {order_dir}
+        LIMIT ? OFFSET ?
+        """
+        data_params = list(params) + [limit, offset]
+        cursor.execute(data_query, data_params)
+        rows = [dict(r) for r in cursor.fetchall()]
+
+        return rows, total_count

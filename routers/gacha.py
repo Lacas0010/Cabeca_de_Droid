@@ -3,10 +3,30 @@ from typing import Optional
 
 import database
 from build_calculator import simulate_gacha_probabilities, calculate_gacha_forecast
-from schemas.gacha import GachaRequest, GachaForecastRequest, GachaGoalSaveRequest
-from schemas.gacha_tracker import GachaTrackerOverviewResponse, ImportGachaRequest, ImportGachaResponse
-from services.gacha_service import get_gacha_characters
-from services.gacha_tracker_service import calculate_gacha_tracker_stats, import_gacha_log_data, export_gacha_log_uigf
+from schemas.gacha import (
+    GachaRequest,
+    GachaForecastRequest,
+    GachaGoalSaveRequest,
+    GachaSimulatorDefaultsResponse,
+    GameBannersData,
+)
+from schemas.gacha_tracker import (
+    GachaTrackerOverviewResponse,
+    GachaHistoryListResponse,
+    ImportGachaRequest,
+    ImportGachaResponse,
+)
+from services.gacha_service import (
+    get_gacha_characters,
+    get_current_banners,
+    get_gacha_simulator_defaults,
+)
+from services.gacha_tracker_service import (
+    calculate_gacha_tracker_stats,
+    get_gacha_pulls_history_detailed,
+    import_gacha_log_data,
+    export_gacha_log_uigf,
+)
 
 router = APIRouter(tags=["Gacha & Banners"])
 
@@ -17,6 +37,7 @@ async def calculate_gacha_sim(req: GachaRequest):
     try:
         res = simulate_gacha_probabilities(
             game_id=req.game_id,
+            banner_type=req.banner_type or "character",
             current_pity=req.current_pity,
             is_guaranteed=req.is_guaranteed,
             pulls_available=req.pulls_available,
@@ -39,6 +60,7 @@ async def calculate_gacha_forecast_endpoint(req: GachaForecastRequest):
     try:
         res = calculate_gacha_forecast(
             game_id=req.game_id,
+            banner_type=req.banner_type or "character",
             character_name=req.character_name or "",
             current_pulls=req.current_pulls or 0,
             current_pity=req.current_pity or 0,
@@ -115,6 +137,47 @@ async def get_gacha_characters_endpoint(game_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@router.get("/api/gacha/defaults/{game_id}", response_model=GachaSimulatorDefaultsResponse)
+async def get_gacha_simulator_defaults_endpoint(
+    game_id: str, uid: Optional[str] = None, banner_type: Optional[str] = "character"
+):
+    """
+    Retorna os valores padrão do simulador de gacha:
+    - Pity atual do jogador no banner relevante (extraído do histórico real no banco de dados).
+    - Status do 50/50 ou 75/25 (garantido vs disputa).
+    - Personagem ou arma do banner oficial ativo no jogo com arte/imagem do banner.
+    - Suporta banner_type: 'character' ou 'weapon'.
+    """
+    try:
+        return get_gacha_simulator_defaults(game_id=game_id, uid=uid, banner_type=banner_type or "character")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/api/gacha/current-banners")
+@router.get("/api/gacha/current-banners/{game_id}")
+async def get_current_banners_endpoint(game_id: Optional[str] = None):
+    """Retorna os dados dos banners atuais de personagens extraídos do manifesto ou raspados dinamicamente."""
+    try:
+        return get_current_banners(game_id=game_id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/gacha/current-banners/sync")
+async def sync_current_banners_endpoint(game_id: Optional[str] = None):
+    """Força a raspagem atualizada dos banners e artes oficiais de personagens no Prydwen."""
+    try:
+        from scrapers.scraper_prydwen import PrydwenScraper
+
+        scraper = PrydwenScraper()
+        res = scraper.get_current_banners(game_id=game_id)
+        return {"status": "success", "message": "Banners atuais sincronizados com sucesso.", "data": res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
 # ==========================================================================
 # RASTREADOR REAL DE TIROS / GACHA TRACKER (ETAPA 8)
 # ==========================================================================
@@ -135,14 +198,40 @@ async def get_gacha_tracker_overview(game_id: str, uid: Optional[str] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/api/gacha/tracker/import/{game_id}", response_model=ImportGachaResponse)
-async def import_gacha_tracker_endpoint(game_id: str, req: ImportGachaRequest):
+@router.get("/api/gacha/tracker/history/{game_id}", response_model=GachaHistoryListResponse)
+async def get_gacha_tracker_history(
+    game_id: str,
+    uid: Optional[str] = None,
+    banner_category: Optional[str] = None,
+    rarity: Optional[int] = None,
+    limit: int = 50,
+    offset: int = 0,
+):
     """
-    Importa dados de histórico de tiros via JSON nos formatos UIGF v2.4+, SRGF ou lista bruta.
+    Retorna o histórico detalhado e paginado de puxadas com ícones oficiais de personagens, bangboos e armas.
+    """
+    try:
+        return get_gacha_pulls_history_detailed(
+            game_id=game_id,
+            uid=uid,
+            banner_category=banner_category,
+            rarity=rarity,
+            limit=limit,
+            offset=offset,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/api/gacha/tracker/import", response_model=ImportGachaResponse)
+@router.post("/api/gacha/tracker/import/{game_id}", response_model=ImportGachaResponse)
+async def import_gacha_tracker_endpoint(req: ImportGachaRequest, game_id: Optional[str] = "all"):
+    """
+    Importa dados de histórico de tiros via JSON nos formatos UIGF v4.1 (multi-jogo), UIGF v2.4+, SRGF ou lista bruta.
     """
     try:
         raw_payload = req.raw_data if req.raw_data is not None else req.pulls_list
-        return import_gacha_log_data(game_id=game_id, raw_data=raw_payload, uid=req.uid)
+        return import_gacha_log_data(game_id=game_id or "all", raw_data=raw_payload, uid=req.uid)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

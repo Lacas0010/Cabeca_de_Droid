@@ -3,7 +3,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 135 Passed](https://img.shields.io/badge/tests-135%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Tests: 143 Passed](https://img.shields.io/badge/tests-143%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
 
 Suíte local inteligente com interface gráfica **Web Glassmorphism** (HTML5/CSS3/ES6+) e backend modular em Python (**FastAPI + Clean Architecture + SQLite + Playwright + Groq Cloud RAG + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
@@ -32,7 +32,7 @@ python main.py
 
 * **Acesso Local (PC):** `http://127.0.0.1:8000`
 * **Acesso no Celular/Tablet (Rede Wi-Fi):** `http://<IP_DO_SEU_PC>:8000` *(habilitável em Configurações)*
-* **Rodar Testes:** `python -m unittest discover tests` *(135 testes unitários inclusos)*
+* **Rodar Testes:** `python -m unittest discover tests` *(143 testes unitários inclusos)*
 
 ---
 
@@ -45,28 +45,28 @@ python main.py
 | **3. Rastreador Oficial de Pity & Tiros** | 📜 | Importação e exportação de logs reais no padrão universal UIGF v2.4/SRGF, cálculo exato de Pity Atual, garantia 100% vs 50/50 e estatísticas de sorte. |
 | **4. Sandbox de Troca de Peças** | 🧪 | Simulação de substituição de relíquias ("E se eu trocasse a peça?") prevendo variações de score, Roll Value, deltas de atributos e novos breakpoints. |
 | **5. Multi-UID Switcher** | 👥 | Alternância instantânea entre múltiplas contas salvas no SQLite para o mesmo jogo, com isolamento de roster e peças. |
-| **2. Monitor de Energia** | 🔋 | Monitor de Resina, Poder de Desbravamento e Bateria com anéis SVG e contagem regressiva. |
-| **3. Auto Check-in 6h** | 🎁 | Resgate automático das recompensas diárias da HoYoLAB a cada 6h gravado no SQLite. |
-| **4. Auto-Sync 04:00** | ⏰ | Agendamento diário automático para atualizar Roster e guias com detecção de diffs. |
-| **5. Interface Glassmorphism** | 📁 | Painel escuro moderno, temas por jogo e gaveta off-canvas deslizante no mobile. |
-| **6. Acesso LAN / Wi-Fi** | 📱 | Binding `0.0.0.0:8000` sob demanda para uso no smartphone ou tablet na rede local. |
-| **7. Galeria com Ícones Oficiais** | 🎨 | Filtros por Elemento (incluindo *Lumiflux* de ZZZ) e Raridade com avatares em cache local. |
-| **8. Proxy Anti-CORS** | 🖼️ | Endpoint `/api/proxy_image` para carregamento seguro de imagens em Canvas 2D. |
-| **9. Tracker de Endgame** | ⚔️ | Histórico de Abismo Espiral, Teatro Imaginário, MoC, Pura Ficção, Sombra e Defesa Shiyu. |
-| **10. Inspetor de Builds Centralizado** | 🗡️ | Janela modal centralizada em 2 colunas, avaliação por Roll Value (RV), Main Stat Forgiveness e notas de **SSS** a **D**. |
-| **11. Eidolons & Shards (HSR)** | 💎 | Fragmentos de arte in-game nos nós de Eidolon e suporte a splash arts de skins (Sparkle, Robin). |
-| **12. Mindscapes & Habilidades (ZZZ)** | ⚡ | Ícones de Cinema Mental 01-06 em neon e categorias oficiais de combate (Básico, Especial, Esquiva, etc.). |
-| **13. Tooltips & Descrições Ricas** | ✨ | Hover action com descrições detalhadas e completas de Talentos, Rastros e Habilidades sem tags HTML. |
-| **14. Exportação em Imagem HD** | 📷 | Renderização em **4K (2400 × 1350 px)** de Cards de Build, Tier List e Diffs de Evolução. |
-| **15. Breakpoints & Speed Tuning** | ⚖️ | Action Value (10000/SPD), metas de 134/160.1 SPD no Ciclo 0 de MoC/PF, sincronia -1 SPD (Bronya/Sunday), checagem Favonius e proporção áurea 1:2. |
-| **16. Calculadora de Ascensão** | 🧮 | Cálculo exato de Mora, XP e materiais com caps reais (**Genshin 90**, **HSR 80**, **ZZZ 60**). |
-| **17. Otimizador IA Groq** | 🧠 | Consultoria instantânea com Llama 3.3 70B gerando 3 melhorias prioritárias para a build. |
-| **18. Diagnóstico de Lacunas** | 🔥 | Mapeamento de fraquezas da conta (DPS/Sustento/Elemento) e modo Roast sarcástico. |
-| **19. Índice de Sorte (Luck Score)** | 🍀 | Medidor de RNG da conta (SSS+ a F), destacando a peça **God Roll #1** e a **Cursed Roll**. |
-| **20. Gacha Monte Carlo** | 🎲 | Simulação de 10.000 tiros com Soft Pity real (74+), desconto de cópias e projeção de metas. |
-| **21. Central de Farm & OS Diária** | 🌾 | Domínios abertos hoje e Ordem de Serviço Diária com alocação inteligente de resina. |
-| **22. Trash Finder & Peças Coringa** | 🗑️ | Varredura de relíquias sem utilidade, proteção absoluta de peças Coringa/Off-Piece (Duplo Crítico/CV) e conselheiro de síntese. |
-| **23. Chat IA & Montador de Times**| 💬 | Chat RAG conversacional com histórico persistente no SQLite por jogo, streaming SSE e montador de times. |
+| **6. Monitor de Energia** | 🔋 | Monitor de Resina, Poder de Desbravamento e Bateria com anéis SVG e contagem regressiva. |
+| **7. Auto Check-in 6h** | 🎁 | Resgate automático das recompensas diárias da HoYoLAB a cada 6h gravado no SQLite. |
+| **8. Auto-Sync 04:00** | ⏰ | Agendamento diário automático para atualizar Roster e guias com detecção de diffs. |
+| **9. Interface Glassmorphism** | 📁 | Painel escuro moderno, temas por jogo e gaveta off-canvas deslizante no mobile. |
+| **10. Acesso LAN / Wi-Fi** | 📱 | Binding `0.0.0.0:8000` sob demanda para uso no smartphone ou tablet na rede local. |
+| **11. Galeria com Ícones Oficiais** | 🎨 | Filtros por Elemento (incluindo *Lumiflux* de ZZZ) e Raridade com avatares em cache local. |
+| **12. Proxy Anti-CORS** | 🖼️ | Endpoint `/api/proxy_image` para carregamento seguro de imagens em Canvas 2D. |
+| **13. Tracker de Endgame** | ⚔️ | Histórico de Abismo Espiral, Teatro Imaginário, MoC, Pura Ficção, Sombra e Defesa Shiyu. |
+| **14. Inspetor de Builds Centralizado** | 🗡️ | Janela modal centralizada em 2 colunas, avaliação por Roll Value (RV), Main Stat Forgiveness e notas de **SSS** a **D**. |
+| **15. Eidolons & Shards (HSR)** | 💎 | Fragmentos de arte in-game nos nós de Eidolon e suporte a splash arts de skins (Sparkle, Robin). |
+| **16. Mindscapes & Habilidades (ZZZ)** | ⚡ | Ícones de Cinema Mental 01-06 em neon e categorias oficiais de combate (Básico, Especial, Esquiva, etc.). |
+| **17. Tooltips & Descrições Ricas** | ✨ | Hover action com descrições detalhadas e completas de Talentos, Rastros e Habilidades sem tags HTML. |
+| **18. Exportação em Imagem HD** | 📷 | Renderização em **4K (2400 × 1350 px)** de Cards de Build, Tier List e Diffs de Evolução. |
+| **19. Breakpoints & Speed Tuning** | ⚖️ | Action Value (10000/SPD), metas de 134/160.1 SPD no Ciclo 0 de MoC/PF, sincronia -1 SPD (Bronya/Sunday), checagem Favonius e proporção áurea 1:2. |
+| **20. Calculadora de Ascensão** | 🧮 | Cálculo exato de Mora, XP e materiais com caps reais (**Genshin 90**, **HSR 80**, **ZZZ 60**). |
+| **21. Otimizador IA Groq** | 🧠 | Consultoria instantânea com Llama 3.3 70B gerando 3 melhorias prioritárias para a build. |
+| **22. Diagnóstico de Lacunas** | 🔥 | Mapeamento de fraquezas da conta (DPS/Sustento/Elemento) e modo Roast sarcástico. |
+| **23. Índice de Sorte (Luck Score)** | 🍀 | Medidor de RNG da conta (SSS+ a F), destacando a peça **God Roll #1** e a **Cursed Roll**. |
+| **24. Gacha Monte Carlo** | 🎲 | Simulação de 10.000 tiros com Soft Pity real (74+), desconto de cópias e projeção de metas. |
+| **25. Central de Farm & OS Diária** | 🌾 | Domínios abertos hoje e Ordem de Serviço Diária com alocação inteligente de resina. |
+| **26. Trash Finder & Peças Coringa** | 🗑️ | Varredura de relíquias sem utilidade, proteção absoluta de peças Coringa/Off-Piece (Duplo Crítico/CV) e conselheiro de síntese. |
+| **27. Chat IA & Montador de Times**| 💬 | Chat RAG conversacional com histórico persistente no SQLite por jogo, streaming SSE e montador de times. |
 
 ---
 
@@ -126,7 +126,7 @@ hoyo-projetos/
 ├── assets/                  # Ícones oficiais de elementos e avatares em cache local
 ├── scrapers/                # Raspadores de metagame e guias do Prydwen (HSR, Genshin, ZZZ)
 ├── scripts/                 # Scripts utilitários e serviços do sistema (systemd)
-├── tests/                   # 74 testes unitários automatizados cobrindo todos os módulos
+├── tests/                   # 143 testes unitários automatizados cobrindo todos os módulos
 ├── server.py                # Orquestrador FastAPI modular com ciclo de vida
 └── main.py                  # Entrypoint de inicialização da aplicação
 ```

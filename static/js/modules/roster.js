@@ -910,12 +910,15 @@ async function inspectCharacter(gameId, char) {
         piecesList.innerHTML = "";
         
         // Elemento visual no topo com a Nota Geral da Build
-        const overallGrade = (char.overall_grade || "D").toUpperCase();
-        const overallScore = char.overall_score !== undefined ? char.overall_score : 0.0;
-        const gradeClass = `badge-${overallGrade.toLowerCase()}`;
-        const equippedInfo = (char.equipped_pieces !== undefined && char.max_pieces !== undefined) 
-            ? ` (${char.equipped_pieces}/${char.max_pieces} peças equipadas)` 
-            : '';
+        const rawGrade = (char.overall_grade || (build && build.overall_grade) || "N/A").toUpperCase();
+        const overallScore = char.overall_score !== undefined ? char.overall_score : ((build && build.overall_score !== undefined) ? build.overall_score : 0.0);
+        const eqCount = char.equipped_pieces !== undefined ? char.equipped_pieces : (build && build.equipped_pieces !== undefined ? build.equipped_pieces : (char.relics ? char.relics.length : 0));
+        const maxSlots = char.max_pieces !== undefined ? char.max_pieces : (build && build.max_pieces !== undefined ? build.max_pieces : (gameId === 'genshin' ? 5 : 6));
+        const isUnequipped = eqCount === 0 || rawGrade === "N/A";
+        const overallGrade = isUnequipped ? "N/A" : rawGrade;
+        const gradeClass = isUnequipped ? "badge-na" : `badge-${overallGrade.toLowerCase()}`;
+        const equippedInfo = ` (${eqCount}/${maxSlots} peças equipadas)`;
+        const badgeContent = isUnequipped ? `Sem Equipamentos (${eqCount}/${maxSlots})` : `${overallGrade} (${overallScore} pts)`;
         
         const banner = document.createElement("div");
         banner.className = "overall-build-banner";
@@ -934,7 +937,7 @@ async function inspectCharacter(gameId, char) {
                 </div>
             </div>
             <div class="overall-badge ${gradeClass}">
-                ${overallGrade} (${overallScore} pts)
+                ${badgeContent}
             </div>
         `;
         piecesList.appendChild(banner);
@@ -1025,9 +1028,11 @@ function getSlotIcon(slotName) {
                     subsHtml = `<span class="text-muted" style="font-size: 10px;">Sem substatus</span>`;
                 }
                 
+                let pGrade = (equivalentLocalPiece && equivalentLocalPiece.grade) || piece.grade;
+                let pScore = (equivalentLocalPiece && equivalentLocalPiece.score !== undefined) ? equivalentLocalPiece.score : (piece.score !== undefined ? piece.score : 0);
                 let gradeHtml = "";
-                if (equivalentLocalPiece && equivalentLocalPiece.grade) {
-                    gradeHtml = `<span class="badge-relic badge-relic-${equivalentLocalPiece.grade.toLowerCase()}">${equivalentLocalPiece.grade}</span><span style="font-size: 10px; color: var(--text-secondary); margin-left: 6px; font-weight: 500;">Score: ${equivalentLocalPiece.score || 0}</span>`;
+                if (pGrade && pGrade !== "N/A") {
+                    gradeHtml = `<span class="badge-relic badge-relic-${pGrade.toLowerCase()}">${pGrade}</span><span style="font-size: 10px; color: var(--text-secondary); margin-left: 6px; font-weight: 500;">Score: ${pScore}</span>`;
                 }
                 
                 const cleanMain = sanitizeStatName(piece.main);
@@ -1453,7 +1458,7 @@ async function generateBuildCardCanvas(char, gameId) {
     ctx.fillRect(0, 0, width, height);
 
     // Dados de notas e contagem de peças
-    const overallGrade = (char.overall_grade || "D").toUpperCase();
+    const overallGrade = (char.overall_grade || "N/A").toUpperCase();
     const overallScore = char.overall_score !== undefined ? char.overall_score : 0.0;
     const equippedPieces = char.equipped_pieces !== undefined ? char.equipped_pieces : (char.relics ? char.relics.length : 0);
     const maxPieces = char.max_pieces || (gameId === 'genshin' ? 5 : 6);
@@ -1465,9 +1470,10 @@ async function generateBuildCardCanvas(char, gameId) {
         A: { bg: "rgba(139, 92, 246, 0.25)", border: "#8b5cf6", text: "#c084fc" },
         B: { bg: "rgba(59, 130, 246, 0.25)", border: "#3b82f6", text: "#60a5fa" },
         C: { bg: "rgba(107, 114, 128, 0.25)", border: "#6b7280", text: "#9ca3af" },
-        D: { bg: "rgba(107, 114, 128, 0.25)", border: "#6b7280", text: "#9ca3af" }
+        D: { bg: "rgba(107, 114, 128, 0.25)", border: "#6b7280", text: "#9ca3af" },
+        "N/A": { bg: "rgba(107, 114, 128, 0.25)", border: "#6b7280", text: "#9ca3af" }
     };
-    const gc = gradeColors[overallGrade] || gradeColors.D;
+    const gc = gradeColors[overallGrade] || gradeColors["N/A"];
 
     // ==========================================
     // 2. HERO COLUMN CONTINUA (COLUNA DA ESQUERDA)
@@ -1824,11 +1830,13 @@ async function generateBuildCardCanvas(char, gameId) {
     ctx.font = "bold 13px sans-serif";
     ctx.fillStyle = gc.text;
     ctx.textAlign = "center";
-    ctx.fillText(`NOTA ${overallGrade}`, hx + hw - 62, hy + 34);
+    const gradeLabel = overallGrade === "N/A" ? "N/A" : `NOTA ${overallGrade}`;
+    ctx.fillText(gradeLabel, hx + hw - 62, hy + 34);
 
     ctx.font = "500 10px sans-serif";
     ctx.fillStyle = "#e2e8f0";
-    ctx.fillText(`${overallScore} pts`, hx + hw - 62, hy + 49);
+    const scoreLabel = overallGrade === "N/A" ? "SEM EQUIP." : `${overallScore} pts`;
+    ctx.fillText(scoreLabel, hx + hw - 62, hy + 49);
     ctx.textAlign = "left";
 
     // ==========================================

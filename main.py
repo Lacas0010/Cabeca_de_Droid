@@ -65,15 +65,39 @@ def get_local_ip() -> str:
         return "127.0.0.1"
 
 
-def find_available_port(start_port: int = 8000, max_attempts: int = 20) -> int:
+def find_available_port(host: str = "127.0.0.1", start_port: int = 8000, max_attempts: int = 20) -> int:
     """Encontra uma porta TCP disponível a partir da porta inicial informada."""
+    target_hosts = [host]
+    if host not in ("127.0.0.1", "0.0.0.0"):
+        target_hosts.append("127.0.0.1")
+
     for port in range(start_port, start_port + max_attempts):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        in_use = False
+        # Verifica se já há conexão respondendo na porta
+        for check_ip in ("127.0.0.1", "localhost"):
             try:
-                s.bind(("0.0.0.0", port))
-                return port
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.15)
+                    if s.connect_ex((check_ip, port)) == 0:
+                        in_use = True
+                        break
+            except Exception:
+                pass
+        if in_use:
+            continue
+
+        # Testa o bind
+        can_bind = True
+        for h in target_hosts:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.bind((h, port))
             except OSError:
-                continue
+                can_bind = False
+                break
+        if can_bind:
+            return port
+
     return start_port
 
 
@@ -167,7 +191,7 @@ def main() -> None:
     elif os.environ.get("PORT"):
         port = int(os.environ["PORT"])
     else:
-        port = find_available_port(8000)
+        port = find_available_port(bind_host, 8000)
 
     server_thread = threading.Thread(target=start_server, args=(bind_host, port), daemon=True)
     server_thread.start()
