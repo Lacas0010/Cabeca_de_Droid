@@ -60,6 +60,42 @@ class GachaGoalSaveRequest(BaseModel):
     success_rate: float = Field(description="Probabilidade matemática calculada de sucesso (%)")
     projected_pulls: int = Field(description="Total projetado de tiros acumulados no término do prazo")
     notes: Optional[str] = Field(default="", description="Anotações estratégicas adicionais sobre o plano")
+    target_date: Optional[str] = Field(
+        default=None, description="Data/hora alvo da atualização quando o banner chega (ISO 8601)"
+    )
+    created_at: Optional[str] = Field(
+        default=None, description="Data/hora exata em que a meta foi criada (ISO 8601)"
+    )
+
+
+class GachaGoalItem(BaseModel):
+    id: int = Field(description="ID único da meta salva")
+    game_id: str = Field(description="Identificador do jogo")
+    character_name: str = Field(description="Nome do personagem ou arma alvo")
+    character_icon: Optional[str] = Field(default=None, description="URL segura do ícone do item alvo")
+    target_rank_str: str = Field(description="Rank/Constelação/Eidolon almejado")
+    current_pulls: int = Field(description="Tiros iniciais no momento da criação")
+    current_pity: int = Field(description="Pity inicial no momento da criação")
+    is_guaranteed: bool = Field(description="Status do garantido no momento da criação")
+    target_days: int = Field(description="Prazo total em dias planejado")
+    has_daily_pass: bool = Field(description="Se possui passe diário ativo")
+    success_rate: float = Field(description="Probabilidade calculada de sucesso (%)")
+    projected_pulls: int = Field(description="Total de tiros projetados até o banner")
+    notes: Optional[str] = Field(default="", description="Notas da meta")
+    created_at: str = Field(description="Data/hora ISO em que a meta foi criada")
+    target_date: str = Field(description="Data/hora ISO da chegada da atualização/banner")
+    days_elapsed: int = Field(default=0, description="Dias decorridos desde a criação")
+    days_remaining: int = Field(default=0, description="Dias restantes até o banner")
+    seconds_elapsed: int = Field(default=0, description="Segundos decorridos desde a criação")
+    seconds_remaining: int = Field(default=0, description="Segundos restantes até o banner")
+    time_progress_pct: float = Field(default=0.0, description="Percentual de progresso temporal (0 a 100%)")
+    is_arrived: bool = Field(default=False, description="Indica se o dia da atualização/banner já chegou")
+    accumulated_pulls_now: int = Field(default=0, description="Estimativa de tiros acumulados até o momento atual")
+
+
+class GachaGoalsListResponse(BaseModel):
+    game_id: str = Field(description="Filtro de jogo consultado")
+    goals: list[GachaGoalItem] = Field(default_factory=list, description="Lista de metas salvas com tempo em andamento")
 
 
 class CharacterMiniInfo(BaseModel):

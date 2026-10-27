@@ -16,7 +16,7 @@
         "is_primary": false
       }
     ],
-    "last_updated": "2026-10-26T10:18:57.367383",
+    "last_updated": "2026-10-27T11:24:24.839817",
     "weapon_banners": [
       {
         "character_name": "Azurelight",
@@ -55,7 +55,6 @@
       {
         "character_name": "Pearl",
         "banner_image": "/assets/banners/banner_pearl_char.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/generic/1786437018206-dfcfa668580f040948d5b05dacaf32ca.webp",
         "featured_4stars": [
           "Qingque",
           "Xueyi",
@@ -67,7 +66,6 @@
       {
         "character_name": "Mortenax Blade",
         "banner_image": "/assets/banners/banner_mortenax_char.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/blade-mortenax_full.webp",
         "featured_4stars": [
           "Qingque",
           "Xueyi",
@@ -79,7 +77,6 @@
       {
         "character_name": "Gilgamesh",
         "banner_image": "/assets/banners/banner_gilgamesh_char.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/gilgamesh_full.webp",
         "featured_4stars": [
           "Qingque",
           "Xueyi",
@@ -91,7 +88,6 @@
       {
         "character_name": "Rin Tohsaka",
         "banner_image": "/assets/banners/banner_rin_char.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/rin-tohsaka_full.webp",
         "featured_4stars": [
           "Qingque",
           "Xueyi",
@@ -103,7 +99,6 @@
       {
         "character_name": "Archer",
         "banner_image": "/assets/banners/banner_archer_char.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/archer_full.webp",
         "featured_4stars": [
           "Qingque",
           "Xueyi",
@@ -115,7 +110,6 @@
       {
         "character_name": "Saber",
         "banner_image": "/assets/banners/banner_saber_char.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/saber_full.webp",
         "featured_4stars": [
           "Qingque",
           "Xueyi",
@@ -125,7 +119,7 @@
         "banner_title": "Excalibur Excelsior"
       }
     ],
-    "last_updated": "2026-10-26T09:23:14.636906",
+    "last_updated": "2026-10-26T15:53:43.551379",
     "weapon_banners": [
       {
         "character_name": "Colors for Tomorrow",
@@ -234,7 +228,7 @@
         "banner_title": "Graceful Gale"
       }
     ],
-    "last_updated": "2026-10-26T09:23:14.931222",
+    "last_updated": "2026-10-26T15:54:33.330939",
     "weapon_banners": [
       {
         "character_name": "Plume of Rebirth",

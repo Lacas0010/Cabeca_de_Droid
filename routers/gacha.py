@@ -7,6 +7,7 @@ from schemas.gacha import (
     GachaRequest,
     GachaForecastRequest,
     GachaGoalSaveRequest,
+    GachaGoalsListResponse,
     GachaSimulatorDefaultsResponse,
     GameBannersData,
 )
@@ -20,6 +21,8 @@ from services.gacha_service import (
     get_gacha_characters,
     get_current_banners,
     get_gacha_simulator_defaults,
+    get_saved_gacha_goals,
+    create_saved_gacha_goal,
 )
 from services.gacha_tracker_service import (
     calculate_gacha_tracker_stats,
@@ -79,35 +82,21 @@ async def calculate_gacha_forecast_endpoint(req: GachaForecastRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.get("/api/gacha/goals")
-@router.get("/api/gacha/goals/{game_id}")
+@router.get("/api/gacha/goals", response_model=GachaGoalsListResponse)
+@router.get("/api/gacha/goals/{game_id}", response_model=GachaGoalsListResponse)
 async def list_gacha_goals(game_id: Optional[str] = "all"):
-    """Retorna a lista de metas de banners salvas no banco de dados SQLite."""
+    """Retorna a lista de metas de banners salvas no banco de dados SQLite com progresso temporal em tempo real."""
     try:
-        goals = database.get_gacha_goals(game_id)
-        return {"game_id": game_id or "all", "goals": goals}
+        return get_saved_gacha_goals(game_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/api/gacha/goals")
 async def save_gacha_goal_endpoint(req: GachaGoalSaveRequest):
-    """Salva uma nova meta de gacha forecast no SQLite."""
+    """Salva uma nova meta de gacha forecast no SQLite com data de criação e data alvo da atualização."""
     try:
-        goal_id = database.save_gacha_goal(
-            game_id=req.game_id,
-            character_name=req.character_name,
-            target_rank_str=req.target_rank_str,
-            current_pulls=req.current_pulls,
-            current_pity=req.current_pity,
-            is_guaranteed=req.is_guaranteed,
-            target_days=req.target_days,
-            has_daily_pass=req.has_daily_pass,
-            success_rate=req.success_rate,
-            projected_pulls=req.projected_pulls,
-            notes=req.notes or "",
-        )
-        return {"status": "saved", "goal_id": goal_id}
+        return create_saved_gacha_goal(req.model_dump())
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

@@ -1556,16 +1556,23 @@
 
                             <!-- Janela de Tempo (Dias até o término do Banner) -->
                             <div style="margin-bottom: 16px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                    <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Janela de Tempo (Dias até o fim do Banner):</label>
-                                    <strong id="forecast-days-val" style="color: #fbbf24; font-size: 13px;">21 dias</strong>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 4px;">
+                                    <label style="font-size: 12px; color: #94a3b8; font-weight: 600;">Janela de Tempo (Até o Banner / Atualização):</label>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <strong id="forecast-days-val" style="color: #fbbf24; font-size: 13px;">21 dias</strong>
+                                        <span id="forecast-target-date-lbl" style="font-size: 11px; color: #38bdf8; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); padding: 2px 8px; border-radius: 6px; font-weight: 600;">--/--/----</span>
+                                    </div>
                                 </div>
-                                <input type="range" id="forecast-days-slider" min="1" max="90" value="21" style="width: 100%; accent-color: #f59e0b; cursor: pointer;">
+                                <input type="range" id="forecast-days-slider" min="1" max="120" value="21" style="width: 100%; accent-color: #f59e0b; cursor: pointer;">
                                 <div style="display: flex; gap: 6px; margin-top: 8px;">
                                     <button type="button" class="filter-btn forecast-quick-day-btn" data-days="7" style="flex: 1; padding: 4px 6px; font-size: 10px;">7d (1 sem)</button>
                                     <button type="button" class="filter-btn active forecast-quick-day-btn" data-days="21" style="flex: 1; padding: 4px 6px; font-size: 10px;">21d (1 banner)</button>
                                     <button type="button" class="filter-btn forecast-quick-day-btn" data-days="42" style="flex: 1; padding: 4px 6px; font-size: 10px;">42d (1 patch)</button>
                                     <button type="button" class="filter-btn forecast-quick-day-btn" data-days="63" style="flex: 1; padding: 4px 6px; font-size: 10px;">63d (1.5 patch)</button>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
+                                    <span style="font-size: 11px; color: #cbd5e1;"><i class="fa-regular fa-calendar-check" style="color: #38bdf8;"></i> Dia da Atualização / Chegada do Banner:</span>
+                                    <input type="date" id="forecast-target-date-input" class="search-input" style="padding: 3px 8px; font-size: 11px; width: auto; color: #f8fafc; margin: 0;">
                                 </div>
                             </div>
 

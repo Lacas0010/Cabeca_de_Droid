@@ -190,12 +190,79 @@ class TestGachaForecastSuite(unittest.TestCase):
         resp_get = self.client.get("/api/gacha/goals/zzz")
         self.assertEqual(resp_get.status_code, 200)
         goals_list = resp_get.json().get("goals", [])
-        self.assertTrue(any(g["id"] == goal_id for g in goals_list))
+        matched = next((g for g in goals_list if g["id"] == goal_id), None)
+        self.assertIsNotNone(matched)
+        self.assertIn("created_at", matched)
+        self.assertIn("target_date", matched)
+        self.assertIn("days_remaining", matched)
+        self.assertIn("seconds_remaining", matched)
+        self.assertIn("time_progress_pct", matched)
+        self.assertIn("is_arrived", matched)
+        self.assertIn("accumulated_pulls_now", matched)
 
         # 3. DELETE
         resp_del = self.client.delete(f"/api/gacha/goals/{goal_id}")
         self.assertEqual(resp_del.status_code, 200)
         self.assertEqual(resp_del.json().get("status"), "deleted")
+
+    def test_goal_time_progression_and_arrival(self):
+        """Valida contagem regressiva (correr do tempo) desde o dia criado até o dia da atualização do banner."""
+        from datetime import datetime, timedelta
+
+        base_created = datetime(2026, 10, 1, 12, 0, 0)
+        target_dt = base_created + timedelta(days=20)
+
+        goal_id = database.save_gacha_goal(
+            game_id="hsr",
+            character_name="Castorice",
+            target_rank_str="E0",
+            current_pulls=40,
+            current_pity=10,
+            is_guaranteed=False,
+            target_days=20,
+            has_daily_pass=True,
+            success_rate=91.0,
+            projected_pulls=80,
+            notes="Teste de contagem regressiva",
+            created_at=base_created.isoformat(),
+            target_date=target_dt.isoformat(),
+        )
+
+        try:
+            # Simula metade do tempo decorrido (10 dias após a criação)
+            mid_now = base_created + timedelta(days=10)
+            goal_mid = {
+                "created_at": base_created.isoformat(),
+                "target_date": target_dt.isoformat(),
+                "target_days": 20,
+                "current_pulls": 40,
+                "projected_pulls": 80,
+            }
+            database.compute_goal_time_metrics(goal_mid, now_dt=mid_now)
+            self.assertEqual(goal_mid["days_elapsed"], 10)
+            self.assertEqual(goal_mid["days_remaining"], 10)
+            self.assertAlmostEqual(goal_mid["time_progress_pct"], 50.0, places=1)
+            self.assertFalse(goal_mid["is_arrived"])
+            self.assertEqual(goal_mid["accumulated_pulls_now"], 60)
+
+            # Simula chegada do dia da atualização/banner (20 dias completos)
+            arrived_now = base_created + timedelta(days=21)
+            goal_done = {
+                "created_at": base_created.isoformat(),
+                "target_date": target_dt.isoformat(),
+                "target_days": 20,
+                "current_pulls": 40,
+                "projected_pulls": 80,
+            }
+            database.compute_goal_time_metrics(goal_done, now_dt=arrived_now)
+            self.assertEqual(goal_done["days_elapsed"], 20)
+            self.assertEqual(goal_done["days_remaining"], 0)
+            self.assertEqual(goal_done["seconds_remaining"], 0)
+            self.assertEqual(goal_done["time_progress_pct"], 100.0)
+            self.assertTrue(goal_done["is_arrived"])
+            self.assertEqual(goal_done["accumulated_pulls_now"], 80)
+        finally:
+            database.delete_gacha_goal(goal_id)
 
 
 if __name__ == "__main__":

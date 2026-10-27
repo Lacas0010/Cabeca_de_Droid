@@ -2,7 +2,8 @@ import os
 import sqlite3
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
+import math
 from typing import Dict, List, Optional, Any, Tuple
 from extractor import clean_relic_name
 
@@ -340,9 +341,15 @@ def init_db() -> None:
             success_rate REAL NOT NULL,
             projected_pulls INTEGER NOT NULL,
             notes TEXT,
-            created_at TEXT NOT NULL
+            created_at TEXT NOT NULL,
+            target_date TEXT
         )
         """)
+
+        try:
+            cursor.execute("ALTER TABLE gacha_forecast_goals ADD COLUMN target_date TEXT")
+        except sqlite3.OperationalError:
+            pass
 
         # Garante linha única de configuração de segurança
         cursor.execute(
@@ -1767,6 +1774,65 @@ def clear_completed_farm_tasks(date_str: str, game_id: str) -> None:
 # ==========================================
 # 12. GESTÃO DE METAS DE GACHA FORECAST
 # ==========================================
+def _parse_iso_datetime(dt_str: Optional[str], fallback: datetime) -> datetime:
+    """Converte string ISO 8601 para datetime local (naive) com segurança."""
+    if not dt_str:
+        return fallback
+    try:
+        clean_str = str(dt_str).strip().replace("Z", "+00:00")
+        parsed = datetime.fromisoformat(clean_str)
+        if parsed.tzinfo is not None:
+            parsed = parsed.astimezone().replace(tzinfo=None)
+        return parsed
+    except Exception:
+        return fallback
+
+
+def compute_goal_time_metrics(g_dict: Dict[str, Any], now_dt: Optional[datetime] = None) -> Dict[str, Any]:
+    """
+    Calcula o progresso temporal em tempo real de uma meta de banner salva:
+    - Data de criação (created_at) e Data da atualização/chegada do banner (target_date)
+    - Segundos e dias decorridos vs restantes
+    - Percentual de progresso do tempo e estimativa de tiros acumulados até o momento atual
+    """
+    ref_now = now_dt or datetime.now()
+    target_days = max(1, int(g_dict.get("target_days") or 21))
+
+    created_dt = _parse_iso_datetime(g_dict.get("created_at"), ref_now)
+    raw_target_date = g_dict.get("target_date")
+    if raw_target_date:
+        target_dt = _parse_iso_datetime(raw_target_date, created_dt + timedelta(days=target_days))
+    else:
+        target_dt = created_dt + timedelta(days=target_days)
+
+    total_seconds = max(1.0, (target_dt - created_dt).total_seconds())
+    elapsed_seconds = max(0.0, (ref_now - created_dt).total_seconds())
+    remaining_seconds = max(0.0, (target_dt - ref_now).total_seconds())
+
+    progress_ratio = min(1.0, max(0.0, elapsed_seconds / total_seconds))
+    time_progress_pct = round(progress_ratio * 100.0, 1)
+
+    days_elapsed = min(target_days, int(elapsed_seconds // 86400))
+    days_remaining = max(0, int(math.ceil(remaining_seconds / 86400.0))) if remaining_seconds > 0 else 0
+    is_arrived = remaining_seconds <= 0
+
+    cur_pulls = int(g_dict.get("current_pulls") or 0)
+    proj_pulls = int(g_dict.get("projected_pulls") or cur_pulls)
+    extra_pulls_planned = max(0, proj_pulls - cur_pulls)
+    accumulated_pulls_now = cur_pulls + int(round(extra_pulls_planned * progress_ratio))
+
+    g_dict["created_at"] = created_dt.isoformat()
+    g_dict["target_date"] = target_dt.isoformat()
+    g_dict["days_elapsed"] = days_elapsed
+    g_dict["days_remaining"] = days_remaining
+    g_dict["seconds_elapsed"] = int(elapsed_seconds)
+    g_dict["seconds_remaining"] = int(remaining_seconds)
+    g_dict["time_progress_pct"] = time_progress_pct
+    g_dict["is_arrived"] = is_arrived
+    g_dict["accumulated_pulls_now"] = accumulated_pulls_now
+    return g_dict
+
+
 def save_gacha_goal(
     game_id: str,
     character_name: str,
@@ -1779,18 +1845,30 @@ def save_gacha_goal(
     success_rate: float,
     projected_pulls: int,
     notes: str = "",
+    target_date: Optional[str] = None,
+    created_at: Optional[str] = None,
 ) -> int:
-    """Salva uma meta de planejamento de gacha/banner futuro no SQLite e retorna seu ID."""
+    """Salva uma meta de planejamento de gacha/banner futuro no SQLite com data de criação e data alvo da atualização."""
     with get_connection() as conn:
         cursor = conn.cursor()
-        now_iso = datetime.now().isoformat()
+        now_dt = datetime.now()
+        created_dt = _parse_iso_datetime(created_at, now_dt) if created_at else now_dt
+        created_iso = created_dt.isoformat()
+
+        clean_days = max(1, int(target_days or 21))
+        if target_date:
+            target_dt = _parse_iso_datetime(target_date, created_dt + timedelta(days=clean_days))
+        else:
+            target_dt = created_dt + timedelta(days=clean_days)
+        target_iso = target_dt.isoformat()
+
         cursor.execute(
             """
         INSERT INTO gacha_forecast_goals (
             game_id, character_name, target_rank_str, current_pulls,
             current_pity, is_guaranteed, target_days, has_daily_pass,
-            success_rate, projected_pulls, notes, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            success_rate, projected_pulls, notes, created_at, target_date
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 game_id.lower().strip(),
@@ -1799,19 +1877,20 @@ def save_gacha_goal(
                 current_pulls,
                 current_pity,
                 1 if is_guaranteed else 0,
-                target_days,
+                clean_days,
                 1 if has_daily_pass else 0,
                 round(success_rate, 1),
                 projected_pulls,
                 notes.strip(),
-                now_iso,
+                created_iso,
+                target_iso,
             ),
         )
         return cursor.lastrowid
 
 
 def get_gacha_goals(game_id: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Retorna as metas de gacha salvas, opcionalmente filtradas por jogo."""
+    """Retorna as metas de gacha salvas enriquecidas com progresso temporal em tempo real."""
     with get_connection() as conn:
         cursor = conn.cursor()
         if game_id and game_id.lower().strip() not in ["", "all", "todos"]:
@@ -1825,10 +1904,12 @@ def get_gacha_goals(game_id: Optional[str] = None) -> List[Dict[str, Any]]:
             cursor.execute("SELECT * FROM gacha_forecast_goals ORDER BY id DESC")
         rows = cursor.fetchall()
         goals = []
+        now_dt = datetime.now()
         for r in rows:
             g_dict = dict(r)
             g_dict["is_guaranteed"] = bool(g_dict.get("is_guaranteed"))
             g_dict["has_daily_pass"] = bool(g_dict.get("has_daily_pass"))
+            compute_goal_time_metrics(g_dict, now_dt=now_dt)
             goals.append(g_dict)
         return goals
 

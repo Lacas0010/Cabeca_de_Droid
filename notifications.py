@@ -467,12 +467,14 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($doc)
         active_goals = database.get_gacha_goals()
         goals_summary = []
         for goal in active_goals[:3]:
+            days_rem = goal.get("days_remaining", goal.get("target_days", 21))
             goals_summary.append(
                 {
                     "character_name": goal.get("character_name", ""),
                     "target_rank_str": goal.get("target_rank_str", "E0"),
                     "success_rate": goal.get("success_rate", 0),
-                    "target_days": goal.get("target_days", 21),
+                    "target_days": days_rem,
+                    "is_arrived": bool(goal.get("is_arrived", False)),
                 }
             )
 

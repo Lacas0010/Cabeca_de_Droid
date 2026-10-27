@@ -446,3 +446,40 @@ def get_gacha_simulator_defaults(
         "available_weapon_banners": formatted_weapon_banners,
     }
 
+
+def get_saved_gacha_goals(game_id: Optional[str] = "all") -> Dict[str, Any]:
+    """
+    Recupera as metas de banners salvas do SQLite, enriquecidas com progresso temporal
+    (contagem regressiva até o dia da atualização/banner) e ícone do personagem/arma.
+    """
+    goals = database.get_gacha_goals(game_id)
+    for g in goals:
+        g_id = g.get("game_id", "genshin")
+        c_name = g.get("character_name", "")
+        rank_str = str(g.get("target_rank_str", "")).upper()
+        is_weap = rank_str.startswith(("R", "S", "★"))
+        item_type = "weapon" if is_weap else "character"
+        g["character_icon"] = resolve_character_icon(g_id, c_name, item_type=item_type)
+    return {"game_id": game_id or "all", "goals": goals}
+
+
+def create_saved_gacha_goal(req_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Salva uma nova meta de banner com data de criação e data alvo da atualização."""
+    goal_id = database.save_gacha_goal(
+        game_id=req_data["game_id"],
+        character_name=req_data["character_name"],
+        target_rank_str=req_data["target_rank_str"],
+        current_pulls=req_data["current_pulls"],
+        current_pity=req_data["current_pity"],
+        is_guaranteed=req_data["is_guaranteed"],
+        target_days=req_data["target_days"],
+        has_daily_pass=req_data["has_daily_pass"],
+        success_rate=req_data["success_rate"],
+        projected_pulls=req_data["projected_pulls"],
+        notes=req_data.get("notes") or "",
+        target_date=req_data.get("target_date"),
+        created_at=req_data.get("created_at"),
+    )
+    return {"status": "saved", "goal_id": goal_id}
+
+

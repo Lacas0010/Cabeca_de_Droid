@@ -8346,3 +8346,24 @@ h6 {
         gap: 6px;
     }
 }
+
+
+/* Metas de Banners Salvas - Cronômetro em Tempo Real */
+.gacha-goal-live-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.gacha-goal-live-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 768px) {
+    .gacha-goal-live-card {
+        padding: 12px !important;
+    }
+
+    .goal-live-countdown-val {
+        font-size: 16px !important;
+    }
+}

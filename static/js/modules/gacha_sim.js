@@ -1004,28 +1004,66 @@ window.initGachaForecast = async function() {
         };
     });
 
+    const dateInput = document.getElementById("forecast-target-date-input");
+
+    window.syncForecastDaysAndDate = function(daysVal) {
+        const d = Math.max(1, parseInt(daysVal) || 21);
+        if (slider) slider.value = d;
+        if (sliderVal) sliderVal.innerText = `${d} ${d === 1 ? 'dia' : 'dias'}`;
+
+        const targetDt = new Date(Date.now() + d * 86400000);
+        const dd = String(targetDt.getDate()).padStart(2, '0');
+        const mm = String(targetDt.getMonth() + 1).padStart(2, '0');
+        const yyyy = targetDt.getFullYear();
+
+        const dateLbl = document.getElementById("forecast-target-date-lbl");
+        if (dateLbl) {
+            dateLbl.innerText = `Chegada: ${dd}/${mm}/${yyyy}`;
+        }
+        if (dateInput) {
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+            const tomorrow = new Date(Date.now() + 86400000);
+            const tY = tomorrow.getFullYear();
+            const tM = String(tomorrow.getMonth() + 1).padStart(2, '0');
+            const tD = String(tomorrow.getDate()).padStart(2, '0');
+            dateInput.min = `${tY}-${tM}-${tD}`;
+        }
+
+        quickDayBtns.forEach(b => {
+            if (parseInt(b.dataset.days) === d) {
+                b.classList.add("active");
+            } else {
+                b.classList.remove("active");
+            }
+        });
+    };
+
     if (slider && sliderVal) {
         slider.oninput = () => {
-            sliderVal.innerText = `${slider.value} dias`;
-            quickDayBtns.forEach(b => {
-                if (parseInt(b.dataset.days) === parseInt(slider.value)) {
-                    b.classList.add("active");
-                } else {
-                    b.classList.remove("active");
-                }
-            });
+            window.syncForecastDaysAndDate(slider.value);
+        };
+    }
+
+    if (dateInput) {
+        dateInput.onchange = () => {
+            if (!dateInput.value) return;
+            const [y, m, day] = dateInput.value.split("-").map(Number);
+            const picked = new Date(y, m - 1, day, 23, 59, 59);
+            const diffDays = Math.max(1, Math.min(180, Math.ceil((picked.getTime() - Date.now()) / 86400000)));
+            window.syncForecastDaysAndDate(diffDays);
+            window.runGachaForecastCalculation();
         };
     }
 
     quickDayBtns.forEach(btn => {
         btn.onclick = () => {
-            quickDayBtns.forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
             const days = parseInt(btn.dataset.days);
-            if (slider) slider.value = days;
-            if (sliderVal) sliderVal.innerText = `${days} dias`;
+            window.syncForecastDaysAndDate(days);
+            window.runGachaForecastCalculation();
         };
     });
+
+    window.syncForecastDaysAndDate(slider ? slider.value : 21);
 
     if (curRankSelect) {
         curRankSelect.onchange = () => {
@@ -1387,6 +1425,10 @@ window.saveCurrentGachaGoal = async function() {
         saveBtn.disabled = true;
     }
 
+    const nowDt = new Date();
+    const daysPlanned = Math.max(1, parseInt(data.target_days) || 21);
+    const targetDt = new Date(nowDt.getTime() + daysPlanned * 86400000);
+
     try {
         const res = await fetch("/api/gacha/goals", {
             method: "POST",
@@ -1398,25 +1440,27 @@ window.saveCurrentGachaGoal = async function() {
                 current_pulls: data.current_pulls,
                 current_pity: data.current_pity,
                 is_guaranteed: data.is_guaranteed,
-                target_days: data.target_days,
+                target_days: daysPlanned,
                 has_daily_pass: Boolean(data.income_breakdown?.daily_pass?.active),
                 success_rate: data.success_rate,
                 projected_pulls: data.total_projected_pulls,
-                notes: `Meta de banner planejada para ${data.target_days} dias.`
+                notes: `Meta de banner planejada para ${daysPlanned} dias (chegada em ${targetDt.toLocaleDateString('pt-BR')}).`,
+                created_at: nowDt.toISOString(),
+                target_date: targetDt.toISOString()
             })
         });
 
         if (res.ok) {
             if (typeof showToast === "function") {
-                showToast(`Meta de ${data.character_name} salva com sucesso! 🎉`);
+                showToast(`Meta de ${data.character_name} salva! Contagem regressiva iniciada ⏳`);
             }
             window.updateGoalsCountBadge();
             if (saveBtn) {
-                saveBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Meta Salva no Banco!`;
+                saveBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Meta Salva & Tempo Correndo!`;
                 setTimeout(() => {
                     saveBtn.innerHTML = `<i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner`;
                     saveBtn.disabled = false;
-                }, 2000);
+                }, 2200);
             }
         }
     } catch (e) {
@@ -1439,6 +1483,106 @@ window.updateGoalsCountBadge = async function() {
             if (badge) badge.innerText = String(count);
         }
     } catch (e) {}
+};
+
+window.goalsCountdownTimerId = null;
+
+window.formatGoalDateTimeBR = function(isoStr, includeTime = true) {
+    if (!isoStr) return "N/A";
+    const dt = new Date(isoStr);
+    if (isNaN(dt.getTime())) return String(isoStr);
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+    if (!includeTime) return `${dd}/${mm}/${yyyy}`;
+    const hh = String(dt.getHours()).padStart(2, '0');
+    const min = String(dt.getMinutes()).padStart(2, '0');
+    return `${dd}/${mm}/${yyyy} às ${hh}:${min}`;
+};
+
+window.formatGoalLiveCountdown = function(remainingSeconds) {
+    const sec = Math.max(0, Math.floor(remainingSeconds));
+    const days = Math.floor(sec / 86400);
+    const hours = Math.floor((sec % 86400) / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    const secs = sec % 60;
+    const pad = n => String(n).padStart(2, '0');
+    return `${days}d ${pad(hours)}h ${pad(mins)}m ${pad(secs)}s`;
+};
+
+window.tickGachaGoalsCountdown = function() {
+    const cards = document.querySelectorAll(".gacha-goal-live-card");
+    if (!cards.length) return;
+
+    const nowMs = Date.now();
+    cards.forEach(card => {
+        const createdMs = parseFloat(card.dataset.createdMs || "0");
+        const targetMs = parseFloat(card.dataset.targetMs || "0");
+        const totalDays = Math.max(1, parseInt(card.dataset.targetDays || "21"));
+        const curPulls = parseInt(card.dataset.curPulls || "0");
+        const projPulls = parseInt(card.dataset.projPulls || "0");
+
+        if (!createdMs || !targetMs) return;
+
+        const totalSec = Math.max(1, (targetMs - createdMs) / 1000);
+        const elapsedSec = Math.max(0, (nowMs - createdMs) / 1000);
+        const remainingSec = Math.max(0, (targetMs - nowMs) / 1000);
+        const ratio = Math.min(1, Math.max(0, elapsedSec / totalSec));
+        const pct = (ratio * 100).toFixed(1);
+
+        const daysElapsed = Math.min(totalDays, Math.floor(elapsedSec / 86400));
+        const daysRemaining = remainingSec > 0 ? Math.max(0, Math.ceil(remainingSec / 86400)) : 0;
+        const isArrived = remainingSec <= 0;
+        const pullsNow = curPulls + Math.round(Math.max(0, projPulls - curPulls) * ratio);
+
+        const timerEl = card.querySelector(".goal-live-countdown-val");
+        const statusBadgeEl = card.querySelector(".goal-live-status-badge");
+        const progressBarEl = card.querySelector(".goal-live-time-bar");
+        const progressPctEl = card.querySelector(".goal-live-time-pct");
+        const daysSummaryEl = card.querySelector(".goal-live-days-summary");
+        const pullsNowEl = card.querySelector(".goal-live-pulls-now");
+
+        if (isArrived) {
+            if (timerEl) {
+                timerEl.innerHTML = `<i class="fa-solid fa-champagne-glasses"></i> O DIA DA ATUALIZAÇÃO CHEGOU!`;
+                timerEl.style.color = "#4ade80";
+            }
+            if (statusBadgeEl) {
+                statusBadgeEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Banner Disponível!`;
+                statusBadgeEl.style.background = "rgba(16, 185, 129, 0.22)";
+                statusBadgeEl.style.color = "#4ade80";
+                statusBadgeEl.style.borderColor = "rgba(16, 185, 129, 0.5)";
+            }
+            if (daysSummaryEl) {
+                daysSummaryEl.innerText = `${totalDays}/${totalDays} dias concluídos • Atualização / Banner no ar!`;
+            }
+        } else {
+            if (timerEl) {
+                timerEl.innerText = window.formatGoalLiveCountdown(remainingSec);
+            }
+            if (daysSummaryEl) {
+                daysSummaryEl.innerText = `${daysElapsed} de ${totalDays} dias decorridos • Faltam ${daysRemaining} ${daysRemaining === 1 ? 'dia' : 'dias'}`;
+            }
+        }
+
+        if (progressBarEl) {
+            progressBarEl.style.width = `${pct}%`;
+        }
+        if (progressPctEl) {
+            progressPctEl.innerText = `${pct}%`;
+        }
+        if (pullsNowEl) {
+            pullsNowEl.innerText = `~${pullsNow} tiros hoje`;
+        }
+    });
+};
+
+window.startGoalsLiveCountdown = function() {
+    if (window.goalsCountdownTimerId) {
+        clearInterval(window.goalsCountdownTimerId);
+    }
+    window.tickGachaGoalsCountdown();
+    window.goalsCountdownTimerId = setInterval(window.tickGachaGoalsCountdown, 1000);
 };
 
 window.loadGachaGoals = async function(gameFilter = "all") {
@@ -1464,6 +1608,10 @@ window.loadGachaGoals = async function(gameFilter = "all") {
         window.updateGoalsCountBadge();
 
         if (goals.length === 0) {
+            if (window.goalsCountdownTimerId) {
+                clearInterval(window.goalsCountdownTimerId);
+                window.goalsCountdownTimerId = null;
+            }
             grid.innerHTML = `
                 <div style="text-align: center; color: var(--text-muted); padding: 50px 20px; grid-column: 1 / -1; background: rgba(0,0,0,0.2); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.1);">
                     <i class="fa-solid fa-bullseye" style="font-size: 36px; color: #64748b; margin-bottom: 12px;"></i>
@@ -1479,21 +1627,90 @@ window.loadGachaGoals = async function(gameFilter = "all") {
             const col = chance >= 75 ? '#34d399' : (chance >= 50 ? '#fbbf24' : '#ef4444');
             const gameTitle = g.game_id === 'genshin' ? 'Genshin Impact' : (g.game_id === 'hsr' ? 'Honkai: Star Rail' : 'Zenless Zone Zero');
 
+            const createdDt = g.created_at ? new Date(g.created_at) : new Date();
+            const createdMs = isNaN(createdDt.getTime()) ? Date.now() : createdDt.getTime();
+            const targetDays = Math.max(1, parseInt(g.target_days) || 21);
+            const targetDt = g.target_date ? new Date(g.target_date) : new Date(createdMs + targetDays * 86400000);
+            const targetMs = isNaN(targetDt.getTime()) ? (createdMs + targetDays * 86400000) : targetDt.getTime();
+
+            const createdFormatted = window.formatGoalDateTimeBR(createdDt.toISOString(), true);
+            const targetFormatted = window.formatGoalDateTimeBR(targetDt.toISOString(), true);
+            const isArrived = Boolean(g.is_arrived) || (targetMs <= Date.now());
+            const timePct = g.time_progress_pct !== undefined ? g.time_progress_pct : 0;
+            const pullsNow = g.accumulated_pulls_now !== undefined ? g.accumulated_pulls_now : g.current_pulls;
+            const charIconHtml = g.character_icon
+                ? `<img src="${g.character_icon}" alt="${g.character_name}" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover; border: 1px solid ${col}66; background: rgba(0,0,0,0.4);" onerror="this.style.display='none'">`
+                : `<div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; color: ${col};"><i class="fa-solid fa-star"></i></div>`;
+
             return `
-                <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255,255,255,0.08); border-top: 3px solid ${col}; border-radius: 14px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: flex; flex-direction: column; justify-content: space-between;">
+                <div class="gacha-goal-live-card"
+                     data-goal-id="${g.id}"
+                     data-created-ms="${createdMs}"
+                     data-target-ms="${targetMs}"
+                     data-target-days="${targetDays}"
+                     data-cur-pulls="${g.current_pulls || 0}"
+                     data-proj-pulls="${g.projected_pulls || 0}"
+                     style="background: rgba(15, 23, 42, 0.92); border: 1px solid rgba(255,255,255,0.08); border-top: 3px solid ${col}; border-radius: 14px; padding: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.35); display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
-                            <div>
-                                <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">${gameTitle}</span>
-                                <h4 style="margin: 2px 0 0 0; color: #fff; font-size: 17px; font-weight: 800;">${g.character_name}</h4>
+                        <!-- Cabeçalho com Ícone e Meta -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; margin-bottom: 12px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                ${charIconHtml}
+                                <div>
+                                    <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; display: block;">${gameTitle}</span>
+                                    <h4 style="margin: 2px 0 0 0; color: #fff; font-size: 16px; font-weight: 800; line-height: 1.2;">${g.character_name}</h4>
+                                </div>
                             </div>
-                            <span style="font-size: 12px; font-weight: 800; background: ${col}22; color: ${col}; padding: 3px 10px; border-radius: 8px; border: 1px solid ${col}44;">
+                            <span style="font-size: 12px; font-weight: 800; background: ${col}22; color: ${col}; padding: 4px 10px; border-radius: 8px; border: 1px solid ${col}44; white-space: nowrap;">
                                 Meta ${g.target_rank_str}
                             </span>
                         </div>
 
-                        <!-- Barra de Probabilidade -->
-                        <div style="margin: 12px 0;">
+                        <!-- Painel do Cronômetro em Tempo Real (Correndo até a Atualização / Banner) -->
+                        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(56, 189, 248, 0.08)); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 12px; padding: 12px; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; gap: 6px; flex-wrap: wrap;">
+                                <span style="font-size: 10px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <i class="fa-solid fa-stopwatch" style="color: #38bdf8;"></i> Tempo até o Banner / Atualização
+                                </span>
+                                <span class="goal-live-status-badge" style="font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+                                    <i class="fa-solid fa-hourglass-half fa-spin" style="animation-duration: 3s;"></i> Correndo o Tempo
+                                </span>
+                            </div>
+
+                            <!-- Relógio Digital Regressivo -->
+                            <div class="goal-live-countdown-val" style="font-family: 'Outfit', monospace; font-size: 20px; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px; margin: 4px 0;">
+                                ${isArrived ? '<i class="fa-solid fa-champagne-glasses"></i> O DIA DA ATUALIZAÇÃO CHEGOU!' : '--d --h --m --s'}
+                            </div>
+                            <div class="goal-live-days-summary" style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">
+                                Calculando progresso diário...
+                            </div>
+
+                            <!-- Barra de Progresso do Tempo -->
+                            <div>
+                                <div style="display: flex; justify-content: space-between; font-size: 10px; color: #cbd5e1; margin-bottom: 3px;">
+                                    <span>Progresso Temporal até a Atualização:</span>
+                                    <strong class="goal-live-time-pct" style="color: #38bdf8;">${timePct}%</strong>
+                                </div>
+                                <div class="gacha-dist-bar-track" style="height: 6px; background: rgba(255,255,255,0.08);">
+                                    <div class="gacha-dist-bar-fill goal-live-time-bar" style="width: ${timePct}%; background: linear-gradient(90deg, #38bdf8, #10b981); transition: width 0.5s ease;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Datas de Criação e de Chegada do Banner -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.1); font-size: 10px;">
+                                <div>
+                                    <span style="color: var(--text-muted); display: block;"><i class="fa-regular fa-calendar-plus" style="color: #94a3b8;"></i> Criado em:</span>
+                                    <strong style="color: #e2e8f0;">${createdFormatted}</strong>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="color: var(--text-muted); display: block;"><i class="fa-solid fa-rocket" style="color: #fbbf24;"></i> Chegada do Banner:</span>
+                                    <strong style="color: #fbbf24;">${targetFormatted}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Probabilidade Monte Carlo -->
+                        <div style="margin: 10px 0 12px 0;">
                             <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
                                 <span style="color: var(--text-muted);">Probabilidade Calculada:</span>
                                 <strong style="color: ${col};">${chance}%</strong>
@@ -1506,12 +1723,13 @@ window.loadGachaGoals = async function(gameFilter = "all") {
                         <!-- Resumo dos Dados -->
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 11px; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 12px;">
                             <div>
-                                <span style="color: var(--text-muted); display: block;">Tiros Projetados:</span>
-                                <strong style="color: #fbbf24; font-size: 13px;">${g.projected_pulls} tiros</strong>
+                                <span style="color: var(--text-muted); display: block;">Tiros (Início ➔ Banner):</span>
+                                <strong style="color: #fbbf24; font-size: 12px;">${g.current_pulls} ➔ ${g.projected_pulls} tiros</strong>
+                                <span class="goal-live-pulls-now" style="display: block; font-size: 10px; color: #38bdf8; font-weight: 600;">~${pullsNow} tiros hoje</span>
                             </div>
                             <div>
-                                <span style="color: var(--text-muted); display: block;">Janela de Tempo:</span>
-                                <strong style="color: #38bdf8; font-size: 13px;">${g.target_days} dias</strong>
+                                <span style="color: var(--text-muted); display: block;">Prazo Planejado:</span>
+                                <strong style="color: #38bdf8; font-size: 12px;">${targetDays} dias totais</strong>
                             </div>
                             <div>
                                 <span style="color: var(--text-muted); display: block;">Pity Inicial:</span>
@@ -1527,12 +1745,14 @@ window.loadGachaGoals = async function(gameFilter = "all") {
                     <!-- Botões de Ação -->
                     <div style="display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
                         <button onclick="window.deleteGachaGoal(${g.id})" class="secondary-btn" style="padding: 6px 10px; font-size: 11px; color: #f87171; border-color: rgba(239, 68, 68, 0.4); flex: 1;">
-                            <i class="fa-solid fa-trash-can"></i> Excluir
+                            <i class="fa-solid fa-trash-can"></i> Excluir Meta
                         </button>
                     </div>
                 </div>
             `;
         }).join('');
+
+        window.startGoalsLiveCountdown();
 
     } catch (e) {
         console.error("Erro ao carregar metas:", e);
