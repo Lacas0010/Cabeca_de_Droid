@@ -19,28 +19,29 @@ Obrigado pelo seu interesse em contribuir com o **Cabeça de Droid**! Este docum
 
 O Cabeça de Droid é projetado como uma suíte **100% local, autônoma, resiliente e segura**. Nossas premissas inegociáveis são:
 - **Privacidade & Segurança em Primeiro Lugar:** Tokens e cookies de sessão nunca devem trafegar para serviços de terceiros e devem ser criptografados em repouso no Windows com DPAPI e no Linux com AES-256 derivado da máquina.
-- **Zero Regressão:** Todos os 74 testes unitários automatizados devem continuar passando a cada modificação.
+- **Zero Regressão:** Todos os 150 testes unitários automatizados devem continuar passando a cada modificação.
 - **Clean Architecture:** Desacoplamento estrito entre a camada de apresentação (`routers/`), contratos de dados (`schemas/`), regras de negócio (`services/`) e persistência/segurança (`core/` e `database.py`).
+- **Zero Hardcoding & Automação de Dados:** É proibido criar dicionários hardcoded com dados voláteis no código Python (tier lists, personagens, multiplicadores). Toda ingestão deve vir dinamicamente de scrapers para arquivos JSON em `static_data/`.
 - **Resiliência Offline:** O sistema deve sempre conter fallbacks e sementes locais (`static_data/`) para inicializar e operar mesmo sem conexão com a internet.
 
 ---
 
-## 📊 Evolução Arquitetural: Mudanças da v4.5 para a v5.0
+## 📊 Evolução Arquitetural: Da v4.5 à v5.2
 
-A versão **5.0** representa uma refatoração estrutural profunda, migrando o sistema de um monólito centrado em `server.py` para uma arquitetura modular em camadas desacopladas.
+A versão **5.2** consolida a modularização total tanto no backend quanto no frontend, adicionando módulos estocásticos de previsão de banners, contagem regressiva em tempo real e montador de times HD.
 
 ### Comparativo Arquitetural
 
-| **Aspecto** | **Versão 4.5** | **Versão 5.x (Atual)** |
+| **Aspecto** | **Versão 4.5** | **Versão 5.x / 5.2 (Atual)** |
 | :--- | :--- | :--- |
 | **Ponto Central (`server.py`)** | Monólito com >3.200 linhas contendo rotas, lógica e SQL | Orquestrador limpo de ciclo de vida com ~200 linhas |
 | **Camada de Roteamento** | Endpoints misturados em funções soltas | 15 módulos `APIRouter` especializados em [`routers/`](routers/) |
 | **Contratos & Tipagem** | Dicionários `dict` brutos sem validação estrita | Modelos tipados [Pydantic v2](schemas/) em [`schemas/`](schemas/) |
 | **Regras de Negócio** | Lógica acoplada dentro dos handlers HTTP | Serviços isolados e testáveis em [`services/`](services/) |
-| **Dados & Metadados** | Dicionários hardcoded em arquivos Python | JSONs desacoplados e sementes em [`static_data/`](static_data/) |
-| **Infraestrutura Core** | Funções globais espalhadas | Módulos [`core/config.py`](core/config.py) e [`core/security.py`](core/security.py) |
-| **Testes Automatizados** | 2 arquivos de teste isolados | 74 testes unitários em 10 suítes completas |
-| **Usabilidade Mobile** | Adaptada com alguns layouts lado a lado | Polimento v5.0 com empilhamento vertical total e safe areas |
+| **Frontend Web** | Script monolítico `app.js` | 12 módulos ES6 desacoplados em [`static/js/modules/`](static/js/modules/) com cache-busting |
+| **Metas de Gacha & Banners** | Ausente | Projeção Monte Carlo com cronômetro em tempo real e horários oficiais (23:30 / 20h / 14h) |
+| **Montador de Times** | Apenas recomendador de texto | Construtor visual de card de time HD, glassmorphism e cópia para Clipboard |
+| **Testes Automatizados** | 2 arquivos de teste isolados | 150 testes unitários em suítes automatizadas passando 100% |
 
 ### Novos Recursos Adicionados na v5.0
 1. **Ordem de Serviço Diária (`routers/farming.py`):** Roteiro automatizado de gasto de resina e checklist de energia diário.
@@ -110,10 +111,15 @@ hoyo-projetos/
 │   └── ...
 ├── static_data/             # Bases de dados estáticas desacopladas (JSON puro)
 ├── static/                  # Frontend Web SPA (HTML5, Vanilla CSS, JS ES6+)
+│   ├── js/
+│   │   ├── app.js           # Ponto de entrada e orquestrador de eventos
+│   │   └── modules/         # 12 submódulos desacoplados (api_client, chat_rag, gacha_sim, etc.)
+│   ├── style.css            # Folha de estilos Glassmorphism e responsividade
+│   └── index.html           # Documento principal da SPA
 ├── assets/                  # Ícones estáticos e avatares oficiais
 ├── scrapers/                # Raspadores de metagame e guias do Prydwen (HSR, Genshin, ZZZ)
 ├── scripts/                 # Scripts utilitários e serviços do sistema (systemd)
-├── tests/                   # Suíte de 74 testes unitários automatizados
+├── tests/                   # Suíte de 150 testes unitários automatizados
 ├── server.py                # Orquestrador FastAPI modular e ciclo de vida
 └── main.py                  # Entrypoint principal de execução
 ```
@@ -134,8 +140,14 @@ hoyo-projetos/
 
 3. **Frontend (Vanilla HTML5 / CSS3 / JavaScript ES6+):**
    - Não utilize frameworks pesados (React, Vue, Tailwind) para manter o carregamento instantâneo.
+   - Todo código JavaScript novo deve ser estruturado em submódulos dentro de `static/js/modules/` e importado pelo `app.js` com query string de cache-busting (ex: `?v=23.5`).
    - Utilize variáveis CSS de tokens definidas em `:root` no [`static/style.css`](static/style.css).
    - Todo novo componente deve possuir media query responsiva para telas verticais de smartphones ($\le 768\text{px}$ e $\le 480\text{px}$).
+
+4. **Horários Oficiais de Lançamento de Banners:**
+   - Ao manipular datas de término ou chegada de banners:
+     - **1ª Fase (os 3 jogos)**: `23:30`.
+     - **2ª Fase**: Genshin `20:00`; HSR `14:00`; ZZZ `14:00`.
 
 ---
 
@@ -144,7 +156,7 @@ hoyo-projetos/
 Todos os testes utilizam o módulo nativo `unittest` do Python, dispensando bibliotecas adicionais:
 
 ```bash
-# Executar toda a suíte de testes (74 testes)
+# Executar toda a suíte de testes (150 testes)
 python -m unittest discover tests
 
 # Executar uma suíte de teste específica
@@ -156,6 +168,22 @@ python -m unittest tests.test_static_data_suite
 ### Regras para Novos Testes
 * Toda nova funcionalidade ou rota adicionada **deve** vir acompanhada de um teste unitário correspondente na pasta `tests/`.
 * Testes que envolvem chamadas de rede externas (HoYoLAB, Groq, Prydwen) **devem utilizar mocks** (`unittest.mock.patch`) para execução 100% determinística e offline.
+
+---
+
+## 🚀 Deploy Automatizado na VM Oracle (Deploy & CI/CD)
+
+Ao atualizar a aplicação e publicar na VM remota:
+1. Valide a integridade local: `python -m unittest discover tests`.
+2. Commit e push para o GitHub: `git push origin main`.
+3. Dispare a atualização remota via SSH:
+   ```bash
+   ssh -i "path/to/ssh-key.key" ubuntu@147.15.40.30 "cd ~/Cabeca_de_Droid && git pull origin main && sudo systemctl restart cabeca-de-droid"
+   ```
+4. Verifique o status ativo do serviço:
+   ```bash
+   ssh -i "path/to/ssh-key.key" ubuntu@147.15.40.30 "sudo systemctl is-active cabeca-de-droid && sudo journalctl -u cabeca-de-droid -n 15 --no-pager"
+   ```
 
 ---
 
@@ -174,7 +202,7 @@ Utilizamos a convenção de [Conventional Commits](https://www.conventionalcommi
 
 ### Checklist para Submissão de Pull Request (PR)
 - [ ] O código segue os padrões do PEP 8 e da Clean Architecture.
-- [ ] O comando `python -m unittest discover` passa com **zero falhas**.
+- [ ] O comando `python -m unittest discover tests` passa com **zero falhas** (150 testes).
 - [ ] O código foi testado no modo desktop e mobile.
 - [ ] Nenhum arquivo de credencial (`config.json`, `cookies.enc`, `*.key`) foi commitado.
 - [ ] As alterações relevantes foram refletidas no `README.md` e `CHANGELOG.md`.

@@ -6,6 +6,50 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.2.0] - 2026-10-28
+
+### ✨ Adicionado
+- **Metas de Banners Salvas com Cronômetro Regressivo em Tempo Real:**
+  - Persistência no SQLite (`gacha_forecast_goals`) com data/hora de criação (`created_at`), data/hora de chegada do banner (`target_date`) e fase (`banner_phase`).
+  - Painel de cronômetro regressivo com contagem ativa segundo a segundo (`window.tickGachaGoalsCountdown`), barra de progresso temporal e estimativa dinâmica de tiros acumulados até o presente.
+  - Sincronização dos **Horários Oficiais de Lançamento dos Banners**:
+    - **1ª Fase (os 3 jogos: Genshin, HSR e ZZZ)**: `23:30` (horário de término da manutenção do patch).
+    - **2ª Fase**: `20:00` no Genshin Impact; `14:00` no Honkai: Star Rail e Zenless Zone Zero.
+  - Seletor de Fase no painel de planejamento do Gacha Forecast (`1ª Fase (23:30)` e `2ª Fase (20h / 14h)`), com labels dinâmicos que se adaptam automaticamente ao jogo ativo.
+  - Rotina autônoma de migração e atualização de metas existentes ([`database.update_all_saved_goals_schedule`](database.py)), garantindo que qualquer meta salva anteriormente receba o horário oficial no banco.
+- **Montador de Card de Time & Exportador HD (Glassmorphism):**
+  - Construtor visual de composições com suporte a 4 slots (Genshin, HSR) e 3 slots (ZZZ).
+  - Seletor de elenco com lazy-loading automático (`/api/roster/{game_id}`), badges de posição de equipe (`#1`, `#2`, `#3`, `#4`) e busca em tempo real.
+  - Exportação em alta resolução (PNG 2x) via `html2canvas` com pré-cálculo geométrico de aspect ratio ("cover") no DOM clonado, eliminando distorções em artes de corpo inteiro e splash art panorâmica.
+  - Botão de cópia direta para a área de transferência (`navigator.clipboard.write` com blob `image/png`) para compartilhamento imediato no Discord ou WhatsApp.
+- **Modularização do Frontend Vanilla ES6 (`static/js/modules/`):**
+  - Desacoplamento do antigo monólito `app.js` em 12 submódulos especializados:
+    - `api_client.js`: Cliente HTTP centralizado e tratamento de erros.
+    - `modal.js`: Controle de janelas modais flutuantes e backdrops.
+    - `navigation.js`: Roteamento de abas e sub-navegação por jogo.
+    - `config_manager.js`: Gestão de formulários, cofre DPAPI e status de credenciais.
+    - `sync_manager.js`: Controles de sincronização assíncrona e stream SSE.
+    - `endgame.js`: Roteamento de registros de Abismo, MoC, Ficção Pura e Shiyu.
+    - `roster.js`: Renderização de galeria, gráficos SVG e filtros por elemento/raridade.
+    - `build_comparator.js`: Inspetor de builds, Roll Value e comparador com meta.
+    - `chat_rag.js`: Chat RAG inteligente, orquestração de SSE e construtor de times.
+    - `farming.js`: Ordem de serviço diária e calendário de rotação de domínios.
+    - `gacha_sim.js`: Simulador Monte Carlo, Gacha Forecast e metas salvas com cronômetro.
+    - `gacha_tracker.js`: Rastreador universal UIGF/SRGF e importador de histórico de tiros.
+  - Cache-busting estrito nos imports ES6 (`?v=23.5`) para invalidar caches antigos no navegador.
+- **Expansão da Suíte de Testes Automatizados para 150 Testes:**
+  - Adição de testes unitários em `tests/test_gacha_forecast_suite.py` cobrindo cálculo de horários por fase/jogo, persistência temporal, avanço do relógio, chegada de banner e migração de metas.
+  - 100% de aprovação na execução do módulo nativo `unittest`.
+
+### 🔄 Modificado
+- **Desambiguação de Funções de Seleção de Time (`static/js/modules/chat_rag.js`):**
+  - Separação estrita entre `toggleChatTeamCharacter` (seletor lateral do Chat IA) e `toggleCharacterInTeam` (Montar Card de Time), corrigindo colisão de escopo global.
+  - Utilização de `this.dataset.name` com sanitização de caracteres especiais/apóstrofos no seletor de personagens.
+- **Deploy Contínuo na VM Oracle Cloud:**
+  - Fluxo padronizado de CI/CD via SSH com validação de testes locais antes do push, pull remoto na VM e reinicialização com verificação de logs no `systemd`.
+
+---
+
 ## [Unreleased] - 2026-10-21
 
 ### ✨ Adicionado

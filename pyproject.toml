@@ -1,3 +1,12 @@
+[project]
+name = "cabeca-de-droid"
+version = "5.2.0"
+description = "Suíte local inteligente com interface Web Glassmorphism, Clean Architecture FastAPI, RAG e gestão de contas HoYoverse."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Lucas (Lacas0010)" }]
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"

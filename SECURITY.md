@@ -1,12 +1,12 @@
 # 🛡️ Política de Segurança e Governança de Dados
 
-Este documento descreve as práticas de segurança, gestão de credenciais locais, privacidade e a arquitetura de proteção implementada no **Cabeça de Droid (v5.0+)**.
+Este documento descreve as práticas de segurança, gestão de credenciais locais, privacidade e a arquitetura de proteção implementada no **Cabeça de Droid (v5.2+)**.
 
 ---
 
 ## 🔒 1. Tratamento de Credenciais Sensíveis
 
-O aplicativo opera estritamente de forma **local** com duas categorias de dados:
+O aplicativo opera estritamente de forma **local** com três categorias de dados sensíveis:
 
 1. **Tokens de Sessão da HoYoLAB (`cookies.enc`):**
    - `ltuid_v2` / `account_id_v2`: Identificador público da conta no HoYoLAB.
@@ -17,8 +17,11 @@ O aplicativo opera estritamente de forma **local** com duas categorias de dados:
 2. **Chaves de API de IA (`config.enc` / `config.json`):**
    - Chaves do Groq Cloud (`gsk_...`) para alimentação do motor RAG local.
 
+3. **Chaves Privadas de Infraestrutura & Deploy (`*.key` / `*.pem`):**
+   - Chaves SSH de acesso à VM de produção Oracle Cloud, mantidas fora da árvore Git e blindadas pelo `.gitignore`.
+
 > [!CAUTION]
-> Mesmo que esses cookies não permitam alteração de senha da sua conta HoYoverse, trate seus arquivos `.enc` como credenciais privadas. Nunca compartilhe dumps de cookies ou seus arquivos cifrados em repositórios públicos.
+> Mesmo que esses cookies não permitam alteração de senha da sua conta HoYoverse, trate seus arquivos `.enc` e chaves `.key` como credenciais estritamente privadas. Nunca compartilhe dumps de cookies, chaves de API ou arquivos cifrados em repositórios públicos.
 
 ---
 
@@ -32,6 +35,7 @@ O aplicativo opera estritamente de forma **local** com duas categorias de dados:
 | **4. Isolamento Loopback Padrão** | Servidor inicia vinculado a `127.0.0.1`. Acesso via rede local (`0.0.0.0`) exige ativação explícita pelo usuário. | [`core/config.py`](core/config.py) / [`main.py`](main.py) |
 | **5. Bloqueio Local por PIN** | Proteção por PIN com hash `PBKDF2-HMAC-SHA256` (120.000 iterações com salt individual) e bloqueio HTTP 423. | [`routers/security.py`](routers/security.py) |
 | **6. Purga Instantânea de Dados** | Endpoint `POST /api/security/clear_credentials` para exclusão imediata e permanente de todas as credenciais do cofre. | [`routers/security.py`](routers/security.py) |
+| **7. Suíte de Testes Criptográficos** | 150 testes unitários automatizados cobrindo sanitização, mascaramento, hash de PIN e fallback DPAPI/AES. | [`tests/`](tests/) |
 
 ---
 
@@ -45,11 +49,20 @@ config.enc
 cookies.json
 cookies.enc
 *.enc
+*.enc.bak
+test_*.enc
+test_*.json
+chave de api.txt
 *.key
 *.pem
+*.pfx
 hoyo_app.db
-hoyo_app.db-wal
-hoyo_app.db-shm
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
 user_data_google/
 .venv/
 ```
@@ -62,3 +75,4 @@ Se suspeitar que seus tokens foram expostos:
 1. **Invalidar Sessões HoYoLAB:** Acesse [hoyolab.com](https://www.hoyolab.com), vá em configurações de conta e clique em **Sair de Todas as Sessões** (ou altere sua senha HoYoVerse).
 2. **Revogar Chaves de IA:** Gere novas chaves no painel da [Groq Console](https://console.groq.com/keys).
 3. **Limpar Cofre Local:** Clique no botão **Limpar Credenciais** na aba de Configurações do app.
+4. **Rotacionar Chaves SSH:** Gere um novo par de chaves SSH para conexões na nuvem caso uma chave `.key` seja comprometida.

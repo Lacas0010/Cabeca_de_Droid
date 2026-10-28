@@ -48,6 +48,9 @@ config.enc
 cookies.json
 cookies.enc
 *.enc
+*.enc.bak
+test_*.enc
+test_*.json
 chave de api.txt
 *.key
 *.pem
