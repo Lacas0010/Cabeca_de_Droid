@@ -3,18 +3,18 @@
 // ==========================================================================
 
 // Importação ordenada dos módulos desacoplados
-import "./modules/api_client.js";
-import "./modules/modal.js";
-import "./modules/navigation.js";
-import "./modules/config_manager.js";
-import "./modules/sync_manager.js";
-import "./modules/endgame.js";
-import "./modules/roster.js";
-import "./modules/build_comparator.js";
-import "./modules/chat_rag.js";
-import "./modules/farming.js";
-import "./modules/gacha_sim.js";
-import "./modules/gacha_tracker.js";
+import "./modules/api_client.js?v=23.4";
+import "./modules/modal.js?v=23.4";
+import "./modules/navigation.js?v=23.4";
+import "./modules/config_manager.js?v=23.4";
+import "./modules/sync_manager.js?v=23.4";
+import "./modules/endgame.js?v=23.4";
+import "./modules/roster.js?v=23.4";
+import "./modules/build_comparator.js?v=23.4";
+import "./modules/chat_rag.js?v=23.4";
+import "./modules/farming.js?v=23.4";
+import "./modules/gacha_sim.js?v=23.4";
+import "./modules/gacha_tracker.js?v=23.4";
 
 // Inicialização da Aplicação
 // ==========================================================================

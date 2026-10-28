@@ -298,7 +298,7 @@ function setupChatSystem() {
     }
 }
 
-// Funções globais auxiliares do Montador de Times
+// Funções globais auxiliares do Montador de Times (Chat IA)
 let selectedTeam = [];
 
 function updateTeamBuilderGrid(gameId) {
@@ -309,7 +309,7 @@ function updateTeamBuilderGrid(gameId) {
     const btn = document.getElementById("team-analyze-btn");
     if (btn) btn.disabled = true;
     
-    const roster = globalRoster[gameId] || [];
+    const roster = (window.globalRoster && window.globalRoster[gameId]) || globalRoster[gameId] || [];
     if (roster.length === 0) {
         grid.innerHTML = `<div style="grid-column: span 4; font-size: 10px; color: var(--text-secondary); text-align: center; padding: 12px;">Roster do ${gameId.toUpperCase()} não sincronizado.</div>`;
         return;
@@ -318,9 +318,10 @@ function updateTeamBuilderGrid(gameId) {
     grid.innerHTML = roster.map(char => {
         const defaultFallback = `/assets/${gameId}_icon.png`;
         const avatarSrc = char.icon || defaultFallback;
+        const safeDataName = (char.name || "").replace(/"/g, "&quot;");
         return `
-            <div class="team-char-select-card" data-name="${char.name}" style="position: relative; aspect-ratio: 1; cursor: pointer; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; background: rgba(0,0,0,0.3); transition: all 0.2s;" onclick="toggleCharacterInTeam(this, '${char.name.replace(/'/g, "\\'")}', '${gameId}')">
-                <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${defaultFallback}';" style="width: 100%; height: 100%; object-fit: cover;" alt="${char.name}">
+            <div class="team-char-select-card" data-name="${safeDataName}" style="position: relative; aspect-ratio: 1; cursor: pointer; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; background: rgba(0,0,0,0.3); transition: all 0.2s;" onclick="window.toggleChatTeamCharacter(this, this.dataset.name, '${gameId}')">
+                <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${defaultFallback}';" style="width: 100%; height: 100%; object-fit: cover;" alt="${safeDataName}">
                 <div class="char-select-overlay" style="position: absolute; inset: 0; background: rgba(167, 139, 250, 0.45); display: none; align-items: center; justify-content: center; font-size: 14px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
                     <i class="fa-solid fa-check"></i>
                 </div>
@@ -330,7 +331,8 @@ function updateTeamBuilderGrid(gameId) {
     }).join('');
 }
 
-function toggleCharacterInTeam(element, charName, gameId) {
+function toggleChatTeamCharacter(element, charName, gameId) {
+    if (!element || typeof element.querySelector !== "function") return;
     const overlay = element.querySelector(".char-select-overlay");
     const maxSelect = gameId === "zzz" ? 3 : 4;
     
@@ -338,7 +340,7 @@ function toggleCharacterInTeam(element, charName, gameId) {
         selectedTeam = selectedTeam.filter(name => name !== charName);
         element.style.borderColor = "rgba(255,255,255,0.06)";
         element.style.boxShadow = "none";
-        overlay.style.display = "none";
+        if (overlay) overlay.style.display = "none";
     } else {
         if (selectedTeam.length >= maxSelect) {
             alert(`Você só pode selecionar até ${maxSelect} personagens para o time de ${gameId.toUpperCase()}!`);
@@ -347,12 +349,13 @@ function toggleCharacterInTeam(element, charName, gameId) {
         selectedTeam.push(charName);
         element.style.borderColor = "#a78bfa";
         element.style.boxShadow = "0 0 8px rgba(167, 139, 250, 0.3)";
-        overlay.style.display = "flex";
+        if (overlay) overlay.style.display = "flex";
     }
     
     const btn = document.getElementById("team-analyze-btn");
     if (btn) btn.disabled = selectedTeam.length === 0;
 }
+window.toggleChatTeamCharacter = toggleChatTeamCharacter;
 
 function appendChatMessage(role, content) {
     const messagesArea = document.getElementById("chat-messages");
@@ -402,17 +405,26 @@ const TEAM_MAX_MEMBERS = {
     zzz: 3
 };
 
-// 1. Alterna personagem no time
-window.toggleCharacterInTeam = function(gameId, charName) {
-    const roster = globalRoster[gameId] || [];
-    const char = roster.find(c => c.name === charName);
+// 1. Alterna personagem no time (compatível tanto com Montar Card de Time quanto com Chat IA)
+function toggleCharacterInTeam(arg1, arg2, arg3) {
+    // Se o primeiro argumento for um elemento DOM, veio do seletor lateral do Chat IA: (element, charName, gameId)
+    if (arg1 && typeof arg1 === "object" && typeof arg1.querySelector === "function") {
+        return toggleChatTeamCharacter(arg1, arg2, arg3);
+    }
+
+    const gameId = String(arg1 || "").toLowerCase().trim();
+    const charName = String(arg2 || "").trim();
+    if (!gameId || !charName) return;
+
+    const roster = (window.globalRoster && window.globalRoster[gameId]) || (typeof globalRoster !== "undefined" ? globalRoster[gameId] : []) || [];
+    const char = roster.find(c => c.name === charName || (c.name || "").trim() === charName);
     if (!char) return;
 
     const team = teamBuilderState[gameId];
     if (!team) return;
 
     const maxSlots = TEAM_MAX_MEMBERS[gameId] || 4;
-    const existingIdx = team.members.findIndex(m => m.name === charName);
+    const existingIdx = team.members.findIndex(m => m.name === char.name);
 
     if (existingIdx !== -1) {
         team.members.splice(existingIdx, 1);
@@ -434,7 +446,8 @@ window.toggleCharacterInTeam = function(gameId, charName) {
     }
 
     updateTeamUI(gameId);
-};
+}
+window.toggleCharacterInTeam = toggleCharacterInTeam;
 
 // 2. Remove membro do time por índice de slot
 window.removeTeamMember = function(gameId, slotIndex) {
@@ -577,9 +590,25 @@ window.renderTeamRosterSelector = function(gameId) {
     const container = document.getElementById(`team-roster-grid-${gameId}`);
     if (!container) return;
 
-    const roster = globalRoster[gameId] || [];
+    const roster = (window.globalRoster && window.globalRoster[gameId]) || (typeof globalRoster !== "undefined" ? globalRoster[gameId] : []) || [];
     if (roster.length === 0) {
-        container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">Nenhum personagem carregado. Sincronize a conta acima.</div>`;
+        container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">Carregando elenco sincronizado...</div>`;
+        fetch(`/api/roster/${gameId}`)
+            .then(res => res.ok ? res.json() : [])
+            .then(data => {
+                if (Array.isArray(data) && data.length > 0) {
+                    if (!window.globalRoster) window.globalRoster = {};
+                    window.globalRoster[gameId] = data;
+                    if (typeof globalRoster !== "undefined") globalRoster[gameId] = data;
+                    window.renderTeamRosterSelector(gameId);
+                    updateTeamUI(gameId);
+                } else {
+                    container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">Nenhum personagem carregado. Sincronize a conta acima.</div>`;
+                }
+            })
+            .catch(() => {
+                container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">Nenhum personagem carregado. Sincronize a conta acima.</div>`;
+            });
         return;
     }
 
@@ -595,15 +624,16 @@ window.renderTeamRosterSelector = function(gameId) {
         const avatarSrc = char.icon || defaultFallback;
         const elemKey = (char.element || "").toLowerCase();
         const elemIconUrl = `/assets/elements/${gameId}_${elemKey}.png`;
+        const safeDataName = String(char.name || "").replace(/"/g, "&quot;");
 
         return `
-            <div class="team-picker-item ${inTeam ? 'in-team' : ''}" data-name="${char.name}" onclick="window.toggleCharacterInTeam('${gameId}', '${char.name}')">
+            <div class="team-picker-item ${inTeam ? 'in-team' : ''}" data-name="${safeDataName}" onclick="window.toggleCharacterInTeam('${gameId}', this.dataset.name)">
                 <div class="team-picker-avatar-box ${rarityClass}">
-                    <img class="team-picker-avatar-img" src="${avatarSrc}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
+                    <img class="team-picker-avatar-img" src="${avatarSrc}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${safeDataName}">
                     <img class="team-picker-elem-icon" src="${elemIconUrl}" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                 </div>
                 ${inTeam ? `<div class="team-picker-pos-badge">${teamIdx + 1}</div>` : ''}
-                <span class="team-picker-name" title="${char.name}">${char.name}</span>
+                <span class="team-picker-name" title="${safeDataName}">${char.name}</span>
                 <span class="team-picker-rank">${char.rank_str || 'C0'} • Nv.${char.level}</span>
             </div>
         `;
