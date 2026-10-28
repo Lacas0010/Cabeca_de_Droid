@@ -1,4 +1,8 @@
-# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v5.2+)
+# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v5.3+)
+
+<p align="center">
+  <b>Language / Idioma:</b> <a href="README.md">🇧🇷 Português</a> | <a href="README.en.md">🇺🇸 English</a>
+</p>
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)

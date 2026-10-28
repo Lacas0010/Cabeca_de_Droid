@@ -52,6 +52,9 @@ class ConfigSaveRequest(BaseModel):
     notify_windows_toast: Optional[bool] = Field(
         default=None, description="Exibir notificações nativas do Windows Toast na área de trabalho"
     )
+    language: Optional[str] = Field(
+        default=None, description="Idioma preferencial do sistema (pt ou en)"
+    )
 
 
 class NotificationTestRequest(BaseModel):

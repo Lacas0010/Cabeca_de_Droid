@@ -34,10 +34,13 @@ async function loadRoster(gameId) {
         }
         
         if (!roster || roster.length === 0) {
+
+            const emptyTitle = window.t ? window.t("roster_empty_title", "Nenhum personagem extraído localmente.") : "Nenhum personagem extraído localmente.";
+            const emptyDesc = isEn ? `Check "Roster" and click "Sync ${gameId.toUpperCase()}" above to load your account!` : `Marque "Roster" e clique em "Sincronizar ${gameId.toUpperCase()}" acima para carregar sua conta!`;
             gallery.innerHTML = `
                 <div class="empty-gallery">
-                    <p>Nenhum personagem extraído localmente.</p>
-                    <span>Marque "Roster" e clique em "Sincronizar ${gameId.toUpperCase()}" acima para carregar sua conta!</span>
+                    <p>${emptyTitle}</p>
+                    <span>${emptyDesc}</span>
                 </div>
             `;
             return;
@@ -55,6 +58,8 @@ async function loadRoster(gameId) {
         const renderCards = () => {
             gallery.innerHTML = "";
             const frag = document.createDocumentFragment();
+
+            const lvlLabel = isEn ? "Level" : "Nível";
             
             // Filtra a lista local baseado na busca de texto, elemento E raridade
             const filtered = roster.filter(char => {
@@ -79,9 +84,10 @@ async function loadRoster(gameId) {
             });
             
             if (filtered.length === 0) {
+                const noMatchText = window.t ? window.t("roster_no_filter_match", "Nenhum personagem encontrado com os filtros ativos.") : "Nenhum personagem encontrado com os filtros ativos.";
                 gallery.innerHTML = `
                     <div class="empty-gallery" style="grid-column: 1 / -1; padding: 40px 0;">
-                        <p>Nenhum personagem encontrado com os filtros ativos.</p>
+                        <p>${noMatchText}</p>
                     </div>
                 `;
                 return;
@@ -117,7 +123,7 @@ async function loadRoster(gameId) {
                             <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                             ${char.name}
                         </div>
-                        <div class="char-lvl">Nível ${char.level}</div>
+                        <div class="char-lvl">${lvlLabel} ${char.level}</div>
                     </div>
                 `;
                 
@@ -349,7 +355,7 @@ async function inspectCharacter(gameId, char) {
     
     activeInspectGame = gameId;
     activeInspectChar = char;
-    
+
     // Força reset para a aba de build
     const btnBuild = document.getElementById("ins-tab-build");
     if (btnBuild) btnBuild.click();
@@ -372,7 +378,7 @@ async function inspectCharacter(gameId, char) {
     const elemKey = (char.element || "").toLowerCase();
     const displayElem = formatElementDisplayName(char.element);
     const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
-    document.getElementById("ins-meta").innerHTML = `${char.rank_str || 'C0'} • ${elemHtml} • Nível ${char.level}`;
+    document.getElementById("ins-meta").innerHTML = `${char.rank_str || "C0"} • ${elemHtml} • ${isEn ? "Level" : "Nível"} ${char.level}`;
     
     // Configura e limpa o card do Otimizador IA
     const btnOptimize = document.getElementById("btn-ai-optimize");
@@ -383,11 +389,11 @@ async function inspectCharacter(gameId, char) {
     aiSuggestions.style.display = "none";
     aiSuggestions.innerHTML = "";
     btnOptimize.disabled = false;
-    btnOptimize.innerText = "Analisar";
+    btnOptimize.innerText = isEn ? "Analyze" : "Analisar";
     
     btnOptimize.onclick = async () => {
         btnOptimize.disabled = true;
-        btnOptimize.innerText = "Analisando...";
+        btnOptimize.innerText = isEn ? "Analyzing..." : "Analisando...";
         aiLoading.style.display = "flex";
         aiSuggestions.style.display = "none";
         aiSuggestions.innerHTML = "";
@@ -417,7 +423,7 @@ async function inspectCharacter(gameId, char) {
             aiSuggestions.style.display = "block";
         } finally {
             btnOptimize.disabled = false;
-            btnOptimize.innerText = "Reanalisar";
+            btnOptimize.innerText = isEn ? "Re-analyze" : "Reanalisar";
         }
     };
     
@@ -432,19 +438,19 @@ async function inspectCharacter(gameId, char) {
     // Configura opções do nível alvo baseadas no jogo (90 para Genshin, 80 para HSR, 60 para ZZZ)
     const maxGameLvl = gameId === "genshin" ? 90 : (gameId === "hsr" ? 80 : 60);
     const availableLvls = [90, 80, 70, 60, 50, 40, 30, 20].filter(l => l <= maxGameLvl);
-    ascTargetSelect.innerHTML = availableLvls.map(l => `<option value="${l}">Nível ${l}</option>`).join("");
+    ascTargetSelect.innerHTML = availableLvls.map(l => `<option value="${l}">${isEn ? "Level" : "Nível"} ${l}</option>`).join("");
     ascTargetSelect.value = maxGameLvl.toString();
     
     btnCalculateAsc.onclick = async () => {
         const targetLvl = parseInt(ascTargetSelect.value);
         if (char.level >= targetLvl) {
             ascResults.style.display = "block";
-            ascResults.innerHTML = `<span style="color: #10b981; font-weight: 500;"><i class="fa-solid fa-circle-check"></i> Este personagem já está no nível ${char.level} ou superior!</span>`;
+            ascResults.innerHTML = `<span style="color: #10b981; font-weight: 500;"><i class="fa-solid fa-circle-check"></i> ${isEn ? `This character is already level ${char.level} or higher!` : `Este personagem já está no nível ${char.level} ou superior!`}</span>`;
             return;
         }
         
         btnCalculateAsc.disabled = true;
-        btnCalculateAsc.innerText = "Calculando...";
+        btnCalculateAsc.innerText = isEn ? "Calculating..." : "Calculando...";
         
         try {
             const mRes = await fetch("/api/materials/calculate", {
@@ -479,13 +485,13 @@ async function inspectCharacter(gameId, char) {
             ascResults.innerHTML = `<span style="color: var(--color-danger);">Erro: ${err.message}</span>`;
         }
         btnCalculateAsc.disabled = false;
-        btnCalculateAsc.innerText = "Calcular";
+        btnCalculateAsc.innerText = isEn ? "Calculate" : "Calcular";
     };
     
     // Exibe esqueleto de loading na área de detalhes
-    document.getElementById("ins-relic-sets").innerHTML = "Carregando conjuntos...";
-    document.getElementById("ins-stats-grid").innerHTML = "Carregando atributos...";
-    document.getElementById("ins-relic-pieces").innerHTML = "Carregando detalhes das peças...";
+    document.getElementById("ins-relic-sets").innerHTML = isEn ? "Loading sets..." : "Carregando conjuntos...";
+    document.getElementById("ins-stats-grid").innerHTML = isEn ? "Loading stats..." : "Carregando atributos...";
+    document.getElementById("ins-relic-pieces").innerHTML = isEn ? "Loading piece breakdown..." : "Carregando detalhes das peças...";
     
     // Abre a aba lateral
     inspector.classList.add("open");
@@ -501,7 +507,7 @@ async function inspectCharacter(gameId, char) {
         const ranksGridEl = document.getElementById("ins-ranks-grid");
 
         let rankPrefix = "C";
-        let rankGameTitle = '<i class="fa-solid fa-star-of-life"></i> Constelações';
+        let rankGameTitle = `<i class="fa-solid fa-star-of-life"></i> ${isEn ? 'Constellations' : 'Constelações'}`;
         if (gameId === "hsr") {
             rankPrefix = "E";
             rankGameTitle = '<i class="fa-solid fa-dna"></i> Eidolons';
@@ -579,7 +585,8 @@ async function inspectCharacter(gameId, char) {
                 nodeCard.setAttribute('data-tooltip-type', rankTypeLabel);
                 nodeCard.setAttribute('data-tooltip-status', statusText);
                 nodeCard.setAttribute('data-tooltip-status-class', isUnlocked ? 'active' : 'locked');
-                nodeCard.setAttribute('data-tooltip-desc', cleanDesc || 'Nenhum detalhe adicional informado.');
+
+            nodeCard.setAttribute('data-tooltip-desc', cleanDesc || (isEn ? 'No additional details provided.' : 'Nenhum detalhe adicional informado.'));
                 nodeCard.title = cleanDesc ? `${rankPrefix}${posNum} • ${rkName} (${statusText})\n\n${cleanDesc}` : `${rankPrefix}${posNum} • ${rkName} (${statusText})`;
 
                 const elemKey = (char.element || "").toLowerCase();
@@ -599,7 +606,7 @@ async function inspectCharacter(gameId, char) {
                         <span class="rank-node-pos">${rankPrefix}${posNum}</span>
                         <span class="rank-node-name" title="${rkName}">${rkName}</span>
                         <span class="rank-status-pill ${isUnlocked ? 'rank-status-pill--active' : 'rank-status-pill--locked'}">
-                            ${isUnlocked ? '<i class="fa-solid fa-circle-check"></i> Ativo' : '<i class="fa-solid fa-lock"></i> Bloqueado'}
+                            ${isUnlocked ? `<i class="fa-solid fa-circle-check"></i> ${isEn ? "Active" : "Ativo"}` : `<i class="fa-solid fa-lock"></i> ${isEn ? "Locked" : "Bloqueado"}`}
                         </span>
                     </div>
                 `;
@@ -612,11 +619,11 @@ async function inspectCharacter(gameId, char) {
         const skillsCountEl = document.getElementById("ins-skills-count");
         const skillsGridEl = document.getElementById("ins-skills-grid");
 
-        let skillsTitleText = '<i class="fa-solid fa-wand-magic-sparkles"></i> Talentos';
+        let skillsTitleText = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${isEn ? 'Talents' : 'Talentos'}`;
         if (gameId === "hsr") {
-            skillsTitleText = '<i class="fa-solid fa-crosshairs"></i> Traços';
+            skillsTitleText = `<i class="fa-solid fa-crosshairs"></i> ${isEn ? 'Traces' : 'Traços'}`;
         } else if (gameId === "zzz") {
-            skillsTitleText = '<i class="fa-solid fa-bolt"></i> Habilidades';
+            skillsTitleText = `<i class="fa-solid fa-bolt"></i> ${isEn ? 'Skills' : 'Habilidades'}`;
         }
         if (skillsTitleEl) skillsTitleEl.innerHTML = skillsTitleText;
 
@@ -627,7 +634,7 @@ async function inspectCharacter(gameId, char) {
         }
 
         if (skillsCountEl) {
-            skillsCountEl.textContent = charSkills.length > 0 ? `(${charSkills.length} habilidades)` : "";
+            skillsCountEl.textContent = charSkills.length > 0 ? `(${charSkills.length} ${isEn ? "skills" : "habilidades"})` : "";
         }
 
         if (skillsGridEl) {
@@ -642,21 +649,22 @@ async function inspectCharacter(gameId, char) {
                     const progressPct = Math.min(100, Math.round((skLvl / skMax) * 100));
                     const rawType = sk.type || "";
 
-                    let fallbackSkillType = "Habilidade";
-                    if (gameId === "hsr") fallbackSkillType = "Rastro";
-                    else if (gameId === "genshin") fallbackSkillType = "Talento";
-                    else if (gameId === "zzz") fallbackSkillType = "Habilidade";
+                    let fallbackSkillType = isEn ? "Skill" : "Habilidade";
+                    if (gameId === "hsr") fallbackSkillType = isEn ? "Trace" : "Rastro";
+                    else if (gameId === "genshin") fallbackSkillType = isEn ? "Talent" : "Talento";
+                    else if (gameId === "zzz") fallbackSkillType = isEn ? "Skill" : "Habilidade";
 
                     const skType = (rawType && rawType !== "Habilidade" && !/^\d+$/.test(rawType)) ? rawType : fallbackSkillType;
                     const cleanSkDesc = cleanHoyoverseText(sk.desc);
-                    const skillLvlText = `Nv. ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}${isBoosted ? ' 👑' : ''}`;
-                    const descFallback = `Aprimoramento de ${skType}. Nível atual: ${skLvl} de ${skMax} (${progressPct}% do progresso máximo).`;
+                    const skillLvlText = `${isEn ? "Lv." : "Nv."} ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}${isBoosted ? ' 👑' : ''}`;
+
+        const descFallback = isEn ? `Enhancement of ${skType}. Current level: ${skLvl} of ${skMax} (${progressPct}% max progress).` : `Aprimoramento de ${skType}. Nível atual: ${skLvl} de ${skMax} (${progressPct}% do progresso máximo).`;
                     const effectiveDesc = cleanSkDesc || descFallback;
 
                     skCard.setAttribute('data-hoyo-tooltip', 'true');
                     skCard.setAttribute('data-tooltip-title', sk.name);
                     skCard.setAttribute('data-tooltip-type', skType);
-                    skCard.setAttribute('data-tooltip-status', `Nv. ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}`);
+                    skCard.setAttribute('data-tooltip-status', `${isEn ? "Lv." : "Nv."} ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}`);
                     skCard.setAttribute('data-tooltip-status-class', isBoosted ? 'boosted' : 'active');
                     skCard.setAttribute('data-tooltip-desc', effectiveDesc);
                     skCard.title = `${skType} • ${sk.name} (${skillLvlText})\n\n${effectiveDesc}`;
@@ -699,7 +707,7 @@ async function inspectCharacter(gameId, char) {
                             </div>
                             <div class="skill-level-row">
                                 <span class="skill-level-badge ${isBoosted ? 'skill-level--boosted' : ''}">
-                                    ${isBoosted ? '<i class="fa-solid fa-crown"></i> ' : ''}Nv. ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}
+                                    ${isBoosted ? '<i class="fa-solid fa-crown"></i> ' : ''}${isEn ? "Lv." : "Nv."} ${skLvl}${sk.max_level ? ` / ${skMax}` : ''}
                                 </span>
                                 <div class="skill-progress-track">
                                     <div class="skill-progress-bar" style="width: ${progressPct}%;"></div>
@@ -725,8 +733,9 @@ async function inspectCharacter(gameId, char) {
         const imgWeaponIcon = document.getElementById("ins-weapon-icon");
         
         if (char.weapon) {
-            lblWeaponName.innerText = char.weapon.name || "Não equipado";
-            lblWeaponMeta.innerText = `Nível ${char.weapon.level || 1} • Refinamento: R${char.weapon.rank || 1}`;
+            lblWeaponName.innerText = char.weapon.name || (isEn ? "Not equipped" : "Não equipado");
+            const refLabel = gameId === "hsr" ? (isEn ? "Superimposition: S" : "Sobreposição: S") : (isEn ? "Refinement: R" : "Refinamento: R");
+            lblWeaponMeta.innerText = `${isEn ? "Level" : "Nível"} ${char.weapon.level || 1} • ${refLabel}${char.weapon.rank || 1}`;
             
             const safeWFn = getSafeFileName(char.weapon.name || "");
             imgWeaponIcon.src = `/assets/weapons/${gameId}/${safeWFn}`;
@@ -734,8 +743,8 @@ async function inspectCharacter(gameId, char) {
                 this.src = char.weapon.icon || '/assets/chat_icon.png';
             };
         } else {
-            lblWeaponName.innerText = build.weapon || "Não informado";
-            lblWeaponMeta.innerText = "Nível secundário / Sem sincronização completa";
+            lblWeaponName.innerText = build.weapon || (isEn ? "Not specified" : "Não informado");
+            lblWeaponMeta.innerText = isEn ? "Secondary level / Incomplete sync" : "Nível secundário / Sem sincronização completa";
             imgWeaponIcon.src = "/assets/chat_icon.png";
         }
         
@@ -751,7 +760,7 @@ async function inspectCharacter(gameId, char) {
                 setsList.appendChild(item);
             });
         } else {
-            setsList.innerHTML = `<span class="text-muted">Nenhum bônus de conjunto ativo.</span>`;
+            setsList.innerHTML = `<span class="text-muted">${isEn ? "No active set bonuses." : "Nenhum bônus de conjunto ativo."}</span>`;
         }
         
         // 3. Renderiza Painel de Status Finais (Combat Stats) - Glassmorphism Premium
@@ -791,7 +800,7 @@ async function inspectCharacter(gameId, char) {
         // Atualiza badge de contagem de stats
         const statsCountEl = document.getElementById("ins-stats-count");
         if (statsCountEl) {
-            statsCountEl.textContent = statsKeys.length > 0 ? `(${statsKeys.length} atributos)` : "";
+            statsCountEl.textContent = statsKeys.length > 0 ? `(${statsKeys.length} ${isEn ? "stats" : "atributos"})` : "";
         }
         
         // Merge stats na referência do char atual para o canvas export
@@ -873,7 +882,7 @@ async function inspectCharacter(gameId, char) {
                                 
                                 const tuningHtml = b.speed_tuning_tip ? `
                                     <div style="font-size: 11px; color: #cbd5e1; background: rgba(0,0,0,0.3); border-left: 2px solid #38bdf8; padding: 5px 8px; border-radius: 4px; margin-top: 6px; line-height: 1.4;">
-                                        <i class="fa-solid fa-lightbulb" style="color: #fbbf24; margin-right: 4px;"></i><strong>Sincronia Tática:</strong> ${b.speed_tuning_tip}
+                                        <i class="fa-solid fa-lightbulb" style="color: #fbbf24; margin-right: 4px;"></i><strong>${isEn ? "Tactical Sync:" : "Sincronia Tática:"}</strong> ${b.speed_tuning_tip}
                                     </div>
                                 ` : "";
 
@@ -918,7 +927,7 @@ async function inspectCharacter(gameId, char) {
         const overallGrade = isUnequipped ? "N/A" : rawGrade;
         const gradeClass = isUnequipped ? "badge-na" : `badge-${overallGrade.toLowerCase()}`;
         const equippedInfo = ` (${eqCount}/${maxSlots} peças equipadas)`;
-        const badgeContent = isUnequipped ? `Sem Equipamentos (${eqCount}/${maxSlots})` : `${overallGrade} (${overallScore} pts)`;
+        const badgeContent = isUnequipped ? (isEn ? `No Gear (${eqCount}/${maxSlots})` : `Sem Equipamentos (${eqCount}/${maxSlots})`) : `${overallGrade} (${overallScore} pts)`;
         
         const banner = document.createElement("div");
         banner.className = "overall-build-banner";
@@ -928,11 +937,11 @@ async function inspectCharacter(gameId, char) {
         banner.innerHTML = `
             <div>
                 <div class="overall-build-title">
-                    <i class="fa-solid fa-award" style="color: #f59e0b;"></i> Nota Geral da Build${equippedInfo}
+                    <i class="fa-solid fa-award" style="color: #f59e0b;"></i> ${isEn ? "Overall Build Score" : "Nota Geral da Build"}${equippedInfo}
                 </div>
                 <div style="margin-top: 6px;">
                     <button class="trigger-export-card action-btn" style="padding: 5px 12px; font-size: 11px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35)); border: 1px solid rgba(245, 158, 11, 0.6); color: #fbbf24; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
-                        <i class="fa-solid fa-camera"></i> Gerar Imagem da Build (Splash Art)
+                        <i class="fa-solid fa-camera"></i> ${isEn ? "Generate Build Card (Splash Art)" : "Gerar Imagem da Build (Splash Art)"}
                     </button>
                 </div>
             </div>
@@ -1025,7 +1034,7 @@ function getSlotIcon(slotName) {
                     });
                     subsHtml += `</div>`;
                 } else {
-                    subsHtml = `<span class="text-muted" style="font-size: 10px;">Sem substatus</span>`;
+                    subsHtml = `<span class="text-muted" style="font-size: 10px;">${isEn ? "No substats" : "Sem substatus"}</span>`;
                 }
                 
                 let pGrade = (equivalentLocalPiece && equivalentLocalPiece.grade) || piece.grade;
@@ -1048,14 +1057,14 @@ function getSlotIcon(slotName) {
                                 ${gradeHtml}
                             </div>
                         </div>
-                        <div class="piece-main" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">Principal: <span class="main-stat-pill">${cleanMain}</span></div>
+                        <div class="piece-main" style="font-size: 11px; color: var(--text-secondary); margin-bottom: 6px;">${isEn ? "Main:" : "Principal:"} <span class="main-stat-pill">${cleanMain}</span></div>
                         <div class="piece-subs">${subsHtml}</div>
                     </div>
                 `;
                 piecesList.appendChild(row);
             });
         } else {
-            piecesList.innerHTML = `<span class="text-muted">Substatus e peças detalhadas indisponíveis para este nível de Roster.</span>`;
+            piecesList.innerHTML = `<span class="text-muted">${isEn ? "Substats and piece breakdown unavailable for this Roster level." : "Substatus e peças detalhadas indisponíveis para este nível de Roster."}</span>`;
         }
         
     } catch (err) {
@@ -1131,15 +1140,49 @@ const ELEMENT_LABELS = {
     }
 };
 
+const ELEMENT_LABELS_EN = {
+    "zzz": {
+        "electric": "Electric",
+        "ether": "Ether",
+        "fire": "Fire",
+        "ice": "Ice",
+        "physical": "Physical",
+        "wind": "Wind",
+        "lumiflux": "Lumiflux",
+        "element_300": "Lumiflux",
+        "element 300": "Lumiflux"
+    },
+    "hsr": {
+        "fire": "Fire",
+        "ice": "Ice",
+        "imaginary": "Imaginary",
+        "lightning": "Lightning",
+        "physical": "Physical",
+        "quantum": "Quantum",
+        "wind": "Wind"
+    },
+    "genshin": {
+        "pyro": "Pyro",
+        "hydro": "Hydro",
+        "anemo": "Anemo",
+        "electro": "Electro",
+        "dendro": "Dendro",
+        "cryo": "Cryo",
+        "geo": "Geo"
+    }
+};
+
 function getElementLabel(gameId, elementKey) {
-    if (!elementKey) return "Desconhecido";
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    if (!elementKey) return isEn ? "Unknown" : "Desconhecido";
     const kLower = elementKey.toLowerCase().trim();
     if (kLower === "element_300" || kLower === "element 300" || kLower === "lumiflux") return "Lumiflux";
-    if (kLower === "element_100" || kLower === "element 100") return "Físico";
-    if (kLower === "element_200" || kLower === "element 200") return "Fogo";
-    if (kLower === "element_400" || kLower === "element 400") return "Elétrico";
-    if (kLower === "element_500" || kLower === "element 500") return "Éter";
-    const gameLabels = ELEMENT_LABELS[gameId] || {};
+    if (kLower === "element_100" || kLower === "element 100") return isEn ? "Physical" : "Físico";
+    if (kLower === "element_200" || kLower === "element 200") return isEn ? "Fire" : "Fogo";
+    if (kLower === "element_400" || kLower === "element 400") return isEn ? "Electric" : "Elétrico";
+    if (kLower === "element_500" || kLower === "element 500") return isEn ? "Ether" : "Éter";
+    const dict = isEn ? ELEMENT_LABELS_EN : ELEMENT_LABELS;
+    const gameLabels = dict[gameId] || {};
     return gameLabels[kLower] || elementKey.charAt(0).toUpperCase() + elementKey.slice(1);
 }
 
@@ -1166,36 +1209,41 @@ function renderGameCharts(gameId) {
     chartsDiv.style.display = "block";
     
     // 1. Gráfico de Raridade
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
     const rarities = {};
     if (gameId === "zzz") {
-        rarities["Classe S"] = 0;
-        rarities["Classe A"] = 0;
+        const sLabel = isEn ? "S-Rank" : "Classe S";
+        const aLabel = isEn ? "A-Rank" : "Classe A";
+        rarities[sLabel] = 0;
+        rarities[aLabel] = 0;
         chars.forEach(c => {
             const r = String(c.rarity || "").toUpperCase();
             if (r === "S" || r === "5") {
-                rarities["Classe S"]++;
+                rarities[sLabel]++;
             } else {
-                rarities["Classe A"]++;
+                rarities[aLabel]++;
             }
         });
         drawPieChart(`chart-rarity-${gameId}`, `legend-rarity-${gameId}`, [
-            { label: "Classe S", value: rarities["Classe S"], color: "#f59e0b" },
-            { label: "Classe A", value: rarities["Classe A"], color: "#a78bfa" }
+            { label: sLabel, value: rarities[sLabel], color: "#f59e0b" },
+            { label: aLabel, value: rarities[aLabel], color: "#a78bfa" }
         ]);
     } else {
-        rarities["5★"] = 0;
-        rarities["4★"] = 0;
+        const legLabel = isEn ? "5★ Legendary" : "5★ Lendário";
+        const epicLabel = isEn ? "4★ Epic" : "4★ Épico";
+        rarities[legLabel] = 0;
+        rarities[epicLabel] = 0;
         chars.forEach(c => {
             const r = Number(c.rarity);
             if (r === 5 || c.rarity === "5" || r === "S") {
-                rarities["5★"]++;
+                rarities[legLabel]++;
             } else {
-                rarities["4★"]++;
+                rarities[epicLabel]++;
             }
         });
         drawPieChart(`chart-rarity-${gameId}`, `legend-rarity-${gameId}`, [
-            { label: "5★ Lendário", value: rarities["5★"], color: "#f59e0b" },
-            { label: "4★ Épico", value: rarities["4★"], color: "#8b5cf6" }
+            { label: legLabel, value: rarities[legLabel], color: "#f59e0b" },
+            { label: epicLabel, value: rarities[epicLabel], color: "#8b5cf6" }
         ]);
     }
     
@@ -1723,7 +1771,7 @@ async function generateBuildCardCanvas(char, gameId) {
     ctx.font = "500 13px sans-serif";
     ctx.fillStyle = "#cbd5e1";
     const elemName = formatElementDisplayName(char.element || "Físico").toUpperCase();
-    ctx.fillText(`Nv. ${char.level} • ${elemName}`, hx + 18, hy + 76);
+    ctx.fillText(`${(window.isEn || window.currentLang === "en") ? "Lv." : "Nv."} ${char.level} • ${elemName}`, hx + 18, hy + 76);
 
     // 2.2 Constelações / Eidolons / Mindscapes (6 Nódulos Visuais com Ícones e Destaque Ativo/Inativo)
     const rankPrefix = gameId === "genshin" ? "C" : (gameId === "zzz" ? "M" : "E");
@@ -1921,7 +1969,8 @@ async function generateBuildCardCanvas(char, gameId) {
         skillsSubTitle = "HABILIDADES";
     } else if (gameId === "zzz") {
         skillsMainTitle = "HABILIDADES";
-        skillsSubTitle = "AGENTE";
+
+    skillsSubTitle = isEn ? "AGENT" : "AGENTE";
     }
 
     ctx.font = "bold 9px sans-serif";
@@ -2000,7 +2049,8 @@ async function generateBuildCardCanvas(char, gameId) {
     } else {
         ctx.font = "italic 11px sans-serif";
         ctx.fillStyle = "#64748b";
-        ctx.fillText("Nenhuma arma equipada", wx + 12, wy + 32);
+
+    ctx.fillText(isEn ? "No weapon equipped" : "Nenhuma arma equipada", wx + 12, wy + 32);
     }
 
     // ==========================================
@@ -2285,10 +2335,11 @@ window.generateTierListCardCanvas = async (gameId, auditData) => {
 
     ctx.font = "500 12px sans-serif";
     ctx.fillStyle = "#94a3b8";
-    ctx.fillText("Classificação dos seus personagens baseada no score matemático das relíquias", 30, 100);
+
+    ctx.fillText(isEn ? "Character ranking based on mathematical relic scoring" : "Classificação dos seus personagens baseada no score matemático das relíquias", 30, 100);
 
     const kpis = [
-        { label: "TOTAL PERSONAGENS", val: `${auditData.total_characters || 0}`, color: "#38bdf8" },
+        { label: isEn ? "TOTAL CHARACTERS" : "TOTAL PERSONAGENS", val: `${auditData.total_characters || 0}`, color: "#38bdf8" },
         { label: "MÉDIA DE NOTA (RV)", val: `${auditData.avg_rv || 0}%`, color: "#f59e0b" },
         { label: "BUILDS S / SSS", val: `${auditData.s_count || 0}`, color: "#10b981" }
     ];
@@ -2345,7 +2396,7 @@ window.generateTierListCardCanvas = async (gameId, auditData) => {
         if (chars.length === 0) {
             ctx.font = "italic 13px sans-serif";
             ctx.fillStyle = "#64748b";
-            ctx.fillText("Nenhum personagem nesta categoria", charStartX, currentY + rowH / 2 + 4);
+            ctx.fillText(isEn ? "No characters in this category" : "Nenhum personagem nesta categoria", charStartX, currentY + rowH / 2 + 4);
         } else {
             chars.forEach((c, idx) => {
                 const col = idx % charsPerRow;
@@ -2430,7 +2481,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const openExportModalHandler = async () => {
         if (!window.currentInspectorChar || !window.currentInspectorGameId) {
-            showToast("Erro: Nenhum personagem selecionado.");
+
+    showToast(isEn ? "Error: No character selected." : "Erro: Nenhum personagem selecionado.");
             return;
         }
 
@@ -2534,7 +2586,8 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btnDownloadCardImg) {
             btnDownloadCardImg.addEventListener("click", () => {
                 if (!currentGeneratedCanvas) return;
-                const charName = window.currentInspectorChar ? window.currentInspectorChar.name : "Personagem";
+
+    const charName = window.currentInspectorChar ? window.currentInspectorChar.name : (isEn ? "Character" : "Personagem");
                 const gameId = window.currentInspectorGameId || "hoyo";
                 const fileName = window.currentExportCardName ? window.currentExportCardName : `Build_${getSafeFileName(charName)}_${gameId.toUpperCase()}`;
                 const link = document.createElement("a");
@@ -2564,7 +2617,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 showToast("Navegadores em conexões HTTP de celular/rede local bloqueiam a cópia direta. Baixando PNG...");
-                const charName = window.currentInspectorChar ? window.currentInspectorChar.name : "Personagem";
+
+    const charName = window.currentInspectorChar ? window.currentInspectorChar.name : (isEn ? "Character" : "Personagem");
                 const gameId = window.currentInspectorGameId || "hoyo";
                 const link = document.createElement("a");
                 link.download = `Build_${getSafeFileName(charName)}_${gameId.toUpperCase()}.png`;
@@ -2576,6 +2630,15 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+
+window.addEventListener("app:languageChanged", () => {
+    ["zzz", "genshin", "hsr"].forEach(g => {
+        const gal = document.getElementById(`gallery-${g}`);
+        if (gal && globalRoster && globalRoster[g] && globalRoster[g].length > 0) {
+            loadRoster(g);
+        }
+    });
+});
 
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof ELEMENT_LABELS !== 'undefined') window.ELEMENT_LABELS = ELEMENT_LABELS;

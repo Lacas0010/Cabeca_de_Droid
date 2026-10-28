@@ -47,14 +47,30 @@ const ELEMENT_MAPPING = {
 
 // Helper global para formatar o nome de exibição de elementos (ex: ELEMENT_300 -> Lumiflux)
 function formatElementDisplayName(rawElem) {
-    if (!rawElem) return "Físico";
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    if (!rawElem) return isEn ? "Physical" : "Físico";
     const str = String(rawElem).trim();
     const upper = str.toUpperCase();
-    if (upper === "ELEMENT_300" || upper === "ELEMENT 300") return "Lumiflux";
-    if (upper === "ELEMENT_100" || upper === "ELEMENT 100") return "Físico";
-    if (upper === "ELEMENT_200" || upper === "ELEMENT 200") return "Fogo";
-    if (upper === "ELEMENT_400" || upper === "ELEMENT 400") return "Elétrico";
-    if (upper === "ELEMENT_500" || upper === "ELEMENT 500") return "Éter";
+    if (upper === "ELEMENT_300" || upper === "ELEMENT 300" || upper === "LUMIFLUX") return "Lumiflux";
+    if (upper === "ELEMENT_100" || upper === "ELEMENT 100") return isEn ? "Physical" : "Físico";
+    if (upper === "ELEMENT_200" || upper === "ELEMENT 200") return isEn ? "Fire" : "Fogo";
+    if (upper === "ELEMENT_400" || upper === "ELEMENT 400") return isEn ? "Electric" : "Elétrico";
+    if (upper === "ELEMENT_500" || upper === "ELEMENT 500") return isEn ? "Ether" : "Éter";
+    if (isEn) {
+        const enMap = {
+            "físico": "Physical", "fisico": "Physical",
+            "fogo": "Fire",
+            "gelo": "Ice",
+            "elétrico": "Electric", "eletrico": "Electric",
+            "éter": "Ether", "eter": "Ether",
+            "vento": "Wind",
+            "raio": "Lightning",
+            "quântico": "Quantum", "quantico": "Quantum",
+            "imaginário": "Imaginary", "imaginario": "Imaginary"
+        };
+        const lower = str.toLowerCase();
+        if (enMap[lower]) return enMap[lower];
+    }
     return str;
 }
 

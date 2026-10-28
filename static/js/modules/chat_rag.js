@@ -104,7 +104,8 @@ function setupChatSystem() {
             messagesArea.scrollTop = messagesArea.scrollHeight;
         } catch (err) {
             document.getElementById(typingId).remove();
-            appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Falha ao conectar ao processador Groq: ${err.message}`);
+
+    appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> ${isEn ? `Failed to connect to Groq processor: ${err.message}` : `Falha ao conectar ao processador Groq: ${err.message}`}`);
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
     };
@@ -123,19 +124,38 @@ function setupChatSystem() {
     const contextSelect = document.getElementById("chat-context-select");
     const clearHistoryBtn = document.getElementById("btn-clear-chat-history");
 
-    const defaultWelcomeHTML = `
-        <div class="chat-msg assistant">
-            <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
-            <div class="msg-content">
-                <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
-                <ul>
-                    <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
-                    <li><em>"Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"</em></li>
-                    <li><em>"Quais são os melhores discos para o agente que escolhi no ZZZ?"</em></li>
-                </ul>
+    const getDefaultWelcomeHTML = () => {
+        const isEn = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+        if (isEn) {
+            return `
+                <div class="chat-msg assistant">
+                    <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="msg-content">
+                        <p>Hello! I am your AI assistant integrated with your local database from HoYoLAB, Prydwen, and KQM. How can I help you today?</p>
+                        <ul>
+                            <li><em>"Which HSR team do you suggest based on my current roster?"</em></li>
+                            <li><em>"Based on my Genshin artifacts, how can I improve my damage?"</em></li>
+                            <li><em>"What are the best drive discs for the agent I chose in ZZZ?"</em></li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+        return `
+            <div class="chat-msg assistant">
+                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="msg-content">
+                    <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
+                    <ul>
+                        <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
+                        <li><em>${window.t ? window.t("rag_prompt_genshin") : "Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"}</em></li>
+                        <li><em>${window.t ? window.t("rag_prompt_zzz") : "Quais são os melhores discos para o agente que escolhi no ZZZ?"}</em></li>
+                    </ul>
+                </div>
             </div>
-        </div>
-    `;
+        `;
+    };
+    const defaultWelcomeHTML = getDefaultWelcomeHTML();
 
     const loadPersistedChatHistory = async (gameId) => {
         try {
@@ -148,7 +168,7 @@ function setupChatSystem() {
             chatHistory = [];
 
             if (messages.length === 0) {
-                messagesArea.innerHTML = defaultWelcomeHTML;
+                messagesArea.innerHTML = getDefaultWelcomeHTML();
             } else {
                 messages.forEach(m => {
                     const role = m.role === "assistant" ? "assistant" : "user";
@@ -190,8 +210,9 @@ function setupChatSystem() {
                 });
                 if (res.ok) {
                     chatHistory = [];
-                    messagesArea.innerHTML = defaultWelcomeHTML;
-                    showToast("Histórico de conversa apagado com sucesso!", "success");
+                    messagesArea.innerHTML = getDefaultWelcomeHTML();
+
+    showToast(isEn ? "Conversation history cleared successfully!" : "Histórico de conversa apagado com sucesso!", "success");
                 } else {
                     showToast("Falha ao apagar histórico.", "error");
                 }
@@ -227,9 +248,10 @@ function setupChatSystem() {
         teamAnalyzeBtn.addEventListener("click", async () => {
             if (selectedTeam.length === 0) return;
             const gameId = teamGameSelect.value;
-            const message = `Análise do Time: ${selectedTeam.join(", ")}`;
+            const isEn = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+            const message = isEn ? `Team Analysis: ${selectedTeam.join(", ")}` : `Análise do Time: ${selectedTeam.join(", ")}`;
             
-            appendChatMessage("user", `Fazer análise de sinergia da equipe: **${selectedTeam.join(", ")}**`);
+            appendChatMessage("user", isEn ? `Analyze team synergy: **${selectedTeam.join(", ")}**` : `Fazer análise de sinergia da equipe: **${selectedTeam.join(", ")}**`);
             messagesArea.scrollTop = messagesArea.scrollHeight;
             
             const typingId = appendChatMessage("assistant", `<div class="typing-loader"><span></span><span></span><span></span></div>`);
@@ -311,7 +333,8 @@ function updateTeamBuilderGrid(gameId) {
     
     const roster = (window.globalRoster && window.globalRoster[gameId]) || globalRoster[gameId] || [];
     if (roster.length === 0) {
-        grid.innerHTML = `<div style="grid-column: span 4; font-size: 10px; color: var(--text-secondary); text-align: center; padding: 12px;">Roster do ${gameId.toUpperCase()} não sincronizado.</div>`;
+        const isEnGrid = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+    grid.innerHTML = `<div style="grid-column: span 4; font-size: 10px; color: var(--text-secondary); text-align: center; padding: 12px;">${isEnGrid ? `${gameId.toUpperCase()} roster not synchronized.` : `Roster do ${gameId.toUpperCase()} não sincronizado.`}</div>`;
         return;
     }
     
@@ -343,7 +366,8 @@ function toggleChatTeamCharacter(element, charName, gameId) {
         if (overlay) overlay.style.display = "none";
     } else {
         if (selectedTeam.length >= maxSelect) {
-            alert(`Você só pode selecionar até ${maxSelect} personagens para o time de ${gameId.toUpperCase()}!`);
+            const isEnAlert = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+        alert(isEnAlert ? `You can only select up to ${maxSelect} characters for ${gameId.toUpperCase()} team!` : `Você só pode selecionar até ${maxSelect} personagens para o time de ${gameId.toUpperCase()}!`);
             return;
         }
         selectedTeam.push(charName);
@@ -429,18 +453,21 @@ function toggleCharacterInTeam(arg1, arg2, arg3) {
     if (existingIdx !== -1) {
         team.members.splice(existingIdx, 1);
         if (typeof showToast === "function") {
-            showToast(`${char.name} removido do time.`, "info");
+            const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+            showToast(isEnToast ? `${char.name} removed from team.` : `${char.name} removido do time.`, "info");
         }
     } else {
         if (team.members.length >= maxSlots) {
             if (typeof showToast === "function") {
-                showToast(`Limite de ${maxSlots} slots para ${gameId.toUpperCase()} atingido! Remova um personagem para adicionar outro.`, "warning");
+                const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+                showToast(isEnToast ? `Limit of ${maxSlots} slots for ${gameId.toUpperCase()} reached! Remove a character to add another.` : `Limite de ${maxSlots} slots para ${gameId.toUpperCase()} atingido! Remova um personagem para adicionar outro.`, "warning");
             }
             return;
         }
         team.members.push(char);
         if (typeof showToast === "function") {
-            showToast(`${char.name} adicionado ao time (#${team.members.length})!`, "success");
+            const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+            showToast(isEnToast ? `${char.name} added to team (#${team.members.length})!` : `${char.name} adicionado ao time (#${team.members.length})!`, "success");
         }
         ensureCharacterBuildData(gameId, char);
     }
@@ -467,7 +494,8 @@ window.clearTeam = function(gameId) {
     if (!team) return;
     team.members = [];
     if (typeof showToast === "function") {
-        showToast("Time esvaziado com sucesso.", "info");
+        const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+        showToast(isEnToast ? "Team cleared successfully." : "Time esvaziado com sucesso.", "info");
     }
     updateTeamUI(gameId);
 };
@@ -592,7 +620,8 @@ window.renderTeamRosterSelector = function(gameId) {
 
     const roster = (window.globalRoster && window.globalRoster[gameId]) || (typeof globalRoster !== "undefined" ? globalRoster[gameId] : []) || [];
     if (roster.length === 0) {
-        container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">Carregando elenco sincronizado...</div>`;
+
+    container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">${isEn ? "Loading synced roster..." : "Carregando elenco sincronizado..."}</div>`;
         fetch(`/api/roster/${gameId}`)
             .then(res => res.ok ? res.json() : [])
             .then(data => {
@@ -603,11 +632,11 @@ window.renderTeamRosterSelector = function(gameId) {
                     window.renderTeamRosterSelector(gameId);
                     updateTeamUI(gameId);
                 } else {
-                    container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">Nenhum personagem carregado. Sincronize a conta acima.</div>`;
+                    container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">${isEn ? "No characters loaded. Please sync account above." : "Nenhum personagem carregado. Sincronize a conta acima."}</div>`;
                 }
             })
             .catch(() => {
-                container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">Nenhum personagem carregado. Sincronize a conta acima.</div>`;
+                container.innerHTML = `<div style="padding: 12px; color: var(--text-muted); font-size: 12px;">${isEn ? "No characters loaded. Please sync account above." : "Nenhum personagem carregado. Sincronize a conta acima."}</div>`;
             });
         return;
     }
@@ -724,7 +753,8 @@ function extractTeamCardStats(gameId, char) {
 // 10. Extração de Equipamento Real
 function extractTeamCardWeapon(gameId, char) {
     const w = char.weapon || {};
-    const wName = typeof w === "string" ? w : (w.name || "Não equipado");
+
+    const wName = typeof w === "string" ? w : (w.name || (isEn ? "Not equipped" : "Não equipado"));
     const wLvl = typeof w === "object" ? (w.level || (gameId === "genshin" ? 90 : (gameId === "hsr" ? 80 : 60))) : 90;
     const rawRank = typeof w === "object" ? (w.rank || 1) : 1;
     let rankPrefix = "R";
@@ -911,6 +941,7 @@ function extractTeamCardRelics(gameId, char) {
 function renderTeamExportCard(gameId) {
     const cardContainer = document.getElementById(`team-export-card-${gameId}`);
     if (!cardContainer) return;
+    const isEnCard = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
 
     const team = teamBuilderState[gameId] || { teamName: "Time", members: [] };
     const maxSlots = TEAM_MAX_MEMBERS[gameId] || 4;
@@ -942,7 +973,9 @@ function renderTeamExportCard(gameId) {
         if (mRank) totalRanks += parseInt(mRank[0]);
     });
     const rankLabel = gameId === "genshin" ? "Constelações" : (gameId === "zzz" ? "Mindscapes" : "Eidolons");
-    const pitySummary = `Investimento: ${fiveStarCount}x 5★ | ${totalRanks}x ${rankLabel} Ativas`;
+    const pitySummary = isEnCard 
+        ? `Investment: ${fiveStarCount}x 5★ | ${totalRanks}x Active ${rankLabel}` 
+        : `Investimento: ${fiveStarCount}x 5★ | ${totalRanks}x ${rankLabel} Ativas`;
 
     // Identificação dinâmica do jogador via API/banco
     let playerNick = "Jogador";
@@ -990,7 +1023,7 @@ function renderTeamExportCard(gameId) {
             const relics = extractTeamCardRelics(gameId, char);
             const stats = extractTeamCardStats(gameId, char);
 
-            let subRole = "Personagem";
+        let subRole = isEn ? "Character" : "Personagem";
             if (char.path) subRole = char.path;
             else if (char.specialty) subRole = char.specialty;
             else if (char.element) subRole = formatElementDisplayName(char.element);
@@ -1004,7 +1037,7 @@ function renderTeamExportCard(gameId) {
                     <div class="subcard-splash-gradient"></div>
 
                     <!-- Botão de Remover Slot (Oculto na exportação PNG) -->
-                    <button class="slot-remove-btn" title="Remover personagem do time" onclick="window.removeTeamMember('${gameId}', ${i})">
+                    <button class="slot-remove-btn" title="${isEnCard ? 'Remove character from team' : 'Remover personagem do time'}" onclick="window.removeTeamMember('${gameId}', ${i})">
                         <i class="fa-solid fa-xmark"></i>
                     </button>
 
@@ -1060,7 +1093,7 @@ function renderTeamExportCard(gameId) {
                                 <span class="subcard-relic-dot"></span>
                             `}
                             <div class="subcard-relic-title-group">
-                                <span class="subcard-relic-category-tag">${gameId === 'genshin' ? 'Artefatos' : (gameId === 'zzz' ? 'Discos' : 'Relíquias')}</span>
+                                <span class="subcard-relic-category-tag">${gameId === 'genshin' ? (isEnCard ? 'Artifacts' : 'Artefatos') : (gameId === 'zzz' ? (isEnCard ? 'Discs' : 'Discos') : (isEnCard ? 'Relics' : 'Relíquias'))}</span>
                                 <div class="subcard-relic-title" title="${relics.setTitle}">
                                     ${(relics.setLines || [relics.setTitle]).map(line => `<span class="subcard-set-line-item">${line}</span>`).join(" <span class='subcard-set-sep'>+</span> ")}
                                 </div>
@@ -1092,8 +1125,8 @@ function renderTeamExportCard(gameId) {
             slotsHtml.push(`
                 <div class="empty-slot-card" onclick="document.querySelector('#team-roster-grid-${gameId}').scrollIntoView({ behavior: 'smooth' })">
                     <i class="fa-solid fa-plus"></i>
-                    <span>Slot ${i + 1} Vazio</span>
-                    <small>Clique em um personagem acima para adicionar</small>
+                    <span>${isEnCard ? `Slot ${i + 1} Empty` : `Slot ${i + 1} Vazio`}</span>
+                    <small>${isEnCard ? 'Click a character above to add' : 'Clique em um personagem acima para adicionar'}</small>
                 </div>
             `);
         }
@@ -1123,8 +1156,8 @@ function renderTeamExportCard(gameId) {
         <!-- Rodapé -->
         <div class="team-footer">
             <div class="team-footer-left">
-                <span class="team-synergy-pill">Composição Ativa</span>
-                <span class="team-synergy-desc">Builds sincronizadas com o banco local SQLite</span>
+                <span class="team-synergy-pill">${isEnCard ? 'Active Team' : 'Composição Ativa'}</span>
+                <span class="team-synergy-desc">${isEnCard ? 'Builds synchronized with local SQLite DB' : 'Builds sincronizadas com o banco local SQLite'}</span>
             </div>
             <div class="team-footer-right">
                 <div class="team-pity-badge">${pitySummary}</div>
@@ -1254,7 +1287,8 @@ window.exportTeamCardPNG = async function(gameId) {
     const team = teamBuilderState[gameId];
     if (!team || team.members.length === 0) {
         if (typeof showToast === "function") {
-            showToast("Adicione pelo menos 1 personagem ao time antes de exportar!", "warning");
+
+    showToast(isEn ? "Add at least 1 character to the team before exporting!" : "Adicione pelo menos 1 personagem ao time antes de exportar!", "warning");
         }
         return;
     }
@@ -1295,7 +1329,8 @@ window.exportTeamCardPNG = async function(gameId) {
         link.href = canvas.toDataURL("image/png");
         link.click();
         if (typeof showToast === "function") {
-            showToast("Card de time exportado com sucesso em alta definição (PNG 2x)!", "success");
+
+    showToast(isEn ? "Team card successfully exported in high definition (PNG 2x)!" : "Card de time exportado com sucesso em alta definição (PNG 2x)!", "success");
         }
     } catch (err) {
         console.error("Erro na exportação do card de time:", err);
@@ -1318,7 +1353,8 @@ window.copyTeamCardClipboard = async function(gameId) {
     const team = teamBuilderState[gameId];
     if (!team || team.members.length === 0) {
         if (typeof showToast === "function") {
-            showToast("Adicione pelo menos 1 personagem ao time antes de copiar!", "warning");
+
+    showToast(isEn ? "Add at least 1 character to the team before copying!" : "Adicione pelo menos 1 personagem ao time antes de copiar!", "warning");
         }
         return;
     }
@@ -1392,3 +1428,26 @@ if (typeof teamBuilderState !== 'undefined') window.teamBuilderState = teamBuild
 if (typeof toggleCharacterInTeam !== 'undefined') window.toggleCharacterInTeam = toggleCharacterInTeam;
 if (typeof updateTeamBuilderGrid !== 'undefined') window.updateTeamBuilderGrid = updateTeamBuilderGrid;
 if (typeof updateTeamUI !== 'undefined') window.updateTeamUI = updateTeamUI;
+// ==========================================
+// LISTENER DE INTERNACIONALIZAÇÃO (i18n)
+// ==========================================
+window.addEventListener("app:languageChanged", () => {
+    try {
+        const messagesArea = document.getElementById("chat-messages");
+        if (messagesArea && (typeof chatHistory !== "undefined" && chatHistory.length === 0)) {
+            if (typeof getDefaultWelcomeHTML === "function") {
+                messagesArea.innerHTML = getDefaultWelcomeHTML();
+            }
+        }
+        ['genshin', 'hsr', 'zzz'].forEach(gid => {
+            if (document.getElementById(`team-export-card-${gid}`) && typeof renderTeamExportCard === "function") {
+                renderTeamExportCard(gid);
+            }
+            if (document.getElementById(`team-roster-grid-${gid}`) && typeof window.renderTeamRosterSelector === "function") {
+                window.renderTeamRosterSelector(gid);
+            }
+        });
+    } catch (e) {
+        console.warn("[CHAT] Erro ao atualizar idioma:", e);
+    }
+});

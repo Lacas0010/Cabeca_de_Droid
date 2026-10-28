@@ -396,7 +396,7 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($doc)
 
         self.send_notification(title=title, message=desc, config=config, color=0xF59E0B, fields=fields)
 
-    def generate_morning_briefing(self, config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def generate_morning_briefing(self, config: Optional[Dict[str, Any]] = None, lang: str = "pt") -> Dict[str, Any]:
         """
         Gera um relatório executivo matinal unificado consolidando:
         - Estado de energia/resina dos 3 jogos
@@ -410,15 +410,18 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($doc)
 
         now_dt = datetime.datetime.now()
         date_str = now_dt.strftime("%d/%m/%Y")
-        weekday_names = [
-            "Segunda-feira",
-            "Terça-feira",
-            "Quarta-feira",
-            "Quinta-feira",
-            "Sexta-feira",
-            "Sábado",
-            "Domingo",
-        ]
+        if lang == "en":
+            weekday_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        else:
+            weekday_names = [
+                "Segunda-feira",
+                "Terça-feira",
+                "Quarta-feira",
+                "Quinta-feira",
+                "Sexta-feira",
+                "Sábado",
+                "Domingo",
+            ]
         weekday_str = weekday_names[now_dt.weekday()]
 
         # 1. Status de Energia e Check-in
@@ -447,8 +450,10 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($doc)
                 calc_energy = int(curr_energy)
                 display_curr = int(curr_energy)
 
-            farm_order = generate_daily_farm_order(g, current_energy=calc_energy, roster=roster)
-            top_task = farm_order["tasks"][0]["description"] if farm_order["tasks"] else "Farm livre / Cálice Dourado"
+            farm_order = generate_daily_farm_order(g, current_energy=calc_energy, roster=roster, lang=lang)
+            default_top_task = "Free farm / Golden Calyx" if lang == "en" else "Farm livre / Cálice Dourado"
+            default_domain_type = "Free" if lang == "en" else "Livre"
+            top_task = farm_order["tasks"][0]["description"] if farm_order["tasks"] else default_top_task
 
             game_statuses.append(
                 {
@@ -459,7 +464,7 @@ $toast = [Windows.UI.Notifications.ToastNotification]::new($doc)
                     "current_energy": display_curr,
                     "max_energy": max_energy,
                     "top_task": top_task,
-                    "domain_type": farm_order["tasks"][0]["type_label"] if farm_order["tasks"] else "Livre",
+                    "domain_type": farm_order["tasks"][0]["type_label"] if farm_order["tasks"] else default_domain_type,
                 }
             )
 

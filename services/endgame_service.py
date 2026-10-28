@@ -1,3 +1,4 @@
+import re
 import os
 import json
 import urllib.parse
@@ -9,7 +10,7 @@ from services.roster_service import get_roster
 from services.media_service import get_raw_url
 
 
-async def get_endgame(game_id: str) -> Dict[str, Any]:
+async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
     """Retorna os dados estruturados de Endgame (MoC, Ficção Pura, Sombra, Abismo, Teatro, Shiyu) de um jogo."""
     game_id = game_id.lower().strip()
     if game_id not in ["hsr", "genshin", "zzz"]:
@@ -128,6 +129,61 @@ async def get_endgame(game_id: str) -> Dict[str, Any]:
                         raw_c_icon = get_raw_url(char["icon"])
                         if raw_c_icon.startswith("http"):
                             char["icon"] = f"/api/proxy_image?url={urllib.parse.quote(raw_c_icon, safe='')}"
+
+    if lang == "en" and modes:
+        en_mode_map = {
+            "Caos da Memória (MoC)": "Memory of Chaos (MoC)",
+            "Caos da Memória": "Memory of Chaos",
+            "Ficção Pura": "Pure Fiction",
+            "Sombra Apocalíptica": "Apocalyptic Shadow",
+            "Abismo Espiral": "Spiral Abyss",
+            "Teatro Imaginário": "Imaginarium Theater",
+            "Defesa Shiyu (Shiyu Defense)": "Shiyu Defense",
+            "Defesa Shiyu": "Shiyu Defense",
+            "Investida Fatal": "Deadly Assault",
+            "Cavidade Zero": "Hollow Zero",
+        }
+        for mode in modes:
+            m_name = mode.get("name", "")
+            if m_name in en_mode_map:
+                mode["name"] = en_mode_map[m_name]
+            stg = mode.get("stage", "")
+            if stg:
+                stg = re.sub(r"Piso\s*(\d+)", r"Floor \1", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Câmara\s*(\d+)", r"Chamber \1", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Desafio Arcano\s*(\d+)", r"Arcane Challenge \1", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Temporada Atual", "Current Season", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Temporada\s*(\d+)", r"Season \1", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Cruzando o Além", "Crossing the Beyond", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Modo Estelar", "Star Mode", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Palavras Imaginadas", "Imagined Words", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Dominação do Esquecimento", "Dominance of Oblivion", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Fronteira Crítica", "Critical Node", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Fronteira Estável", "Stable Node", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Nó Crítico", "Critical Node", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Zona Disputada", "Disputed Node", stg, flags=re.IGNORECASE)
+                stg = re.sub(r"Ato\s*(\d+)", r"Act \1", stg, flags=re.IGNORECASE)
+                mode["stage"] = stg
+            ml = mode.get("metric_label", "")
+            if ml:
+                ml = ml.replace("Rodadas Utilizadas", "Cycles Used")
+                ml = ml.replace("Pontuação", "Score")
+                ml = ml.replace("Estrelas do Piso", "Floor Stars")
+                ml = ml.replace("Atos Concluídos", "Acts Completed")
+                mode["metric_label"] = ml
+            for team in mode.get("teams", []):
+                t_name = team.get("name", "")
+                if t_name:
+                    t_name = re.sub(r"Lado\s*(\d+)", r"Side \1", t_name, flags=re.IGNORECASE)
+                    t_name = re.sub(r"Primeira Metade", "First Half", t_name, flags=re.IGNORECASE)
+                    t_name = re.sub(r"Segunda Metade", "Second Half", t_name, flags=re.IGNORECASE)
+                    t_name = re.sub(r"Ato\s*(\d+)", r"Act \1", t_name, flags=re.IGNORECASE)
+                    t_name = re.sub(r"Elenco Principal\s*/\s*Destaques", "Main Cast / Highlights", t_name, flags=re.IGNORECASE)
+                    t_name = re.sub(r"Agentes da Rotação", "Rotation Agents", t_name, flags=re.IGNORECASE)
+                    team["name"] = t_name
+                for m in team.get("monsters", []):
+                    if m.get("name") == "Inimigo":
+                        m["name"] = "Enemy"
 
     return {
         "status": "success",

@@ -29,13 +29,13 @@ async def calculate_materials(req: MaterialsCalculateRequest):
 
 
 @router.get("/api/farming/today/{game_id}")
-async def get_farming_today(game_id: str, selected_chars: Optional[str] = None):
+async def get_farming_today(game_id: str, selected_chars: Optional[str] = None, lang: Optional[str] = "pt"):
     """Retorna o calendário de farm do dia atual + sugestões com base nos seus personagens."""
     try:
         roster_data = await get_roster(game_id)
         selected_list = [s.strip() for s in selected_chars.split(",") if s.strip()] if selected_chars else None
         res = build_calculator.get_daily_farm_recommendations(
-            game_id=game_id, roster=roster_data, selected_chars=selected_list
+            game_id=game_id, roster=roster_data, selected_chars=selected_list, lang=lang or "pt"
         )
         return res
     except Exception as e:
@@ -44,14 +44,14 @@ async def get_farming_today(game_id: str, selected_chars: Optional[str] = None):
 
 
 @router.get("/api/farm/order-of-day/{game_id}")
-async def get_daily_farm_order_endpoint(game_id: str, selected_chars: Optional[str] = None):
+async def get_daily_farm_order_endpoint(game_id: str, selected_chars: Optional[str] = None, lang: Optional[str] = "pt"):
     """Retorna a Ordem de Serviço Diária com alocação inteligente de resina/energia."""
     try:
         roster_data = await get_roster(game_id)
         meta_data = build_calculator.get_meta_data(game_id)
         selected_list = [s.strip() for s in selected_chars.split(",") if s.strip()] if selected_chars else None
         order = build_calculator.generate_daily_farm_order(
-            game_id=game_id, roster=roster_data, meta_data=meta_data, selected_chars=selected_list
+            game_id=game_id, roster=roster_data, meta_data=meta_data, selected_chars=selected_list, lang=lang or "pt"
         )
         return order
     except Exception as e:

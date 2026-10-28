@@ -19,12 +19,22 @@ async function fetchConfig() {
             secStatus = await secRes.json();
         }
         
+        // 0. Idioma
+        if (config.language) {
+            const langSelect = document.getElementById("cfg-app-language");
+            if (langSelect) langSelect.value = config.language;
+            if (!localStorage.getItem("app_lang") && window.setLanguage) {
+                window.setLanguage(config.language);
+            }
+        }
+
         // 1. Chave IA Groq (Tratada com máscara ou em branco para segurança)
         const groqInput = document.getElementById("cfg-groq-key");
         if (groqInput) {
             if (config.has_api_key) {
                 groqInput.value = "";
-                groqInput.placeholder = config.groq_api_key || "gsk_... (Chave configurada)";
+                const isEn = window.isEn;
+                groqInput.placeholder = config.groq_api_key || (isEn ? "gsk_... (Key configured)" : "gsk_... (Chave configurada)");
             } else {
                 groqInput.value = "";
                 groqInput.placeholder = "gsk_...";
@@ -39,7 +49,8 @@ async function fetchConfig() {
                 previewEl.innerHTML = `<i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 6px;"></i><code>${config.cookies_preview}</code>`;
                 if (previewTag) previewTag.style.display = "inline-block";
             } else {
-                previewEl.innerHTML = `<i class="fa-solid fa-lock" style="margin-right: 6px;"></i>Nenhum cookie configurado no cofre.`;
+                const isEnCookie = window.isEn;
+                previewEl.innerHTML = `<i class="fa-solid fa-lock" style="margin-right: 6px;"></i>${isEnCookie ? "No cookies configured in vault." : "Nenhum cookie configurado no cofre."}`;
                 if (previewTag) previewTag.style.display = "none";
             }
         }
@@ -49,12 +60,14 @@ async function fetchConfig() {
         if (hoyoInput) hoyoInput.value = "";
 
         // 3. Vault Badge
+        window.lastSecStatus = secStatus;
         const vaultBadge = document.getElementById("cfg-vault-badge");
         if (vaultBadge && secStatus.storage_backend) {
+            const isEnSec = window.isEn || !!window.isEn;
             if (secStatus.dpapi_available) {
-                vaultBadge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>Proteção Windows DPAPI Ativa</span>`;
+                vaultBadge.innerHTML = `<i class="fa-solid fa-shield-halved"></i> <span>${isEnSec ? "Windows DPAPI Protection Active" : "Proteção Windows DPAPI Ativa"}</span>`;
             } else {
-                vaultBadge.innerHTML = `<i class="fa-solid fa-shield"></i> <span>Cofre Criptografado Ativo</span>`;
+                vaultBadge.innerHTML = `<i class="fa-solid fa-shield"></i> <span>${isEnSec ? "Encrypted Vault Active" : "Cofre Criptografado Ativo"}</span>`;
             }
         }
 
@@ -74,7 +87,8 @@ async function fetchConfig() {
         }
         if (newPinInput) {
             newPinInput.value = "";
-            newPinInput.placeholder = secStatus.pin_enabled ? "PIN Ativo (Alterar)" : "Digite 4 a 6 dígitos";
+            const isEnPin = window.isEn;
+            newPinInput.placeholder = secStatus.pin_enabled ? (isEnPin ? "PIN Active (Change)" : "PIN Ativo (Alterar)") : (isEnPin ? "Enter 4 to 6 digits" : "Digite 4 a 6 dígitos");
         }
 
         // 5. Controle de Acesso LAN
@@ -84,9 +98,10 @@ async function fetchConfig() {
             lanToggle.checked = !!secStatus.allow_lan_access;
         }
         if (lanStatusMsg) {
+            const isEnLan = window.isEn;
             lanStatusMsg.innerText = secStatus.allow_lan_access 
-                ? "Acesso LAN ativo: Celular/tablet na mesma rede Wi-Fi podem acessar." 
-                : "Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.";
+                ? (isEnLan ? "LAN access active: Mobile phones and tablets on the same Wi-Fi can access." : "Acesso LAN ativo: Celular/tablet na mesma rede Wi-Fi podem acessar.") 
+                : (isEnLan ? "Secure isolation active: Only this computer can access APIs and data." : "Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.");
         }
         
         updateApiStatusIndicator(config.has_api_key && config.has_cookies);
@@ -99,12 +114,13 @@ function updateApiStatusIndicator(online) {
     const dot = document.getElementById("api-status-dot");
     const text = document.getElementById("api-status-text");
     if (dot && text) {
+        const isEn = window.isEn;
         if (online) {
             dot.className = "status-dot online";
-            text.innerText = "IA & Cookies Conectados";
+            text.innerText = isEn ? "AI & Cookies Connected" : "IA & Cookies Conectados";
         } else {
             dot.className = "status-dot offline";
-            text.innerText = "Configuração pendente";
+            text.innerText = isEn ? "Configuration pending" : "Configuração pendente";
         }
     }
 }
@@ -124,6 +140,7 @@ async function setupConfigForm() {
         saveBtn.addEventListener("click", async () => {
             const groq_api_key = document.getElementById("cfg-groq-key")?.value || "";
             const cookies_raw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
+            const language = window.getLanguage ? window.getLanguage() : (document.getElementById("cfg-app-language")?.value || "pt");
             
             if (statusMsg) {
                 statusMsg.className = "status-msg";
@@ -134,14 +151,15 @@ async function setupConfigForm() {
                 const res = await fetch("/api/config", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ groq_api_key, cookies_raw })
+                    body: JSON.stringify({ groq_api_key, cookies_raw, language })
                 });
                 const data = await res.json();
                 
                 if (res.ok) {
                     if (statusMsg) {
                         statusMsg.className = "status-msg success";
-                        statusMsg.innerText = "Configurações salvas no cofre com sucesso!";
+
+        statusMsg.innerText = isEn ? "Settings saved to vault successfully!" : "Configurações salvas no cofre com sucesso!";
                     }
                     showToast("Configurações atualizadas e criptografadas!", "success");
                     fetchConfig();
@@ -178,7 +196,8 @@ async function setupConfigForm() {
                             clearInterval(interval);
                             autoLoginBtn.disabled = false;
                             autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
-                            showToast("Cookies capturados e criptografados com sucesso!", "success");
+
+                showToast(isEn ? "Cookies captured and encrypted successfully!" : "Cookies capturados e criptografados com sucesso!", "success");
                             fetchConfig();
                         }
                     }, 2000);
@@ -197,7 +216,8 @@ async function setupConfigForm() {
             try {
                 const res = await fetch("/api/security/clear_credentials", { method: "POST" });
                 if (res.ok) {
-                    showToast("Credenciais e tokens removidos com sucesso.", "info");
+
+        showToast(isEn ? "Credentials and tokens removed successfully." : "Credenciais e tokens removidos com sucesso.", "info");
                     fetchConfig();
                 } else {
                     showToast("Erro ao limpar credenciais.", "error");
@@ -244,7 +264,8 @@ async function setupConfigForm() {
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    showToast("PIN de segurança configurado com sucesso!", "success");
+
+            showToast(isEn ? "Security PIN configured successfully!" : "PIN de segurança configurado com sucesso!", "success");
                     fetchConfig();
                 } else {
                     showToast(`Erro ao gravar PIN: ${data.detail || "Erro"}`, "error");
@@ -335,7 +356,8 @@ window.loadAccountsManagement = async function(showFeedback = false) {
         if (quickSelect) {
             quickSelect.innerHTML = "";
             if (accounts.length === 0) {
-                quickSelect.innerHTML = '<option value="">Nenhuma conta sincronizada</option>';
+                const noAccText = isEn ? "No accounts synced" : "Nenhuma conta sincronizada";
+                quickSelect.innerHTML = `<option value="">${noAccText}</option>`;
             } else {
                 // Agrupa por jogo
                 const games = ["zzz", "genshin", "hsr"];
@@ -350,8 +372,10 @@ window.loadAccountsManagement = async function(showFeedback = false) {
                             const opt = document.createElement("option");
                             opt.value = `${acc.game_id}:${acc.uid}`;
                             const isAct = (activeAccounts[gid] && String(activeAccounts[gid]) === String(acc.uid)) || acc.is_active;
-                            const activeMark = isAct ? " ★ [Ativo]" : "";
-                            opt.textContent = `${acc.nickname || 'Jogador'} (Nv.${acc.level || 1} • UID: ${acc.uid})${activeMark}`;
+                            const activeMark = isAct ? (isEn ? " ★ [Active]" : " ★ [Ativo]") : "";
+                            const playerWord = isEn ? "Player" : "Jogador";
+                            const lvlPrefix = isEn ? "Lv." : "Nv.";
+                            opt.textContent = `${acc.nickname || playerWord} (${lvlPrefix}${acc.level || 1} • UID: ${acc.uid})${activeMark}`;
                             if (isAct) {
                                 opt.selected = true;
                             }
@@ -365,9 +389,11 @@ window.loadAccountsManagement = async function(showFeedback = false) {
 
         if (quickInfo) {
             const count = accounts.length;
+            const profilesStr = isEn ? `${count} profile${count > 1 ? 's' : ''} registered` : `${count} perfil${count > 1 ? 's' : ''} registrado${count > 1 ? 's' : ''}`;
+            const syncPrompt = isEn ? "Sync your cookies in the vault to import accounts" : "Sincronize seus cookies no cofre para importar contas";
             quickInfo.innerHTML = count > 0 
-                ? `<span style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-check-circle" style="color: #34d399;"></i> ${count} perfil${count > 1 ? 's' : ''} registrado${count > 1 ? 's' : ''}</span>`
-                : `<span style="color: #94a3b8;"><i class="fa-solid fa-circle-info"></i> Sincronize seus cookies no cofre para importar contas</span>`;
+                ? `<span style="display: inline-flex; align-items: center; gap: 6px;"><i class="fa-solid fa-check-circle" style="color: #34d399;"></i> ${profilesStr}</span>`
+                : `<span style="color: #94a3b8;"><i class="fa-solid fa-circle-info"></i> ${syncPrompt}</span>`;
         }
 
         // 2. Atualiza a Lista de Perfis no Painel de Configurações
@@ -429,7 +455,8 @@ window.loadAccountsManagement = async function(showFeedback = false) {
         }
 
         if (showFeedback && typeof showToast === "function") {
-            showToast("Lista de contas e perfis atualizada com sucesso!", "success");
+
+        showToast(isEn ? "Accounts and profiles list refreshed successfully!" : "Lista de contas e perfis atualizada com sucesso!", "success");
         }
     } catch (err) {
         console.error("Erro ao carregar perfis de contas:", err);
@@ -469,7 +496,8 @@ window.switchActiveAccount = async function(gameId, uid) {
         ]);
 
         if (typeof showToast === "function") {
-            showToast(`Perfil ${uid} (${gameId.toUpperCase()}) ativado com sucesso!`, "success");
+
+            showToast(isEn ? `Profile ${uid} (${gameId.toUpperCase()}) activated successfully!` : `Perfil ${uid} (${gameId.toUpperCase()}) ativado com sucesso!`, "success");
         }
     } catch (err) {
         console.error("Erro ao alternar perfil ativo:", err);
@@ -480,7 +508,8 @@ window.switchActiveAccount = async function(gameId, uid) {
 };
 
 window.deleteAccountProfile = async function(uid) {
-    if (!confirm(`Tem certeza que deseja excluir o perfil UID ${uid} do banco de dados local?\nIsso removerá os personagens e relíquias salvos deste perfil no SQLite.`)) {
+
+    if (!confirm(isEn ? `Are you sure you want to delete profile UID ${uid} from the local database?\nThis will remove saved characters and relics for this profile in SQLite.` : `Tem certeza que deseja excluir o perfil UID ${uid} do banco de dados local?\nIsso removerá os personagens e relíquias salvos deste perfil no SQLite.`)) {
         return;
     }
 
@@ -497,7 +526,8 @@ window.deleteAccountProfile = async function(uid) {
         ]);
 
         if (typeof showToast === "function") {
-            showToast(`Perfil UID ${uid} removido com sucesso.`, "success");
+
+            showToast(isEn ? `Profile UID ${uid} removed successfully.` : `Perfil UID ${uid} removido com sucesso.`, "success");
         }
     } catch (err) {
         console.error("Erro ao excluir perfil:", err);
@@ -508,6 +538,15 @@ window.deleteAccountProfile = async function(uid) {
 };
 
 
+
+window.addEventListener("app:languageChanged", () => {
+    if (typeof window.loadAccountsManagement === "function") {
+        window.loadAccountsManagement(false);
+    }
+    if (typeof fetchConfig === "function") {
+        fetchConfig();
+    }
+});
 
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof GAME_DISPLAY_CONFIG !== 'undefined') window.GAME_DISPLAY_CONFIG = GAME_DISPLAY_CONFIG;

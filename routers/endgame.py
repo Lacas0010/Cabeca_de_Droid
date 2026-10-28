@@ -8,10 +8,10 @@ router = APIRouter(tags=["Endgame"])
 
 
 @router.get("/api/endgame/{game_id}")
-async def get_endgame_endpoint(game_id: str):
+async def get_endgame_endpoint(game_id: str, lang: str = Query("pt", description="Language ('pt' or 'en')")):
     """Retorna os dados estruturados de Endgame (MoC, Ficção Pura, Sombra, Abismo, Teatro, Shiyu) de um jogo."""
     try:
-        return await get_endgame(game_id)
+        return await get_endgame(game_id, lang=lang)
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:
@@ -24,13 +24,14 @@ async def get_endgame_team_match_endpoint(
     uid: Optional[str] = Query(None, description="UID da conta do jogador"),
     mode: Optional[str] = Query(None, description="Filtro por modo de jogo (MoC, PF, AS, Abismo, Shiyu)"),
     min_match: Optional[float] = Query(0.0, description="Percentual mínimo de compatibilidade (0 a 100)"),
+    lang: str = Query("pt", description="Language ('pt' or 'en')"),
 ):
     """
     Cruza composições líderes de endgame do metagame com os personagens reais do jogador.
     Calcula percentual de compatibilidade e recomenda substitutos funcionais disponíveis no próprio roster.
     """
     try:
-        return match_endgame_teams(game_id=game_id, uid=uid, mode=mode, min_match=min_match or 0.0)
+        return match_endgame_teams(game_id=game_id, uid=uid, mode=mode, min_match=min_match or 0.0, lang=lang)
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:

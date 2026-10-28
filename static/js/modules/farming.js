@@ -1,3 +1,43 @@
+
+function formatFarmingDay(dayStr) {
+    if (!dayStr) return (window.isEn || window.currentLang === "en") ? "Today" : "Hoje";
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    if (!isEn) return dayStr;
+    const dayMap = {
+        "Segunda-feira": "Monday",
+        "Terça-feira": "Tuesday",
+        "Quarta-feira": "Wednesday",
+        "Quinta-feira": "Thursday",
+        "Sexta-feira": "Friday",
+        "Sábado": "Saturday",
+        "Domingo": "Sunday",
+        "Hoje": "Today"
+    };
+    return dayMap[dayStr] || dayStr;
+}
+
+function formatFarmingNote(noteStr) {
+    if (!noteStr) return "";
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    if (!isEn) return noteStr;
+    let s = String(noteStr);
+    return s.replace(/Reset Semanal do Notorious Hunt \(3x Caça aos Chefes de Dano\)\./gi, "Weekly Reset of Notorious Hunt (3x Boss Hunt).")
+            .replace(/Reset Semanal do Universo Simulado e Eco da Guerra \(3x recompensas\)\./gi, "Weekly Reset of Simulated Universe and Echo of War (3x rewards).")
+            .replace(/Calyx de Traço & Ascensão com drop normal\./gi, "Trace & Ascension Calyx with normal drop.")
+            .replace(/Calyx de Traço & Ascensão\./gi, "Trace & Ascension Calyx.")
+            .replace(/Foco recomendado:\s*Farm de Túnel de Relíquias\./gi, "Recommended focus: Relic Tunnel Farming.")
+            .replace(/Foco recomendado:\s*Ornamentos Planares \(Universo Divergente\/Simulado\)\./gi, "Recommended focus: Planar Ornaments (Divergent/Simulated Universe).")
+            .replace(/Farm livre de Relíquias e Materiais de Ascensão\./gi, "Free farming of Relics and Ascension Materials.")
+            .replace(/Preparação de Energia para o Reset de Segunda\./gi, "Stamina preparation for Monday Reset.")
+            .replace(/Foco recomendado:\s*HIA Club - Chips de Atributo de Especialidade\./gi, "Recommended focus: HIA Club - Specialty Attribute Chips.")
+            .replace(/Foco recomendado:\s*HIA Club - Certificados de Promoção\./gi, "Recommended focus: HIA Club - Promotion Seals.")
+            .replace(/Foco recomendado:\s*Drive Disc Tuning & Limpeza de Rótulo\./gi, "Recommended focus: Drive Disc Tuning & Label Cleanup.")
+            .replace(/HIA Club - Materiais de Agente\./gi, "HIA Club - Agent Materials.")
+            .replace(/Farm livre de Discos e Materiais na Cavidade Zero\./gi, "Free farming of Drive Discs and Hollow Zero Materials.")
+            .replace(/Preparação de Bateria para o Reset Semanal\./gi, "Battery preparation for Weekly Reset.")
+            .replace(/Todos os materiais abertos/gi, "All materials open");
+}
+
 // ==========================================================================
 // Módulo: farming.js
 // Cabeça de Droid - Vanilla ES6 Module
@@ -40,10 +80,11 @@
                 const data = await res.json();
                 
                 document.getElementById("gacha-results-box").style.display = "block";
-                document.getElementById("gacha-chance-lbl").innerText = `Chance de Sucesso: ${data.success_rate}%`;
+
+                document.getElementById("gacha-chance-lbl").innerText = `${isEn ? "Success Chance:" : "Chance de Sucesso:"} ${data.success_rate}%`;
                 document.getElementById("gacha-avg-lbl").innerText = data.avg_pulls_spent 
-                    ? `Média de Tiros Gastos nas vitórias: ${data.avg_pulls_spent} tiros` 
-                    : "Quantidade de tiros insuficiente para garantir a meta com alta frequência.";
+                    ? (isEn ? `Average Pulls Spent in wins: ${data.avg_pulls_spent} pulls` : `Média de Tiros Gastos nas vitórias: ${data.avg_pulls_spent} tiros`) 
+                    : (isEn ? "Insufficient pulls to guarantee goal frequently." : "Quantidade de tiros insuficiente para garantir a meta com alta frequência.");
 
                 const distList = document.getElementById("gacha-dist-list");
                 distList.innerHTML = "";
@@ -73,7 +114,8 @@
     window.loadFarmData = async (gameId, targetContainerId = "farm-content-body") => {
         const body = document.getElementById(targetContainerId);
         if (!body) return;
-        body.innerHTML = "<div style='color:#94a3b8; padding: 20px; text-align: center;'><i class='fa-solid fa-spinner fa-spin'></i> Carregando calendário, lista de personagens e recomendações...</div>";
+
+        body.innerHTML = `<div style='color:#94a3b8; padding: 20px; text-align: center;'><i class='fa-solid fa-spinner fa-spin'></i> ${isEn ? "Loading calendar, character list, and recommendations..." : "Carregando calendário, lista de personagens e recomendações..."}</div>`;
         
         try {
             const storageKey = `hoyo_farm_selected_${gameId}`;
@@ -88,7 +130,7 @@
                 }
             } catch(e) {}
 
-            let apiUrl = `/api/farming/today/${gameId}`;
+            let apiUrl = `/api/farming/today/${gameId}?lang=${isEn ? "en" : "pt"}`;
             if (savedSelected && Array.isArray(savedSelected) && savedSelected.length > 0 && !savedSelected.includes("__none__")) {
                 apiUrl += `?selected_chars=${encodeURIComponent(savedSelected.join(","))}`;
             } else if (savedSelected && savedSelected.includes("__none__")) {
@@ -131,13 +173,13 @@
                 <!-- CALENDÁRIO DO DIA -->
                 <div style="padding:14px; background:rgba(255,255,255,0.03); border-radius:10px; margin-bottom:16px; border:1px solid var(--border-color);">
                     <h4 style="margin:0 0 6px 0; color:#10b981; font-size:15px; display:flex; align-items:center; gap:8px;">
-                        <i class="fa-solid fa-calendar-day"></i> Calendário do Dia (${cal.days || 'Hoje'})
-                        <span style="font-size:11px; background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:12px; margin-left:auto;">Nv. Máximo do Jogo: ${maxLvl}</span>
+                        <i class="fa-solid fa-calendar-day"></i> ${isEn ? "Today's Schedule" : "Calendário do Dia"} (${formatFarmingDay(cal.days)})
+                        <span style="font-size:11px; background:rgba(16,185,129,0.15); color:#10b981; padding:2px 8px; border-radius:12px; margin-left:auto;">${isEn ? "Max Game Level:" : "Nv. Máximo do Jogo:"} ${maxLvl}</span>
                     </h4>
             `;
-            if (cal.talents) html += `<div style="font-size:13px; color:#cbd5e1; margin-top:4px;"><strong>Livros de Talento / Mat.:</strong> ${cal.talents.join(", ")}</div>`;
-            if (cal.weapons) html += `<div style="font-size:13px; color:#cbd5e1; margin-top:4px;"><strong>Armas / Elevação:</strong> ${cal.weapons.join(", ")}</div>`;
-            if (cal.note) html += `<div style="font-size:13px; color:#f59e0b; margin-top:4px;"><strong>Nota Especial:</strong> ${cal.note}</div>`;
+            if (cal.talents) html += `<div style="font-size:13px; color:#cbd5e1; margin-top:4px;"><strong>${isEn ? "Talent Books / Mat.:" : "Livros de Talento / Mat.:"}</strong> ${cal.talents.join(", ")}</div>`;
+            if (cal.weapons) html += `<div style="font-size:13px; color:#cbd5e1; margin-top:4px;"><strong>${isEn ? "Weapons / Ascension:" : "Armas / Elevação:"}</strong> ${cal.weapons.join(", ")}</div>`;
+            if (cal.note) html += `<div style="font-size:13px; color:#f59e0b; margin-top:4px;"><strong>${isEn ? "Special Note:" : "Nota Especial:"}</strong> ${formatFarmingNote(cal.note)}</div>`;
             html += `</div>`;
 
             // PAINEL / TRAY DE SELEÇÃO VISUAL DE PERSONAGENS ALVO
@@ -146,22 +188,18 @@
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
                         <div style="display:flex; align-items:center; gap:8px;">
                             <strong style="color:#ffffff; font-size:14px; display:flex; align-items:center; gap:6px;">
-                                <i class="fa-solid fa-crosshairs" style="color:#10b981;"></i> Foco de Farm Ativo
+                                <i class="fa-solid fa-crosshairs" style="color:#10b981;"></i> ${isEn ? "Active Farming Focus" : "Foco de Farm Ativo"}
                             </strong>
                             <span style="font-size:11px; background:rgba(56,189,248,0.15); color:#38bdf8; font-weight:700; padding:2px 8px; border-radius:12px; border:1px solid rgba(56,189,248,0.3);">
-                                ${selectedSet.size} de ${allRosterNames.length} personagens
+                                ${selectedSet.size} ${isEn ? "of" : "de"} ${allRosterNames.length} ${isEn ? "characters" : "personagens"}
                             </span>
                         </div>
                         <div style="display:flex; gap:6px; align-items:center;">
                             <button onclick="window.openFarmCharSelectorModal('${gameId}', '${targetContainerId}')" style="padding:6px 14px; font-size:12px; font-weight:700; background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 2px 10px rgba(16,185,129,0.35);">
-                                <i class="fa-solid fa-user-pen"></i> Escolher Personagens Alvo
+                                <i class="fa-solid fa-user-pen"></i> ${isEn ? "Select Target Characters" : "Escolher Personagens Alvo"}
                             </button>
-                            <button onclick="window.quickSelectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer; font-weight:600;">
-                                Todos
-                            </button>
-                            <button onclick="window.quickDeselectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; cursor:pointer; font-weight:600;">
-                                Desmarcar
-                            </button>
+                            <button onclick="window.quickSelectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer; font-weight:600;">${isEn ? "All" : "Todos"}</button>
+                            <button onclick="window.quickDeselectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; cursor:pointer; font-weight:600;">${isEn ? "Deselect" : "Desmarcar"}</button>
                         </div>
                     </div>
 
@@ -201,12 +239,12 @@
             html += `
                 <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 10px 0;">
                     <h4 style="margin:0; color:#f59e0b; font-size:15px; display:flex; align-items:center; gap:6px;">
-                        <i class="fa-solid fa-bullseye"></i> Sugestões e Itens de Farm Detalhados
+                        <i class="fa-solid fa-bullseye"></i> ${isEn ? "Detailed Farming Suggestions & Materials" : "Sugestões e Itens de Farm Detalhados"}
                     </h4>
                     ${gameId === "genshin" ? `
                         <label style="font-size:12px; color:#38bdf8; display:flex; align-items:center; gap:6px; background:rgba(56,189,248,0.1); padding:4px 10px; border-radius:8px; cursor:pointer; border:1px solid rgba(56,189,248,0.25);">
                             <input type="checkbox" id="${targetContainerId}-farmable-only" ${isFarmableOnly ? 'checked' : ''}>
-                            <span> Apenas Materiais Abertos Hoje</span>
+                            <span> ${isEn ? "Only Materials Open Today" : "Apenas Materiais Abertos Hoje"}</span>
                         </label>
                     ` : ''}
                 </div>
@@ -222,15 +260,15 @@
                     html += `
                         <div style="padding:18px; background:rgba(234,179,8,0.08); border:1px solid rgba(234,179,8,0.25); border-radius:10px; font-size:13px; color:#fde047; text-align:center; line-height:1.6;">
                             <i class="fa-solid fa-calendar-xmark" style="font-size:18px; margin-bottom:6px; display:block; color:#facc15;"></i>
-                            <strong>Os domínios de talento dos personagens selecionados estão fechados hoje!</strong><br>
-                            <span style="font-size:12px; color:#94a3b8;">Desmarque a opção <strong>"Apenas Materiais Abertos Hoje"</strong> acima para visualizar todos os materiais de ascensão, chefes e talentos mesmo com o domínio fechado.</span>
+                            <strong>${isEn ? "Talent domains for selected characters are closed today!" : "Os domínios de talento dos personagens selecionados estão fechados hoje!"}</strong><br>
+                            <span style="font-size:12px; color:#94a3b8;">${isEn ? "Uncheck the option above to view all ascension, boss and talent materials even when domains are closed." : "Desmarque a opção <strong>\"Apenas Materiais Abertos Hoje\"</strong> acima para visualizar todos os materiais de ascensão, chefes e talentos mesmo com o domínio fechado."}</span>
                         </div>
                     `;
                 } else {
                     html += `
                         <div style="padding:18px; background:rgba(255,255,255,0.02); border-radius:10px; font-size:13px; color:#94a3b8; text-align:center;">
                             <i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:6px;"></i>
-                            Nenhum personagem selecionado precisa de ascensão no momento. Todos os selecionados estão no nível máximo (${maxLvl}) com talentos e armas atualizados!
+                            ${isEn ? `No selected characters need ascension at the moment. All selected are at maximum level (${maxLvl}) with up-to-date talents and weapons!` : `Nenhum personagem selecionado precisa de ascensão no momento. Todos os selecionados estão no nível máximo (${maxLvl}) com talentos e armas atualizados!`}
                         </div>
                     `;
                 }
@@ -268,11 +306,11 @@
                                         <div style="display:flex; align-items:center; gap:8px;">
                                             <strong style="color:#ffffff; font-size:16px;">${t.name}</strong>
                                             <span style="font-size:11px; padding:2px 8px; border-radius:10px; background:${elemTheme.color}22; color:${elemTheme.color}; font-weight:700; border:1px solid ${elemTheme.color}44;">
-                                                ${t.element || 'Elemento'}
+                                                ${window.formatElementDisplayName ? window.formatElementDisplayName(t.element) : (t.element || (isEn ? "Element" : "Elemento"))}
                                             </span>
                                         </div>
                                         <div style="font-size:12px; color:#cbd5e1; margin-top:3px; display:flex; align-items:center; gap:8px;">
-                                            <span>Nv. ${t.level}/${t.max_level}</span>
+                                            <span>${isEn ? "Lv." : "Nv."} ${t.level}/${t.max_level}</span>
                                             <div style="width:80px; height:6px; background:rgba(255,255,255,0.1); border-radius:3px; overflow:hidden;">
                                                 <div style="width:${pct}%; height:100%; background:${elemTheme.color};"></div>
                                             </div>
@@ -283,14 +321,14 @@
                                 <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
                                     ${t.talent_priority ? `
                                         <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:rgba(168,85,247,0.15); color:#c084fc; font-weight:600; border:1px solid rgba(168,85,247,0.3);">
-                                             Prioridade Prydwen: ${t.talent_priority}
+                                             ${isEn ? "Prydwen Priority:" : "Prioridade Prydwen:"} ${t.talent_priority}
                                         </span>
                                     ` : ''}
                                     <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:${t.level < t.max_level ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'}; color:${t.level < t.max_level ? '#f87171' : '#34d399'}; font-weight:600;">
-                                        ${t.level < t.max_level ? `Ascensão Nv. ${t.level}/${t.max_level}` : `Nível ${t.max_level} OK`}
+                                        ${t.level < t.max_level ? (isEn ? `Ascension Lv. ${t.level}/${t.max_level}` : `Ascensão Nv. ${t.level}/${t.max_level}`) : (isEn ? `Level ${t.max_level} OK` : `Nível ${t.max_level} OK`)}
                                     </span>
                                     <span style="font-size:11px; padding:4px 10px; border-radius:12px; background:rgba(255,255,255,0.05); color:${gColor}; font-weight:bold; border:1px solid ${gColor}44;">
-                                        Nota ${t.grade} (${t.score.toFixed(1)}%)
+                                        ${isEn ? "Grade" : "Nota"} ${t.grade} (${t.score.toFixed(1)}%)
                                     </span>
                                 </div>
                             </div>
@@ -302,7 +340,65 @@
                     const gameIdStr = (t.game_id || gameId || "genshin").toLowerCase().trim();
                     const ic = (t.items_needed && t.items_needed.icons) || {};
 
-                    const defaultTermsByGame = {
+                    const defaultTermsByGame = isEn ? {
+                        genshin: {
+                            currency_name: "Mora",
+                            xp_book_name: "Hero's Wit",
+                            talent_category: "Talents",
+                            green_book: "Teachings (2★)",
+                            blue_book: "Guide (3★)",
+                            purple_book: "Philosophies (4★)",
+                            enemy_t1: "Common Enemy Drop (1★)",
+                            enemy_t2: "Uncommon Enemy Drop (2★)",
+                            enemy_t3: "Rare Enemy Drop (3★)",
+                            boss_mat: "Field Boss Material",
+                            weekly_boss_mat: "Weekly Boss Material",
+                            crown_mat: "Crown of Insight",
+                            ore_name: "Mystic Enhancement Ore",
+                            w_mat_green: "Weapon Domain Mat. (2★)",
+                            w_mat_blue: "Weapon Domain Mat. (3★)",
+                            w_mat_purple: "Weapon Domain Mat. (4★)",
+                            w_mat_gold: "Weapon Domain Mat. (5★)"
+                        },
+                        hsr: {
+                            currency_name: "Credits",
+                            xp_book_name: "Traveler's Guide",
+                            talent_category: "Traces",
+                            green_book: "Trace Material (2★)",
+                            blue_book: "Trace Material (3★)",
+                            purple_book: "Trace Material (4★)",
+                            enemy_t1: "Enemy Component (1★)",
+                            enemy_t2: "Enemy Core (2★)",
+                            enemy_t3: "Enemy Essence (3★)",
+                            boss_mat: "Stagnant Shadow Material",
+                            weekly_boss_mat: "Echo of War Material",
+                            crown_mat: "Tracks of Destiny",
+                            ore_name: "Refined Aether",
+                            w_mat_green: "Light Cone Material (2★)",
+                            w_mat_blue: "Light Cone Material (3★)",
+                            w_mat_purple: "Light Cone Material (4★)",
+                            w_mat_gold: "Light Cone Material (5★)"
+                        },
+                        zzz: {
+                            currency_name: "Dennys",
+                            xp_book_name: "Official Investigator Log",
+                            talent_category: "Skills",
+                            green_book: "Basic Skill Chip (2★)",
+                            blue_book: "Advanced Skill Chip (3★)",
+                            purple_book: "Specialized Skill Chip (4★)",
+                            enemy_t1: "Basic Certification Seal (1★)",
+                            enemy_t2: "Advanced Certification Seal (2★)",
+                            enemy_t3: "Specialized Certification Seal (3★)",
+                            boss_mat: "Higher Dimensional Data",
+                            weekly_boss_mat: "Notorious Hunt Material",
+                            crown_mat: "Hamster Cage Pass",
+                            ore_name: "W-Engine Power Supply",
+                            w_mat_green: "Basic W-Engine Component (2★)",
+                            w_mat_blue: "Advanced W-Engine Component (3★)",
+                            w_mat_purple: "Specialized Component (4★)",
+                            w_mat_gold: "Master Component (5★)"
+                        }
+                    } : {
                         genshin: {
                             currency_name: "Mora",
                             xp_book_name: "EXP do Herói",
@@ -416,17 +512,17 @@
                             <div style="background:rgba(239,68,68,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #ef4444;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:6px;">
                                     <strong style="color:#f87171; display:flex; align-items:center; gap:6px; font-size:13px;">
-                                         Elevação de Nível & Ascensão do Personagem (Nv. ${t.level} ➔ Nv. ${t.max_level})
+                                         ${isEn ? "Level Up & Character Ascension" : "Elevação de Nível & Ascensão do Personagem"} (${isEn ? "Lv." : "Nv."} ${t.level} ➔ ${isEn ? "Lv." : "Nv."} ${t.max_level})
                                     </strong>
                                     <span style="font-size:11px; padding:2px 8px; border-radius:6px; background:rgba(16,185,129,0.15); color:#34d399; font-weight:600;">
-                                        <i class="fa-solid fa-earth-americas"></i> Aberto Hoje (Chefe de Campo & Especialidades 24/7)
+                                        <i class="fa-solid fa-earth-americas"></i> ${isEn ? "Open Today (Field Boss & Specialties 24/7)" : "Aberto Hoje (Chefe de Campo & Especialidades 24/7)"}
                                     </span>
                                 </div>
                                 <div style="color:#cbd5e1; line-height:1.6; font-size:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:6px;">
-                                    <div>${xpIcon} <strong>${terms.xp_book_name}:</strong> ${asc.xp_needed.toLocaleString()} EXP (~${asc.xp_books_purple} un. Roxos)</div>
+                                    <div>${xpIcon} <strong>${terms.xp_book_name}:</strong> ${asc.xp_needed.toLocaleString()} EXP (~${asc.xp_books_purple} ${isEn ? "Purples" : "un. Roxos"})</div>
                                     <div>${moraIcon} <strong>${terms.currency_name}:</strong> ${asc.currency_needed.toLocaleString()}</div>
-                                    ${asc.boss_items_needed > 0 ? `<div>${bIconHtml} <strong>${asc.boss_item_name || terms.boss_mat}:</strong> ${asc.boss_items_needed} un.</div>` : ''}
-                                    ${asc.local_specialty ? `<div>${specIconHtml} <strong>${asc.local_specialty}:</strong> Especialidade Local</div>` : ''}
+                                    ${asc.boss_items_needed > 0 ? `<div>${bIconHtml} <strong>${asc.boss_item_name || terms.boss_mat}:</strong> ${asc.boss_items_needed} ${isEn ? "pcs." : "un."}</div>` : ''}
+                                    ${asc.local_specialty ? `<div>${specIconHtml} <strong>${asc.local_specialty}:</strong> ${isEn ? "Local Specialty" : "Especialidade Local"}</div>` : ''}
                                 </div>
                             </div>
                         `;
@@ -439,11 +535,11 @@
                             <div style="background:rgba(56,189,248,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #38bdf8;">
                                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
                                     <strong style="color:#38bdf8; display:flex; align-items:center; gap:6px; font-size:13px;">
-                                         Elevação de ${terms.talent_category} Detalhada por Habilidade:
+                                         ${isEn ? `Detailed ${terms.talent_category} Upgrades:` : `Elevação de ${terms.talent_category} Detalhada por Habilidade:`}
                                     </strong>
                                     ${gameIdStr === "genshin" ? `
                                         <span style="font-size:11px; padding:2px 8px; border-radius:6px; background:${isTalentOpen ? 'rgba(56,189,248,0.15)' : 'rgba(234,179,8,0.15)'}; color:${isTalentOpen ? '#38bdf8' : '#fde047'}; font-weight:600;">
-                                            <i class="fa-solid ${isTalentOpen ? 'fa-door-open' : 'fa-clock'}"></i> ${isTalentOpen ? 'Domínio Aberto Hoje!' : 'Domínio Fechado Hoje'}
+                                            <i class="fa-solid ${isTalentOpen ? 'fa-door-open' : 'fa-clock'}"></i> ${isTalentOpen ? (isEn ? 'Domain Open Today!' : 'Domínio Aberto Hoje!') : (isEn ? 'Domain Closed Today' : 'Domínio Fechado Hoje')}
                                         </span>
                                     ` : ''}
                                 </div>
@@ -467,7 +563,7 @@
                                     <div style="font-weight:600; color:#f1f5f9; display:flex; justify-content:space-between; align-items:center; font-size:12px;">
                                         <span style="display:flex; align-items:center; gap:4px;">${skillIconHtml} ${td.skill_name}</span>
                                         <span style="font-size:11px; color:#38bdf8; background:rgba(56,189,248,0.15); padding:2px 8px; border-radius:12px; font-weight:600;">
-                                            Nv. ${td.current_level} ➔ Nv. ${td.target_level}
+                                            ${isEn ? "Lv." : "Nv."} ${td.current_level} ➔ ${isEn ? "Lv." : "Nv."} ${td.target_level}
                                         </span>
                                     </div>
                                     <div style="font-size:11px; color:#cbd5e1; margin-top:5px; display:flex; gap:12px; flex-wrap:wrap; align-items:center;">
@@ -490,10 +586,10 @@
 
                         let wMats = [];
                         if (wd.ores_needed > 0) wMats.push(`<div>${makeMatIcon(wd.ore_icon, finalIcons.weapon_ore)} <strong>${wd.ore_name || terms.ore_name}:</strong> ~${wd.ores_needed} un.</div>`);
-                        if (wd.w_mat_green > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_green_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_green_name || terms.w_mat_green || 'Mat. Domínio Arma (2★)'}:</strong> ${wd.w_mat_green} un.</div>`);
-                        if (wd.w_mat_blue > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_blue_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_blue_name || terms.w_mat_blue || 'Mat. Domínio Arma (3★)'}:</strong> ${wd.w_mat_blue} un.</div>`);
-                        if (wd.w_mat_purple > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_purple_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_purple_name || terms.w_mat_purple || 'Mat. Domínio Arma (4★)'}:</strong> ${wd.w_mat_purple} un.</div>`);
-                        if (wd.w_mat_gold > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_gold_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_gold_name || terms.w_mat_gold || 'Mat. Domínio Arma (5★)'}:</strong> ${wd.w_mat_gold} un.</div>`);
+                        if (wd.w_mat_green > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_green_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_green_name || terms.w_mat_green || (isEn ? 'Weapon Domain Mat. (2★)' : 'Mat. Domínio Arma (2★)')}:</strong> ${wd.w_mat_green} un.</div>`);
+                        if (wd.w_mat_blue > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_blue_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_blue_name || terms.w_mat_blue || (isEn ? 'Weapon Domain Mat. (3★)' : 'Mat. Domínio Arma (3★)')}:</strong> ${wd.w_mat_blue} un.</div>`);
+                        if (wd.w_mat_purple > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_purple_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_purple_name || terms.w_mat_purple || (isEn ? 'Weapon Domain Mat. (4★)' : 'Mat. Domínio Arma (4★)')}:</strong> ${wd.w_mat_purple} un.</div>`);
+                        if (wd.w_mat_gold > 0) wMats.push(`<div>${makeMatIcon(wd.w_mat_gold_icon, finalIcons.weapon_mat)} <strong>${wd.w_mat_gold_name || terms.w_mat_gold || (isEn ? 'Weapon Domain Mat. (5★)' : 'Mat. Domínio Arma (5★)')}:</strong> ${wd.w_mat_gold} un.</div>`);
                         if (wd.w_enemy_t1 > 0) wMats.push(`<div>${makeMatIcon(wd.w_enemy_t1_icon, finalIcons.boss)} <strong>${wd.w_enemy_t1_name || terms.enemy_t1 || 'Drop Inimigo (1★)'}:</strong> ${wd.w_enemy_t1} un.</div>`);
                         if (wd.w_enemy_t2 > 0) wMats.push(`<div>${makeMatIcon(wd.w_enemy_t2_icon, finalIcons.boss)} <strong>${wd.w_enemy_t2_name || terms.enemy_t2 || 'Drop Inimigo (2★)'}:</strong> ${wd.w_enemy_t2} un.</div>`);
                         if (wd.w_enemy_t3 > 0) wMats.push(`<div>${makeMatIcon(wd.w_enemy_t3_icon, finalIcons.boss)} <strong>${wd.w_enemy_t3_name || terms.enemy_t3 || 'Drop Inimigo (3★)'}:</strong> ${wd.w_enemy_t3} un.</div>`);
@@ -502,7 +598,7 @@
                         html += `
                             <div style="background:rgba(16,185,129,0.05); padding:10px 12px; border-radius:8px; border-left:3px solid #10b981;">
                                 <strong style="color:#34d399; display:flex; align-items:center; gap:8px; margin-bottom:6px; font-size:13px;">
-                                    ${wIconImg} Elevação da Arma Equipada (${wd.weapon_name}) - Nv. ${wd.current_level} ➔ Nv. ${wd.target_level}
+                                    ${wIconImg} ${isEn ? "Equipped Weapon Ascension" : "Elevação da Arma Equipada"} (${wd.weapon_name}) - ${isEn ? "Lv." : "Nv."} ${wd.current_level} ➔ ${isEn ? "Lv." : "Nv."} ${wd.target_level}
                                 </strong>
                                 <div style="color:#cbd5e1; line-height:1.6; font-size:12px; display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:6px;">
                                     ${wMats.join("")}
@@ -515,7 +611,7 @@
                     if (t.items_needed && t.items_needed.relics) {
                         html += `
                             <div style="background:rgba(245,158,11,0.05); padding:8px 10px; border-radius:6px; border-left:3px solid #f59e0b;">
-                                <strong style="color:#f59e0b; display:block; margin-bottom:2px;"> Relíquias & Equipamentos:</strong>
+                                <strong style="color:#f59e0b; display:block; margin-bottom:2px;"> ${isEn ? (gameIdStr === "zzz" ? "Drive Discs & Equipment:" : "Relics & Equipment:") : (gameIdStr === "zzz" ? "Discos de Acionamento & Equipamentos:" : "Relíquias & Equipamentos:")}</strong>
                                 <div style="color:#cbd5e1;">${t.items_needed.relics}</div>
                             </div>
                         `;
@@ -660,11 +756,11 @@
         });
 
         if (countEl) {
-            countEl.innerText = `${window.farmModalSelectedSet.size} / ${rosterList.length} selecionados`;
+            countEl.innerText = `${window.farmModalSelectedSet.size} / ${rosterList.length} ${isEn ? "selected" : "selecionados"}`;
         }
 
         if (filtered.length === 0) {
-            grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">Nenhum personagem encontrado com os filtros aplicados.</div>`;
+            grid.innerHTML = `<div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">${isEn ? "No characters found matching the applied filters." : "Nenhum personagem encontrado com os filtros aplicados."}</div>`;
             return;
         }
 
@@ -841,10 +937,12 @@
             }
         });
 
-        container.innerHTML = "<div style='color: #94a3b8; text-align: center; padding: 20px;'><i class='fa-solid fa-spinner fa-spin'></i> Otimizando roteiro diário de energia...</div>";
+        const optimizingText = isEn ? "Optimizing daily energy schedule..." : "Otimizando roteiro diário de energia...";
+        container.innerHTML = `<div style='color: #94a3b8; text-align: center; padding: 20px;'><i class='fa-solid fa-spinner fa-spin'></i> ${optimizingText}</div>`;
 
         try {
-            const res = await fetch(`/api/farm/order-of-day/${gameId}`);
+            const farmLang = window.isEn ? 'en' : 'pt';
+            const res = await fetch(`/api/farm/order-of-day/${gameId}?lang=${farmLang}`);
             if (!res.ok) {
                 const errData = await res.json().catch(() => ({}));
                 throw new Error(errData.detail || `Erro HTTP ${res.status}`);
@@ -852,10 +950,41 @@
             const data = await res.json();
             window.lastLoadedFarmOrder = data;
 
-            if (weekdayTag) weekdayTag.innerText = `${data.weekday_name || 'Hoje'}`;
+            const WEEKDAY_DICT = {
+                "Segunda-feira": "Monday",
+                "Terça-feira": "Tuesday",
+                "Quarta-feira": "Wednesday",
+                "Quinta-feira": "Thursday",
+                "Sexta-feira": "Friday",
+                "Sábado": "Saturday",
+                "Domingo": "Sunday"
+            };
+            const ENERGY_DICT = {
+                "Resina Original": "Original Resin",
+                "Poder de Desbravamento": "Trailblaze Power",
+                "Carga de Bateria": "Battery Charge"
+            };
+            const TYPE_DICT = {
+                "Chefe de Ascensão": "Ascension Boss",
+                "Domínio de Livros de Talento": "Talent Book Domain",
+                "Livros de Talento": "Talent Books",
+                "Domínio de Artefatos": "Artifact Domain",
+                "Domínio de Artefatos Recomendado": "Recommended Artifact Domain",
+                "Cálice (Materiais)": "Calyx (Materials)",
+                "Sombra Estagnada": "Stagnant Shadow",
+                "Caverna da Corrosão": "Cavern of Corrosion",
+                "Limpeza de Rotina": "Routine Cleanup",
+                "Limpeza Periódica": "Periodic Cleanup",
+                "Caçada Notória": "Notorious Hunt",
+                "Especialidade Local": "Local Specialty"
+            };
+
+            const displayWk = (window.isEn && WEEKDAY_DICT[data.weekday_name]) ? WEEKDAY_DICT[data.weekday_name] : (data.weekday_name || (window.isEn ? 'Today' : 'Hoje'));
+            if (weekdayTag) weekdayTag.innerText = displayWk;
             
             const energy = data.energy || {};
-            if (energyVal) energyVal.innerText = `${energy.current || 0} / ${energy.max || 0} ${energy.name || ''}`;
+            const eName = (window.isEn && ENERGY_DICT[energy.name]) ? ENERGY_DICT[energy.name] : (energy.name || '');
+            if (energyVal) energyVal.innerText = `${energy.current || 0} / ${energy.max || 0} ${eName}`;
             if (energyBar) energyBar.style.width = `${energy.usage_pct || 0}%`;
 
             const compCount = data.completed_count || 0;
@@ -867,11 +996,14 @@
 
             const tasks = data.tasks || [];
             if (tasks.length === 0) {
-                container.innerHTML = "<div style='color: #94a3b8; text-align: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 8px;'>Nenhuma recomendação pendente para hoje!</div>";
+                const noTasksText = isEn ? "No pending recommendations for today!" : "Nenhuma recomendação pendente para hoje!";
+                container.innerHTML = `<div style='color: #94a3b8; text-align: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 8px;'>${noTasksText}</div>`;
                 return;
             }
 
             let html = "";
+            const stepWord = isEn ? "Step" : "Passo";
+            const costWord = isEn ? "Cost" : "Custo";
             tasks.forEach(t => {
                 const isDone = !!t.completed;
                 const isAvail = !!t.available_now;
@@ -879,6 +1011,55 @@
                 const badgeColor = t.badge_color || '#10b981';
                 const statusColor = isAvail ? '#10b981' : '#f59e0b';
                 const statusBg = isAvail ? 'rgba(16,185,129,0.15)' : 'rgba(245,158,11,0.15)';
+
+                let curTypeLabel = (window.isEn && TYPE_DICT[t.type_label]) ? TYPE_DICT[t.type_label] : t.type_label;
+                let curPBadge = t.priority_badge;
+                let curEstimate = t.time_estimate;
+                let curLoc = t.location;
+                let curDesc = t.description;
+                let curEnergyName = (window.isEn && ENERGY_DICT[t.energy_name]) ? ENERGY_DICT[t.energy_name] : t.energy_name;
+
+                if (window.isEn) {
+                    if (curPBadge && curPBadge.includes("Aberto Hoje")) curPBadge = "⭐ Open Today";
+                    if (curPBadge && curPBadge.includes("Ascensão Pendente")) curPBadge = "🔥 Pending Ascension";
+                    if (curPBadge && curPBadge.includes("Otimização de Build")) curPBadge = "💎 Build Optimization";
+                    if (curEstimate && curEstimate.includes("Disponível Agora")) curEstimate = "Available Now";
+                    if (curEstimate && curEstimate.includes("Disponível às")) curEstimate = curEstimate.replace("Disponível às", "Available at");
+                    if (curEstimate && curEstimate.includes("Aguardando Energia")) curEstimate = "Waiting for Energy";
+                    if (curLoc) {
+                        curLoc = curLoc
+                            .replace("Chefe de Ascensão", "Ascension Boss")
+                            .replace("Domínio de Livros de Talento", "Talent Book Domain")
+                            .replace("Domínio de Artefatos Recomendado", "Recommended Artifact Domain")
+                            .replace("Domínio de Artefatos", "Artifact Domain")
+                            .replace("Cálice Rubro", "Crimson Calyx")
+                            .replace("Treinamento de Habilidades", "Skill Training");
+                    }
+                    if (curDesc) {
+                        if (curDesc.startsWith("Derrote")) {
+                            curDesc = curDesc
+                                .replace("Derrote", "Defeat")
+                                .replace("Chefe de Ascensão", "Ascension Boss")
+                                .replace("para avançar", "to advance")
+                                .replace("do Nv.", "from Lv.")
+                                .replace("rumo ao Nv.", "towards Lv.");
+                        } else if (curDesc.startsWith("Faça")) {
+                            curDesc = curDesc
+                                .replace("Faça", "Run")
+                                .replace("Domínio de Livros de Talento", "Talent Book Domain")
+                                .replace("Domínio de Artefatos Recomendado", "Recommended Artifact Domain")
+                                .replace("para obter", "to obtain")
+                                .replace("e avançar os talentos prioritários de", "and advance priority talents for")
+                                .replace("para farmar o conjunto ideal para", "to farm recommended set for")
+                                .replace("Nota", "Grade");
+                        } else if (curDesc.startsWith("Realize")) {
+                            curDesc = curDesc
+                                .replace("Realize", "Run")
+                                .replace("Domínio de Artefatos", "Artifact Domain")
+                                .replace("buscando peças com Atributos Ideais para maximizar a nota de", "seeking optimal main and sub-stats to maximize the rating of");
+                        }
+                    }
+                }
 
                 html += `
                     <div class="farm-order-step-item" id="order-step-item-${t.id}" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: ${isDone ? 'rgba(16, 185, 129, 0.08)' : 'rgba(15, 23, 42, 0.7)'}; border: 1px solid ${isDone ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 12px; transition: all 0.25s ease; ${isDone ? 'opacity: 0.75;' : ''}">
@@ -897,22 +1078,22 @@
                         <div style="flex: 1; min-width: 0;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px;">
                                 <div style="display: flex; align-items: center; gap: 8px;">
-                                    <strong style="font-size: 13px; color: ${isDone ? '#94a3b8' : '#ffffff'}; ${isDone ? 'text-decoration: line-through;' : ''}">Passo ${t.step}: ${t.target_character} • ${t.type_label}</strong>
-                                    <span style="font-size: 10px; background: ${badgeBg}; color: ${badgeColor}; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${t.priority_badge}</span>
+                                    <strong style="font-size: 13px; color: ${isDone ? '#94a3b8' : '#ffffff'}; ${isDone ? 'text-decoration: line-through;' : ''}">${stepWord} ${t.step}: ${t.target_character} • ${curTypeLabel}</strong>
+                                    <span style="font-size: 10px; background: ${badgeBg}; color: ${badgeColor}; padding: 1px 6px; border-radius: 4px; font-weight: 600;">${curPBadge}</span>
                                 </div>
                                 <span style="font-size: 10px; background: ${statusBg}; color: ${statusColor}; padding: 2px 8px; border-radius: 10px; font-weight: 700;">
-                                    <i class="fa-solid ${isAvail ? 'fa-circle-check' : 'fa-clock'}"></i> ${t.time_estimate}
+                                    <i class="fa-solid ${isAvail ? 'fa-circle-check' : 'fa-clock'}"></i> ${curEstimate}
                                 </span>
                             </div>
 
                             <div style="font-size: 12px; color: #cbd5e1; margin-top: 4px;">
-                                <span style="color: #38bdf8; font-weight: 600;">${t.material_name}</span> • <span style="color: var(--text-muted);">${t.location}</span>
+                                <span style="color: #38bdf8; font-weight: 600;">${t.material_name}</span> • <span style="color: var(--text-muted);">${curLoc}</span>
                             </div>
 
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px; font-size: 11px; color: var(--text-muted); flex-wrap: wrap; gap: 6px;">
-                                <span>${t.description}</span>
+                                <span>${curDesc}</span>
                                 <span style="color: #e2e8f0; background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;">
-                                    <i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> Custo: <strong>${t.cost_energy} ${t.energy_name}</strong> (${t.runs}x)
+                                    <i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> ${costWord}: <strong>${t.cost_energy} ${curEnergyName}</strong> (${t.runs}x)
                                 </span>
                             </div>
                         </div>
@@ -1036,11 +1217,18 @@
         }
     }, 600);
 
+    window.addEventListener("app:languageChanged", () => {
+        if (document.getElementById("farm-order-tasks-list") && typeof window.loadDailyFarmOrder === "function") {
+            window.loadDailyFarmOrder(window.currentFarmOrderGame || "genshin");
+        }
+    });
+
     // 3. RELÍQUIAS LIXO (TRASH FINDER)
     window.loadTrashRelics = async (gameId, targetContainerId = "trash-relics-body") => {
         const body = document.getElementById(targetContainerId);
         if (!body) return;
-        body.innerHTML = "<div style='color:#94a3b8; padding: 20px; text-align: center;'><i class='fa-solid fa-spinner fa-spin' style='margin-right: 8px;'></i> Analisando inventário de relíquias e calculando Crit Values contra o metagame...</div>";
+
+        body.innerHTML = `<div style='color:#94a3b8; padding: 20px; text-align: center;'><i class='fa-solid fa-spinner fa-spin' style='margin-right: 8px;'></i> ${isEn ? "Analyzing relic inventory and calculating Crit Values against the metagame..." : "Analisando inventário de relíquias e calculando Crit Values contra o metagame..."}</div>`;
         try {
             const res = await fetch(`/api/relics/trash/${gameId}`);
             const data = await res.json();
@@ -1060,24 +1248,24 @@
                         <div style="padding: 14px 16px; background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(234, 179, 8, 0.10)); border-radius: 10px; border: 1px solid rgba(168, 85, 247, 0.4); box-shadow: 0 4px 15px rgba(168, 85, 247, 0.08);">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <span style="font-size: 15px; font-weight: 700; color: #c084fc; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-crown" style="color: #fbbf24;"></i> ${data.coringa_count} Peças Coringa Protegidas
+                                    <i class="fa-solid fa-crown" style="color: #fbbf24;"></i> ${data.coringa_count} ${isEn ? "Protected Wildcard Pieces" : "Peças Coringa Protegidas"}
                                 </span>
                                 <span style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: rgba(168, 85, 247, 0.25); color: #e9d5ff; font-weight: 600;">Off-Piece Safe</span>
                             </div>
                             <div style="font-size: 12px; color: #cbd5e1; margin-top: 6px; line-height: 1.4;">
-                                Peças com Duplo Crítico ou Crit Value superior salvas contra descarte acidental para uso universal ou composições 2pc+2pc / off-piece.
+                                ${isEn ? "Double-crit or high Crit Value pieces protected against accidental disposal for universal 2pc+2pc or off-piece builds." : "Peças com Duplo Crítico ou Crit Value superior salvas contra descarte acidental para uso universal ou composições 2pc+2pc / off-piece."}
                             </div>
                         </div>
 
                         <div style="padding: 14px 16px; background: rgba(239, 68, 68, 0.08); border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.3);">
                             <div style="display: flex; align-items: center; justify-content: space-between;">
                                 <span style="font-size: 15px; font-weight: 700; color: #ef4444; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fa-solid fa-trash-can"></i> ${data.trash_count} Peça(s) Lixo
+                                    <i class="fa-solid fa-trash-can"></i> ${data.trash_count} ${isEn ? "Trash Relic(s)" : "Peça(s) Lixo"}
                                 </span>
                                 <span style="font-size: 11px; padding: 2px 8px; border-radius: 12px; background: rgba(239, 68, 68, 0.2); color: #fca5a5; font-weight: 600;">Total: ${data.total_analyzed}</span>
                             </div>
                             <div style="font-size: 12px; color: #94a3b8; margin-top: 6px; line-height: 1.4;">
-                                Peças sem sinergia com o meta, sem críticos e com múltiplos atributos planos recomendadas para conversão em EXP ou síntese.
+                                ${isEn ? "Pieces with zero meta synergy, no crits and multiple flat stats recommended for EXP or salvage." : "Peças sem sinergia com o meta, sem críticos e com múltiplos atributos planos recomendadas para conversão em EXP ou síntese."}
                             </div>
                         </div>
                     </div>
@@ -1088,7 +1276,7 @@
                 html += `
                     <div style="margin-bottom: 24px;">
                         <h3 style="font-size: 14px; color: #e2e8f0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-gem" style="color: #a855f7;"></i> Tesouros Coringa & Peças Off-Piece Identificadas (${coringaList.length})
+                            <i class="fa-solid fa-gem" style="color: #a855f7;"></i> ${isEn ? "Wildcard Treasures & Off-Piece Items Identified" : "Tesouros Coringa & Peças Off-Piece Identificadas"} (${coringaList.length})
                         </h3>
                 `;
 
@@ -1135,7 +1323,7 @@
                                         </div>
                                     </div>
                                     <div style="margin-top: 4px; font-size: 12px; color: #cbd5e1;">
-                                        <span style="color: #38bdf8; font-weight: 600;">Principal:</span> ${r.main_stat} | <span style="color: #94a3b8;">Sub:</span> ${subFormatted || "Nenhum"}
+                                        <span style="color: #38bdf8; font-weight: 600;">${isEn ? "Main:" : "Principal:"}</span> ${r.main_stat} | <span style="color: #94a3b8;">Sub:</span> ${subFormatted || (isEn ? "None" : "Nenhum")}
                                     </div>
                                     <div style="margin-top: 4px; font-size: 11px; color: #a3e635; display: flex; align-items: center; gap: 4px;">
                                         <i class="fa-solid fa-shield" style="font-size: 10px;"></i> ${r.reason}
@@ -1153,12 +1341,12 @@
                 html += `
                     <div>
                         <h3 style="font-size: 14px; color: #e2e8f0; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                            <i class="fa-solid fa-recycle" style="color: #ef4444;"></i> Peças Lixo Recomendadas para Desmanche (${trashList.length})
+                            <i class="fa-solid fa-recycle" style="color: #ef4444;"></i> ${isEn ? "Trash Pieces Recommended for Salvage" : "Peças Lixo Recomendadas para Desmanche"} (${trashList.length})
                         </h3>
                 `;
 
                 if (trashList.length === 0) {
-                    html += `<div style="font-size:13px; color:#10b981; padding: 12px; background: rgba(16, 185, 129, 0.08); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-circle-check" style="margin-right: 6px;"></i> Nenhuma relíquia lixo detectada! Seu inventário está limpo.</div>`;
+                    html += `<div style="font-size:13px; color:#10b981; padding: 12px; background: rgba(16, 185, 129, 0.08); border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-circle-check" style="margin-right: 6px;"></i> ${isEn ? "No trash relics detected! Your inventory is clean." : "Nenhuma relíquia lixo detectada! Seu inventário está limpo."}</div>`;
                 } else {
                     html += `<div style="display: flex; flex-direction: column; gap: 10px;">`;
                     trashList.forEach(r => {
@@ -1180,7 +1368,7 @@
                                         </div>
                                         <span style="color:#ef4444; font-weight:bold; font-size:12px;">${r.main_stat}</span>
                                     </div>
-                                    <div style="color:#94a3b8; font-size:12px; margin-top:4px;">Substatus: ${r.substats ? r.substats.join(", ") : "Nenhum"}</div>
+                                    <div style="color:#94a3b8; font-size:12px; margin-top:4px;">${isEn ? "Substats:" : "Substatus:"} ${r.substats ? r.substats.join(", ") : (isEn ? "None" : "Nenhum")}</div>
                                     <div style="color:#f59e0b; font-size:12px; margin-top:3px;"><i class="fa-solid fa-circle-exclamation" style="margin-right: 4px;"></i> Motivo: ${r.reason}</div>
                                 </div>
                             </div>
@@ -1192,7 +1380,7 @@
             }
             body.innerHTML = html;
         } catch (e) {
-            body.innerHTML = "<div style='color:#ef4444; padding: 12px;'>Erro ao analisar relíquias lixo e peças coringa.</div>";
+            body.innerHTML = `<div style='color:#ef4444; padding: 12px;'>${isEn ? "Error analyzing trash relics and flex pieces." : "Erro ao analisar relíquias lixo e peças coringa."}</div>`;
         }
     };
 
@@ -1211,6 +1399,7 @@
         window.currentAuditGameId = gameId;
         const body = document.getElementById(targetContainerId);
         if (!body) return;
+
         body.innerHTML = "<div style='color:#94a3b8;'>Gerando relatório de auditoria e Tier List da conta...</div>";
         try {
             const res = await fetch(`/api/audit/${gameId}`);
@@ -1219,19 +1408,19 @@
             let html = `
                 <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
                     <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; text-align:center; border:1px solid var(--border-color);">
-                        <span style="font-size:12px; color:#94a3b8;">Total Personagens</span>
+                        <span style="font-size:12px; color:#94a3b8;">${isEn ? "Total Characters" : "Total Personagens"}</span>
                         <h3 style="margin:4px 0 0 0; color:#38bdf8; font-size:20px;">${data.total_characters}</h3>
                     </div>
                     <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; text-align:center; border:1px solid var(--border-color);">
-                        <span style="font-size:12px; color:#94a3b8;">Média de Nota RV</span>
+                        <span style="font-size:12px; color:#94a3b8;">${isEn ? "Average RV Grade" : "Média de Nota RV"}</span>
                         <h3 style="margin:4px 0 0 0; color:#f59e0b; font-size:20px;">${data.avg_rv}%</h3>
                     </div>
                     <div style="padding:12px; background:rgba(255,255,255,0.03); border-radius:10px; text-align:center; border:1px solid var(--border-color);">
-                        <span style="font-size:12px; color:#94a3b8;">Builds Nota S/SSS</span>
+                        <span style="font-size:12px; color:#94a3b8;">${isEn ? "S/SSS Builds" : "Builds Nota S/SSS"}</span>
                         <h3 style="margin:4px 0 0 0; color:#10b981; font-size:20px;">${data.s_count}</h3>
                     </div>
                 </div>
-                <h4 style="margin:0 0 12px 0; color:#a855f7; font-size:16px;"> Tier List dos seus Personagens por Nota RV</h4>
+                <h4 style="margin:0 0 12px 0; color:#a855f7; font-size:16px;">🏆 ${isEn ? "Character Tier List by RV Grade" : "Tier List dos seus Personagens por Nota RV"}</h4>
             `;
 
             const tierColors = { "S+": "#ef4444", "S": "#f59e0b", "A": "#10b981", "B": "#38bdf8", "C/D": "#94a3b8", "Sem Equipamento": "#64748b" };
@@ -1248,7 +1437,7 @@
                         <div style="display:flex; flex-wrap:wrap; gap:10px; flex:1; align-items:center;">
                 `;
                 if (!chars || chars.length === 0) {
-                    html += `<span style="font-size:13px; color:#64748b; font-style:italic;">Nenhum personagem nesta categoria</span>`;
+                    html += `<span style="font-size:13px; color:#64748b; font-style:italic;">${isEn ? "No characters in this category" : "Nenhum personagem nesta categoria"}</span>`;
                 } else {
                     chars.forEach(c => {
                         const iconSrc = c.icon || '';
@@ -1303,7 +1492,8 @@
                 const res = await fetch("/api/reset-data", { method: "POST" });
                 const data = await res.json();
                 if (res.ok) {
-                    alert(data.message || "Pastas e banco de dados apagados com sucesso!");
+
+    alert(data.message || (isEn ? "Folders and database deleted successfully!" : "Pastas e banco de dados apagados com sucesso!"));
                     window.location.reload();
                 } else {
                     alert("Erro ao apagar dados: " + (data.detail || "Erro desconhecido."));
@@ -1413,7 +1603,7 @@ window.openCharacterDiffModal = function(cData) {
 
     if (!modal || !bodyEl) return;
 
-    const name = cData.name || "Personagem";
+    const name = cData.name || (isEn ? "Character" : "Personagem");
     iconEl.src = cData.icon || "/assets/logo.svg";
     nameEl.textContent = name;
 
@@ -1422,7 +1612,7 @@ window.openCharacterDiffModal = function(cData) {
     const diffs = cData.diffs || {};
 
     if (cData.is_new) {
-        subEl.innerHTML = `<span style="color: #f59e0b; font-weight: 700;">★ Novo Personagem Adquirido!</span>`;
+        subEl.innerHTML = isEn ? `<span style="color: #f59e0b; font-weight: 700;">★ New Character Acquired!</span>` : `<span style="color: #f59e0b; font-weight: 700;">★ Novo Personagem Adquirido!</span>`;
     } else {
         subEl.innerHTML = `Comparativo de Evolução de Build (${cData.rarity || 4}★ ${cData.element || ''})`;
     }
@@ -1465,7 +1655,7 @@ window.openCharacterDiffModal = function(cData) {
     const wBase = base.weapon || (base.weapon_name ? { name: base.weapon_name, level: base.weapon_level, rank: base.weapon_rank, icon: base.weapon_icon } : null);
     const wTarget = target.weapon || (target.weapon_name ? { name: target.weapon_name, level: target.weapon_level, rank: target.weapon_rank, icon: target.weapon_icon } : null);
 
-    html += `<div class="diff-section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Arma / Cone de Luz / W-Engine Equipado</div>`;
+    html += `<div class="diff-section-title"><i class="fa-solid fa-wand-magic-sparkles"></i> ${isEn ? "Equipped Weapon / Light Cone / W-Engine" : "Arma / Cone de Luz / W-Engine Equipado"}</div>`;
     if (wBase || wTarget) {
         const weaponSwapped = (wBase?.name || '') !== (wTarget?.name || '');
         const weaponLeveled = (wBase?.level || 0) !== (wTarget?.level || 0) || (wBase?.rank || 1) !== (wTarget?.rank || 1);
@@ -1482,12 +1672,12 @@ window.openCharacterDiffModal = function(cData) {
                                 <span style="font-size: 11px; color: var(--text-secondary);">Nv. ${wBase.level || 1} ${wBase.rank ? `• Refinamento R${wBase.rank}` : ''}</span>
                             </div>
                         </div>
-                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Nenhuma arma no snapshot anterior</span>`}
+                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">${isEn ? "No weapon in previous snapshot" : "Nenhuma arma no snapshot anterior"}</span>`}
                 </div>
                 <div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
                         <span style="font-size: 11px; color: #10b981; font-weight: 700;">SNAPSHOT ATUAL (COMPARADO)</span>
-                        ${weaponSwapped ? `<span class="diff-arrow-badge">Arma Trocada</span>` : (weaponLeveled ? `<span class="diff-badge-gain">Evoluída</span>` : '')}
+                        ${weaponSwapped ? `<span class="diff-arrow-badge">${isEn ? "Weapon Swapped" : "Arma Trocada"}</span>` : (weaponLeveled ? `<span class="diff-badge-gain">${isEn ? "Leveled Up" : "Evoluída"}</span>` : '')}
                     </div>
                     ${wTarget && wTarget.name ? `
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -1497,12 +1687,12 @@ window.openCharacterDiffModal = function(cData) {
                                 <span style="font-size: 11px; color: #10b981; font-weight: 600;">Nv. ${wTarget.level || 1} ${wTarget.rank ? `• Refinamento R${wTarget.rank}` : ''}</span>
                             </div>
                         </div>
-                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">Nenhuma arma registrada</span>`}
+                    ` : `<span style="font-size: 12px; color: var(--text-muted); font-style: italic;">${isEn ? "No weapon recorded" : "Nenhuma arma registrada"}</span>`}
                 </div>
             </div>
         `;
     } else {
-        html += `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">Informações de arma não disponíveis.</p>`;
+        html += `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">${isEn ? "Weapon information unavailable." : "Informações de arma não disponíveis."}</p>`;
     }
 
     // 2. TALENTOS E HABILIDADES
@@ -1544,7 +1734,7 @@ window.openCharacterDiffModal = function(cData) {
     const allStatKeys = listUniqueDictKeys(statsBase, statsTarget);
 
     if (allStatKeys.length > 0) {
-        html += `<div class="diff-section-title"><i class="fa-solid fa-chart-line"></i> Status Gerais do Personagem (Atributos Finais)</div>`;
+        html += `<div class="diff-section-title"><i class="fa-solid fa-chart-line"></i> ${isEn ? "General Character Stats (Final Attributes)" : "Status Gerais do Personagem (Atributos Finais)"}</div>`;
         html += `<div class="diff-stats-category-card">`;
         html += `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;">`;
 
@@ -1600,7 +1790,7 @@ window.openCharacterDiffModal = function(cData) {
     const relicsBase = base.relics || [];
     const relicsTarget = target.relics || [];
 
-    html += `<div class="diff-section-title"><i class="fa-solid fa-gem"></i> Comparativo de Artefatos & Relíquias Equipados</div>`;
+    html += `<div class="diff-section-title"><i class="fa-solid fa-gem"></i> ${isEn ? "Comparison of Equipped Artifacts & Relics" : "Comparativo de Artefatos & Relíquias Equipados"}</div>`;
     
     // Mapeia todas as peças por Slot
     const slotPairs = buildRelicSlotPairs(relicsBase, relicsTarget);
@@ -1738,7 +1928,7 @@ window.openCharacterDiffModal = function(cData) {
         });
         html += `</div>`;
     } else {
-        html += `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">Detalhes de relíquias não salvos no snapshot base/comparado.</p>`;
+        html += `<p style="font-size: 12px; color: var(--text-muted); font-style: italic;">${isEn ? "Relic details not saved in base/compared snapshot." : "Detalhes de relíquias não salvos no snapshot base/comparado."}</p>`;
     }
 
     bodyEl.innerHTML = html;
@@ -1926,7 +2116,7 @@ window.renderAccountGapsResult = function(data) {
     (data.archetypes_summary || []).forEach(arch => {
         const charListHtml = (arch.owned_characters && arch.owned_characters.length > 0)
             ? arch.owned_characters.map(c => `<span style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 2px 7px; border-radius: 6px; font-size: 11px; color: #e2e8f0;">${c}</span>`).join(" ")
-            : `<span style="color: #fca5a5; font-size: 11px; font-style: italic;">Nenhum identificado</span>`;
+            : `<span style="color: #fca5a5; font-size: 11px; font-style: italic;">${isEn ? "None identified" : "Nenhum identificado"}</span>`;
 
         html += `
             <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
@@ -2030,7 +2220,7 @@ window.renderAccountGapsResult = function(data) {
                 <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 14px; position: relative;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                         <span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #020617; font-weight: 800; font-size: 10px; padding: 2px 8px; border-radius: 10px;">
-                            #${rec.priority_rank} ${rec.badge || 'Prioridade'}
+                            #${rec.priority_rank} ${rec.badge || (isEn ? "Priority" : "Prioridade")}
                         </span>
                         <span style="font-size: 11px; color: #34d399; font-weight: 700;">${rec.impact_score || ''}</span>
                     </div>
@@ -2157,17 +2347,73 @@ window.loadMorningBriefing = async function() {
     if (!gridEl) return;
 
     try {
-        const res = await fetch("/api/briefing/today");
+        const briefingLang = window.isEn ? 'en' : 'pt';
+        const res = await fetch(`/api/briefing/today?lang=${briefingLang}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        if (dateLbl) dateLbl.innerText = `${data.weekday}, ${data.date} • Tarefas e Metas Consolidadas`;
-        if (weekdayTag) weekdayTag.innerText = data.weekday;
+        const consolidatedText = isEn ? "Consolidated Tasks & Goals" : "Tarefas e Metas Consolidadas";
+        const highPrioText = window.t ? window.t("briefing_high_prio", "Alta Prioridade") : "Alta Prioridade";
+        const craftTitle = window.t ? window.t("briefing_craft_title", "Síntese Recomendada") : "Síntese Recomendada";
+        const gachaTitle = window.t ? window.t("briefing_gacha_title", "Metas de Gacha") : "Metas de Gacha";
+        const openGalleryText = window.t ? window.t("briefing_open_gallery_btn", "Abrir Galeria & Resina ➔") : "Abrir Galeria & Resina ➔";
+        const viewSimText = window.t ? window.t("briefing_view_sim_btn", "Ver Simulador & Forecast ➔") : "Ver Simulador & Forecast ➔";
+        const viewCraftText = window.t ? window.t("briefing_view_craft_btn", "Ver Conselheiro de Síntese ➔") : "Ver Conselheiro de Síntese ➔";
+        const gainText = window.t ? window.t("briefing_craft_gain", "Ganho:") : "Ganho:";
+        const craftVerb = isEn ? "Craft" : "Fabricar";
+        const forWord = isEn ? "for" : "para";
+
+        const BRIEFING_WEEKDAY_DICT = {
+            "Segunda-feira": "Monday",
+            "Terça-feira": "Tuesday",
+            "Quarta-feira": "Wednesday",
+            "Quinta-feira": "Thursday",
+            "Sexta-feira": "Friday",
+            "Sábado": "Saturday",
+            "Domingo": "Sunday"
+        };
+        const BRIEFING_DOMAIN_DICT = {
+            "Talentos": "Talents",
+            "Livros de Talento": "Talent Books",
+            "Rastros": "Traces",
+            "Habilidades": "Skills",
+            "Chefe de Ascensão": "Ascension Boss",
+            "Domínio de Artefatos": "Artifact Domain",
+            "Caverna da Corrosão": "Cavern of Corrosion",
+            "Livre": "Free"
+        };
+
+        const displayWkBriefing = (window.isEn && BRIEFING_WEEKDAY_DICT[data.weekday]) ? BRIEFING_WEEKDAY_DICT[data.weekday] : data.weekday;
+
+        if (dateLbl) dateLbl.innerText = `${displayWkBriefing}, ${data.date} • ${consolidatedText}`;
+        if (weekdayTag) weekdayTag.innerText = displayWkBriefing;
 
         let html = "";
 
         // 1. Cards de Tarefas dos 3 Jogos
         (data.games || []).forEach(g => {
+            let curDomainType = (window.isEn && BRIEFING_DOMAIN_DICT[g.domain_type]) ? BRIEFING_DOMAIN_DICT[g.domain_type] : g.domain_type;
+            let curTopTask = g.top_task || "";
+            if (window.isEn) {
+                if (curTopTask.startsWith("Derrote")) {
+                    curTopTask = curTopTask
+                        .replace("Derrote", "Defeat")
+                        .replace("Chefe de Ascensão", "Ascension Boss")
+                        .replace("para avançar", "to advance")
+                        .replace("do Nv.", "from Lv.")
+                        .replace("rumo ao Nv.", "towards Lv.");
+                } else if (curTopTask.startsWith("Faça")) {
+                    curTopTask = curTopTask
+                        .replace("Faça", "Run")
+                        .replace("Domínio de Livros de Talento", "Talent Book Domain")
+                        .replace("Domínio de Artefatos Recomendado", "Recommended Artifact Domain")
+                        .replace("para obter", "to obtain")
+                        .replace("e avançar os talentos prioritários de", "and advance priority talents for")
+                        .replace("para farmar o conjunto ideal para", "to farm recommended set for")
+                        .replace("Nota", "Grade");
+                }
+            }
+
             html += `
                 <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -2179,11 +2425,11 @@ window.loadMorningBriefing = async function() {
                         </span>
                     </div>
                     <div style="font-size: 12px; color: #cbd5e1; line-height: 1.4; margin-bottom: 10px;">
-                        <strong style="color: #fbbf24; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px;">${g.domain_type}:</strong>
-                        ${g.top_task}
+                        <strong style="color: #fbbf24; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px;">${curDomainType}:</strong>
+                        ${curTopTask}
                     </div>
                     <button onclick="document.querySelector('[data-tab=${g.game_id}]')?.click()" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer;">
-                        Abrir Galeria & Resina ➔
+                        ${openGalleryText}
                     </button>
                 </div>
             `;
@@ -2203,14 +2449,14 @@ window.loadMorningBriefing = async function() {
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="font-size: 13px; font-weight: 700; color: #c084fc; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-wand-magic-sparkles"></i> Metas de Gacha
+                                <i class="fa-solid fa-wand-magic-sparkles"></i> ${gachaTitle}
                             </span>
                             <span style="font-size: 10px; color: var(--text-muted);">Monte Carlo</span>
                         </div>
                         <div>${goalsHtml}</div>
                     </div>
                     <button onclick="document.querySelector('[data-tab=gacha]')?.click()" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer; margin-top: 8px;">
-                        Ver Simulador & Forecast ➔
+                        ${viewSimText}
                     </button>
                 </div>
             `;
@@ -2219,22 +2465,58 @@ window.loadMorningBriefing = async function() {
         // 3. Card de Dica de Síntese
         if (data.top_craft) {
             const tc = data.top_craft;
+            let displaySlotName = tc.slot_name || "";
+            let displayMainStat = tc.recommended_main_stat || "";
+            let displayGain = tc.expected_gain || "";
+            if (window.isEn) {
+                displaySlotName = displaySlotName
+                    .replace("Corda de Recuperação de Energia", "Energy Regen Rope")
+                    .replace("Corda de Ligação", "Link Rope")
+                    .replace("Esfera Plana", "Planar Sphere")
+                    .replace("Pés de SPD", "SPD Boots")
+                    .replace("Botas de SPD", "SPD Boots")
+                    .replace("Botas", "Boots")
+                    .replace("Pés", "Boots")
+                    .replace("Corpo", "Body")
+                    .replace("Cabeça", "Head")
+                    .replace("Mãos", "Hands")
+                    .replace("Tiara", "Circlet")
+                    .replace("Cálice", "Goblet")
+                    .replace("Ampulheta", "Sands")
+                    .replace("Pluma", "Plume")
+                    .replace("Flor", "Flower")
+                    .replace(" ou ", " or ");
+
+                displayMainStat = displayMainStat
+                    .replace("Recuperação de Energia", "Energy Regeneration")
+                    .replace("Taxa Crítica", "CRIT Rate")
+                    .replace("Dano Crítico", "CRIT DMG")
+                    .replace("Bônus Elemental", "Elemental DMG Bonus")
+                    .replace("Bônus de Cura", "Healing Bonus")
+                    .replace("Acerto de Efeito", "Effect Hit Rate");
+
+                displayGain = displayGain
+                    .replace("Substitui peça sem status úteis", "Replaces piece with no useful stats")
+                    .replace("Substitui peça com atributos fracos", "Replaces piece with weak attributes")
+                    .replace("Peça BiS", "BiS Piece");
+            }
+
             html += `
                 <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.7)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="font-size: 13px; font-weight: 700; color: #fbbf24; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-cube"></i> Síntese Recomendada
+                                <i class="fa-solid fa-cube"></i> ${craftTitle}
                             </span>
-                            <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">Alta Prioridade</span>
+                            <span style="background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 700;">${highPrioText}</span>
                         </div>
                         <div style="font-size: 12px; color: #e2e8f0; line-height: 1.4;">
-                            Fabricar <strong>${tc.slot_name}</strong> (${tc.recommended_main_stat}) para <strong style="color: #38bdf8;">${tc.character_name}</strong>.
-                            <div style="color: #34d399; font-size: 11px; margin-top: 4px;"><strong>Ganho:</strong> ${tc.expected_gain}</div>
+                            ${craftVerb} <strong>${displaySlotName}</strong> (${displayMainStat}) ${forWord} <strong style="color: #38bdf8;">${tc.character_name}</strong>.
+                            <div style="color: #34d399; font-size: 11px; margin-top: 4px;"><strong>${gainText}</strong> ${displayGain}</div>
                         </div>
                     </div>
                     <button onclick="document.querySelector('[data-tab=trash]')?.click(); window.switchTrashSubView('craft');" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer; margin-top: 8px;">
-                        Ver Conselheiro de Síntese ➔
+                        ${viewCraftText}
                     </button>
                 </div>
             `;
@@ -2244,14 +2526,22 @@ window.loadMorningBriefing = async function() {
 
     } catch (err) {
         console.error("Erro ao carregar Morning Briefing:", err);
+        const errText = window.t ? window.t("briefing_error_load", "Não foi possível carregar o resumo matinal automaticamente.") : "Não foi possível carregar o resumo matinal automaticamente.";
+        const reloadText = window.t ? window.t("briefing_btn_reload", "Recarregar") : "Recarregar";
         gridEl.innerHTML = `
             <div style="text-align: center; color: var(--text-muted); padding: 20px; grid-column: 1 / -1;">
-                <p style="margin: 0; font-size: 12px;">Não foi possível carregar o resumo matinal automaticamente.</p>
-                <button onclick="window.loadMorningBriefing()" class="secondary-btn" style="margin-top: 6px; padding: 4px 10px; font-size: 11px;">Recarregar</button>
+                <p style="margin: 0; font-size: 12px;">${errText}</p>
+                <button onclick="window.loadMorningBriefing()" class="secondary-btn" style="margin-top: 6px; padding: 4px 10px; font-size: 11px;">${reloadText}</button>
             </div>
         `;
     }
 };
+
+window.addEventListener("app:languageChanged", () => {
+    if (typeof window.loadMorningBriefing === "function") {
+        window.loadMorningBriefing();
+    }
+});
 
 window.sendMorningBriefingNow = async function() {
     const btn = document.getElementById("btn-send-briefing-webhook");
@@ -2264,9 +2554,9 @@ window.sendMorningBriefingNow = async function() {
         const res = await fetch("/api/briefing/send-now", { method: "POST" });
         const data = await res.json();
         if (typeof showToast === "function") {
-            showToast("☀️ Morning Briefing enviado com sucesso para seus Webhooks configurados!");
+    showToast(isEn ? "☀️ Morning Briefing successfully sent to your configured Webhooks!" : "☀️ Morning Briefing enviado com sucesso para seus Webhooks configurados!");
         } else {
-            alert("Morning Briefing enviado com sucesso!");
+    alert(isEn ? "Morning Briefing sent successfully!" : "Morning Briefing enviado com sucesso!");
         }
     } catch (err) {
         console.error("Erro ao enviar Morning Briefing:", err);
@@ -2348,7 +2638,7 @@ window.loadCraftRecommendations = async function(gameId) {
                     </div>
                     <div>
                         <h3 style="margin: 0; font-size: 16px; color: var(--text-primary);">${data.crafting_item_name}</h3>
-                        <span style="font-size: 11px; color: var(--text-muted);">Recomendações baseadas nas piores peças dos personagens meta do seu Roster</span>
+                        <span style="font-size: 11px; color: var(--text-muted);">${isEn ? "Recommendations based on worst pieces of meta characters in your Roster" : "Recomendações baseadas nas piores peças dos personagens meta do seu Roster"}</span>
                     </div>
                 </div>
                 <div style="font-size: 12px; color: #cbd5e1; line-height: 1.5; background: rgba(0,0,0,0.25); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
@@ -2376,12 +2666,12 @@ window.loadCraftRecommendations = async function(gameId) {
                         </div>
 
                         <div style="background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.04);">
-                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Set & Slot Alvo:</div>
+                            <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">${isEn ? "Target Set & Slot:" : "Set & Slot Alvo:"}</div>
                             <div style="font-size: 13px; font-weight: 700; color: #f8fafc; margin-bottom: 6px;">
                                 <i class="fa-solid ${rec.slot_icon || 'fa-gem'}" style="color: #fbbf24; margin-right: 4px;"></i> ${rec.target_set_name} • ${rec.slot_name}
                             </div>
                             <div style="font-size: 12px; color: #38bdf8; font-weight: 700; margin-bottom: 6px;">
-                                🎯 Atributo Principal: ${rec.recommended_main_stat}
+                                🎯 ${isEn ? "Main Stat:" : "Atributo Principal:"} ${rec.recommended_main_stat}
                             </div>
                             <div style="display: flex; flex-wrap: wrap; gap: 4px;">${substatsHtml}</div>
                         </div>
@@ -2417,3 +2707,30 @@ window.loadCraftRecommendations = async function(gameId) {
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof buildRelicSlotPairs !== 'undefined') window.buildRelicSlotPairs = buildRelicSlotPairs;
 if (typeof parseSubstats !== 'undefined') window.parseSubstats = parseSubstats;
+
+window.addEventListener("app:languageChanged", () => {
+    // Farm
+    const activeFarmGameBtn = document.querySelector(".tab-farm-game-btn.active");
+    if (activeFarmGameBtn && typeof window.loadFarmData === "function") {
+        window.loadFarmData(activeFarmGameBtn.dataset.game || "genshin", "tab-farm-content-body");
+    }
+
+    // Trash & Craft
+    const activeTrashGameBtn = document.querySelector(".tab-trash-game-btn.active");
+    const trashGame = activeTrashGameBtn?.dataset?.game || window.currentTrashGame || "hsr";
+    if (window.currentTrashSubView === "craft" && typeof window.loadCraftRecommendations === "function") {
+        window.loadCraftRecommendations(trashGame);
+    } else if (typeof window.loadTrashRelics === "function") {
+        window.loadTrashRelics(trashGame, "tab-trash-relics-body");
+    }
+
+    // Audit
+    const auditGame = window.currentAuditGameId || "hsr";
+    if (typeof window.loadAuditReport === "function") {
+        window.loadAuditReport(auditGame, "tab-audit-report-body");
+    }
+    const gapsGame = window.currentGapsGame || "hsr";
+    if (typeof window.loadAccountGapsAnalysis === "function") {
+        window.loadAccountGapsAnalysis(gapsGame);
+    }
+});

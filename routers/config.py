@@ -50,6 +50,7 @@ async def get_configuration():
         "quiet_hours_start": config_dict.get("quiet_hours_start", "23:00"),
         "quiet_hours_end": config_dict.get("quiet_hours_end", "07:00"),
         "notify_windows_toast": config_dict.get("notify_windows_toast", True),
+        "language": config_dict.get("language", "pt"),
         "vault_info": security_vault.get_vault_security_info(),
     }
 
@@ -127,6 +128,11 @@ async def save_configuration(req: ConfigSaveRequest):
     if req.notify_windows_toast is not None:
         config["notify_windows_toast"] = req.notify_windows_toast
         changed = True
+    if req.language is not None:
+        lang_val = req.language.lower().strip()
+        if lang_val in ["pt", "en"]:
+            config["language"] = lang_val
+            changed = True
 
     if changed:
         security_vault.save_secure_config(config)

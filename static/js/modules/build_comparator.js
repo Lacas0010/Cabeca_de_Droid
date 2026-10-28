@@ -47,12 +47,14 @@ async function loadBuildComparison() {
     const gameTag = document.getElementById("ins-compare-game-tag");
     
     if (!rowsContainer || !activeInspectChar) return;
+
+    const t = (k, fb) => (window.t ? window.t(k) : fb);
     
     if (gameTag) {
         gameTag.textContent = `${activeInspectGame.toUpperCase()} • METAGAME BENCHMARK`;
     }
     
-    rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 25px 0; color: var(--text-muted);"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i> Carregando comparação com o metagame...</td></tr>`;
+    rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 25px 0; color: var(--text-muted);"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i> ${t("comp_loading", "Carregando comparação com o metagame...")}</td></tr>`;
     if (scoreCard) scoreCard.style.display = "none";
     
     try {
@@ -425,31 +427,37 @@ async function loadBuildComparison() {
         let weaponScore = 0;
         if (weaponMatchTier === 1) {
             weaponScore = 25;
-            weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-crown"></i> Ideal (BIS)</span>`;
-            feedbackBullets.push(`<strong>Arma:</strong> <span style="color: #10b981;">Ideal (Best in Slot) equipada</span> com sucesso.`);
+            weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-crown"></i> ${t("comp_badge_bis", "Ideal (BIS)")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Weapon:</strong> <span style="color: #10b981;">Ideal (Best in Slot)</span> successfully equipped.`
+                : (isEn ? `<strong>Weapon:</strong> <span style="color: #10b981;">Best in Slot equipped</span> successfully.` : `<strong>Arma:</strong> <span style="color: #10b981;">Ideal (Best in Slot) equipada</span> com sucesso.`));
         } else if (weaponMatchTier === 2) {
             weaponScore = 20;
-            weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> Recomendada</span>`;
-            feedbackBullets.push(`<strong>Arma:</strong> <span style="color: #38bdf8;">Opção recomendada</span> pelo metagame equipada.`);
+            weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> ${t("comp_badge_rec", "Recomendada")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Weapon:</strong> <span style="color: #38bdf8;">Recommended option</span> equipped.`
+                : (isEn ? `<strong>Weapon:</strong> <span style="color: #38bdf8;">Recommended option</span> equipped.` : `<strong>Arma:</strong> <span style="color: #38bdf8;">Opção recomendada</span> pelo metagame equipada.`));
         } else if (weaponMatchTier === 3) {
             weaponScore = 12;
-            weaponBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> Alternativa</span>`;
-            feedbackBullets.push(`<strong>Arma:</strong> Usando alternativa viável. O ideal para pico de dano/suporte é <em>${recommendedWeapons[0] || 'arma BIS'}</em>.`);
+            weaponBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> ${t("comp_badge_alt", "Alternativa")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Weapon:</strong> Using a viable alternative. The ideal pick is <em>${recommendedWeapons[0] || 'BIS weapon'}</em>.`
+                : (isEn ? `<strong>Weapon:</strong> Using viable alternative. Optimal for peak damage/support is <em>${recommendedWeapons[0] || 'BIS weapon'}</em>.` : `<strong>Arma:</strong> Usando alternativa viável. O ideal para pico de dano/suporte é <em>${recommendedWeapons[0] || 'arma BIS'}</em>.`));
         } else {
             weaponScore = 0;
-            weaponBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> Subótimo</span>`;
-            feedbackBullets.push(`<strong>Arma:</strong> Nenhuma arma meta identificada. Recomendado buscar <em>${recommendedWeapons[0] || 'arma recomendada'}</em>.`);
+            weaponBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_sub", "Subótimo")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Weapon:</strong> No meta weapon identified. Recommended to acquire <em>${recommendedWeapons[0] || 'recommended weapon'}</em>.`
+                : (isEn ? `<strong>Weapon:</strong> No meta weapon identified. Recommended to obtain <em>${recommendedWeapons[0] || 'recommended weapon'}</em>.` : `<strong>Arma:</strong> Nenhuma arma meta identificada. Recomendado buscar <em>${recommendedWeapons[0] || 'arma recomendada'}</em>.`));
         }
         scoreTotal += weaponScore;
         
         const displayTargetWeapon = translationDict[String(target.weapon || '').toLowerCase().trim()] || target.weapon;
         
         html += `
-            <tr class="comparison-section-header">
-                <td colspan="3"><i class="fa-solid fa-shield-halved" style="margin-right: 6px; color: var(--color-hsr);"></i> Equipamentos & Conjuntos</td>
-            </tr>
+            <tr class="comparison-section-header"><td colspan="3"><i class="fa-solid fa-shield-halved" style="margin-right: 6px; color: var(--color-hsr);"></i> ${t("comp_sec_equip", "Equipamentos e Conjuntos")}</td></tr>
             <tr>
-                <td class="comparison-row-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 6px; opacity: 0.7;"></i> Arma / Cone</td>
+                <td class="comparison-row-title"><i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 6px; opacity: 0.7;"></i> ${t("comp_weapon", "Arma / Cone")}</td>
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 3px;">
                         <span style="font-weight: 600; color: var(--text-primary);">${rawPlayerWeapon}</span>
@@ -458,7 +466,7 @@ async function loadBuildComparison() {
                 </td>
                 <td class="comparison-val-target">
                     <strong style="color: var(--text-primary);">${displayTargetWeapon}</strong>
-                    ${recommendedWeapons.length > 1 ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">+ ${recommendedWeapons.length - 1} opções viáveis</div>` : ''}
+                    ${recommendedWeapons.length > 1 ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">+ ${recommendedWeapons.length - 1} ${isEn ? "viable options" : "opções viáveis"}</div>` : ''}
                 </td>
             </tr>
         `;
@@ -467,7 +475,8 @@ async function loadBuildComparison() {
         // 2. AVALIAÇÃO DE CONJUNTOS / SETS (25 pts)
         // ==========================================
         const playerSets = build.sets || [];
-        const currentSetsStr = playerSets.join(" + ") || "Nenhum conjunto ativo";
+
+        const currentSetsStr = playerSets.join(" + ") || (isEn ? "No active set bonus" : "Nenhum conjunto ativo");
         const recommendedSets = target.all_sets && target.all_sets.length > 0 ? target.all_sets : (target.sets && target.sets[0] !== "Não informado" ? target.sets : []);
         const targetSetsStr = target.sets && target.sets[0] !== "Não informado" ? target.sets.join(" / ") : "Não informado";
         
@@ -489,26 +498,34 @@ async function loadBuildComparison() {
         let setScore = 0;
         if (setMatchTier === 1) {
             setScore = 25;
-            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-circle-check"></i> 4p BIS Ideal</span>`;
-            feedbackBullets.push(`<strong>Conjunto:</strong> <span style="color: #10b981;">Bônus de 4 peças ideal</span> ativo.`);
+            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-circle-check"></i> ${t("comp_badge_set_bis", "4p BIS Ideal")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Set:</strong> <span style="color: #10b981;">Ideal 4-piece bonus</span> active.`
+                : `<strong>Conjunto:</strong> <span style="color: #10b981;">Bônus de 4 peças ideal</span> ativo.`);
         } else if (setMatchTier === 2) {
             setScore = 20;
-            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> Conjunto Meta</span>`;
-            feedbackBullets.push(`<strong>Conjunto:</strong> <span style="color: #38bdf8;">Conjunto recomendado</span> equipado.`);
+            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> ${t("comp_badge_set_meta", "Conjunto Meta")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Set:</strong> <span style="color: #38bdf8;">Recommended set</span> equipped.`
+                : (isEn ? `<strong>Set:</strong> <span style="color: #38bdf8;">Recommended set</span> equipped.` : `<strong>Conjunto:</strong> <span style="color: #38bdf8;">Conjunto recomendado</span> equipado.`));
         } else if (setMatchTier === 3) {
             setScore = 12;
-            setBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> Alternativo</span>`;
-            feedbackBullets.push(`<strong>Conjunto:</strong> Bônus ativo, mas conjunto ideal recomendado é <em>${recommendedSets[0] || 'o set 4p do meta'}</em>.`);
+            setBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> ${t("comp_badge_set_alt", "Alternativo")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Set:</strong> Bonus active, but recommended set is <em>${recommendedSets[0] || 'meta 4pc set'}</em>.`
+                : (isEn ? `<strong>Set:</strong> Active bonus, but ideal recommended set is <em>${recommendedSets[0] || 'meta 4-PC set'}</em>.` : `<strong>Conjunto:</strong> Bônus ativo, mas conjunto ideal recomendado é <em>${recommendedSets[0] || 'o set 4p do meta'}</em>.`));
         } else {
             setScore = 0;
-            setBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> Incompleto</span>`;
-            feedbackBullets.push(`<strong>Conjunto:</strong> Sem bônus de conjunto ideal ativo.`);
+            setBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_set_inc", "Incompleto")}</span>`;
+            feedbackBullets.push(isEn 
+                ? `<strong>Set:</strong> No recommended set bonus active.`
+                : `<strong>Conjunto:</strong> Sem bônus de conjunto ideal ativo.`);
         }
         scoreTotal += setScore;
         
         html += `
             <tr>
-                <td class="comparison-row-title"><i class="fa-solid fa-gem" style="margin-right: 6px; opacity: 0.7;"></i> Conjuntos</td>
+                <td class="comparison-row-title"><i class="fa-solid fa-gem" style="margin-right: 6px; opacity: 0.7;"></i> ${t("comp_sets", "Conjuntos")}</td>
                 <td>
                     <div style="display: flex; flex-direction: column; gap: 3px;">
                         <span style="font-weight: 500; color: var(--text-primary);">${currentSetsStr}</span>
@@ -529,16 +546,14 @@ async function loadBuildComparison() {
         
         if (targetStatsKeys.length > 0) {
             html += `
-                <tr class="comparison-section-header">
-                    <td colspan="3"><i class="fa-solid fa-bullseye" style="margin-right: 6px; color: #f59e0b;"></i> Atributos Principais por Slot (Main Stats)</td>
-                </tr>
+                <tr class="comparison-section-header"><td colspan="3"><i class="fa-solid fa-bullseye" style="margin-right: 6px; color: #f59e0b;"></i> ${t("comp_sec_main", "Atributos Principais por Slot (Main Stats)")}</td></tr>
             `;
             
             const pointsPerSlot = 30 / targetStatsKeys.length;
             let slotIssues = [];
             
             targetStatsKeys.forEach(key => {
-                let playerVal = "Não equipado";
+                let playerVal = isEn ? "Not equipped" : "Não equipado";
                 let statClass = "comparison-mismatch";
                 let slotBadgeHtml = "";
                 
@@ -569,18 +584,18 @@ async function loadBuildComparison() {
                     if (isFirstMatch) {
                         scoreTotal += pointsPerSlot;
                         statClass = "comparison-match";
-                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> Ideal</span>`;
+                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_slot_ideal", "Ideal")}</span>`;
                     } else if (isAnyMatch) {
                         scoreTotal += pointsPerSlot * 0.75;
                         statClass = "comparison-warning";
-                        slotBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-check-double"></i> Válido</span>`;
+                        slotBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-check-double"></i> ${t("comp_badge_slot_valid", "Válido")}</span>`;
                     } else {
                         statClass = "comparison-mismatch";
-                        slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-xmark"></i> Incompatível</span>`;
+                        slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_slot_mismatch", "Incompatível")}</span>`;
                         slotIssues.push(`${key} (${target.stats[key]})`);
                     }
                 } else {
-                    slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-circle-question"></i> Vazio</span>`;
+                    slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-circle-question"></i> ${t("comp_badge_slot_empty", "Vazio")}</span>`;
                     slotIssues.push(key);
                 }
                 
@@ -599,9 +614,9 @@ async function loadBuildComparison() {
             });
             
             if (slotIssues.length === 0) {
-                feedbackBullets.push(`<strong>Main Stats:</strong> <span style="color: #10b981;">Todos os slots chave</span> possuem os atributos principais ideais.`);
+                feedbackBullets.push(isEn ? `<strong>Main Stats:</strong> <span style="color: #10b981;">All key slots</span> have ideal main stats.` : `<strong>Main Stats:</strong> <span style="color: #10b981;">Todos os slots chave</span> possuem os atributos principais ideais.`);
             } else {
-                feedbackBullets.push(`<strong>Main Stats:</strong> Priorize trocar peças com main stats incorretos em: <em>${slotIssues.join(', ')}</em>.`);
+                feedbackBullets.push(isEn ? `<strong>Main Stats:</strong> Prioritize replacing pieces with incorrect main stats on: <em>${slotIssues.join(", ")}</em>.` : `<strong>Main Stats:</strong> Priorize trocar peças com main stats incorretos em: <em>${slotIssues.join(", ")}</em>.`);
             }
         }
         
@@ -613,9 +628,7 @@ async function loadBuildComparison() {
         
         if (endgameKeys.length > 0) {
             html += `
-                <tr class="comparison-section-header">
-                    <td colspan="3"><i class="fa-solid fa-chart-line" style="margin-right: 6px; color: #38bdf8;"></i> Status Finais de Combate (Endgame Benchmarks)</td>
-                </tr>
+                <tr class="comparison-section-header"><td colspan="3"><i class="fa-solid fa-chart-line" style="margin-right: 6px; color: #38bdf8;"></i> ${t("comp_sec_endgame", "Status Finais de Combate (Endgame Benchmarks)")}</td></tr>
             `;
             
             const pointsPerBenchmark = 20 / endgameKeys.length;
@@ -677,11 +690,11 @@ async function loadBuildComparison() {
                         if (playerNum >= targetMinNum) {
                             scoreTotal += pointsPerBenchmark;
                             statClass = "comparison-match";
-                            diffBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> Meta OK (${diffFormatted})</span>`;
+                            diffBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_meta_ok", "Meta OK")} (${diffFormatted})</span>`;
                         } else if (playerNum >= targetMinNum * 0.85) {
                             scoreTotal += pointsPerBenchmark * 0.5;
                             statClass = "comparison-warning";
-                            diffBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-triangle-exclamation"></i> Próximo (${diffFormatted})</span>`;
+                            diffBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-triangle-exclamation"></i> ${t("comp_badge_meta_close", "Próximo")} (${diffFormatted})</span>`;
                         } else {
                             statClass = "comparison-mismatch";
                             diffBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-arrow-down"></i> ${diffFormatted}</span>`;
@@ -763,7 +776,8 @@ async function loadBuildComparison() {
 window.generateAndOpenDiffCardModal = async function() {
     const cData = window.currentDiffDataCache;
     if (!cData) {
-        showToast("Nenhum comparativo selecionado para gerar card.");
+
+    showToast(isEn ? "No comparison selected to generate card." : "Nenhum comparativo selecionado para gerar card.");
         return;
     }
 
@@ -791,7 +805,8 @@ window.generateAndOpenDiffCardModal = async function() {
 
         if (downloadBtn) {
             downloadBtn.href = img.src;
-            downloadBtn.download = `comparativo_${(cData.name || 'personagem').toLowerCase().replace(/\s+/g, '_')}.png`;
+
+        downloadBtn.download = `comparison_${(cData.name || (isEn ? 'character' : 'personagem')).toLowerCase().replace(/\s+/g, '_')}.png`;
         }
 
         if (copyBtn) {
@@ -932,7 +947,8 @@ async function generateDiffCardCanvas(cData) {
     drawRoundedRect(30, 150, 560, 95, 12, "rgba(0, 0, 0, 0.4)", "rgba(255, 255, 255, 0.1)");
     ctx.fillStyle = "#38bdf8";
     ctx.font = "bold 13px sans-serif";
-    ctx.fillText("ARMA / CONE DE LUZ / W-ENGINE", 45, 170);
+
+    ctx.fillText(isEn ? "WEAPON / LIGHT CONE / W-ENGINE" : "ARMA / CONE DE LUZ / W-ENGINE", 45, 170);
 
     const wBase = base.weapon || (base.weapon_name ? { name: base.weapon_name, level: base.weapon_level, icon: base.weapon_icon } : null);
     const wTarget = target.weapon || (target.weapon_name ? { name: target.weapon_name, level: target.weapon_level, icon: target.weapon_icon } : null);
@@ -943,7 +959,7 @@ async function generateDiffCardCanvas(cData) {
     if (wBaseImg) ctx.drawImage(wBaseImg, 45, 180, 42, 42);
     ctx.fillStyle = "#94a3b8";
     ctx.font = "12px sans-serif";
-    ctx.fillText(wBase?.name || "Nenhuma", 98, 197);
+    ctx.fillText(wBase?.name || (isEn ? "None" : "Nenhuma"), 98, 197);
     ctx.font = "11px sans-serif";
     ctx.fillText(`Nv. ${wBase?.level || 1}`, 98, 213);
 
@@ -954,7 +970,7 @@ async function generateDiffCardCanvas(cData) {
     if (wTargetImg) ctx.drawImage(wTargetImg, 315, 180, 42, 42);
     ctx.fillStyle = "#fff";
     ctx.font = "bold 13px sans-serif";
-    ctx.fillText(wTarget?.name || "Nenhuma", 368, 197);
+    ctx.fillText(wTarget?.name || (isEn ? "None" : "Nenhuma"), 368, 197);
     ctx.fillStyle = "#10b981";
     ctx.font = "11px sans-serif";
     ctx.fillText(`Nv. ${wTarget?.level || 1}`, 368, 213);
@@ -1086,7 +1102,7 @@ async function generateDiffCardCanvas(cData) {
     drawRoundedRect(610, 150, 560, 680, 12, "rgba(0, 0, 0, 0.4)", "rgba(255, 255, 255, 0.1)");
     ctx.fillStyle = "#38bdf8";
     ctx.font = "bold 13px sans-serif";
-    ctx.fillText("ARTEFATOS & RELÍQUIAS (DE ➔ PARA)", 625, 175);
+    ctx.fillText(isEn ? "ARTIFACTS & RELICS (FROM ➔ TO)" : "ARTEFATOS & RELÍQUIAS (DE ➔ PARA)", 625, 175);
 
     const relicsBase = base.relics || [];
     const relicsTarget = target.relics || [];
@@ -1261,12 +1277,12 @@ window.loadAccountHistory = async (gameId = "hsr") => {
         btnSnapshot.dataset.bound = "true";
         btnSnapshot.addEventListener("click", async () => {
             btnSnapshot.disabled = true;
-            btnSnapshot.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Gerando Snapshot...`;
+            btnSnapshot.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${window.t ? window.t("history_btn_creating") : "Gerando Snapshot..."}`;
             try {
                 const res = await fetch("/api/sync/global", { method: "POST" });
                 const resData = await res.json();
                 if (resData.success) {
-                    showToast("Snapshot de evolução criado com sucesso!", "success");
+                    showToast(window.t ? window.t("history_toast_created") : "Snapshot de evolução criado com sucesso!", "success");
                     window.loadAccountHistory(currentGameIdHistory || gameId);
                 } else {
                     showToast("Erro ao criar snapshot: " + (resData.message || "Erro desconhecido"));
@@ -1275,7 +1291,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                 showToast("Erro de rede ao criar snapshot.");
             } finally {
                 btnSnapshot.disabled = false;
-                btnSnapshot.innerHTML = `<i class="fa-solid fa-camera-retro"></i> Criar Novo Snapshot Agora`;
+                btnSnapshot.innerHTML = `<i class="fa-solid fa-camera-retro"></i> ${window.t ? window.t("history_btn_create") : "Criar Novo Snapshot Agora"}`;
             }
         });
     }
@@ -1283,7 +1299,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
     container.innerHTML = `
         <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
             <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #ec4899;"></i>
-            <p style="margin-top: 12px; font-weight: 500;">Buscando linha do tempo e realizando comparativo de evolução...</p>
+            <p style="margin-top: 12px; font-weight: 500;">${window.t ? window.t("history_searching") : "Buscando linha do tempo e realizando comparativo de evolução..."}</p>
         </div>
     `;
 
@@ -1296,9 +1312,9 @@ window.loadAccountHistory = async (gameId = "hsr") => {
             container.innerHTML = `
                 <div class="overview-card" style="padding: 40px; text-align: center; color: var(--text-secondary); border-left: 4px solid #ec4899;">
                     <i class="fa-solid fa-clock-rotate-left fa-3x" style="color: #ec4899; margin-bottom: 14px;"></i>
-                    <h3 style="color: var(--text-primary); font-size: 18px; margin-bottom: 8px;">Nenhum Snapshot de Evolução Registrado</h3>
+                    <h3 style="color: var(--text-primary); font-size: 18px; margin-bottom: 8px;">${window.t ? window.t("history_empty_title") : "Nenhum Snapshot de Evolução Registrado"}</h3>
                     <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 18px auto; line-height: 1.5;">
-                        Faça uma sincronização global de conta ou clique no botão acima para registrar a primeira fotografia (snapshot) dos seus personagens e acompanhar a sua progressão ao longo do tempo!
+                        ${window.t ? window.t("history_empty_desc") : "Faça uma sincronização global de conta ou clique no botão acima para registrar a primeira fotografia (snapshot) dos seus personagens e acompanhar a sua progressão ao longo do tempo!"}
                     </p>
                 </div>
             `;
@@ -1468,11 +1484,11 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                             }).join('')}
                                         </div>
                                     </div>
-                                ` : (idx > 0 ? `<p style="font-size: 12px; color: var(--text-muted); font-style: italic; margin-bottom: 12px;"><i class="fa-solid fa-check-circle" style="color: #10b981;"></i> Nenhuma alteração de atributos ou novos personagens detectados em relação ao snapshot anterior.</p>` : '')}
+                                ` : (idx > 0 ? `<p style="font-size: 12px; color: var(--text-muted); font-style: italic; margin-bottom: 12px;"><i class="fa-solid fa-check-circle" style="color: #10b981;"></i> ${isEn ? "No attribute changes or new characters detected compared to previous snapshot." : "Nenhuma alteração de atributos ou novos personagens detectados em relação ao snapshot anterior."}</p>` : '')}
 
                                 <details style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px 14px;">
                                     <summary style="font-size: 12px; font-weight: 600; color: #38bdf8; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 6px;">
-                                        <i class="fa-solid fa-users"></i> ${onlyChanged ? `Ver ${filteredChars.length} Personagem(ns) Alterado(s)` : `Ver Todos os ${allChars.length} Personagens`} do Snapshot #${snapshotNum}
+                                        <i class="fa-solid fa-users"></i> ${onlyChanged ? (isEn ? `View ${filteredChars.length} Changed Character(s)` : `Ver ${filteredChars.length} Personagem(ns) Alterado(s)`) : (isEn ? `View All ${allChars.length} Characters` : `Ver Todos os ${allChars.length} Personagens`)} ${isEn ? "from Snapshot #" : "do Snapshot #"}${snapshotNum}
                                     </summary>
                                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 10px; margin-top: 14px;">
                                         ${filteredChars.map(c => `
@@ -1606,14 +1622,14 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
     } catch (err) {
         console.error("Erro ao carregar histórico:", err);
-        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Falha ao carregar o histórico de evolução da conta.</div>`;
+        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">${isEn ? "Failed to load account evolution history." : "Falha ao carregar o histórico de evolução da conta."}</div>`;
     }
 };
 
 window.loadPromoCodes = async (gameId = "hsr") => {
     const container = document.getElementById("tab-codes-body");
     if (!container) return;
-    container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Buscando códigos promocionais ativos e histórico de resgates...</p></div>`;
+    container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">${window.t ? window.t("codes_searching") : "Buscando códigos promocionais ativos e histórico de resgates..."}</p></div>`;
 
     try {
         const [resCodes, resHistory] = await Promise.all([
@@ -1629,7 +1645,7 @@ window.loadPromoCodes = async (gameId = "hsr") => {
         });
 
         if (!codes.length && !history.length) {
-            container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><p>Nenhum código ativo encontrado para ${gameId.toUpperCase()}.</p></div>`;
+            container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><p>${window.t ? window.t("codes_empty", {game: gameId.toUpperCase()}) : `Nenhum código ativo encontrado para ${gameId.toUpperCase()}.`}</p></div>`;
             return;
         }
 
@@ -1637,7 +1653,7 @@ window.loadPromoCodes = async (gameId = "hsr") => {
             <!-- CÓDIGOS ATIVOS -->
             <div style="margin-bottom: 24px;">
                 <h4 style="color: #f59e0b; margin-top: 0; margin-bottom: 12px; font-size: 14px; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-fire"></i> Códigos Promocionais Disponíveis (${codes.length})
+                    <i class="fa-solid fa-fire"></i> ${window.t ? window.t("codes_available_title") : "Códigos Promocionais Disponíveis"} (${codes.length})
                 </h4>
                 <div style="display: flex; flex-direction: column; gap: 12px;">
                     ${codes.map(c => {
@@ -1647,9 +1663,9 @@ window.loadPromoCodes = async (gameId = "hsr") => {
 
                         let badgeHtml = "";
                         if (isClaimed) {
-                            badgeHtml = `<span style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-check"></i> Resgatado</span>`;
+                            badgeHtml = `<span style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);"><i class="fa-solid fa-check"></i> ${window.t ? window.t("codes_status_claimed") : "Resgatado"}</span>`;
                         } else if (isInvalid) {
-                            badgeHtml = `<span style="font-size: 11px; background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fa-solid fa-xmark"></i> Expirado</span>`;
+                            badgeHtml = `<span style="font-size: 11px; background: rgba(239, 68, 68, 0.15); color: #f87171; padding: 3px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(239, 68, 68, 0.3);"><i class="fa-solid fa-xmark"></i> ${window.t ? window.t("codes_status_expired") : "Expirado"}</span>`;
                         }
 
                         return `
@@ -1659,11 +1675,11 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                                         <code style="font-size: 16px; font-weight: 700; color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">${c.code}</code>
                                         ${badgeHtml}
                                     </div>
-                                    <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;"> Recompensas: ${c.rewards}</span>
+                                    <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;"> ${window.t ? window.t("codes_rewards_label") : "Recompensas:"} ${c.rewards}</span>
                                     <span style="display: block; font-size: 10px; color: #10b981; margin-top: 2px;">• ${c.status}</span>
                                 </div>
                                 <button class="action-btn btn-redeem-single" data-game="${gameId}" data-code="${c.code}" style="padding: 8px 14px; font-size: 12px; background: ${isClaimed ? 'rgba(255,255,255,0.05)' : 'rgba(245, 158, 11, 0.15)'}; border-color: ${isClaimed ? 'rgba(255,255,255,0.1)' : 'rgba(245, 158, 11, 0.4)'}; color: ${isClaimed ? 'var(--text-muted)' : '#fbbf24'}; border-radius: 6px; cursor: pointer;">
-                                    <i class="fa-solid fa-gift"></i> ${isClaimed ? 'Resgatar Novamente' : 'Resgatar Este'}
+                                    <i class="fa-solid fa-gift"></i> ${isClaimed ? (window.t ? window.t('codes_btn_redeem_again') : 'Resgatar Novamente') : (window.t ? window.t('codes_btn_redeem') : 'Resgatar Este')}
                                 </button>
                             </div>
                         `;
@@ -1676,7 +1692,7 @@ window.loadPromoCodes = async (gameId = "hsr") => {
             ${history.length > 0 ? `
                 <details style="background: rgba(0,0,0,0.2); border: 1px solid var(--border-color); border-radius: 10px; padding: 14px; margin-top: 20px;">
                     <summary style="font-size: 13px; font-weight: 700; color: #38bdf8; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                        <i class="fa-solid fa-clock-rotate-left"></i> Histórico de Resgates Registrados (${history.length})
+                        <i class="fa-solid fa-clock-rotate-left"></i> ${window.t ? window.t("codes_history_title") : "Histórico de Resgates Registrados"} (${history.length})
                     </summary>
                     <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
                         ${history.map(h => {
@@ -1731,7 +1747,7 @@ window.loadPromoCodes = async (gameId = "hsr") => {
 
     } catch (err) {
         console.error("Erro ao carregar códigos:", err);
-        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">Falha ao carregar códigos promocionais.</div>`;
+        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">${isEn ? "Failed to load promo codes." : "Falha ao carregar códigos promocionais."}</div>`;
     }
 };
 
@@ -1876,7 +1892,8 @@ window.saveAppConfiguration = async () => {
         const data = await res.json();
         showToast("Configurações atualizadas!", "success");
     } catch (e) {
-        showToast("Erro ao salvar configurações.");
+
+        showToast(isEn ? "Error saving settings." : "Erro ao salvar configurações.");
     }
 };
 
@@ -1898,14 +1915,15 @@ window.openRelicSandboxModal = async function() {
 
     if (!char) {
         if (typeof showToast === "function") {
-            showToast("Selecione um personagem na galeria para abrir o Sandbox de Troca.", "warning");
+
+    showToast(isEn ? "Select a character in the gallery to open the Swap Sandbox." : "Selecione um personagem na galeria para abrir o Sandbox de Troca.", "warning");
         }
         return;
     }
 
     const subtitleEl = document.getElementById("sandbox-char-subtitle");
     if (subtitleEl) {
-        subtitleEl.innerHTML = `Simulando para <strong>${char.name}</strong> (${gameId.toUpperCase()} • Nv. ${char.level || 80}) — Teste substituições de relíquias sem gastar recursos in-game.`;
+        subtitleEl.innerHTML = isEn ? `Simulating for <strong>${char.name}</strong> (${gameId.toUpperCase()} • Lv. ${char.level || 80}) — Test relic swaps without spending in-game resources.` : `Simulando para <strong>${char.name}</strong> (${gameId.toUpperCase()} • Nv. ${char.level || 80}) — Teste substituições de relíquias sem gastar recursos in-game.`;
     }
 
     // Popula o seletor de Slots
@@ -1922,11 +1940,12 @@ window.openRelicSandboxModal = async function() {
             });
         } else {
             // Fallbacks padrão de slots por jogo
+            const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
             const defaultSlots = gameId === "genshin" 
-                ? ["Flor", "Pena", "Areia", "Cálice", "Tiara"]
+                ? (isEn ? ["Flower", "Plume", "Sands", "Goblet", "Circlet"] : ["Flor", "Pena", "Areia", "Cálice", "Tiara"])
                 : (gameId === "zzz" 
-                    ? ["Disco 1", "Disco 2", "Disco 3", "Disco 4", "Disco 5", "Disco 6"]
-                    : ["Cabeça", "Mãos", "Corpo", "Pés", "Esfera", "Corda"]);
+                    ? (isEn ? ["Disc 1", "Disc 2", "Disc 3", "Disc 4", "Disc 5", "Disc 6"] : ["Disco 1", "Disco 2", "Disco 3", "Disco 4", "Disco 5", "Disco 6"])
+                    : (isEn ? ["Head", "Hands", "Body", "Feet", "Planar Sphere", "Link Rope"] : ["Cabeça", "Mãos", "Corpo", "Pés", "Esfera", "Corda"]));
             defaultSlots.forEach(s => {
                 const opt = document.createElement("option");
                 opt.value = s;
@@ -2019,10 +2038,10 @@ window.onSandboxSlotChanged = function() {
         currentBox.innerHTML = `
             <div style="font-weight: 700; color: #fff; font-size: 13px;">${currentRelic.name || 'Peça Atual'}</div>
             <div style="color: #fbbf24; font-size: 11px; margin-top: 2px;">Main: <strong>${currentRelic.main || currentRelic.main_stat || 'N/A'}</strong></div>
-            <div style="color: var(--text-muted); font-size: 11px; margin-top: 2px;">Substats: ${currentRelic.sub || currentRelic.sub_stats || 'Nenhum'}</div>
+            <div style="color: var(--text-muted); font-size: 11px; margin-top: 2px;">${isEn ? "Substats:" : "Substatus:"} ${currentRelic.sub || currentRelic.sub_stats || (isEn ? "None" : "Nenhum")}</div>
         `;
     } else {
-        currentBox.innerHTML = `<span style="color: #64748b; font-style: italic;">Nenhuma relíquia equipada neste slot atualmente.</span>`;
+        currentBox.innerHTML = `<span style="color: #64748b; font-style: italic;">${isEn ? "No relic currently equipped in this slot." : "Nenhuma relíquia equipada neste slot atualmente."}</span>`;
     }
 
     // Filtra o select de inventário para o slot selecionado
@@ -2035,7 +2054,7 @@ window.onSandboxSlotChanged = function() {
         );
 
         if (matchingPieces.length === 0) {
-            invSelect.innerHTML = `<option value="">Nenhuma outra peça encontrada para ${selectedSlot}</option>`;
+            invSelect.innerHTML = `<option value="">${isEn ? `No other piece found for ${selectedSlot}` : `Nenhuma outra peça encontrada para ${selectedSlot}`}</option>`;
         } else {
             matchingPieces.forEach((p, idx) => {
                 const opt = document.createElement("option");
@@ -2058,7 +2077,8 @@ window.executeRelicSwapSimulation = async function() {
 
     if (!char || !slotSelect) {
         if (typeof showToast === "function") {
-            showToast("Dados do personagem insuficientes para simulação.", "error");
+
+        showToast(isEn ? "Insufficient character data for simulation." : "Dados do personagem insuficientes para simulação.", "error");
         }
         return;
     }
@@ -2220,7 +2240,8 @@ window.executeRelicSwapSimulation = async function() {
         const bpContainer = document.getElementById("sandbox-breakpoints-container");
         if (bpContainer) {
             if (!data.breakpoint_feedback || data.breakpoint_feedback.length === 0) {
-                bpContainer.innerHTML = `<span style="color: var(--text-muted);">Nenhum breakpoint afetado.</span>`;
+
+    bpContainer.innerHTML = `<span style="color: var(--text-muted);">${isEn ? "No breakpoints affected." : "Nenhum breakpoint afetado."}</span>`;
             } else {
                 bpContainer.innerHTML = data.breakpoint_feedback.map(fb => {
                     const isSuccess = fb.startsWith("✓") || fb.startsWith("⚡");
@@ -2233,11 +2254,13 @@ window.executeRelicSwapSimulation = async function() {
         // 5. Veredito Executivo
         const verdictText = document.getElementById("sandbox-verdict-text");
         if (verdictText) {
-            verdictText.textContent = data.verdict_summary || "Simulação concluída com sucesso.";
+
+    verdictText.textContent = data.verdict_summary || (isEn ? "Simulation completed successfully." : "Simulação concluída com sucesso.");
         }
 
         if (typeof showToast === "function") {
-            showToast("Simulação de troca calculada com sucesso!", "success");
+
+        showToast(isEn ? "Swap simulation calculated successfully!" : "Simulação de troca calculada com sucesso!", "success");
         }
     } catch (err) {
         console.error("Erro na simulação do Sandbox:", err);
@@ -2262,3 +2285,23 @@ if (typeof loadBuildComparison !== 'undefined') window.loadBuildComparison = loa
 if (typeof sandboxCurrentMode !== 'undefined') window.sandboxCurrentMode = sandboxCurrentMode;
 if (typeof sandboxInventoryPool !== 'undefined') window.sandboxInventoryPool = sandboxInventoryPool;
 if (typeof setupInspectorTabs !== 'undefined') window.setupInspectorTabs = setupInspectorTabs;
+
+window.addEventListener("app:languageChanged", () => {
+    const inspector = document.getElementById("build-inspector");
+    const panelCompare = document.getElementById("panel-compare");
+    if (inspector && inspector.classList.contains("open") && panelCompare && panelCompare.style.display !== "none") {
+        if (typeof loadBuildComparison === "function") {
+            loadBuildComparison();
+        }
+    }
+    const tabHistory = document.getElementById("tab-history");
+    if (tabHistory && tabHistory.classList.contains("active") && typeof window.loadAccountHistory === "function") {
+        const activeGameBtn = document.querySelector(".tab-history-game-btn.active");
+        window.loadAccountHistory(activeGameBtn ? activeGameBtn.dataset.game : "hsr");
+    }
+    const tabCodes = document.getElementById("tab-codes");
+    if (tabCodes && tabCodes.classList.contains("active") && typeof window.loadPromoCodes === "function") {
+        const activeCodeBtn = document.querySelector(".tab-codes-game-btn.active");
+        window.loadPromoCodes(activeCodeBtn ? activeCodeBtn.dataset.game : "hsr");
+    }
+});

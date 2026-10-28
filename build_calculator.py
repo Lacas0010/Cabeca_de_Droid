@@ -3220,7 +3220,7 @@ GAME_SPECIFIC_TERMS = {
 
 
 def get_daily_farm_recommendations(
-    game_id: str, roster: list = None, day_of_week: int = None, selected_chars: list = None
+    game_id: str, roster: list = None, day_of_week: int = None, selected_chars: list = None, lang: str = "pt"
 ) -> dict:
     """
     Retorna o calendário de farm do dia atual e gera sugestões personalizadas de gasto de energia
@@ -3237,7 +3237,15 @@ def get_daily_farm_recommendations(
     if day_of_week is None:
         day_of_week = datetime.now().weekday()  # 0=Segunda, 6=Domingo
 
-    game_calendar = FARM_CALENDAR.get(game_id, {}).get(day_of_week, {"days": "Hoje", "note": "Farm Livre"})
+    raw_cal = FARM_CALENDAR.get(game_id, {}).get(day_of_week, {"days": "Hoje", "note": "Farm Livre"})
+    game_calendar = dict(raw_cal)
+    if lang == "en":
+        day_en_map = {0: "Monday", 1: "Tuesday", 2: "Wednesday", 3: "Thursday", 4: "Friday", 5: "Saturday", 6: "Sunday"}
+        game_calendar["days"] = day_en_map.get(day_of_week, "Today")
+        if game_calendar.get("talents") and "Todos os materiais abertos" in game_calendar["talents"]:
+            game_calendar["talents"] = ["All materials open"]
+        if game_calendar.get("weapons") and "Todos os materiais abertos" in game_calendar["weapons"]:
+            game_calendar["weapons"] = ["All materials open"]
 
     meta_db = get_meta_data(game_id)
 
@@ -4255,6 +4263,7 @@ def generate_daily_farm_order(
     max_energy: Optional[int] = None,
     weekday: Optional[int] = None,
     selected_chars: Optional[List[str]] = None,
+    lang: str = "pt",
 ) -> Dict[str, Any]:
     """
     Gera a 'Ordem de Serviço do Dia' inteligente e otimizada.
@@ -4270,13 +4279,16 @@ def generate_daily_farm_order(
         weekday = now_dt.weekday()
     today_str = now_dt.strftime("%Y-%m-%d")
 
-    weekday_names = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+    if lang == "en":
+        weekday_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    else:
+        weekday_names = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
     weekday_name = weekday_names[weekday]
 
     # Configurações de Energia e Custos por Jogo
     game_configs = {
         "genshin": {
-            "energy_name": "Resina Original",
+            "energy_name": "Original Resin" if lang == "en" else "Resina Original",
             "energy_icon": "fa-droplet",
             "default_max": 200,
             "default_current": 160,
@@ -4291,7 +4303,7 @@ def generate_daily_farm_order(
             "max_level": 90,
         },
         "hsr": {
-            "energy_name": "Poder de Desbravamento",
+            "energy_name": "Trailblaze Power" if lang == "en" else "Poder de Desbravamento",
             "energy_icon": "fa-bolt",
             "default_max": 300,
             "default_current": 240,
@@ -4302,11 +4314,11 @@ def generate_daily_farm_order(
             "weekly_boss_run_cost": 30,
             "relic_run_cost": 40,
             "relic_runs_default": 1,
-            "currency_name": "Créditos",
+            "currency_name": "Credits" if lang == "en" else "Créditos",
             "max_level": 80,
         },
         "zzz": {
-            "energy_name": "Carga de Bateria",
+            "energy_name": "Battery Charge" if lang == "en" else "Carga de Bateria",
             "energy_icon": "fa-battery-full",
             "default_max": 240,
             "default_current": 240,
@@ -4414,31 +4426,46 @@ def generate_daily_farm_order(
         runs = cfg["talent_runs_default"]
         cost = runs * cfg["talent_run_cost"]
 
-        location = "Domínio de Livros de Talento"
-        if profile and profile.get("region"):
-            location = f"Domínio da Região de {profile['region']}"
-        elif g == "hsr":
-            location = f"Cálice Rubro ({profile.get('path', 'Caminho') if profile else 'Rastros'})"
-        elif g == "zzz":
-            location = f"Treinamento de Habilidades ({profile.get('specialty', 'Agente') if profile else 'Ataque'})"
+        if lang == "en":
+            location = "Talent Book Domain"
+            if profile and profile.get("region"):
+                location = f"{profile['region']} Region Domain"
+            elif g == "hsr":
+                location = f"Crimson Calyx ({profile.get('path', 'Path') if profile else 'Traces'})"
+            elif g == "zzz":
+                location = f"Skill Training ({profile.get('specialty', 'Agent') if profile else 'Attack'})"
+            t_label = "Talent Books"
+            p_badge = "⭐ Open Today"
+            desc_text = f"Run {runs}x {location} to obtain {talent_mat_name} and advance priority talents for {c_name} (Grade {c_grade})."
+        else:
+            location = "Domínio de Livros de Talento"
+            if profile and profile.get("region"):
+                location = f"Domínio da Região de {profile['region']}"
+            elif g == "hsr":
+                location = f"Cálice Rubro ({profile.get('path', 'Caminho') if profile else 'Rastros'})"
+            elif g == "zzz":
+                location = f"Treinamento de Habilidades ({profile.get('specialty', 'Agente') if profile else 'Ataque'})"
+            t_label = "Livros de Talento"
+            p_badge = "⭐ Aberto Hoje"
+            desc_text = f"Faça {runs}x {location} para obter {talent_mat_name} e avançar os talentos prioritários de {c_name} (Nota {c_grade})."
 
         task_item = {
             "id": sig,
             "step": task_idx,
             "type": "talent_domain",
-            "type_label": "Livros de Talento",
+            "type_label": t_label,
             "type_icon": "fa-book-open",
             "target_character": c_name,
             "character_icon": target.get("icon"),
             "character_grade": c_grade,
-            "material_name": talent_mat_name or "Livros de Elevação",
+            "material_name": talent_mat_name or ("Elevation Books" if lang == "en" else "Livros de Elevação"),
             "location": location,
             "runs": runs,
             "cost_energy": cost,
             "energy_name": cfg["energy_name"],
-            "priority_badge": "⭐ Aberto Hoje",
+            "priority_badge": p_badge,
             "badge_color": "#10b981",
-            "description": f"Faça {runs}x {location} para obter {talent_mat_name} e avançar os talentos prioritários de {c_name} (Nota {c_grade}).",
+            "description": desc_text,
             "completed": sig in completed_task_ids,
         }
 
@@ -4447,15 +4474,16 @@ def generate_daily_farm_order(
         task_item["cumulative_energy"] = accumulated_energy
         if accumulated_energy <= current_energy:
             task_item["available_now"] = True
-            task_item["status_text"] = "Pronto para Executar"
-            task_item["time_estimate"] = "Disponível Agora"
+            task_item["status_text"] = "Ready to Execute" if lang == "en" else "Pronto para Executar"
+            task_item["time_estimate"] = "Available Now" if lang == "en" else "Disponível Agora"
         else:
             deficit = accumulated_energy - current_energy
             wait_min = deficit * cfg["regen_minutes"]
             ready_dt = now_dt + timedelta(minutes=wait_min)
             task_item["available_now"] = False
-            task_item["status_text"] = "Aguardando Energia"
-            task_item["time_estimate"] = f"Disponível às {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
+            task_item["status_text"] = "Waiting for Energy" if lang == "en" else "Aguardando Energia"
+            time_prefix = "Available at" if lang == "en" else "Disponível às"
+            task_item["time_estimate"] = f"{time_prefix} {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
 
         tasks.append(task_item)
         task_idx += 1
@@ -4483,15 +4511,26 @@ def generate_daily_farm_order(
         runs = 1
         cost = runs * cfg["boss_run_cost"]
 
-        location = f"Chefe de Ascensão ({boss_name})"
-        if profile and profile.get("region"):
-            location = f"Chefe de {profile['region']} ({boss_name})"
+        if lang == "en":
+            location = f"Ascension Boss ({boss_name})"
+            if profile and profile.get("region"):
+                location = f"{profile['region']} Boss ({boss_name})"
+            t_label = "Ascension Boss"
+            p_badge = "🔥 Pending Ascension"
+            desc_text = f"Defeat {location} to advance {c_name} from Lv. {c_lvl} towards Lv. {c_max}."
+        else:
+            location = f"Chefe de Ascensão ({boss_name})"
+            if profile and profile.get("region"):
+                location = f"Chefe de {profile['region']} ({boss_name})"
+            t_label = "Chefe de Ascensão"
+            p_badge = "🔥 Ascensão Pendente"
+            desc_text = f"Derrote {location} para avançar {c_name} do Nv. {c_lvl} rumo ao Nv. {c_max}."
 
         task_item = {
             "id": sig,
             "step": task_idx,
             "type": "boss",
-            "type_label": "Chefe de Ascensão",
+            "type_label": t_label,
             "type_icon": "fa-skull",
             "target_character": c_name,
             "character_icon": target.get("icon"),
@@ -4501,9 +4540,9 @@ def generate_daily_farm_order(
             "runs": runs,
             "cost_energy": cost,
             "energy_name": cfg["energy_name"],
-            "priority_badge": "🔥 Ascensão Pendente",
+            "priority_badge": p_badge,
             "badge_color": "#f59e0b",
-            "description": f"Derrote {location} para avançar {c_name} do Nv. {c_lvl} rumo ao Nv. {c_max}.",
+            "description": desc_text,
             "completed": sig in completed_task_ids,
         }
 
@@ -4511,15 +4550,16 @@ def generate_daily_farm_order(
         task_item["cumulative_energy"] = accumulated_energy
         if accumulated_energy <= current_energy:
             task_item["available_now"] = True
-            task_item["status_text"] = "Pronto para Executar"
-            task_item["time_estimate"] = "Disponível Agora"
+            task_item["status_text"] = "Ready to Execute" if lang == "en" else "Pronto para Executar"
+            task_item["time_estimate"] = "Available Now" if lang == "en" else "Disponível Agora"
         else:
             deficit = accumulated_energy - current_energy
             wait_min = deficit * cfg["regen_minutes"]
             ready_dt = now_dt + timedelta(minutes=wait_min)
             task_item["available_now"] = False
-            task_item["status_text"] = "Aguardando Energia"
-            task_item["time_estimate"] = f"Disponível às {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
+            task_item["status_text"] = "Waiting for Energy" if lang == "en" else "Aguardando Energia"
+            time_prefix = "Available at" if lang == "en" else "Disponível às"
+            task_item["time_estimate"] = f"{time_prefix} {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
 
         tasks.append(task_item)
         task_idx += 1
@@ -4539,9 +4579,22 @@ def generate_daily_farm_order(
         runs = cfg["relic_runs_default"]
         cost = runs * cfg["relic_run_cost"]
 
-        domain_label = (
-            "Domínio de Artefatos" if g == "genshin" else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
-        )
+        if lang == "en":
+            domain_label = (
+                "Artifact Domain" if g == "genshin" else ("Cavern of Corrosion" if g == "hsr" else "Routine Cleanup")
+            )
+            p_badge = "💎 Build Optimization"
+            mat_name = f"Recommended Sets for {c_name}"
+            loc_name = f"Recommended {domain_label}"
+            desc_text = f"Run {runs}x {domain_label} seeking optimal main and sub-stats to maximize {c_name}'s rating."
+        else:
+            domain_label = (
+                "Domínio de Artefatos" if g == "genshin" else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
+            )
+            p_badge = "💎 Otimização de Build"
+            mat_name = f"Sets Recomendados para {c_name}"
+            loc_name = f"{domain_label} Recomendado"
+            desc_text = f"Realize {runs}x {domain_label} buscando peças com Atributos Ideais para maximizar a nota de {c_name}."
 
         task_item = {
             "id": sig,
@@ -4552,14 +4605,14 @@ def generate_daily_farm_order(
             "target_character": c_name,
             "character_icon": target.get("icon"),
             "character_grade": c_grade,
-            "material_name": f"Sets Recomendados para {c_name}",
-            "location": f"{domain_label} Recomendado",
+            "material_name": mat_name,
+            "location": loc_name,
             "runs": runs,
             "cost_energy": cost,
             "energy_name": cfg["energy_name"],
-            "priority_badge": "💎 Otimização de Build",
+            "priority_badge": p_badge,
             "badge_color": "#ec4899",
-            "description": f"Realize {runs}x {domain_label} buscando peças com Atributos Ideais para maximizar a nota de {c_name}.",
+            "description": desc_text,
             "completed": sig in completed_task_ids,
         }
 
@@ -4567,15 +4620,16 @@ def generate_daily_farm_order(
         task_item["cumulative_energy"] = accumulated_energy
         if accumulated_energy <= current_energy:
             task_item["available_now"] = True
-            task_item["status_text"] = "Pronto para Executar"
-            task_item["time_estimate"] = "Disponível Agora"
+            task_item["status_text"] = "Ready to Execute" if lang == "en" else "Pronto para Executar"
+            task_item["time_estimate"] = "Available Now" if lang == "en" else "Disponível Agora"
         else:
             deficit = accumulated_energy - current_energy
             wait_min = deficit * cfg["regen_minutes"]
             ready_dt = now_dt + timedelta(minutes=wait_min)
             task_item["available_now"] = False
-            task_item["status_text"] = "Aguardando Energia"
-            task_item["time_estimate"] = f"Disponível às {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
+            task_item["status_text"] = "Waiting for Energy" if lang == "en" else "Aguardando Energia"
+            time_prefix = "Available at" if lang == "en" else "Disponível às"
+            task_item["time_estimate"] = f"{time_prefix} {ready_dt.strftime('%H:%M')} (+{wait_min} min)"
 
         tasks.append(task_item)
         task_idx += 1

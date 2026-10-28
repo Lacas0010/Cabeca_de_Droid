@@ -6,6 +6,48 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.3.0] - 2026-10-28
+
+### ✨ Adicionado
+- **Suporte Completo a Bilinguismo & Internacionalização Integral (i18n - PT-BR / EN-US):**
+  - Módulo cliente dedicado `static/js/modules/i18n.js` com dicionário bilíngue exaustivo (mais de 200 chaves de tradução) cobrindo **100% da interface gráfica e todos os seus 20 módulos em 8 etapas**:
+    - **Etapa 1 (Início & Dashboard Global)**: Banner de boas-vindas, monitor de energia/resina/bateria, ordem de farm prioritária, ferramentas rápidas e briefing do perfil ativo.
+    - **Etapa 2 (Abas de Jogos - Genshin, HSR, ZZZ)**: Sub-navegação, badges de filtro por elemento e raridade, barras de pesquisa, checkboxes de sincronização e galeria do elenco.
+    - **Etapa 3 (Inspetor de Builds & Roll Value)**: Título e notas de pontuação de relíquias/artefatos/discos, Main Stat Forgiveness, Flat Stat Fallback, detalhes de rolls, custos de ascensão e comparador de metas.
+    - **Etapa 4 (Desafios de Endgame)**: Visão focada e completa de Abismo Espiral, Memória do Caos, Ficção Pura, Sombra Apocalíptica, Shiyu Defense e Team Matcher inteligente.
+    - **Etapa 5 (Simulador de Tiros & Gacha Forecast)**: Simulação Monte Carlo de 10.000 invocações, painel de metas salvas com cronômetro em tempo real, selector de fase com horários oficiais e rastreador UIGF/SRGF.
+    - **Etapa 6 (Central de Farm, Relíquias Lixo, Índice de Sorte & Tier List/Audit)**: Rotação de materiais diários, identificador de peças lixo para descarte, estatísticas de RNG (God Roll, Most Cursed) e diagnóstico de lacunas da conta.
+    - **Etapa 7 (Chat IA Meta & Construtor de Card de Time HD)**: Mensagens de boas-vindas e análise conversacional via Groq, avisos de erro, seleção visual de equipe, exportação Canvas 2x PNG e badges de sinergia.
+    - **Etapa 8 (Linha do Tempo, Códigos Promocionais, Configurações & Central de Ajuda)**: Histórico de snapshots de evolução, gerenciador de códigos com resgate automático a cada 3h, proteção por PIN, cofre DPAPI, isolamento LAN e central com 20 cards de recursos com busca dinâmica.
+  - Seletor de idioma visual com estilo "pill" integrado na barra lateral desktop (`.sidebar-lang-selector`), botão dinâmico de alternância no cabeçalho mobile (`.lang-btn-mobile`) e seletor persistente na aba de Configurações (`#tab-config`).
+  - Persistência reativa do idioma ativo no `localStorage` (`app_lang`) e sincronização transparente com o backend através da API `/api/config` (`language: "pt" | "en"`).
+  - Atualização dinâmica em tempo real com preservação de estado via atributos `data-i18n`, `data-i18n-placeholder` e listeners ao evento `app:languageChanged` em todos os módulos ES6.
+    - **Endgame Bilíngue Completo (HSR, Genshin, ZZZ)**:
+      - Nomes oficiais de modos traduzidos dinamicamente no frontend e backend (`Memory of Chaos`, `Pure Fiction`, `Apocalyptic Shadow`, `Spiral Abyss`, `Imaginarium Theater`, `Shiyu Defense`, `Deadly Assault`, `Hollow Zero`).
+      - Fases, andares e nós localizados (`Floor`, `Chamber`, `Critical Node`, `Stable Node`, `Disputed Node`, `Arcane Challenge`, `Season`, `Crossing the Beyond`, `Star Mode`, `Act`).
+      - Métricas de combate (`Cycles Used`, `Cycles`, `Score`, `Points`, `Floor Stars`, `Side 1 / Side 2`, `Deployed`, `Enemy Lv.`).
+      - Team Matcher totalmente traduzido com sugestão funcional de substitutos (`Same tactical role`, `and same element`, `battle-ready`).
+    - **Localização Completa de Zenless Zone Zero (ZZZ)**:
+      - Elementos traduzidos em filtros, gráficos, galeria e comparador: `Electric`, `Ether`, `Fire`, `Ice`, `Physical`, `Lumiflux`.
+      - Raridades de agentes em gráficos de distribuição: `S-Rank` e `A-Rank` (substituindo `Classe S` e `Classe A`).
+      - Discos de acionamento em comparadores e sandbox: `Disc 1` .. `Disc 6`.
+      - Materiais de farm e unidades padronizados: `Dennys`, `Official Investigator Log`, `Skills`, `Basic/Advanced/Specialized Skill Chips`, `Higher Dimensional Data`, `Hamster Cage Pass`, `W-Engine Power Supply`, `pcs.`.
+    - **Central de Farm & Ordem Diária**:
+      - Dias da semana no calendário de domínios traduzidos (`Monday`, `Tuesday`, `Wednesday`, `Thursday`, `Friday`, `Saturday`, `Sunday`).
+      - Seções informativas traduzidas (`Level Up & Character Ascension`, `Open Today (Field Boss & Specialties 24/7)`, `Local Specialty`).
+
+  - **Serviço de Tradução Bidirecional (`services/translation_service.py`):**
+  - Mapeamento reverso automático com suporte ao parâmetro `lang="pt" | "en"` na função `traduzir_item`.
+  - Contrato Pydantic v2 atualizado em `schemas/config.py` (`ConfigSaveRequest.language`) e endpoint `/api/config` estendido para leitura e gravação da preferência de idioma.
+- **Documentação Bilíngue Completa:**
+  - Criação de `README.en.md` contendo a tradução integral da documentação em inglês (Quick Start, 28 recursos, arquitetura, zero-exposure security, fórmulas do Roll Value com as 5 regras de pontuação e referência REST API).
+  - Barra superior de alternância de idioma adicionada em `README.md` e `README.en.md`.
+- **Suíte de Testes para i18n (`tests/test_i18n_translation_suite.py`):**
+  - Novos testes unitários validando a tradução de atributos nos dois sentidos, persistência na API `/api/config`, validação de schemas Pydantic e integridade estrutural do módulo `i18n.js`.
+  - Suíte total de testes unitários executada com 157 testes e 100% de aprovação.
+
+---
+
 ## [5.2.0] - 2026-10-28
 
 ### ✨ Adicionado

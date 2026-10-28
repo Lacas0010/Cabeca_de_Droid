@@ -38,7 +38,12 @@ function updateBannerFilterOptions(gameId) {
     const bannerSelect = document.getElementById("tracker-history-filter-banner");
     if (!bannerSelect) return;
 
-    let optionsHtml = `
+    let optionsHtml = isEn ? `
+        <option value="all">All Banners</option>
+        <option value="character">Character / Agent</option>
+        <option value="weapon">Weapon / Light Cone / W-Engine</option>
+        <option value="standard">Standard / Wanderlust</option>
+    ` : `
         <option value="all">Todos os Banners</option>
         <option value="character">Personagem / Agente</option>
         <option value="weapon">Arma / Cone / Motor-W</option>
@@ -46,17 +51,25 @@ function updateBannerFilterOptions(gameId) {
     `;
 
     if (gameId === "genshin") {
-        optionsHtml += `
+        optionsHtml += isEn ? `
+            <option value="beginner">Beginners' Wish</option>
+            <option value="chronicled">Chronicled Wish</option>
+        ` : `
             <option value="beginner">Desejo dos Novatos (Iniciante)</option>
             <option value="chronicled">Oração das Crônicas (Regional)</option>
         `;
     } else if (gameId === "hsr") {
-        optionsHtml += `
+        optionsHtml += isEn ? `
+            <option value="beginner">Departure Warp (Beginner)</option>
+            <option value="collab">Collab Warp (Fate)</option>
+        ` : `
             <option value="beginner">Salto de Partida (Iniciante)</option>
             <option value="collab">Salto de Colaboração (Fate)</option>
         `;
     } else if (gameId === "zzz") {
-        optionsHtml += `
+        optionsHtml += isEn ? `
+            <option value="bangboo">Bangboo Channel (Boopon)</option>
+        ` : `
             <option value="bangboo">Canal de Bangboos (Boopon)</option>
         `;
     }
@@ -85,7 +98,8 @@ window.loadGachaTracker = async function(gameId) {
         if (avgPityEl) {
             const charB = data.character_banner || {};
             const avg = charB.avg_five_star_pity || 0;
-            avgPityEl.textContent = avg > 0 ? `${avg} tiros` : "--";
+
+    avgPityEl.textContent = avg > 0 ? (isEn ? `${avg} pulls` : `${avg} tiros`) : "--";
         }
         if (luckBadgeEl) {
             luckBadgeEl.innerHTML = `<i class="fa-solid fa-clover" style="color: #34d399;"></i> ${data.overall_luck_rating || 'Sem dados'}`;
@@ -209,14 +223,14 @@ function renderBannerCardHtml(gameId, banner) {
     }
 
     const softText = banner.next_soft_pity_in > 0
-        ? `Faltam ${banner.next_soft_pity_in} tiros para o Soft Pity (${softStart})`
-        : `🔥 Soft Pity Ativo! (+ chance acelerada)`;
+        ? (isEn ? `${banner.next_soft_pity_in} pulls until Soft Pity (${softStart})` : `Faltam ${banner.next_soft_pity_in} tiros para o Soft Pity (${softStart})`)
+        : (isEn ? `🔥 Soft Pity Active! (+ accelerated rate)` : `🔥 Soft Pity Ativo! (+ chance acelerada)`);
 
     // Histórico dos 5★ com Miniatura
     const recents = banner.recent_five_stars || [];
     let recentsHtml = "";
     if (recents.length === 0) {
-        recentsHtml = `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">Nenhum registro de 5★ obtido neste banner.</span>`;
+        recentsHtml = `<span style="font-size: 11px; color: var(--text-muted); font-style: italic;">${isEn ? "No 5★ records obtained on this banner." : "Nenhum registro de 5★ obtido neste banner."}</span>`;
     } else {
         recentsHtml = recents.map(f => {
             const winColor = f.is_win_5050 ? "#34d399" : "#f87171";
@@ -328,7 +342,8 @@ window.loadGachaTrackerHistory = async function() {
         // Atualiza label de total
         const totalLabel = document.getElementById("tracker-history-total-label");
         if (totalLabel) {
-            totalLabel.textContent = `${window.currentHistoryTotal.toLocaleString()} tiros encontrados no banco de dados`;
+
+    totalLabel.textContent = isEn ? `${window.currentHistoryTotal.toLocaleString()} pulls found in database` : `${window.currentHistoryTotal.toLocaleString()} tiros encontrados no banco de dados`;
         }
 
         // Atualiza controles de paginação
@@ -395,8 +410,8 @@ function renderHistoryRowHtml(pull) {
 
     // Banner legível
     const bannerNames = {
-        character: "Personagem",
-        weapon: "Arma / Cone",
+        character: isEn ? "Character" : "Personagem",
+        weapon: isEn ? "Weapon / Cone" : "Arma / Cone",
         standard: "Mochileiro",
         beginner: "Iniciante",
         collab: "Collab (Fate)",
@@ -491,7 +506,8 @@ window.handleGachaLogFileImport = async function(inputEl) {
         if (!res.ok) throw new Error(data.detail || "Erro ao importar histórico");
 
         if (typeof showToast === "function") {
-            showToast(data.message || `${data.total_imported} tiros importados com sucesso!`, "success");
+
+        showToast(data.message || (isEn ? `${data.total_imported} pulls imported successfully!` : `${data.total_imported} tiros importados com sucesso!`), "success");
         }
 
         window.loadGachaTracker(gid);
@@ -527,7 +543,8 @@ window.exportGachaLogUIGF = async function() {
         URL.revokeObjectURL(url);
 
         if (typeof showToast === "function") {
-            showToast("Backup UIGF baixado com sucesso!", "success");
+
+        showToast(isEn ? "UIGF backup downloaded successfully!" : "Backup UIGF baixado com sucesso!", "success");
         }
     } catch (err) {
         console.error("Erro ao exportar UIGF:", err);
@@ -542,7 +559,8 @@ window.exportGachaLogUIGF = async function() {
  */
 window.clearGachaLogHistory = async function() {
     const gid = window.currentTrackerGame || "hsr";
-    if (!confirm(`Tem certeza que deseja apagar todo o histórico de tiros de ${gid.toUpperCase()} do banco local?`)) {
+
+    if (!confirm(isEn ? `Are you sure you want to clear all pull history for ${gid.toUpperCase()} from local database?` : `Tem certeza que deseja apagar todo o histórico de tiros de ${gid.toUpperCase()} do banco local?`)) {
         return;
     }
 
@@ -552,7 +570,8 @@ window.clearGachaLogHistory = async function() {
         if (!res.ok) throw new Error(data.detail || "Erro ao limpar histórico");
 
         if (typeof showToast === "function") {
-            showToast(data.message || "Histórico de tiros limpo com sucesso.", "success");
+
+        showToast(data.message || (isEn ? "Pull history cleared successfully." : "Histórico de tiros limpo com sucesso."), "success");
         }
         window.loadGachaTracker(gid);
     } catch (err) {
@@ -562,3 +581,13 @@ window.clearGachaLogHistory = async function() {
         }
     }
 };
+
+
+window.addEventListener("app:languageChanged", () => {
+    if (typeof updateBannerFilterOptions === "function") {
+        updateBannerFilterOptions(window.currentTrackerGame || "hsr");
+    }
+    if (typeof window.loadGachaTracker === "function") {
+        window.loadGachaTracker(window.currentTrackerGame || "hsr");
+    }
+});

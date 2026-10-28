@@ -31,11 +31,11 @@ async def get_checkin_today():
 
 
 @router.get("/api/briefing/today")
-async def get_today_morning_briefing():
+async def get_today_morning_briefing(lang: str = "pt"):
     """Retorna os dados consolidados do Morning Briefing do dia atual."""
     try:
         config = get_config()
-        briefing = notifier.generate_morning_briefing(config)
+        briefing = notifier.generate_morning_briefing(config, lang=lang or "pt")
         return briefing
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

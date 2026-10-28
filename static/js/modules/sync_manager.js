@@ -110,11 +110,14 @@ async function setupEnergyMonitor() {
         try {
             const res = await fetch("/api/notes");
             const data = await res.json();
+            const txtFull = window.t ? window.t("energy_fully_charged", "Totalmente carregada") : "Totalmente carregada";
+            const txtRecov = window.t ? window.t("energy_recovery", "Recuperação: ") : "Recuperação: ";
+            const txtNoData = window.t ? window.t("energy_no_data", "Sem dados sincronizados") : "Sem dados sincronizados";
             
             // Genshin
             if (data.genshin) {
                 const notes = data.genshin;
-                let timeStr = "Totalmente carregada";
+                let timeStr = txtFull;
                 if (notes.recovery_time && notes.recovery_time !== "0:00:00" && notes.recovery_time !== "0") {
                     // Formata a string de tempo (ex: "1 day, 2:30:15" -> "1d 2h 30m" ou "2h 30m")
                     let displayTime = notes.recovery_time;
@@ -124,17 +127,17 @@ async function setupEnergyMonitor() {
                             displayTime = `${parts[0]}h ${parts[1]}m`;
                         }
                     } catch(e) {}
-                    timeStr = `Recuperação: ${displayTime}`;
+                    timeStr = `${txtRecov}${displayTime}`;
                 }
                 updateEnergyCircle("genshin", notes.current_energy, notes.max_energy, timeStr);
             } else {
-                updateEnergyCircle("genshin", 0, 200, "Sem dados sincronizados");
+                updateEnergyCircle("genshin", 0, 200, txtNoData);
             }
             
             // HSR
             if (data.hsr) {
                 const notes = data.hsr;
-                let timeStr = "Totalmente carregado";
+                let timeStr = txtFull;
                 if (notes.recovery_time && notes.recovery_time !== "0" && notes.recovery_time !== "0:00:00") {
                     let displayTime = notes.recovery_time;
                     try {
@@ -145,17 +148,17 @@ async function setupEnergyMonitor() {
                             displayTime = `${hrs}h ${mins}m`;
                         }
                     } catch(e) {}
-                    timeStr = `Recuperação: ${displayTime}`;
+                    timeStr = `${txtRecov}${displayTime}`;
                 }
                 updateEnergyCircle("hsr", notes.current_energy, notes.max_energy, timeStr);
             } else {
-                updateEnergyCircle("hsr", 0, 240, "Sem dados sincronizados");
+                updateEnergyCircle("hsr", 0, 240, txtNoData);
             }
             
             // ZZZ
             if (data.zzz) {
                 const notes = data.zzz;
-                let timeStr = "Totalmente carregada";
+                let timeStr = txtFull;
                 if (notes.recovery_time && notes.recovery_time !== "0" && notes.recovery_time !== "0:00:00") {
                     let displayTime = notes.recovery_time;
                     try {
@@ -166,11 +169,11 @@ async function setupEnergyMonitor() {
                             displayTime = `${hrs}h ${mins}m`;
                         }
                     } catch(e) {}
-                    timeStr = `Recuperação: ${displayTime}`;
+                    timeStr = `${txtRecov}${displayTime}`;
                 }
                 updateEnergyCircle("zzz", notes.current_energy, notes.max_energy, timeStr);
             } else {
-                updateEnergyCircle("zzz", 0, 240, "Sem dados sincronizados");
+                updateEnergyCircle("zzz", 0, 240, txtNoData);
             }
         } catch (err) {
             console.error("Erro ao carregar notas diárias:", err);
@@ -179,6 +182,12 @@ async function setupEnergyMonitor() {
     
     fetchNotes();
     setInterval(fetchNotes, 60000); // Atualiza a cada 1 minuto
+    window.addEventListener("app:languageChanged", () => {
+        fetchNotes();
+        if (typeof window.refreshCheckinLogs === "function") {
+            window.refreshCheckinLogs();
+        }
+    });
 }
 
 function updateEnergyCircle(gameId, current, max, remainText) {
@@ -217,7 +226,17 @@ function setupCheckinSystem() {
                     if (l.status === "ERROR") statusColor = "var(--color-danger)";
                     else if (l.status === "ALREADY_CLAIMED") statusColor = "var(--text-muted)";
                     
-                    return `<li style="margin-bottom: 4px;">[${time}] <strong>${gameName}</strong>: <span style="color: ${statusColor}">${l.message}</span></li>`;
+                    let msg = l.message || "";
+                    if (window.isEn) {
+                        if (l.status === "ALREADY_CLAIMED" || msg.includes("já foi resgatada") || msg.includes("jǿ foi resgatada")) {
+                            msg = "Daily check-in reward already claimed today.";
+                        } else if (msg.startsWith("Check-in realizado com sucesso! Recompensa:")) {
+                            msg = msg.replace("Check-in realizado com sucesso! Recompensa:", "Check-in successful! Reward:");
+                        } else if (msg.startsWith("Erro no check-in:")) {
+                            msg = msg.replace("Erro no check-in:", "Check-in error:");
+                        }
+                    }
+                    return `<li style="margin-bottom: 4px;">[${time}] <strong>${gameName}</strong>: <span style="color: ${statusColor}">${msg}</span></li>`;
                 }).join('');
             }
         } catch(e) {
@@ -227,7 +246,9 @@ function setupCheckinSystem() {
     
     checkinBtn.addEventListener("click", async () => {
         checkinBtn.disabled = true;
-        checkinBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Resgatando...';
+        checkinBtn.innerHTML = window.isEn
+            ? '<i class="fa-solid fa-spinner fa-spin"></i> Claiming...'
+            : '<i class="fa-solid fa-spinner fa-spin"></i> Resgatando...';
         try {
             const res = await fetch("/api/checkin/run", { method: "POST" });
             if (res.ok) {
@@ -237,10 +258,13 @@ function setupCheckinSystem() {
             console.error("Erro ao rodar checkin manual:", e);
         } finally {
             checkinBtn.disabled = false;
-            checkinBtn.innerHTML = '<i class="fa-solid fa-gift"></i> Resgatar Recompensas Agora';
+            checkinBtn.innerHTML = window.isEn
+                ? '<i class="fa-solid fa-gift"></i> Claim Rewards Now'
+                : '<i class="fa-solid fa-gift"></i> Resgatar Recompensas Agora';
         }
     });
     
+    window.refreshCheckinLogs = loadLogs;
     loadLogs();
 }
 
@@ -301,7 +325,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const perm = await Notification.requestPermission();
                 window.updateWebNotificationBadge();
                 if (perm === "granted") {
-                    showToast("Notificações no navegador autorizadas com sucesso!", "success");
+
+        showToast(isEn ? "Browser notifications authorized successfully!" : "Notificações no navegador autorizadas com sucesso!", "success");
                     window.triggerBrowserNotification(
                         "🔔 Cabeça de Droid • Alerta Web",
                         "Suas notificações no navegador estão ativas e funcionando perfeitamente!"
@@ -336,7 +361,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if ("Notification" in window && Notification.permission === "granted") {
                 window.triggerBrowserNotification(
                     "🔔 Teste de Notificação • Cabeça de Droid",
-                    "Canal de Alertas Web verificado com sucesso!"
+                    isEn ? "Web Alerts channel verified successfully!" : "Canal de Alertas Web verificado com sucesso!"
                 );
             }
 
@@ -390,7 +415,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (statusBox) statusBox.innerHTML = html;
             } catch (err) {
                 console.error("Erro no teste de notificações:", err);
-                if (statusBox) statusBox.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">Falha ao comunicar com o servidor para testar notificações.</div>`;
+
+        if (statusBox) statusBox.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">${isEn ? "Failed to communicate with server to test notifications." : "Falha ao comunicar com o servidor para testar notificações."}</div>`;
             } finally {
                 btnTestNotif.disabled = false;
                 btnTestNotif.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Testar Notificações Agora`;
@@ -414,7 +440,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     gTag.innerText = s.genshin.offline_ready ? "Pronto (Offline)" : "Pendente";
                     gTag.style.background = s.genshin.offline_ready ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
                     gTag.style.color = s.genshin.offline_ready ? "#34d399" : "#fbbf24";
-                    gDesc.innerHTML = `<strong>${s.genshin.characters}</strong> personagens indexados.<br><span style="color:#64748b; font-size:10px;">Origem: ${s.genshin.manifest?.source || 'Seed Local'}</span>`;
+
+        gDesc.innerHTML = `<strong>${s.genshin.characters}</strong> ${isEn ? "characters indexed" : "personagens indexados"}.<br><span style="color:#64748b; font-size:10px;">${isEn ? "Source:" : "Origem:"} ${s.genshin.manifest?.source || (isEn ? "Local Seed" : "Seed Local")}</span>`;
                 }
 
                 // HSR
@@ -424,7 +451,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     hTag.innerText = s.hsr.offline_ready ? "Pronto (Offline)" : "Pendente";
                     hTag.style.background = s.hsr.offline_ready ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
                     hTag.style.color = s.hsr.offline_ready ? "#34d399" : "#fbbf24";
-                    hDesc.innerHTML = `<strong>${s.hsr.characters}</strong> personagens indexados.<br><span style="color:#64748b; font-size:10px;">Origem: ${s.hsr.manifest?.source || 'Seed Local'}</span>`;
+
+        hDesc.innerHTML = `<strong>${s.hsr.characters}</strong> ${isEn ? "characters indexed" : "personagens indexados"}.<br><span style="color:#64748b; font-size:10px;">${isEn ? "Source:" : "Origem:"} ${s.hsr.manifest?.source || (isEn ? "Local Seed" : "Seed Local")}</span>`;
                 }
 
                 // ZZZ
@@ -434,7 +462,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     zTag.innerText = s.zzz.offline_ready ? "Pronto (Offline)" : "Pendente";
                     zTag.style.background = s.zzz.offline_ready ? "rgba(16,185,129,0.2)" : "rgba(245,158,11,0.2)";
                     zTag.style.color = s.zzz.offline_ready ? "#34d399" : "#fbbf24";
-                    zDesc.innerHTML = `<strong>${s.zzz.characters}</strong> agentes indexados.<br><span style="color:#64748b; font-size:10px;">Origem: ${s.zzz.manifest?.source || 'Seed Local'}</span>`;
+
+        zDesc.innerHTML = `<strong>${s.zzz.characters}</strong> ${isEn ? "agents indexed" : "agentes indexados"}.<br><span style="color:#64748b; font-size:10px;">${isEn ? "Source:" : "Origem:"} ${s.zzz.manifest?.source || (isEn ? "Local Seed" : "Seed Local")}</span>`;
                 }
             }
         } catch (err) {
@@ -462,19 +491,22 @@ document.addEventListener("DOMContentLoaded", () => {
                 const data = await res.json();
                 if (data.status === "success") {
                     let html = `<div style="padding: 10px 14px; border-radius: 8px; background: rgba(16,185,129,0.12); border: 1px solid #10b981; color: #4ade80;">`;
-                    html += `<strong><i class="fa-solid fa-check"></i> Sincronização concluída com sucesso!</strong><ul style="margin: 6px 0 0 16px; font-size: 11px;">`;
+
+            html += `<strong><i class="fa-solid fa-check"></i> ${isEn ? "Sync completed successfully!" : "Sincronização concluída com sucesso!"}</strong><ul style="margin: 6px 0 0 16px; font-size: 11px;">`;
                     for (const [gid, info] of Object.entries(data.results || {})) {
-                        html += `<li><strong>${gid.toUpperCase()}:</strong> ${info.character_count} personagens atualizados via ${info.source || 'Seed'} (${info.status})</li>`;
+                        html += `<li><strong>${gid.toUpperCase()}:</strong> ${info.character_count} ${isEn ? "characters updated via" : "personagens atualizados via"} ${info.source || 'Seed'} (${info.status})</li>`;
                     }
                     html += `</ul></div>`;
                     if (staticSyncResult) staticSyncResult.innerHTML = html;
                     window.loadStaticDataStatus();
                 } else {
-                    if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">Erro na sincronização: ${data.detail || 'Falha desconhecida'}</div>`;
+
+        if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">${isEn ? `Sync error: ${data.detail || "Unknown error"}` : `Erro na sincronização: ${data.detail || "Falha desconhecida"}`}</div>`;
                 }
             } catch (err) {
                 console.error("Erro ao sincronizar dados estáticos:", err);
-                if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">Falha ao comunicar com o servidor. O cache offline permanece ativo.</div>`;
+
+        if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">${isEn ? "Failed to communicate with server. Offline cache remains active." : "Falha ao comunicar com o servidor. O cache offline permanece ativo."}</div>`;
             } finally {
                 btnSyncStatic.disabled = false;
                 btnSyncStatic.innerHTML = `<i class="fa-solid fa-rotate"></i> Sincronizar Datamines Agora`;
@@ -539,12 +571,13 @@ window.initHelpHubHandlers = () => {
             const details = card?.querySelector(".help-card-details");
             if (details) {
                 const isOpen = details.classList.contains("open");
+                const isEn = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
                 if (isOpen) {
                     details.classList.remove("open");
-                    toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Detalhes`;
+                    toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">${isEn ? "Details" : "Detalhes"}</span>`;
                 } else {
                     details.classList.add("open");
-                    toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Recolher`;
+                    toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> <span data-i18n="help_btn_collapse">${isEn ? "Collapse" : "Recolher"}</span>`;
                 }
             }
         }

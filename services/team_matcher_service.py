@@ -1,3 +1,16 @@
+
+ENDGAME_MODE_EN_MAP = {
+    "Caos da Memória (MoC)": "Memory of Chaos (MoC)",
+    "Caos da Memória": "Memory of Chaos",
+    "Ficção Pura": "Pure Fiction",
+    "Sombra Apocalíptica": "Apocalyptic Shadow",
+    "Abismo Espiral": "Spiral Abyss",
+    "Teatro Imaginário": "Imaginarium Theater",
+    "Defesa Shiyu (Shiyu Defense)": "Shiyu Defense",
+    "Defesa Shiyu": "Shiyu Defense",
+    "Investida Fatal": "Deadly Assault",
+    "Cavidade Zero": "Hollow Zero",
+}
 import os
 import re
 import json
@@ -133,7 +146,7 @@ def infer_char_role(game_id: str, char_name: str, char_data: Optional[Dict[str, 
 
 
 def find_functional_substitutes(
-    game_id: str, target_role: str, target_element: str, roster: List[Dict[str, Any]], excluded_names: Set[str]
+    game_id: str, target_role: str, target_element: str, roster: List[Dict[str, Any]], excluded_names: Set[str], lang: str = "pt"
 ) -> List[TeamMemberSubstitute]:
     """Varre os personagens que o jogador REALMENTE POSSUI no roster para sugerir substitutos funcionais."""
     g_clean = game_id.lower().strip()
@@ -184,11 +197,18 @@ def find_functional_substitutes(
             score += 5
 
         # Elabora justificativa funcional
-        reason = f"Mesmo papel tático ({target_category.capitalize()})"
-        if target_element and c_element and target_element.lower() == c_element.lower():
-            reason += f" e mesmo elemento ({c_element})"
-        if c_level >= 70:
-            reason += f" • Nv. {c_level} já preparado"
+        if lang == "en":
+            reason = f"Same tactical role ({target_category.capitalize()})"
+            if target_element and c_element and target_element.lower() == c_element.lower():
+                reason += f" and same element ({c_element})"
+            if c_level >= 70:
+                reason += f" • Lv. {c_level} battle-ready"
+        else:
+            reason = f"Mesmo papel tático ({target_category.capitalize()})"
+            if target_element and c_element and target_element.lower() == c_element.lower():
+                reason += f" e mesmo elemento ({c_element})"
+            if c_level >= 70:
+                reason += f" • Nv. {c_level} já preparado"
 
         candidates.append(
             (
@@ -228,7 +248,7 @@ def calculate_readiness_score(matched_members: List[TeamMemberMatch], max_level:
 
 
 def match_endgame_teams(
-    game_id: str, uid: Optional[str] = None, mode: Optional[str] = None, min_match: float = 0.0
+    game_id: str, uid: Optional[str] = None, mode: Optional[str] = None, min_match: float = 0.0, lang: str = "pt"
 ) -> EndgameTeamMatchResponse:
     """
     Cruza as equipes de referência de endgame com o roster real do jogador.
@@ -318,6 +338,7 @@ def match_endgame_teams(
                     target_element=m_item.element or "",
                     roster=roster_data,
                     excluded_names=excluded_names,
+                    lang=lang,
                 )
                 m_item.substitutes = subs
                 # Evita reutilizar o mesmo substituto sugerido em outro slot faltante da mesma equipe
@@ -343,7 +364,7 @@ def match_endgame_teams(
                 team_id=t_arch.get("team_id", f"{g_clean}_{len(matched_teams)}"),
                 team_name=t_arch.get("team_name", "Composição Metagame"),
                 game_id=g_clean,
-                mode=t_mode,
+                mode=ENDGAME_MODE_EN_MAP.get(t_mode, t_mode) if lang == "en" else t_mode,
                 tier_or_rank=t_arch.get("tier_or_rank", ""),
                 avg_performance=t_arch.get("avg_performance", ""),
                 usage_rate=t_arch.get("usage_rate", ""),
@@ -369,5 +390,5 @@ def match_endgame_teams(
         total_teams=len(matched_teams),
         ready_teams_count=ready_count,
         teams=matched_teams,
-        available_modes=available_modes,
+        available_modes=[ENDGAME_MODE_EN_MAP.get(m, m) for m in available_modes] if lang == "en" else available_modes,
     )

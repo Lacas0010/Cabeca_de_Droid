@@ -3,6 +3,7 @@
 // ==========================================================================
 
 // Importação ordenada dos módulos desacoplados
+import "./modules/i18n.js?v=23.5";
 import "./modules/api_client.js?v=23.5";
 import "./modules/modal.js?v=23.5";
 import "./modules/navigation.js?v=23.5";
@@ -102,11 +103,12 @@ async function loadOverview() {
         window.globalOverview = overview;
         window.globalAccounts = accountByGame;
         
+        const notSyncedText = window.t ? window.t("ov_not_synced", "Não sincronizado") : "Não sincronizado";
         // ZZZ
         if (overview.zzz) {
             const zNick = overview.zzz.nickname ? `${overview.zzz.nickname} • ` : "";
             const zUidEl = document.getElementById("ov-zzz-uid");
-            if (zUidEl) zUidEl.innerText = overview.zzz.uid && overview.zzz.uid !== "Não sincronizado" ? `${zNick}UID: ${overview.zzz.uid}` : "Não sincronizado";
+            if (zUidEl) zUidEl.innerText = overview.zzz.uid && overview.zzz.uid !== "Não sincronizado" && overview.zzz.uid !== notSyncedText ? `${zNick}UID: ${overview.zzz.uid}` : notSyncedText;
             const zLvlEl = document.getElementById("ov-zzz-lvl");
             if (zLvlEl) zLvlEl.innerText = overview.zzz.level || "N/A";
             const zCharsEl = document.getElementById("ov-zzz-chars");
@@ -117,7 +119,7 @@ async function loadOverview() {
         if (overview.genshin) {
             const gNick = overview.genshin.nickname ? `${overview.genshin.nickname} • ` : "";
             const gUidEl = document.getElementById("ov-genshin-uid");
-            if (gUidEl) gUidEl.innerText = overview.genshin.uid && overview.genshin.uid !== "Não sincronizado" ? `${gNick}UID: ${overview.genshin.uid}` : "Não sincronizado";
+            if (gUidEl) gUidEl.innerText = overview.genshin.uid && overview.genshin.uid !== "Não sincronizado" && overview.genshin.uid !== notSyncedText ? `${gNick}UID: ${overview.genshin.uid}` : notSyncedText;
             const gLvlEl = document.getElementById("ov-genshin-lvl");
             if (gLvlEl) gLvlEl.innerText = overview.genshin.level || "N/A";
             const gCharsEl = document.getElementById("ov-genshin-chars");
@@ -128,7 +130,7 @@ async function loadOverview() {
         if (overview.hsr) {
             const hNick = overview.hsr.nickname ? `${overview.hsr.nickname} • ` : "";
             const hUidEl = document.getElementById("ov-hsr-uid");
-            if (hUidEl) hUidEl.innerText = overview.hsr.uid && overview.hsr.uid !== "Não sincronizado" ? `${hNick}UID: ${overview.hsr.uid}` : "Não sincronizado";
+            if (hUidEl) hUidEl.innerText = overview.hsr.uid && overview.hsr.uid !== "Não sincronizado" && overview.hsr.uid !== notSyncedText ? `${hNick}UID: ${overview.hsr.uid}` : notSyncedText;
             const hLvlEl = document.getElementById("ov-hsr-lvl");
             if (hLvlEl) hLvlEl.innerText = overview.hsr.level || "N/A";
             const hCharsEl = document.getElementById("ov-hsr-chars");
@@ -149,5 +151,10 @@ async function loadOverview() {
         console.error("Erro ao carregar visão geral:", err);
     }
 }
+
+// Re-carrega visão geral ao alternar idioma
+window.addEventListener("app:languageChanged", () => {
+    loadOverview();
+});
 
 

@@ -173,22 +173,138 @@ window.GACHA_TERMS = {
 };
 
 window.getGachaTerms = function(gameId, bannerType = "character") {
+
     const g = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
     const bType = (bannerType || "character").toLowerCase();
     const typeTerms = g[bType] || g.character || g;
+
+    if (!isEn) {
+        return {
+            gameName: g.gameName,
+            currency: g.currency,
+            gemCostPerPull: g.gemCostPerPull,
+            term: typeTerms.term,
+            termPlural: typeTerms.termPlural,
+            prefix: typeTerms.prefix,
+            unownedLabel: typeTerms.unownedLabel,
+            maxPity: typeTerms.maxPity || 89,
+            pityTitle: typeTerms.pityTitle || "Pity Atual (0-89):",
+            guaranteedNormal: typeTerms.guaranteedNormal || "50/50 Ativo (Normal)",
+            guaranteedWon: typeTerms.guaranteedWon || "Garantido",
+            ranks: typeTerms.ranks || []
+        };
+    }
+
+    // English Terms
+    let currencyEn = "Primogems";
+    if (gameId === "hsr") currencyEn = "Stellar Jades";
+    else if (gameId === "zzz") currencyEn = "Polychromes";
+
+    let termEn = "Constellation";
+    let termPluralEn = "Constellations";
+    let unownedEn = "Not owned (0 copies)";
+    let pityTitleEn = "Character Pity (0-89):";
+    let guarNormEn = "50/50 Active (Normal)";
+    let guarWonEn = "Guaranteed (Lost previous 50/50)";
+    let ranksEn = [];
+
+    if (bType === "weapon") {
+        if (gameId === "genshin") {
+            termEn = "Refinement";
+            termPluralEn = "Refinements";
+            unownedEn = "Weapon not owned (0 copies)";
+            pityTitleEn = "Weapon Pity (0-79):";
+            guarNormEn = "Epitomized Path / 75/25 Active";
+            guarWonEn = "Guaranteed (Fate / 100%)";
+            ranksEn = [
+                { val: 0, label: "R1 (Base Weapon)" },
+                { val: 1, label: "R2 (Refinement 2)" },
+                { val: 2, label: "R3 (Refinement 3)" },
+                { val: 3, label: "R4 (Refinement 4)" },
+                { val: 4, label: "R5 (Max Refinement)" }
+            ];
+        } else if (gameId === "hsr") {
+            termEn = "Superimposition";
+            termPluralEn = "Superimpositions";
+            unownedEn = "Light Cone not owned (0 copies)";
+            pityTitleEn = "Light Cone Pity (0-79):";
+            guarNormEn = "75/25 Active (Normal)";
+            guarWonEn = "Guaranteed (Lost previous 75/25)";
+            ranksEn = [
+                { val: 0, label: "S1 (Base Light Cone)" },
+                { val: 1, label: "S2 (Superimposition 2)" },
+                { val: 2, label: "S3 (Superimposition 3)" },
+                { val: 3, label: "S4 (Superimposition 4)" },
+                { val: 4, label: "S5 (Max Superimposition)" }
+            ];
+        } else if (gameId === "zzz") {
+            termEn = "Modification";
+            termPluralEn = "Modifications";
+            unownedEn = "W-Engine not owned (0 copies)";
+            pityTitleEn = "W-Engine Pity (0-79):";
+            guarNormEn = "75/25 Active (Normal)";
+            guarWonEn = "Guaranteed (Lost previous 75/25)";
+            ranksEn = [
+                { val: 0, label: "W1 (Base W-Engine)" },
+                { val: 1, label: "W2 (Modification 2)" },
+                { val: 2, label: "W3 (Modification 3)" },
+                { val: 3, label: "W4 (Modification 4)" },
+                { val: 4, label: "W5 (Max Modification)" }
+            ];
+        }
+    } else {
+        if (gameId === "genshin") {
+            ranksEn = [
+                { val: 0, label: "C0 (Base Character)" },
+                { val: 1, label: "C1 (1st Constellation)" },
+                { val: 2, label: "C2 (2nd Constellation)" },
+                { val: 3, label: "C3 (3rd Constellation)" },
+                { val: 4, label: "C4 (4th Constellation)" },
+                { val: 5, label: "C5 (5th Constellation)" },
+                { val: 6, label: "C6 (Max Constellation)" }
+            ];
+        } else if (gameId === "hsr") {
+            termEn = "Eidolon";
+            termPluralEn = "Eidolons";
+            pityTitleEn = "Character Pity (0-89):";
+            ranksEn = [
+                { val: 0, label: "E0 (Base Character)" },
+                { val: 1, label: "E1 (1st Eidolon)" },
+                { val: 2, label: "E2 (2nd Eidolon)" },
+                { val: 3, label: "E3 (3rd Eidolon)" },
+                { val: 4, label: "E4 (4th Eidolon)" },
+                { val: 5, label: "E5 (5th Eidolon)" },
+                { val: 6, label: "E6 (Max Eidolon)" }
+            ];
+        } else if (gameId === "zzz") {
+            termEn = "Mindscape Cinema";
+            termPluralEn = "Mindscapes";
+            pityTitleEn = "Agent Pity (0-89):";
+            ranksEn = [
+                { val: 0, label: "M0 (Base Agent)" },
+                { val: 1, label: "M1 (1st Cinema)" },
+                { val: 2, label: "M2 (2nd Cinema)" },
+                { val: 3, label: "M3 (3rd Cinema)" },
+                { val: 4, label: "M4 (4th Cinema)" },
+                { val: 5, label: "M5 (5th Cinema)" },
+                { val: 6, label: "M6 (Max Cinema)" }
+            ];
+        }
+    }
+
     return {
         gameName: g.gameName,
-        currency: g.currency,
+        currency: currencyEn,
         gemCostPerPull: g.gemCostPerPull,
-        term: typeTerms.term,
-        termPlural: typeTerms.termPlural,
+        term: termEn,
+        termPlural: termPluralEn,
         prefix: typeTerms.prefix,
-        unownedLabel: typeTerms.unownedLabel,
+        unownedLabel: unownedEn,
         maxPity: typeTerms.maxPity || 89,
-        pityTitle: typeTerms.pityTitle || "Pity Atual (0-89):",
-        guaranteedNormal: typeTerms.guaranteedNormal || "50/50 Ativo (Normal)",
-        guaranteedWon: typeTerms.guaranteedWon || "Garantido",
-        ranks: typeTerms.ranks || []
+        pityTitle: pityTitleEn,
+        guaranteedNormal: guarNormEn,
+        guaranteedWon: guarWonEn,
+        ranks: ranksEn
     };
 };
 
@@ -209,12 +325,14 @@ window.addGachaPulls = function(amount) {
 
 window.updateGachaGemConversion = function() {
     const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
-    const terms = window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin;
+    const terms = (typeof window.getGachaTerms === "function") ? window.getGachaTerms(gameId) : (window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin);
     const pulls = parseInt(document.getElementById("tab-gacha-pulls")?.value) || 0;
-    const gems = pulls * terms.gemCostPerPull;
+    const gems = pulls * (terms.gemCostPerPull || 160);
     const convertLbl = document.getElementById("gacha-gems-convert-lbl");
     if (convertLbl) {
-        convertLbl.innerText = `(Equivale a ${gems.toLocaleString()} ${terms.currency})`;
+        convertLbl.innerText = window.isEn
+            ? `(Equivalent to ${gems.toLocaleString()} ${terms.currency})`
+            : `(Equivale a ${gems.toLocaleString()} ${terms.currency})`;
     }
 };
 
@@ -351,15 +469,17 @@ window.updateTargetRankOptions = function() {
         if (r.val > currentRank || (currentRank === -1 && r.val >= 0)) {
             const opt = document.createElement("option");
             opt.value = r.val;
-            
+
             let extraStr = "";
             if (currentRank < 0) {
                 extraStr = r.val === 0 
-                    ? (bannerType === "weapon" ? " (Garantir 1ª Arma/Cone)" : " (Garantir 1º Personagem)") 
-                    : ` (+${r.val + 1} cópias)`;
+                    ? (bannerType === "weapon" ? (isEn ? " (Obtain 1st Weapon/Cone)" : " (Garantir 1ª Arma/Cone)") : (isEn ? " (Obtain 1st Character)" : " (Garantir 1º Personagem)")) 
+                    : (isEn ? ` (+${r.val + 1} copies)` : ` (+${r.val + 1} cópias)`);
             } else {
                 const needed = r.val - currentRank;
-                extraStr = needed === 1 ? " (+1 cópia adicional)" : ` (+${needed} cópias adicionais)`;
+                extraStr = needed === 1 
+                    ? (isEn ? " (+1 additional copy)" : " (+1 cópia adicional)") 
+                    : (isEn ? ` (+${needed} additional copies)` : ` (+${needed} cópias adicionais)`);
             }
             opt.innerText = `${terms.prefix}${bannerType === "weapon" ? r.val + 1 : r.val}${extraStr}`;
             targetRankSelect.appendChild(opt);
@@ -381,9 +501,10 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
 
     const bannerType = requestedBannerType || document.getElementById("tab-gacha-banner-type")?.value || "character";
     if (lblTargetItem) {
-        lblTargetItem.innerText = bannerType === "weapon" ? "Arma / Cone de Luz / Motor-W Alvo:" : "Personagem Alvo:";
+
+    lblTargetItem.innerText = bannerType === "weapon" ? (isEn ? "Target Weapon / Light Cone / W-Engine:" : "Arma / Cone de Luz / Motor-W Alvo:") : (isEn ? "Target Character:" : "Personagem Alvo:");
     }
-    charSelect.innerHTML = `<option value="">Carregando dados do simulador e banner atual (${bannerType === 'weapon' ? 'Armas' : 'Personagens'})...</option>`;
+    charSelect.innerHTML = `<option value="">${isEn ? `Loading simulator data and current banner (${bannerType === 'weapon' ? 'Weapons' : 'Characters'})...` : `Carregando dados do simulador e banner atual (${bannerType === 'weapon' ? 'Armas' : 'Personagens'})...`}</option>`;
 
     try {
         const [charsRes, defaultsRes] = await Promise.allSettled([
@@ -413,8 +534,8 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
         }
         if (pityBadge) {
             pityBadge.textContent = curPity > 0 
-                ? `Sincronizado: ${curPity} tiros (${bannerType === 'weapon' ? 'Arma/Cone' : 'Personagem'})`
-                : `Sincronizado (0 Tiros • ${bannerType === 'weapon' ? 'Arma/Cone' : 'Personagem'})`;
+                ? (isEn ? `Synced: ${curPity} pulls (${bannerType === 'weapon' ? 'Weapon/Cone' : 'Character'})` : `Sincronizado: ${curPity} tiros (${bannerType === 'weapon' ? 'Arma/Cone' : 'Personagem'})`)
+                : (isEn ? `Synced (0 Pulls • ${bannerType === 'weapon' ? 'Weapon/Cone' : 'Character'})` : `Sincronizado (0 Tiros • ${bannerType === 'weapon' ? 'Arma/Cone' : 'Personagem'})`);
         }
 
         // 2. Atualiza Card Visual do Banner Oficial Promocional In-Game
@@ -426,17 +547,17 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
         if (bannerType === "weapon") {
             const genericOpt = document.createElement("option");
             genericOpt.value = "";
-            genericOpt.innerText = "⚔️ Arma / Cone de Luz / Motor-W 5★ Genérico";
+            genericOpt.innerText = isEn ? "⚔️ Generic 5★ Weapon / Light Cone / W-Engine" : "⚔️ Arma / Cone de Luz / Motor-W 5★ Genérico";
             charSelect.appendChild(genericOpt);
 
             const weaponBanners = defaultsData.available_weapon_banners || [];
             if (weaponBanners.length > 0) {
                 const grpWeapon = document.createElement("optgroup");
-                grpWeapon.label = "⚔️ Banners de Armas/Cones em Destaque";
+                grpWeapon.label = isEn ? "⚔️ Featured Weapon / Cone Banners" : "⚔️ Banners de Armas/Cones em Destaque";
                 weaponBanners.forEach(b => {
                     const opt = document.createElement("option");
                     opt.value = b.character_name;
-                    opt.innerText = `⚔️ ${b.character_name}${b.banner_title ? ` (${b.banner_title})` : ''} (Banner In-Game)`;
+                    opt.innerText = `⚔️ ${b.character_name}${b.banner_title ? ` (${b.banner_title})` : ''} ${isEn ? "(In-Game Banner)" : "(Banner In-Game)"}`;
                     grpWeapon.appendChild(opt);
                 });
                 charSelect.appendChild(grpWeapon);
@@ -480,16 +601,16 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
 
             const genericOpt = document.createElement("option");
             genericOpt.value = "";
-            genericOpt.innerText = "✨ Personagem 5★ Genérico / Qualquer Banner";
+            genericOpt.innerText = isEn ? "✨ Generic 5★ Character / Any Banner" : "✨ Personagem 5★ Genérico / Qualquer Banner";
             charSelect.appendChild(genericOpt);
 
             if (bannerChars.length > 0) {
                 const grpBanner = document.createElement("optgroup");
-                grpBanner.label = "⭐ Banners Oficiais Ativos (Destaque Atual)";
+                grpBanner.label = isEn ? "⭐ Active Official Banners (Current Featured)" : "⭐ Banners Oficiais Ativos (Destaque Atual)";
                 bannerChars.forEach(b => {
                     const opt = document.createElement("option");
                     opt.value = b.character_name;
-                    opt.innerText = `⭐ ${b.character_name}${b.banner_title ? ` (${b.banner_title})` : ''} (Banner In-Game)`;
+                    opt.innerText = `⭐ ${b.character_name}${b.banner_title ? ` (${b.banner_title})` : ''} ${isEn ? "(In-Game Banner)" : "(Banner In-Game)"}`;
                     grpBanner.appendChild(opt);
                 });
                 charSelect.appendChild(grpBanner);
@@ -500,11 +621,11 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
 
             if (ownedChars.length > 0) {
                 const grpOwned = document.createElement("optgroup");
-                grpOwned.label = "🟢 Seus Personagens 5★ (no Roster)";
+                grpOwned.label = isEn ? "🟢 Your 5★ Characters (in Roster)" : "🟢 Seus Personagens 5★ (no Roster)";
                 ownedChars.forEach(c => {
                     const opt = document.createElement("option");
                     opt.value = c.name;
-                    opt.innerText = `✓ ${c.name} (Nv. ${c.level} • ${c.rank_str || 'C0'})`;
+                    opt.innerText = `✓ ${c.name} (${isEn ? "Lv." : "Nv."} ${c.level} • ${c.rank_str || 'C0'})`;
                     grpOwned.appendChild(opt);
                 });
                 charSelect.appendChild(grpOwned);
@@ -512,11 +633,11 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
 
             if (unownedChars.length > 0) {
                 const grpUnowned = document.createElement("optgroup");
-                grpUnowned.label = "⚪ Outros Personagens 5★ do Jogo";
+                grpUnowned.label = isEn ? "⚪ Other 5★ Characters in the Game" : "⚪ Outros Personagens 5★ do Jogo";
                 unownedChars.forEach(c => {
                     const opt = document.createElement("option");
                     opt.value = c.name;
-                    opt.innerText = `${c.name} (Não Obtido)`;
+                    opt.innerText = `${c.name} ${isEn ? "(Unowned)" : "(Não Obtido)"}`;
                     grpUnowned.appendChild(opt);
                 });
                 charSelect.appendChild(grpUnowned);
@@ -562,10 +683,13 @@ window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, banner
     if (!currentBanner) return;
 
     // 1. Badge de Patch/Fase e Horário Oficial do Banner
+    window.lastDefaultsData = defaultsData;
     const patchBadge = document.getElementById("gacha-banner-patch-badge");
     if (patchBadge) {
         const schedTime = defaultsData.banner_time || (defaultsData.banner_phase === 2 ? (defaultsData.game_id === 'genshin' ? '20:00' : '14:00') : '23:30');
-        patchBadge.textContent = `${defaultsData.patch_info || "Fase Ativa"} • Horário Oficial: ${schedTime}`;
+        const defaultPatch = window.isEn ? "Active Phase" : "Fase Ativa";
+        const timeLabel = window.isEn ? "Official Time:" : "Horário Oficial:";
+        patchBadge.textContent = `${defaultsData.patch_info || defaultPatch} • ${timeLabel} ${schedTime}`;
     }
 
     // 2. Seletor de Banners da Fase (Tabs/Pills)
@@ -607,14 +731,22 @@ window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, banner
     }
     if (bannerSubtitle) {
         bannerSubtitle.textContent = bannerType === "weapon"
-            ? `Taxa Aumentada de Arma / Cone 5★ • ${currentBanner.character_name}`
+            ? (isEn ? `Increased 5★ Weapon / Cone Rate • ${currentBanner.character_name}` : `Taxa Aumentada de Arma / Cone 5★ • ${currentBanner.character_name}`)
             : `Taxa Aumentada de 5★ • ${currentBanner.character_name}`;
     }
     if (bannerTypeBadge) {
         if (bannerType === "weapon") {
-            bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Fixação Brilhante (Cones)" : (defaultsData.game_id === "zzz" ? "Sonata Dissonante (Motores-W)" : "Invocação do Epítome (Armas)");
+            if (window.isEn) {
+                bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Brilliant Fixation (Light Cones)" : (defaultsData.game_id === "zzz" ? "Dissonant Sonata (W-Engines)" : "Epitome Invocation (Weapons)");
+            } else {
+                bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Fixação Brilhante (Cones)" : (defaultsData.game_id === "zzz" ? "Sonata Dissonante (Motores-W)" : "Invocação do Epítome (Armas)");
+            }
         } else {
-            bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Salto de Evento" : (defaultsData.game_id === "zzz" ? "Busca de Sinal" : "Oração de Evento");
+            if (window.isEn) {
+                bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Character Event Warp" : (defaultsData.game_id === "zzz" ? "Signal Search" : "Character Event Wish");
+            } else {
+                bannerTypeBadge.textContent = defaultsData.game_id === "hsr" ? "Salto de Evento" : (defaultsData.game_id === "zzz" ? "Busca de Sinal" : "Oração de Evento");
+            }
         }
     }
     if (currentBanner.banner_image && bannerArtImg) {
@@ -713,7 +845,8 @@ window.updateGachaCharPreview = function(charName) {
     const currentRankSelect = document.getElementById("tab-gacha-current-rank");
 
     if (bannerType === "weapon") {
-        if (nameLbl) nameLbl.innerText = charName || "Arma / Cone 5★ Genérico";
+
+    if (nameLbl) nameLbl.innerText = charName || (isEn ? "Generic 5★ Weapon / Cone" : "Arma / Cone 5★ Genérico");
         if (starsLbl) starsLbl.innerText = "★★★★★";
         if (badgeEl) {
             badgeEl.className = "gacha-char-badge-unowned";
@@ -762,11 +895,12 @@ window.updateGachaCharPreview = function(charName) {
     }
 
     if (!char) {
-        if (nameLbl) nameLbl.innerText = "Personagem 5★ Genérico";
+
+    if (nameLbl) nameLbl.innerText = isEn ? "Generic 5★ Character" : "Personagem 5★ Genérico";
         if (starsLbl) starsLbl.innerText = "★★★★★";
         if (badgeEl) {
             badgeEl.className = "gacha-char-badge-unowned";
-            badgeEl.innerHTML = `<i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)`;
+            badgeEl.innerHTML = isEn ? `<i class="fa-solid fa-circle-plus"></i> Unowned (0 copies)` : `<i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)`;
         }
         if (bgEl) bgEl.style.backgroundImage = "none";
         if (avatarImg) avatarImg.style.display = "none";
@@ -806,13 +940,13 @@ window.updateGachaCharPreview = function(charName) {
         const rankStr = char.rank_str || `${terms.prefix}${rankNum}`;
         if (badgeEl) {
             badgeEl.className = "gacha-char-badge-owned";
-            badgeEl.innerHTML = `<i class="fa-solid fa-circle-check"></i> No seu Roster: ${rankStr} (Nível ${char.level})`;
+            badgeEl.innerHTML = isEn ? `<i class="fa-solid fa-circle-check"></i> In your Roster: ${rankStr} (Level ${char.level})` : `<i class="fa-solid fa-circle-check"></i> No seu Roster: ${rankStr} (Nível ${char.level})`;
         }
         if (currentRankSelect) currentRankSelect.value = String(rankNum);
     } else {
         if (badgeEl) {
             badgeEl.className = "gacha-char-badge-unowned";
-            badgeEl.innerHTML = `<i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)`;
+            badgeEl.innerHTML = isEn ? `<i class="fa-solid fa-circle-plus"></i> Unowned (0 copies)` : `<i class="fa-solid fa-circle-plus"></i> Não possui (0 cópias)`;
         }
         if (currentRankSelect) currentRankSelect.value = "-1";
     }
@@ -833,7 +967,8 @@ window.runGachaSimulation = async function() {
 
     const runBtn = document.getElementById("tab-btn-run-gacha-sim");
     if (runBtn) {
-        runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Simulando 10.000 iterações...`;
+
+        runBtn.innerHTML = isEn ? `<i class="fa-solid fa-spinner fa-spin"></i> Simulating 10,000 iterations...` : `<i class="fa-solid fa-spinner fa-spin"></i> Simulando 10.000 iterações...`;
         runBtn.disabled = true;
     }
 
@@ -868,20 +1003,21 @@ window.runGachaSimulation = async function() {
 
         const summaryEl = document.getElementById("tab-gacha-target-summary");
         const terms = window.getGachaTerms(gameId, bannerType);
-        const charTitle = charName ? `<b>${charName}</b>` : (bannerType === "weapon" ? "Arma/Cone Alvo" : "Personagem Alvo");
+
+        const charTitle = charName ? `<b>${charName}</b>` : (bannerType === "weapon" ? (isEn ? "Target Weapon/Cone" : "Arma/Cone Alvo") : (isEn ? "Target Character" : "Personagem Alvo"));
         if (summaryEl) {
             if (data.needed_new_copies === 0) {
-                summaryEl.innerHTML = `🎉 Você já possui a meta <b>${data.target_rank_str}</b>!`;
+                summaryEl.innerHTML = isEn ? `🎉 You already own the target <b>${data.target_rank_str}</b>!` : `🎉 Você já possui a meta <b>${data.target_rank_str}</b>!`;
             } else {
-                summaryEl.innerHTML = `Probabilidade de evoluir ${charTitle} de <b>${data.current_rank_str}</b> até <b>${data.target_rank_str}</b> (+${data.needed_new_copies} cópias) com <b>${pullsAvailable} tiros</b>.`;
+                summaryEl.innerHTML = isEn ? `Probability of evolving ${charTitle} from <b>${data.current_rank_str}</b> to <b>${data.target_rank_str}</b> (+${data.needed_new_copies} copies) with <b>${pullsAvailable} pulls</b>.` : `Probabilidade de evoluir ${charTitle} de <b>${data.current_rank_str}</b> até <b>${data.target_rank_str}</b> (+${data.needed_new_copies} cópias) com <b>${pullsAvailable} tiros</b>.`;
             }
         }
 
         const avgLbl = document.getElementById("tab-gacha-avg-lbl");
         if (avgLbl) {
             avgLbl.innerText = data.avg_pulls_spent 
-                ? `${data.avg_pulls_spent} tiros` 
-                : "Tiros insuficientes";
+                ? (isEn ? `${data.avg_pulls_spent} pulls` : `${data.avg_pulls_spent} tiros`) 
+                : (isEn ? "Insufficient pulls" : "Tiros insuficientes");
         }
 
         const gemsSpentLbl = document.getElementById("tab-gacha-gems-spent-lbl");
@@ -1171,11 +1307,12 @@ window.updateForecastTargetRankOptions = function() {
         if (r.val > curRank || (curRank === -1 && r.val >= 0)) {
             const opt = document.createElement("option");
             opt.value = r.val;
+
             const extra = curRank < 0
                 ? (r.val === 0 
-                    ? (bannerType === "weapon" ? " (Obter Arma/Cone Base)" : " (Obter Personagem Base)") 
-                    : ` (+${r.val + 1} cópias)`)
-                : ` (+${r.val - curRank} cópias)`;
+                    ? (bannerType === "weapon" ? (isEn ? " (Obtain Base Weapon/Cone)" : " (Obter Arma/Cone Base)") : (isEn ? " (Obtain Base Character)" : " (Obter Personagem Base)")) 
+                    : (isEn ? ` (+${r.val + 1} copies)` : ` (+${r.val + 1} cópias)`))
+                : (isEn ? ` (+${r.val - curRank} copies)` : ` (+${r.val - curRank} cópias)`);
             opt.innerText = `${terms.prefix}${bannerType === "weapon" ? r.val + 1 : r.val}${extra}`;
             tgtSelect.appendChild(opt);
         }
@@ -1194,9 +1331,10 @@ window.loadForecastCharacters = async function(gameId, bannerType = "character")
     if (!select) return;
     
     if (lblTargetItem) {
-        lblTargetItem.innerText = bannerType === "weapon" ? "Arma / Cone de Luz / Motor-W Alvo:" : "Personagem Alvo:";
+
+    lblTargetItem.innerText = bannerType === "weapon" ? (isEn ? "Target Weapon / Light Cone / W-Engine:" : "Arma / Cone de Luz / Motor-W Alvo:") : (isEn ? "Target Character:" : "Personagem Alvo:");
     }
-    select.innerHTML = `<option value="">Buscando catálogo de ${bannerType === 'weapon' ? 'armas' : 'personagens'}...</option>`;
+    select.innerHTML = `<option value="">${isEn ? `Fetching catalog of ${bannerType === 'weapon' ? 'weapons' : 'characters'}...` : `Buscando catálogo de ${bannerType === 'weapon' ? 'armas' : 'personagens'}...`}</option>`;
 
     try {
         const [charsRes, defaultsRes] = await Promise.allSettled([
@@ -1222,7 +1360,7 @@ window.loadForecastCharacters = async function(gameId, bannerType = "character")
 
         if (bannerType === "weapon") {
             const optGeneric = document.createElement("option");
-            optGeneric.value = "Próxima Arma / Cone 5★ Limitado";
+            optGeneric.value = isEn ? "Next Limited 5★ Weapon / Cone" : "Próxima Arma / Cone 5★ Limitado";
             optGeneric.innerText = "⚔️ Próximo Banner de Armas / Cones Limitado";
             select.appendChild(optGeneric);
 
@@ -1250,8 +1388,8 @@ window.loadForecastCharacters = async function(gameId, bannerType = "character")
             window.forecastState.charList = chars;
 
             const optGeneric = document.createElement("option");
-            optGeneric.value = "Próximo Personagem 5★ Limitado";
-            optGeneric.innerText = "✨ Próximo Banner Limitado / Novo Personagem";
+            optGeneric.value = isEn ? "Next Limited 5★ Character" : "Próximo Personagem 5★ Limitado";
+            optGeneric.innerText = isEn ? "✨ Next Limited Banner / New Character" : "✨ Próximo Banner Limitado / Novo Personagem";
             select.appendChild(optGeneric);
 
             const owned = chars.filter(c => c.owned);
@@ -1259,7 +1397,7 @@ window.loadForecastCharacters = async function(gameId, bannerType = "character")
 
             if (unowned.length > 0) {
                 const grpUnowned = document.createElement("optgroup");
-                grpUnowned.label = "⚪ Personagens 5★ Não Obtidos";
+                grpUnowned.label = isEn ? "⚪ Unowned 5★ Characters" : "⚪ Personagens 5★ Não Obtidos";
                 unowned.forEach(c => {
                     const opt = document.createElement("option");
                     opt.value = c.name;
@@ -1271,7 +1409,7 @@ window.loadForecastCharacters = async function(gameId, bannerType = "character")
 
             if (owned.length > 0) {
                 const grpOwned = document.createElement("optgroup");
-                grpOwned.label = "🟢 Personagens 5★ no Roster (Constelações/Eidolons)";
+                grpOwned.label = isEn ? "🟢 5★ Characters in Roster (Constellations/Eidolons)" : "🟢 Personagens 5★ no Roster (Constelações/Eidolons)";
                 owned.forEach(c => {
                     const opt = document.createElement("option");
                     opt.value = c.name;
@@ -1304,7 +1442,8 @@ window.runGachaForecastCalculation = async function() {
     const gameId = window.forecastState.gameId || "genshin";
     const bannerType = document.getElementById("forecast-banner-type")?.value || window.forecastState.bannerType || "character";
     const charSelect = document.getElementById("forecast-char-select");
-    const charName = charSelect?.value || (bannerType === "weapon" ? "Arma 5★ Alvo" : "Personagem 5★ Alvo");
+
+    const charName = charSelect?.value || (bannerType === "weapon" ? (isEn ? "Target 5★ Weapon" : "Arma 5★ Alvo") : (isEn ? "Target 5★ Character" : "Personagem 5★ Alvo"));
     const currentPulls = parseInt(document.getElementById("forecast-pulls-cur")?.value) || 0;
     const currentPity = parseInt(document.getElementById("forecast-pity-cur")?.value) || 0;
     const isGuaranteed = document.getElementById("forecast-guaranteed-cur")?.value === "true";
@@ -1319,7 +1458,8 @@ window.runGachaForecastCalculation = async function() {
 
     const runBtn = document.getElementById("btn-run-forecast-calc");
     if (runBtn) {
-        runBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Projetando acúmulo de gemas & Monte Carlo...`;
+
+    runBtn.innerHTML = isEn ? `<i class="fa-solid fa-spinner fa-spin"></i> Projecting gem accumulation & Monte Carlo...` : `<i class="fa-solid fa-spinner fa-spin"></i> Projetando acúmulo de gemas & Monte Carlo...`;
         runBtn.disabled = true;
     }
 
@@ -1403,20 +1543,21 @@ window.renderGachaForecastResult = function(data) {
         kpiF2P.innerText = `(F2P Puro: ${data.f2p_pure_success_rate}%)`;
     }
     if (kpiTotal) {
-        kpiTotal.innerText = `${data.total_projected_pulls} tiros`;
+
+    kpiTotal.innerText = isEn ? `${data.total_projected_pulls} pulls` : `${data.total_projected_pulls} tiros`;
     }
     if (kpiFuture) {
         kpiFuture.innerText = `+${Math.round(data.income_breakdown?.total_future_pulls || 0)} novos no período`;
     }
     if (kpiWorst) {
-        kpiWorst.innerText = `${data.worst_case_pulls} tiros`;
+        kpiWorst.innerText = isEn ? `${data.worst_case_pulls} pulls` : `${data.worst_case_pulls} tiros`;
     }
     if (kpiMissing) {
         if (data.pulls_needed_for_guarantee === 0) {
             kpiMissing.innerText = "✓ Garantido matematicamente!";
             kpiMissing.style.color = "#34d399";
         } else {
-            kpiMissing.innerText = `Faltam ${data.pulls_needed_for_guarantee} tiros p/ 100%`;
+            kpiMissing.innerText = isEn ? `${data.pulls_needed_for_guarantee} pulls needed for 100%` : `Faltam ${data.pulls_needed_for_guarantee} tiros p/ 100%`;
             kpiMissing.style.color = "#fca5a5";
         }
     }
@@ -1427,7 +1568,7 @@ window.renderGachaForecastResult = function(data) {
     const listEl = document.getElementById("forecast-income-breakdown-list");
 
     if (totalLbl) {
-        totalLbl.innerText = `${inc.total_projected_pulls} tiros (~${(inc.total_projected_gems_equiv || 0).toLocaleString()} gemas)`;
+        totalLbl.innerText = isEn ? `${inc.total_projected_pulls} pulls (~${(inc.total_projected_gems_equiv || 0).toLocaleString()} gems)` : `${inc.total_projected_pulls} tiros (~${(inc.total_projected_gems_equiv || 0).toLocaleString()} gemas)`;
     }
 
     if (listEl) {
@@ -1459,7 +1600,8 @@ window.renderGachaForecastResult = function(data) {
 window.saveCurrentGachaGoal = async function() {
     const data = window.lastForecastResult;
     if (!data) {
-        if (typeof showToast === "function") showToast("Calcule a projeção antes de salvar a meta.");
+
+    if (typeof showToast === "function") showToast(isEn ? "Calculate projection before saving goal." : "Calcule a projeção antes de salvar a meta.");
         return;
     }
 
@@ -1506,7 +1648,8 @@ window.saveCurrentGachaGoal = async function() {
             if (saveBtn) {
                 saveBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Meta Salva & Tempo Correndo!`;
                 setTimeout(() => {
-                    saveBtn.innerHTML = `<i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner`;
+
+    saveBtn.innerHTML = isEn ? `<i class="fa-solid fa-bookmark"></i> Save This Banner Goal` : `<i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner`;
                     saveBtn.disabled = false;
                 }, 2200);
             }
@@ -1515,7 +1658,8 @@ window.saveCurrentGachaGoal = async function() {
         console.error("Erro ao salvar meta:", e);
         if (typeof showToast === "function") showToast("Erro ao salvar a meta no banco de dados.");
         if (saveBtn) {
-            saveBtn.innerHTML = `<i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner`;
+
+    saveBtn.innerHTML = isEn ? `<i class="fa-solid fa-bookmark"></i> Save This Banner Goal` : `<i class="fa-solid fa-bookmark"></i> Salvar Esta Meta de Banner`;
             saveBtn.disabled = false;
         }
     }
@@ -1620,7 +1764,8 @@ window.tickGachaGoalsCountdown = function() {
             progressPctEl.innerText = `${pct}%`;
         }
         if (pullsNowEl) {
-            pullsNowEl.innerText = `~${pullsNow} tiros hoje`;
+
+    pullsNowEl.innerText = isEn ? `~${pullsNow} pulls today` : `~${pullsNow} tiros hoje`;
         }
     });
 };
@@ -1822,7 +1967,8 @@ window.deleteGachaGoal = async function(goalId) {
     try {
         const res = await fetch(`/api/gacha/goals/${goalId}`, { method: "DELETE" });
         if (res.ok) {
-            if (typeof showToast === "function") showToast("Meta excluída com sucesso.");
+
+    if (typeof showToast === "function") showToast(isEn ? "Goal deleted successfully." : "Meta excluída com sucesso.");
             const activeBtn = document.querySelector(".goals-game-btn.active");
             window.loadGachaGoals(activeBtn ? activeBtn.dataset.game : "all");
         }
@@ -1885,7 +2031,7 @@ function renderSubstatsPillList(substatsAnalyzed, rawFallbackStr) {
                     <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid ${sub.status_color}55; border-radius: 8px; padding: 4px 8px; font-size: 11px; display: inline-flex; align-items: center; gap: 6px;">
                         <span style="color: #f8fafc; font-weight: 600;">${sub.raw_text}</span>
                         <span style="color: ${sub.status_color}; font-weight: 700; background: ${sub.status_color}22; padding: 2px 6px; border-radius: 4px; font-size: 10px; border: 1px solid ${sub.status_color}44;">
-                            ${sub.status_badge}
+                            ${window.translateLuckBadgeText(sub.status_badge)}
                         </span>
                     </div>
                 `).join('')}
@@ -1895,6 +2041,79 @@ function renderSubstatsPillList(substatsAnalyzed, rawFallbackStr) {
     return `<div style="font-size: 11px; color: #cbd5e1; margin-top: 4px;">${rawFallbackStr}</div>`;
 }
 
+
+window.RELIC_NAME_EN_MAP = {
+    "Afiação que Cessou na Criação Maravilhosa": "Finale of the Deep Galleries",
+    "Canção da Vida": "Song of Days Past",
+    "Cálice do Estudioso Viajante": "Traveling Doctor's Medicine Pot",
+    "Determinação do Caçador Verde": "Viridescent Venerer's Determination",
+    "Flor Altruísta": "Ay-Khanoum's Myriad",
+    "Flor de Metal Onírica": "Dreaming Steelbloom",
+    "Inscrição da Flor da Brisa": "Windblume's Ode Plume",
+    "Pena Caída do Pássaro Dourado": "Golden Troupe's Feather",
+    "Pena Pristina dos Abençoados": "Marechaussee Hunter's Feather",
+    "Pena de Flecha do Caçador Verde": "Viridescent Arrow Feather",
+    "Plumas da Opulência": "Plume of Luxury",
+    "Raiz da Medula do Espírito": "Root of the Spirit Medulla",
+    "Rapsódia da Chuva de Icor": "Nymph's Constancy",
+    "Reflexão Noturna do Mar Antigo": "Nighttime Whispers in the Harmonic Gloom",
+    "Variação da Composição Dourada": "Golden Troupe's Variety",
+    "Suposição do Forjador": "Forging Guess",
+    "Observação do Forjador": "Forging Observation",
+    "Ambição do Forjador": "Forging Ambition",
+    "Contagem do Forjador": "Forging Tally",
+    "Magnanimidade do Forjador": "Forging Magnanimity"
+};
+
+window.translateRelicName = function(name, fallbackSlot = "") {
+    if (!name || !window.isEn) return name;
+    if (window.RELIC_NAME_EN_MAP[name]) return window.RELIC_NAME_EN_MAP[name];
+    for (const [pt, en] of Object.entries(window.RELIC_NAME_EN_MAP)) {
+        if (name.includes(pt)) return en;
+    }
+    // Fallback if Portuguese accents remain
+    if (/[áéíóúâêîôûãõç]/i.test(name)) {
+        return fallbackSlot ? `${fallbackSlot}` : "Equipped Artifact";
+    }
+    return name;
+};
+
+window.translateLuckBadgeText = function(badge) {
+    if (!badge || !window.isEn) return badge;
+    return badge
+        .replace("Deus do RNG", "RNG God")
+        .replace("Abençoado pelo RNG", "Blessed by RNG")
+        .replace("Abençoado", "Blessed")
+        .replace("Sortudo", "Lucky")
+        .replace("Boa Peça", "Good Piece")
+        .replace("Mediana", "Average")
+        .replace("Azarado", "Unlucky")
+        .replace("Amaldiçoada pela HoYoverse", "Cursed by HoYoverse")
+        .replace("Amaldiçoado", "Cursed")
+        .replace("Ótimo", "Great")
+        .replace("Perfeito", "Perfect")
+        .replace("Útil", "Useful")
+        .replace("Desperdício", "Wasted")
+        .replace("Lixo", "Trash");
+};
+
+window.translateSlotText = function(slot) {
+    if (!slot || !window.isEn) return slot;
+    return slot
+        .replace("Flor da Vida", "Flower of Life")
+        .replace("Pluma da Morte", "Plume of Death")
+        .replace("Ampulheta", "Sands of Eon")
+        .replace("Cálice", "Goblet")
+        .replace("Tiara", "Circlet of Logos")
+        .replace("Cabeça", "Head")
+        .replace("Mãos", "Hands")
+        .replace("Corpo", "Body")
+        .replace("Botas", "Boots")
+        .replace("Esfera Plana", "Planar Sphere")
+        .replace("Corda de Ligação", "Link Rope")
+        .replace("Disco Slot", "Disc Slot");
+};
+
 window.renderLuckDashboard = function(data) {
     const bodyEl = document.getElementById("tab-luck-body");
     if (!bodyEl) return;
@@ -1903,10 +2122,7 @@ window.renderLuckDashboard = function(data) {
         bodyEl.innerHTML = `
             <div style="text-align: center; padding: 60px 20px;" class="overview-card">
                 <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #64748b; margin-bottom: 16px;"></i>
-                <h3 style="color: #f8fafc; margin-bottom: 8px;">Nenhuma Relíquia Encontrada</h3>
-                <p style="color: #94a3b8; max-width: 500px; margin: 0 auto 20px auto;">
-                    Sincronize seu Roster com o HoYoLAB para analisar a sorte e a eficiência das rolagens de atributos dos seus equipamentos.
-                </p>
+                <h3 style="color: #f8fafc; margin-bottom: 8px;">${isEn ? "No Relics Found" : "Nenhuma Relíquia Encontrada"}</h3><p style="color: #94a3b8; max-width: 500px; margin: 0 auto 20px auto;">${isEn ? "Sync your Roster with HoYoLAB to analyze luck and roll efficiency of your gear." : "Sincronize seu Roster com o HoYoLAB para analisar a sorte e a eficiência das rolagens de atributos dos seus equipamentos."}</p>
             </div>
         `;
         return;
@@ -1921,25 +2137,25 @@ window.renderLuckDashboard = function(data) {
             <!-- CARD 1: SORTE GERAL DA CONTA -->
             <div class="luck-overview-card">
                 <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
-                    <span>Pontuação de Sorte da Conta</span>
+                    <span>${isEn ? "Account Luck Score" : "Pontuação de Sorte da Conta"}</span>
                     <i class="fa-solid fa-clover" style="color: #10b981;"></i>
                 </div>
                 <div class="luck-gauge-box">
                     <div class="luck-gauge-value">${data.overall_account_luck}%</div>
-                    <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;">${data.luck_title}</div>
+                    <div style="font-size: 14px; font-weight: 700; color: #f8fafc; margin-top: 4px;">${window.translateLuckBadgeText(data.luck_title)}</div>
                     <div style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); margin-top: 8px;">
-                        ${data.luck_badge}
+                        ${window.translateLuckBadgeText(data.luck_badge)}
                     </div>
                 </div>
                 <div style="font-size: 12px; color: #64748b; text-align: center;">
-                    Baseado em ${data.total_relics_analyzed} relíquias equipadas
+                    ${isEn ? `Based on ${data.total_relics_analyzed} equipped relics` : `Baseado em ${data.total_relics_analyzed} relíquias equipadas`}
                 </div>
             </div>
 
             <!-- CARD 2: GOD ROLL DA CONTA -->
             <div class="luck-overview-card god-roll-card">
                 <div style="font-size: 12px; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
-                    <span>🏆 A Peça Mais Sortuda (God Roll)</span>
+                    <span>🏆 ${isEn ? "Luckiest Piece (God Roll)" : "A Peça Mais Sortuda (God Roll)"}</span>
                     <span style="font-size: 11px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; padding: 2px 8px; border-radius: 12px;">Top #1</span>
                 </div>
                 ${god ? `
@@ -1950,28 +2166,28 @@ window.renderLuckDashboard = function(data) {
                         <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap;">
                             ${god.relic_icon ? `<img src="${god.relic_icon}" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px;">` : ''}
                             <span style="font-size: 12px; font-weight: 800; color: #fbbf24; background: rgba(245, 158, 11, 0.2); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; gap: 4px;">
-                                ${god.slot_display || god.slot}
+                                ${window.translateSlotText(god.slot_display || god.slot)}
                             </span>
-                            <span style="font-size: 12px; color: #e2e8f0; font-weight: 500;">${god.relic_name}</span>
+                            <span style="font-size: 12px; color: #e2e8f0; font-weight: 500;">${window.translateRelicName(god.relic_name, window.translateSlotText(god.slot_display))}</span>
                         </div>
-                        <div style="font-size: 11px; color: #cbd5e1;">Atributo Principal: <strong style="color: #38bdf8;">${god.main_stat}</strong></div>
+                        <div style="font-size: 11px; color: #cbd5e1;">${isEn ? "Main Stat:" : "Atributo Principal:"} <strong style="color: #38bdf8;">${god.main_stat}</strong></div>
                     </div>
                 </div>
                 <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 10px; font-size: 11px; color: #e2e8f0; margin-bottom: 10px;">
-                    <div style="font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Avaliação de Substatus & Rolagens:</div>
+                    <div style="font-weight: 700; color: #94a3b8; margin-bottom: 4px;">${isEn ? "Substats & Roll Assessment:" : "Avaliação de Substatus & Rolagens:"}</div>
                     ${renderSubstatsPillList(god.substats_analyzed, god.substats_str)}
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; color: #34d399; font-weight: bold;">Sorte: ${god.luck_score}% (${god.luck_badge})</span>
+                    <span style="font-size: 12px; color: #34d399; font-weight: bold;">${isEn ? "Luck:" : "Sorte:"} ${god.luck_score}% (${window.translateLuckBadgeText(god.luck_badge)})</span>
                     <span style="font-size: 11px; color: #94a3b8;">Roll Value (RV): ${god.total_rv}</span>
                 </div>
-                ` : '<div style="color:#94a3b8;">Nenhuma peça encontrada</div>'}
+                ` : `<div style="color:#94a3b8;">${isEn ? "No piece found" : "Nenhuma peça encontrada"}</div>`}
             </div>
 
             <!-- CARD 3: CURSED ROLL DA CONTA -->
             <div class="luck-overview-card cursed-roll-card">
                 <div style="font-size: 12px; color: #f87171; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
-                    <span>💀 A Peça Mais Amaldiçoada</span>
+                    <span>💀 ${isEn ? "Most Cursed Piece" : "A Peça Mais Amaldiçoada"}</span>
                     <span style="font-size: 11px; background: rgba(239, 68, 68, 0.2); color: #f87171; padding: 2px 8px; border-radius: 12px;">Cursed</span>
                 </div>
                 ${cursed ? `
@@ -1982,22 +2198,22 @@ window.renderLuckDashboard = function(data) {
                         <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap;">
                             ${cursed.relic_icon ? `<img src="${cursed.relic_icon}" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px;">` : ''}
                             <span style="font-size: 12px; font-weight: 800; color: #f87171; background: rgba(239, 68, 68, 0.2); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); display: inline-flex; align-items: center; gap: 4px;">
-                                ${cursed.slot_display || cursed.slot}
+                                ${window.translateSlotText(cursed.slot_display || cursed.slot)}
                             </span>
-                            <span style="font-size: 12px; color: #e2e8f0; font-weight: 500;">${cursed.relic_name}</span>
+                            <span style="font-size: 12px; color: #e2e8f0; font-weight: 500;">${window.translateRelicName(cursed.relic_name, window.translateSlotText(cursed.slot_display))}</span>
                         </div>
-                        <div style="font-size: 11px; color: #cbd5e1;">Atributo Principal: <strong style="color: #f87171;">${cursed.main_stat}</strong></div>
+                        <div style="font-size: 11px; color: #cbd5e1;">${isEn ? "Main Stat:" : "Atributo Principal:"} <strong style="color: #f87171;">${cursed.main_stat}</strong></div>
                     </div>
                 </div>
                 <div style="background: rgba(0, 0, 0, 0.3); padding: 10px; border-radius: 10px; font-size: 11px; color: #e2e8f0; margin-bottom: 10px;">
-                    <div style="font-weight: 700; color: #94a3b8; margin-bottom: 4px;">Avaliação de Substatus & Rolagens:</div>
+                    <div style="font-weight: 700; color: #94a3b8; margin-bottom: 4px;">${isEn ? "Substats & Roll Assessment:" : "Avaliação de Substatus & Rolagens:"}</div>
                     ${renderSubstatsPillList(cursed.substats_analyzed, cursed.substats_str)}
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 12px; color: #ef4444; font-weight: bold;">Sorte: ${cursed.luck_score}% (${cursed.luck_badge})</span>
+                    <span style="font-size: 12px; color: #ef4444; font-weight: bold;">${isEn ? "Luck:" : "Sorte:"} ${cursed.luck_score}% (${window.translateLuckBadgeText(cursed.luck_badge)})</span>
                     <span style="font-size: 11px; color: #94a3b8;">Roll Value (RV): ${cursed.total_rv}</span>
                 </div>
-                ` : '<div style="color:#94a3b8;">Nenhuma peça encontrada</div>'}
+                ` : `<div style="color:#94a3b8;">${isEn ? "No piece found" : "Nenhuma peça encontrada"}</div>`}
             </div>
         </div>
 
@@ -2008,9 +2224,9 @@ window.renderLuckDashboard = function(data) {
                 <div style="display: flex; align-items: center; gap: 14px;">
                     <img src="${data.luckiest_character.character_icon || '/assets/logo.svg'}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #10b981; object-fit: cover;">
                     <div style="flex: 1;">
-                        <div style="font-size: 11px; color: #34d399; font-weight: 700; text-transform: uppercase;">🌟 Personagem Mais Sortudo</div>
+                        <div style="font-size: 11px; color: #34d399; font-weight: 700; text-transform: uppercase;">${isEn ? "🌟 Luckiest Character" : "🌟 Personagem Mais Sortudo"}</div>
                         <div style="font-size: 16px; font-weight: bold; color: #fff;">${data.luckiest_character.character_name}</div>
-                        <div style="font-size: 12px; color: #94a3b8;">Média de Sorte: <strong style="color: #34d399;">${data.luckiest_character.avg_luck}%</strong> (${data.luckiest_character.relic_count} relíquias)</div>
+                        <div style="font-size: 12px; color: #94a3b8;">${isEn ? "Average Luck:" : "Média de Sorte:"} <strong style="color: #34d399;">${data.luckiest_character.avg_luck}%</strong> (${data.luckiest_character.relic_count} ${isEn ? "relics" : "relíquias"})</div>
                     </div>
                 </div>
             </div>
@@ -2021,9 +2237,9 @@ window.renderLuckDashboard = function(data) {
                 <div style="display: flex; align-items: center; gap: 14px;">
                     <img src="${data.cursed_character.character_icon || '/assets/logo.svg'}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ef4444; object-fit: cover;">
                     <div style="flex: 1;">
-                        <div style="font-size: 11px; color: #f87171; font-weight: 700; text-transform: uppercase;">🌧️ Personagem Mais Azarado</div>
+                        <div style="font-size: 11px; color: #f87171; font-weight: 700; text-transform: uppercase;">${isEn ? "🌧️ Most Cursed Character" : "🌧️ Personagem Mais Azarado"}</div>
                         <div style="font-size: 16px; font-weight: bold; color: #fff;">${data.cursed_character.character_name}</div>
-                        <div style="font-size: 12px; color: #94a3b8;">Média de Sorte: <strong style="color: #f87171;">${data.cursed_character.avg_luck}%</strong> (${data.cursed_character.relic_count} relíquias)</div>
+                        <div style="font-size: 12px; color: #94a3b8;">${isEn ? "Average Luck:" : "Média de Sorte:"} <strong style="color: #f87171;">${data.cursed_character.avg_luck}%</strong> (${data.cursed_character.relic_count} ${isEn ? "relics" : "relíquias"})</div>
                     </div>
                 </div>
             </div>
@@ -2033,7 +2249,7 @@ window.renderLuckDashboard = function(data) {
         <!-- LISTA DE SORTE POR PERSONAGEM -->
         <div class="overview-card" style="margin-bottom: 24px;">
             <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-users-gear" style="color: #10b981;"></i> Ranking de Sorte dos Personagens do Roster
+                <i class="fa-solid fa-users-gear" style="color: #10b981;"></i> ${isEn ? "Roster Character Luck Ranking" : "Ranking de Sorte dos Personagens do Roster"}
             </h3>
             <div style="display: flex; flex-direction: column; gap: 8px;">
                 ${(data.character_breakdown || []).map(c => {
@@ -2060,7 +2276,7 @@ window.renderLuckDashboard = function(data) {
         <!-- TABELA DAS MELHORES RELÍQUIAS DO INVENTÁRIO -->
         <div class="overview-card">
             <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #f8fafc; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-gem" style="color: #fbbf24;"></i> Top Relíquias mais Sortudas do Inventário (Roll Value)
+                <i class="fa-solid fa-gem" style="color: #fbbf24;"></i> ${isEn ? "Top Luckiest Inventory Relics (Roll Value)" : "Top Relíquias mais Sortudas do Inventário (Roll Value)"}
             </h3>
             <div style="display: flex; flex-direction: column; gap: 10px;">
                 ${(data.all_relics || []).map((r, idx) => `
@@ -2071,16 +2287,16 @@ window.renderLuckDashboard = function(data) {
                         <div style="font-size: 13px; font-weight: bold; color: #f8fafc; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                             ${r.relic_icon ? `<img src="${r.relic_icon}" style="width: 28px; height: 28px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); padding: 2px;">` : ''}
                             <span style="color: #fbbf24; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
-                                ${r.slot_display || r.slot}
+                                ${window.translateSlotText(r.slot_display || r.slot)}
                             </span>
-                            <span>${r.relic_name}</span>
+                            <span>${window.translateRelicName(r.relic_name, window.translateSlotText(r.slot_display))}</span>
                             <span style="font-weight: normal; color: #94a3b8;">(${r.character_name})</span>
                         </div>
                         ${renderSubstatsPillList(r.substats_analyzed, r.substats_str)}
                     </div>
                     <div style="text-align: right; flex-shrink: 0;">
                         <div style="font-size: 15px; font-weight: bold; color: ${r.luck_score >= 75 ? '#34d399' : '#fbbf24'};">${r.luck_score}%</div>
-                        <div style="font-size: 10px; color: #94a3b8;">${r.luck_badge}</div>
+                        <div style="font-size: 10px; color: #94a3b8;">${window.translateLuckBadgeText(r.luck_badge)}</div>
                     </div>
                 </div>
                 `).join('')}
@@ -2203,7 +2419,8 @@ function rollSingleWishItem(gameId, pity, isGuaranteed, targetCharName) {
     const rand5Star = Math.random();
     if (rand5Star <= base5StarChance) {
         let won5050 = true;
-        let cleanTarget = (targetCharName || "Personagem 5★ Limitado").replace(/\s*\(.*?\)/g, '').trim();
+
+    let cleanTarget = (targetCharName || (isEn ? "Limited 5★ Character" : "Personagem 5★ Limitado")).replace(/\s*\(.*?\)/g, '').trim();
         let charName = cleanTarget;
 
         if (!isGuaranteed && Math.random() > 0.5) {
@@ -2265,7 +2482,7 @@ function rollSingleWishItem(gameId, pity, isGuaranteed, targetCharName) {
 
     return {
         rarity: 3,
-        name: "Arma 3★ (Mochileiro)",
+        name: isEn ? "3★ Weapon (Wanderlust)" : "Arma 3★ (Mochileiro)",
         pitySpent: pity,
         won5050: true,
         isGuaranteedNext: isGuaranteed,
@@ -2361,8 +2578,8 @@ window.startWishAnimation = function(pullsCount = 1) {
 
         const currentPity = parseInt(pityInput?.value || 35);
         const isGuaranteed = guatSelect?.value === "true";
-        
-        let selectedCharName = "Personagem 5★ Limitado";
+
+    let selectedCharName = isEn ? "Limited 5★ Character" : "Personagem 5★ Limitado";
         if (charSelect && charSelect.selectedIndex >= 0 && charSelect.options[charSelect.selectedIndex]) {
             selectedCharName = charSelect.options[charSelect.selectedIndex].text;
         }
@@ -2477,7 +2694,8 @@ window.showWishItemAtIndex = function(index) {
             cardBadge.style.color = "#c084fc";
             cardBadge.style.borderColor = "rgba(168, 85, 247, 0.35)";
             cardBadge.style.background = "rgba(168, 85, 247, 0.15)";
-            cardBadge.innerHTML = `<i class="fa-solid fa-sparkles" style="color: #c084fc;"></i> PERSONAGEM 4★ ADQUIRIDO!`;
+
+        cardBadge.innerHTML = isEn ? `<i class="fa-solid fa-sparkles" style="color: #c084fc;"></i> 4★ CHARACTER ACQUIRED!` : `<i class="fa-solid fa-sparkles" style="color: #c084fc;"></i> PERSONAGEM 4★ ADQUIRIDO!`;
         } else {
             cardBadge.style.color = "#38bdf8";
             cardBadge.style.borderColor = "rgba(56, 189, 248, 0.35)";
@@ -2504,7 +2722,8 @@ window.showWishItemAtIndex = function(index) {
         
         const nextBtnLabel = document.getElementById("wish-next-btn-label");
         if (nextBtnLabel) {
-            nextBtnLabel.innerText = index === wishCurrentResults.length - 1 ? "Ver Resumo dos 10 Tiros ➔" : `Próximo Item (${index + 1}/${wishCurrentResults.length}) ➔`;
+
+    nextBtnLabel.innerText = index === wishCurrentResults.length - 1 ? (isEn ? "View 10-Pull Summary ➔" : "Ver Resumo dos 10 Tiros ➔") : (isEn ? `Next Item (${index + 1}/${wishCurrentResults.length}) ➔` : `Próximo Item (${index + 1}/${wishCurrentResults.length}) ➔`);
         }
     } else {
         if (nextBtn) nextBtn.style.display = "none";
@@ -2609,7 +2828,8 @@ window.openRoastModal = async function(gameId) {
     try {
         const res = await fetch(`/api/roast/${selectedGame}`);
         if (!res.ok) {
-            bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">Falha na requisição HTTP: Status ${res.status}</p>`;
+
+    bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">${isEn ? `HTTP request failed: Status ${res.status}` : `Falha na requisição HTTP: Status ${res.status}`}</p>`;
             return;
         }
         
@@ -2653,7 +2873,8 @@ window.openRoastModal = async function(gameId) {
         }
         
         if (!rawText.trim()) {
-            bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">Nenhum conteúdo retornado pelo Roast. Verifique se sua chave API da Groq está configurada nas Configurações.</p>`;
+
+    bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">${isEn ? "No content returned by Roast. Check if your Groq API key is set in Settings." : "Nenhum conteúdo retornado pelo Roast. Verifique se sua chave API da Groq está configurada nas Configurações."}</p>`;
         }
     } catch (err) {
         console.error("Erro no Roast:", err);
@@ -2663,7 +2884,8 @@ window.openRoastModal = async function(gameId) {
 
 window.copyRoastToClipboard = function() {
     if (!window.lastRoastMarkdown) {
-        alert("Nenhum Roast para copiar ainda!");
+
+    alert(isEn ? "No Roast to copy yet!" : "Nenhum Roast para copiar ainda!");
         return;
     }
     navigator.clipboard.writeText(window.lastRoastMarkdown).then(() => {
@@ -2693,3 +2915,29 @@ if (typeof wishAudioCtx !== 'undefined') window.wishAudioCtx = wishAudioCtx;
 if (typeof wishCurrentResults !== 'undefined') window.wishCurrentResults = wishCurrentResults;
 if (typeof wishGameId !== 'undefined') window.wishGameId = wishGameId;
 if (typeof wishIsMultiPull !== 'undefined') window.wishIsMultiPull = wishIsMultiPull;
+
+window.addEventListener("app:languageChanged", () => {
+    const curGame = document.getElementById("tab-gacha-game-select")?.value || "genshin";
+    const curType = document.getElementById("tab-gacha-banner-type")?.value || "character";
+    if (typeof window.updateGachaLabels === "function") {
+        window.updateGachaLabels(curGame, curType);
+    }
+    const fcGame = window.forecastState?.gameId || "genshin";
+    const fcType = document.getElementById("forecast-banner-type")?.value || "character";
+    if (typeof window.updateForecastRankLabels === "function") {
+        window.updateForecastRankLabels(fcGame, fcType);
+    }
+    if (typeof window.loadGachaGoals === "function") {
+        window.loadGachaGoals();
+    }
+    const luckGame = document.querySelector(".tab-luck-game-btn.active")?.dataset?.game || "genshin";
+    if (typeof window.loadLuckDashboard === "function") {
+        window.loadLuckDashboard(luckGame);
+    }
+    if (typeof window.updateGachaGemConversion === "function") {
+        window.updateGachaGemConversion();
+    }
+    if (window.lastDefaultsData && typeof window.renderActiveBannerCard === "function") {
+        window.renderActiveBannerCard(window.lastDefaultsData, window.gachaState?.activeBannerIndex || 0);
+    }
+});
