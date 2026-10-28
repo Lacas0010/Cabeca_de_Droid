@@ -491,6 +491,7 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
         relics = c.get("relics", [])
         total_relics += len(relics)
 
+        max_slots = 5 if game_id_clean == "genshin" else 6
         relic_scores = []
         for r in relics:
             slot = r.get("slot", "")
@@ -503,10 +504,9 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
             else:
                 sub_stats_str = str(sub_stats)
             g, sc = score_relic(game_id_clean, char_name, slot, main_stat, sub_stats_str)
-            if sc > 0:
-                relic_scores.append(sc)
+            relic_scores.append(sc)
 
-        char_score = round(sum(relic_scores) / len(relic_scores), 1) if relic_scores else 0.0
+        char_score = round(sum(relic_scores) / max_slots, 1) if relic_scores else 0.0
         if char_score > 0:
             scores.append(char_score)
 

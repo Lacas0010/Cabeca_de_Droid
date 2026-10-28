@@ -187,16 +187,32 @@ class TestGachaDefaultsAndBannersSuite(unittest.TestCase):
         self.assertGreaterEqual(res_fc["success_rate"], 65.0)
 
     def test_character_score_calculation_reverted_to_21_oct(self):
-        """Valida que o cálculo de notas retornou ao formato de 21/10/2026."""
-        # Personagem inexistente ou sem guia deve retornar pesos do fallback original de 21/10
+        """Valida que o cálculo de notas retornou ao formato original (5 regras de RV e Ponderação)."""
+        from build_calculator import normalize_slot_name, get_meta_data
+
+        # 1. Normalização Contextual de Slots
+        self.assertEqual(normalize_slot_name("1", "genshin"), "flower")
+        self.assertEqual(normalize_slot_name("5", "genshin"), "circlet")
+        self.assertEqual(normalize_slot_name("4", "hsr"), "feet")
+        self.assertEqual(normalize_slot_name("6", "hsr"), "link_rope")
+        self.assertEqual(normalize_slot_name("6", "zzz"), "slot_6")
+
+        # 2. Main Stat Forgiveness e ausência de artefatos '**' nos main_stats de Genshin
+        meta_genshin = get_meta_data("genshin")
+        for entry in meta_genshin.values():
+            if isinstance(entry, dict):
+                for ms_list in entry.get("main_stats", {}).values():
+                    for stat_str in ms_list:
+                        self.assertFalse(str(stat_str).startswith("**"), f"Main stat corrompido: {stat_str}")
+
+        # 3. Flat Stat Fallback (50% da versão %) e fallback padrão
         fallback_weights = extract_weights_from_guide("genshin", "non_existent_hero_xyz")
-        # O fallback original de 21/10 tem break_effect=0.5, def_flat=0.2 (sem anomaly_prof, impact, etc)
         self.assertEqual(fallback_weights.get("break_effect"), 0.5)
         self.assertEqual(fallback_weights.get("def_flat"), 0.2)
         self.assertNotIn("anomaly_prof", fallback_weights)
         self.assertNotIn("impact", fallback_weights)
 
-        # score_relic determinístico
+        # 4. score_relic determinístico com Benchmark Dinâmico
         grade, score = score_relic(
             "genshin",
             "generic_char",

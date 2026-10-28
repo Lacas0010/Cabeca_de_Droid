@@ -174,8 +174,9 @@ def simulate_relic_swap(req: SimulateSwapRequest) -> SimulateSwapResponse:
         all_old_scores.append(p_score)
         all_new_scores.append(p_score)
 
-    old_build_score = round(sum(all_old_scores) / max(len(all_old_scores), 1), 1)
-    new_build_score = round(sum(all_new_scores) / max(len(all_new_scores), 1), 1)
+    max_slots = 5 if game_clean == "genshin" else 6
+    old_build_score = round(sum(all_old_scores) / max_slots, 1)
+    new_build_score = round(sum(all_new_scores) / max_slots, 1)
     score_diff = round(new_build_score - old_build_score, 1)
 
     old_build_grade = map_score_to_grade(old_build_score)

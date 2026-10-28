@@ -785,22 +785,50 @@ def get_meta_data(game_id: str) -> dict:
         try:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                master = fetch_master_id_list(game_id)
-                indexed_data = dict(data)
-                for k, v in list(data.items()):
-                    if isinstance(v, dict):
-                        name = v.get("name", "")
-                        norm_name = normalize_char_name(name)
-                        norm_key = normalize_char_name(k)
-                        cid = master.get(norm_name) or master.get(norm_key) or master.get(k.lower())
-                        if cid:
-                            indexed_data[str(cid)] = v
-                        if norm_name:
-                            indexed_data[norm_name] = v
-                        if norm_key:
-                            indexed_data[norm_key] = v
-                META_DATA_CACHE[game_id] = indexed_data
-                return indexed_data
+
+            # Auto-repara se o arquivo JSON contiver artefatos de markdown ('**') ou entradas órfãs de benchmark
+            needs_regen = any(
+                isinstance(v, dict)
+                and (
+                    any("**" in str(s) for ms in v.get("main_stats", {}).values() for s in ms)
+                    or (not v.get("main_stats") and bool(v.get("substats_priority")))
+                )
+                for v in data.values()
+            )
+            if needs_regen and os.path.exists(f"{game_id}/guias"):
+                generate_meta_json_from_markdown(game_id)
+                with open(path, "r", encoding="utf-8") as f2:
+                    data = json.load(f2)
+
+            master = fetch_master_id_list(game_id)
+            indexed_data = dict(data)
+            for k, v in list(data.items()):
+                if isinstance(v, dict):
+                    name = v.get("name", "")
+                    norm_name = normalize_char_name(name)
+                    norm_key = normalize_char_name(k)
+                    cid = master.get(norm_name) or master.get(norm_key) or master.get(k.lower())
+                    has_mains = bool(v.get("main_stats"))
+                    if cid and (
+                        str(cid) not in indexed_data
+                        or has_mains
+                        or not indexed_data[str(cid)].get("main_stats")
+                    ):
+                        indexed_data[str(cid)] = v
+                    if norm_name and (
+                        norm_name not in indexed_data
+                        or has_mains
+                        or not indexed_data[norm_name].get("main_stats")
+                    ):
+                        indexed_data[norm_name] = v
+                    if norm_key and (
+                        norm_key not in indexed_data
+                        or has_mains
+                        or not indexed_data[norm_key].get("main_stats")
+                    ):
+                        indexed_data[norm_key] = v
+            META_DATA_CACHE[game_id] = indexed_data
+            return indexed_data
         except Exception as e:
             print(f"[WARN] Erro ao ler {path}: {e}")
     return {}
@@ -1379,7 +1407,12 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
     game_id = game_id.lower().strip()
     meta_db = get_meta_data(game_id)
 
-    char_meta = meta_db.get(str(char_id))
+    char_key = str(char_id)
+    char_meta = (
+        meta_db.get(char_key)
+        or meta_db.get(char_key.lower().strip())
+        or meta_db.get(normalize_char_name(char_key))
+    )
     if char_meta:
         subs = char_meta.get("substats_priority", [])
         if subs:
@@ -1443,7 +1476,13 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
 
     weights = extract_weights_from_guide(game_id, str(char_id))
     meta_db = get_meta_data(game_id)
-    char_meta = meta_db.get(str(char_id), {})
+    char_key = str(char_id)
+    char_meta = (
+        meta_db.get(char_key)
+        or meta_db.get(char_key.lower().strip())
+        or meta_db.get(normalize_char_name(char_key))
+        or {}
+    )
 
     main_clean = main_stat.lower()
     norm_slot = normalize_slot_name(slot, game_id)
@@ -2099,7 +2138,9 @@ def generate_meta_json_from_markdown(game_id: str):
             main_sec = main_sec_match.group(1)
             lines = main_sec.split("\n")
             for line in lines:
-                m = re.search(r"-\s*(?:\*\*)?([^\*:]+)(?:\*\*)?:?\s*(.*)", line)
+                m = re.search(r"-\s*\*\*([^\*]+)\*\*:?\s*(.*)", line) or re.search(
+                    r"-\s*([^\*:]+):\s*(.*)", line
+                )
                 if m:
                     slot_label = m.group(1).lower().strip()
                     val = m.group(2)
@@ -2115,7 +2156,7 @@ def generate_meta_json_from_markdown(game_id: str):
                     tokens = re.split(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=|&)\s*", val, flags=re.IGNORECASE)
                     stats = []
                     for t in tokens:
-                        t_clean = re.sub(r"\([^)]*\)", "", t).strip()
+                        t_clean = re.sub(r"\([^)]*\)", "", t).replace("*", "").strip()
                         if t_clean:
                             norm = normalize_stat_name(t_clean)
                             if norm and norm not in stats:
@@ -2166,42 +2207,6 @@ def generate_meta_json_from_markdown(game_id: str):
                         print(f"[WARN] Erro ao parsear {filepath}: {ex}")
         except Exception as e:
             print(f"[WARN] Erro ao listar diretório {guias_dir}: {e}")
-
-    # Enriquecimento com static_data/character_benchmarks.json
-    try:
-        from meta_comparator import get_character_benchmarks
-
-        b_game = get_character_benchmarks().get(game_id, {})
-        for char_slug, bench_dict in b_game.items():
-            canonical_id = master_ids.get(char_slug, master_ids.get(normalize_char_name(char_slug)))
-            target_key = str(canonical_id) if canonical_id else char_slug
-            if target_key not in meta_db or not meta_db[target_key].get("substats_priority"):
-                subs = []
-                for k, v in bench_dict.items():
-                    norm_s = normalize_stat_name(k)
-                    if norm_s == "atk_flat":
-                        norm_s = "atk_pct"
-                    elif norm_s == "hp_flat":
-                        norm_s = "hp_pct"
-                    elif norm_s == "def_flat":
-                        norm_s = "def_pct"
-                    if norm_s in VALID_SUBSTATS and norm_s not in subs:
-                        subs.append(norm_s)
-                display_n = char_slug.replace("_", " ").title()
-                if target_key not in meta_db:
-                    meta_db[target_key] = {
-                        "main_stats": {},
-                        "substats_priority": subs,
-                        "general_benchmarks": bench_dict,
-                        "name": display_n,
-                    }
-                else:
-                    if not meta_db[target_key].get("substats_priority"):
-                        meta_db[target_key]["substats_priority"] = subs
-                    if not meta_db[target_key].get("general_benchmarks"):
-                        meta_db[target_key]["general_benchmarks"] = bench_dict
-    except Exception as b_ex:
-        print(f"[WARN] Erro ao integrar benchmarks ao meta_db: {b_ex}")
 
     output_path = f"{game_id}/meta_data_{game_id}.json"
     os.makedirs(os.path.dirname(output_path) or ".", exist_ok=True)
@@ -2396,8 +2401,9 @@ def optimize_character_relics(game_id: str, char_id: str, relics_list: List[Dict
             "recommendations": ["Nenhuma relíquia válida foi avaliada."],
         }
 
+    max_slots = 5 if game_id == "genshin" else 6
     scores = [p["score"] for p in best_by_slot.values()]
-    avg_score = round(sum(scores) / len(scores), 1) if scores else 0.0
+    avg_score = round(sum(scores) / max_slots, 1) if scores else 0.0
 
     if avg_score >= 90:
         overall_grade = "SS"
