@@ -264,6 +264,121 @@ class TestGachaForecastSuite(unittest.TestCase):
         finally:
             database.delete_gacha_goal(goal_id)
 
+    def test_banner_schedule_hours_phase1_and_phase2(self):
+        """Valida horários oficiais dos banners:
+        - 1ª Fase (os 3 jogos): 23:30
+        - 2ª Fase Genshin: 20:00
+        - 2ª Fase HSR: 14:00
+        - 2ª Fase ZZZ: 14:00
+        """
+        # 1ª Fase: todos os 3 jogos devem retornar 23:30
+        self.assertEqual(database.get_banner_schedule_time("genshin", phase=1), (23, 30))
+        self.assertEqual(database.get_banner_schedule_time("hsr", phase=1), (23, 30))
+        self.assertEqual(database.get_banner_schedule_time("zzz", phase=1), (23, 30))
+
+        # 2ª Fase: Genshin 20h, HSR e ZZZ 14h
+        self.assertEqual(database.get_banner_schedule_time("genshin", phase=2), (20, 0))
+        self.assertEqual(database.get_banner_schedule_time("hsr", phase=2), (14, 0))
+        self.assertEqual(database.get_banner_schedule_time("zzz", phase=2), (14, 0))
+
+    def test_save_goal_with_banner_phase_and_target_date_schedule(self):
+        """Valida que salvar meta com banner_phase preserva os horários oficiais nos endpoints e no banco."""
+        # 1. Meta Genshin 2ª Fase (deve chegar às 20:00)
+        resp = self.client.post(
+            "/api/gacha/goals",
+            json={
+                "game_id": "genshin",
+                "character_name": "Mavuika",
+                "target_rank_str": "C2",
+                "current_pulls": 50,
+                "current_pity": 20,
+                "is_guaranteed": True,
+                "target_days": 21,
+                "has_daily_pass": True,
+                "success_rate": 88.5,
+                "projected_pulls": 140,
+                "banner_phase": 2,
+                "target_date": "2026-11-20T20:00:00",
+            },
+        )
+        self.assertEqual(resp.status_code, 200)
+        goal_id = resp.json().get("goal_id")
+
+        try:
+            resp_get = self.client.get("/api/gacha/goals/genshin")
+            self.assertEqual(resp_get.status_code, 200)
+            goals = resp_get.json().get("goals", [])
+            saved = next((g for g in goals if g["id"] == goal_id), None)
+            self.assertIsNotNone(saved)
+            self.assertEqual(saved["banner_phase"], 2)
+            self.assertEqual(saved["banner_time"], "20:00")
+            self.assertTrue(saved["target_date"].endswith("20:00:00") or "20:00" in saved["target_date"])
+        finally:
+            database.delete_gacha_goal(goal_id)
+
+        # 2. Meta HSR 2ª Fase (deve chegar às 14:00)
+        resp_hsr = self.client.post(
+            "/api/gacha/goals",
+            json={
+                "game_id": "hsr",
+                "character_name": "Sunday",
+                "target_rank_str": "E1",
+                "current_pulls": 30,
+                "current_pity": 10,
+                "is_guaranteed": False,
+                "target_days": 21,
+                "has_daily_pass": True,
+                "success_rate": 75.0,
+                "projected_pulls": 110,
+                "banner_phase": 2,
+                "target_date": "2026-11-20T14:00:00",
+            },
+        )
+        self.assertEqual(resp_hsr.status_code, 200)
+        hsr_goal_id = resp_hsr.json().get("goal_id")
+
+        try:
+            resp_get_hsr = self.client.get("/api/gacha/goals/hsr")
+            self.assertEqual(resp_get_hsr.status_code, 200)
+            hsr_goals = resp_get_hsr.json().get("goals", [])
+            saved_hsr = next((g for g in hsr_goals if g["id"] == hsr_goal_id), None)
+            self.assertIsNotNone(saved_hsr)
+            self.assertEqual(saved_hsr["banner_phase"], 2)
+            self.assertEqual(saved_hsr["banner_time"], "14:00")
+        finally:
+            database.delete_gacha_goal(hsr_goal_id)
+
+    def test_update_all_saved_goals_schedule(self):
+        """Valida a função de atualização em lote das metas já salvas para os horários oficiais."""
+        # Cria uma meta sem target_date definido
+        gid = database.save_gacha_goal(
+            game_id="zzz",
+            character_name="Miyabi",
+            target_rank_str="M0",
+            current_pulls=20,
+            current_pity=0,
+            is_guaranteed=False,
+            target_days=21,
+            has_daily_pass=False,
+            success_rate=60.0,
+            projected_pulls=70,
+            notes="Meta antiga sem horário fixo",
+            banner_phase=2,
+        )
+
+        try:
+            count = database.update_all_saved_goals_schedule()
+            self.assertGreaterEqual(count, 1)
+
+            goals = database.get_gacha_goals("zzz")
+            matched = next((g for g in goals if g["id"] == gid), None)
+            self.assertIsNotNone(matched)
+            self.assertEqual(matched["banner_phase"], 2)
+            self.assertEqual(matched["banner_time"], "14:00")
+            self.assertIn("14:00:00", matched["target_date"])
+        finally:
+            database.delete_gacha_goal(gid)
+
 
 if __name__ == "__main__":
     unittest.main()

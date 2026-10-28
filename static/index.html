@@ -1570,6 +1570,15 @@
                                     <button type="button" class="filter-btn forecast-quick-day-btn" data-days="42" style="flex: 1; padding: 4px 6px; font-size: 10px;">42d (1 patch)</button>
                                     <button type="button" class="filter-btn forecast-quick-day-btn" data-days="63" style="flex: 1; padding: 4px 6px; font-size: 10px;">63d (1.5 patch)</button>
                                 </div>
+                                <!-- Seletor de Fase do Banner (Horários Oficiais: Fase 1 às 23:30; Fase 2: Genshin 20h, HSR/ZZZ 14h) -->
+                                <div style="display: flex; gap: 8px; margin-top: 8px;">
+                                    <button type="button" class="filter-btn active forecast-phase-btn" data-phase="1" style="flex: 1; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <i class="fa-solid fa-bolt" style="color: #38bdf8;"></i> 1ª Fase (23:30)
+                                    </button>
+                                    <button type="button" class="filter-btn forecast-phase-btn" data-phase="2" style="flex: 1; padding: 6px 10px; font-size: 11px; font-weight: 700; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                                        <i class="fa-solid fa-clock" style="color: #fbbf24;"></i> <span id="forecast-phase-2-label">2ª Fase (20h)</span>
+                                    </button>
+                                </div>
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 8px; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
                                     <span style="font-size: 11px; color: #cbd5e1;"><i class="fa-regular fa-calendar-check" style="color: #38bdf8;"></i> Dia da Atualização / Chegada do Banner:</span>
                                     <input type="date" id="forecast-target-date-input" class="search-input" style="padding: 3px 8px; font-size: 11px; width: auto; color: #f8fafc; margin: 0;">
@@ -3832,7 +3841,7 @@
     </div>
 
     <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-    <script type="module" src="js/app.js?v=23.4"></script>
+    <script type="module" src="js/app.js?v=23.5"></script>
 </body>
 </html>
 

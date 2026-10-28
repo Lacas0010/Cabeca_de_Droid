@@ -66,6 +66,9 @@ class GachaGoalSaveRequest(BaseModel):
     created_at: Optional[str] = Field(
         default=None, description="Data/hora exata em que a meta foi criada (ISO 8601)"
     )
+    banner_phase: Optional[int] = Field(
+        default=1, description="Fase do banner planejado: 1 (23:30 para os 3 jogos) ou 2 (20h Genshin, 14h HSR/ZZZ)"
+    )
 
 
 class GachaGoalItem(BaseModel):
@@ -84,6 +87,8 @@ class GachaGoalItem(BaseModel):
     notes: Optional[str] = Field(default="", description="Notas da meta")
     created_at: str = Field(description="Data/hora ISO em que a meta foi criada")
     target_date: str = Field(description="Data/hora ISO da chegada da atualização/banner")
+    banner_phase: Optional[int] = Field(default=1, description="Fase do banner (1 ou 2)")
+    banner_time: Optional[str] = Field(default="23:30", description="Horário oficial do banner (ex: '23:30', '20:00', '14:00')")
     days_elapsed: int = Field(default=0, description="Dias decorridos desde a criação")
     days_remaining: int = Field(default=0, description="Dias restantes até o banner")
     seconds_elapsed: int = Field(default=0, description="Segundos decorridos desde a criação")

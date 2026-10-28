@@ -351,6 +351,17 @@ def init_db() -> None:
         except sqlite3.OperationalError:
             pass
 
+        try:
+            cursor.execute("ALTER TABLE gacha_forecast_goals ADD COLUMN banner_phase INTEGER DEFAULT 1")
+        except sqlite3.OperationalError:
+            pass
+
+        # Atualiza automaticamente o horário oficial de metas já salvas na inicialização
+        try:
+            update_all_saved_goals_schedule()
+        except Exception:
+            pass
+
         # Garante linha única de configuração de segurança
         cursor.execute(
             "INSERT OR IGNORE INTO security_settings (id, pin_enabled, allow_lan_access, updated_at) VALUES (1, 0, 0, ?)",
@@ -1774,6 +1785,24 @@ def clear_completed_farm_tasks(date_str: str, game_id: str) -> None:
 # ==========================================
 # 12. GESTÃO DE METAS DE GACHA FORECAST
 # ==========================================
+def get_banner_schedule_time(game_id: str, phase: int = 1) -> tuple[int, int]:
+    """
+    Retorna (hora, minuto) do horário oficial de início do banner:
+    - 1ª Fase (todos os 3 jogos): 23:30
+    - 2ª Fase:
+      - Genshin: 20:00 (20h)
+      - Honkai (HSR): 14:00 (14h)
+      - ZZZ: 14:00 (14h)
+    """
+    g = (game_id or "genshin").lower().strip()
+    p = int(phase or 1)
+    if p == 2:
+        if g == "genshin":
+            return (20, 0)
+        return (14, 0)
+    return (23, 30)
+
+
 def _parse_iso_datetime(dt_str: Optional[str], fallback: datetime) -> datetime:
     """Converte string ISO 8601 para datetime local (naive) com segurança."""
     if not dt_str:
@@ -1792,18 +1821,25 @@ def compute_goal_time_metrics(g_dict: Dict[str, Any], now_dt: Optional[datetime]
     """
     Calcula o progresso temporal em tempo real de uma meta de banner salva:
     - Data de criação (created_at) e Data da atualização/chegada do banner (target_date)
+    - Horário oficial ajustado por fase e jogo (1ª Fase: 23:30 para os 3 jogos; 2ª Fase: 20h Genshin, 14h HSR/ZZZ)
     - Segundos e dias decorridos vs restantes
     - Percentual de progresso do tempo e estimativa de tiros acumulados até o momento atual
     """
     ref_now = now_dt or datetime.now()
     target_days = max(1, int(g_dict.get("target_days") or 21))
+    game_id = (g_dict.get("game_id") or "genshin").lower().strip()
+    phase = int(g_dict.get("banner_phase") or 1)
+    sched_hour, sched_min = get_banner_schedule_time(game_id, phase)
+    banner_time_str = f"{sched_hour:02d}:{sched_min:02d}"
 
     created_dt = _parse_iso_datetime(g_dict.get("created_at"), ref_now)
     raw_target_date = g_dict.get("target_date")
     if raw_target_date:
         target_dt = _parse_iso_datetime(raw_target_date, created_dt + timedelta(days=target_days))
     else:
-        target_dt = created_dt + timedelta(days=target_days)
+        target_dt = (created_dt + timedelta(days=target_days)).replace(
+            hour=sched_hour, minute=sched_min, second=0, microsecond=0
+        )
 
     total_seconds = max(1.0, (target_dt - created_dt).total_seconds())
     elapsed_seconds = max(0.0, (ref_now - created_dt).total_seconds())
@@ -1821,6 +1857,8 @@ def compute_goal_time_metrics(g_dict: Dict[str, Any], now_dt: Optional[datetime]
     extra_pulls_planned = max(0, proj_pulls - cur_pulls)
     accumulated_pulls_now = cur_pulls + int(round(extra_pulls_planned * progress_ratio))
 
+    g_dict["banner_phase"] = phase
+    g_dict["banner_time"] = banner_time_str
     g_dict["created_at"] = created_dt.isoformat()
     g_dict["target_date"] = target_dt.isoformat()
     g_dict["days_elapsed"] = days_elapsed
@@ -1847,19 +1885,29 @@ def save_gacha_goal(
     notes: str = "",
     target_date: Optional[str] = None,
     created_at: Optional[str] = None,
+    banner_phase: int = 1,
 ) -> int:
-    """Salva uma meta de planejamento de gacha/banner futuro no SQLite com data de criação e data alvo da atualização."""
+    """Salva uma meta de planejamento de gacha/banner futuro no SQLite com data de criação, data alvo e fase do banner."""
     with get_connection() as conn:
         cursor = conn.cursor()
         now_dt = datetime.now()
+        clean_game = game_id.lower().strip()
+        clean_phase = 2 if int(banner_phase or 1) == 2 else 1
+        sched_hour, sched_min = get_banner_schedule_time(clean_game, clean_phase)
+
         created_dt = _parse_iso_datetime(created_at, now_dt) if created_at else now_dt
         created_iso = created_dt.isoformat()
 
         clean_days = max(1, int(target_days or 21))
         if target_date:
             target_dt = _parse_iso_datetime(target_date, created_dt + timedelta(days=clean_days))
+            # Garante que o horário do banner seja precisamente o da fase e jogo se a string alvo for apenas data
+            if "T" not in str(target_date):
+                target_dt = target_dt.replace(hour=sched_hour, minute=sched_min, second=0, microsecond=0)
         else:
-            target_dt = created_dt + timedelta(days=clean_days)
+            target_dt = (created_dt + timedelta(days=clean_days)).replace(
+                hour=sched_hour, minute=sched_min, second=0, microsecond=0
+            )
         target_iso = target_dt.isoformat()
 
         cursor.execute(
@@ -1867,11 +1915,11 @@ def save_gacha_goal(
         INSERT INTO gacha_forecast_goals (
             game_id, character_name, target_rank_str, current_pulls,
             current_pity, is_guaranteed, target_days, has_daily_pass,
-            success_rate, projected_pulls, notes, created_at, target_date
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            success_rate, projected_pulls, notes, created_at, target_date, banner_phase
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
-                game_id.lower().strip(),
+                clean_game,
                 character_name.strip(),
                 target_rank_str.strip(),
                 current_pulls,
@@ -1884,6 +1932,7 @@ def save_gacha_goal(
                 notes.strip(),
                 created_iso,
                 target_iso,
+                clean_phase,
             ),
         )
         return cursor.lastrowid
@@ -1912,6 +1961,61 @@ def get_gacha_goals(game_id: Optional[str] = None) -> List[Dict[str, Any]]:
             compute_goal_time_metrics(g_dict, now_dt=now_dt)
             goals.append(g_dict)
         return goals
+
+
+def update_all_saved_goals_schedule() -> int:
+    """
+    Atualiza os horários e datas de chegada de todas as metas já salvas no SQLite:
+    - 1ª Fase (os 3 jogos): 23:30
+    - 2ª Fase:
+      - Genshin: 20:00 (20h)
+      - Honkai (HSR): 14:00 (14h)
+      - ZZZ: 14:00 (14h)
+    Persiste a data/hora exata em 'target_date' e a fase em 'banner_phase'.
+    Retorna a quantidade de metas atualizadas.
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, game_id, target_days, created_at, target_date, banner_phase, notes FROM gacha_forecast_goals"
+        )
+        rows = cursor.fetchall()
+        updated_count = 0
+        now_dt = datetime.now()
+
+        for r in rows:
+            g_id = r["id"]
+            game_id = (r["game_id"] or "genshin").lower().strip()
+            target_days = max(1, int(r["target_days"] or 21))
+            created_dt = _parse_iso_datetime(r["created_at"], now_dt)
+            notes_str = (r["notes"] or "").lower()
+
+            raw_phase = r["banner_phase"]
+            if raw_phase in [1, 2]:
+                phase = raw_phase
+            elif "fase 2" in notes_str or "phase 2" in notes_str:
+                phase = 2
+            else:
+                phase = 1
+
+            sched_hour, sched_min = get_banner_schedule_time(game_id, phase)
+
+            raw_target = r["target_date"]
+            if raw_target:
+                tgt_dt = _parse_iso_datetime(raw_target, created_dt + timedelta(days=target_days))
+            else:
+                tgt_dt = created_dt + timedelta(days=target_days)
+
+            tgt_dt = tgt_dt.replace(hour=sched_hour, minute=sched_min, second=0, microsecond=0)
+            target_iso = tgt_dt.isoformat()
+
+            cursor.execute(
+                "UPDATE gacha_forecast_goals SET target_date = ?, banner_phase = ? WHERE id = ?",
+                (target_iso, phase, g_id),
+            )
+            updated_count += 1
+
+        return updated_count
 
 
 def delete_gacha_goal(goal_id: int) -> bool:

@@ -561,10 +561,11 @@ window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, banner
 
     if (!currentBanner) return;
 
-    // 1. Badge de Patch/Fase
+    // 1. Badge de Patch/Fase e Horário Oficial do Banner
     const patchBadge = document.getElementById("gacha-banner-patch-badge");
     if (patchBadge) {
-        patchBadge.textContent = defaultsData.patch_info || "Fase Ativa";
+        const schedTime = defaultsData.banner_time || (defaultsData.banner_phase === 2 ? (defaultsData.game_id === 'genshin' ? '20:00' : '14:00') : '23:30');
+        patchBadge.textContent = `${defaultsData.patch_info || "Fase Ativa"} • Horário Oficial: ${schedTime}`;
     }
 
     // 2. Seletor de Banners da Fase (Tabs/Pills)
@@ -929,10 +930,23 @@ window.runGachaSimulation = async function() {
 // GACHA FORECAST & PLANEJADOR DE BANNERS FUTUROS FRONTEND LOGIC
 // ==========================================================================
 
+window.getBannerScheduleTime = function(gameId, phase = 1) {
+    const g = String(gameId || "genshin").toLowerCase().trim();
+    const p = parseInt(phase) || 1;
+    if (p === 2) {
+        if (g === "genshin") {
+            return { hour: 20, minute: 0, str: "20:00", label: "2ª Fase (20h)" };
+        }
+        return { hour: 14, minute: 0, str: "14:00", label: "2ª Fase (14h)" };
+    }
+    return { hour: 23, minute: 30, str: "23:30", label: "1ª Fase (23:30)" };
+};
+
 window.lastForecastResult = null;
 window.forecastState = {
     gameId: "genshin",
     bannerType: "character",
+    bannerPhase: 1,
     charList: []
 };
 
@@ -969,6 +983,7 @@ window.initGachaNavigation = function() {
 window.initGachaForecast = async function() {
     const gameBtns = document.querySelectorAll(".forecast-game-btn");
     const typeBtns = document.querySelectorAll("#forecast-type-pills .forecast-type-btn");
+    const phaseBtns = document.querySelectorAll(".forecast-phase-btn");
     const hiddenType = document.getElementById("forecast-banner-type");
     const slider = document.getElementById("forecast-days-slider");
     const sliderVal = document.getElementById("forecast-days-val");
@@ -985,6 +1000,7 @@ window.initGachaForecast = async function() {
             window.forecastState.gameId = gId;
             const bType = hiddenType ? hiddenType.value : "character";
             window.updateForecastRankLabels(gId, bType);
+            window.syncForecastDaysAndDate(slider ? slider.value : 21);
             await window.loadForecastCharacters(gId, bType);
             window.runGachaForecastCalculation();
         };
@@ -1004,6 +1020,16 @@ window.initGachaForecast = async function() {
         };
     });
 
+    phaseBtns.forEach(btn => {
+        btn.onclick = () => {
+            phaseBtns.forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            window.forecastState.bannerPhase = parseInt(btn.dataset.phase) || 1;
+            window.syncForecastDaysAndDate(slider ? slider.value : 21);
+            window.runGachaForecastCalculation();
+        };
+    });
+
     const dateInput = document.getElementById("forecast-target-date-input");
 
     window.syncForecastDaysAndDate = function(daysVal) {
@@ -1011,14 +1037,22 @@ window.initGachaForecast = async function() {
         if (slider) slider.value = d;
         if (sliderVal) sliderVal.innerText = `${d} ${d === 1 ? 'dia' : 'dias'}`;
 
+        const gId = window.forecastState.gameId || "genshin";
+        const curPhase = window.forecastState.bannerPhase || 1;
+        const sched = window.getBannerScheduleTime(gId, curPhase);
+
         const targetDt = new Date(Date.now() + d * 86400000);
+        targetDt.setHours(sched.hour, sched.minute, 0, 0);
+
         const dd = String(targetDt.getDate()).padStart(2, '0');
         const mm = String(targetDt.getMonth() + 1).padStart(2, '0');
         const yyyy = targetDt.getFullYear();
+        const hh = String(targetDt.getHours()).padStart(2, '0');
+        const min = String(targetDt.getMinutes()).padStart(2, '0');
 
         const dateLbl = document.getElementById("forecast-target-date-lbl");
         if (dateLbl) {
-            dateLbl.innerText = `Chegada: ${dd}/${mm}/${yyyy}`;
+            dateLbl.innerText = `Chegada: ${dd}/${mm}/${yyyy} às ${hh}:${min}`;
         }
         if (dateInput) {
             dateInput.value = `${yyyy}-${mm}-${dd}`;
@@ -1048,7 +1082,10 @@ window.initGachaForecast = async function() {
         dateInput.onchange = () => {
             if (!dateInput.value) return;
             const [y, m, day] = dateInput.value.split("-").map(Number);
-            const picked = new Date(y, m - 1, day, 23, 59, 59);
+            const gId = window.forecastState.gameId || "genshin";
+            const curPhase = window.forecastState.bannerPhase || 1;
+            const sched = window.getBannerScheduleTime(gId, curPhase);
+            const picked = new Date(y, m - 1, day, sched.hour, sched.minute, 0);
             const diffDays = Math.max(1, Math.min(180, Math.ceil((picked.getTime() - Date.now()) / 86400000)));
             window.syncForecastDaysAndDate(diffDays);
             window.runGachaForecastCalculation();
@@ -1097,6 +1134,13 @@ window.updateForecastRankLabels = function(gameId, bannerType = "character") {
     const lblTgt = document.getElementById("lbl-forecast-target-rank");
     if (lblCur) lblCur.innerText = `${terms.term} Atual:`;
     if (lblTgt) lblTgt.innerText = `Meta de ${terms.term}:`;
+
+    // Atualiza o texto do botão da 2ª Fase conforme o jogo (Genshin: 20h; HSR/ZZZ: 14h)
+    const phase2Label = document.getElementById("forecast-phase-2-label");
+    if (phase2Label) {
+        const schedPhase2 = window.getBannerScheduleTime(gameId, 2);
+        phase2Label.innerText = schedPhase2.label;
+    }
 
     const curSelect = document.getElementById("forecast-current-rank");
     if (curSelect) {
@@ -1427,7 +1471,10 @@ window.saveCurrentGachaGoal = async function() {
 
     const nowDt = new Date();
     const daysPlanned = Math.max(1, parseInt(data.target_days) || 21);
+    const curPhase = window.forecastState.bannerPhase || 1;
+    const sched = window.getBannerScheduleTime(data.game_id, curPhase);
     const targetDt = new Date(nowDt.getTime() + daysPlanned * 86400000);
+    targetDt.setHours(sched.hour, sched.minute, 0, 0);
 
     try {
         const res = await fetch("/api/gacha/goals", {
@@ -1444,9 +1491,10 @@ window.saveCurrentGachaGoal = async function() {
                 has_daily_pass: Boolean(data.income_breakdown?.daily_pass?.active),
                 success_rate: data.success_rate,
                 projected_pulls: data.total_projected_pulls,
-                notes: `Meta de banner planejada para ${daysPlanned} dias (chegada em ${targetDt.toLocaleDateString('pt-BR')}).`,
+                notes: `Meta de banner planejada para ${daysPlanned} dias (${curPhase}ª Fase - chegada em ${window.formatGoalDateTimeBR(targetDt.toISOString(), true)}).`,
                 created_at: nowDt.toISOString(),
-                target_date: targetDt.toISOString()
+                target_date: targetDt.toISOString(),
+                banner_phase: curPhase
             })
         });
 
@@ -1633,6 +1681,10 @@ window.loadGachaGoals = async function(gameFilter = "all") {
             const targetDt = g.target_date ? new Date(g.target_date) : new Date(createdMs + targetDays * 86400000);
             const targetMs = isNaN(targetDt.getTime()) ? (createdMs + targetDays * 86400000) : targetDt.getTime();
 
+            const phaseNum = parseInt(g.banner_phase) || 1;
+            const phaseSched = window.getBannerScheduleTime(g.game_id, phaseNum);
+            const bannerTimeStr = g.banner_time || phaseSched.str;
+
             const createdFormatted = window.formatGoalDateTimeBR(createdDt.toISOString(), true);
             const targetFormatted = window.formatGoalDateTimeBR(targetDt.toISOString(), true);
             const isArrived = Boolean(g.is_arrived) || (targetMs <= Date.now());
@@ -1661,9 +1713,14 @@ window.loadGachaGoals = async function(gameFilter = "all") {
                                     <h4 style="margin: 2px 0 0 0; color: #fff; font-size: 16px; font-weight: 800; line-height: 1.2;">${g.character_name}</h4>
                                 </div>
                             </div>
-                            <span style="font-size: 12px; font-weight: 800; background: ${col}22; color: ${col}; padding: 4px 10px; border-radius: 8px; border: 1px solid ${col}44; white-space: nowrap;">
-                                Meta ${g.target_rank_str}
-                            </span>
+                            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                                <span style="font-size: 12px; font-weight: 800; background: ${col}22; color: ${col}; padding: 4px 10px; border-radius: 8px; border: 1px solid ${col}44; white-space: nowrap;">
+                                    Meta ${g.target_rank_str}
+                                </span>
+                                <span style="font-size: 10px; font-weight: 700; color: #fbbf24; background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); padding: 2px 8px; border-radius: 6px; white-space: nowrap;">
+                                    <i class="fa-solid fa-clock"></i> ${phaseNum}ª Fase (${bannerTimeStr})
+                                </span>
+                            </div>
                         </div>
 
                         <!-- Painel do Cronômetro em Tempo Real (Correndo até a Atualização / Banner) -->

@@ -406,6 +406,11 @@ def get_gacha_simulator_defaults(
     formatted_char_banners = [_format_banner_item(b, is_weapon=False) for b in char_banners_list]
     formatted_weapon_banners = [_format_banner_item(b, is_weapon=True) for b in weapon_banners_list]
 
+    # Identifica a fase ativa e o horário oficial do banner
+    phase = 2 if ("phase 2" in patch_info.lower() or "fase 2" in patch_info.lower()) else 1
+    sched_hour, sched_min = database.get_banner_schedule_time(clean_game, phase)
+    banner_time = f"{sched_hour:02d}:{sched_min:02d}"
+
     target_list = formatted_weapon_banners if clean_banner_type == "weapon" else formatted_char_banners
     if not target_list and formatted_char_banners:
         target_list = formatted_char_banners
@@ -429,6 +434,8 @@ def get_gacha_simulator_defaults(
     return {
         "game_id": clean_game,
         "banner_type": clean_banner_type,
+        "banner_phase": phase,
+        "banner_time": banner_time,
         "current_pity": current_pity,
         "is_guaranteed": is_guaranteed,
         "character_pity": char_pity,
@@ -479,6 +486,7 @@ def create_saved_gacha_goal(req_data: Dict[str, Any]) -> Dict[str, Any]:
         notes=req_data.get("notes") or "",
         target_date=req_data.get("target_date"),
         created_at=req_data.get("created_at"),
+        banner_phase=req_data.get("banner_phase", 1),
     )
     return {"status": "saved", "goal_id": goal_id}
 
