@@ -225,6 +225,24 @@ class TestStaticDataSuite(unittest.TestCase):
         self.assertTrue(len(w_prof.get("w_mat_tier4_name", "")) > 0)
         self.assertTrue(w_prof.get("w_mat_tier4_icon", "").startswith("https://"))
 
+    def test_roster_path_and_weapon_enrichment(self):
+        """Valida que get_roster enriquece path para HSR e weapon_type/path para Genshin."""
+        import asyncio
+        from services.roster_service import get_roster
+
+        hsr_roster = asyncio.run(get_roster("hsr"))
+        self.assertTrue(len(hsr_roster) > 0)
+        for char in hsr_roster:
+            self.assertIsNotNone(char.get("path"), f"HSR char {char.get('name')} sem path")
+
+        gen_roster = asyncio.run(get_roster("genshin"))
+        self.assertTrue(len(gen_roster) > 0)
+        for char in gen_roster:
+            self.assertIsNotNone(
+                char.get("weapon_type") or char.get("path"),
+                f"Genshin char {char.get('name')} sem weapon_type",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

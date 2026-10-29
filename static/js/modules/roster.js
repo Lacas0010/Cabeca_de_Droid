@@ -6,6 +6,44 @@
 // ==========================================================================
 // RENDERIZAÇÃO DA GALERIA DE PERSONAGENS
 // ==========================================================================
+const HSR_CHAR_PATHS = {"acheron": "Nihility", "firefly": "Destruction", "feixiao": "Hunt", "robin": "Harmony", "ruan_mei": "Harmony", "ruan mei": "Harmony", "aventurine": "Preservation", "black_swan": "Nihility", "black swan": "Nihility", "sparkle": "Harmony", "sunday": "Harmony", "fugue": "Nihility", "castorice": "Remembrance", "boothill": "Hunt", "dr_ratio": "Hunt", "dr. ratio": "Hunt", "topaz": "Hunt", "topaz & dinheirinho": "Hunt", "jingliu": "Destruction", "dan_heng_il": "Destruction", "dan heng • embebidor lunae": "Destruction", "blade": "Destruction", "kafka": "Nihility", "silver_wolf": "Nihility", "loba prateada (silver wolf)": "Nihility", "seele": "Hunt", "jing_yuan": "Erudition", "jing yuan": "Erudition", "luocha": "Abundance", "huohuo": "Abundance", "lingsha": "Abundance", "jiaoqiu": "Nihility", "bronya": "Harmony", "tingyun": "Harmony", "clara": "Destruction", "gepard": "Preservation", "bailu": "Abundance", "himeko": "Erudition", "welt": "Nihility", "7_de_março": "Hunt", "7 de março": "Hunt", "dan_heng": "Hunt", "dan heng": "Hunt", "loba_prateada": "Nihility", "loba prateada": "Nihility", "arlan": "Destruction", "asta": "Harmony", "herta": "Erudition", "saber": "Destruction", "archer": "Hunt", "serval": "Erudition", "natasha": "Abundance", "pela": "Nihility", "sampo": "Nihility", "hook": "Destruction", "lynx": "Abundance", "luka": "Nihility", "topaz_e_dinheirinho": "Hunt", "topaz e dinheirinho": "Hunt", "qingque": "Erudition", "sushang": "Hunt", "yukong": "Harmony", "fu_xuan": "Preservation", "fu xuan": "Preservation", "yanqing": "Hunt", "guinaifen": "Nihility", "dan_heng_-_embebidor_lunae": "Destruction", "dan heng - embebidor lunae": "Destruction", "xueyi": "Destruction", "hanya": "Harmony", "yunli": "Destruction", "moze": "Hunt", "gallagher": "Abundance", "argenti": "Erudition", "dr._ratio": "Hunt", "cisne_negro": "Nihility", "cisne negro": "Nihility", "vaga-lume": "Destruction", "misha": "Destruction", "jade": "Erudition", "rappa": "Erudition", "a_dália": "Nihility", "a dália": "Nihility", "a_herta": "Erudition", "a herta": "Erudition", "aglaea": "Remembrance", "tribbie": "Harmony", "mydei": "Destruction", "anaxa": "Erudition", "cipher": "Nihility", "phainon": "Destruction", "hyacine": "Remembrance", "hysilens": "Nihility", "cerydra": "Harmony", "noite_eterna": "Remembrance", "noite eterna": "Remembrance", "dan_heng_-_permansor_terrae": "Preservation", "dan heng - permansor terrae": "Preservation", "cyrene": "Remembrance", "sparxie": "Elation", "yao_guang": "Elation", "yao guang": "Elation", "pearl": "Elation", "ashveil": "Hunt", "evanescia": "Elation", "loba_prateada_nv._999": "Elation", "loba prateada nv. 999": "Elation", "mortenax_blade": "Nihility", "mortenax blade": "Nihility", "rin_tohsaka": "Erudition", "rin tohsaka": "Erudition", "gilgamesh": "Destruction", "himeko_-_nova": "Erudition", "himeko - nova": "Erudition", "robin_-_summeretto": "Remembrance", "robin - summeretto": "Harmony", "aventurine_-_veraneio": "Elation", "aventurine - veraneio": "Elation", "{nickname}": "Elation", "novo_personagem_teste": "Destruction", "novo personagem teste": "Destruction", "vagalume": "Destruction", "luciernaga": "Destruction", "cisne": "Nihility", "dr ratio": "Hunt", "doutor ratio": "Hunt", "doctor ratio": "Hunt", "ratio": "Hunt", "aqueronte": "Nihility", "danheng": "Hunt", "lobo prateado": "Nihility", "loba plateada": "Nihility", "silver wolf": "Nihility", "aventurina": "Preservation", "faísca": "Harmony", "faisca": "Harmony", "hanabi": "Harmony", "domingo": "Harmony", "robin summeretto": "Harmony", "robin_summeretto": "Harmony", "himeko nova": "Erudition", "himeko_nova": "Erudition"};
+const GENSHIN_CHAR_WEAPONS = {"albedo": "Sword", "aloy": "Bow", "amber": "Bow", "barbara": "Catalyst", "bennett": "Sword", "diluc": "Claymore", "diona": "Bow", "eula": "Claymore", "fischl": "Bow", "jean": "Sword", "kaeya": "Sword", "klee": "Catalyst", "lisa": "Catalyst", "mika": "Polearm", "mona": "Catalyst", "noelle": "Claymore", "razor": "Claymore", "rosaria": "Polearm", "sucrose": "Catalyst", "venti": "Bow", "baizhu": "Catalyst", "beidou": "Claymore", "chongyun": "Claymore", "gaming": "Claymore", "ganyu": "Bow", "hu_tao": "Polearm", "hu tao": "Polearm", "kaedehara_kazuha": "Sword", "kaedehara kazuha": "Sword", "kazuha": "Sword", "keqing": "Sword", "lan_yan": "Catalyst", "lan yan": "Catalyst", "ningguang": "Catalyst", "qiqi": "Sword", "shenhe": "Polearm", "xiangling": "Polearm", "xianyun": "Catalyst", "xiao": "Polearm", "xingqiu": "Sword", "xinyan": "Claymore", "yanfei": "Catalyst", "yaoyao": "Polearm", "yelan": "Bow", "yun_jin": "Polearm", "yun jin": "Polearm", "yunjin": "Polearm", "zhongli": "Polearm", "arataki_itto": "Claymore", "arataki itto": "Claymore", "itto": "Claymore", "kamisato_ayaka": "Sword", "kamisato ayaka": "Sword", "ayaka": "Sword", "kamisato_ayato": "Sword", "kamisato ayato": "Sword", "ayato": "Sword", "chiori": "Sword", "gorou": "Bow", "kirara": "Sword", "kujou_sara": "Bow", "kujou sara": "Bow", "sara": "Bow", "kuki_shinobu": "Sword", "kuki shinobu": "Sword", "shinobu": "Sword", "raiden_shogun": "Polearm", "raiden shogun": "Polearm", "sangonomiya_kokomi": "Catalyst", "sangonomiya kokomi": "Catalyst", "kokomi": "Catalyst", "sayu": "Claymore", "shikanoin_heizou": "Catalyst", "shikanoin heizou": "Catalyst", "heizou": "Catalyst", "thoma": "Polearm", "yae_miko": "Catalyst", "yae miko": "Catalyst", "yoimiya": "Bow", "alhaitham": "Sword", "candace": "Polearm", "collei": "Bow", "cyno": "Polearm", "dehya": "Claymore", "dori": "Claymore", "faruzan": "Bow", "kaveh": "Claymore", "layla": "Sword", "nahida": "Catalyst", "nilou": "Sword", "sethos": "Bow", "tighnari": "Bow", "wanderer": "Catalyst", "andarilho": "Catalyst", "arlecchino": "Polearm", "charlotte": "Catalyst", "chevreuse": "Polearm", "clorinde": "Sword", "emilie": "Polearm", "freminet": "Claymore", "furina": "Sword", "lynette": "Sword", "lyney": "Bow", "navia": "Claymore", "neuvillette": "Catalyst", "sigewinne": "Bow", "wriothesley": "Catalyst", "chasca": "Bow", "citlali": "Catalyst", "iansan": "Polearm", "kachina": "Polearm", "kinich": "Claymore", "mavuika": "Claymore", "mualani": "Catalyst", "ororon": "Bow", "xilonen": "Sword", "tartaglia": "Bow", "viajante": "Sword", "hutao": "Polearm", "shogun_raiden": "Polearm", "shogun raiden": "Polearm", "yumemizuki_mizuki": "Catalyst", "yumemizuki mizuki": "Catalyst", "varesa": "Catalyst", "escoffier": "Polearm", "ifa": "Catalyst", "skirk": "Sword", "dahlia": "Sword", "ineffa": "Polearm", "lauma": "Catalyst", "flins": "Polearm", "aino": "Claymore", "nefer": "Catalyst", "durin": "Sword", "jahoda": "Bow", "mavuika_(teste)": "Claymore", "mavuika (teste)": "Claymore", "hutao_(teste)": "Polearm", "hutao (teste)": "Polearm", "columbina": "Catalyst", "arconte_pyro_(teste)": "Claymore", "arconte pyro (teste)": "Claymore", "raiden": "Polearm", "yae": "Catalyst", "mochileiro": "Catalyst", "trotamundos": "Catalyst", "scaramouche": "Catalyst", "arlequino": "Polearm"};
+
+function getCharacterPath(char) {
+    if (char && char.path) return String(char.path);
+    const nameLower = (char && char.name ? char.name : "").toLowerCase().trim();
+    const slug = nameLower.replace(/\s+/g, "_");
+    if (HSR_CHAR_PATHS[slug]) return HSR_CHAR_PATHS[slug];
+    if (HSR_CHAR_PATHS[nameLower]) return HSR_CHAR_PATHS[nameLower];
+    if (nameLower.includes("desbrav") || nameLower.includes("trailblazer")) {
+        const elem = (char && char.element ? char.element : "").toLowerCase();
+        if (elem.includes("ice") || elem.includes("gelo")) return "Remembrance";
+        if (elem.includes("fire") || elem.includes("fogo")) return "Preservation";
+        if (elem.includes("imaginary") || elem.includes("imagin")) return "Harmony";
+        if (elem.includes("physical") || elem.includes("físic") || elem.includes("fisic")) return "Destruction";
+    }
+    return "";
+}
+
+function getCharacterWeapon(char) {
+    if (char && char.weapon_type) return String(char.weapon_type);
+    if (char && char.path && ["sword", "claymore", "polearm", "bow", "catalyst"].includes(String(char.path).toLowerCase())) return String(char.path);
+    const nameLower = (char && char.name ? char.name : "").toLowerCase().trim();
+    const slug = nameLower.replace(/\s+/g, "_");
+    if (GENSHIN_CHAR_WEAPONS[slug]) return GENSHIN_CHAR_WEAPONS[slug];
+    if (GENSHIN_CHAR_WEAPONS[nameLower]) return GENSHIN_CHAR_WEAPONS[nameLower];
+    const wName = (typeof char.weapon === "object" && char.weapon ? char.weapon.name : char.weapon_name) || "";
+    if (wName) {
+        const wLower = String(wName).toLowerCase();
+        if (wLower.includes("arco") || wLower.includes("bow") || wLower.includes("cordas") || wLower.includes("asa gelada") || wLower.includes("estilingue") || wLower.includes("harpa") || wLower.includes("caçador")) return "Bow";
+        if (wLower.includes("lança") || wLower.includes("lanca") || wLower.includes("polearm") || wLower.includes("spear") || wLower.includes("borla") || wLower.includes("dragão") || wLower.includes("dragao") || wLower.includes("subjugadora") || wLower.includes("perdição") || wLower.includes("perdicao")) return "Polearm";
+        if (wLower.includes("espadão") || wLower.includes("espadao") || wLower.includes("claymore") || wLower.includes("grande espada") || wLower.includes("túmulo") || wLower.includes("tumulo") || wLower.includes("sombra branca")) return "Claymore";
+        if (wLower.includes("espada") || wLower.includes("sword") || wLower.includes("lâmina") || wLower.includes("lamina") || wLower.includes("farpa") || wLower.includes("espinho") || wLower.includes("chuva floral") || wLower.includes("cortadora") || wLower.includes("falcão") || wLower.includes("falcao")) return "Sword";
+        if (wLower.includes("catalisador") || wLower.includes("catalyst") || wLower.includes("guia") || wLower.includes("sinfonia") || wLower.includes("contos") || wLower.includes("atlas") || wLower.includes("oração") || wLower.includes("oracao") || wLower.includes("olho") || wLower.includes("éditos") || wLower.includes("editos") || wLower.includes("memórias") || wLower.includes("memorias") || wLower.includes("codex") || wLower.includes("protótipo âmbar") || wLower.includes("prototipo ambar")) return "Catalyst";
+    }
+    return "";
+}
+
 async function loadRoster(gameId) {
     const gallery = document.getElementById(`gallery-${gameId}`);
     gallery.innerHTML = Array(12).fill(0).map(() => `
@@ -21,6 +59,14 @@ async function loadRoster(gameId) {
     try {
         const res = await fetch(`/api/roster/${gameId}`);
         const roster = await res.json();
+        
+        // Garante preenchimento de path (HSR) e weapon_type (Genshin) mesmo sob cache local antigo
+        if (Array.isArray(roster)) {
+            roster.forEach(char => {
+                if (gameId === 'hsr' && !char.path) char.path = getCharacterPath(char);
+                if (gameId === 'genshin' && !char.weapon_type) char.weapon_type = getCharacterWeapon(char);
+            });
+        }
         
         // Salva no estado global e atualiza os gráficos SVG e endgame
         globalRoster[gameId] = roster || [];
@@ -51,6 +97,8 @@ async function loadRoster(gameId) {
         // Estado dos filtros combinados
         let activeElementFilter = "all";
         let activeRarityFilter = "all";
+        let activePathFilter = "all";
+        let activeWeaponFilter = "all";
         let searchQuery = "";
         
         const searchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
@@ -80,7 +128,35 @@ async function loadRoster(gameId) {
                     }
                 }
                 
-                return matchesSearch && matchesElement && matchesRarity;
+                let matchesPath = true;
+                if (gameId === "hsr" && activePathFilter !== "all") {
+                    const charPath = String(char.path || getCharacterPath(char) || "").toLowerCase();
+                    const pLower = activePathFilter.toLowerCase();
+                    if (pLower === "destruction") matchesPath = charPath.includes("destruc") || charPath.includes("destrui");
+                    else if (pLower === "hunt") matchesPath = charPath.includes("hunt") || charPath.includes("caça") || charPath.includes("caca");
+                    else if (pLower === "erudition") matchesPath = charPath.includes("erudi");
+                    else if (pLower === "harmony") matchesPath = charPath.includes("harmon");
+                    else if (pLower === "nihility") matchesPath = charPath.includes("nihil") || charPath.includes("inexist");
+                    else if (pLower === "preservation") matchesPath = charPath.includes("preserv");
+                    else if (pLower === "abundance") matchesPath = charPath.includes("abund");
+                    else if (pLower === "remembrance") matchesPath = charPath.includes("remembr") || charPath.includes("reminisc");
+                    else if (pLower === "elation") matchesPath = charPath.includes("elat") || charPath.includes("eufor") || charPath.includes("júbil") || charPath.includes("jubil");
+                    else matchesPath = charPath === pLower;
+                }
+
+                let matchesWeapon = true;
+                if (gameId === "genshin" && activeWeaponFilter !== "all") {
+                    const charWeapon = String(char.weapon_type || getCharacterWeapon(char) || char.path || "").toLowerCase();
+                    const wLower = activeWeaponFilter.toLowerCase();
+                    if (wLower === "sword") matchesWeapon = (charWeapon.includes("sword") || charWeapon.includes("espada")) && !charWeapon.includes("espadão") && !charWeapon.includes("espadao");
+                    else if (wLower === "claymore") matchesWeapon = charWeapon.includes("claymore") || charWeapon.includes("espadão") || charWeapon.includes("espadao");
+                    else if (wLower === "polearm") matchesWeapon = charWeapon.includes("polearm") || charWeapon.includes("lança") || charWeapon.includes("lanca") || charWeapon.includes("spear");
+                    else if (wLower === "bow") matchesWeapon = charWeapon.includes("bow") || charWeapon.includes("arco");
+                    else if (wLower === "catalyst") matchesWeapon = charWeapon.includes("catalyst") || charWeapon.includes("catalisador");
+                    else matchesWeapon = charWeapon === wLower;
+                }
+                
+                return matchesSearch && matchesElement && matchesRarity && matchesPath && matchesWeapon;
             });
             
             if (filtered.length === 0) {
@@ -139,7 +215,7 @@ async function loadRoster(gameId) {
         };
         
         // Configura ouvintes de clique nos botões de filtro de elementos
-        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters)`);
+        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters):not(.weapon-filters):not(.path-filters)`);
         if (filterContainer) {
             const filterBtns = filterContainer.querySelectorAll(".filter-btn");
             filterBtns.forEach(btn => {
@@ -177,6 +253,44 @@ async function loadRoster(gameId) {
                     freshRarityBtns.forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
                     activeRarityFilter = btn.getAttribute("data-rarity");
+                    renderCards();
+                });
+            });
+        }
+        
+        // Configura ouvintes de clique nos botões de filtro de caminho (HSR)
+        const pathContainer = document.querySelector(`.path-filters[data-game="${gameId}"]`);
+        if (pathContainer) {
+            const pathBtns = pathContainer.querySelectorAll(".filter-btn");
+            pathBtns.forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+            const freshPathBtns = pathContainer.querySelectorAll(".filter-btn");
+            freshPathBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    freshPathBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    activePathFilter = btn.getAttribute("data-path") || "all";
+                    renderCards();
+                });
+            });
+        }
+
+        // Configura ouvintes de clique nos botões de filtro de arma (Genshin)
+        const weaponContainer = document.querySelector(`.weapon-filters[data-game="${gameId}"]`);
+        if (weaponContainer) {
+            const weaponBtns = weaponContainer.querySelectorAll(".filter-btn");
+            weaponBtns.forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+            const freshWeaponBtns = weaponContainer.querySelectorAll(".filter-btn");
+            freshWeaponBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    freshWeaponBtns.forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    activeWeaponFilter = btn.getAttribute("data-weapon") || "all";
                     renderCards();
                 });
             });
@@ -2120,6 +2234,12 @@ async function generateBuildCardCanvas(char, gameId) {
             const mainY = rowY + (rowH - mainH) / 2;
             drawRoundedRect(rowX + 210, mainY, mainW, mainH, 8, "rgba(245, 158, 11, 0.12)", "rgba(245, 158, 11, 0.3)", 1);
             
+            let mainFontSize = 12;
+            ctx.font = `bold ${mainFontSize}px sans-serif`;
+            while (ctx.measureText(mainText).width > mainW - 14 && mainFontSize > 8) {
+                mainFontSize -= 0.5;
+                ctx.font = `bold ${mainFontSize}px sans-serif`;
+            }
             ctx.fillStyle = "#fbbf24";
             ctx.textAlign = "center";
             ctx.fillText(mainText, rowX + 210 + mainW / 2, mainY + 20);

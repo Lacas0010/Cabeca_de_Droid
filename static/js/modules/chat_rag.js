@@ -744,7 +744,7 @@ function extractTeamCardStats(gameId, char) {
             { label: isEn ? "Impact" : "Impacto", val: findStat(["Impacto", "Impactoo", "Impact"], "0"), highlight: true },
             { label: isEn ? "CRIT Rate" : "Tx. CR", val: findStat(["Taxa CRIT", "Taxa Crítica", "CRIT Rate"], "5.0%"), crit: true },
             { label: isEn ? "CRIT DMG" : "Dano CR", val: findStat(["Dano CRIT", "Dano Crítico", "CRIT DMG"], "50.0%"), crit: true },
-            { label: isEn ? "Anomaly Prof." : "Prof. Anom", val: findStat(["Prof. Anomalia", "Proficiência de Anomalia", "Anomaly Proficiency"], "0"), highlight: true },
+            { label: isEn ? "Anom. Prof" : "Prof. Anom", val: findStat(["Prof. Anomalia", "Proficiência de Anomalia", "Anomaly Proficiency"], "0"), highlight: true },
             { label: isEn ? "PEN / Regen" : "PEN / Recup", val: findStat(["Perfuração", "Taxa de Perfuração", "Recup. Energia", "Recuperação de Energia"], "0"), highlight: true }
         ];
     }
@@ -822,6 +822,100 @@ function getCharacterSplashArt(gameId, char) {
     return proxyUrl(char.icon) || `/assets/${gameId}_icon.png`;
 }
 
+// Helper para normalizar e compactar nomes de atributos em chips de relíquias / artefatos / discos
+function formatChipStat(raw, gameId, isEn) {
+    if (!raw) return "-";
+    let s = String(raw).trim();
+    const hasPct = s.includes("%");
+    s = s.replace(/\s*\([^)]*\)/g, "").trim();
+    const lower = s.toLowerCase();
+
+    // 1. Taxa de Regeneração de Energia / ERR
+    if (lower.includes("regen") || lower.includes("err") || lower.includes("recupera") || (lower.includes("recarga") && gameId === "hsr")) {
+        return "ERR";
+    }
+    // 2. Recarga de Energia / ER (Genshin)
+    if (lower.includes("recarga") || lower.includes("recharge") || lower === "er") {
+        return isEn ? "ER" : "Recarga";
+    }
+    // 3. Taxa Crítica / CRIT Rate
+    if (lower.includes("taxa") || lower.includes("rate") || lower.includes("crit rate") || lower.includes("tx. cr")) {
+        return isEn ? "CRIT%" : "Taxa%";
+    }
+    // 4. Dano Crítico / CRIT DMG
+    if (lower.includes("dano crit") || lower.includes("crit dmg") || lower.includes("cdmg") || lower.includes("dano cr")) {
+        return isEn ? "CDMG%" : "Dano%";
+    }
+    // 5. Efeito de Quebra / Break Effect
+    if (lower.includes("quebra") || lower.includes("break")) {
+        return isEn ? "Break%" : "Quebra%";
+    }
+    // 6. Taxa de Acerto de Efeito / EHR
+    if (lower.includes("acerto") || lower.includes("ehr") || lower.includes("hit rate")) {
+        return isEn ? "EHR%" : "Acerto%";
+    }
+    // 7. Resistência a Efeito / RES
+    if (lower.includes("res a efeito") || lower.includes("res efeito") || lower.includes("effect res")) {
+        return "RES%";
+    }
+    // 8. Bônus de Cura / Healing Bonus
+    if (lower.includes("cura") || lower.includes("heal")) {
+        return isEn ? "Heal%" : "Cura%";
+    }
+    // 9. Velocidade / Speed
+    if (lower.includes("vel") || lower.includes("spd") || lower.includes("speed")) {
+        return isEn ? "SPD" : "VEL";
+    }
+    // 10. Proficiência Elemental / EM
+    if ((lower.includes("profici") && !lower.includes("anom")) || lower.includes("elemental mastery") || lower === "em") {
+        return "EM";
+    }
+    // 11. Proficiência de Anomalia / AP
+    if (lower.includes("anomalia") || lower.includes("anomaly")) {
+        return "AP";
+    }
+    // 12. Perfuração / PEN Ratio
+    if (lower.includes("perfur") || lower.includes("pen")) {
+        return "PEN%";
+    }
+    // 13. Impacto / Impact
+    if (lower.includes("impact")) {
+        return isEn ? "Impact" : "Impacto";
+    }
+    // 14. Bônus Elementais
+    if (lower.includes("fogo") || lower.includes("fire") || lower.includes("pyro")) return isEn ? (gameId === "genshin" ? "Pyro%" : "Fire%") : "D. Fogo%";
+    if (lower.includes("gelo") || lower.includes("ice") || lower.includes("cryo")) return isEn ? (gameId === "genshin" ? "Cryo%" : "Ice%") : "D. Gelo%";
+    if (lower.includes("vento") || lower.includes("wind") || lower.includes("anemo")) return isEn ? (gameId === "genshin" ? "Anemo%" : "Wind%") : "D. Vento%";
+    if (lower.includes("raio") || lower.includes("lightning") || lower.includes("electro") || lower.includes("elétr")) return isEn ? (gameId === "genshin" ? "Electro%" : (gameId === "zzz" ? "Elec%" : "Light%")) : "D. Raio%";
+    if (lower.includes("quânt") || lower.includes("quantum")) return isEn ? "Quant%" : "D. Quânt%";
+    if (lower.includes("imagin") || lower.includes("imaginary")) return isEn ? "Imag%" : "D. Imag%";
+    if (lower.includes("físic") || lower.includes("physic")) return isEn ? "Phys%" : "D. Físico%";
+    if (lower.includes("hydro")) return isEn ? "Hydro%" : "D. Hydro%";
+    if (lower.includes("geo")) return isEn ? "Geo%" : "D. Geo%";
+    if (lower.includes("dendro")) return isEn ? "Dendro%" : "D. Dendro%";
+    if (lower.includes("éter") || lower.includes("ether")) return isEn ? "Ether%" : "D. Éter%";
+    if (lower.includes("dano elem") || lower.includes("elem. dmg")) return isEn ? "Elem%" : "D. Elem%";
+
+    // 15. Stats Base (ATK, HP, DEF)
+    if (lower.includes("atq") || lower.includes("atk") || lower.includes("ataque") || lower.includes("attack")) {
+        return isEn ? (hasPct ? "ATK%" : "ATK") : (hasPct ? "ATQ%" : "ATQ");
+    }
+    if (lower.includes("hp") || lower.includes("vida") || lower.includes("pv")) {
+        return isEn ? (hasPct ? "HP%" : "HP") : (hasPct ? "Vida%" : "Vida");
+    }
+    if (lower.includes("def")) {
+        return hasPct ? "DEF%" : "DEF";
+    }
+
+    // Fallback seguro via sanitizeStatName
+    let clean = typeof sanitizeStatName === "function" ? sanitizeStatName(s) : s;
+    if (clean.length > 8) {
+        clean = clean.substring(0, 7) + ".";
+    }
+    if (hasPct && !clean.includes("%")) clean += "%";
+    return clean;
+}
+
 // 11. Extração de Conjuntos, Ícones Representativos e Atributos Principais
 function extractTeamCardRelics(gameId, char) {
     const relics = char.relics || char.artifacts || char.discs || char.pieces || [];
@@ -896,43 +990,38 @@ function extractTeamCardRelics(gameId, char) {
     }
     const setIcon = setIcons.length > 0 ? setIcons[0] : null;
 
-    const cleanChipStat = (raw) => {
-        if (!raw) return "-";
-        let s = String(raw).trim();
-        const hasPct = s.includes("%");
-        s = s.replace(/\s*\([^)]*\)/g, "").trim();
-        s = sanitizeStatName(s);
-        s = s.replace(/Taxa CRIT/i, "Taxa").replace(/Dano CRIT/i, "Dano");
-        s = s.replace(/Recarga de Energia/i, "Recarga").replace(/Bônus de Cura/i, "Cura");
-        s = s.replace(/Bônus de Dano ([A-Za-zÀ-ÿ]+)/i, "D. $1");
-        if (hasPct && !s.includes("%")) s += "%";
-        return s;
-    };
+    const isEn = Boolean(
+        window.isEn ||
+        (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') ||
+        window.currentLang === 'en' ||
+        (typeof localStorage !== 'undefined' && localStorage.getItem("app_language") === 'en')
+    );
+    const cleanChipStat = (raw) => formatChipStat(raw, gameId, isEn);
 
     const chips = [];
     if (gameId === "genshin") {
         const sands = relics.find(r => r.slot === "3" || r.slot === "areia" || String(r.name).toLowerCase().includes("areia"));
         const goblet = relics.find(r => r.slot === "4" || r.slot === "calice" || r.slot === "cálice" || r.slot === "copo");
         const circlet = relics.find(r => r.slot === "5" || r.slot === "tiara" || r.slot === "coroa");
-        chips.push({ slot: "A", val: cleanChipStat(sands ? sands.main : "ATQ%") });
-        chips.push({ slot: "C", val: cleanChipStat(goblet ? goblet.main : "Dano Elem") });
-        chips.push({ slot: "T", val: cleanChipStat(circlet ? circlet.main : "CRIT") });
+        chips.push({ slot: "A", val: cleanChipStat(sands ? sands.main : (isEn ? "ATK%" : "ATQ%")) });
+        chips.push({ slot: "C", val: cleanChipStat(goblet ? goblet.main : (isEn ? "Elem%" : "D. Elem%")) });
+        chips.push({ slot: "T", val: cleanChipStat(circlet ? circlet.main : (isEn ? "CRIT%" : "Taxa%")) });
     } else if (gameId === "hsr") {
         const body = relics.find(r => String(r.slot).toLowerCase().includes("corpo") || r.slot === "3");
         const feet = relics.find(r => String(r.slot).toLowerCase().includes("pés") || String(r.slot).toLowerCase().includes("bota") || r.slot === "4");
         const sphere = relics.find(r => String(r.slot).toLowerCase().includes("esfera") || r.slot === "5");
         const rope = relics.find(r => String(r.slot).toLowerCase().includes("corda") || r.slot === "6");
-        chips.push({ slot: "C", val: cleanChipStat(body ? body.main : "CRIT") });
-        chips.push({ slot: "P", val: cleanChipStat(feet ? feet.main : "VEL") });
-        chips.push({ slot: "E", val: cleanChipStat(sphere ? sphere.main : "Dano Elem") });
-        chips.push({ slot: "L", val: cleanChipStat(rope ? rope.main : "ERR/ATQ") });
+        chips.push({ slot: "C", val: cleanChipStat(body ? body.main : (isEn ? "CRIT%" : "Taxa%")) });
+        chips.push({ slot: "P", val: cleanChipStat(feet ? feet.main : (isEn ? "SPD" : "VEL")) });
+        chips.push({ slot: "E", val: cleanChipStat(sphere ? sphere.main : (isEn ? "Elem%" : "D. Elem%")) });
+        chips.push({ slot: "L", val: cleanChipStat(rope ? rope.main : "ERR") });
     } else if (gameId === "zzz") {
         const d4 = relics.find(r => String(r.slot).includes("4"));
         const d5 = relics.find(r => String(r.slot).includes("5"));
         const d6 = relics.find(r => String(r.slot).includes("6"));
-        chips.push({ slot: "4", val: cleanChipStat(d4 ? d4.main : "CRIT/ATQ") });
-        chips.push({ slot: "5", val: cleanChipStat(d5 ? d5.main : "Dano Elem") });
-        chips.push({ slot: "6", val: cleanChipStat(d6 ? d6.main : "Anomalia/ER") });
+        chips.push({ slot: "4", val: cleanChipStat(d4 ? d4.main : (isEn ? "CRIT%" : "Taxa%")) });
+        chips.push({ slot: "5", val: cleanChipStat(d5 ? d5.main : (isEn ? "Elem%" : "D. Elem%")) });
+        chips.push({ slot: "6", val: cleanChipStat(d6 ? d6.main : "ERR") });
     }
 
     return { setTitle, setLines, setIcon, setIcons, chips };
@@ -1115,7 +1204,7 @@ function renderTeamExportCard(gameId) {
                     <div class="subcard-stats-matrix-2x4">
                         ${stats.map(st => `
                             <div class="subcard-stat-cell">
-                                <span class="subcard-stat-label" title="${st.label}">${st.label}</span>
+                                <span class="subcard-stat-label" title="${st.label}" ${st.label && st.label.length > 7 ? 'style="font-size: 7.2px;"' : ''}>${st.label}</span>
                                 <span class="subcard-stat-val ${st.highlight ? 'highlight' : ''} ${st.crit ? 'crit' : ''}" title="${st.val}">${st.val}</span>
                             </div>
                         `).join("")}

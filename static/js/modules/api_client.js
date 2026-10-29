@@ -47,7 +47,7 @@ const ELEMENT_MAPPING = {
 
 // Helper global para formatar o nome de exibição de elementos (ex: ELEMENT_300 -> Lumiflux)
 function formatElementDisplayName(rawElem) {
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
     if (!rawElem) return isEn ? "Physical" : "Físico";
     const str = String(rawElem).trim();
     const upper = str.toUpperCase();
@@ -190,7 +190,7 @@ const CHARACTER_NAME_MAP_EN = {
 
 function formatCharacterName(rawName) {
     if (!rawName) return "";
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
     const str = String(rawName).trim();
     if (!isEn) return str;
 
@@ -254,7 +254,7 @@ const PATH_MAP_PT = {
 
 function formatPathName(rawPath, gameId) {
     if (!rawPath) return "";
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
     const str = String(rawPath).trim();
     const lower = str.toLowerCase();
     if (isEn) {
@@ -274,7 +274,7 @@ const STAT_SHORT_NAMES_EN = {
     "efeito de quebra": "Break Effect", "quebra": "Break Effect",
     "taxa de acerto de efeito": "Effect Hit Rate", "acerto efeito": "Effect Hit Rate", "acerto de efeito": "Effect Hit Rate",
     "resistência a efeito": "Effect RES", "res a efeito": "Effect RES", "res efeito": "Effect RES",
-    "taxa de regeneração de energia": "Energy Regen Rate", "taxa de reg. de energia": "Energy Regen Rate", "regeneração de energia": "Energy Regen Rate", "regen. energia": "Energy Regen",
+    "taxa de regeneração de energia": "Energy Regen", "taxa de reg. de energia": "Energy Regen", "taxa de regen. energia": "Energy Regen", "taxa de regen de energia": "Energy Regen", "regeneração de energia": "Energy Regen", "regen. energia": "Energy Regen", "energy regeneration rate": "Energy Regen", "energy regen rate": "Energy Regen", "energy regen": "Energy Regen", "energy recharge": "Energy Recharge", "elemental mastery": "Elemental Mastery", "outgoing healing boost": "Healing Bonus", "break effect": "Break Effect", "effect hit rate": "Effect Hit Rate", "effect res": "Effect RES", "anomaly proficiency": "Anomaly Prof.", "anomaly mastery": "Anomaly Mastery", "pen ratio": "PEN Ratio",
     "recuperação de energia": "Energy Regen", "recup. energia": "Energy Regen",
     "recarga de energia": "Energy Recharge", "recarga": "Energy Recharge",
     "proficiência elemental": "Elemental Mastery", "proficiência elementar": "Elemental Mastery", "prof. elementar": "Elemental Mastery", "prof. element.": "Elemental Mastery",
@@ -330,6 +330,8 @@ const STAT_SHORT_NAMES = {
     "Regeneração de Energia": "Regen. Energia",
     "Taxa de Reg. de Energia": "Regen. Energia",
     "Taxa de Regeneração de Energia": "Regen. Energia",
+    "Taxa de Regen. Energia": "Regen. Energia",
+    "Taxa de Regen de Energia": "Regen. Energia",
 
     // Genshin Impact
     "Proficiência Elemental": "Prof. Elementar",
@@ -444,7 +446,7 @@ function isStatRecommendedForChar(statKey, char) {
 
 function sanitizeStatName(statText) {
     if (!statText) return "";
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
     let s = String(statText).trim();
     if (isEn) {
         const lower = s.toLowerCase();

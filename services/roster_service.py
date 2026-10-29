@@ -832,11 +832,104 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
             )
             if man_entry:
                 if not char.get("path"):
-                    char["path"] = man_entry.get("path") or man_entry.get("weapon_type") or man_entry.get("specialty")
+                    char["path"] = (
+                        man_entry.get("path")
+                        or man_entry.get("weapon")
+                        or man_entry.get("weapon_type")
+                        or man_entry.get("specialty")
+                    )
+                if not char.get("weapon_type"):
+                    char["weapon_type"] = man_entry.get("weapon_type") or man_entry.get("weapon")
                 if not char.get("specialty"):
                     char["specialty"] = man_entry.get("specialty") or man_entry.get("path")
                 if not char.get("element") and man_entry.get("element"):
                     char["element"] = man_entry.get("element")
+
+            if game_id == "genshin":
+                if not char.get("weapon_type"):
+                    w_name = (
+                        (char.get("weapon") or {}).get("name")
+                        if isinstance(char.get("weapon"), dict)
+                        else char.get("weapon_name")
+                    )
+                    if w_name:
+                        w_lower = str(w_name).lower()
+                        if any(k in w_lower for k in ["arco", "bow", "cordas", "asa gelada"]):
+                            char["weapon_type"] = "Bow"
+                        elif any(
+                            k in w_lower
+                            for k in [
+                                "lança",
+                                "lanca",
+                                "spear",
+                                "polearm",
+                                "borla",
+                                "subjugadora",
+                                "perdição",
+                                "perdicao",
+                                "dragão",
+                                "dragao",
+                            ]
+                        ):
+                            char["weapon_type"] = "Polearm"
+                        elif any(
+                            k in w_lower
+                            for k in [
+                                "espadão",
+                                "espadao",
+                                "claymore",
+                                "grande espada",
+                                "túmulo",
+                                "tumulo",
+                            ]
+                        ):
+                            char["weapon_type"] = "Claymore"
+                        elif any(
+                            k in w_lower
+                            for k in [
+                                "espada",
+                                "sword",
+                                "lâmina",
+                                "lamina",
+                                "cortadora",
+                                "farpa",
+                                "espinho",
+                                "chuva floral",
+                            ]
+                        ):
+                            char["weapon_type"] = "Sword"
+                        elif any(
+                            k in w_lower
+                            for k in [
+                                "catalisador",
+                                "catalyst",
+                                "guia",
+                                "sinfonia",
+                                "contos",
+                                "atlas",
+                                "oração",
+                                "oracao",
+                                "olho",
+                                "éditos",
+                                "editos",
+                                "memórias",
+                                "memorias",
+                            ]
+                        ):
+                            char["weapon_type"] = "Catalyst"
+                if not char.get("path"):
+                    char["path"] = char.get("weapon_type")
+            elif game_id == "hsr":
+                if not char.get("path") and "desbravador" in c_name.lower():
+                    elem = (char.get("element") or "").lower()
+                    if "physical" in elem or "físico" in elem or "fisico" in elem:
+                        char["path"] = "Destruction"
+                    elif "fire" in elem or "fogo" in elem:
+                        char["path"] = "Preservation"
+                    elif "imaginary" in elem or "imaginário" in elem or "imaginario" in elem:
+                        char["path"] = "Harmony"
+                    elif "ice" in elem or "gelo" in elem:
+                        char["path"] = "Remembrance"
 
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []

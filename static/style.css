@@ -1705,13 +1705,14 @@ h6 {
 
 .stat-label {
     display: block;
-    font-size: 10px;
+    font-size: 9.5px;
     font-weight: 600;
     color: #94a3b8;
     text-transform: uppercase;
-    letter-spacing: 0.03em;
-    white-space: normal;
-    word-break: break-word;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     min-width: 0;
     line-height: 1.25;
 }
@@ -7501,33 +7502,42 @@ h6 {
 }
 
 .subcard-mainstats-row {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: 3px;
+    width: 100%;
 }
 
 .subcard-mainstat-chip {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 4px;
-    padding: 2px 4px;
+    padding: 2px 2px;
     display: flex;
     align-items: center;
-    gap: 3px;
-    font-size: 9.5px;
+    gap: 2px;
+    font-size: 8.5px;
     color: #E2E8F0;
-    flex: 1;
     min-width: 0;
     justify-content: center;
     white-space: nowrap;
-    overflow: visible;
+    overflow: hidden;
+    text-overflow: ellipsis;
     letter-spacing: -0.2px;
+    box-sizing: border-box;
+}
+
+.subcard-mainstat-chip span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .subcard-mainstat-slot {
     color: var(--text-muted);
-    font-weight: 600;
-    font-size: 9px;
+    font-weight: 700;
+    font-size: 8.5px;
+    flex-shrink: 0;
 }
 
 /* Grid 2x4 de Atributos Finais */
@@ -7543,38 +7553,43 @@ h6 {
     background: rgba(0, 0, 0, 0.38);
     border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: 5px;
-    padding: 3px 1px;
+    padding: 3px 2px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
     min-width: 0;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .subcard-stat-label {
-    font-size: 8.5px;
+    font-size: 8px;
     font-weight: 700;
     text-transform: uppercase;
     color: var(--text-secondary);
-    white-space: normal;
-    word-break: break-word;
-    line-height: 1.05;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.1;
     text-align: center;
-    overflow: visible;
+    overflow: hidden;
     max-width: 100%;
     letter-spacing: -0.2px;
+    padding: 0 1px;
 }
 
 .subcard-stat-val {
     font-family: 'Rajdhani', monospace;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     color: #FFFFFF;
     white-space: nowrap;
-    overflow: visible;
+    overflow: hidden;
+    text-overflow: ellipsis;
     letter-spacing: -0.3px;
     margin-top: 1px;
+    max-width: 100%;
 }
 
 .subcard-stat-val.highlight {
