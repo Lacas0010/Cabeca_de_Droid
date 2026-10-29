@@ -65,10 +65,10 @@
         "loba plateada": "silver_wolf",
         "silver wolf": "silver_wolf",
         "silver_wolf": "silver_wolf",
-        "loba prateada nv. 999": "silver_wolf",
-        "loba prateada nv 999": "silver_wolf",
-        "silver wolf lv 999": "silver_wolf",
-        "silver_wolf_•_lv._999": "silver_wolf",
+        "loba prateada nv. 999": "silver_wolf_•_lv._999",
+        "loba prateada nv 999": "silver_wolf_•_lv._999",
+        "silver wolf lv 999": "silver_wolf_•_lv._999",
+        "silver_wolf_•_lv._999": "silver_wolf_•_lv._999",
         "desbravador destruição": "trailblazer_•_destruction",
         "desbravador destruicao": "trailblazer_•_destruction",
         "trailblazer destruction": "trailblazer_•_destruction",
@@ -139,7 +139,8 @@
         "robin_summeretto": "robin",
         "himeko - nova": "himeko",
         "himeko nova": "himeko",
-        "himeko_nova": "himeko"
+        "himeko_nova": "himeko",
+        "silver wolf lv. 999": "silver_wolf_•_lv._999"
     },
     "genshin": {
         "hu tao": "hu_tao",

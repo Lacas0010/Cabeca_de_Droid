@@ -93,7 +93,14 @@ const CHARACTER_NAME_MAP_EN = {
     // HSR
     "loba prateada": "Silver Wolf",
     "lobo prateado": "Silver Wolf",
-    "loba prateada nv. 999": "Silver Wolf",
+    "loba prateada nv. 999": "Silver Wolf Lv. 999",
+    "loba prateada nv 999": "Silver Wolf Lv. 999",
+    "loba prateada (nv. 999)": "Silver Wolf (Lv. 999)",
+    "loba prateada • nv. 999": "Silver Wolf • Lv. 999",
+    "noite eterna": "Evernight",
+    "7 de março (noite eterna)": "March 7th (Evernight)",
+    "a dália": "The Dahlia",
+    "a dalia": "The Dahlia",
     "desbravador": "Trailblazer",
     "desbravadora": "Trailblazer",
     "desbravador(a)": "Trailblazer",
@@ -165,8 +172,11 @@ const CHARACTER_NAME_MAP_EN = {
     "trotamundos": "Wanderer",
     "shogun raiden": "Raiden Shogun",
     "arlequino": "Arlecchino",
+    "manequina": "Mannequin",
     // ZZZ
     "soldado 11": "Soldier 11",
+    "anby (soldado 0)": "Anby: Soldier 0",
+    "anby: soldado 0": "Anby: Soldier 0",
     "n.º 11": "Soldier 11",
     "nº 11": "Soldier 11",
     "n° 11": "Soldier 11",
@@ -187,9 +197,10 @@ function formatCharacterName(rawName) {
     const lower = str.toLowerCase();
     if (CHARACTER_NAME_MAP_EN[lower]) return CHARACTER_NAME_MAP_EN[lower];
 
-    for (const [ptKey, enVal] of Object.entries(CHARACTER_NAME_MAP_EN)) {
+    const sortedEntries = Object.entries(CHARACTER_NAME_MAP_EN).sort((a, b) => b[0].length - a[0].length);
+    for (const [ptKey, enVal] of sortedEntries) {
         if (lower.startsWith(ptKey)) {
-            const remainder = str.slice(ptKey.length);
+            const remainder = str.slice(ptKey.length).replace(/\bNv\.\s*/gi, "Lv. ");
             return enVal + remainder;
         }
     }
@@ -206,6 +217,7 @@ const PATH_MAP_EN = {
     "abundância": "Abundance", "abundancia": "Abundance",
     "reminiscência": "Remembrance", "reminiscencia": "Remembrance",
     "recordação": "Remembrance", "recordacao": "Remembrance",
+    "euforia": "Elation", "júbilo": "Elation", "jubilo": "Elation",
     "ataque": "Attack",
     "atordoamento": "Stun",
     "anomalia": "Anomaly",
@@ -227,6 +239,7 @@ const PATH_MAP_PT = {
     "preservation": "Preservação",
     "abundance": "Abundância",
     "remembrance": "Reminiscência",
+    "elation": "Euforia",
     "attack": "Ataque",
     "stun": "Atordoamento",
     "anomaly": "Anomalia",

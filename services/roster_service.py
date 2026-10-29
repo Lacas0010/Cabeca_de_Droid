@@ -823,7 +823,13 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                 or aliases.get(normalize_char_name(c_name))
                 or c_name.lower().replace(" ", "_")
             )
-            man_entry = manifest.get(c_slug) or manifest.get(char_id_val) or manifest.get(c_name.lower()) or {}
+            man_entry = (
+                manifest.get(c_name.lower().replace(" ", "_"))
+                or manifest.get(c_slug)
+                or manifest.get(char_id_val)
+                or manifest.get(c_name.lower())
+                or {}
+            )
             if man_entry:
                 if not char.get("path"):
                     char["path"] = man_entry.get("path") or man_entry.get("weapon_type") or man_entry.get("specialty")

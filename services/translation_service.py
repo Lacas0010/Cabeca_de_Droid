@@ -18,25 +18,32 @@ except Exception as te:
 CHARACTER_TRANSLATIONS: Dict[str, str] = {
     # HSR
     "Silver Wolf": "Loba Prateada",
+    "Silver Wolf Lv. 999": "Loba Prateada Nv. 999",
+    "Silver Wolf • Lv. 999": "Loba Prateada • Nv. 999",
     "Trailblazer": "Desbravador",
     "Trailblazer (Destruction)": "Desbravador (Destruição)",
     "Trailblazer (Preservation)": "Desbravador (Preservação)",
     "Trailblazer (Harmony)": "Desbravador (Harmonia)",
     "Trailblazer (Remembrance)": "Desbravador (Recordação)",
+    "Trailblazer (Elation)": "Desbravador (Euforia)",
     "Trailblazer • Destruction": "Desbravador • Destruição",
     "Trailblazer • Preservation": "Desbravador • Preservação",
     "Trailblazer • Harmony": "Desbravador • Harmonia",
     "Trailblazer • Remembrance": "Desbravador • Recordação",
+    "Trailblazer • Elation": "Desbravador • Euforia",
     "March 7th": "7 de Março",
     "March 7th (The Hunt)": "7 de Março (Caça)",
     "March 7th • The Hunt": "7 de Março • A Caça",
     "March 7th (Preservation)": "7 de Março (Preservação)",
     "March 7th • Preservation": "7 de Março • Preservação",
+    "March 7th (Evernight)": "7 de Março (Noite Eterna)",
+    "Evernight": "Noite Eterna",
     "Black Swan": "Cisne Negro",
     "Firefly": "Vaga-lume",
     "Sparkle": "Faísca",
     "Aventurine": "Aventurina",
     "The Herta": "A Herta",
+    "The Dahlia": "A Dália",
     "Topaz & Numby": "Topaz e Dinheirinho",
     "Dan Heng • Imbibitor Lunae": "Dan Heng • Embebedor de Luna",
     "Tingyun • Fugue": "Tingyun • Fuga",
@@ -55,8 +62,10 @@ CHARACTER_TRANSLATIONS: Dict[str, str] = {
     "Wanderer": "Andarilho",
     "Raiden Shogun": "Shogun Raiden",
     "Arlecchino": "Arlequino",
+    "Mannequin": "Manequina",
     # ZZZ
     "Soldier 11": "Soldado 11",
+    "Anby: Soldier 0": "Anby (Soldado 0)",
     "Cissia": "Císsia",
     "Orphie & Magus": "Orfeu & Magus",
 }
@@ -71,6 +80,7 @@ PATH_TRANSLATIONS: Dict[str, str] = {
     "Preservation": "Preservação",
     "Abundance": "Abundância",
     "Remembrance": "Reminiscência",
+    "Elation": "Euforia",
     # ZZZ Specialties
     "Attack": "Ataque",
     "Stun": "Atordoamento",
@@ -159,7 +169,20 @@ for _d in (CHARACTER_TRANSLATIONS, PATH_TRANSLATIONS, STAT_TRANSLATIONS, ELEMENT
 _EXTRA_REVERSE = {
     "loba prateada": "Silver Wolf",
     "lobo prateado": "Silver Wolf",
-    "loba prateada nv. 999": "Silver Wolf",
+    "loba prateada nv. 999": "Silver Wolf Lv. 999",
+    "loba prateada nv 999": "Silver Wolf Lv. 999",
+    "loba prateada (nv. 999)": "Silver Wolf (Lv. 999)",
+    "loba prateada • nv. 999": "Silver Wolf • Lv. 999",
+    "noite eterna": "Evernight",
+    "7 de março (noite eterna)": "March 7th (Evernight)",
+    "a dália": "The Dahlia",
+    "a dalia": "The Dahlia",
+    "manequina": "Mannequin",
+    "anby (soldado 0)": "Anby: Soldier 0",
+    "anby: soldado 0": "Anby: Soldier 0",
+    "euforia": "Elation",
+    "júbilo": "Elation",
+    "jubilo": "Elation",
     "desbravador": "Trailblazer",
     "desbravadora": "Trailblazer",
     "desbravador(a)": "Trailblazer",
@@ -274,9 +297,11 @@ def traduzir_personagem(nome: str, lang: str = "pt") -> str:
         n_low = n.lower()
         if n_low in REVERSE_TRANSLATIONS:
             return REVERSE_TRANSLATIONS[n_low]
-        for pt_key, en_val in REVERSE_TRANSLATIONS.items():
+        for pt_key, en_val in sorted(REVERSE_TRANSLATIONS.items(), key=lambda x: len(x[0]), reverse=True):
             if pt_key in n_low and len(pt_key) > 3:
-                return n_low.replace(pt_key, en_val).title()
+                replaced = n_low.replace(pt_key, en_val).title()
+                replaced = re.sub(r"\bNv\.\s*", "Lv. ", replaced, flags=re.IGNORECASE)
+                return replaced
         return n
     else:
         if n in CHARACTER_TRANSLATIONS:

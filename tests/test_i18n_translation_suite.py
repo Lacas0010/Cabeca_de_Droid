@@ -176,6 +176,10 @@ class TestI18nTranslationSuite(unittest.TestCase):
     def test_character_translations_en(self):
         """Valida que nomes de personagens em português são convertidos com precisão para inglês."""
         self.assertEqual(traduzir_personagem("Loba Prateada", lang="en"), "Silver Wolf")
+        self.assertEqual(traduzir_personagem("Loba Prateada Nv. 999", lang="en"), "Silver Wolf Lv. 999")
+        self.assertEqual(traduzir_personagem("Noite Eterna", lang="en"), "Evernight")
+        self.assertEqual(traduzir_personagem("A Dália", lang="en"), "The Dahlia")
+        self.assertEqual(traduzir_personagem("Manequina", lang="en"), "Mannequin")
         self.assertEqual(traduzir_personagem("Desbravador", lang="en"), "Trailblazer")
         self.assertEqual(traduzir_personagem("Viajante", lang="en"), "Traveler")
         self.assertEqual(traduzir_personagem("Cisne Negro", lang="en"), "Black Swan")
@@ -191,6 +195,7 @@ class TestI18nTranslationSuite(unittest.TestCase):
     def test_path_and_stat_translations_en(self):
         """Valida que caminhos, atributos, status e elementos são convertidos com precisão para inglês."""
         self.assertEqual(traduzir_caminho("Inexistência", lang="en"), "Nihility")
+        self.assertEqual(traduzir_caminho("Euforia", lang="en"), "Elation")
         self.assertEqual(traduzir_caminho("Harmonia", lang="en"), "Harmony")
         self.assertEqual(traduzir_caminho("Destruição", lang="en"), "Destruction")
         self.assertEqual(traduzir_caminho("Atordoamento", lang="en"), "Stun")
