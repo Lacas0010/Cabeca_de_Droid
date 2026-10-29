@@ -4,7 +4,13 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from server import app
-from services.translation_service import traduzir_item
+from services.translation_service import (
+    traduzir_item,
+    traduzir_personagem,
+    traduzir_caminho,
+    traduzir_status,
+    traduzir_elemento,
+)
 from schemas.config import ConfigSaveRequest
 
 
@@ -73,8 +79,8 @@ class TestI18nTranslationSuite(unittest.TestCase):
         with open(i18n_file, "r", encoding="utf-8") as f:
             code = f.read()
 
-        pt_match = re.search(r'pt:\s*\{(.*?)\n\s*\},?\s*en:\s*\{', code, re.DOTALL)
-        en_match = re.search(r'en:\s*\{(.*?)\n\s*\}\s*\};', code, re.DOTALL)
+        pt_match = re.search(r"pt:\s*\{(.*?)\n\s*\},?\s*en:\s*\{", code, re.DOTALL)
+        en_match = re.search(r"en:\s*\{(.*?)\n\s*\}\s*\};", code, re.DOTALL)
         self.assertIsNotNone(pt_match)
         self.assertIsNotNone(en_match)
 
@@ -84,7 +90,7 @@ class TestI18nTranslationSuite(unittest.TestCase):
                 line = line.strip()
                 if not line or line.startswith("//"):
                     continue
-                m = re.match(r'([a-zA-Z0-9_]+)\s*:', line)
+                m = re.match(r"([a-zA-Z0-9_]+)\s*:", line)
                 if m:
                     keys.add(m.group(1))
             return keys
@@ -107,8 +113,6 @@ class TestI18nTranslationSuite(unittest.TestCase):
         self.assertEqual(len(missing_pt), 0, f"Chaves HTML ausentes em PT: {missing_pt}")
         self.assertEqual(len(missing_en), 0, f"Chaves HTML ausentes em EN: {missing_en}")
 
-
-
     @patch("services.endgame_service.database.get_endgame_data")
     def test_endgame_translation_en(self, mock_get_endgame):
         """Valida que get_endgame traduz modos, estágios e métricas quando lang='en'."""
@@ -122,12 +126,12 @@ class TestI18nTranslationSuite(unittest.TestCase):
                         {
                             "name": "Lado 1",
                             "characters": [{"name": "Ellen", "level": 60}],
-                            "monsters": [{"name": "Inimigo", "level": 60}]
+                            "monsters": [{"name": "Inimigo", "level": 60}],
                         }
-                    ]
+                    ],
                 }
             ],
-            "uid": "100222333"
+            "uid": "100222333",
         }
         res = self.client.get("/api/endgame/zzz?lang=en")
         self.assertEqual(res.status_code, 200)
@@ -155,9 +159,7 @@ class TestI18nTranslationSuite(unittest.TestCase):
                 "game_id": "hsr",
                 "mode": "Caos da Memória (MoC)",
                 "tier": "T0",
-                "members": [
-                    {"name": "Jiaoqiu", "role": "Debuffer", "element": "Fire"}
-                ]
+                "members": [{"name": "Jiaoqiu", "role": "Debuffer", "element": "Fire"}],
             }
         ]
         res = self.client.get("/api/endgame/team-match/hsr?lang=en")
@@ -170,6 +172,45 @@ class TestI18nTranslationSuite(unittest.TestCase):
         self.assertTrue(len(subs) > 0)
         self.assertIn("Same tactical role", subs[0]["synergy_reason"])
         self.assertIn("battle-ready", subs[0]["synergy_reason"])
+
+    def test_character_translations_en(self):
+        """Valida que nomes de personagens em português são convertidos com precisão para inglês."""
+        self.assertEqual(traduzir_personagem("Loba Prateada", lang="en"), "Silver Wolf")
+        self.assertEqual(traduzir_personagem("Desbravador", lang="en"), "Trailblazer")
+        self.assertEqual(traduzir_personagem("Viajante", lang="en"), "Traveler")
+        self.assertEqual(traduzir_personagem("Cisne Negro", lang="en"), "Black Swan")
+        self.assertEqual(traduzir_personagem("Vaga-lume", lang="en"), "Firefly")
+        self.assertEqual(traduzir_personagem("Faísca", lang="en"), "Sparkle")
+        self.assertEqual(traduzir_personagem("Aventurina", lang="en"), "Aventurine")
+        self.assertEqual(traduzir_personagem("7 de Março", lang="en"), "March 7th")
+        self.assertEqual(traduzir_personagem("Soldado 11", lang="en"), "Soldier 11")
+        self.assertEqual(traduzir_personagem("Andarilho", lang="en"), "Wanderer")
+        self.assertEqual(traduzir_personagem("Mochileiro", lang="en"), "Wanderer")
+        self.assertEqual(traduzir_personagem("Topaz e Dinheirinho", lang="en"), "Topaz & Numby")
+
+    def test_path_and_stat_translations_en(self):
+        """Valida que caminhos, atributos, status e elementos são convertidos com precisão para inglês."""
+        self.assertEqual(traduzir_caminho("Inexistência", lang="en"), "Nihility")
+        self.assertEqual(traduzir_caminho("Harmonia", lang="en"), "Harmony")
+        self.assertEqual(traduzir_caminho("Destruição", lang="en"), "Destruction")
+        self.assertEqual(traduzir_caminho("Atordoamento", lang="en"), "Stun")
+        self.assertEqual(traduzir_caminho("Espada", lang="en"), "Sword")
+
+        self.assertEqual(traduzir_status("Velocidade", lang="en"), "Speed")
+        self.assertEqual(traduzir_status("VEL", lang="en"), "SPD")
+        self.assertEqual(traduzir_status("Taxa CRIT", lang="en"), "CRIT Rate")
+        self.assertEqual(traduzir_status("Dano CRIT", lang="en"), "CRIT DMG")
+        self.assertEqual(traduzir_status("Efeito de Quebra", lang="en"), "Break Effect")
+        self.assertEqual(traduzir_status("Proficiência Elemental", lang="en"), "Elemental Mastery")
+        self.assertEqual(traduzir_status("Recarga de Energia", lang="en"), "Energy Recharge")
+        self.assertEqual(traduzir_status("Proficiência de Anomalia", lang="en"), "Anomaly Proficiency")
+        self.assertEqual(traduzir_status("Impacto", lang="en"), "Impact")
+
+        self.assertEqual(traduzir_elemento("Físico", lang="en"), "Physical")
+        self.assertEqual(traduzir_elemento("Raio", lang="en"), "Lightning")
+        self.assertEqual(traduzir_elemento("Fogo", lang="en"), "Fire")
+        self.assertEqual(traduzir_elemento("Gelo", lang="en"), "Ice")
+        self.assertEqual(traduzir_elemento("Éter", lang="en"), "Ether")
 
 
 if __name__ == "__main__":

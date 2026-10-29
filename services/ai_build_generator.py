@@ -1,8 +1,7 @@
 import os
-import json
 import re
 from datetime import datetime
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional
 from pydantic import BaseModel, Field
 
 from static_data_manager import static_data_manager
@@ -108,7 +107,7 @@ def sanitize_stat_name(stat_str: str) -> str:
 
 
 class AIBuildPayload(BaseModel):
-    """Schema Pydantic rígido para validação de saídas estruturadas de IA."""
+    """Schema Pydantic rígido para validação de saídas estruturadas de builds."""
 
     character_name: str = Field(..., description="Nome oficial do personagem")
     weapons: List[str] = Field(default_factory=list, description="Lista de armas/cones recomendados")
@@ -129,7 +128,7 @@ class AIBuildGenerator:
 
     @staticmethod
     def is_ai_preliminary_guide(file_path: str) -> bool:
-        """Verifica se um arquivo de guia foi gerado por IA preliminar."""
+        """Verifica se um arquivo de guia foi gerado por template preliminar."""
         if not file_path or not os.path.isfile(file_path):
             return False
         try:
@@ -143,7 +142,7 @@ class AIBuildGenerator:
     def get_or_generate_guide(game_id: str, char_name: str, element: str = "") -> Optional[str]:
         """
         Garante que um guia exista para o personagem. Se não existir, gera automaticamente
-        e salva no diretório de guias do jogo correspondente com proveniência explícita.
+        a partir de heurísticas de arquétipo e salva no diretório de guias do jogo correspondente.
         """
         g = game_id.lower().strip()
         existing = find_best_guide_file(g, char_name, element)
@@ -160,61 +159,8 @@ class AIBuildGenerator:
         role = char_profile.get("path") or char_profile.get("specialty") or char_profile.get("weapon") or "DPS"
         rarity = char_profile.get("rarity", 5)
 
-        # 1. Tentar gerar com Groq Cloud estruturado se configurado
-        guide_md = None
-        try:
-            from groq_rag import GroqRAG
+        guide_md = AIBuildGenerator._generate_template_guide(g, char_name_clean, elem, role, rarity)
 
-            groq = GroqRAG()
-            if groq.client:
-                prompt = (
-                    f"Você é o analista mestre de teoria e metagame de {g.upper()} (HoYoverse).\n"
-                    f"Gere um JSON estrito para o personagem '{char_name_clean}' ({rarity}★, Elemento: {elem}, Classe: {role}).\n"
-                    f"Retorne APENAS um JSON válido no seguinte formato:\n"
-                    f"{{\n"
-                    f'  "character_name": "{char_name_clean}",\n'
-                    f'  "weapons": ["Opção Assinatura 5★", "Opção F2P 4★"],\n'
-                    f'  "relic_sets": ["Conjunto Principal (4-PC)"],\n'
-                    f'  "planar_sets": ["Ornamento Principal (2-PC)"],\n'
-                    f'  "main_stats": {{"slot_1": "Taxa Crítica / Dano Crítico", "slot_2": "ATK% / Velocidade", "slot_3": "Bônus de Dano {elem}"}},\n'
-                    f'  "sub_stats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Velocidade"],\n'
-                    f'  "pros": ["Alto dano e sinergia com times de {elem}"],\n'
-                    f'  "cons": ["Requer investimento balanceado de atributos"],\n'
-                    f'  "optimization_summary": "Manter proporção 1:2 de Taxa Crítica para Dano Crítico."\n'
-                    f"}}"
-                )
-
-                models = [
-                    "openai/gpt-oss-120b",
-                    "groq/compound",
-                    "groq/compound-mini",
-                    "openai/gpt-oss-20b",
-                    "qwen/qwen3.6-27b",
-                ]
-                for mod in models:
-                    try:
-                        resp = groq.client.chat.completions.create(
-                            model=mod, messages=[{"role": "user", "content": prompt}], temperature=0.1, max_tokens=1000
-                        )
-                        if resp and resp.choices and resp.choices[0].message.content:
-                            raw_txt = resp.choices[0].message.content.strip()
-                            json_match = re.search(r"\{.*\}", raw_txt, re.DOTALL)
-                            if json_match:
-                                parsed = json.loads(json_match.group(0))
-                                validated = AIBuildPayload(**parsed)
-                                guide_md = AIBuildGenerator._build_markdown_from_payload(g, validated, elem, role)
-                                break
-                    except Exception:
-                        continue
-
-        except Exception as e:
-            print(f"[AI_BUILD_GENERATOR] Aviso: Falha no gerador Groq ({e}). Usando fallback determinístico.")
-
-        # 2. Se a IA estiver offline ou payload inválido, usar template determinístico seguro
-        if not guide_md:
-            guide_md = AIBuildGenerator._generate_template_guide(g, char_name_clean, elem, role, rarity)
-
-        # 3. Gravação com Metadata de Proveniência
         guides_dir = os.path.join(BASE_DIR, g, "guias")
         os.makedirs(guides_dir, exist_ok=True)
         file_path = os.path.join(guides_dir, f"{canonical_slug}.md")
@@ -222,9 +168,8 @@ class AIBuildGenerator:
         try:
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(guide_md)
-            print(f"[AI_BUILD_GENERATOR] Guia Day-1 gerado com sucesso [ai_preliminary]: {file_path}")
+            print(f"[BUILD_GENERATOR] Guia Day-1 gerado com sucesso [ai_preliminary]: {file_path}")
 
-            # Atualizar cache estruturado do build_calculator
             try:
                 from build_calculator import generate_meta_json_from_markdown
 
@@ -234,7 +179,7 @@ class AIBuildGenerator:
 
             return file_path
         except Exception as err:
-            print(f"[AI_BUILD_GENERATOR] Erro ao gravar guia Day-1: {err}")
+            print(f"[BUILD_GENERATOR] Erro ao gravar guia Day-1: {err}")
             return None
 
     @staticmethod
@@ -285,7 +230,7 @@ class AIBuildGenerator:
             f'<!-- METADATA: {{"source": "ai_preliminary", "game_id": "{game_id}", "generated_at": "{now_iso}"}} -->\n'
             f"# Guia de Build - {p.character_name}\n"
             f"> [!NOTE]\n"
-            f"> **Guia Preliminar IA (Llama 3.3 / GPT-OSS)**: Gerado automaticamente no Day-1 com base nas mecânicas de {element} / {role}.\n\n"
+            f"> **Guia Preliminar Automático (Day-1)**: Gerado automaticamente com base nas mecânicas de {element} / {role}.\n\n"
             f"## Review\n"
             f"### Prós (Pontos Fortes)\n"
             f"{pros_md}\n\n"

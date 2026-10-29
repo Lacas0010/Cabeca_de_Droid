@@ -15,9 +15,12 @@ class GachaRequest(BaseModel):
     target_copies: Optional[int] = Field(default=1, description="Número de cópias desejadas do item alvo")
     current_copies: Optional[int] = Field(default=0, description="Número de cópias já possuídas")
     current_rank: Optional[int] = Field(
-        default=None, description="Rank/constelação/eidolon/refinamento inicial (-1 para não obtido, 0 para C0/E0/M0/R1)"
+        default=None,
+        description="Rank/constelação/eidolon/refinamento inicial (-1 para não obtido, 0 para C0/E0/M0/R1)",
     )
-    target_rank: Optional[int] = Field(default=None, description="Rank final almejado (0 a 6 para char, 0 a 4 para arma)")
+    target_rank: Optional[int] = Field(
+        default=None, description="Rank final almejado (0 a 6 para char, 0 a 4 para arma)"
+    )
     char_name: Optional[str] = Field(default=None, description="Nome do personagem ou arma alvo no banner promocional")
 
 
@@ -63,9 +66,7 @@ class GachaGoalSaveRequest(BaseModel):
     target_date: Optional[str] = Field(
         default=None, description="Data/hora alvo da atualização quando o banner chega (ISO 8601)"
     )
-    created_at: Optional[str] = Field(
-        default=None, description="Data/hora exata em que a meta foi criada (ISO 8601)"
-    )
+    created_at: Optional[str] = Field(default=None, description="Data/hora exata em que a meta foi criada (ISO 8601)")
     banner_phase: Optional[int] = Field(
         default=1, description="Fase do banner planejado: 1 (23:30 para os 3 jogos) ou 2 (20h Genshin, 14h HSR/ZZZ)"
     )
@@ -88,7 +89,9 @@ class GachaGoalItem(BaseModel):
     created_at: str = Field(description="Data/hora ISO em que a meta foi criada")
     target_date: str = Field(description="Data/hora ISO da chegada da atualização/banner")
     banner_phase: Optional[int] = Field(default=1, description="Fase do banner (1 ou 2)")
-    banner_time: Optional[str] = Field(default="23:30", description="Horário oficial do banner (ex: '23:30', '20:00', '14:00')")
+    banner_time: Optional[str] = Field(
+        default="23:30", description="Horário oficial do banner (ex: '23:30', '20:00', '14:00')"
+    )
     days_elapsed: int = Field(default=0, description="Dias decorridos desde a criação")
     days_remaining: int = Field(default=0, description="Dias restantes até o banner")
     seconds_elapsed: int = Field(default=0, description="Segundos decorridos desde a criação")
@@ -115,8 +118,12 @@ class BannerDetail(BaseModel):
     banner_title: Optional[str] = Field(default=None, description="Título do evento/banner in-game")
     banner_image: str = Field(description="URL da imagem oficial de arte do banner in-game")
     character_info: Optional[CharacterMiniInfo] = Field(default=None, description="Foto e informações do 5★ do banner")
-    featured_4stars: list[str] = Field(default_factory=list, description="Lista de personagens/armas 4★ com taxa aumentada")
-    featured_4stars_info: list[CharacterMiniInfo] = Field(default_factory=list, description="Fotos e dados dos 4★ com taxa aumentada")
+    featured_4stars: list[str] = Field(
+        default_factory=list, description="Lista de personagens/armas 4★ com taxa aumentada"
+    )
+    featured_4stars_info: list[CharacterMiniInfo] = Field(
+        default_factory=list, description="Fotos e dados dos 4★ com taxa aumentada"
+    )
     is_primary: bool = Field(default=False, description="Se é o banner principal de estreia da fase")
     banner_type: Optional[str] = Field(default="character", description="Tipo de banner ('character' ou 'weapon')")
 
@@ -141,13 +148,18 @@ class GachaSimulatorDefaultsResponse(BaseModel):
     active_banner_character: Optional[str] = Field(default=None, description="Nome do item 5★ do banner ativo padrão")
     active_banner_title: Optional[str] = Field(default=None, description="Título oficial do banner in-game ativo")
     active_banner_image: Optional[str] = Field(default=None, description="URL proxy da arte do banner ativo")
-    active_character_info: Optional[CharacterMiniInfo] = Field(default=None, description="Foto e informações do 5★ ativo")
+    active_character_info: Optional[CharacterMiniInfo] = Field(
+        default=None, description="Foto e informações do 5★ ativo"
+    )
     featured_4stars: list[str] = Field(default_factory=list, description="Lista de nomes dos 4★ em destaque")
-    featured_4stars_info: list[CharacterMiniInfo] = Field(default_factory=list, description="Fotos e dados dos 4★ com taxa aumentada")
+    featured_4stars_info: list[CharacterMiniInfo] = Field(
+        default_factory=list, description="Fotos e dados dos 4★ com taxa aumentada"
+    )
     patch_info: Optional[str] = Field(default="", description="Informações da fase e versão atual do patch")
     available_banners: list[BannerDetail] = Field(default_factory=list, description="Banners ativos disponíveis")
-    available_weapon_banners: list[BannerDetail] = Field(default_factory=list, description="Banners de armas ativos disponíveis")
-
+    available_weapon_banners: list[BannerDetail] = Field(
+        default_factory=list, description="Banners de armas ativos disponíveis"
+    )
 
 
 class StrategyAskAIRequest(BaseModel):

@@ -17,7 +17,7 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
     - **Etapa 4 (Desafios de Endgame)**: Visão focada e completa de Abismo Espiral, Memória do Caos, Ficção Pura, Sombra Apocalíptica, Shiyu Defense e Team Matcher inteligente.
     - **Etapa 5 (Simulador de Tiros & Gacha Forecast)**: Simulação Monte Carlo de 10.000 invocações, painel de metas salvas com cronômetro em tempo real, selector de fase com horários oficiais e rastreador UIGF/SRGF.
     - **Etapa 6 (Central de Farm, Relíquias Lixo, Índice de Sorte & Tier List/Audit)**: Rotação de materiais diários, identificador de peças lixo para descarte, estatísticas de RNG (God Roll, Most Cursed) e diagnóstico de lacunas da conta.
-    - **Etapa 7 (Chat IA Meta & Construtor de Card de Time HD)**: Mensagens de boas-vindas e análise conversacional via Groq, avisos de erro, seleção visual de equipe, exportação Canvas 2x PNG e badges de sinergia.
+    - **Etapa 7 (Construtor de Card de Time HD & Sinergia)**: Seleção visual de equipe, exportação Canvas 2x PNG e badges de sinergia.
     - **Etapa 8 (Linha do Tempo, Códigos Promocionais, Configurações & Central de Ajuda)**: Histórico de snapshots de evolução, gerenciador de códigos com resgate automático a cada 3h, proteção por PIN, cofre DPAPI, isolamento LAN e central com 20 cards de recursos com busca dinâmica.
   - Seletor de idioma visual com estilo "pill" integrado na barra lateral desktop (`.sidebar-lang-selector`), botão dinâmico de alternância no cabeçalho mobile (`.lang-btn-mobile`) e seletor persistente na aba de Configurações (`#tab-config`).
   - Persistência reativa do idioma ativo no `localStorage` (`app_lang`) e sincronização transparente com o backend através da API `/api/config` (`language: "pt" | "en"`).
@@ -44,7 +44,8 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
   - Barra superior de alternância de idioma adicionada em `README.md` e `README.en.md`.
 - **Suíte de Testes para i18n (`tests/test_i18n_translation_suite.py`):**
   - Novos testes unitários validando a tradução de atributos nos dois sentidos, persistência na API `/api/config`, validação de schemas Pydantic e integridade estrutural do módulo `i18n.js`.
-  - Suíte total de testes unitários executada com 157 testes e 100% de aprovação.
+  - Tradução bidirecional completa de nomes de personagens (ex: Silver Wolf, Trailblazer, Traveler, Firefly, Black Swan), caminhos/especialidades (Destruction, Harmony, Nihility, Stun, Sword) e atributos de status (SPD, CRIT Rate, CRIT DMG).
+  - Suíte total de testes unitários executada com 159 testes e 100% de aprovação.
 
 ---
 
@@ -154,7 +155,7 @@ Esta versão representa a maior evolução estrutural do Cabeça de Droid desde 
 - **Novos Recursos & Endpoints:**
   - **Ordem de Serviço Diária:** Algoritmo de roteirização inteligente de resina e energia com checklist dinâmico (`/api/farm/order-of-day/{game_id}`).
   - **Previsão de Gacha & Metas Monte Carlo:** Projeção temporal de acúmulo de gemas/tiros e persistência de metas de invocação no SQLite (`/api/gacha/forecast/calculate` e `/api/gacha/goals`).
-  - **Diagnóstico de Lacunas da Conta (Account Gaps):** Avaliação de cobertura de elementos e funções (DPS/Sustento/Buffer) com consultoria estratégica da IA Groq Llama 3.3 70B (`/api/strategy/account-gaps/{game_id}`).
+  - **Diagnóstico de Lacunas da Conta (Account Gaps):** Avaliação determinística de cobertura de elementos e funções (DPS/Sustento/Buffer) (`/api/strategy/account-gaps/{game_id}`).
   - **Recomendador de Artesanato de Relíquias (Relic Crafting):** Sugestão de síntese de peças com Resina Automodeladora ou Elixir Santificador com base nas piores peças do time principal (`/api/relics/craft-recommendations/{game_id}`).
   - **Morning Briefing Matinal:** Sumário executivo consolidando os 3 jogos com disparo para Discord Webhooks e Telegram Bot (`/api/briefing/today` e `/api/briefing/send-now`).
   - **Resgate Autônomo de Códigos 3h:** Rotina assíncrona que varre novos códigos na web e efetua o resgate automático na HoYoverse.
@@ -184,7 +185,6 @@ Esta versão representa a maior evolução estrutural do Cabeça de Droid desde 
 - **Índice de Sorte & Eficiência de Rolagens (Luck Score):** Módulo estatístico para avaliar a qualidade dos artefatos da conta, com detecção de God Roll #1 e Cursed Roll.
 - **Linha do Tempo & Snapshots Periódicos:** Histórico de evolução da conta com comparador gráfico de diffs e filtro de personagens alterados.
 - **Analisador de Relíquias Lixo (Trash Finder):** Identificação de peças de artefatos/discos com atributos incompatíveis com o metagame para reciclagem segura.
-- **Modo Roast da Conta por IA:** Crítica bem-humorada e ácida gerada pelo Groq Llama 3.3 70B sobre as escolhas de pulls e investimentos do jogador.
 
 ### 🔄 Modificado
 - Migração de cookies em texto claro para formato cifrado `.enc` com exclusão automática de arquivos legados.
@@ -195,7 +195,7 @@ Esta versão representa a maior evolução estrutural do Cabeça de Droid desde 
 ## [4.0.0] - 2026-09-01
 
 ### ✨ Adicionado
-- **Higienizador de Logs em Tempo Real (`log_sanitizer.py`):** Filtro regex no terminal e logs de sincronização para censurar tokens `ltoken_v2`, `ltuid_v2` e chaves de API `gsk_...`.
+- **Higienizador de Logs em Tempo Real (`log_sanitizer.py`):** Filtro regex no terminal e logs de sincronização para censurar tokens `ltoken_v2`, `ltuid_v2` e credenciais de sessão.
 - **Acesso Wi-Fi & Rede Local (LAN):** Opção de alternância sob demanda para binding em `0.0.0.0:8000`, viabilizando o uso no celular ou tablet.
 - **Auto Check-in HoYoLAB a cada 6 Horas:** Rotina em background com gravação de histórico de tentativas no SQLite (`daily_checkin_logs`).
 - **Suporte Completo a Zenless Zone Zero (ZZZ):** Integração de agentes, discos, atributos de Anomalia e novo elemento *Lumiflux*.
@@ -206,7 +206,6 @@ Esta versão representa a maior evolução estrutural do Cabeça de Droid desde 
 ## [3.0.0] - 2026-08-15
 
 ### ✨ Adicionado
-- **Assistente RAG com Groq Cloud API:** Integração do modelo Llama 3.3 70B Versatile contextualizado com os guias de metagame e dados do Roster.
 - **Montador de Times com Análise de Sinergia:** Ferramenta visual de seleção de até 4 personagens com streaming de análise via Server-Sent Events (SSE).
 - **Exportação de Cards em Imagem HD:** Renderizador Canvas 2D em resolução 4K (2400 × 1350 px) para compartilhamento no Discord.
 - **Calculadora de Ascensão:** Estimativa de materiais de chefe, Mora e livros de talento para níveis 60, 70, 80 e 90.

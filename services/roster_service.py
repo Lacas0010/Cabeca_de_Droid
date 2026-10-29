@@ -815,6 +815,23 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                 char["substats_priority"] = char_meta.get("substats_priority", [])
                 char["recommended_weights"] = extract_weights_from_guide(game_id, char_id_val)
 
+            # Enriquece caminho (Path/Specialty) e elemento a partir do manifesto se ausente
+            manifest = _get_manifest(game_id)
+            aliases = _get_character_aliases().get(game_id, {})
+            c_slug = (
+                aliases.get(c_name.lower())
+                or aliases.get(normalize_char_name(c_name))
+                or c_name.lower().replace(" ", "_")
+            )
+            man_entry = manifest.get(c_slug) or manifest.get(char_id_val) or manifest.get(c_name.lower()) or {}
+            if man_entry:
+                if not char.get("path"):
+                    char["path"] = man_entry.get("path") or man_entry.get("weapon_type") or man_entry.get("specialty")
+                if not char.get("specialty"):
+                    char["specialty"] = man_entry.get("specialty") or man_entry.get("path")
+                if not char.get("element") and man_entry.get("element"):
+                    char["element"] = man_entry.get("element")
+
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
             for relic in relics:

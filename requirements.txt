@@ -17,9 +17,6 @@ genshin>=1.7.0
 # Playwright (Auto-login e captura automatizada de cookies de sessão em Chromium)
 playwright>=1.41.0
 
-# Groq Cloud API Integration (Motor RAG contextualizado com Llama 3.3 70B Versatile)
-groq>=0.4.0
-
 # Fuzzy String Matching & Dynamic Entity Resolution (Resolução autônoma de personagens sem aliases manuais)
 rapidfuzz>=3.0.0
 
@@ -29,4 +26,3 @@ pyinstaller>=6.3.0
 # Windows System Tray & Background Daemon (Ícone na bandeja do sistema com menu de contexto)
 pystray>=0.19.5
 Pillow>=10.0.0
-

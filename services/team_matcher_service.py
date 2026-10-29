@@ -1,4 +1,3 @@
-
 ENDGAME_MODE_EN_MAP = {
     "Caos da Memória (MoC)": "Memory of Chaos (MoC)",
     "Caos da Memória": "Memory of Chaos",
@@ -146,7 +145,12 @@ def infer_char_role(game_id: str, char_name: str, char_data: Optional[Dict[str, 
 
 
 def find_functional_substitutes(
-    game_id: str, target_role: str, target_element: str, roster: List[Dict[str, Any]], excluded_names: Set[str], lang: str = "pt"
+    game_id: str,
+    target_role: str,
+    target_element: str,
+    roster: List[Dict[str, Any]],
+    excluded_names: Set[str],
+    lang: str = "pt",
 ) -> List[TeamMemberSubstitute]:
     """Varre os personagens que o jogador REALMENTE POSSUI no roster para sugerir substitutos funcionais."""
     g_clean = game_id.lower().strip()

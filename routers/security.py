@@ -94,11 +94,9 @@ async def toggle_lan_access_endpoint(req: LanToggleRequest):
 
 @router.post("/api/security/clear_credentials")
 async def clear_credentials_endpoint():
-    """Remove permanentemente do cofre local todos os cookies e chaves de IA."""
+    """Remove permanentemente do cofre local todos os cookies."""
     security_vault.save_secure_cookies({})
     config = get_config()
-    config["groq_api_key"] = ""
-    config["gemini_api_key"] = ""
     security_vault.save_secure_config(config)
     return {"status": "success", "message": "Credenciais e cookies locais removidos com sucesso!"}
 

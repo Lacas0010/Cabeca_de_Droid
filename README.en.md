@@ -1,4 +1,4 @@
-# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v5.3+)
+# 🤖 Cabeça de Droid (HoYo Metagame Suite v5.3+)
 
 <p align="center">
   <b>Language / Idioma:</b> <a href="README.md">🇧🇷 Português</a> | <a href="README.en.md">🇺🇸 English</a>
@@ -7,10 +7,10 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 154 Passed](https://img.shields.io/badge/tests-157%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Tests: 159 Passed](https://img.shields.io/badge/tests-159%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
 
-Local intelligent suite featuring a **Glassmorphism Web UI** (HTML5/CSS3/ES6+ Modular) and a modular Python backend (**FastAPI + Clean Architecture + SQLite + Playwright + Groq Cloud RAG + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
+Local intelligent suite featuring a **Glassmorphism Web UI** (HTML5/CSS3/ES6+ Modular) and a modular Python backend (**FastAPI + Clean Architecture + SQLite + Playwright + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
 
 > [!NOTE]
 > **About the name:** "Cabeça de Droid" (Droid Head) is a reference to *Honkai: Star Rail* — the affectionate nickname Herta gives to the **Aeon Nous** (the Aeon of Erudition), an astral supercomputer that ascended to godhood.
@@ -36,7 +36,7 @@ python main.py
 
 * **Local PC Access:** `http://127.0.0.1:8000`
 * **Mobile / Tablet Access (Local Wi-Fi):** `http://<YOUR_PC_IP>:8000` *(configurable in Settings)*
-* **Run Tests:** `python -m unittest discover tests` *(157 unit tests included)*
+* **Run Tests:** `python -m unittest discover tests` *(159 unit tests included)*
 
 ---
 
@@ -64,13 +64,13 @@ python main.py
 | **18. HD Image Export** | 📷 | Crisp **4K (2400 × 1350 px)** rendering of Build Cards, Tier Lists, and Evolution Diffs for Discord sharing. |
 | **19. Breakpoints & Speed Tuning** | ⚖️ | Action Value (10000/SPD), Cycle 0 134/160.1 SPD thresholds, -1 SPD tuning (Bronya/Sunday), Favonius energy checks, and 1:2 CRIT ratio analyzer. |
 | **20. Ascension Material Calculator** | 🧮 | Exact calculation of Mora, EXP books, and ascension mats with real caps (**Genshin 90**, **HSR 80**, **ZZZ 60**). |
-| **21. Groq AI Optimizer** | 🧠 | Instant AI consultation with Llama 3.3 70B generating 3 prioritized build recommendations tailored to your account. |
+| **21. Meta Build Analyzer** | 🧠 | Deterministic comparison of your active build against metagame benchmarks, BIS weapons, and priority substats. |
 | **22. Account Gap Diagnostic** | 🔥 | Comprehensive scan of archetype gaps (DPS, Sustain, Element coverage) plus an optional sarcastic "Roast My Account" mode. |
 | **23. Account Luck Index** | 🍀 | RNG assessment of account rolls (SSS+ to F), spotlighting your **#1 God Roll** and your worst **Cursed Roll**. |
 | **24. Gacha Forecast & Live Banner Goals** | 🎲 | Monte Carlo gacha simulation, SQLite banner target persistence with a **live second-by-second countdown**, and official HoYoverse schedules (**Phase 1 at 23:30**; **Phase 2 Genshin at 20:00, HSR/ZZZ at 14:00**). |
 | **25. Daily Farm Hub & Work Order** | 🌾 | Schedule of daily open talent/weapon domains and smart Resin allocation based on your account goals. |
 | **26. Trash Finder & Off-Piece Protector** | 🗑️ | Identifies junk relics with zero build viability, strictly protects high-CV Off-Piece wildcards, and advises on relic synthesis salvage. |
-| **27. Conversational AI Chat & RAG** | 💬 | Interactive RAG assistant with persistent SQLite conversation history per game and real-time SSE streaming powered by Groq Cloud (Llama 3.3 70B). |
+| **27. Team Synergy Analyzer** | 💬 | 4-slot team synergy analyzer with persistent SQLite history per game and real-time SSE streaming. |
 | **28. HD Team Card Builder** | 👥 | Visual 4-slot team builder (3 slots for ZZZ), dynamic element/role badges, 2x lossless PNG export, and 1-click clipboard copy (`Discord`/`WhatsApp`). |
 
 ---
@@ -84,7 +84,6 @@ graph LR
     User[User] -->|Local Vault DPAPI / AES-256| Vault[(cookies.enc)]
     Vault -->|Log Sanitization| San[core/security.py]
     San -->|Direct HTTPS Calls| HoYo[Official HoYoLAB API]
-    San -->|Contextual RAG| Groq[Groq Cloud API]
 ```
 
 ### Privacy Guarantee
@@ -113,7 +112,6 @@ graph TD
     Services --> DB[(SQLite hoyo_app.db)]
     Services --> StaticData[static_data/ - Static Manifests]
     Services --> Scrapers[Prydwen Scrapers: HSR / ZZZ / Genshin]
-    Services --> GroqAI[Groq Cloud API - Llama 3.3 70B]
     Services --> HoYoAPI[HoYoLAB API - genshin.py]
 ```
 
@@ -137,7 +135,7 @@ hoyo-projetos/
 ├── assets/                  # Element icons, weapon icons, and local avatar cache
 ├── scrapers/                # Prydwen scrapers for meta guides and stats
 ├── scripts/                 # Systemd services, tray icon, and utility automation
-├── tests/                   # 154 automated unit tests covering all system domains
+├── tests/                   # 159 automated unit tests covering all system domains
 ├── server.py                # FastAPI app lifecycle orchestrator
 └── main.py                  # CLI / System Tray application bootstrapper
 ```
@@ -196,7 +194,7 @@ $$
 | `GET` | `/api/briefing/today` | Daily executive morning briefing |
 | `POST` | `/api/codes/redeem` | Bulk redemption of active promotional codes |
 | `POST` | `/api/team/analyze` | 4-slot team synergy analysis via SSE stream |
-| `POST` | `/api/chat` | Conversational RAG with Groq Llama 3.3 70B (SSE) |
+| `POST` | `/api/chat` | Local chat endpoint via Server-Sent Events (SSE) |
 | `GET` | `/api/static-data/status` | Offline data manifests and scraper catalog status |
 | `GET` | `/api/static-data/schedule/{game_id}` | Daily material schedule and open farming domains |
 | `GET` | `/api/static-data/character/{game_id}/{char_name}` | Detailed character profile, boss mats, and ascension paths |

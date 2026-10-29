@@ -46,7 +46,7 @@ A versão **5.2** consolida a modularização total tanto no backend quanto no f
 ### Novos Recursos Adicionados na v5.0
 1. **Ordem de Serviço Diária (`routers/farming.py`):** Roteiro automatizado de gasto de resina e checklist de energia diário.
 2. **Previsão de Gacha & Metas Monte Carlo (`routers/gacha.py`):** Simulação de acúmulo de gemas e persistência de metas futuras.
-3. **Diagnóstico de Lacunas da Conta (`routers/strategy.py`):** Mapeamento de ausência de arquétipos com parecer Groq 70B.
+3. **Diagnóstico de Lacunas da Conta (`routers/strategy.py`):** Mapeamento determinístico de ausência de arquétipos e elementos.
 4. **Recomendador de Síntese (`routers/relics.py`):** Sugestão de criação de artefatos com Resina Automodeladora / Elixir Santificador.
 5. **Morning Briefing Matinal (`routers/system.py`):** Relatório unificado dos 3 jogos com suporte a Discord Webhook e Telegram.
 6. **Resgate Autônomo 3h (`services/promo_codes_service.py`):** Busca contínua e ativação de novos códigos promocionais.
@@ -102,7 +102,7 @@ hoyo-projetos/
 │   ├── checkin_service.py   # Automação do check-in diário no HoYoLAB
 │   ├── promo_codes_service.py # Varredura e resgate autônomo de códigos promocionais
 │   ├── gacha_service.py     # Simulações estocásticas e metas de banners
-│   ├── roast_service.py     # Análise e geração de pareceres via Groq Llama 3.3 70B
+│   ├── roast_service.py     # Serviço de avaliação de conta
 │   └── ...
 ├── routers/                 # Controladores REST FastAPI (Definição de Rotas e Endpoints)
 │   ├── security.py          # Rotas de cofre, PIN e controle de rede LAN
@@ -167,7 +167,7 @@ python -m unittest tests.test_static_data_suite
 
 ### Regras para Novos Testes
 * Toda nova funcionalidade ou rota adicionada **deve** vir acompanhada de um teste unitário correspondente na pasta `tests/`.
-* Testes que envolvem chamadas de rede externas (HoYoLAB, Groq, Prydwen) **devem utilizar mocks** (`unittest.mock.patch`) para execução 100% determinística e offline.
+* Testes que envolvem chamadas de rede externas (HoYoLAB, Prydwen) **devem utilizar mocks** (`unittest.mock.patch`) para execução 100% determinística e offline.
 
 ---
 

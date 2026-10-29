@@ -388,8 +388,7 @@ def get_gacha_simulator_defaults(
         b_info = get_character_mini_info(clean_game, b_name, default_rarity=5, item_type=item_type)
         b_4stars = b.get("featured_4stars", [])
         b_4stars_info = [
-            get_character_mini_info(clean_game, f4, default_rarity=4, item_type=item_type)
-            for f4 in b_4stars
+            get_character_mini_info(clean_game, f4, default_rarity=4, item_type=item_type) for f4 in b_4stars
         ]
 
         return {
@@ -489,5 +488,3 @@ def create_saved_gacha_goal(req_data: Dict[str, Any]) -> Dict[str, Any]:
         banner_phase=req_data.get("banner_phase", 1),
     )
     return {"status": "saved", "goal_id": goal_id}
-
-

@@ -1,4 +1,4 @@
-# 🤖 Cabeça de Droid (HoYo AI Assistant & Local RAG v5.3+)
+# 🤖 Cabeça de Droid (HoYo Metagame Suite v5.3+)
 
 <p align="center">
   <b>Language / Idioma:</b> <a href="README.md">🇧🇷 Português</a> | <a href="README.en.md">🇺🇸 English</a>
@@ -7,10 +7,10 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 150 Passed](https://img.shields.io/badge/tests-150%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Tests: 159 Passed](https://img.shields.io/badge/tests-159%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
 
-Suíte local inteligente com interface gráfica **Web Glassmorphism** (HTML5/CSS3/ES6+ Modular) e backend modular em Python (**FastAPI + Clean Architecture + SQLite + Playwright + Groq Cloud RAG + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
+Suíte local inteligente com interface gráfica **Web Glassmorphism** (HTML5/CSS3/ES6+ Modular) e backend modular em Python (**FastAPI + Clean Architecture + SQLite + Playwright + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
 
 > [!NOTE]
 > **Sobre o nome:** "Cabeça de Droid" é uma referência a *Honkai: Star Rail* — o apelido carinhoso que Herta dá ao **Aeon Nous** (o Aeon da Erudição), um supercomputador astral que ascendeu à divindade.
@@ -36,7 +36,7 @@ python main.py
 
 * **Acesso Local (PC):** `http://127.0.0.1:8000`
 * **Acesso no Celular/Tablet (Rede Wi-Fi):** `http://<IP_DO_SEU_PC>:8000` *(habilitável em Configurações)*
-* **Rodar Testes:** `python -m unittest discover tests` *(150 testes unitários inclusos)*
+* **Rodar Testes:** `python -m unittest discover tests` *(159 testes unitários inclusos)*
 
 ---
 
@@ -64,13 +64,13 @@ python main.py
 | **18. Exportação em Imagem HD**         |   📷   | Renderização em **4K (2400 × 1350 px)** de Cards de Build, Tier List e Diffs de Evolução.                                                                                                                                       |
 | **19. Breakpoints & Speed Tuning**        |  ⚖️  | Action Value (10000/SPD), metas de 134/160.1 SPD no Ciclo 0 de MoC/PF, sincronia -1 SPD (Bronya/Sunday), checagem Favonius e proporção áurea 1:2.                                                                                       |
 | **20. Calculadora de Ascensão**          |   🧮   | Cálculo exato de Mora, XP e materiais com caps reais (**Genshin 90**, **HSR 80**, **ZZZ 60**).                                                                                                                          |
-| **21. Otimizador IA Groq**                |   🧠   | Consultoria instantânea com Llama 3.3 70B gerando 3 melhorias prioritárias para a build.                                                                                                                                                 |
+| **21. Analisador de Builds Meta**         |   🧠   | Comparação determinística da sua build atual contra benchmarks de metagame, armas BIS e substatus prioritários.                                                                                                                          |
 | **22. Diagnóstico de Lacunas**           |   🔥   | Mapeamento de fraquezas da conta (DPS/Sustento/Elemento) e modo Roast sarcástico.                                                                                                                                                         |
 | **23. Índice de Sorte (Luck Score)**     |   🍀   | Medidor de RNG da conta (SSS+ a F), destacando a peça **God Roll #1** e a **Cursed Roll**.                                                                                                                                    |
 | **24. Gacha Forecast & Metas em Tempo Real** |   🎲   | Simulação Monte Carlo, persistência de metas de banners no SQLite com **cronômetro regressivo ao vivo** segundo a segundo e horários oficiais HoYoverse (**1ª Fase às 23:30**; **2ª Fase Genshin 20h, HSR/ZZZ 14h**). |
 | **25. Central de Farm & OS Diária**      |   🌾   | Domínios abertos hoje e Ordem de Serviço Diária com alocação inteligente de resina.                                                                                                                                                   |
 | **26. Trash Finder & Peças Coringa**     |  🗑️  | Varredura de relíquias sem utilidade, proteção absoluta de peças Coringa/Off-Piece (Duplo Crítico/CV) e conselheiro de síntese.                                                                                                      |
-| **27. Chat IA & RAG Conversacional**     |   💬   | Chat RAG conversacional com histórico persistente no SQLite por jogo e streaming SSE com Groq Cloud (Llama 3.3 70B).                                                                                                                      |
+| **27. Sinergia & Análise de Equipes**     |   💬   | Analisador de sinergia de equipes de 4 slots com persistência de histórico no SQLite por jogo via SSE Stream.                                                                                                                             |
 | **28. Montador de Card de Time HD**      |   👥   | Construtor visual de composições de 4 slots (ou 3 slots no ZZZ), badges dinâmicas, exportação PNG 2x sem distorção e cópia direta para o Clipboard (`Discord`/`WhatsApp`).                                                              |
 
 ---
@@ -84,7 +84,6 @@ graph LR
     User[Usuário] -->|Cofre Local DPAPI / AES-256| Vault[(cookies.enc)]
     Vault -->|Higienização de Logs| San[core/security.py]
     San -->|Chamadas HTTPS Diretas| HoYo[API Oficial HoYoLAB]
-    San -->|RAG Contextualizado| Groq[Groq Cloud API]
 ```
 
 ### Resumo de Privacidade
@@ -113,7 +112,6 @@ graph TD
     Services --> DB[(SQLite hoyo_app.db)]
     Services --> StaticData[static_data/ - JSONs Estáticos]
     Services --> Scrapers[Scrapers Prydwen: HSR / ZZZ / Genshin]
-    Services --> GroqAI[Groq Cloud API - Llama 3.3 70B]
     Services --> HoYoAPI[HoYoLAB API - genshin.py]
 ```
 
@@ -137,7 +135,7 @@ hoyo-projetos/
 ├── assets/                  # Ícones oficiais de elementos e avatares em cache local
 ├── scrapers/                # Raspadores de metagame e guias do Prydwen (HSR, Genshin, ZZZ)
 ├── scripts/                 # Scripts utilitários e serviços do sistema (systemd)
-├── tests/                   # 150 testes unitários automatizados cobrindo todos os módulos
+├── tests/                   # 159 testes unitários automatizados cobrindo todos os módulos
 ├── server.py                # Orquestrador FastAPI modular com ciclo de vida
 └── main.py                  # Entrypoint de inicialização da aplicação
 ```
@@ -196,7 +194,7 @@ $$
 | `GET`  | `/api/briefing/today`                              | Morning Briefing executivo diário                                        |
 | `POST` | `/api/codes/redeem`                                | Resgate em lote de códigos promocionais ativos                           |
 | `POST` | `/api/team/analyze`                                | Análise de sinergia de equipes de 4 slots via SSE Stream                 |
-| `POST` | `/api/chat`                                        | Chat conversacional RAG com Groq Llama 3.3 70B (SSE)                      |
+| `POST` | `/api/chat`                                        | Endpoint de chat local via Server-Sent Events (SSE)                       |
 | `GET`  | `/api/static-data/status`                          | Status geral dos manifestos de dados estáticos e catálogos offline      |
 | `GET`  | `/api/static-data/schedule/{game_id}`              | Calendário diário de materiais de farm e domínios abertos hoje         |
 | `GET`  | `/api/static-data/character/{game_id}/{char_name}` | Perfil detalhado de materiais, chefes e ascensão do personagem           |

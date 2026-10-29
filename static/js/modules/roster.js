@@ -63,7 +63,7 @@ async function loadRoster(gameId) {
             
             // Filtra a lista local baseado na busca de texto, elemento E raridade
             const filtered = roster.filter(char => {
-                const matchesSearch = char.name.toLowerCase().includes(searchQuery);
+                const matchesSearch = char.name.toLowerCase().includes(searchQuery) || (typeof formatCharacterName === 'function' && formatCharacterName(char.name).toLowerCase().includes(searchQuery));
                 const charElemLower = (char.element || "").toLowerCase();
                 const filterLower = activeElementFilter.toLowerCase();
                 const isLumifluxMatch = filterLower === "lumiflux" && (charElemLower === "lumiflux" || charElemLower === "element_300" || charElemLower === "element 300");
@@ -119,9 +119,9 @@ async function loadRoster(gameId) {
                     </div>
 
                     <div class="char-info">
-                        <div class="char-name" title="${char.name}">
+                        <div class="char-name" title="${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}">
                             <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
-                            ${char.name}
+                            ${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}
                         </div>
                         <div class="char-lvl">${lvlLabel} ${char.level}</div>
                     </div>
@@ -373,12 +373,15 @@ async function inspectCharacter(gameId, char) {
     window.currentInspectorGameId = gameId;
 
     
-    document.getElementById("ins-name").innerText = char.name;
+    document.getElementById("ins-name").innerText = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
     
     const elemKey = (char.element || "").toLowerCase();
     const displayElem = formatElementDisplayName(char.element);
     const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
-    document.getElementById("ins-meta").innerHTML = `${char.rank_str || "C0"} • ${elemHtml} • ${isEn ? "Level" : "Nível"} ${char.level}`;
+    const pathVal = char.path || char.specialty || char.weapon_type || "";
+    const pathDisplay = pathVal && typeof formatPathName === 'function' ? formatPathName(pathVal, gameId) : "";
+    const pathHtml = pathDisplay ? ` • ${pathDisplay.toUpperCase()}` : "";
+    document.getElementById("ins-meta").innerHTML = `${char.rank_str || "C0"} • ${elemHtml}${pathHtml} • ${isEn ? "Level" : "Nível"} ${char.level}`;
     
     // Configura e limpa o card do Otimizador IA
     const btnOptimize = document.getElementById("btn-ai-optimize");
@@ -413,7 +416,7 @@ async function inspectCharacter(gameId, char) {
                 });
                 aiSuggestions.style.display = "block";
             } else {
-                aiSuggestions.innerHTML = "<li>Não foi possível obter recomendações agora. Verifique a chave Groq.</li>";
+                aiSuggestions.innerHTML = "<li>O módulo de recomendações por IA está temporariamente desabilitado.</li>";
                 aiSuggestions.style.display = "block";
             }
         } catch (optErr) {
@@ -1766,12 +1769,15 @@ async function generateBuildCardCanvas(char, gameId) {
 
     ctx.font = "bold 26px sans-serif";
     ctx.fillStyle = "#ffffff";
-    ctx.fillText(char.name.length > 15 ? char.name.substring(0, 15) + "..." : char.name, hx + 18, hy + 56);
+    const charDisplayName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
+    ctx.fillText(charDisplayName.length > 15 ? charDisplayName.substring(0, 15) + "..." : charDisplayName, hx + 18, hy + 56);
 
     ctx.font = "500 13px sans-serif";
     ctx.fillStyle = "#cbd5e1";
     const elemName = formatElementDisplayName(char.element || "Físico").toUpperCase();
-    ctx.fillText(`${(window.isEn || window.currentLang === "en") ? "Lv." : "Nv."} ${char.level} • ${elemName}`, hx + 18, hy + 76);
+    const pathValCanvas = char.path || char.specialty || char.weapon_type || "";
+    const pathNameCanvas = pathValCanvas && typeof formatPathName === 'function' ? " • " + formatPathName(pathValCanvas, gameId).toUpperCase() : "";
+    ctx.fillText(`${(window.isEn || window.currentLang === "en") ? "Lv." : "Nv."} ${char.level} • ${elemName}${pathNameCanvas}`, hx + 18, hy + 76);
 
     // 2.2 Constelações / Eidolons / Mindscapes (6 Nódulos Visuais com Ícones e Destaque Ativo/Inativo)
     const rankPrefix = gameId === "genshin" ? "C" : (gameId === "zzz" ? "M" : "E");
@@ -2430,7 +2436,8 @@ window.generateTierListCardCanvas = async (gameId, auditData) => {
                 const textX = avatarX + avatarSize + 10;
                 ctx.font = "bold 12px sans-serif";
                 ctx.fillStyle = "#ffffff";
-                const cName = c.name.length > 14 ? c.name.substring(0, 13) + "." : c.name;
+                const cFormatted = typeof formatCharacterName === 'function' ? formatCharacterName(c.name) : c.name;
+                const cName = cFormatted.length > 14 ? cFormatted.substring(0, 13) + "." : cFormatted;
                 ctx.fillText(cName, textX, cy + 23);
 
                 ctx.font = "bold 11px sans-serif";

@@ -2874,7 +2874,7 @@ window.openRoastModal = async function(gameId) {
         
         if (!rawText.trim()) {
 
-    bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">${isEn ? "No content returned by Roast. Check if your Groq API key is set in Settings." : "Nenhum conteúdo retornado pelo Roast. Verifique se sua chave API da Groq está configurada nas Configurações."}</p>`;
+    bodyEl.innerHTML = `<p style="color: var(--color-danger); padding: 20px;">${isEn ? "AI Roast module is temporarily disabled." : "O módulo de Roast IA está temporariamente desabilitado."}</p>`;
         }
     } catch (err) {
         console.error("Erro no Roast:", err);

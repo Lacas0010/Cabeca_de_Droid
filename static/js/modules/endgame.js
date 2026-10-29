@@ -123,12 +123,12 @@ function normalizeEndgameChar(char, gameId) {
     // Normaliza nomes desconhecidos do Desbravador e Viajante
     if (!name || name.toLowerCase().includes("desconhecido") || name.toLowerCase().includes("avatar")) {
         if (id.startsWith("800") || id.startsWith("801") || name.includes("8009") || name.includes("800")) {
-            name = "Desbravador(a)";
+            name = checkIsEn() ? "Trailblazer" : "Desbravador(a)";
             char.name = name;
             if (!char.element) char.element = "ice";
             char.rarity = 5;
         } else if (id === "10000005" || id === "10000007" || name.includes("1000000")) {
-            name = "Viajante";
+            name = checkIsEn() ? "Traveler" : "Viajante";
             char.name = name;
             char.rarity = 5;
         }
@@ -184,14 +184,15 @@ function renderEndgameTeamCard(team, gameId) {
             const avatarSrc = char.icon || fallbackIcon;
             const rankBadge = char.rank_str ? `<span class="endgame-char-rank-badge">${char.rank_str}</span>` : "";
 
+            const endgameCharName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
             charsHtml += `
-                <div class="endgame-char-mini ${elemClass} ${rarityClass}" data-char-name="${char.name}" title="${char.name} (${checkIsEn() ? 'Lv.' : 'Nv.'} ${char.level || 80}) • ${checkIsEn() ? 'Inspect Build' : 'Inspecionar Build'}">
+                <div class="endgame-char-mini ${elemClass} ${rarityClass}" data-char-name="${char.name}" title="${endgameCharName} (${checkIsEn() ? 'Lv.' : 'Nv.'} ${char.level || 80}) • ${checkIsEn() ? 'Inspect Build' : 'Inspecionar Build'}">
                     <div class="endgame-char-avatar-box" style="position: relative; width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; flex-shrink: 0; display: inline-block;">
-                        <img src="${avatarSrc}" class="endgame-char-avatar" style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; border-radius: 50%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${char.name}">
+                        <img src="${avatarSrc}" class="endgame-char-avatar" style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; border-radius: 50%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${endgameCharName}">
                         ${elemKey && elemKey !== "bangboo" ? `<img src="/assets/elements/${gameId}_${elemKey}.png" class="endgame-char-elem-icon" style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; min-width: 14px; min-height: 14px; max-width: 14px; max-height: 14px; border-radius: 50%; padding: 1px; object-fit: contain;" onerror="this.style.display='none';" alt="">` : ""}
                         ${rankBadge}
                     </div>
-                    <span class="endgame-char-name-label">${char.name}</span>
+                    <span class="endgame-char-name-label">${endgameCharName}</span>
                     <span class="endgame-char-lvl-label">${checkIsEn() ? 'Lv.' : 'Nv.'} ${char.level || 80}</span>
                 </div>
             `;
@@ -647,24 +648,25 @@ function renderTeamMatchCard(team, gameId) {
         const elemClass = ELEMENT_MAPPING[elemKey] || "el-physical";
         const rarityClass = (m.rarity === 5 || m.rarity === "5" || String(m.rarity).toUpperCase() === "S") ? "rarity-5" : "rarity-4";
 
+        const mDisplayName = typeof formatCharacterName === 'function' ? formatCharacterName(m.name) : m.name;
         if (m.is_owned) {
             slotsHtml += `
-                <div class="team-matcher-slot owned" title="${m.name} (Nv. ${m.level || 80} ${m.rank_str || ''}) • ${isEn ? "In your Roster" : "No seu Roster"}">
+                <div class="team-matcher-slot owned" title="${mDisplayName} (Nv. ${m.level || 80} ${m.rank_str || ''}) • ${isEn ? "In your Roster" : "No seu Roster"}">
                     <div class="team-matcher-avatar-box ${elemClass} ${rarityClass}">
-                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${m.name}">
+                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${mDisplayName}">
                     </div>
-                    <span class="team-matcher-slot-name">${m.name}</span>
+                    <span class="team-matcher-slot-name">${mDisplayName}</span>
                     <span class="team-matcher-slot-role">${formatEndgameRole(m.role)}</span>
                     <span class="team-matcher-slot-badge owned">${isEn ? "Lv." : "Nv."} ${m.level || 80}</span>
                 </div>
             `;
         } else {
             slotsHtml += `
-                <div class="team-matcher-slot missing" title="${m.name} • ${isEn ? "Not Owned" : "Não Possuído"}">
+                <div class="team-matcher-slot missing" title="${mDisplayName} • ${isEn ? "Not Owned" : "Não Possuído"}">
                     <div class="team-matcher-avatar-box">
-                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${m.name}">
+                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${mDisplayName}">
                     </div>
-                    <span class="team-matcher-slot-name">${m.name}</span>
+                    <span class="team-matcher-slot-name">${mDisplayName}</span>
                     <span class="team-matcher-slot-role">${formatEndgameRole(m.role)}</span>
                     <span class="team-matcher-slot-badge missing"><i class="fa-solid fa-xmark"></i> ${isEn ? "Missing" : "Faltando"}</span>
                 </div>
@@ -685,14 +687,14 @@ function renderTeamMatchCard(team, gameId) {
                 <div class="team-matcher-subs-list">
                     ${missingWithSubs.map(m => `
                         <div>
-                            <span style="font-size: 11px; color: #f87171; font-weight: 600;">${isEn ? `For the slot of ${m.name} (${formatEndgameRole(m.role)}):` : `Para o slot de ${m.name} (${m.role}):`}</span>
+                            <span style="font-size: 11px; color: #f87171; font-weight: 600;">${isEn ? `For the slot of ${typeof formatCharacterName === 'function' ? formatCharacterName(m.name) : m.name} (${formatEndgameRole(m.role)}):` : `Para o slot de ${m.name} (${m.role}):`}</span>
                             <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
                                 ${m.substitutes.map(sub => `
                                     <div class="team-matcher-sub-chip">
                                         <div class="team-matcher-sub-info">
                                             <img src="${sub.icon || `/assets/${gameId}_icon.png`}" class="team-matcher-sub-avatar" onerror="this.onerror=null; this.src='/assets/${gameId}_icon.png';">
                                             <div>
-                                                <strong style="color: #f8fafc;">${sub.name}</strong> 
+                                                <strong style="color: #f8fafc;">${typeof formatCharacterName === 'function' ? formatCharacterName(sub.name) : sub.name}</strong> 
                                                 <span style="color: #94a3b8; font-size: 10px;">(${isEn ? "Lv." : "Nv."} ${sub.level} • ${sub.rank_str})</span>
                                             </div>
                                         </div>

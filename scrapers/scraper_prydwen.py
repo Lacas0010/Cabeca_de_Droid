@@ -695,7 +695,11 @@ class PrydwenScraper:
             except Exception:
                 all_banners = {}
 
-        targets = [game_id.lower().strip()] if game_id and game_id.lower().strip() in banner_urls else list(banner_urls.keys())
+        targets = (
+            [game_id.lower().strip()]
+            if game_id and game_id.lower().strip() in banner_urls
+            else list(banner_urls.keys())
+        )
 
         for g in targets:
             url = banner_urls[g]
@@ -713,7 +717,9 @@ class PrydwenScraper:
                         if phase_node:
                             game_data["patch_info"] = phase_node.get_text().strip()
 
-                        grid = sec_header.find_next_sibling(class_="banner-grid") or sec_header.find_next(class_="banner-grid")
+                        grid = sec_header.find_next_sibling(class_="banner-grid") or sec_header.find_next(
+                            class_="banner-grid"
+                        )
                         cards = grid.find_all(class_="banner-card") if grid else []
                         for idx, c in enumerate(cards):
                             # Busca imagem da arte do banner (banner-art)
@@ -729,7 +735,9 @@ class PrydwenScraper:
                                 for a in c.find_all("a")
                                 if "/characters/" in a.get("href", "") or "/agents/" in a.get("href", "")
                             ]
-                            names = list(dict.fromkeys([a.get_text().strip() for a in char_links if a.get_text().strip()]))
+                            names = list(
+                                dict.fromkeys([a.get_text().strip() for a in char_links if a.get_text().strip()])
+                            )
 
                             # Busca 4★ com taxa aumentada (Secondary Rate Up)
                             rate_up_sec = c.find(attrs={"aria-label": lambda x: x and "secondary rate up" in x.lower()})
@@ -755,7 +763,13 @@ class PrydwenScraper:
 
                                 if prev_banner:
                                     prev_img = prev_banner.get("banner_image", "")
-                                    if prev_img and (prev_img.startswith("/assets/") or "_full.webp" in img_src or "banner1" in img_src or "banner2" in img_src or not img_src):
+                                    if prev_img and (
+                                        prev_img.startswith("/assets/")
+                                        or "_full.webp" in img_src
+                                        or "banner1" in img_src
+                                        or "banner2" in img_src
+                                        or not img_src
+                                    ):
                                         img_src = prev_img
                                     if not featured_4s and prev_banner.get("featured_4stars"):
                                         featured_4s = prev_banner.get("featured_4stars", [])
@@ -793,4 +807,3 @@ class PrydwenScraper:
         if game_id and game_id.lower().strip() in all_banners:
             return all_banners[game_id.lower().strip()]
         return all_banners
-

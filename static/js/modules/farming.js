@@ -220,8 +220,8 @@ function formatFarmingNote(noteStr) {
                     html += `
                         <div class="farm-target-chip">
                             ${cIcon ? `<img src="${cIcon}" onerror="this.src='/assets/logo.svg'">` : `<i class="fa-solid fa-user" style="font-size:11px; color:#38bdf8;"></i>`}
-                            <span>${cName}</span>
-                            <button class="btn-remove-chip" title="Remover foco" onclick="window.quickRemoveFarmTarget('${gameId}', '${cName}', '${targetContainerId}')">✕</button>
+                            <span>${typeof formatCharacterName === 'function' ? formatCharacterName(cName) : cName}</span>
+                            <button class="btn-remove-chip" title="${isEn ? 'Remove focus' : 'Remover foco'}" onclick="window.quickRemoveFarmTarget('${gameId}', '${cName}', '${targetContainerId}')">✕</button>
                         </div>
                     `;
                 });
@@ -743,7 +743,7 @@ function formatFarmingNote(noteStr) {
         const filterType = window.currentFarmFilterPill || "all";
 
         let filtered = rosterList.filter(c => {
-            const nameMatch = !searchVal || (c.name || "").toLowerCase().includes(searchVal);
+            const nameMatch = !searchVal || (c.name || "").toLowerCase().includes(searchVal) || (typeof formatCharacterName === 'function' && formatCharacterName(c.name).toLowerCase().includes(searchVal));
             if (!nameMatch) return false;
 
             const rarityNum = parseInt(c.rarity) || (String(c.rarity).includes("5") || String(c.rarity).toUpperCase() === "S" ? 5 : 4);
@@ -781,10 +781,10 @@ function formatFarmingNote(noteStr) {
                         <img src="${c.icon || '/assets/logo.svg'}" onerror="this.src='/assets/logo.svg'" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div style="font-weight: 700; color: #fff; font-size: 12px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
-                        ${c.name}
+                        ${typeof formatCharacterName === 'function' ? formatCharacterName(c.name) : c.name}
                     </div>
                     <div style="display: flex; gap: 4px; align-items: center; justify-content: center; flex-wrap: wrap;">
-                        <span style="font-size: 9px; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #cbd5e1;">Nv. ${c.level}</span>
+                        <span style="font-size: 9px; padding: 1px 5px; border-radius: 4px; background: rgba(255,255,255,0.08); color: #cbd5e1;">${isEn ? 'Lv.' : 'Nv.'} ${c.level}</span>
                         ${c.grade && c.grade !== 'N/A' ? `<span style="font-size: 9px; padding: 1px 5px; border-radius: 4px; background: ${gColor}22; color: ${gColor}; font-weight: 700; border: 1px solid ${gColor}44;">${c.grade}</span>` : ''}
                     </div>
                 </div>
@@ -1446,7 +1446,7 @@ function formatFarmingNote(noteStr) {
                             <div style="display:flex; align-items:center; gap:10px; padding:8px 14px; background:rgba(255,255,255,0.06); border-radius:10px; border:1px solid rgba(255,255,255,0.1); min-height:64px; transition:all 0.2s ease;" onmouseover="this.style.borderColor='${color}'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.transform='none'">
                                 ${iconHtml}
                                 <div style="display:flex; flex-direction:column; justify-content:center;">
-                                    <strong style="color:#ffffff; font-size:13px; font-weight:600; line-height:1.2;">${c.name}</strong>
+                                    <strong style="color:#ffffff; font-size:13px; font-weight:600; line-height:1.2;">${typeof formatCharacterName === 'function' ? formatCharacterName(c.name) : c.name}</strong>
                                     <div style="display:flex; align-items:center; gap:6px; margin-top:3px;">
                                         ${isUnequipped ? `<span style="color:#94a3b8; font-size:11px; font-weight:500;">Sem Equipamento</span>` : `<span style="color:${color}; font-weight:700; font-size:12px;">${c.score.toFixed(1)}%</span><span style="font-size:10px; color:#ffffff; font-weight:bold; background:rgba(255,255,255,0.12); padding:1px 6px; border-radius:4px;">${c.grade}</span>`}
                                     </div>
@@ -2235,14 +2235,14 @@ window.renderAccountGapsResult = function(data) {
 
     // 6. Box de Parecer da IA & Ação Rápida
     html += `
-        <div id="ai-strategic-verdict-box" style="background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 20px;">
+        <div id="ai-strategic-verdict-box" style="display: none; background: linear-gradient(135deg, rgba(2, 132, 199, 0.12), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 16px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px;">
                 <div style="display: flex; align-items: center; gap: 10px;">
                     <div style="width: 36px; height: 36px; border-radius: 10px; background: rgba(56, 189, 248, 0.2); display: flex; align-items: center; justify-content: center; color: #38bdf8;">
                         <i class="fa-solid fa-brain" style="font-size: 18px;"></i>
                     </div>
                     <div>
-                        <h4 style="margin: 0; font-size: 15px; color: var(--text-primary);">Parecer Estratégico da IA (Groq RAG)</h4>
+                        <h4 style="margin: 0; font-size: 15px; color: var(--text-primary);">Parecer Estratégico da Conta</h4>
                         <span style="font-size: 11px; color: var(--text-muted);">Recomendações customizadas em tempo real alimentadas pelo seu Roster</span>
                     </div>
                 </div>
@@ -2272,7 +2272,7 @@ window.consultAiAccountGaps = async function(customQuestion) {
         contentArea.innerHTML = `
             <div style="display: flex; align-items: center; gap: 10px; padding: 16px 0; color: #38bdf8;">
                 <i class="fa-solid fa-spinner fa-spin fa-lg"></i>
-                <span>Avaliando combinações de times, Roster e metagame com o modelo Groq...</span>
+                <span>Avaliando combinações de times, Roster e metagame...</span>
             </div>
         `;
     }

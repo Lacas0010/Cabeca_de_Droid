@@ -78,10 +78,10 @@ class TestSecurityVault(unittest.TestCase):
         self.assertIn("123***89", preview_str)
         self.assertIn("v2_CA***4321", preview_str)
 
-        groq_key = "gsk_1234567890abcdef1234567890abcdef"
-        masked_groq = security_vault.mask_secret_string(groq_key, show_prefix=4, show_suffix=4)
-        self.assertNotIn("abcdef1234567890", masked_groq)
-        self.assertTrue(masked_groq.startswith("gsk_"))
+        secret_str = "sec_1234567890abcdef1234567890abcdef"
+        masked_secret = security_vault.mask_secret_string(secret_str, show_prefix=4, show_suffix=4)
+        self.assertNotIn("abcdef1234567890", masked_secret)
+        self.assertTrue(masked_secret.startswith("sec_"))
 
     def test_pin_hashing_and_verification(self):
         pin = "123456"
@@ -92,12 +92,12 @@ class TestSecurityVault(unittest.TestCase):
 
 class TestLogSanitizer(unittest.TestCase):
     def test_redaction(self):
-        dirty_log = "Error syncing with ltoken_v2=v2_SECRET_ABCDEF_1234567890 and ltuid_v2=987654321. Groq key: gsk_abcdef1234567890xyz"
+        dirty_log = "Error syncing with ltoken_v2=v2_SECRET_ABCDEF_1234567890 and ltuid_v2=987654321. Auth: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         clean_log = log_sanitizer.sanitize_log(dirty_log)
         self.assertNotIn("v2_SECRET_ABCDEF_1234567890", clean_log)
-        self.assertNotIn("gsk_abcdef1234567890xyz", clean_log)
+        self.assertNotIn("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9", clean_log)
         self.assertIn("ltoken_v2=***[LTOKEN_REDACTED]***", clean_log)
-        self.assertIn("gsk_***[API_KEY_REDACTED]***", clean_log)
+        self.assertIn("Bearer ***[BEARER_REDACTED]***", clean_log)
 
 
 class TestDatabaseSecuritySettings(unittest.TestCase):

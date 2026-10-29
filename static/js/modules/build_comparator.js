@@ -1756,11 +1756,6 @@ window.loadAppConfiguration = async () => {
         const res = await fetch("/api/config");
         const data = await res.json();
 
-        const groqKeyInput = document.getElementById("cfg-groq-key");
-        if (groqKeyInput && data.groq_api_key) {
-            groqKeyInput.value = data.groq_api_key;
-        }
-
         const cookiesInput = document.getElementById("cfg-hoyolab-cookies");
         if (cookiesInput && data.cookies_raw) {
             cookiesInput.value = data.cookies_raw;
@@ -1842,8 +1837,7 @@ window.loadAppConfiguration = async () => {
 };
 
 window.saveAppConfiguration = async () => {
-    const groqKey = document.getElementById("cfg-groq-key")?.value || "";
-    const cookiesRaw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
+        const cookiesRaw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
     const autoSyncEnabled = document.getElementById("cfg-auto-sync-enabled")?.checked ?? true;
     const autoSyncTime = document.getElementById("cfg-auto-sync-time")?.value || "04:00";
     const autoSyncRoster = document.getElementById("cfg-auto-sync-roster")?.checked ?? true;
@@ -1868,8 +1862,7 @@ window.saveAppConfiguration = async () => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                groq_api_key: groqKey,
-                cookies_raw: cookiesRaw,
+                                cookies_raw: cookiesRaw,
                 auto_sync_enabled: autoSyncEnabled,
                 auto_sync_time: autoSyncTime,
                 auto_sync_roster: autoSyncRoster,

@@ -28,19 +28,6 @@ async function fetchConfig() {
             }
         }
 
-        // 1. Chave IA Groq (Tratada com máscara ou em branco para segurança)
-        const groqInput = document.getElementById("cfg-groq-key");
-        if (groqInput) {
-            if (config.has_api_key) {
-                groqInput.value = "";
-                const isEn = window.isEn;
-                groqInput.placeholder = config.groq_api_key || (isEn ? "gsk_... (Key configured)" : "gsk_... (Chave configurada)");
-            } else {
-                groqInput.value = "";
-                groqInput.placeholder = "gsk_...";
-            }
-        }
-
         // 2. Máscara de Cookies (Zero-Exposure de tokens no frontend)
         const previewEl = document.getElementById("cfg-cookies-preview-text");
         const previewTag = document.getElementById("cfg-cookies-status-tag");
@@ -104,7 +91,7 @@ async function fetchConfig() {
                 : (isEnLan ? "Secure isolation active: Only this computer can access APIs and data." : "Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.");
         }
         
-        updateApiStatusIndicator(config.has_api_key && config.has_cookies);
+        updateApiStatusIndicator(config.has_cookies);
     } catch (err) {
         console.error("Erro ao buscar configurações:", err);
     }
@@ -117,7 +104,7 @@ function updateApiStatusIndicator(online) {
         const isEn = window.isEn;
         if (online) {
             dot.className = "status-dot online";
-            text.innerText = isEn ? "AI & Cookies Connected" : "IA & Cookies Conectados";
+            text.innerText = isEn ? "Cookies Connected" : "Cookies Conectados";
         } else {
             dot.className = "status-dot offline";
             text.innerText = isEn ? "Configuration pending" : "Configuração pendente";
@@ -135,11 +122,10 @@ async function setupConfigForm() {
     const disablePinBtn = document.getElementById("btn-disable-pin");
     const lanToggle = document.getElementById("cfg-lan-access-toggle");
 
-    // Salvar Configurações (Chave Groq + Cookies)
+    // Salvar Configurações (Cookies + Idioma)
     if (saveBtn) {
         saveBtn.addEventListener("click", async () => {
-            const groq_api_key = document.getElementById("cfg-groq-key")?.value || "";
-            const cookies_raw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
+                        const cookies_raw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
             const language = window.getLanguage ? window.getLanguage() : (document.getElementById("cfg-app-language")?.value || "pt");
             
             if (statusMsg) {
@@ -151,7 +137,7 @@ async function setupConfigForm() {
                 const res = await fetch("/api/config", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ groq_api_key, cookies_raw, language })
+                    body: JSON.stringify({ cookies_raw, language })
                 });
                 const data = await res.json();
                 

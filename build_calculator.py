@@ -810,21 +810,15 @@ def get_meta_data(game_id: str) -> dict:
                     cid = master.get(norm_name) or master.get(norm_key) or master.get(k.lower())
                     has_mains = bool(v.get("main_stats"))
                     if cid and (
-                        str(cid) not in indexed_data
-                        or has_mains
-                        or not indexed_data[str(cid)].get("main_stats")
+                        str(cid) not in indexed_data or has_mains or not indexed_data[str(cid)].get("main_stats")
                     ):
                         indexed_data[str(cid)] = v
                     if norm_name and (
-                        norm_name not in indexed_data
-                        or has_mains
-                        or not indexed_data[norm_name].get("main_stats")
+                        norm_name not in indexed_data or has_mains or not indexed_data[norm_name].get("main_stats")
                     ):
                         indexed_data[norm_name] = v
                     if norm_key and (
-                        norm_key not in indexed_data
-                        or has_mains
-                        or not indexed_data[norm_key].get("main_stats")
+                        norm_key not in indexed_data or has_mains or not indexed_data[norm_key].get("main_stats")
                     ):
                         indexed_data[norm_key] = v
             META_DATA_CACHE[game_id] = indexed_data
@@ -1409,9 +1403,7 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
 
     char_key = str(char_id)
     char_meta = (
-        meta_db.get(char_key)
-        or meta_db.get(char_key.lower().strip())
-        or meta_db.get(normalize_char_name(char_key))
+        meta_db.get(char_key) or meta_db.get(char_key.lower().strip()) or meta_db.get(normalize_char_name(char_key))
     )
     if char_meta:
         subs = char_meta.get("substats_priority", [])
@@ -2138,15 +2130,18 @@ def generate_meta_json_from_markdown(game_id: str):
             main_sec = main_sec_match.group(1)
             lines = main_sec.split("\n")
             for line in lines:
-                m = re.search(r"-\s*\*\*([^\*]+)\*\*:?\s*(.*)", line) or re.search(
-                    r"-\s*([^\*:]+):\s*(.*)", line
-                )
+                m = re.search(r"-\s*\*\*([^\*]+)\*\*:?\s*(.*)", line) or re.search(r"-\s*([^\*:]+):\s*(.*)", line)
                 if m:
                     slot_label = m.group(1).lower().strip()
                     val = m.group(2)
                     if "sand" in slot_label or "ampulheta" in slot_label or "areia" in slot_label:
                         slot_key = "sands"
-                    elif "goblet" in slot_label or "cálice" in slot_label or "calice" in slot_label or "copo" in slot_label:
+                    elif (
+                        "goblet" in slot_label
+                        or "cálice" in slot_label
+                        or "calice" in slot_label
+                        or "copo" in slot_label
+                    ):
                         slot_key = "goblet"
                     elif "circlet" in slot_label or "tiara" in slot_label or "coroa" in slot_label:
                         slot_key = "circlet"
@@ -2542,7 +2537,7 @@ def simulate_gacha_probabilities(
             base_rate = 0.007  # 0.7%
             soft_pity_increment = 0.07
             promo_chance = 0.75  # 75% rate up
-            fate_point_cap = 1   # Limite oficial de 1 ponto de destino na v5.0+
+            fate_point_cap = 1  # Limite oficial de 1 ponto de destino na v5.0+
         elif game_id == "hsr":
             soft_pity_start = 65
             base_rate = 0.008  # 0.8%
@@ -2833,9 +2828,13 @@ def calculate_gacha_forecast(
     if needed_new_copies <= 0:
         worst_case_pulls = 0
     elif needed_new_copies == 1:
-        worst_case_pulls = (hard_pity_val - current_pity) if is_guaranteed else (max_guarantee_multiplier - current_pity)
+        worst_case_pulls = (
+            (hard_pity_val - current_pity) if is_guaranteed else (max_guarantee_multiplier - current_pity)
+        )
     else:
-        first_copy_worst = (hard_pity_val - current_pity) if is_guaranteed else (max_guarantee_multiplier - current_pity)
+        first_copy_worst = (
+            (hard_pity_val - current_pity) if is_guaranteed else (max_guarantee_multiplier - current_pity)
+        )
         remaining_copies_worst = (needed_new_copies - 1) * max_guarantee_multiplier
         worst_case_pulls = first_copy_worst + remaining_copies_worst
 
@@ -2889,9 +2888,7 @@ def calculate_gacha_forecast(
             "active": has_daily_pass,
             "gems": pass_gems,
             "pulls": round(pass_pulls, 1),
-            "label": f"{pass_name} ({target_days}d × 90)"
-            if has_daily_pass
-            else f"{pass_name} (Inativo)",
+            "label": f"{pass_name} ({target_days}d × 90)" if has_daily_pass else f"{pass_name} (Inativo)",
         },
         "battle_pass": {
             "active": has_battle_pass,
@@ -4282,7 +4279,15 @@ def generate_daily_farm_order(
     if lang == "en":
         weekday_names = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     else:
-        weekday_names = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado", "Domingo"]
+        weekday_names = [
+            "Segunda-feira",
+            "Terça-feira",
+            "Quarta-feira",
+            "Quinta-feira",
+            "Sexta-feira",
+            "Sábado",
+            "Domingo",
+        ]
     weekday_name = weekday_names[weekday]
 
     # Configurações de Energia e Custos por Jogo
@@ -4589,12 +4594,16 @@ def generate_daily_farm_order(
             desc_text = f"Run {runs}x {domain_label} seeking optimal main and sub-stats to maximize {c_name}'s rating."
         else:
             domain_label = (
-                "Domínio de Artefatos" if g == "genshin" else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
+                "Domínio de Artefatos"
+                if g == "genshin"
+                else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
             )
             p_badge = "💎 Otimização de Build"
             mat_name = f"Sets Recomendados para {c_name}"
             loc_name = f"{domain_label} Recomendado"
-            desc_text = f"Realize {runs}x {domain_label} buscando peças com Atributos Ideais para maximizar a nota de {c_name}."
+            desc_text = (
+                f"Realize {runs}x {domain_label} buscando peças com Atributos Ideais para maximizar a nota de {c_name}."
+            )
 
         task_item = {
             "id": sig,
@@ -5665,7 +5674,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         "details": [gap["title"] for gap in critical_gaps],
     }
 
-    # Resumo formatado em Markdown para injeção rápida no Groq RAG
+    # Resumo formatado em Markdown consolidado
     rag_lines = [
         f"### DIAGNÓSTICO DE LACUNAS DA CONTA ({game_names.get(g, g.upper())}):",
         f"- **Pontuação de Saúde da Conta:** {overall_score}/100 (Classificação: {score_grade} - {score_label})",

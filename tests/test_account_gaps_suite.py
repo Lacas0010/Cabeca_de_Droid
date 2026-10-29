@@ -130,22 +130,14 @@ class TestAccountGapsSuite(unittest.TestCase):
         res_invalid = self.client.get("/api/strategy/account-gaps/invalid_game")
         self.assertEqual(res_invalid.status_code, 400)
 
-    @patch("server.GroqRAG")
-    def test_api_ask_ai_gaps_endpoint(self, mock_groq_rag_class):
-        """Testa o endpoint POST /api/strategy/ask-ai-gaps com mock de IA."""
-        mock_instance = MagicMock()
-        mock_instance.client = MagicMock()
-        mock_instance.ask_assistant.return_value = (
-            "Plano Estratégico: Priorize Robin no próximo banner para fechar o time com Feixiao."
-        )
-        mock_groq_rag_class.return_value = mock_instance
-
+    def test_api_ask_ai_gaps_endpoint(self):
+        """Testa o endpoint POST /api/strategy/ask-ai-gaps com módulo de IA desabilitado."""
         payload = {"game_id": "hsr", "custom_question": "Quem devo puxar na próxima versão?"}
         res = self.client.post("/api/strategy/ask-ai-gaps", json=payload)
         self.assertEqual(res.status_code, 200)
         data = res.json()
-        self.assertTrue(data.get("has_ai"))
-        self.assertIn("Plano Estratégico", data.get("ai_response"))
+        self.assertFalse(data.get("has_ai"))
+        self.assertIn("DIAGNÓSTICO DE LACUNAS DA CONTA", data.get("ai_response"))
         self.assertIn("analysis", data)
 
 

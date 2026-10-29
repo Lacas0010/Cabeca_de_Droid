@@ -70,9 +70,223 @@ function formatElementDisplayName(rawElem) {
         };
         const lower = str.toLowerCase();
         if (enMap[lower]) return enMap[lower];
+    } else {
+        const ptMap = {
+            "physical": "Físico",
+            "fire": "Fogo",
+            "ice": "Gelo",
+            "electric": "Elétrico",
+            "ether": "Éter",
+            "wind": "Vento",
+            "lightning": "Raio",
+            "quantum": "Quântico",
+            "imaginary": "Imaginário"
+        };
+        const lower = str.toLowerCase();
+        if (ptMap[lower]) return ptMap[lower];
     }
     return str;
 }
+
+// Mapa de Tradução de Nomes de Personagens PT -> EN
+const CHARACTER_NAME_MAP_EN = {
+    // HSR
+    "loba prateada": "Silver Wolf",
+    "lobo prateado": "Silver Wolf",
+    "loba prateada nv. 999": "Silver Wolf",
+    "desbravador": "Trailblazer",
+    "desbravadora": "Trailblazer",
+    "desbravador(a)": "Trailblazer",
+    "desbravador (destruição)": "Trailblazer (Destruction)",
+    "desbravador (preservação)": "Trailblazer (Preservation)",
+    "desbravador (harmonia)": "Trailblazer (Harmony)",
+    "desbravador (recordação)": "Trailblazer (Remembrance)",
+    "desbravador (reminiscência)": "Trailblazer (Remembrance)",
+    "desbravador • destruição": "Trailblazer • Destruction",
+    "desbravador • preservação": "Trailblazer • Preservation",
+    "desbravador • harmonia": "Trailblazer • Harmony",
+    "desbravador • recordação": "Trailblazer • Remembrance",
+    "desbravador • reminiscência": "Trailblazer • Remembrance",
+    "desbravadora (destruição)": "Trailblazer (Destruction)",
+    "desbravadora (preservação)": "Trailblazer (Preservation)",
+    "desbravadora (harmonia)": "Trailblazer (Harmony)",
+    "desbravadora (recordação)": "Trailblazer (Remembrance)",
+    "desbravadora (reminiscência)": "Trailblazer (Remembrance)",
+    "desbravadora • destruição": "Trailblazer • Destruction",
+    "desbravadora • preservação": "Trailblazer • Preservation",
+    "desbravadora • harmonia": "Trailblazer • Harmony",
+    "desbravadora • recordação": "Trailblazer • Remembrance",
+    "desbravadora • reminiscência": "Trailblazer • Remembrance",
+    "7 de março": "March 7th",
+    "7 de março (caça)": "March 7th (The Hunt)",
+    "7 de março • a caça": "March 7th • The Hunt",
+    "7 de março • caça": "March 7th • The Hunt",
+    "7 de março (preservação)": "March 7th (Preservation)",
+    "7 de março • preservação": "March 7th • Preservation",
+    "cisne negro": "Black Swan",
+    "vaga-lume": "Firefly",
+    "vagalume": "Firefly",
+    "faísca": "Sparkle",
+    "faisca": "Sparkle",
+    "aventurina": "Aventurine",
+    "a herta": "The Herta",
+    "topaz e dinheirinho": "Topaz & Numby",
+    "topaz & dinheirinho": "Topaz & Numby",
+    "topaz e dinhero": "Topaz & Numby",
+    "topaz & dinhero": "Topaz & Numby",
+    "dan heng • embebedor de luna": "Dan Heng • Imbibitor Lunae",
+    "dan heng embebedor de luna": "Dan Heng • Imbibitor Lunae",
+    "embebedor de luna": "Dan Heng • Imbibitor Lunae",
+    "tingyun • fuga": "Tingyun • Fugue",
+    "tingyun fuga": "Tingyun • Fugue",
+    "doutor ratio": "Dr. Ratio",
+    "dr ratio": "Dr. Ratio",
+    "dr. ratio": "Dr. Ratio",
+    "domingo": "Sunday",
+    "aqueronte": "Acheron",
+    // Genshin
+    "viajante": "Traveler",
+    "viajante (anemo)": "Traveler (Anemo)",
+    "viajante (geo)": "Traveler (Geo)",
+    "viajante (electro)": "Traveler (Electro)",
+    "viajante (dendro)": "Traveler (Dendro)",
+    "viajante (hydro)": "Traveler (Hydro)",
+    "viajante (pyro)": "Traveler (Pyro)",
+    "viajante (cryo)": "Traveler (Cryo)",
+    "viajante anemo": "Traveler (Anemo)",
+    "viajante geo": "Traveler (Geo)",
+    "viajante electro": "Traveler (Electro)",
+    "viajante dendro": "Traveler (Dendro)",
+    "viajante hydro": "Traveler (Hydro)",
+    "viajante pyro": "Traveler (Pyro)",
+    "viajante cryo": "Traveler (Cryo)",
+    "mochileiro": "Wanderer",
+    "andarilho": "Wanderer",
+    "trotamundos": "Wanderer",
+    "shogun raiden": "Raiden Shogun",
+    "arlequino": "Arlecchino",
+    // ZZZ
+    "soldado 11": "Soldier 11",
+    "n.º 11": "Soldier 11",
+    "nº 11": "Soldier 11",
+    "n° 11": "Soldier 11",
+    "número 11": "Soldier 11",
+    "numero 11": "Soldier 11",
+    "císsia": "Cissia",
+    "cissia": "Cissia",
+    "orfeu & magus": "Orphie & Magus",
+    "orfeu e magus": "Orphie & Magus"
+};
+
+function formatCharacterName(rawName) {
+    if (!rawName) return "";
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    const str = String(rawName).trim();
+    if (!isEn) return str;
+
+    const lower = str.toLowerCase();
+    if (CHARACTER_NAME_MAP_EN[lower]) return CHARACTER_NAME_MAP_EN[lower];
+
+    for (const [ptKey, enVal] of Object.entries(CHARACTER_NAME_MAP_EN)) {
+        if (lower.startsWith(ptKey)) {
+            const remainder = str.slice(ptKey.length);
+            return enVal + remainder;
+        }
+    }
+    return str;
+}
+
+const PATH_MAP_EN = {
+    "destruição": "Destruction", "destruicao": "Destruction",
+    "a caça": "The Hunt", "caça": "The Hunt", "caca": "The Hunt",
+    "erudição": "Erudition", "erudicao": "Erudition",
+    "harmonia": "Harmony",
+    "inexistência": "Nihility", "inexistencia": "Nihility",
+    "preservação": "Preservation", "preservacao": "Preservation",
+    "abundância": "Abundance", "abundancia": "Abundance",
+    "reminiscência": "Remembrance", "reminiscencia": "Remembrance",
+    "recordação": "Remembrance", "recordacao": "Remembrance",
+    "ataque": "Attack",
+    "atordoamento": "Stun",
+    "anomalia": "Anomaly",
+    "suporte": "Support",
+    "defesa": "Defense",
+    "espada": "Sword",
+    "espadão": "Claymore", "espadao": "Claymore", "espada larga": "Claymore",
+    "lança": "Polearm", "lanca": "Polearm",
+    "arco": "Bow",
+    "catalisador": "Catalyst"
+};
+
+const PATH_MAP_PT = {
+    "destruction": "Destruição",
+    "the hunt": "A Caça", "hunt": "A Caça",
+    "erudition": "Erudição",
+    "harmony": "Harmonia",
+    "nihility": "Inexistência",
+    "preservation": "Preservação",
+    "abundance": "Abundância",
+    "remembrance": "Reminiscência",
+    "attack": "Ataque",
+    "stun": "Atordoamento",
+    "anomaly": "Anomalia",
+    "support": "Suporte",
+    "defense": "Defesa",
+    "sword": "Espada",
+    "claymore": "Espadão",
+    "polearm": "Lança",
+    "bow": "Arco",
+    "catalyst": "Catalisador"
+};
+
+function formatPathName(rawPath, gameId) {
+    if (!rawPath) return "";
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
+    const str = String(rawPath).trim();
+    const lower = str.toLowerCase();
+    if (isEn) {
+        return PATH_MAP_EN[lower] || (str.charAt(0).toUpperCase() + str.slice(1));
+    } else {
+        return PATH_MAP_PT[lower] || str;
+    }
+}
+
+const STAT_SHORT_NAMES_EN = {
+    "velocidade": "Speed", "vel": "SPD",
+    "vida": "HP", "pv": "HP", "vida máx": "Max HP", "vida máx.": "Max HP", "pv máx.": "Max HP", "vida máxima": "Max HP",
+    "ataque": "ATK", "atq": "ATK",
+    "defesa": "DEF", "def": "DEF",
+    "taxa crit": "CRIT Rate", "taxa de crit": "CRIT Rate", "taxa crítica": "CRIT Rate", "chance de crit": "CRIT Rate", "tx. cr": "CRIT Rate", "tx. crítica": "CRIT Rate", "tx. crit": "CRIT Rate",
+    "dano crit": "CRIT DMG", "dano de crit": "CRIT DMG", "dano crítico": "CRIT DMG", "dano cr": "CRIT DMG",
+    "efeito de quebra": "Break Effect", "quebra": "Break Effect",
+    "taxa de acerto de efeito": "Effect Hit Rate", "acerto efeito": "Effect Hit Rate", "acerto de efeito": "Effect Hit Rate",
+    "resistência a efeito": "Effect RES", "res a efeito": "Effect RES", "res efeito": "Effect RES",
+    "taxa de regeneração de energia": "Energy Regen Rate", "taxa de reg. de energia": "Energy Regen Rate", "regeneração de energia": "Energy Regen Rate", "regen. energia": "Energy Regen",
+    "recuperação de energia": "Energy Regen", "recup. energia": "Energy Regen",
+    "recarga de energia": "Energy Recharge", "recarga": "Energy Recharge",
+    "proficiência elemental": "Elemental Mastery", "proficiência elementar": "Elemental Mastery", "prof. elementar": "Elemental Mastery", "prof. element.": "Elemental Mastery",
+    "bônus de cura": "Healing Bonus", "bônus cura": "Healing Bonus", "cura bônus": "Healing Bonus", "bônus de cura recebida": "Incoming Healing", "cura recebida": "Incoming Healing",
+    "proficiência de anomalia": "Anomaly Prof.", "prof. anomalia": "Anomaly Prof.", "prof. anom": "Anomaly Prof.",
+    "taxa de acerto de anomalia": "Anomaly Mastery", "maestria de anomalia": "Anomaly Mastery", "maest. anomalia": "Anomaly Mastery",
+    "taxa de perfuração": "PEN Ratio", "perfuração": "PEN Ratio",
+    "impacto": "Impact",
+    "bônus de dano de fogo": "Fire DMG", "bônus de dano fogo": "Fire DMG", "dano fogo": "Fire DMG",
+    "bônus de dano de gelo": "Ice DMG", "bônus de dano gelo": "Ice DMG", "dano gelo": "Ice DMG",
+    "bônus de dano de raio": "Lightning DMG", "bônus de dano raio": "Lightning DMG", "dano raio": "Lightning DMG",
+    "bônus de dano de vento": "Wind DMG", "bônus de dano vento": "Wind DMG", "dano vento": "Wind DMG",
+    "bônus de dano quântico": "Quantum DMG", "bônus de dano de quântico": "Quantum DMG", "dano quântico": "Quantum DMG",
+    "bônus de dano imaginário": "Imaginary DMG", "bônus de dano de imaginário": "Imaginary DMG", "dano imaginário": "Imaginary DMG",
+    "bônus de dano físico": "Physical DMG", "bônus de dano de físico": "Physical DMG", "dano físico": "Physical DMG",
+    "bônus de dano anemo": "Anemo DMG", "dano anemo": "Anemo DMG",
+    "bônus de dano pyro": "Pyro DMG", "dano pyro": "Pyro DMG",
+    "bônus de dano hydro": "Hydro DMG", "dano hydro": "Hydro DMG",
+    "bônus de dano electro": "Electro DMG", "dano electro": "Electro DMG",
+    "bônus de dano cryo": "Cryo DMG", "dano cryo": "Cryo DMG",
+    "bônus de dano geo": "Geo DMG", "dano geo": "Geo DMG",
+    "bônus de dano dendro": "Dendro DMG", "dano dendro": "Dendro DMG",
+    "bônus de dano elétrico": "Electric DMG", "bônus de dano de elétrico": "Electric DMG", "dano elétrico": "Electric DMG",
+    "bônus de dano éter": "Ether DMG", "bônus de dano de éter": "Ether DMG", "dano éter": "Ether DMG"
+};
 
 // Dicionário de sanitização e abreviação inteligente de nomes de atributos (Stats / Substats)
 const STAT_SHORT_NAMES = {
@@ -217,7 +431,21 @@ function isStatRecommendedForChar(statKey, char) {
 
 function sanitizeStatName(statText) {
     if (!statText) return "";
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
     let s = String(statText).trim();
+    if (isEn) {
+        const lower = s.toLowerCase();
+        if (STAT_SHORT_NAMES_EN[lower]) return STAT_SHORT_NAMES_EN[lower];
+        for (const [k, v] of Object.entries(STAT_SHORT_NAMES_EN)) {
+            if (lower === k || lower.startsWith(k)) {
+                return v;
+            }
+        }
+        s = s.replace(/Bônus de Dano (?:de )?([A-Za-zÀ-ÿ]+)/gi, (m, elem) => formatElementDisplayName(elem) + ' DMG');
+        s = s.replace(/Dano ([A-Za-zÀ-ÿ]+)/gi, (m, elem) => formatElementDisplayName(elem) + ' DMG');
+        return s;
+    }
+
     if (STAT_SHORT_NAMES[s]) return STAT_SHORT_NAMES[s];
     for (const [k, v] of Object.entries(STAT_SHORT_NAMES)) {
         if (s.includes(k)) {
@@ -305,3 +533,5 @@ if (typeof globalRoster !== 'undefined') window.globalRoster = globalRoster;
 if (typeof isStatRecommendedForChar !== 'undefined') window.isStatRecommendedForChar = isStatRecommendedForChar;
 if (typeof originalFetch !== 'undefined') window.originalFetch = originalFetch;
 if (typeof sanitizeStatName !== 'undefined') window.sanitizeStatName = sanitizeStatName;
+if (typeof formatCharacterName !== 'undefined') window.formatCharacterName = formatCharacterName;
+if (typeof formatPathName !== 'undefined') window.formatPathName = formatPathName;

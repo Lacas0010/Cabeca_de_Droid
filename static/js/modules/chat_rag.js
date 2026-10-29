@@ -4,7 +4,7 @@
 // ==========================================================================
 
 // ==========================================================================
-// ASSISTENTE DE CHAT IA RAG (GROQ ENGINE)
+// ASSISTENTE DE CHAT IA RAG
 // ==========================================================================
 function setupChatSystem() {
     const chatInput = document.getElementById("chat-input");
@@ -105,7 +105,7 @@ function setupChatSystem() {
         } catch (err) {
             document.getElementById(typingId).remove();
 
-    appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> ${isEn ? `Failed to connect to Groq processor: ${err.message}` : `Falha ao conectar ao processador Groq: ${err.message}`}`);
+    appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> ${isEn ? `Failed to connect to local server: ${err.message}` : `Falha ao conectar ao servidor local: ${err.message}`}`);
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
     };
@@ -348,7 +348,7 @@ function updateTeamBuilderGrid(gameId) {
                 <div class="char-select-overlay" style="position: absolute; inset: 0; background: rgba(167, 139, 250, 0.45); display: none; align-items: center; justify-content: center; font-size: 14px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
                     <i class="fa-solid fa-check"></i>
                 </div>
-                <div class="char-select-name" style="position: absolute; bottom: 0; left: 0; right: 0; font-size: 8px; background: rgba(0,0,0,0.85); color: #fff; text-align: center; padding: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">${char.name}</div>
+                <div class="char-select-name" style="position: absolute; bottom: 0; left: 0; right: 0; font-size: 8px; background: rgba(0,0,0,0.85); color: #fff; text-align: center; padding: 2px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}</div>
             </div>
         `;
     }).join('');
@@ -662,7 +662,7 @@ window.renderTeamRosterSelector = function(gameId) {
                     <img class="team-picker-elem-icon" src="${elemIconUrl}" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                 </div>
                 ${inTeam ? `<div class="team-picker-pos-badge">${teamIdx + 1}</div>` : ''}
-                <span class="team-picker-name" title="${safeDataName}">${char.name}</span>
+                <span class="team-picker-name" title="${safeDataName}">${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}</span>
                 <span class="team-picker-rank">${char.rank_str || 'C0'} • Nv.${char.level}</span>
             </div>
         `;
@@ -672,6 +672,7 @@ window.renderTeamRosterSelector = function(gameId) {
 // 9. Extração Inteligente de 8 Atributos Finais (Grid 2x4)
 function extractTeamCardStats(gameId, char) {
     const raw = char.stats || {};
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
     const findStat = (candidates, fallback = "-") => {
         for (const cand of candidates) {
             for (const [k, v] of Object.entries(raw)) {
@@ -687,25 +688,25 @@ function extractTeamCardStats(gameId, char) {
     };
 
     if (gameId === "genshin") {
-        let elemBonusLabel = "Dano Elem";
+        let elemBonusLabel = isEn ? "Elem. DMG" : "Dano Elem";
         let elemBonusVal = "-";
         for (const [k, v] of Object.entries(raw)) {
             const lk = k.toLowerCase();
             if (lk.includes("bônus de cura") || lk.includes("cura")) {
-                elemBonusLabel = "Cura";
+                elemBonusLabel = isEn ? "Healing" : "Cura";
                 elemBonusVal = v;
                 break;
             }
             if (lk.includes("bônus de dano")) {
-                if (lk.includes("pyro")) elemBonusLabel = "D. Pyro";
-                else if (lk.includes("hydro")) elemBonusLabel = "D. Hydro";
-                else if (lk.includes("cryo")) elemBonusLabel = "D. Cryo";
-                else if (lk.includes("electro")) elemBonusLabel = "D. Electro";
-                else if (lk.includes("anemo")) elemBonusLabel = "D. Anemo";
-                else if (lk.includes("geo")) elemBonusLabel = "D. Geo";
-                else if (lk.includes("dendro")) elemBonusLabel = "D. Dendro";
-                else if (lk.includes("físico")) elemBonusLabel = "D. Físico";
-                else elemBonusLabel = "Dano Elem";
+                if (lk.includes("pyro")) elemBonusLabel = isEn ? "Pyro DMG" : "D. Pyro";
+                else if (lk.includes("hydro")) elemBonusLabel = isEn ? "Hydro DMG" : "D. Hydro";
+                else if (lk.includes("cryo")) elemBonusLabel = isEn ? "Cryo DMG" : "D. Cryo";
+                else if (lk.includes("electro")) elemBonusLabel = isEn ? "Electro DMG" : "D. Electro";
+                else if (lk.includes("anemo")) elemBonusLabel = isEn ? "Anemo DMG" : "D. Anemo";
+                else if (lk.includes("geo")) elemBonusLabel = isEn ? "Geo DMG" : "D. Geo";
+                else if (lk.includes("dendro")) elemBonusLabel = isEn ? "Dendro DMG" : "D. Dendro";
+                else if (lk.includes("físico")) elemBonusLabel = isEn ? "Phys. DMG" : "D. Físico";
+                else elemBonusLabel = isEn ? "Elem. DMG" : "Dano Elem";
                 elemBonusVal = v;
                 break;
             }
@@ -715,36 +716,36 @@ function extractTeamCardStats(gameId, char) {
         }
 
         return [
-            { label: "Vida", val: findStat(["Vida Máxima", "Vida", "PV"], "0") },
-            { label: "ATQ", val: findStat(["ATQ", "Ataque"], "0"), highlight: true },
-            { label: "DEF", val: findStat(["DEF", "Defesa"], "0") },
+            { label: isEn ? "HP" : "Vida", val: findStat(["Vida Máxima", "Vida", "PV"], "0") },
+            { label: isEn ? "ATK" : "ATQ", val: findStat(["ATQ", "Ataque"], "0"), highlight: true },
+            { label: isEn ? "DEF" : "DEF", val: findStat(["DEF", "Defesa"], "0") },
             { label: "EM", val: findStat(["Proficiência Elemental", "Proficiência Elementar", "EM"], "0") },
-            { label: "Tx. CR", val: findStat(["Taxa Crítica", "Taxa CRIT", "Taxa"], "5.0%"), crit: true },
-            { label: "Dano CR", val: findStat(["Dano Crítico", "Dano CRIT", "Dano"], "50.0%"), crit: true },
-            { label: "Recarga", val: findStat(["Recarga de Energia", "Recarga", "ER"], "100.0%"), highlight: true },
+            { label: isEn ? "CRIT Rate" : "Tx. CR", val: findStat(["Taxa Crítica", "Taxa CRIT", "Taxa"], "5.0%"), crit: true },
+            { label: isEn ? "CRIT DMG" : "Dano CR", val: findStat(["Dano Crítico", "Dano CRIT", "Dano"], "50.0%"), crit: true },
+            { label: isEn ? "ER" : "Recarga", val: findStat(["Recarga de Energia", "Recarga", "ER"], "100.0%"), highlight: true },
             { label: elemBonusLabel, val: elemBonusVal, highlight: true }
         ];
     } else if (gameId === "hsr") {
         return [
-            { label: "Vida", val: findStat(["PV", "Vida Máxima", "Vida", "HP"], "0") },
-            { label: "ATQ", val: findStat(["ATQ", "Ataque", "ATK"], "0"), highlight: true },
-            { label: "DEF", val: findStat(["DEF", "Defesa"], "0") },
-            { label: "VEL", val: findStat(["VEL", "Velocidade", "SPD"], "0"), highlight: true },
-            { label: "Tx. CR", val: findStat(["Taxa CRIT", "Taxa Crítica", "Taxa", "CRIT Rate"], "5.0%"), crit: true },
-            { label: "Dano CR", val: findStat(["Dano CRIT", "Dano Crítico", "Dano", "CRIT DMG"], "50.0%"), crit: true },
-            { label: "Quebra", val: findStat(["Quebra", "Efeito de Quebra", "Break Effect"], "0.0%") },
+            { label: isEn ? "HP" : "Vida", val: findStat(["PV", "Vida Máxima", "Vida", "HP"], "0") },
+            { label: isEn ? "ATK" : "ATQ", val: findStat(["ATQ", "Ataque", "ATK"], "0"), highlight: true },
+            { label: isEn ? "DEF" : "DEF", val: findStat(["DEF", "Defesa"], "0") },
+            { label: isEn ? "SPD" : "VEL", val: findStat(["VEL", "Velocidade", "SPD"], "0"), highlight: true },
+            { label: isEn ? "CRIT Rate" : "Tx. CR", val: findStat(["Taxa CRIT", "Taxa Crítica", "Taxa", "CRIT Rate"], "5.0%"), crit: true },
+            { label: isEn ? "CRIT DMG" : "Dano CR", val: findStat(["Dano CRIT", "Dano Crítico", "Dano", "CRIT DMG"], "50.0%"), crit: true },
+            { label: isEn ? "Break" : "Quebra", val: findStat(["Quebra", "Efeito de Quebra", "Break Effect"], "0.0%") },
             { label: "EHR / ERR", val: findStat(["Acerto Efeito", "Taxa de Acerto de Efeito", "Regen. Energia", "Taxa de Regeneração de Energia"], "0.0%"), highlight: true }
         ];
     } else if (gameId === "zzz") {
         return [
-            { label: "Vida", val: findStat(["PV", "Vida", "HP"], "0") },
-            { label: "ATQ", val: findStat(["ATQ", "Ataque", "ATK"], "0"), highlight: true },
-            { label: "DEF", val: findStat(["DEF", "Defesa"], "0") },
-            { label: "Impacto", val: findStat(["Impacto", "Impactoo", "Impact"], "0"), highlight: true },
-            { label: "Tx. CR", val: findStat(["Taxa CRIT", "Taxa Crítica", "CRIT Rate"], "5.0%"), crit: true },
-            { label: "Dano CR", val: findStat(["Dano CRIT", "Dano Crítico", "CRIT DMG"], "50.0%"), crit: true },
-            { label: "Prof. Anom", val: findStat(["Prof. Anomalia", "Proficiência de Anomalia", "Anomaly Proficiency"], "0"), highlight: true },
-            { label: "PEN / Recup", val: findStat(["Perfuração", "Taxa de Perfuração", "Recup. Energia", "Recuperação de Energia"], "0"), highlight: true }
+            { label: isEn ? "HP" : "Vida", val: findStat(["PV", "Vida", "HP"], "0") },
+            { label: isEn ? "ATK" : "ATQ", val: findStat(["ATQ", "Ataque", "ATK"], "0"), highlight: true },
+            { label: isEn ? "DEF" : "DEF", val: findStat(["DEF", "Defesa"], "0") },
+            { label: isEn ? "Impact" : "Impacto", val: findStat(["Impacto", "Impactoo", "Impact"], "0"), highlight: true },
+            { label: isEn ? "CRIT Rate" : "Tx. CR", val: findStat(["Taxa CRIT", "Taxa Crítica", "CRIT Rate"], "5.0%"), crit: true },
+            { label: isEn ? "CRIT DMG" : "Dano CR", val: findStat(["Dano CRIT", "Dano Crítico", "CRIT DMG"], "50.0%"), crit: true },
+            { label: isEn ? "Anomaly Prof." : "Prof. Anom", val: findStat(["Prof. Anomalia", "Proficiência de Anomalia", "Anomaly Proficiency"], "0"), highlight: true },
+            { label: isEn ? "PEN / Regen" : "PEN / Recup", val: findStat(["Perfuração", "Taxa de Perfuração", "Recup. Energia", "Recuperação de Energia"], "0"), highlight: true }
         ];
     }
     return [];
@@ -1024,9 +1025,10 @@ function renderTeamExportCard(gameId) {
             const stats = extractTeamCardStats(gameId, char);
 
         let subRole = isEn ? "Character" : "Personagem";
-            if (char.path) subRole = char.path;
-            else if (char.specialty) subRole = char.specialty;
+            if (char.path) subRole = typeof formatPathName === 'function' ? formatPathName(char.path, gameId) : char.path;
+            else if (char.specialty) subRole = typeof formatPathName === 'function' ? formatPathName(char.specialty, gameId) : char.specialty;
             else if (char.element) subRole = formatElementDisplayName(char.element);
+            const teamCharName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
 
             slotsHtml.push(`
                 <div class="team-char-subcard" style="--char-border: rgba(255, 255, 255, 0.12); --char-elem-color: ${rarityColor}; --char-rarity-color: ${rarityColor}; --char-rarity-glow: ${rarityGlow};">
@@ -1058,7 +1060,7 @@ function renderTeamExportCard(gameId) {
 
                     <!-- Identificação do Personagem -->
                     <div class="subcard-hero-title-box">
-                        <h4 class="subcard-char-name" title="${char.name}">${char.name}</h4>
+                        <h4 class="subcard-char-name" title="${teamCharName}">${teamCharName}</h4>
                         <div class="subcard-char-submeta">
                             <span class="subcard-char-role">${subRole}</span>
                             <span class="subcard-char-stars">${'★'.repeat(Math.min(5, Math.max(4, isFiveStar ? 5 : 4)))}</span>

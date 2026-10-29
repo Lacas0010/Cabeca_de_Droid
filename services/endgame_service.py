@@ -178,7 +178,9 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
                     t_name = re.sub(r"Primeira Metade", "First Half", t_name, flags=re.IGNORECASE)
                     t_name = re.sub(r"Segunda Metade", "Second Half", t_name, flags=re.IGNORECASE)
                     t_name = re.sub(r"Ato\s*(\d+)", r"Act \1", t_name, flags=re.IGNORECASE)
-                    t_name = re.sub(r"Elenco Principal\s*/\s*Destaques", "Main Cast / Highlights", t_name, flags=re.IGNORECASE)
+                    t_name = re.sub(
+                        r"Elenco Principal\s*/\s*Destaques", "Main Cast / Highlights", t_name, flags=re.IGNORECASE
+                    )
                     t_name = re.sub(r"Agentes da Rotação", "Rotation Agents", t_name, flags=re.IGNORECASE)
                     team["name"] = t_name
                 for m in team.get("monsters", []):

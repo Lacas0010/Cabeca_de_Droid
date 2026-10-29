@@ -87,17 +87,8 @@ class TestChatPersistenceSuite(unittest.TestCase):
         self.assertEqual(empty_resp.status_code, 200)
         self.assertEqual(len(empty_resp.json()["messages"]), 0)
 
-    @patch("routers.chat.get_config")
-    @patch("routers.chat.GroqRAG")
-    def test_chat_interaction_streaming_persists_messages(self, mock_rag_class, mock_get_config):
-        """Valida que o endpoint de streaming /api/chat salva a pergunta e resposta completa no SQLite."""
-        mock_get_config.return_value = {"groq_api_key": "gsk_dummy_valid_test_key"}
-
-        mock_rag_instance = MagicMock()
-        mock_rag_instance.load_game_context.return_value = "Contexto mockado do jogo"
-        mock_rag_instance.ask_assistant_stream.return_value = ["Olá! ", "Aqui está ", "sua resposta de teste."]
-        mock_rag_class.return_value = mock_rag_instance
-
+    def test_chat_interaction_streaming_persists_messages(self):
+        """Valida que o endpoint de streaming /api/chat salva a pergunta e resposta no SQLite."""
         payload = {"message": "Qual é a melhor arma para o Jing Yuan?", "game_id": "hsr", "history": []}
 
         response = self.client.post("/api/chat", json=payload)
@@ -105,8 +96,7 @@ class TestChatPersistenceSuite(unittest.TestCase):
 
         # Consome o stream de dados SSE para acionar a persistência ao término
         content = response.text
-        self.assertIn("Olá!", content)
-        self.assertIn("sua resposta de teste.", content)
+        self.assertIn("temporariamente desativado", content)
 
         # Verifica persistência no SQLite
         history = database.get_chat_history("hsr")
@@ -114,7 +104,7 @@ class TestChatPersistenceSuite(unittest.TestCase):
         self.assertEqual(history[0]["role"], "user")
         self.assertEqual(history[0]["content"], "Qual é a melhor arma para o Jing Yuan?")
         self.assertEqual(history[1]["role"], "assistant")
-        self.assertEqual(history[1]["content"], "Olá! Aqui está sua resposta de teste.")
+        self.assertIn("temporariamente desativado", history[1]["content"])
 
 
 if __name__ == "__main__":

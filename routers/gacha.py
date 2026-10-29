@@ -166,7 +166,6 @@ async def sync_current_banners_endpoint(game_id: Optional[str] = None):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-
 # ==========================================================================
 # RASTREADOR REAL DE TIROS / GACHA TRACKER (ETAPA 8)
 # ==========================================================================

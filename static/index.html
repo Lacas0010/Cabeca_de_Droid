@@ -327,7 +327,7 @@
 </div>
 <div class="brand-text">
 <h1 data-i18n="app_name">Cabeça de Droid</h1>
-<span data-i18n="brand_subtitle">Groq RAG Engine v3.0</span>
+<span data-i18n="brand_subtitle">Local Metagame Engine v5.3</span>
 </div>
 <button aria-label="Fechar Menu" class="sidebar-close-btn" id="sidebar-close-btn">
 <i class="fa-solid fa-xmark"></i>
@@ -384,7 +384,7 @@
 <i class="fa-solid fa-trophy tab-icon" style="color: #a855f7; font-size: 16px;"></i>
 <span class="nav-text" data-i18n="nav_audit">Tier List &amp; Audit</span>
 </button>
-<button class="nav-btn" data-tab="chat">
+<button class="nav-btn" data-tab="chat" style="display: none;">
 <img alt="Chat" class="tab-icon" src="/assets/chat_icon.png"/>
 <span class="nav-text" data-i18n="nav_chat">Chat IA Meta</span>
 </button>
@@ -668,11 +668,9 @@
 </button>
 </div>
 </div>
-<div class="overview-card start-guide-card">
+<div class="overview-card start-guide-card" style="display: none;">
 <h3><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="guide_ai_title">Começando com o Assistente de IA</span></h3>
-<p data-i18n="guide_ai_desc">
-                        O Cabeça de Droid consolidou suas contas locais. Vá na aba <strong>Chat IA Meta</strong> no menu lateral para conversar diretamente com o <strong>Groq Cloud / Llama 3.3 70B</strong>! Ele tem conhecimento de todos os personagens do seu roster e do metagame atualizado de builds.
-                    </p>
+<p data-i18n="guide_ai_desc">O Cabeça de Droid consolidou suas contas locais com conhecimento de todos os personagens do seu roster e do metagame atualizado de builds.</p>
 <div class="button-group">
 <button class="primary-btn guide-btn" onclick="document.querySelector('[data-tab=chat]').click()"><i class="fa-solid fa-comments"></i> <span data-i18n="guide_ai_chat_btn">Abrir Chat com IA</span></button>
 <button class="secondary-btn guide-btn" onclick="document.querySelector('[data-tab=help]').click()"><i class="fa-solid fa-book-open"></i> <span data-i18n="guide_ai_tutorial_btn">Ver Tutorial de Uso</span></button>
@@ -1844,7 +1842,7 @@
 <button class="filter-btn tab-audit-game-btn" data-game="zzz">Zenless Zone Zero</button>
 </div>
 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-<button class="primary-btn" id="btn-trigger-roast-tab" onclick="window.openRoastModal()" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #ff416c, #ff4b2b); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 0 14px rgba(255, 75, 43, 0.4); transition: transform 0.2s ease;">
+<button class="primary-btn" id="btn-trigger-roast-tab" onclick="window.openRoastModal()" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #ff416c, #ff4b2b); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: none; align-items: center; gap: 6px; box-shadow: 0 0 14px rgba(255, 75, 43, 0.4); transition: transform 0.2s ease;">
 <i class="fa-solid fa-fire-flame-curved"></i> <span data-i18n="audit_btn_roast">🔥 Roast da Conta (Herta IA)</span>
 </button>
 <button class="primary-btn trigger-export-tierlist" id="btn-export-tierlist-card" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; cursor: pointer; border-radius: 8px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px;">
@@ -1865,7 +1863,7 @@
 <button class="filter-btn tab-gaps-game-btn" data-game="zzz">Zenless Zone Zero</button>
 </div>
 <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-<button class="primary-btn" id="btn-ask-ai-gaps-action" onclick="window.consultAiAccountGaps()" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);">
+<button class="primary-btn" id="btn-ask-ai-gaps-action" onclick="window.consultAiAccountGaps()" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: none; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.4);">
 <i class="fa-solid fa-brain"></i> <span data-i18n="audit_btn_ai_opinion">Parecer Estratégico da IA</span>
 </button>
 </div>
@@ -1956,14 +1954,6 @@
 <option data-i18n="lang_pt_br" value="pt">🇧🇷 Português (Brasil)</option>
 <option data-i18n="lang_en_us" value="en">🇺🇸 English (US)</option>
 </select>
-</div>
-</div>
-<!-- 1. CHAVE DE API GROQ / GEMINI -->
-<div class="config-section">
-<h3><i class="fa-solid fa-key" style="color: #6366f1;"></i> <span data-i18n="cfg_groq_title">API Key do Groq / IA</span></h3>
-<p class="section-desc" data-i18n="cfg_groq_desc">Insira a chave da API do Groq (iniciando com <code>gsk_</code>) para alimentar o Assistente de IA e o Analisador de Builds.</p>
-<div class="input-group">
-<input class="config-input" id="cfg-groq-key" placeholder="gsk_..." type="password"/>
 </div>
 </div>
 <!-- 2. COFRE DE COOKIES HOYOLAB (ENTRADA SEGURA) -->
@@ -2259,12 +2249,6 @@
 <td><span data-i18n="cfg_td_risk_web_token" style="color: #f59e0b;">Token Web</span></td>
 <td data-i18n="cfg_privacy_dpapi_aes">Windows DPAPI + AES-256</td>
 </tr>
-<tr>
-<td><strong data-i18n="cfg_td_groq_title">Chave de IA (Groq)</strong></td>
-<td data-i18n="cfg_td_groq_desc">Prompts para Assistente RAG e Análise de Builds</td>
-<td><span data-i18n="cfg_td_risk_private" style="color: #a855f7;">Privado</span></td>
-<td data-i18n="cfg_privacy_vault_in">Cofre local em <code>config.json</code></td>
-</tr>
 <tr style="background: rgba(239, 68, 68, 0.08);">
 <td><strong data-i18n="cfg_td_password_title">Senha HoYoVerse &amp; stoken</strong></td>
 <td><strong data-i18n="cfg_td_password_desc">NUNCA COLETADOS OU ARMAZENADOS</strong></td>
@@ -2536,11 +2520,9 @@
 <div class="help-card-tags">
 <span class="help-tag">Card PNG</span>
 <span class="help-tag">Discord Ready</span>
-<span class="help-tag">Groq 70B</span>
+<span class="help-tag">HD Export</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_7">
-                                    Clique no botão <strong>Card Imagem</strong> no Inspetor para renderizar uma vitrine visual completa da build com equipamentos, atributos e notas. Use o botão <strong>Otimizador IA</strong> para invocar o Groq Llama 3.3 70B e receber os 3 ajustes prioritários imediatos para maximizar o dano do personagem.
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_7">Clique no botão <strong>Card Imagem</strong> no Inspetor para renderizar uma vitrine visual completa da build com equipamentos, atributos e notas de eficiência.</div>
 </div>
 <div class="help-card-footer">
 <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></button>
@@ -2697,7 +2679,7 @@
 <button class="help-action-btn" onclick="document.querySelector('[data-tab=audit]').click()"><i class="fa-solid fa-trophy"></i><span data-i18n="help_card_btn_13"> Abrir Tier List</span></button>
 </div>
 </div>
-<!-- CARD 14: DIAGNÓSTICO DE LACUNAS & ROAST IA -->
+<!-- CARD 14: DIAGNÓSTICO DE LACUNAS -->
 <div class="help-card" data-category="audit">
 <span class="help-card-badge" data-i18n="help_card_badge_14" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">DIAGNÓSTICO</span>
 <div>
@@ -2707,7 +2689,7 @@
 </div>
 <div class="help-card-title" data-i18n="help_card_title_14">14. Diagnóstico de Lacunas &amp; Roast da Conta</div>
 </div>
-<div class="help-card-desc" data-i18n="help_card_desc_14">Detecção de fraquezas de elementos e funções (DPS/Sustento/Buffer) e modo Roast sarcástico com Groq Llama 3.3 70B.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_14">Detecção determinística de fraquezas de elementos e funções (DPS/Sustento/Buffer) no seu elenco.</div>
 <div class="help-card-tags">
 <span class="help-tag">Account Gaps</span>
 <span class="help-tag" data-i18n="help_tag_ai_roast_mode">Modo Roast IA</span>
@@ -2797,8 +2779,8 @@
 <button class="help-action-btn" onclick="document.querySelector('[data-tab=config]').click()"><i class="fa-solid fa-bell"></i><span data-i18n="help_card_btn_17"> Configurar Webhook</span></button>
 </div>
 </div>
-<!-- CARD 18: CHAT IA & MONTADOR DE TIMES -->
-<div class="help-card" data-category="ia">
+<!-- CARD 18: CHAT IA & MONTADOR DE TIMES (OCULTO) -->
+<div class="help-card" data-category="ia" style="display: none;">
 <span class="help-card-badge" data-i18n="help_card_badge_18" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">CHAT IA</span>
 <div>
 <div class="help-card-header">
@@ -2807,9 +2789,9 @@
 </div>
 <div class="help-card-title" data-i18n="help_card_title_18">18. Chat IA Meta &amp; Montador de Times (SSE)</div>
 </div>
-<div class="help-card-desc" data-i18n="help_card_desc_18">Assistente RAG conversacional Groq Llama 3.3 70B e analisador de sinergia de equipes em tempo real via Server-Sent Events.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_18">Assistente conversacional e analisador de sinergia de equipes em tempo real via Server-Sent Events.</div>
 <div class="help-card-tags">
-<span class="help-tag">Groq RAG 70B</span>
+<span class="help-tag">Local RAG</span>
 <span class="help-tag">Team Builder</span>
 <span class="help-tag">SSE Streaming</span>
 </div>
@@ -2935,7 +2917,7 @@
 </div>
 </div>
 <!-- Otimizador IA de Build -->
-<div class="inspector-card ai-optimizer-card" style="border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
+<div class="inspector-card ai-optimizer-card" style="display: none; border: 1px solid rgba(167, 139, 250, 0.25); background: rgba(167, 139, 250, 0.03); border-radius: 12px;">
 <div class="ai-opt-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
 <h4 style="margin-bottom: 0; color: #a78bfa; display: flex; align-items: center; gap: 6px; font-size: 13px;"><i class="fa-solid fa-brain"></i> <span data-i18n="ins_card_ai_optimizer">Otimizador de Build IA</span></h4>
 <button class="action-btn" data-i18n="btn_analyze" id="btn-ai-optimize" style="padding: 4px 10px; font-size: 11px; background: rgba(167, 139, 250, 0.1); border-color: rgba(167, 139, 250, 0.3); color: #c084fc; border-radius: 6px; cursor: pointer;">Analisar</button>
@@ -3251,7 +3233,7 @@
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
 <h3 data-i18n="modal_audit_title" style="margin: 0; color: #a855f7; font-size: 18px;"><i class="fa-solid fa-trophy"></i> Tier List &amp; Relatório da Conta</h3>
 <div style="display: flex; align-items: center; gap: 10px;">
-<button class="primary-btn" data-i18n="roast_modal_trigger_btn" id="btn-modal-roast-trigger" onclick="window.openRoastModal()" style="padding: 6px 12px; font-size: 11px; background: linear-gradient(135deg, #ff416c, #ff4b2b); border: none; cursor: pointer; border-radius: 6px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px; box-shadow: 0 0 10px rgba(255, 75, 43, 0.4);">
+<button class="primary-btn" data-i18n="roast_modal_trigger_btn" id="btn-modal-roast-trigger" onclick="window.openRoastModal()" style="padding: 6px 12px; font-size: 11px; background: linear-gradient(135deg, #ff416c, #ff4b2b); border: none; cursor: pointer; border-radius: 6px; font-weight: 700; display: none; align-items: center; gap: 5px; box-shadow: 0 0 10px rgba(255, 75, 43, 0.4);">
 <i class="fa-solid fa-fire-flame-curved"></i> Roast da Conta
                     </button>
 <button class="primary-btn trigger-export-tierlist" data-i18n="btn_generate_image" style="padding: 6px 12px; font-size: 11px; background: linear-gradient(135deg, #a855f7, #ec4899); border: none; cursor: pointer; border-radius: 6px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px;">

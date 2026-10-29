@@ -8,10 +8,6 @@ REDACTION_PATTERNS = [
     (re.compile(r'(cookie_token(?:_v2)?\s*=\s*)([^;,\s&\'"]+)', re.IGNORECASE), r"\1***[COOKIE_TOKEN_REDACTED]***"),
     (re.compile(r'(account_id(?:_v2)?\s*=\s*)([^;,\s&\'"]+)', re.IGNORECASE), r"\1***[ACCOUNT_ID_REDACTED]***"),
     (re.compile(r'(ltuid(?:_v2)?\s*=\s*)([^;,\s&\'"]+)', re.IGNORECASE), r"\1***[LTUID_REDACTED]***"),
-    # Chaves de API Groq (gsk_...)
-    (re.compile(r"gsk_[a-zA-Z0-9_-]{10,}", re.IGNORECASE), "gsk_***[API_KEY_REDACTED]***"),
-    # Chaves de API Google Gemini (AIzaSy...)
-    (re.compile(r"AIzaSy[a-zA-Z0-9_-]{10,}", re.IGNORECASE), "AIzaSy***[API_KEY_REDACTED]***"),
     # Cabeçalhos Authorization Bearer
     (re.compile(r"(Bearer\s+)[a-zA-Z0-9_\-\.]{15,}", re.IGNORECASE), r"\1***[BEARER_REDACTED]***"),
 ]

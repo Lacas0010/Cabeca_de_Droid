@@ -17,20 +17,15 @@ async def get_configuration():
     config_dict = get_config()
 
     cookies_summary = security_vault.get_masked_cookies_preview(cookies_dict)
-    raw_api_key = config_dict.get("groq_api_key") or config_dict.get("gemini_api_key") or ""
-    masked_key = security_vault.mask_secret_string(raw_api_key, 6, 4) if raw_api_key else ""
 
     raw_tg_token = config_dict.get("telegram_bot_token", "")
     masked_tg_token = security_vault.mask_secret_string(raw_tg_token, 4, 3) if raw_tg_token else ""
 
     return {
-        "groq_api_key": masked_key,
-        "groq_api_key_configured": bool(raw_api_key),
         "cookies_raw": "",
         "cookies_preview": cookies_summary["preview"],
         "cookies_summary": cookies_summary,
         "has_cookies": len(cookies_dict) > 0,
-        "has_api_key": bool(raw_api_key),
         "auto_sync_enabled": config_dict.get("auto_sync_enabled", True),
         "auto_sync_time": config_dict.get("auto_sync_time", "04:00"),
         "auto_sync_roster": config_dict.get("auto_sync_roster", True),
@@ -57,18 +52,9 @@ async def get_configuration():
 
 @router.post("/api/config")
 async def save_configuration(req: ConfigSaveRequest):
-    """Salva a chave API, cookies e configurações de agendamento e notificações de forma criptografada no cofre."""
+    """Salva cookies e configurações de agendamento e notificações de forma criptografada no cofre."""
     config = get_config()
     changed = False
-
-    if req.groq_api_key is not None:
-        key_val = req.groq_api_key.strip()
-        if key_val and not key_val.startswith("***") and "REDACTED" not in key_val and "***" not in key_val:
-            config["groq_api_key"] = key_val
-            changed = True
-        elif not key_val:
-            config["groq_api_key"] = ""
-            changed = True
 
     if req.auto_sync_enabled is not None:
         config["auto_sync_enabled"] = req.auto_sync_enabled

@@ -299,8 +299,6 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
 
         # Atualiza os banners atuais e imagens oficiais de gacha
         try:
-            from scrapers.scraper_prydwen import PrydwenScraper
-
             PrydwenScraper().get_current_banners(game_id)
             log_game(
                 game_id,

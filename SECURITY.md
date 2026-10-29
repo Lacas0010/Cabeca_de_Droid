@@ -6,7 +6,7 @@ Este documento descreve as práticas de segurança, gestão de credenciais locai
 
 ## 🔒 1. Tratamento de Credenciais Sensíveis
 
-O aplicativo opera estritamente de forma **local** com três categorias de dados sensíveis:
+O aplicativo opera estritamente de forma **local** com duas categorias de dados sensíveis:
 
 1. **Tokens de Sessão da HoYoLAB (`cookies.enc`):**
    - `ltuid_v2` / `account_id_v2`: Identificador público da conta no HoYoLAB.
@@ -14,10 +14,7 @@ O aplicativo opera estritamente de forma **local** com três categorias de dados
    - `cookie_token_v2`: Token para resgate de códigos promocionais e dados web.
    - **Senhas e `stoken`:** **NUNCA** solicitados, interceptados ou armazenados.
 
-2. **Chaves de API de IA (`config.enc` / `config.json`):**
-   - Chaves do Groq Cloud (`gsk_...`) para alimentação do motor RAG local.
-
-3. **Chaves Privadas de Infraestrutura & Deploy (`*.key` / `*.pem`):**
+2. **Chaves Privadas de Infraestrutura & Deploy (`*.key` / `*.pem`):**
    - Chaves SSH de acesso à VM de produção Oracle Cloud, mantidas fora da árvore Git e blindadas pelo `.gitignore`.
 
 > [!CAUTION]
@@ -31,7 +28,7 @@ O aplicativo opera estritamente de forma **local** com três categorias de dados
 | :--- | :--- | :--- |
 | **1. Cofre Criptográfico DPAPI** | Criptografia em repouso no Windows (`CryptProtectData` via `ctypes.windll.crypt32`) e AES-256 no Linux. | [`core/security.py`](core/security.py) / [`security_vault.py`](security_vault.py) |
 | **2. Zero-Exposure no Frontend** | O servidor **nunca** devolve cookies em texto claro para a UI; envia apenas previews mascarados (`ltuid_v2=282***47`). | [`routers/config.py`](routers/config.py) |
-| **3. Sanitização de Logs em Tempo Real** | Filtro regex que censura automaticamente tokens, chaves `gsk_` e cabeçalhos `Bearer` antes da saída no terminal/SSE. | [`core/security.py`](core/security.py) |
+| **3. Sanitização de Logs em Tempo Real** | Filtro regex que censura automaticamente tokens de sessão e cabeçalhos `Bearer` antes da saída no terminal/SSE. | [`core/security.py`](core/security.py) |
 | **4. Isolamento Loopback Padrão** | Servidor inicia vinculado a `127.0.0.1`. Acesso via rede local (`0.0.0.0`) exige ativação explícita pelo usuário. | [`core/config.py`](core/config.py) / [`main.py`](main.py) |
 | **5. Bloqueio Local por PIN** | Proteção por PIN com hash `PBKDF2-HMAC-SHA256` (120.000 iterações com salt individual) e bloqueio HTTP 423. | [`routers/security.py`](routers/security.py) |
 | **6. Purga Instantânea de Dados** | Endpoint `POST /api/security/clear_credentials` para exclusão imediata e permanente de todas as credenciais do cofre. | [`routers/security.py`](routers/security.py) |
@@ -73,6 +70,5 @@ user_data_google/
 
 Se suspeitar que seus tokens foram expostos:
 1. **Invalidar Sessões HoYoLAB:** Acesse [hoyolab.com](https://www.hoyolab.com), vá em configurações de conta e clique em **Sair de Todas as Sessões** (ou altere sua senha HoYoVerse).
-2. **Revogar Chaves de IA:** Gere novas chaves no painel da [Groq Console](https://console.groq.com/keys).
-3. **Limpar Cofre Local:** Clique no botão **Limpar Credenciais** na aba de Configurações do app.
-4. **Rotacionar Chaves SSH:** Gere um novo par de chaves SSH para conexões na nuvem caso uma chave `.key` seja comprometida.
+2. **Limpar Cofre Local:** Clique no botão **Limpar Credenciais** na aba de Configurações do app.
+3. **Rotacionar Chaves SSH:** Gere um novo par de chaves SSH para conexões na nuvem caso uma chave `.key` seja comprometida.

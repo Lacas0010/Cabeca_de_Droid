@@ -21,7 +21,6 @@ from core.security import (
 import database
 import security_vault
 from notifications import notifier
-from groq_rag import GroqRAG
 from static_data_manager import static_data_manager
 from services.media_service import get_raw_url, download_element_icons, download_hsr_eidolon_shards, ELEMENT_ICONS_MAP
 from services.translation_service import traduzir_item
