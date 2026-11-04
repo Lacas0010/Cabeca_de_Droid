@@ -1,210 +1,257 @@
-# 🤖 Cabeça de Droid (HoYo Metagame Suite v5.3+)
+# Cabeça de Droid
 
 <p align="center">
-  <b>Language / Idioma:</b> <a href="README.md">🇧🇷 Português</a> | <a href="README.en.md">🇺🇸 English</a>
+  <b>Language / Idioma:</b> <a href="README.md">🇺🇸 English</a> | <a href="README.pt-BR.md">🇧🇷 Português (Brasil)</a>
 </p>
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 159 Passed](https://img.shields.io/badge/tests-159%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Tests: 160 Passed](https://img.shields.io/badge/tests-160%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
 
-Suíte local inteligente com interface gráfica **Web Glassmorphism** (HTML5/CSS3/ES6+ Modular) e backend modular em Python (**FastAPI + Clean Architecture + SQLite + Playwright + Windows DPAPI Security Vault + Zero-Maintenance Datamines**).
+Cabeça de Droid is a local metagame analysis application for Honkai: Star Rail that executes automated metagame data scraping, deterministic relic Roll Value (RV) scoring, and programmatic tier list rendering.
 
 > [!NOTE]
-> **Sobre o nome:** "Cabeça de Droid" é uma referência a *Honkai: Star Rail* — o apelido carinhoso que Herta dá ao **Aeon Nous** (o Aeon da Erudição), um supercomputador astral que ascendeu à divindade.
+> **Name Origin:** "Cabeça de Droid" (Droid Head) references *Honkai: Star Rail* lore — the title given by Herta to the **Aeon Nous** (the Aeon of Erudition), an astronomical supercomputer elevated to divinity.
 
 ---
 
-## ⚡ Início Rápido (Quick Start em 3 Passos)
+## 1. Core Features
 
-```bash
-# 1. Clonar e entrar no repositório
-git clone https://github.com/Lacas0010/Cabeca_de_Droid.git
-cd Cabeca_de_Droid
-
-# 2. Criar ambiente virtual e instalar dependências
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1   # Linux/macOS: source .venv/bin/activate
-pip install -r requirements.txt
-playwright install chromium
-
-# 3. Executar o aplicativo
-python main.py
-```
-
-* **Acesso Local (PC):** `http://127.0.0.1:8000`
-* **Acesso no Celular/Tablet (Rede Wi-Fi):** `http://<IP_DO_SEU_PC>:8000` *(habilitável em Configurações)*
-* **Rodar Testes:** `python -m unittest discover tests` *(159 testes unitários inclusos)*
+- **Metagame Data Ingestion:** Automated data scraping via `curl_cffi` (impersonating browser TLS fingerprints to avoid 403 CDN blocks) targeting upstream community databases and metagame guides. Scraped records are normalized and written to offline JSON manifests under `static_data/`.
+- **Relic Roll Value (RV) Engine:** Deterministic substat scoring model evaluating 5★ relics against canonical roll limits, weighted by character archetype, path, and designated stat priorities. Incorporates primary stat forgiveness (+40% baseline credit) and flat-to-percent fallback weights.
+- **Programmatic Tier List & Build Cards:** Real-time 2400 × 1350 px (2x HD) canvas rendering for character build overviews, relic roll distributions, account gear audits, and evolution diffs without external frontend frameworks.
+- **Endgame Compatibility Matcher:** Algorithmic comparison matching active Memory of Chaos (MoC), Pure Fiction (PF), and Apocalyptic Shadow (AS) compositions against user roster data in SQLite, reporting readiness ratings and functional character substitutions.
+- **Warp & Resource Tracking:** Standard UIGF v2.4 / SRGF warp log import and export, exact pity counters (guaranteed vs 50/50), Monte Carlo pull probability projections, and countdown timers aligned with official HoYoverse banner schedules.
+- **Cryptographic Credential Vault:** Zero-exposure session storage using Windows DPAPI or AES-256-GCM / HMAC on Linux. Session tokens (`ltuid_v2`, `ltoken_v2`) are masked in web interfaces and stripped from logs by regex filters.
 
 ---
 
-## 🌟 Recursos Principais
+## 2. Roll Value (RV) Calculation Methodology
 
-| Módulo                                         | Ícone | O que faz?                                                                                                                                                                                                                                 |
-| :---------------------------------------------- | :----: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **1. Ícone na Bandeja (System Tray)**    |   🛸   | Execução minimizada em segundo plano no Windows 10/11 com menu de contexto (abrir dashboard, sincronizar roster, alternar notificações e encerrar servidor).                                                                           |
-| **2. Endgame Team Matcher**               |  ⚔️  | Cruza as melhores composições do meta atual (MoC, Ficção Pura, Sombra, Abismo, Shiyu) com seu Roster real no SQLite, calcula % de compatibilidade e recomenda substitutos funcionais disponíveis na sua conta para membros faltantes. |
-| **3. Rastreador Oficial de Pity & Tiros** |   📜   | Importação e exportação de logs reais no padrão universal UIGF v2.4/SRGF, cálculo exato de Pity Atual, garantia 100% vs 50/50 e estatísticas de sorte.                                                                              |
-| **4. Sandbox de Troca de Peças**         |   🧪   | Simulação de substituição de relíquias ("E se eu trocasse a peça?") prevendo variações de score, Roll Value, deltas de atributos e novos breakpoints.                                                                              |
-| **5. Multi-UID Switcher**                 |   👥   | Alternância instantânea entre múltiplas contas salvas no SQLite para o mesmo jogo, com isolamento de roster e peças.                                                                                                                   |
-| **6. Monitor de Energia**                 |   🔋   | Monitor de Resina, Poder de Desbravamento e Bateria com anéis SVG e contagem regressiva.                                                                                                                                                  |
-| **7. Auto Check-in 6h**                   |   🎁   | Resgate automático das recompensas diárias da HoYoLAB a cada 6h gravado no SQLite.                                                                                                                                                       |
-| **8. Auto-Sync 04:00**                    |   ⏰   | Agendamento diário automático para atualizar Roster e guias com detecção de diffs.                                                                                                                                                     |
-| **9. Interface Glassmorphism & ES6**      |   📁   | Painel escuro moderno, temas por jogo, gaveta off-canvas deslizante no mobile e arquitetura modular ES6 desacoplada em 12 submódulos.                                                                                                      |
-| **10. Acesso LAN / Wi-Fi**                |   📱   | Binding `0.0.0.0:8000` sob demanda para uso no smartphone ou tablet na rede local.                                                                                                                                                       |
-| **11. Galeria com Ícones Oficiais**      |   🎨   | Filtros por Elemento (incluindo *Lumiflux* de ZZZ) e Raridade com avatares em cache local.                                                                                                                                               |
-| **12. Proxy Anti-CORS**                   |  🖼️  | Endpoint `/api/proxy_image` para carregamento seguro de imagens em Canvas 2D.                                                                                                                                                            |
-| **13. Tracker de Endgame**                |  ⚔️  | Histórico de Abismo Espiral, Teatro Imaginário, MoC, Pura Ficção, Sombra e Defesa Shiyu.                                                                                                                                               |
-| **14. Inspetor de Builds Centralizado**   |  🗡️  | Janela modal centralizada em 2 colunas, avaliação por Roll Value (RV), Main Stat Forgiveness e notas de **SSS** a **D**.                                                                                                     |
-| **15. Eidolons & Shards (HSR)**           |   💎   | Fragmentos de arte in-game nos nós de Eidolon e suporte a splash arts de skins (Sparkle, Robin).                                                                                                                                          |
-| **16. Mindscapes & Habilidades (ZZZ)**    |   ⚡   | Ícones de Cinema Mental 01-06 em neon e categorias oficiais de combate (Básico, Especial, Esquiva, etc.).                                                                                                                                |
-| **17. Tooltips & Descrições Ricas**     |   ✨   | Hover action com descrições detalhadas e completas de Talentos, Rastros e Habilidades sem tags HTML.                                                                                                                                     |
-| **18. Exportação em Imagem HD**         |   📷   | Renderização em **4K (2400 × 1350 px)** de Cards de Build, Tier List e Diffs de Evolução.                                                                                                                                       |
-| **19. Breakpoints & Speed Tuning**        |  ⚖️  | Action Value (10000/SPD), metas de 134/160.1 SPD no Ciclo 0 de MoC/PF, sincronia -1 SPD (Bronya/Sunday), checagem Favonius e proporção áurea 1:2.                                                                                       |
-| **20. Calculadora de Ascensão**          |   🧮   | Cálculo exato de Mora, XP e materiais com caps reais (**Genshin 90**, **HSR 80**, **ZZZ 60**).                                                                                                                          |
-| **21. Analisador de Builds Meta**         |   🧠   | Comparação determinística da sua build atual contra benchmarks de metagame, armas BIS e substatus prioritários.                                                                                                                          |
-| **22. Diagnóstico de Lacunas**           |   🔥   | Mapeamento de fraquezas da conta (DPS/Sustento/Elemento) e modo Roast sarcástico.                                                                                                                                                         |
-| **23. Índice de Sorte (Luck Score)**     |   🍀   | Medidor de RNG da conta (SSS+ a F), destacando a peça **God Roll #1** e a **Cursed Roll**.                                                                                                                                    |
-| **24. Gacha Forecast & Metas em Tempo Real** |   🎲   | Simulação Monte Carlo, persistência de metas de banners no SQLite com **cronômetro regressivo ao vivo** segundo a segundo e horários oficiais HoYoverse (**1ª Fase às 23:30**; **2ª Fase Genshin 20h, HSR/ZZZ 14h**). |
-| **25. Central de Farm & OS Diária**      |   🌾   | Domínios abertos hoje e Ordem de Serviço Diária com alocação inteligente de resina.                                                                                                                                                   |
-| **26. Trash Finder & Peças Coringa**     |  🗑️  | Varredura de relíquias sem utilidade, proteção absoluta de peças Coringa/Off-Piece (Duplo Crítico/CV) e conselheiro de síntese.                                                                                                      |
-| **27. Sinergia & Análise de Equipes**     |   💬   | Analisador de sinergia de equipes de 4 slots com persistência de histórico no SQLite por jogo via SSE Stream.                                                                                                                             |
-| **28. Montador de Card de Time HD**      |   👥   | Construtor visual de composições de 4 slots (ou 3 slots no ZZZ), badges dinâmicas, exportação PNG 2x sem distorção e cópia direta para o Clipboard (`Discord`/`WhatsApp`).                                                              |
+### 2.1 Mathematical Formulation
+
+The Roll Value of an individual substat roll is defined as the ratio between the observed numerical value and the maximum possible single roll value for a 5★ relic:
+
+$$RV_i = \frac{\text{Observed Substat Value}_i}{\text{Max 5★ Roll Value}_i}$$
+
+Each piece is scored by summing the weighted Roll Values of its active substats:
+
+$$\text{Substat Score} = \sum_{i=1}^{n} \left( RV_i \times W_i \right)$$
+
+Where $W_i \in [0.0, 1.0]$ represents the weight assigned to substat $i$ based on the character's path and build archetype:
+- **Priority 1 Substat:** $W = 1.00$
+- **Priority 2 Substat:** $W = 0.85$
+- **Priority 3 Substat:** $W = 0.70$
+- **Priority 4 Substat:** $W = 0.55$
+- **Priority 5 Substat:** $W = 0.40$
+- **Off-Stat / Secondary Pool:** $W = 0.30$
+- **Flat Stat Fallback:** Flat ATK, Flat HP, and Flat DEF automatically receive $50\%$ of their corresponding percentage stat weight if the percentage variant is prioritized.
+
+### 2.2 Primary Stat Forgiveness
+
+Primary stats on slots with randomized types (Body, Feet, Planar Sphere, Link Rope) are evaluated as follows:
+- **Recommended Primary Stat:** $+40\%$ baseline credit added to the piece rating.
+- **Secondary / Viable Primary Stat:** $+24\%$ baseline credit.
+- **Non-Viable Primary Stat:** $0\%$ baseline credit.
+- **Fixed Primary Slots (Head: Flat HP, Hands: Flat ATK):** Base credit is fixed at $30\%$, with the remaining $70\%$ allocated to substats.
+
+### 2.3 Account Build Score
+
+The overall build score evaluates all designated equipment slots ($N_{\text{slots}} = 6$ for Honkai: Star Rail):
+
+$$\text{Overall Build Score} = \frac{\sum_{k=1}^{N_{\text{equipped}}} \text{Piece Score}_k}{N_{\text{total slots}}}$$
+
+Unassigned equipment slots contribute $0.0$, proportionally lowering incomplete builds.
+
+### 2.4 Rating Scale
+
+| Grade | Score Interval | Classification |
+| :---: | :---: | :--- |
+| **SSS** | $\ge 90.0\%$ | Optimal rolls across all priority stats |
+| **SS** | $75.0\% - 89.9\%$ | High-investment build; minimal stat waste |
+| **S** | $60.0\% - 74.9\%$ | Battle-ready endgame benchmark |
+| **A** | $45.0\% - 59.9\%$ | Functional build; acceptable substat spread |
+| **B** | $30.0\% - 44.9\%$ | Transitional gear; missing core rolls |
+| **C** | $15.0\% - 29.9\%$ | Low efficiency; incorrect main stats or rolls |
+| **D** | $< 15.0\%$ | Unviable build; immediate replacement candidate |
+
+### 2.5 Canonical 5★ Substat Roll Baselines (Honkai: Star Rail)
+
+| Substat | Minimum Roll | Average Roll | Maximum Roll (1.0 RV) |
+| :--- | :---: | :---: | :---: |
+| **CRIT Rate** | 2.59% | 2.91% | 3.24% |
+| **CRIT DMG** | 5.18% | 5.83% | 6.48% |
+| **SPD** | 2.00 | 2.30 | 2.60 |
+| **Break Effect** | 5.18% | 5.83% | 6.48% |
+| **Effect Hit Rate (EHR)** | 3.45% | 3.88% | 4.32% |
+| **Effect RES** | 3.45% | 3.88% | 4.32% |
+| **ATK%** | 3.45% | 3.88% | 4.32% |
+| **HP%** | 3.45% | 3.88% | 4.32% |
+| **DEF%** | 4.32% | 4.86% | 5.40% |
+| **Flat ATK** | 17.00 | 19.15 | 21.30 |
+| **Flat HP** | 33.80 | 38.05 | 42.30 |
+| **Flat DEF** | 17.00 | 19.15 | 21.30 |
 
 ---
 
-## 🍪 Segurança de Dados & Cookies HoYoLAB
-
-O aplicativo utiliza cookies de sessão oficiais (`ltuid_v2`, `ltoken_v2`, `cookie_token_v2`) para interagir com a HoYoverse sem exigir login por senha.
-
-```mermaid
-graph LR
-    User[Usuário] -->|Cofre Local DPAPI / AES-256| Vault[(cookies.enc)]
-    Vault -->|Higienização de Logs| San[core/security.py]
-    San -->|Chamadas HTTPS Diretas| HoYo[API Oficial HoYoLAB]
-```
-
-### Resumo de Privacidade
-
-* **Senhas e `stoken`:** **NUNCA** solicitados ou armazenados.
-* **Criptografia em Repouso:** Arquivos `.enc` criptografados nativamente no Windows via **DPAPI** e no Linux via **AES-256/HMAC**.
-* **Zero-Exposure no Frontend:** A interface gráfica exibe apenas tokens mascarados (ex: `ltuid_v2=282***47; ltoken_v2=v2_CA***JkXB`).
-* **Higienização de Logs:** Filtro regex automático censura segredos antes de qualquer saída no terminal ou SSE.
-
-Para detalhes completos de governança e modelagem de ameaças, leia o [SECURITY.md](SECURITY.md).
-
----
-
-## ⚙️ Arquitetura do Sistema (Clean Architecture)
+## 3. Architecture & Technologies
 
 ```mermaid
 graph TD
-    UI[Frontend Web SPA - Glassmorphism] -->|HTTP REST / SSE Stream| Server[FastAPI Server - server.py]
-    Server --> Routers[routers/ - 15 APIRouters]
-  
-    Routers -.-> Schemas[schemas/ - Pydantic v2 Models]
-    Routers --> Services[services/ - Camada de Negócio]
-  
-    Services --> CoreSec[core/security.py - DPAPI / AES / PIN]
-    Services --> CoreCfg[core/config.py - Settings]
-    Services --> DB[(SQLite hoyo_app.db)]
-    Services --> StaticData[static_data/ - JSONs Estáticos]
-    Services --> Scrapers[Scrapers Prydwen: HSR / ZZZ / Genshin]
-    Services --> HoYoAPI[HoYoLAB API - genshin.py]
+    UI["Vanilla Web SPA (HTML5 / CSS3 / ES6 Modules)"] -->|REST API / SSE| API["FastAPI Application (server.py)"]
+    API --> Routers["API Routers (routers/)"]
+    Routers -.-> Schemas["Pydantic v2 Contracts (schemas/)"]
+    Routers --> Services["Service Layer (services/)"]
+    Services --> DB[("SQLite Database (hoyo_app.db)")]
+    Services --> Static["Static Manifests (static_data/)"]
+    Services --> Vault["Security Vault (core/security.py)"]
+    Services --> Scrapers["Scrapers (curl_cffi / Playwright)"]
+    Scrapers --> Ext["External Upstream Endpoints"]
+```
+
+### Component Stack
+
+- **Backend:** Python 3.10+, FastAPI, Pydantic v2, Uvicorn.
+- **Scraping & Ingestion:** `curl_cffi` (browser TLS/JA3 fingerprint impersonation), BeautifulSoup4, Playwright Chromium.
+- **Data Persistence:** SQLite (`hoyo_app.db`) with native JSON manifests as offline fallback caches (`static_data/`).
+- **Security:** Windows Data Protection API (DPAPI via `ctypes.windll.crypt32`) and AES-256-GCM fallback on POSIX environments.
+- **Frontend:** Vanilla HTML5, CSS3 with standard CSS variables, and modular ES6 JavaScript without external build frameworks.
+
+---
+
+## 4. Prerequisites & Installation
+
+### Requirements
+- Python 3.10 or higher
+- Git
+
+### Quick Setup
+
+```bash
+# 1. Clone repository
+git clone https://github.com/Lacas0010/Cabeca_de_Droid.git
+cd Cabeca_de_Droid
+
+# 2. Configure virtual environment
+python -m venv .venv
+
+# Windows PowerShell:
+.\.venv\Scripts\Activate.ps1
+# Linux / macOS:
+source .venv/bin/activate
+
+# 3. Install dependencies
+pip install -r requirements.txt
+playwright install chromium
+
+# 4. Launch web service
+python main.py
+```
+
+Default access URL: `http://127.0.0.1:8000`
+
+---
+
+## 5. Self-Hosted Deployment
+
+### 5.1 Systemd Service (Linux)
+
+Create `/etc/systemd/system/cabeca-de-droid.service`:
+
+```ini
+[Unit]
+Description=Cabeca de Droid Metagame Service
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/Cabeca_de_Droid
+ExecStart=/home/ubuntu/Cabeca_de_Droid/.venv/bin/python main.py --host 0.0.0.0 --port 8000 --no-browser
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start the service:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable cabeca-de-droid
+sudo systemctl start cabeca-de-droid
+```
+
+### 5.2 Container Deployment (OCI / Docker)
+
+A minimal deployment Dockerfile:
+
+```dockerfile
+FROM python:3.11-slim
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl git && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt && \
+    playwright install-deps chromium && \
+    playwright install chromium
+
+COPY . .
+
+EXPOSE 8000
+
+CMD ["python", "main.py", "--host", "0.0.0.0", "--port", "8000", "--no-browser"]
+```
+
+Build and run:
+
+```bash
+docker build -t cabeca-de-droid .
+docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droid
 ```
 
 ---
 
-## 📂 Estrutura Modular do Projeto
+## 6. Configuration & CLI Parameters
 
-```
-hoyo-projetos/
-├── core/                    # Infraestrutura, configurações e segurança criptográfica
-├── schemas/                 # Contratos tipados Pydantic v2 (validação de entrada e saída)
-├── services/                # Regras de negócio desacopladas (Sync, Checkin, Gacha, Roster, Codes)
-├── routers/                 # 15 Controladores REST FastAPI (APIRouter)
-├── static_data/             # Catálogos de personagens, domínios e regras em JSON puro
-├── static/                  # Frontend Web SPA (HTML5, Vanilla CSS, JS ES6 Modular)
-│   ├── js/
-│   │   ├── app.js           # Ponto de entrada SPA e orquestrador
-│   │   └── modules/         # 12 submódulos desacoplados (api_client, chat_rag, gacha_sim, etc.)
-│   ├── style.css            # Estilos Glassmorphism e responsividade mobile
-│   └── index.html           # SPA principal
-├── assets/                  # Ícones oficiais de elementos e avatares em cache local
-├── scrapers/                # Raspadores de metagame e guias do Prydwen (HSR, Genshin, ZZZ)
-├── scripts/                 # Scripts utilitários e serviços do sistema (systemd)
-├── tests/                   # 159 testes unitários automatizados cobrindo todos os módulos
-├── server.py                # Orquestrador FastAPI modular com ciclo de vida
-└── main.py                  # Entrypoint de inicialização da aplicação
-```
+| Parameter | Type | Default | Description |
+| :--- | :---: | :---: | :--- |
+| `--host` | `str` | `127.0.0.1` | Network interface binding (`0.0.0.0` for LAN access). |
+| `--port` | `int` | `8000` | TCP listening port. |
+| `--lan` | `flag` | `False` | Shortcut to bind `--host 0.0.0.0`. |
+| `--no-browser` | `flag` | `False` | Disables automated default browser launch on startup. |
+| `--no-tray` | `flag` | `False` | Disables Windows system tray taskbar icon integration. |
 
 ---
 
-## 🧮 Motor de Pontuação Roll Value (RV) & Ponderação de Build
+## 7. REST API Reference
 
-A nota de cada peça de relíquia/artefato/disco é calculada avaliando o Roll Value (RV) dos substatus contra os rolls máximos de peças 5★/S-Rank:
-
-$$
-RV_i = \frac{\text{Valor Real do Substatus}_i}{\text{Valor Máximo do Roll 5★}}
-$$
-
-$$
-\text{Score da Peça} = \sum_{i} \left( RV_i \times \text{Peso}_i \right)
-$$
-
-$$
-\text{Nota Geral da Build} = \frac{\sum_{k=1}^{\text{Peças Equipadas}} \text{Score da Peça}_k}{\text{Total de Slots do Jogo}}
-$$
-
-1. **Normalização Contextual de Slots (`normalize_slot_name`):** Converte posições numéricas do HoYoLAB (`1` a `5`/`6`) para as chaves exatas de cada jogo (ex: `flower`, `plume`, `sands`, `goblet`, `circlet` em Genshin; `head`, `hands`, `body`, `feet`, `planar_sphere`, `link_rope` em HSR; `slot_1` a `slot_6` em ZZZ), garantindo avaliação correta do Main Stat recomendado.
-2. **Main Stat Forgiveness:** Se o atributo principal da peça for um dos recomendados no guia (ex: Copo de ATQ% ou Botas de VEL), a peça recebe 40% de crédito base do Main Stat.
-3. **Flat Stat Fallback:** Substatus brutos (Ataque Flat, Vida Flat, Defesa Flat) recebem peso parcial automático (50% do peso da versão %) se a versão percentual for recomendada pelo guia.
-4. **Benchmark Dinâmico por Substatus Prioritários:** O limite teórico de rolagens adapta-se dinamicamente à quantidade de substatus prioritários que sobraram pós-exclusão do Main Stat:
-   - **1 prioritário restante:** 4.0 rolagens no 1º + 5.0 rolagens no pool de outros atributos (peso 0.30).
-   - **2 prioritários restantes:** 4.0 rolagens no 1º + 3.0 no 2º + 2.0 rolagens no pool de outros atributos.
-   - **3 prioritários restantes:** 5.0 rolagens no 1º + 2.0 no 2º + 1.0 no 3º + 1.0 rolagem no pool de outros atributos.
-   - **4+ prioritários restantes:** Distribuição padrão de 9 rolagens `[6.0, 1.0, 1.0, 1.0]`.
-5. **Ponderação Proporcional por Slots Totais:** O divisor da Nota Geral é fixo no total de slots do jogo ($6$ para HSR/ZZZ, $5$ para Genshin). Slots vazios/não equipados pontuam $0.0$, penalizando builds incompletas proporcionalmente.
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `GET` | `/api/overview` | Unified account metadata, resin levels, and active rosters. |
+| `GET` | `/api/roster/{game_id}` | Full character roster with computed Roll Value and gear scores. |
+| `GET` | `/api/build/{game_id}/{char_name}` | Equipment breakdown, traces, skills, and Eidolon progression. |
+| `GET` | `/api/compare/{game_id}/{char_name}` | Deterministic build audit against community benchmark targets. |
+| `POST` | `/api/sync/{game_id}` | Triggers background synchronization of roster and guide manifests. |
+| `GET` | `/api/endgame/{game_id}` | Cleared stages, star counts, and cycle metrics for endgame modes. |
+| `GET` | `/api/endgame/team-match/{game_id}` | Archetype team compatibility calculations and substitute ranking. |
+| `POST` | `/api/gacha/forecast/calculate` | Monte Carlo warp forecast calculation. |
+| `GET` | `/api/notes` | Real-time stamina, daily quest, and expedition counters. |
+| `POST` | `/api/checkin/run` | Executes HoYoLAB daily check-in sequence. |
+| `GET` | `/api/static-data/status` | Ingestion status and checksum metadata for offline JSON manifests. |
 
 ---
 
-## 📡 Endpoints Principais da API REST
+## 8. License & Contributing
 
-| Método  | Endpoint                                             | Descrição                                                               |
-| :------- | :--------------------------------------------------- | :------------------------------------------------------------------------ |
-| `GET`  | `/api/overview`                                    | Estatísticas unificadas das contas (UID, Nível, Chars)                  |
-| `GET`  | `/api/security/status`                             | Status do cofre DPAPI, autenticação por PIN e isolamento LAN            |
-| `POST` | `/api/security/pin/verify`                         | Validação de PIN e emissão de sessão segura                           |
-| `GET`  | `/api/roster/{game_id}`                            | Roster completo com builds, notas RV e relíquias                         |
-| `GET`  | `/api/build/{game_id}/{char_name}`                 | Dados completos da build (armas, relíquias, status, habilidades e ranks) |
-| `GET`  | `/api/compare/{game_id}/{char_name}`               | Comparador da build do jogador com a meta recomendada                     |
-| `GET`  | `/api/optimize/{game_id}/{char_name}`              | Sugestões inteligentes de otimização de build geradas via IA           |
-| `POST` | `/api/sync/{game_id}`                              | Inicia sincronização assíncrona de Roster e Metagame                   |
-| `GET`  | `/api/notes`                                       | Monitor de energia/resina/bateria em tempo real                           |
-| `POST` | `/api/checkin/run`                                 | Executa o check-in diário na HoYoLAB                                     |
-| `POST` | `/api/gacha/forecast/calculate`                    | Simulação Monte Carlo e projeção de tiros para banners                |
-| `GET`  | `/api/gacha/goals/{game_id}`                       | Recupera metas salvas com cronômetro ao vivo e horários oficiais         |
-| `POST` | `/api/gacha/goals`                                 | Salva meta estratégica com data alvo e horários oficiais por fase       |
-| `GET`  | `/api/gacha/defaults/{game_id}`                    | Pity atual, status de 50/50 e banners oficiais ativos com horário        |
-| `GET`  | `/api/strategy/account-gaps/{game_id}`             | Diagnóstico de lacunas de arquétipos e cobertura elemental              |
-| `GET`  | `/api/farm/order-of-day/{game_id}`                 | Ordem de Serviço Diária com alocação otimizada de resina              |
-| `GET`  | `/api/relics/craft-recommendations/{game_id}`      | Recomendações de síntese com Resina Automodeladora                     |
-| `GET`  | `/api/briefing/today`                              | Morning Briefing executivo diário                                        |
-| `POST` | `/api/codes/redeem`                                | Resgate em lote de códigos promocionais ativos                           |
-| `POST` | `/api/team/analyze`                                | Análise de sinergia de equipes de 4 slots via SSE Stream                 |
-| `POST` | `/api/chat`                                        | Endpoint de chat local via Server-Sent Events (SSE)                       |
-| `GET`  | `/api/static-data/status`                          | Status geral dos manifestos de dados estáticos e catálogos offline      |
-| `GET`  | `/api/static-data/schedule/{game_id}`              | Calendário diário de materiais de farm e domínios abertos hoje         |
-| `GET`  | `/api/static-data/character/{game_id}/{char_name}` | Perfil detalhado de materiais, chefes e ascensão do personagem           |
-| `POST` | `/api/static-data/sync`                            | Sincronização sob demanda dos manifestos e datamines locais             |
-
----
-
-## 📄 Governança, Licença e Contribuição
-
-* **Licença:** Distribuído sob a licença [MIT](LICENSE).
-* **Guia de Contribuição:** Para padrões de código, fluxo de PR e guia de testes, consulte o [CONTRIBUTING.md](CONTRIBUTING.md).
-* **Histórico de Mudanças:** Consulte o [CHANGELOG.md](CHANGELOG.md) para a lista de novidades de cada versão.
-* **Segurança:** Leia o [SECURITY.md](SECURITY.md) para detalhes de criptografia e reporte de vulnerabilidades.
+- **License:** Distributed under the [MIT License](LICENSE).
+- **Contributing:** Submit technical pull requests targeting `main`. Code contributions must pass automated linting (`ruff check .`), formatting (`ruff format --check .`), type checking (`mypy schemas/ services/`), and the unit test suite (`python -m unittest discover tests`). Detailed workflow rules are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
+- **Security Disclosures:** For vulnerability reporting and cryptographic vault specifications, refer to [SECURITY.md](SECURITY.md).

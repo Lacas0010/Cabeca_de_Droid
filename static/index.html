@@ -366,7 +366,7 @@
 </button>
 <button class="nav-btn" data-tab="gacha">
 <i class="fa-solid fa-wand-magic-sparkles tab-icon" style="color: #f59e0b; font-size: 16px;"></i>
-<span class="nav-text" data-i18n="nav_gacha">Simulador de Tiros</span>
+<span class="nav-text" data-i18n="nav_gacha">Simulador de Gacha</span>
 </button>
 <button class="nav-btn" data-tab="farm">
 <i class="fa-solid fa-wheat-awn tab-icon" style="color: #10b981; font-size: 16px;"></i>
@@ -374,7 +374,7 @@
 </button>
 <button class="nav-btn" data-tab="trash">
 <i class="fa-solid fa-trash-can tab-icon" style="color: #ef4444; font-size: 16px;"></i>
-<span class="nav-text" data-i18n="nav_trash">Relíquias Lixo</span>
+<span class="nav-text" data-i18n="nav_trash">Filtro de Descarte</span>
 </button>
 <button class="nav-btn" data-tab="luck">
 <i class="fa-solid fa-clover tab-icon" style="color: #10b981; font-size: 16px;"></i>
@@ -467,7 +467,7 @@
 </div>
 <div>
 <h3 style="margin: 0; font-size: 17px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
-<span data-i18n="briefing_title">Morning Briefing Executivo</span> <span data-i18n="briefing_tag_today" id="briefing-weekday-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Hoje</span>
+<span data-i18n="briefing_title">Resumo Diário da Conta</span> <span data-i18n="briefing_tag_today" id="briefing-weekday-tag" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 700;">Hoje</span>
 </h3>
 <span data-i18n="briefing_date_syncing" id="briefing-date-lbl" style="font-size: 12px; color: var(--text-muted);">Sincronizando tarefas prioritárias e metas...</span>
 </div>
@@ -601,7 +601,7 @@
 <i class="fa-solid fa-clipboard-list" style="color: #10b981;"></i> <span data-i18n="farm_order_main_title">Ordem de Serviço do Dia</span>
 <span data-i18n="briefing_tag_today" id="farm-order-weekday-tag" style="font-size: 11px; background: rgba(16,185,129,0.2); color: #34d399; padding: 2px 8px; border-radius: 12px; font-weight: 700;">Hoje</span>
 </h3>
-<span data-i18n="farm_order_main_desc" style="font-size: 12px; color: var(--text-muted);">Alocação inteligente de resina e energia nos domínios abertos hoje para seu Roster.</span>
+<span data-i18n="farm_order_main_desc" style="font-size: 12px; color: var(--text-muted);">Alocação determinística de resina e energia nos domínios abertos hoje para o elenco.</span>
 </div>
 <!-- Seletor de Jogo -->
 <div style="display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 4px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
@@ -655,13 +655,13 @@
 <p data-i18n="meta_tools_desc" style="margin-bottom: 14px; font-size: 13px; color: #94a3b8;">Acesse simuladores probabilísticos, recomendações diárias de gasto de energia e análises profundas do seu inventário.</p>
 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
 <button class="primary-btn" onclick="document.getElementById('modal-gacha').style.display='flex'" style="padding: 10px; font-size: 12px; display: flex; align-items: center; gap: 8px; justify-content: center; background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">
-<i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="meta_tools_gacha_btn">Simulador de Tiros</span>
+<i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="meta_tools_gacha_btn">Simulador de Gacha</span>
 </button>
 <button class="primary-btn" onclick="document.getElementById('modal-farm').style.display='flex'; window.loadFarmData('genshin');" style="padding: 10px; font-size: 12px; display: flex; align-items: center; gap: 8px; justify-content: center; background: linear-gradient(135deg, #10b981, #059669); border: none;">
 <i class="fa-solid fa-wheat-awn"></i> <span data-i18n="meta_tools_farm_btn">Farm Diário</span>
 </button>
 <button class="primary-btn" onclick="document.getElementById('modal-trash-relics').style.display='flex'; window.loadTrashRelics('genshin');" style="padding: 10px; font-size: 12px; display: flex; align-items: center; gap: 8px; justify-content: center; background: linear-gradient(135deg, #ef4444, #dc2626); border: none;">
-<i class="fa-solid fa-trash-can"></i> <span data-i18n="meta_tools_trash_btn">Relíquias Lixo</span>
+<i class="fa-solid fa-trash-can"></i> <span data-i18n="meta_tools_trash_btn">Filtro de Descarte</span>
 </button>
 <button class="primary-btn" onclick="document.getElementById('modal-audit-report').style.display='flex'; window.loadAuditReport('hsr');" style="padding: 10px; font-size: 12px; display: flex; align-items: center; gap: 8px; justify-content: center; background: linear-gradient(135deg, #a855f7, #7e22ce); border: none;">
 <i class="fa-solid fa-trophy"></i> <span data-i18n="meta_tools_audit_btn">Tier List &amp; Audit</span>
@@ -1147,7 +1147,7 @@
 <div class="team-builder-controls-bar">
 <div class="team-name-field">
 <label for="team-name-input-hsr"><i class="fa-solid fa-pen-nib"></i> <span data-i18n="teamcard_composition_name">Nome da Composição:</span></label>
-<input class="team-name-input" id="team-name-input-hsr" oninput="window.updateTeamName('hsr', this.value)" placeholder="Ex: DoT Kafka Swan Team" type="text" value="Acheron Nihility Supreme"/>
+<input class="team-name-input" id="team-name-input-hsr" oninput="window.updateTeamName('hsr', this.value)" placeholder="Ex: DoT Kafka Swan Team" type="text" value="Acheron Hypercarry"/>
 </div>
 <div class="team-selection-counter">
 <span class="counter-label" data-i18n="roster_team_builder_chars">Personagens no Time:</span>
@@ -1180,8 +1180,8 @@
 <section class="tab-pane" id="tab-gacha">
 <div class="game-banner" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(245, 158, 11, 0.3);">
 <div class="banner-overlay">
-<h2><i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> <span data-i18n="gacha_banner_title">Simulador de Tiros &amp; Gacha Forecast</span></h2>
-<p data-i18n="gacha_banner_desc">Simulação Monte Carlo (10.000 iterações), projeção de acúmulo de gemas/tiros e metas de banners futuros</p>
+<h2><i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> <span data-i18n="gacha_banner_title">Simulador de Gacha &amp; Projeção</span></h2>
+<p data-i18n="gacha_banner_desc">Simulação probabilística de Monte Carlo (10.000 iterações), projeção de acúmulo de recursos e metas de banners</p>
 </div>
 </div>
 <!-- Sub-Navegação da Aba Gacha -->
@@ -1191,7 +1191,7 @@
 </button>
 <button class="game-subnav-btn gacha-view-btn" data-view="forecast">
 <i class="fa-solid fa-chart-line" style="color: #f59e0b;"></i> <span data-i18n="gacha_subnav_forecast">Gacha Forecast (Banners Futuros)</span>
-<span class="subnav-badge" data-i18n="gacha_subnav_forecast_badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">Inteligente</span>
+<span class="subnav-badge" data-i18n="gacha_subnav_forecast_badge" style="background: rgba(245, 158, 11, 0.2); color: #fbbf24;">Projeção</span>
 </button>
 <button class="game-subnav-btn gacha-view-btn" data-view="goals">
 <i class="fa-solid fa-bullseye" style="color: #10b981;"></i> <span data-i18n="gacha_subnav_goals">Metas de Banners Salvas</span>
@@ -1363,18 +1363,18 @@
 </select>
 </div>
 </div>
-<!-- Tiros e Gemas Disponíveis com Botões de Ajuste Rápido -->
+<!-- Invocações e Recursos Disponíveis -->
 <div style="margin-bottom: 20px;">
 <div style="display:flex; justify-content:space-between; align-items:center;">
-<label data-i18n="gacha_pulls_available" style="font-size: 12px; color: #94a3b8;">Tiros/Desejos Disponíveis:</label>
+<label data-i18n="gacha_pulls_available" style="font-size: 12px; color: #94a3b8;">Invocações / Recursos Disponíveis:</label>
 <span data-i18n="gacha_gems_equiv_sample" id="gacha-gems-convert-lbl" style="font-size: 11px; color: #a78bfa;">(Equivale a 14.400 Gemas)</span>
 </div>
 <input class="search-input" id="tab-gacha-pulls" min="1" style="width: 100%; margin-top: 4px;" type="number" value="90"/>
 <div class="gacha-quick-pulls">
-<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_10" onclick="addGachaPulls(10)" type="button">+10 Tiros</button>
-<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_50" onclick="addGachaPulls(50)" type="button">+50 Tiros</button>
-<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_90" onclick="addGachaPulls(90)" type="button">+90 Tiros</button>
-<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_180" onclick="addGachaPulls(180)" type="button">+180 Tiros</button>
+<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_10" onclick="addGachaPulls(10)" type="button">+10 Invocações</button>
+<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_50" onclick="addGachaPulls(50)" type="button">+50 Invocações</button>
+<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_90" onclick="addGachaPulls(90)" type="button">+90 Invocações</button>
+<button class="gacha-quick-btn" data-i18n="gacha_btn_plus_180" onclick="addGachaPulls(180)" type="button">+180 Invocações</button>
 </div>
 </div>
 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
@@ -1382,10 +1382,10 @@
 <i class="fa-solid fa-dice"></i> <span data-i18n="gacha_btn_monte_carlo">Monte Carlo</span>
 </button>
 <button class="primary-btn" id="tab-btn-open-wish-single" onclick="window.startWishAnimation(1)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;" type="button">
-<i class="fa-solid fa-rotate-right"></i> <span data-i18n="gacha_btn_single_wish">Dar 1 Tiro</span>
+<i class="fa-solid fa-rotate-right"></i> <span data-i18n="gacha_btn_single_wish">1 Invocação</span>
 </button>
 <button class="primary-btn" data-i18n="wish_btn_ten" id="tab-btn-open-wish-multi" onclick="window.startWishAnimation(10)" style="width: 100%; padding: 12px 10px; font-weight: bold; font-size: 12px; background: linear-gradient(135deg, #a855f7, #6366f1); border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(168, 85, 247, 0.35); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;" type="button">
-<i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="gacha_btn_multi_wish">10 Tiros</span>
+<i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="gacha_btn_multi_wish">10 Invocações</span>
 </button>
 </div>
 </div>
@@ -1405,7 +1405,7 @@
 <!-- Métricas Secundárias -->
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0;">
 <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
-<div data-i18n="gacha_avg_pulls_lbl" style="font-size: 11px; color: #94a3b8;">Média de Tiros Gastos:</div>
+<div data-i18n="gacha_avg_pulls_lbl" style="font-size: 11px; color: #94a3b8;">Média de Invocações Gastas:</div>
 <div id="tab-gacha-avg-lbl" style="font-size: 14px; font-weight: bold; color: #f8fafc; margin-top: 2px;">N/A</div>
 </div>
 <div style="padding: 12px; background: rgba(255,255,255,0.03); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06);">
@@ -1487,7 +1487,7 @@
 <!-- Recursos Atuais (Pity, Garantido, Saldo) -->
 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 14px;">
 <div>
-<label data-i18n="forecast_saved_pulls_lbl" style="font-size: 11px; color: #94a3b8;">Tiros Guardados:</label>
+<label data-i18n="forecast_saved_pulls_lbl" style="font-size: 11px; color: #94a3b8;">Invocações Acumuladas:</label>
 <input class="search-input" id="forecast-pulls-cur" min="0" style="width: 100%; margin-top: 4px;" type="number" value="30"/>
 </div>
 <div>
@@ -1549,7 +1549,7 @@
 <input id="forecast-inc-bp" style="accent-color: #a855f7;" type="checkbox"/>
 </label>
 <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
-<span><i class="fa-solid fa-shop" style="color: #10b981;"></i> <span data-i18n="forecast_inc_shop">Reset da Loja Mensal (5 tiros/mês)</span></span>
+<span><i class="fa-solid fa-shop" style="color: #10b981;"></i> <span data-i18n="forecast_inc_shop">Reset da Loja Mensal (5 invocações/mês)</span></span>
 <input checked="" id="forecast-inc-shop" style="accent-color: #10b981;" type="checkbox"/>
 </label>
 <label style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
@@ -1585,21 +1585,21 @@
 <span id="forecast-kpi-f2p-comp" style="font-size: 10px; color: #94a3b8; display: block;">(F2P: --%)</span>
 </div>
 <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 10px; text-align: center;">
-<span data-i18n="forecast_kpi_total_lbl" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Total de Tiros Projetados</span>
+<span data-i18n="forecast_kpi_total_lbl" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Total de Invocações Projetadas</span>
 <strong id="forecast-kpi-total-pulls" style="font-size: 22px; color: #fbbf24; display: block; margin-top: 2px;">--</strong>
 <span id="forecast-kpi-future-add" style="font-size: 10px; color: #38bdf8; display: block;">+-- novos</span>
 </div>
 <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); padding: 12px; border-radius: 10px; text-align: center;">
 <span data-i18n="forecast_kpi_worst_lbl" style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; display: block;">Garantia 100% (Worst-case)</span>
 <strong id="forecast-kpi-worst-case" style="font-size: 22px; color: #f87171; display: block; margin-top: 2px;">--</strong>
-<span data-i18n="forecast_missing_pulls_lbl" id="forecast-kpi-missing-pulls" style="font-size: 10px; color: #fca5a5; display: block;">Faltam -- tiros</span>
+<span data-i18n="forecast_missing_pulls_lbl" id="forecast-kpi-missing-pulls" style="font-size: 10px; color: #fca5a5; display: block;">Faltam -- invocações</span>
 </div>
 </div>
 <!-- Detalhamento da Renda (Income Breakdown) -->
 <div style="background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 12px; margin-bottom: 16px;">
 <div style="font-size: 11px; font-weight: 700; color: #cbd5e1; text-transform: uppercase; margin-bottom: 10px; display: flex; justify-content: space-between;">
-<span data-i18n="forecast_income_comp_lbl">Composição dos Tiros Futuros:</span>
-<span data-i18n="forecast_total_pulls_lbl" id="forecast-breakdown-total-lbl" style="color: #fbbf24;">-- tiros</span>
+<span data-i18n="forecast_income_comp_lbl">Composição de Recursos Futuros:</span>
+<span data-i18n="forecast_total_pulls_lbl" id="forecast-breakdown-total-lbl" style="color: #fbbf24;">-- invocações</span>
 </div>
 <div id="forecast-income-breakdown-list" style="display: flex; flex-direction: column; gap: 6px; font-size: 12px;">
 <div data-i18n="forecast_income_calc_hint" style="color: var(--text-muted); font-size: 11px; text-align: center; padding: 10px;">Execute a simulação para ver a composição detalhada.</div>
@@ -1674,7 +1674,7 @@
 <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
 <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
 <div style="display: flex; flex-direction: column;">
-<span data-i18n="tracker_kpi_total_pulls" style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total de Tiros Dados:</span>
+<span data-i18n="tracker_kpi_total_pulls" style="font-size: 11px; color: var(--text-muted); text-transform: uppercase;">Total de Invocações Registradas:</span>
 <strong id="tracker-stat-total-pulls" style="font-size: 20px; color: #fff;">0</strong>
 </div>
 <div style="width: 1px; height: 32px; background: rgba(255,255,255,0.1);"></div>
@@ -1698,7 +1698,7 @@
 <div id="tracker-banners-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 16px;">
 <!-- Renderizado dinamicamente via JS de acordo com o jogo (Genshin, HSR ou ZZZ) -->
 </div>
-<!-- Seção: Histórico Completo de Tiros com Miniaturas de Itens e Filtros -->
+<!-- Seção: Histórico Completo de Invocações com Miniaturas de Itens e Filtros -->
 <div style="margin-top: 28px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 16px; padding: 20px;">
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 18px;">
 <div style="display: flex; align-items: center; gap: 10px;">
@@ -1706,7 +1706,7 @@
 <i class="fa-solid fa-clock-rotate-left"></i>
 </div>
 <div>
-<h3 data-i18n="tracker_full_history_title" style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">Histórico Completo de Tiros</h3>
+<h3 data-i18n="tracker_full_history_title" style="margin: 0; font-size: 16px; font-weight: 800; color: #fff;">Histórico Completo de Invocações</h3>
 <span data-i18n="tracker_official_records_label" id="tracker-history-total-label" style="font-size: 11px; color: var(--text-muted);">Exibindo registros oficiais sincronizados</span>
 </div>
 </div>
@@ -1758,7 +1758,7 @@
 <section class="tab-pane" id="tab-farm">
 <div class="game-banner" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(16, 185, 129, 0.3);">
 <div class="banner-overlay">
-<h2><i class="fa-solid fa-wheat-awn" style="color: #10b981;"></i> <span data-i18n="farm_banner_title">Central de Farm Inteligente Diário</span></h2>
+<h2><i class="fa-solid fa-wheat-awn" style="color: #10b981;"></i> <span data-i18n="farm_banner_title">Planejador de Cultivo Diário</span></h2>
 <p data-i18n="farm_banner_desc">Calendário de rotação de domínios e recomendação personalizada de gasto de energia</p>
 </div>
 </div>
@@ -1777,14 +1777,14 @@
 <section class="tab-pane" id="tab-trash">
 <div class="game-banner" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(15, 23, 42, 0.9)); border-bottom: 1px solid rgba(239, 68, 68, 0.3);">
 <div class="banner-overlay">
-<h2><i class="fa-solid fa-trash-can" style="color: #ef4444;"></i> <span data-i18n="trash_banner_title">Gestão de Relíquias &amp; Síntese Inteligente</span></h2>
-<p data-i18n="trash_banner_desc">Desmanche inteligente de peças sem utilidade e conselheiro de uso para Resina Automodeladora e Elixir Santificador</p>
+<h2><i class="fa-solid fa-trash-can" style="color: #ef4444;"></i> <span data-i18n="trash_banner_title">Filtro de Descarte &amp; Otimização de Relíquias</span></h2>
+<p data-i18n="trash_banner_desc">Identificação determinística de peças com atributos conflitantes e conselheiro de síntese.</p>
 </div>
 </div>
 <!-- SUB-NAVEGAÇÃO: LIXO vs SÍNTESE -->
 <div class="gacha-subnav" style="display: flex; gap: 8px; margin-top: 16px; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
 <button class="subnav-btn active" id="btn-subnav-trash-finder" onclick="window.switchTrashSubView('finder')" style="padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid rgba(239, 68, 68, 0.4); background: rgba(239, 68, 68, 0.15); color: #f87171; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-<i class="fa-solid fa-trash-can"></i> <span data-i18n="trash_subnav_salvage">Peças Lixo (Desmanche)</span>
+<i class="fa-solid fa-trash-can"></i> <span data-i18n="trash_subnav_salvage">Peças para Desmanche / Conversão</span>
 </button>
 <button class="subnav-btn" id="btn-subnav-trash-craft" onclick="window.switchTrashSubView('craft')" style="padding: 8px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 6px;">
 <i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> <span data-i18n="trash_subnav_craft">Conselheiro de Síntese &amp; Resina Automodeladora</span>
@@ -2557,7 +2557,7 @@
 <div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
 <i class="fa-solid fa-wand-magic-sparkles"></i>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_8">8. Monte Carlo Gacha &amp; Simulador de Tiros</div>
+<div class="help-card-title" data-i18n="help_card_title_8">8. Simulador de Gacha (Monte Carlo)</div>
 </div>
 <div class="help-card-desc" data-i18n="help_card_desc_8">Simulação estocástica de 10.000 invocações, Soft Pity real (74+), cálculo de cópias faltantes e animações 3D.</div>
 <div class="help-card-tags">
@@ -2607,7 +2607,7 @@
 <div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
 <i class="fa-solid fa-trash-can"></i>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_10">10. Analisador de Relíquias Lixo (Trash Finder)</div>
+<div class="help-card-title" data-i18n="help_card_title_10">10. Filtro de Descarte de Equipamentos (Trash Finder)</div>
 </div>
 <div class="help-card-desc" data-i18n="help_card_desc_10">Identificador automático de artefatos e relíquias do inventário com substatus incompatíveis com o metagame.</div>
 <div class="help-card-tags">
@@ -2621,7 +2621,7 @@
 </div>
 <div class="help-card-footer">
 <button class="help-toggle-details-btn"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></button>
-<button class="help-action-btn" onclick="document.querySelector('[data-tab=trash]').click()"><i class="fa-solid fa-trash-can"></i><span data-i18n="help_card_btn_10"> Ver Relíquias Lixo</span></button>
+<button class="help-action-btn" onclick="document.querySelector('[data-tab=trash]').click()"><i class="fa-solid fa-trash-can"></i><span data-i18n="help_card_btn_10"> Ver Peças para Descarte</span></button>
 </div>
 </div>
 <!-- CARD 11: RECOMENDADOR DE ARTESANATO (RELIC CRAFTING) -->
@@ -2634,7 +2634,7 @@
 </div>
 <div class="help-card-title" data-i18n="help_card_title_11">11. Artesanato de Relíquias &amp; Síntese</div>
 </div>
-<div class="help-card-desc" data-i18n="help_card_desc_11">Recomendador inteligente de criação de peças com Resina Automoduladora focado nas piores peças da sua equipe principal.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_11">Recomendação técnica de criação de peças com Resina Automodeladora focada nos espaços com menor pontuação do elenco.</div>
 <div class="help-card-tags">
 <span class="help-tag">Relic Crafting</span>
 <span class="help-tag" data-i18n="help_tag_self_mod_resin">Resina Automoduladora</span>
@@ -3100,7 +3100,7 @@
 <div class="modal-overlay" id="modal-gacha" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
 <div class="modal-card-content" style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; width: 92%; max-width: 600px; padding: 20px;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-<h3 data-i18n="modal_gacha_title" style="margin: 0; color: #f59e0b; font-size: 18px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Simulador de Tiros &amp; Gacha (Monte Carlo)</h3>
+<h3 data-i18n="modal_gacha_title" style="margin: 0; color: #f59e0b; font-size: 18px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Simulador de Gacha (Monte Carlo)</h3>
 <button onclick="document.getElementById('modal-gacha').style.display='none'" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
 </div>
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
@@ -3124,7 +3124,7 @@
 </select>
 </div>
 <div>
-<label data-i18n="modal_gacha_available_pulls" style="font-size: 12px; color: #94a3b8;">Tiros/Gemas Disponíveis:</label>
+<label data-i18n="modal_gacha_available_pulls" style="font-size: 12px; color: #94a3b8;">Invocações / Recursos Disponíveis:</label>
 <input class="search-input" id="gacha-pulls" min="1" style="width: 100%; margin-top: 4px;" type="number" value="90"/>
 </div>
 <div style="grid-column: span 2;">
@@ -3140,7 +3140,7 @@
 <button class="primary-btn" data-i18n="modal_gacha_btn_simulate" id="btn-run-gacha-sim" style="width: 100%; padding: 10px; font-weight: bold; background: linear-gradient(135deg, #f59e0b, #d97706); border: none;">Simular 10.000 Tentativas</button>
 <div id="gacha-results-box" style="margin-top: 16px; padding: 14px; background: rgba(255,255,255,0.03); border-radius: 12px; border: 1px solid var(--border-color); display: none;">
 <div data-i18n="modal_gacha_chance" id="gacha-chance-lbl" style="font-size: 14px; font-weight: bold; color: #10b981; margin-bottom: 6px;">Chance de Sucesso: 0%</div>
-<div data-i18n="modal_gacha_avg_pulls" id="gacha-avg-lbl" style="font-size: 12px; color: #94a3b8;">Média de Tiros Gastos: N/A</div>
+<div data-i18n="modal_gacha_avg_pulls" id="gacha-avg-lbl" style="font-size: 12px; color: #94a3b8;">Média de Invocações Gastas: N/A</div>
 <div id="gacha-dist-list" style="margin-top: 10px; font-size: 11px; color: #cbd5e1; display: flex; flex-direction: column; gap: 4px;"></div>
 </div>
 </div>
@@ -3149,7 +3149,7 @@
 <div class="modal-overlay" id="modal-farm" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
 <div class="modal-card-content" style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; width: 92%; max-width: 650px; padding: 20px;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-<h3 data-i18n="modal_farm_center_title" style="margin: 0; color: #10b981; font-size: 18px;"><i class="fa-solid fa-wheat-awn"></i> Central de Farm Inteligente Diário</h3>
+<h3 data-i18n="modal_farm_center_title" style="margin: 0; color: #10b981; font-size: 18px;"><i class="fa-solid fa-wheat-awn"></i> Planejador de Cultivo Diário</h3>
 <button onclick="document.getElementById('modal-farm').style.display='none'" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
 </div>
 <div style="display: flex; gap: 10px; margin-bottom: 14px;">
@@ -3234,7 +3234,7 @@
 <div class="modal-overlay" id="modal-trash-relics" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 9999; justify-content: center; align-items: center;">
 <div class="modal-card-content" style="background: #0f172a; border: 1px solid var(--border-color); border-radius: 16px; width: 92%; max-width: 700px; padding: 20px; max-height: 85vh; overflow-y: auto;">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-<h3 data-i18n="modal_trash_title" style="margin: 0; color: #ef4444; font-size: 18px;"><i class="fa-solid fa-trash-can"></i> Analisador de Relíquias Lixo (Trash Finder)</h3>
+<h3 data-i18n="modal_trash_title" style="margin: 0; color: #ef4444; font-size: 18px;"><i class="fa-solid fa-trash-can"></i> Filtro de Descarte de Equipamentos (Trash Finder)</h3>
 <button onclick="document.getElementById('modal-trash-relics').style.display='none'" style="background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer;">✕</button>
 </div>
 <div style="display: flex; gap: 10px; margin-bottom: 14px;">
@@ -3395,7 +3395,7 @@
 <i class="fa-solid fa-trophy" style="color: #fbbf24;"></i> 5★ LIMITADO ADQUIRIDO!
                 </div>
 <div data-i18n="gacha_anim_pull_indicator_sample" id="wish-card-pity-text" style="font-size: 12px; color: #cbd5e1; text-shadow: 0 2px 6px rgba(0,0,0,0.8);">
-                    Tiro nº 76 • Soft Pity Ativo • Próximo Pity: 0
+                    Invocação nº 76 • Soft Pity Ativo • Próximo Pity: 0
                 </div>
 </div>
 <!-- BOTÃO FLUTUANTE DE PRÓXIMO ITEM (10 TIROS SEQUENCIAIS) -->
@@ -3405,10 +3405,10 @@
 <!-- BARRA FLUTUANTE DE AÇÕES NA PARTE INFERIOR DA TELA (TIRO ÚNICO) -->
 <div id="wish-single-actions-bar" style="position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 12px; justify-content: center; align-items: center; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2); padding: 10px 22px; border-radius: 40px; backdrop-filter: blur(16px); box-shadow: 0 15px 35px rgba(0,0,0,0.7);">
 <button data-i18n="wish_btn_single" onclick="window.startWishAnimation(1)" style="padding: 10px 22px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); display: flex; align-items: center; gap: 6px;" type="button">
-<i class="fa-solid fa-rotate-right"></i> +1 Tiro
+<i class="fa-solid fa-rotate-right"></i> +1 Invocação
                 </button>
 <button data-i18n="gacha_pull_10" onclick="window.startWishAnimation(10)" style="padding: 10px 24px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4); display: flex; align-items: center; gap: 6px;" type="button">
-<i class="fa-solid fa-wand-magic-sparkles"></i> 10 Tiros
+<i class="fa-solid fa-wand-magic-sparkles"></i> 10 Invocações
                 </button>
 <button data-i18n="wish_btn_close" onclick="window.closeWishModal()" style="padding: 10px 20px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.1); color: #e2e8f0; display: flex; align-items: center; gap: 6px;" type="button">
 <i class="fa-solid fa-xmark"></i> Fechar
@@ -3418,7 +3418,7 @@
 <!-- CONTAINER DA TELA DE RESUMO DOS 10 TIROS (LADO A LADO IGUAL AOS JOGOS) -->
 <div id="wish-summary-container" style="display: none; position: relative; z-index: 10; flex-direction: column; align-items: center; justify-content: center; width: 100vw; height: 100vh; overflow: hidden; pointer-events: auto; padding: 20px;">
 <h2 data-i18n="wish_results_ten_title" style="font-size: 26px; font-weight: 900; color: #ffffff; margin-bottom: 18px; text-shadow: 0 4px 15px rgba(0,0,0,0.85); display: flex; align-items: center; gap: 10px;">
-<i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Resultado dos 10 Tiros
+<i class="fa-solid fa-wand-magic-sparkles" style="color: #a855f7;"></i> Resultado das 10 Invocações
             </h2>
 <!-- GRID COM OS 10 ITENS LADO A LADO -->
 <div id="wish-summary-grid-box" style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; width: 100%; max-width: 920px; max-height: 65vh; overflow-y: auto; padding: 18px; background: rgba(15, 23, 42, 0.85); border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.2); backdrop-filter: blur(20px); box-shadow: 0 25px 60px rgba(0,0,0,0.9);">
@@ -3427,10 +3427,10 @@
 <!-- BARRA DE AÇÕES INFERIOR DA TELA DE RESUMO -->
 <div style="margin-top: 20px; display: flex; gap: 12px; justify-content: center; align-items: center; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.2); padding: 10px 22px; border-radius: 40px; backdrop-filter: blur(16px); box-shadow: 0 15px 35px rgba(0,0,0,0.7);">
 <button data-i18n="gacha_pull_1" onclick="window.startWishAnimation(1)" style="padding: 10px 22px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); display: flex; align-items: center; gap: 6px;" type="button">
-<i class="fa-solid fa-rotate-right"></i> +1 Tiro
+<i class="fa-solid fa-rotate-right"></i> +1 Invocação
                 </button>
 <button data-i18n="gacha_pull_10" onclick="window.startWishAnimation(10)" style="padding: 10px 24px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: none; background: linear-gradient(135deg, #a855f7, #7e22ce); color: #fff; box-shadow: 0 4px 14px rgba(168, 85, 247, 0.4); display: flex; align-items: center; gap: 6px;" type="button">
-<i class="fa-solid fa-wand-magic-sparkles"></i> 10 Tiros
+<i class="fa-solid fa-wand-magic-sparkles"></i> 10 Invocações
                 </button>
 <button data-i18n="btn_close" onclick="window.closeWishModal()" style="padding: 10px 20px; border-radius: 25px; font-weight: 700; font-size: 13px; cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.1); color: #e2e8f0; display: flex; align-items: center; gap: 6px;" type="button">
 <i class="fa-solid fa-xmark"></i> Fechar
@@ -3583,7 +3583,7 @@
 <!-- Preenchido via JS -->
 </div>
 </div>
-<!-- Veredito Executivo da IA -->
+<!-- Diagnóstico de Sinergia -->
 <div id="sandbox-verdict-box" style="margin-top: auto; padding: 10px 14px; border-radius: 10px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); font-size: 12px; color: #e0f2fe; line-height: 1.4;">
 <i class="fa-solid fa-lightbulb" style="color: #38bdf8; margin-right: 4px;"></i>
 <span data-i18n="sandbox_candidate_evaluate_hint" id="sandbox-verdict-text">Selecione uma peça candidata para avaliar se a troca vale a pena antes de gastar recursos in-game.</span>

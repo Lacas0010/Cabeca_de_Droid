@@ -1,22 +1,30 @@
 {
   "genshin": {
     "game_id": "genshin",
-    "patch_info": "Patch 7.1 Phase 2Oct 13, 2026 – Nov 3, 2026",
+    "patch_info": "Patch 7.2 Phase 1Nov 4, 2026 – Nov 23, 2026",
     "banners": [
       {
-        "character_name": "Escoffier",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1789223129861-11f7d61757845c545f9a1495e6a47f00.webp",
-        "featured_4stars": [],
+        "character_name": "Mitya",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1790669909754-8b33a775c352dfb957990e89264f40a2.webp",
+        "featured_4stars": [
+          "Valeriy",
+          "Charlotte",
+          "Rosaria"
+        ],
         "is_primary": true
       },
       {
-        "character_name": "Skirk",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1789223129869-8b618882ddee46cf159f5abb3e3f2db9.webp",
-        "featured_4stars": [],
+        "character_name": "Furina",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/characters/furina_full.webp",
+        "featured_4stars": [
+          "Valeriy",
+          "Charlotte",
+          "Rosaria"
+        ],
         "is_primary": false
       }
     ],
-    "last_updated": "2026-10-29T15:35:56.504922",
+    "last_updated": "2026-11-04T10:10:47.800105",
     "weapon_banners": [
       {
         "character_name": "Azurelight",
@@ -119,7 +127,7 @@
         "banner_title": "Excalibur Excelsior"
       }
     ],
-    "last_updated": "2026-10-26T15:53:43.551379",
+    "last_updated": "2026-11-04T10:10:43.712110",
     "weapon_banners": [
       {
         "character_name": "Colors for Tomorrow",
@@ -228,7 +236,7 @@
         "banner_title": "Graceful Gale"
       }
     ],
-    "last_updated": "2026-10-26T15:54:33.330939",
+    "last_updated": "2026-11-04T10:10:44.077186",
     "weapon_banners": [
       {
         "character_name": "Plume of Rebirth",
