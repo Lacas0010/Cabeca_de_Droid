@@ -920,16 +920,29 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                 if not char.get("path"):
                     char["path"] = char.get("weapon_type")
             elif game_id == "hsr":
-                if not char.get("path") and "desbravador" in c_name.lower():
-                    elem = (char.get("element") or "").lower()
-                    if "physical" in elem or "físico" in elem or "fisico" in elem:
-                        char["path"] = "Destruction"
-                    elif "fire" in elem or "fogo" in elem:
-                        char["path"] = "Preservation"
-                    elif "imaginary" in elem or "imaginário" in elem or "imaginario" in elem:
-                        char["path"] = "Harmony"
-                    elif "ice" in elem or "gelo" in elem:
-                        char["path"] = "Remembrance"
+                if not char.get("path"):
+                    if "desbravador" in c_name.lower() or "trailblazer" in c_name.lower():
+                        elem = (char.get("element") or "").lower()
+                        if "fire" in elem or "fogo" in elem:
+                            char["path"] = "Preservation"
+                        elif "imaginary" in elem or "imaginário" in elem or "imaginario" in elem:
+                            char["path"] = "Harmony"
+                        elif "ice" in elem or "gelo" in elem:
+                            char["path"] = "Remembrance"
+                        elif "lightning" in elem or "raio" in elem or "elétrico" in elem:
+                            char["path"] = "Erudition"
+                        elif "wind" in elem or "vento" in elem:
+                            char["path"] = "The Hunt"
+                        elif "quantum" in elem or "quântico" in elem or "quantico" in elem:
+                            char["path"] = "Nihility"
+                        else:
+                            char["path"] = "Destruction"
+                    else:
+                        from static_data_manager import StaticDataManager
+
+                        prof = StaticDataManager().get_character_profile("hsr", c_name)
+                        if prof and prof.get("path"):
+                            char["path"] = prof["path"]
 
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []

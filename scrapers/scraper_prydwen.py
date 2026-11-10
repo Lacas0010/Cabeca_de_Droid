@@ -675,7 +675,7 @@ class PrydwenScraper:
 
     def get_current_banners(self, game_id: str = None) -> dict:
         """
-        Extrai dinamicamente os banners atuais de personagens e suas imagens do Prydwen.
+        Extrai dinamicamente os banners atuais de personagens e armas/cones/motores do Prydwen.
         Salva e consolida o resultado no cache offline static_data/current_banners.json.
         """
         banner_urls = {
@@ -708,19 +708,38 @@ class PrydwenScraper:
                 if r.status_code != 200:
                     continue
                 soup = BeautifulSoup(r.text, "html.parser")
-                game_data = {"game_id": g, "patch_info": "", "banners": [], "last_updated": datetime.now().isoformat()}
+                game_data = {
+                    "game_id": g,
+                    "patch_info": "",
+                    "banners": [],
+                    "weapon_banners": [],
+                    "last_updated": datetime.now().isoformat(),
+                }
 
+                # 1. BANNERS DE PERSONAGEM (Current Character Banners)
                 for h in soup.find_all(["h2", "h3"]):
                     if "current character banners" in h.get_text().strip().lower():
                         sec_header = h.find_parent(class_="section-header") or h.parent
                         phase_node = sec_header.find_next_sibling(class_="phase-summary")
                         if phase_node:
-                            game_data["patch_info"] = phase_node.get_text().strip()
+                            raw_phase = phase_node.get_text(separator=" ").strip()
+                            game_data["patch_info"] = re.sub(r"\s+", " ", raw_phase)
 
                         grid = sec_header.find_next_sibling(class_="banner-grid") or sec_header.find_next(
                             class_="banner-grid"
                         )
                         cards = grid.find_all(class_="banner-card") if grid else []
+
+                        # Coleta o pool de 4★ compartilhados na grade deste banner
+                        shared_4stars = []
+                        for c in cards:
+                            ru_sec = c.find(attrs={"aria-label": lambda x: x and "secondary rate up" in str(x).lower()})
+                            if ru_sec:
+                                for a in ru_sec.find_all("a"):
+                                    t = a.get_text().strip()
+                                    if t and t not in shared_4stars:
+                                        shared_4stars.append(t)
+
                         for idx, c in enumerate(cards):
                             # Busca imagem da arte do banner (banner-art)
                             art_container = c.find(class_=lambda x: x and "banner-art" in x)
@@ -730,17 +749,25 @@ class PrydwenScraper:
                                 img_src = "https://www.prydwen.gg" + img_src
 
                             # Busca nome principal do personagem 5★
-                            char_links = [
-                                a
-                                for a in c.find_all("a")
-                                if "/characters/" in a.get("href", "") or "/agents/" in a.get("href", "")
-                            ]
-                            names = list(
-                                dict.fromkeys([a.get_text().strip() for a in char_links if a.get_text().strip()])
-                            )
+                            b_name_el = c.find(class_="banner-name")
+                            main_char = b_name_el.get_text().strip() if b_name_el else ""
+                            if not main_char:
+                                char_links = [
+                                    a
+                                    for a in c.find_all("a")
+                                    if "/characters/" in a.get("href", "") or "/agents/" in a.get("href", "")
+                                ]
+                                names = list(
+                                    dict.fromkeys([a.get_text().strip() for a in char_links if a.get_text().strip()])
+                                )
+                                if names:
+                                    main_char = names[0]
+
+                            if not main_char:
+                                continue
 
                             # Busca 4★ com taxa aumentada (Secondary Rate Up)
-                            rate_up_sec = c.find(attrs={"aria-label": lambda x: x and "secondary rate up" in x.lower()})
+                            rate_up_sec = c.find(attrs={"aria-label": lambda x: x and "secondary rate up" in str(x).lower()})
                             featured_4s = []
                             if rate_up_sec:
                                 for a in rate_up_sec.find_all("a"):
@@ -748,50 +775,174 @@ class PrydwenScraper:
                                     if t and t not in featured_4s:
                                         featured_4s.append(t)
 
-                            if names:
-                                main_char = names[0]
-                                if not featured_4s and len(names) > 1:
-                                    featured_4s = names[1:]
+                            if not featured_4s and shared_4stars:
+                                featured_4s = list(shared_4stars)
 
-                                # Preserva imagem oficial in-game e 4★ caso o scraper venha com placeholder
-                                prev_banner = None
-                                if g in all_banners and "banners" in all_banners[g]:
-                                    for pb in all_banners[g]["banners"]:
-                                        if pb.get("character_name", "").lower() == main_char.lower():
-                                            prev_banner = pb
-                                            break
+                            # Preserva imagem oficial in-game e 4★ caso o scraper venha com placeholder
+                            prev_banner = None
+                            if g in all_banners and "banners" in all_banners[g]:
+                                for pb in all_banners[g]["banners"]:
+                                    if pb.get("character_name", "").lower() == main_char.lower():
+                                        prev_banner = pb
+                                        break
 
-                                if prev_banner:
-                                    prev_img = prev_banner.get("banner_image", "")
-                                    if prev_img and (
-                                        prev_img.startswith("/assets/")
-                                        or "_full.webp" in img_src
-                                        or "banner1" in img_src
-                                        or "banner2" in img_src
-                                        or not img_src
-                                    ):
-                                        img_src = prev_img
-                                    if not featured_4s and prev_banner.get("featured_4stars"):
-                                        featured_4s = prev_banner.get("featured_4stars", [])
-                                    banner_title = prev_banner.get("banner_title", "")
-                                else:
-                                    banner_title = ""
+                            if prev_banner:
+                                prev_img = prev_banner.get("banner_image", "")
+                                if prev_img and (
+                                    prev_img.startswith("/assets/")
+                                    or "_full.webp" in img_src
+                                    or "banner1" in img_src
+                                    or "banner2" in img_src
+                                    or not img_src
+                                ):
+                                    img_src = prev_img
+                                if not featured_4s and prev_banner.get("featured_4stars"):
+                                    featured_4s = prev_banner.get("featured_4stars", [])
+                                banner_title = prev_banner.get("banner_title", "")
+                            else:
+                                banner_title = ""
 
-                                banner_entry = {
-                                    "character_name": main_char,
-                                    "banner_image": img_src,
-                                    "featured_4stars": featured_4s,
-                                    "is_primary": (idx == 0),
-                                }
-                                if banner_title:
-                                    banner_entry["banner_title"] = banner_title
+                            banner_entry = {
+                                "character_name": main_char,
+                                "banner_image": img_src,
+                                "featured_4stars": featured_4s,
+                                "is_primary": (idx == 0),
+                            }
+                            if banner_title:
+                                banner_entry["banner_title"] = banner_title
 
-                                game_data["banners"].append(banner_entry)
+                            game_data["banners"].append(banner_entry)
                         break
 
+                # 2. BANNERS DE ARMA / CONE / MOTOR (Current Weapon / Light Cone Banners)
+                for h in soup.find_all(["h2", "h3"]):
+                    h_text = h.get_text().strip().lower()
+                    if "current weapon banners" in h_text or "current light cone banners" in h_text:
+                        sec_header = h.find_parent(class_="section-header") or h.parent
+                        grid = sec_header.find_next_sibling(class_="banner-grid") or sec_header.find_next(
+                            class_="banner-grid"
+                        )
+                        cards = grid.find_all(class_="banner-card") if grid else []
+
+                        # Pool compartilhado de 4★ de armas
+                        shared_wp_4s = []
+                        for c in cards:
+                            ru_sec = c.find(attrs={"aria-label": lambda x: x and "secondary rate up" in str(x).lower()})
+                            if ru_sec:
+                                for a in ru_sec.find_all("a"):
+                                    t = a.get_text().strip()
+                                    if t and t not in shared_wp_4s:
+                                        shared_wp_4s.append(t)
+
+                        for idx, c in enumerate(cards):
+                            # Imagem do banner de arma
+                            art_container = c.find(class_=lambda x: x and ("banner-art" in x or "lightcone-art" in x))
+                            bg_img = c.find("img", class_="lightcone-bg-image")
+                            img = bg_img or (art_container.find("img") if art_container else c.find("img"))
+                            img_src = img.get("src") or img.get("data-src") or "" if img else ""
+                            if img_src and not img_src.startswith("http"):
+                                img_src = "https://www.prydwen.gg" + img_src
+
+                            # Imagem detalhada alternativa da arma (ícone ou arte do item)
+                            card_img = c.find("img", class_="lightcone-card-image")
+                            remote_card_img = (
+                                card_img.get("src") or card_img.get("data-src") or "" if card_img else ""
+                            )
+                            if remote_card_img and not remote_card_img.startswith("http"):
+                                remote_card_img = "https://www.prydwen.gg" + remote_card_img
+
+                            b_name_el = c.find(class_="banner-name")
+                            raw_banner_name = b_name_el.get_text().strip() if b_name_el else ""
+
+                            # 4★ rate-up do card
+                            ru_sec = c.find(attrs={"aria-label": lambda x: x and "secondary rate up" in str(x).lower()})
+                            featured_4s = []
+                            if ru_sec:
+                                for a in ru_sec.find_all("a"):
+                                    t = a.get_text().strip()
+                                    if t and t not in featured_4s:
+                                        featured_4s.append(t)
+                            if not featured_4s and shared_wp_4s:
+                                featured_4s = list(shared_wp_4s)
+
+                            # Tratamento Genshin: Epitome Invocation com 2 armas 5★
+                            if g == "genshin" and "epitome invocation" in raw_banner_name.lower():
+                                sub = re.sub(r"^Epitome Invocation:\s*", "", raw_banner_name, flags=re.IGNORECASE)
+                                weap_names = [w.strip() for w in sub.split("&") if w.strip()]
+                                for w_idx, w_name in enumerate(weap_names):
+                                    prev_wb = None
+                                    if g in all_banners and "weapon_banners" in all_banners[g]:
+                                        for pwb in all_banners[g]["weapon_banners"]:
+                                            if pwb.get("character_name", "").lower() == w_name.lower():
+                                                prev_wb = pwb
+                                                break
+                                    w_img = (
+                                        prev_wb.get("banner_image", img_src)
+                                        if prev_wb and prev_wb.get("banner_image", "").startswith("/assets/")
+                                        else img_src
+                                    )
+                                    w_4s = featured_4s or (prev_wb.get("featured_4stars", []) if prev_wb else [])
+                                    w_title = prev_wb.get("banner_title", raw_banner_name) if prev_wb else raw_banner_name
+
+                                    game_data["weapon_banners"].append(
+                                        {
+                                            "character_name": w_name,
+                                            "banner_title": w_title,
+                                            "banner_image": w_img,
+                                            "featured_4stars": w_4s,
+                                            "is_primary": (w_idx == 0),
+                                            "banner_type": "weapon",
+                                        }
+                                    )
+                            else:
+                                # HSR e ZZZ
+                                wp_name = raw_banner_name
+                                if not wp_name:
+                                    wp_links = [
+                                        a
+                                        for a in c.find_all("a")
+                                        if "/light-cones/" in a.get("href", "") or "w-engines" in a.get("href", "")
+                                    ]
+                                    names = list(
+                                        dict.fromkeys([a.get_text().strip() for a in wp_links if a.get_text().strip()])
+                                    )
+                                    if names:
+                                        wp_name = names[0]
+
+                                if wp_name:
+                                    prev_wb = None
+                                    if g in all_banners and "weapon_banners" in all_banners[g]:
+                                        for pwb in all_banners[g]["weapon_banners"]:
+                                            if pwb.get("character_name", "").lower() == wp_name.lower():
+                                                prev_wb = pwb
+                                                break
+
+                                    w_img = (
+                                        prev_wb.get("banner_image", img_src)
+                                        if prev_wb and prev_wb.get("banner_image", "").startswith("/assets/")
+                                        else img_src
+                                    )
+                                    w_4s = featured_4s or (prev_wb.get("featured_4stars", []) if prev_wb else [])
+                                    w_title = prev_wb.get("banner_title", wp_name) if prev_wb else wp_name
+
+                                    entry = {
+                                        "character_name": wp_name,
+                                        "banner_title": w_title,
+                                        "banner_image": w_img,
+                                        "featured_4stars": w_4s,
+                                        "is_primary": (idx == 0),
+                                        "banner_type": "weapon",
+                                    }
+                                    if remote_card_img:
+                                        entry["remote_banner_image"] = remote_card_img
+                                    game_data["weapon_banners"].append(entry)
+                        break
+
+                # Fallback de preservação caso não tenha raspado weapon banners
+                if not game_data["weapon_banners"] and g in all_banners and "weapon_banners" in all_banners[g]:
+                    game_data["weapon_banners"] = all_banners[g]["weapon_banners"]
+
                 if game_data["banners"]:
-                    if g in all_banners and "weapon_banners" in all_banners[g]:
-                        game_data["weapon_banners"] = all_banners[g]["weapon_banners"]
                     all_banners[g] = game_data
             except Exception as e:
                 print(f"[WARN] Falha ao raspar banners atuais de {g}: {e}")

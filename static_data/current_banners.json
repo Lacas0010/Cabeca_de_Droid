@@ -1,11 +1,11 @@
 {
   "genshin": {
     "game_id": "genshin",
-    "patch_info": "Patch 7.2 Phase 1Nov 4, 2026 – Nov 23, 2026",
+    "patch_info": "Patch 7.2 Phase 1 Nov 4, 2026 – Nov 24, 2026",
     "banners": [
       {
         "character_name": "Mitya",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1790669909754-8b33a775c352dfb957990e89264f40a2.webp",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1794038807165-910f1eaa3bab31e64966c822dcc1af79.webp",
         "featured_4stars": [
           "Valeriy",
           "Charlotte",
@@ -24,41 +24,41 @@
         "is_primary": false
       }
     ],
-    "last_updated": "2026-11-04T10:10:47.800105",
     "weapon_banners": [
       {
-        "character_name": "Azurelight",
-        "banner_title": "Invocação do Epítome: Azurelight & Sinfonista de Aromas",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1791908683690-d84df5c8d69bfed74b184ad5fa85f36e.webp",
+        "character_name": "Starsealed Edict",
+        "banner_title": "Epitome Invocation: Starsealed Edict & Splendor of Tranquil Waters",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1793626452722-aea5e9759d1455b1d2fdc066454269ab.webp",
         "featured_4stars": [
-          "Sturdy Bone",
-          "Sacrificial Greatsword",
-          "Favonius Lance",
-          "The Widsith",
-          "Sacrificial Bow"
+          "The Dockhand's Assistant",
+          "Prospector's Drill",
+          "Dawning Frost",
+          "Rainslasher",
+          "Rust"
         ],
         "is_primary": true,
         "banner_type": "weapon"
       },
       {
-        "character_name": "Symponist of Scents",
-        "banner_title": "Invocação do Epítome: Sinfonista de Aromas & Azurelight",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1791908683690-d84df5c8d69bfed74b184ad5fa85f36e.webp",
+        "character_name": "Splendor of Tranquil Waters",
+        "banner_title": "Epitome Invocation: Starsealed Edict & Splendor of Tranquil Waters",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1793626452722-aea5e9759d1455b1d2fdc066454269ab.webp",
         "featured_4stars": [
-          "Sturdy Bone",
-          "Sacrificial Greatsword",
-          "Favonius Lance",
-          "The Widsith",
-          "Sacrificial Bow"
+          "The Dockhand's Assistant",
+          "Prospector's Drill",
+          "Dawning Frost",
+          "Rainslasher",
+          "Rust"
         ],
         "is_primary": false,
         "banner_type": "weapon"
       }
-    ]
+    ],
+    "last_updated": "2026-11-10T15:44:43.603659"
   },
   "hsr": {
     "game_id": "hsr",
-    "patch_info": "Patch 4.6Sep 28, 2026 – Nov 10, 2026",
+    "patch_info": "Patch 4.6 Sep 28, 2026 – Nov 10, 2026",
     "banners": [
       {
         "character_name": "Pearl",
@@ -127,91 +127,91 @@
         "banner_title": "Excalibur Excelsior"
       }
     ],
-    "last_updated": "2026-11-04T10:10:43.712110",
     "weapon_banners": [
       {
         "character_name": "Colors for Tomorrow",
         "banner_title": "Brilliant Fixation: Colors for Tomorrow",
         "banner_image": "/assets/banners/banner_colors_for_tomorrow_lc.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/banners/1789909518022-aecacc74c72446b1c3f60e34d34b9ce4.webp",
         "featured_4stars": [
-          "Post-Op Conversation",
           "Planetary Rendezvous",
+          "Post-Op Conversation",
           "Boundless Choreo"
         ],
         "is_primary": true,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/colors-for-tomorrow.webp?v=1790244005898"
       },
       {
         "character_name": "Reforged in Hellfire",
         "banner_title": "Bygone Reminiscence: Reforged in Hellfire",
         "banner_image": "/assets/banners/banner_reforged_in_hellfire_lc.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/reforged-in-hellfire_full.webp?v=1790244197065",
         "featured_4stars": [
-          "Post-Op Conversation",
           "Planetary Rendezvous",
+          "Post-Op Conversation",
           "Boundless Choreo"
         ],
         "is_primary": false,
-        "banner_type": "weapon"
-      },
-      {
-        "character_name": "I Am As You Behold",
-        "banner_title": "Age of Gods Golden Gate: I Am As You Behold",
-        "banner_image": "/assets/banners/banner_iamasyoubehold_lc.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/i-am-as-you-behold_full.webp?v=1787563501701",
-        "featured_4stars": [
-          "Post-Op Conversation",
-          "Planetary Rendezvous",
-          "Boundless Choreo"
-        ],
-        "is_primary": false,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/reforged-in-hellfire.webp?v=1790244197065"
       },
       {
         "character_name": "Flickering Stars",
         "banner_title": "Kaleidic Coruscation: Flickering Stars",
         "banner_image": "/assets/banners/banner_flickering_stars_lc.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/flickering-stars_full.webp?v=1787563505145",
         "featured_4stars": [
-          "Post-Op Conversation",
           "Planetary Rendezvous",
+          "Post-Op Conversation",
           "Boundless Choreo"
         ],
         "is_primary": false,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/flickering-stars.webp?v=1787563505145"
       },
       {
-        "character_name": "The Hell Where Ideals Burn",
-        "banner_title": "Red Radiance of Fuyuki: The Hell Where Ideals Burn",
-        "banner_image": "/assets/banners/banner_archer_lc.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn_full.webp?v=1778524336072",
+        "character_name": "I Am As You Behold",
+        "banner_title": "Age of Gods Golden Gate: I Am As You Behold",
+        "banner_image": "/assets/banners/banner_iamasyoubehold_lc.webp",
         "featured_4stars": [
-          "Post-Op Conversation",
           "Planetary Rendezvous",
+          "Post-Op Conversation",
           "Boundless Choreo"
         ],
         "is_primary": false,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/i-am-as-you-behold.webp?v=1787563501701"
       },
       {
         "character_name": "A Thankless Coronation",
         "banner_title": "Birth of a King: A Thankless Coronation",
         "banner_image": "/assets/banners/banner_saber_lc.webp",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/a-thankless-coronation_full.webp?v=1778524336072",
         "featured_4stars": [
-          "Post-Op Conversation",
           "Planetary Rendezvous",
+          "Post-Op Conversation",
           "Boundless Choreo"
         ],
         "is_primary": false,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/a-thankless-coronation.webp?v=1778524336072"
+      },
+      {
+        "character_name": "The Hell Where Ideals Burn",
+        "banner_title": "Red Radiance of Fuyuki: The Hell Where Ideals Burn",
+        "banner_image": "/assets/banners/banner_archer_lc.webp",
+        "featured_4stars": [
+          "Planetary Rendezvous",
+          "Post-Op Conversation",
+          "Boundless Choreo"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1778524336072"
       }
-    ]
+    ],
+    "last_updated": "2026-11-10T15:05:03.878156"
   },
   "zzz": {
     "game_id": "zzz",
-    "patch_info": "Patch 3.3 Phase 1Oct 21, 2026 – Nov 11, 2026",
+    "patch_info": "Patch 3.3 Phase 1 Oct 21, 2026 – Nov 11, 2026",
     "banners": [
       {
         "character_name": "Phoenix",
@@ -236,30 +236,32 @@
         "banner_title": "Graceful Gale"
       }
     ],
-    "last_updated": "2026-11-04T10:10:44.077186",
     "weapon_banners": [
       {
         "character_name": "Plume of Rebirth",
         "banner_title": "Dissonant Sonata: Plume of Rebirth",
-        "banner_image": "https://upload-os-bbs.hoyolab.com/upload/2026/10/18/0/953e970ff1219261858e83b974aae49c_1301481997602712761.png",
+        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1792340965728-1804aec61e7702871d7b4bb63af5e996.webp",
         "featured_4stars": [
           "Starlight Engine",
           "Demara Battery Mark II"
         ],
         "is_primary": true,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/plume-of-rebirth_image.webp?v=1792490246573"
       },
       {
         "character_name": "Joyau Dore",
         "banner_title": "Dissonant Sonata: Joyau Dore",
-        "banner_image": "https://upload-os-bbs.hoyolab.com/upload/2026/10/18/0/65a233370b433c1b7d3126ad5155188b_2269549401582863875.png",
+        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/joyau-dore_image.webp?v=1781636511716",
         "featured_4stars": [
           "Starlight Engine",
           "Demara Battery Mark II"
         ],
         "is_primary": false,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/joyau-dore_image.webp?v=1781636511716"
       }
-    ]
+    ],
+    "last_updated": "2026-11-10T15:04:54.116782"
   }
 }

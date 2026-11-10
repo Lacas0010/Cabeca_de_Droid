@@ -61,6 +61,62 @@ class TestGachaDefaultsAndBannersSuite(unittest.TestCase):
         self.assertEqual(banners[1]["character_name"], "Hero2")
         self.assertFalse(banners[1]["is_primary"])
 
+    @patch("scrapers.scraper_prydwen.requests.get")
+    def test_scraper_get_current_weapon_banners(self, mock_get):
+        """Valida a extração de banners de armas/cones/motores com mocks determinísticos."""
+        sample_html = """
+        <html>
+            <body>
+                <div class="section-header">
+                    <h2>Current Character Banners</h2>
+                </div>
+                <div class="phase-summary">Patch 7.2 Phase 1 Nov 4, 2026 – Nov 24, 2026</div>
+                <div class="banner-grid">
+                    <div class="banner-card">
+                        <div class="banner-identity"><p class="banner-name">Mitya</p></div>
+                        <div aria-label="Secondary Rate Up">
+                            <a href="/characters/valeriy">Valeriy</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-header">
+                    <h2>Current Weapon Banners</h2>
+                </div>
+                <div class="banner-grid">
+                    <div class="banner-card weapon-banner-card">
+                        <div class="banner-art lightcone-art">
+                            <img class="lightcone-bg-image" src="https://cdn.prydwen.gg/images/weapon_banner.webp" />
+                        </div>
+                        <div class="banner-identity">
+                            <p class="banner-name">Epitome Invocation: Starsealed Edict & Splendor of Tranquil Waters</p>
+                        </div>
+                        <div aria-label="Secondary Rate Up" class="featured-rate-ups">
+                            <a href="/weapons/dockhands">The Dockhand's Assistant</a>
+                            <a href="/weapons/rust">Rust</a>
+                        </div>
+                    </div>
+                </div>
+            </body>
+        </html>
+        """
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.text = sample_html
+        mock_get.return_value = mock_resp
+
+        scraper = PrydwenScraper()
+        result = scraper.get_current_banners("genshin")
+
+        self.assertIn("weapon_banners", result)
+        wb = result["weapon_banners"]
+        self.assertEqual(len(wb), 2)
+        self.assertEqual(wb[0]["character_name"], "Starsealed Edict")
+        self.assertTrue(wb[0]["is_primary"])
+        self.assertEqual(wb[0]["featured_4stars"], ["The Dockhand's Assistant", "Rust"])
+        self.assertEqual(wb[1]["character_name"], "Splendor of Tranquil Waters")
+        self.assertFalse(wb[1]["is_primary"])
+
+
     @patch("services.gacha_tracker_service.calculate_gacha_tracker_stats")
     @patch("services.gacha_service.get_current_banners")
     def test_get_gacha_simulator_defaults(self, mock_banners, mock_tracker):
