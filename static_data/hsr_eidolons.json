@@ -10842,5 +10842,93 @@
       "trace_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/skill/8010_rank6.png",
       "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/db/Character_Trailblazer_Female_Eidolon_6.png/revision/latest?cb=20240123200540"
     }
+  ],
+  "1511": [
+    {
+      "pos": 1,
+      "name": "Eidolon 1",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/80/Character_Aeon_%E2%98%85_Aha_Eidolon_1.png/revision/latest?cb=20261104123253",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/80/Character_Aeon_%E2%98%85_Aha_Eidolon_1.png/revision/latest?cb=20261104123253"
+    },
+    {
+      "pos": 2,
+      "name": "Eidolon 2",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/8d/Character_Aeon_%E2%98%85_Aha_Eidolon_2.png/revision/latest?cb=20261104123304",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/8d/Character_Aeon_%E2%98%85_Aha_Eidolon_2.png/revision/latest?cb=20261104123304"
+    },
+    {
+      "pos": 3,
+      "name": "Eidolon 3",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/32/Character_Aeon_%E2%98%85_Aha_Eidolon_3.png/revision/latest?cb=20261104123314",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/32/Character_Aeon_%E2%98%85_Aha_Eidolon_3.png/revision/latest?cb=20261104123314"
+    },
+    {
+      "pos": 4,
+      "name": "Eidolon 4",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/3b/Character_Aeon_%E2%98%85_Aha_Eidolon_4.png/revision/latest?cb=20261104123323",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/3b/Character_Aeon_%E2%98%85_Aha_Eidolon_4.png/revision/latest?cb=20261104123323"
+    },
+    {
+      "pos": 5,
+      "name": "Eidolon 5",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/df/Character_Aeon_%E2%98%85_Aha_Eidolon_5.png/revision/latest?cb=20261104123333",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/df/Character_Aeon_%E2%98%85_Aha_Eidolon_5.png/revision/latest?cb=20261104123333"
+    },
+    {
+      "pos": 6,
+      "name": "Eidolon 6",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/1/1b/Character_Aeon_%E2%98%85_Aha_Eidolon_6.png/revision/latest?cb=20261104123343",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/1/1b/Character_Aeon_%E2%98%85_Aha_Eidolon_6.png/revision/latest?cb=20261104123343"
+    }
+  ],
+  "aeon ★ aha": [
+    {
+      "pos": 1,
+      "name": "Eidolon 1",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/80/Character_Aeon_%E2%98%85_Aha_Eidolon_1.png/revision/latest?cb=20261104123253",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/80/Character_Aeon_%E2%98%85_Aha_Eidolon_1.png/revision/latest?cb=20261104123253"
+    },
+    {
+      "pos": 2,
+      "name": "Eidolon 2",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/8d/Character_Aeon_%E2%98%85_Aha_Eidolon_2.png/revision/latest?cb=20261104123304",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/8/8d/Character_Aeon_%E2%98%85_Aha_Eidolon_2.png/revision/latest?cb=20261104123304"
+    },
+    {
+      "pos": 3,
+      "name": "Eidolon 3",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/32/Character_Aeon_%E2%98%85_Aha_Eidolon_3.png/revision/latest?cb=20261104123314",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/32/Character_Aeon_%E2%98%85_Aha_Eidolon_3.png/revision/latest?cb=20261104123314"
+    },
+    {
+      "pos": 4,
+      "name": "Eidolon 4",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/3b/Character_Aeon_%E2%98%85_Aha_Eidolon_4.png/revision/latest?cb=20261104123323",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/3/3b/Character_Aeon_%E2%98%85_Aha_Eidolon_4.png/revision/latest?cb=20261104123323"
+    },
+    {
+      "pos": 5,
+      "name": "Eidolon 5",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/df/Character_Aeon_%E2%98%85_Aha_Eidolon_5.png/revision/latest?cb=20261104123333",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/d/df/Character_Aeon_%E2%98%85_Aha_Eidolon_5.png/revision/latest?cb=20261104123333"
+    },
+    {
+      "pos": 6,
+      "name": "Eidolon 6",
+      "desc": "",
+      "shard_icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/1/1b/Character_Aeon_%E2%98%85_Aha_Eidolon_6.png/revision/latest?cb=20261104123343",
+      "icon": "https://static.wikia.nocookie.net/houkai-star-rail/images/1/1b/Character_Aeon_%E2%98%85_Aha_Eidolon_6.png/revision/latest?cb=20261104123343"
+    }
   ]
 }

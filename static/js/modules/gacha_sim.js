@@ -2394,6 +2394,7 @@ function getWishCharacterSplash(gameId, charName) {
         "von-lycaon": "von-lycaon"
     };
     if (slugFixes[slug]) slug = slugFixes[slug];
+    if (slug.startsWith("aeon-")) slug = slug.replace(/^aeon-/, "");
 
     if (gameId === "genshin") {
         return `/api/proxy_image?url=${encodeURIComponent('https://cdn.prydwen.gg/images/genshin-impact/characters/' + slug + '_card.webp')}`;

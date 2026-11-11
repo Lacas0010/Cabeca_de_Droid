@@ -3820,6 +3820,7 @@ class StaticDataManager:
 
         chars_dict = self._cache[g].get("characters", {})
         query = char_name_or_id.lower().strip().replace(" ", "_").replace("•", "").replace("'", "")
+        q_clean = re.sub(r"[^a-z0-9]", "", char_name_or_id.lower())
 
         found_item = None
         # 1. Busca direta por chave
@@ -3829,7 +3830,17 @@ class StaticDataManager:
             # 2. Busca por matching flexível de nome
             for k, v in chars_dict.items():
                 name_clean = v.get("name", "").lower().replace(" ", "_").replace("•", "").replace("'", "")
-                if query == name_clean or query in name_clean or name_clean in query or k == query:
+                k_clean = re.sub(r"[^a-z0-9]", "", k.lower())
+                vn_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
+                if (
+                    query == name_clean
+                    or k_clean == q_clean
+                    or vn_clean == q_clean
+                    or (len(q_clean) >= 3 and (q_clean in k_clean or k_clean in q_clean or q_clean in vn_clean or vn_clean in q_clean))
+                    or query in name_clean
+                    or name_clean in query
+                    or k == query
+                ):
                     found_item = dict(v)
                     break
 
@@ -3841,7 +3852,17 @@ class StaticDataManager:
             else:
                 for k, v in seed_dict.items():
                     name_clean = v.get("name", "").lower().replace(" ", "_").replace("•", "").replace("'", "")
-                    if query == name_clean or query in name_clean or name_clean in query or k == query:
+                    k_clean = re.sub(r"[^a-z0-9]", "", k.lower())
+                    vn_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
+                    if (
+                        query == name_clean
+                        or k_clean == q_clean
+                        or vn_clean == q_clean
+                        or (len(q_clean) >= 3 and (q_clean in k_clean or k_clean in q_clean or q_clean in vn_clean or vn_clean in q_clean))
+                        or query in name_clean
+                        or name_clean in query
+                        or k == query
+                    ):
                         found_item = dict(v)
                         break
 
@@ -4581,6 +4602,71 @@ class StaticDataManager:
                     "hoyolab_id": str(cid),
                     "icon": cinfo.get("icon", ""),
                 }
+
+        # Retroalimenta entidades locais de HSR (SQLite Roster e guias de meta) no manifesto
+        try:
+            import database
+            roster_chars = database.get_roster_data("hsr")
+            meta_path_map = {}
+            meta_md_path = os.path.join(database.BASE_DIR, "hsr", "meta_endgame_hsr.md")
+            if os.path.exists(meta_md_path):
+                with open(meta_md_path, "r", encoding="utf-8") as mf:
+                    for mline in mf:
+                        mm = re.search(r"-\s*([^(\n]+?)\s*\(\d+★\s*([^-]+?)\s*-\s*([^\)]+?)\)", mline)
+                        if mm:
+                            c_key = re.sub(r"[^a-z0-9]", "", mm.group(1).lower())
+                            raw_p = mm.group(3).strip()
+                            clean_p = re.split(r"[\s\(]", raw_p)[0].strip()
+                            if clean_p:
+                                meta_path_map[c_key] = clean_p.capitalize()
+
+            for rc in roster_chars:
+                r_name = rc.get("name", "").strip()
+                r_id = str(rc.get("id") or rc.get("character_id") or "")
+                if not r_name or not r_id:
+                    continue
+                safe_id = re.sub(r"[^a-z0-9_]", "", r_name.lower().replace(" ", "_")).strip("_")
+                c_clean = re.sub(r"[^a-z0-9]", "", r_name.lower())
+
+                already_exists = False
+                for existing_k, existing_v in current_chars.items():
+                    if existing_v.get("hoyolab_id") == r_id or existing_k == safe_id:
+                        already_exists = True
+                        break
+
+                if not already_exists:
+                    r_elem = str(rc.get("element") or "Quantum").capitalize()
+                    r_path = rc.get("path") or meta_path_map.get(c_clean)
+                    if not r_path:
+                        for mpk, mpv in meta_path_map.items():
+                            if mpk in c_clean or c_clean in mpk:
+                                r_path = mpv
+                                break
+                    r_path = r_path or "Elation"
+
+                    current_chars[safe_id] = {
+                        "id": safe_id,
+                        "name": r_name,
+                        "rarity": int(rc.get("rarity") or 5),
+                        "element": r_elem,
+                        "path": r_path,
+                        "calyx_mat": "Cálice de Rastros da Via",
+                        "calyx_tier2_name": "Esboço de Rastro (2★)",
+                        "calyx_tier2_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+                        "calyx_tier3_name": "Dinâmica de Rastro (3★)",
+                        "calyx_tier3_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+                        "calyx_tier4_name": "Conhecimento de Rastro (4★)",
+                        "calyx_tier4_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+                        "stagnant_shadow_mat": "Sombra Estagnada",
+                        "boss_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/201.png",
+                        "echo_of_war_mat": "Eco da Guerra",
+                        "weekly_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/3.png",
+                        "schedule_type": "Daily",
+                        "hoyolab_id": r_id,
+                        "icon": rc.get("icon", ""),
+                    }
+        except Exception as retro_err:
+            print(f"[WARN] Falha ao retroalimentar manifesto HSR com dados locais: {retro_err}")
 
         payload = {"characters": current_chars}
         self._cache["hsr"] = payload

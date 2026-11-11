@@ -54,41 +54,59 @@
         "banner_type": "weapon"
       }
     ],
-    "last_updated": "2026-11-10T15:44:43.603659"
+    "last_updated": "2026-11-11T09:21:43.133375"
   },
   "hsr": {
     "game_id": "hsr",
-    "patch_info": "Patch 4.6 Sep 28, 2026 – Nov 10, 2026",
+    "patch_info": "Patch 4.7 Nov 11, 2026 – Dec 22, 2026",
     "banners": [
       {
-        "character_name": "Pearl",
-        "banner_image": "/assets/banners/banner_pearl_char.webp",
+        "character_name": "Aha",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/banners/1789455378477-2a5936213dba9bb7b3b5db03e231a317.webp",
         "featured_4stars": [
-          "Qingque",
-          "Xueyi",
-          "Misha"
+          "Asta",
+          "Lynx",
+          "Yukong"
         ],
-        "is_primary": true,
-        "banner_title": "An Ocean in a Pearl"
+        "is_primary": true
       },
       {
-        "character_name": "Mortenax Blade",
-        "banner_image": "/assets/banners/banner_mortenax_char.webp",
+        "character_name": "Sparxie",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/sparxie_full.webp",
         "featured_4stars": [
-          "Qingque",
-          "Xueyi",
-          "Misha"
+          "Asta",
+          "Lynx",
+          "Yukong"
         ],
-        "is_primary": false,
-        "banner_title": "Now I Am Become Blade"
+        "is_primary": false
+      },
+      {
+        "character_name": "Silver Wolf • Lv. 999",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/silver-wolf-lv-999_full.webp",
+        "featured_4stars": [
+          "Asta",
+          "Lynx",
+          "Yukong"
+        ],
+        "is_primary": false
+      },
+      {
+        "character_name": "Yao Guang",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/characters/yao-guang_full.webp",
+        "featured_4stars": [
+          "Asta",
+          "Lynx",
+          "Yukong"
+        ],
+        "is_primary": false
       },
       {
         "character_name": "Gilgamesh",
         "banner_image": "/assets/banners/banner_gilgamesh_char.webp",
         "featured_4stars": [
-          "Qingque",
-          "Xueyi",
-          "Misha"
+          "Asta",
+          "Lynx",
+          "Yukong"
         ],
         "is_primary": false,
         "banner_title": "Of the Beginning, Enuma Elish"
@@ -97,9 +115,9 @@
         "character_name": "Rin Tohsaka",
         "banner_image": "/assets/banners/banner_rin_char.webp",
         "featured_4stars": [
-          "Qingque",
-          "Xueyi",
-          "Misha"
+          "Asta",
+          "Lynx",
+          "Yukong"
         ],
         "is_primary": false,
         "banner_title": "The Gem Coursing in Red"
@@ -108,9 +126,9 @@
         "character_name": "Archer",
         "banner_image": "/assets/banners/banner_archer_char.webp",
         "featured_4stars": [
-          "Qingque",
-          "Xueyi",
-          "Misha"
+          "Asta",
+          "Lynx",
+          "Yukong"
         ],
         "is_primary": false,
         "banner_title": "I Am the Bone of My Sword"
@@ -119,9 +137,9 @@
         "character_name": "Saber",
         "banner_image": "/assets/banners/banner_saber_char.webp",
         "featured_4stars": [
-          "Qingque",
-          "Xueyi",
-          "Misha"
+          "Asta",
+          "Lynx",
+          "Yukong"
         ],
         "is_primary": false,
         "banner_title": "Excalibur Excelsior"
@@ -129,39 +147,69 @@
     ],
     "weapon_banners": [
       {
-        "character_name": "Colors for Tomorrow",
-        "banner_title": "Brilliant Fixation: Colors for Tomorrow",
-        "banner_image": "/assets/banners/banner_colors_for_tomorrow_lc.webp",
+        "character_name": "Upon the First Echo of \"Aha\"",
+        "banner_title": "Upon the First Echo of \"Aha\"",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/generic/1793469866919-78c263a42c2477b41bca2ae7cb40bf43.webp",
         "featured_4stars": [
-          "Planetary Rendezvous",
-          "Post-Op Conversation",
-          "Boundless Choreo"
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Shadowed By Night"
         ],
         "is_primary": true,
         "banner_type": "weapon",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/colors-for-tomorrow.webp?v=1790244005898"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/upon-the-first-echo-of-aha.webp?v=1793553628069"
       },
       {
-        "character_name": "Reforged in Hellfire",
-        "banner_title": "Bygone Reminiscence: Reforged in Hellfire",
-        "banner_image": "/assets/banners/banner_reforged_in_hellfire_lc.webp",
+        "character_name": "Dazzled By A Flowery World",
+        "banner_title": "Dazzled By A Flowery World",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/dazzled-by-a-flowery-world_full.webp?v=1778524336072",
         "featured_4stars": [
-          "Planetary Rendezvous",
-          "Post-Op Conversation",
-          "Boundless Choreo"
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Sagacity",
+          "Shadowed By Night"
         ],
         "is_primary": false,
         "banner_type": "weapon",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/reforged-in-hellfire.webp?v=1790244197065"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/dazzled-by-a-flowery-world.webp?v=1778524336072"
+      },
+      {
+        "character_name": "Welcome to the Cosmic City",
+        "banner_title": "Welcome to the Cosmic City",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/welcome-to-the-cosmic-city_full.webp?v=1778524336072",
+        "featured_4stars": [
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Shattered Home",
+          "Shadowed By Night"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/welcome-to-the-cosmic-city.webp?v=1778524336072"
+      },
+      {
+        "character_name": "When She Decided to See",
+        "banner_title": "When She Decided to See",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/when-she-decided-to-see_full.webp?v=1778524336072",
+        "featured_4stars": [
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Shadowed By Night"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/when-she-decided-to-see.webp?v=1778524336072"
       },
       {
         "character_name": "Flickering Stars",
         "banner_title": "Kaleidic Coruscation: Flickering Stars",
         "banner_image": "/assets/banners/banner_flickering_stars_lc.webp",
         "featured_4stars": [
-          "Planetary Rendezvous",
-          "Post-Op Conversation",
-          "Boundless Choreo"
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Shadowed By Night",
+          "Sagacity",
+          "Shattered Home"
         ],
         "is_primary": false,
         "banner_type": "weapon",
@@ -172,9 +220,11 @@
         "banner_title": "Age of Gods Golden Gate: I Am As You Behold",
         "banner_image": "/assets/banners/banner_iamasyoubehold_lc.webp",
         "featured_4stars": [
-          "Planetary Rendezvous",
-          "Post-Op Conversation",
-          "Boundless Choreo"
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Shadowed By Night",
+          "Sagacity",
+          "Shattered Home"
         ],
         "is_primary": false,
         "banner_type": "weapon",
@@ -185,9 +235,11 @@
         "banner_title": "Birth of a King: A Thankless Coronation",
         "banner_image": "/assets/banners/banner_saber_lc.webp",
         "featured_4stars": [
-          "Planetary Rendezvous",
-          "Post-Op Conversation",
-          "Boundless Choreo"
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Shadowed By Night",
+          "Sagacity",
+          "Shattered Home"
         ],
         "is_primary": false,
         "banner_type": "weapon",
@@ -198,16 +250,18 @@
         "banner_title": "Red Radiance of Fuyuki: The Hell Where Ideals Burn",
         "banner_image": "/assets/banners/banner_archer_lc.webp",
         "featured_4stars": [
-          "Planetary Rendezvous",
-          "Post-Op Conversation",
-          "Boundless Choreo"
+          "Trend of the Universal Market",
+          "Geniuses' Repose",
+          "Shadowed By Night",
+          "Sagacity",
+          "Shattered Home"
         ],
         "is_primary": false,
         "banner_type": "weapon",
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1778524336072"
       }
     ],
-    "last_updated": "2026-11-10T15:05:03.878156"
+    "last_updated": "2026-11-11T09:03:39.474698"
   },
   "zzz": {
     "game_id": "zzz",
@@ -234,6 +288,18 @@
         ],
         "is_primary": false,
         "banner_title": "Graceful Gale"
+      },
+      {
+        "character_name": "Severian",
+        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1789201787070-9bdb7e64a0d96f6a3a948efb45887f14.webp",
+        "featured_4stars": [],
+        "is_primary": false
+      },
+      {
+        "character_name": "Norma",
+        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/characters/norma_full.webp",
+        "featured_4stars": [],
+        "is_primary": false
       }
     ],
     "weapon_banners": [
@@ -260,8 +326,26 @@
         "is_primary": false,
         "banner_type": "weapon",
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/joyau-dore_image.webp?v=1781636511716"
+      },
+      {
+        "character_name": "Incarcerating Grip",
+        "banner_title": "Incarcerating Grip",
+        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1794038246178-447aee70c75945e17a60c0432bd41879.webp",
+        "featured_4stars": [],
+        "is_primary": false,
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/incarcerating-grip_image.webp?v=1794317654340"
+      },
+      {
+        "character_name": "Chief Sidekick",
+        "banner_title": "Chief Sidekick",
+        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/chief-sidekick_image.webp?v=1781636481144",
+        "featured_4stars": [],
+        "is_primary": false,
+        "banner_type": "weapon",
+        "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/chief-sidekick_image.webp?v=1781636481144"
       }
     ],
-    "last_updated": "2026-11-10T15:04:54.116782"
+    "last_updated": "2026-11-11T08:49:43.482880"
   }
 }

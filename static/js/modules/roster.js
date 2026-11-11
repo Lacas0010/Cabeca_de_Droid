@@ -1650,51 +1650,52 @@ async function generateBuildCardCanvas(char, gameId) {
 
     // Carregamento da Splash Art / Gacha Art / Eidolon Art
     let splashUrl = char.portrait || char.splash_art || char.eidolon_art || char.gacha_art || char.draw || char.art_url || char.gacha_card || char.gacha_slice || char.display_image || char.image || char.banner_icon;
+    let effectiveId = null;
+    let skinId = null;
+
     if (gameId === 'hsr') {
         const rawGacha = String(char.gacha_art || char.splash_art || char.portrait || "");
-        if (rawGacha.includes("avatar_skin_image")) {
-            splashUrl = rawGacha.startsWith("/api/proxy_image") ? rawGacha : `/api/proxy_image?url=${encodeURIComponent(rawGacha)}`;
-        } else {
-            const checkStr = `${char.name || ''} ${char.id || ''} ${char.character_id || ''} ${char.icon || ''} ${char.gacha_art || ''} ${char.portrait || ''} ${char.splash_art || ''}`.toLowerCase();
-            let skinId = null;
-            const skinMatch = checkStr.match(/\b(150[1-9]|151[0-5]|1414)\b/);
+        const checkStr = `${char.name || ''} ${char.id || ''} ${char.character_id || ''} ${char.icon || ''} ${char.gacha_art || ''} ${char.portrait || ''} ${char.splash_art || ''}`.toLowerCase();
+
+        // 1. Resolução automática de ID a partir das propriedades diretas do personagem
+        if (char.id && String(char.id).trim().match(/^\d+$/)) {
+            effectiveId = String(char.id).trim();
+        } else if (char.character_id && String(char.character_id).trim().match(/^\d+$/)) {
+            effectiveId = String(char.character_id).trim();
+        }
+
+        // 2. Resolução automática buscando padrão numérico nas strings do personagem (skins 1501..1515, 1414, ou IDs numéricos de 4 dígitos)
+        if (!effectiveId) {
+            const skinMatch = checkStr.match(/\b(150[1-9]|151[0-5]|1414|\d{4})\b/);
             if (skinMatch) {
                 skinId = skinMatch[1];
-            } else if (checkStr.includes("summeretto") || checkStr.includes("robin summer") || checkStr.includes("robin verão")) {
-                skinId = "1512";
-            } else if (checkStr.includes("himeko - nova") || checkStr.includes("himeko nova") || checkStr.includes(" nova")) {
-                skinId = "1510";
-            } else if (checkStr.includes("999") || checkStr.includes("loba prateada nv.")) {
-                skinId = "1506";
-            } else if (checkStr.includes("permansor")) {
-                skinId = checkStr.includes("terrae") ? "1414" : "1505";
-            } else if (checkStr.includes("veraneio")) {
-                skinId = "1513";
-            } else if (checkStr.includes("noite de inverno") || checkStr.includes("winter") || checkStr.includes("sparxie")) {
-                skinId = "1501";
-            } else if (checkStr.includes("evanescia")) {
-                skinId = "1505";
-            } else if (checkStr.includes("mortenax")) {
-                skinId = "1507";
-            } else if (checkStr.includes("tohsaka")) {
-                skinId = "1508";
-            } else if (checkStr.includes("gilgamesh")) {
-                skinId = "1509";
+                effectiveId = skinMatch[1];
             }
+        }
 
-            const effectiveId = skinId || char.id || (char.character_id ? String(char.character_id) : null);
-            if (effectiveId === "1505" || effectiveId === "1501" || checkStr.includes("evanescia") || checkStr.includes("sparxie")) {
-                const actId = (effectiveId === "1505" || checkStr.includes("evanescia")) ? "1505" : "1501";
-                splashUrl = `/api/proxy_image?url=${encodeURIComponent(`https://act-webstatic.hoyoverse.com/game_record/hkrpg/custom/avatar_skin_image/${actId}@2x.png`)}`;
-            } else if (effectiveId) {
-                const portraitUrl = `/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${effectiveId}.png`)}`;
-                const previewUrl = `/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/${effectiveId}.png`)}`;
-                splashUrl = portraitUrl || previewUrl || char.portrait || char.splash_art;
-            } else if (char.portrait || char.splash_art) {
-                splashUrl = char.portrait || char.splash_art;
-            } else if (char.eidolon_art) {
-                splashUrl = char.eidolon_art;
+        // 3. Resolução automática dinâmica via roster global em memória
+        if (!effectiveId && window.globalRoster && Array.isArray(window.globalRoster[gameId])) {
+            const found = window.globalRoster[gameId].find(c => 
+                c && (c.name === char.name || (char.name && c.name && c.name.toLowerCase().trim() === char.name.toLowerCase().trim()))
+            );
+            if (found && (found.id || found.character_id)) {
+                effectiveId = String(found.id || found.character_id);
             }
+        }
+
+        if (rawGacha.includes("avatar_skin_image")) {
+            splashUrl = rawGacha.startsWith("/api/proxy_image") ? rawGacha : `/api/proxy_image?url=${encodeURIComponent(rawGacha)}`;
+        } else if (effectiveId === "1505" || effectiveId === "1501" || checkStr.includes("evanescia") || checkStr.includes("sparxie")) {
+            const actId = (effectiveId === "1505" || checkStr.includes("evanescia")) ? "1505" : "1501";
+            splashUrl = `/api/proxy_image?url=${encodeURIComponent(`https://act-webstatic.hoyoverse.com/game_record/hkrpg/custom/avatar_skin_image/${actId}@2x.png`)}`;
+        } else if (effectiveId) {
+            const portraitUrl = `/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${effectiveId}.png`)}`;
+            const previewUrl = `/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/${effectiveId}.png`)}`;
+            splashUrl = portraitUrl || previewUrl || char.portrait || char.splash_art;
+        } else if (char.portrait || char.splash_art) {
+            splashUrl = char.portrait || char.splash_art;
+        } else if (char.eidolon_art) {
+            splashUrl = char.eidolon_art;
         }
     } else if (gameId === 'zzz') {
         const iconStr = String(char.icon || "");
@@ -1737,9 +1738,32 @@ async function generateBuildCardCanvas(char, gameId) {
 
     if (!charImg && gameId === 'hsr') {
         const charId = effectiveId || char.id || (char.character_id ? String(char.character_id) : null);
+        const candidates = [];
         if (charId) {
-            charImg = (await loadImage(`/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${charId}.png`)}`))
-                   || (await loadImage(`/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/${charId}.png`)}`));
+            candidates.push(`/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/${charId}.png`)}`);
+            candidates.push(`/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${charId}.png`)}`);
+        }
+
+        if (char.name) {
+            const rawClean = char.name.replace(/\s*\(.*?\)/g, '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase();
+            const slug = rawClean.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+            const strippedSlug = slug.replace(/^(aeon|skin)-+/, "");
+            candidates.push(`/api/proxy_image?url=${encodeURIComponent(`https://cdn.prydwen.gg/images/honkai-star-rail/characters/${slug}_full.webp`)}`);
+            candidates.push(`/api/proxy_image?url=${encodeURIComponent(`https://cdn.prydwen.gg/images/honkai-star-rail/characters/${strippedSlug}_full.webp`)}`);
+            candidates.push(`/api/proxy_image?url=${encodeURIComponent(`https://cdn.prydwen.gg/images/honkai-star-rail/characters/${slug}_card.webp`)}`);
+            candidates.push(`/api/proxy_image?url=${encodeURIComponent(`https://cdn.prydwen.gg/images/honkai-star-rail/characters/${strippedSlug}_card.webp`)}`);
+        }
+
+        if (char.portrait && char.portrait !== splashUrl) candidates.push(char.portrait);
+        if (char.splash_art && char.splash_art !== splashUrl) candidates.push(char.splash_art);
+        if (char.gacha_art && char.gacha_art !== splashUrl) candidates.push(char.gacha_art);
+        if (char.eidolon_art && char.eidolon_art !== splashUrl) candidates.push(char.eidolon_art);
+
+        for (const cand of candidates) {
+            if (cand) {
+                charImg = await loadImage(cand);
+                if (charImg) break;
+            }
         }
     }
 

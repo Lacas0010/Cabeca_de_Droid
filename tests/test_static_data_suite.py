@@ -243,6 +243,22 @@ class TestStaticDataSuite(unittest.TestCase):
                 f"Genshin char {char.get('name')} sem weapon_type",
             )
 
+    def test_hsr_dynamic_effective_id_discovery(self):
+        """Valida a resolução automática e dinâmica de IDs efetivos para HSR sem hardcoding."""
+        from services.roster_service import get_hsr_effective_id
+
+        # Teste com objeto contendo apenas nome
+        aha_id = get_hsr_effective_id({"name": "Aeon ★ Aha"})
+        self.assertEqual(aha_id, "1511")
+
+        # Teste com objeto sem prefixo de raridade/estrela
+        aha_short_id = get_hsr_effective_id({"name": "Aha"})
+        self.assertEqual(aha_short_id, "1511")
+
+        # Teste com personagem tradicional
+        acheron_id = get_hsr_effective_id({"name": "Acheron"})
+        self.assertEqual(acheron_id, "1308")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -561,7 +561,7 @@ def get_hsr_effective_id(char: Any) -> str:
     if skin_match:
         return skin_match.group(1)
 
-    # 4. Busca por sufixos ou nomes de skins
+    # 4. Busca por sufixos ou nomes de skins conhecidas
     if "summeretto" in check_str or "robin summer" in check_str or "robin verão" in check_str:
         return "1512"
     if "himeko - nova" in check_str or "himeko nova" in check_str:
@@ -582,6 +582,73 @@ def get_hsr_effective_id(char: Any) -> str:
         return "1508"
     if "gilgamesh" in check_str:
         return "1509"
+
+    # 5. Resolução dinâmica autônoma (se c_id ausente ou não numérico)
+    if not c_id or not str(c_id).isdigit():
+        c_norm = normalize_char_name(c_name)
+        c_lower = c_name.lower().strip()
+        c_clean = re.sub(r"[^a-z0-9]", "", c_lower)
+
+        # 5.1 Busca exata no banco SQLite local (Roster)
+        try:
+            roster = database.get_roster_data("hsr")
+            for c in roster:
+                cn = c.get("name", "")
+                if re.sub(r"[^a-z0-9]", "", cn.lower()) == c_clean:
+                    cid = str(c.get("id") or c.get("character_id") or "")
+                    if cid and cid.isdigit():
+                        return cid
+        except Exception:
+            pass
+
+        # 5.2 Busca exata no manifesto de metadados HSR
+        man = _get_manifest("hsr")
+        for k, v in man.items():
+            k_clean = re.sub(r"[^a-z0-9]", "", k)
+            v_name_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
+            if k == c_lower or k == c_norm or k_clean == c_clean or v_name_clean == c_clean:
+                hid = str(v.get("hoyolab_id") or v.get("id") or "")
+                if hid and hid.isdigit():
+                    return hid
+
+        # 5.3 Busca no cache de Eidolons
+        try:
+            global _HSR_EIDOLON_CACHE
+            if _HSR_EIDOLON_CACHE is None:
+                p = get_resource_path(os.path.join("static_data", "hsr_eidolons.json"))
+                if os.path.exists(p):
+                    with open(p, "r", encoding="utf-8") as f:
+                        _HSR_EIDOLON_CACHE = json.load(f)
+            if _HSR_EIDOLON_CACHE:
+                ranks = _HSR_EIDOLON_CACHE.get(c_lower) or _HSR_EIDOLON_CACHE.get(c_norm)
+                if ranks:
+                    for k, v in _HSR_EIDOLON_CACHE.items():
+                        if k.isdigit() and v == ranks:
+                            return k
+        except Exception:
+            pass
+
+        # 5.4 Busca parcial / por aproximação no Roster local
+        try:
+            roster = database.get_roster_data("hsr")
+            for c in roster:
+                cn = c.get("name", "")
+                cn_clean = re.sub(r"[^a-z0-9]", "", cn.lower())
+                if len(c_clean) >= 3 and (c_clean in cn_clean or cn_clean in c_clean):
+                    cid = str(c.get("id") or c.get("character_id") or "")
+                    if cid and cid.isdigit():
+                        return cid
+        except Exception:
+            pass
+
+        # 5.5 Busca parcial no manifesto HSR
+        for k, v in man.items():
+            k_clean = re.sub(r"[^a-z0-9]", "", k)
+            v_name_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
+            if len(c_clean) >= 3 and (c_clean in k_clean or k_clean in c_clean or c_clean in v_name_clean or v_name_clean in c_clean):
+                hid = str(v.get("hoyolab_id") or v.get("id") or "")
+                if hid and hid.isdigit():
+                    return hid
 
     return c_id
 
@@ -943,6 +1010,29 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                         prof = StaticDataManager().get_character_profile("hsr", c_name)
                         if prof and prof.get("path"):
                             char["path"] = prof["path"]
+                        else:
+                            c_clean = re.sub(r"[^a-z0-9]", "", c_name.lower())
+                            man_entry = _get_manifest("hsr").get(c_name.lower().strip())
+                            if man_entry and man_entry.get("path"):
+                                char["path"] = man_entry["path"]
+                            else:
+                                meta_path = os.path.join(database.BASE_DIR, "hsr", "meta_endgame_hsr.md")
+                                if os.path.exists(meta_path):
+                                    try:
+                                        with open(meta_path, "r", encoding="utf-8") as mf:
+                                            for line in mf:
+                                                if line.startswith("-") and "(" in line and "★" in line:
+                                                    m_cand = re.search(r"-\s*([^(\n]+?)\s*\(\d+★\s*([^-]+?)\s*-\s*([^\)]+?)\)", line)
+                                                    if m_cand:
+                                                        cand_clean = re.sub(r"[^a-z0-9]", "", m_cand.group(1).lower())
+                                                        if cand_clean == c_clean or (len(c_clean) >= 3 and (c_clean in cand_clean or cand_clean in c_clean)):
+                                                            raw_p = m_cand.group(3).strip()
+                                                            clean_p = re.split(r"[\s\(]", raw_p)[0].strip()
+                                                            if clean_p:
+                                                                char["path"] = clean_p.capitalize()
+                                                                break
+                                    except Exception:
+                                        pass
 
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
