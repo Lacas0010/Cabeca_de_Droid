@@ -1,8 +1,9 @@
 import os
 import re
 import json
+import time
 import urllib.parse
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Tuple
 
 import database
 from core.config import get_resource_path
@@ -16,6 +17,25 @@ from build_calculator import (
     normalize_char_name,
 )
 import meta_comparator
+
+
+# Cache em memória para Roster e Overview com TTL e invalidação inteligente
+_ROSTER_CACHE: Dict[Tuple[str, str], Tuple[float, List[Dict[str, Any]]]] = {}
+_OVERVIEW_CACHE: Optional[Tuple[float, Dict[str, Any]]] = None
+CACHE_TTL = 60.0
+
+
+def invalidate_roster_cache(game_id: Optional[str] = None) -> None:
+    """Invalida o cache em memória do roster e overview para forçar atualização imediata."""
+    global _ROSTER_CACHE, _OVERVIEW_CACHE
+    _OVERVIEW_CACHE = None
+    if game_id:
+        clean_g = game_id.lower().strip()
+        keys_to_del = [k for k in _ROSTER_CACHE if k[0] == clean_g]
+        for k in keys_to_del:
+            _ROSTER_CACHE.pop(k, None)
+    else:
+        _ROSTER_CACHE.clear()
 
 
 # Carrega elementos conhecidos de static_data
@@ -659,6 +679,15 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise ValueError("Jogo inválido. Escolha 'hsr', 'genshin' ou 'zzz'.")
 
+    # Verifica cache em memória
+    active_uid = database.get_active_uid(game_id) or ""
+    cache_key = (game_id, str(active_uid))
+    now = time.time()
+    if cache_key in _ROSTER_CACHE:
+        cached_time, cached_val = _ROSTER_CACHE[cache_key]
+        if now - cached_time < CACHE_TTL:
+            return cached_val
+
     data = None
     # 1. Tenta carregar do SQLite primeiro
     try:
@@ -1034,9 +1063,23 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                                     except Exception:
                                         pass
 
+            # Garante que raridade da arma esteja definida
+            if isinstance(char.get("weapon"), dict):
+                if not char["weapon"].get("rarity"):
+                    char["weapon"]["rarity"] = database.get_weapon_rarity(game_id, char["weapon"].get("name", ""))
+
+            # Garante que conjuntos com efeito ativo estejam definidos
+            if not char.get("sets"):
+                if char.get("raw_md"):
+                    char["sets"] = database.parse_sets_from_raw_md(char["raw_md"])
+                else:
+                    char["sets"] = []
+
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
             for relic in relics:
+                if not relic.get("rarity"):
+                    relic["rarity"] = 5
                 if "name" in relic:
                     relic["name"] = clean_relic_name(relic["name"])
                 if "main" in relic:
@@ -1085,8 +1128,10 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
             char["overall_grade"] = overall_grade
             char["equipped_pieces"] = equipped_count
             char["max_pieces"] = max_slots
+        _ROSTER_CACHE[cache_key] = (now, data)
         return data
 
+    _ROSTER_CACHE[cache_key] = (now, [])
     return []
 
 
@@ -1220,6 +1265,7 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
                     "main": r.get("main", ""),
                     "sub": r.get("sub", ""),
                     "icon": r.get("icon", ""),
+                    "rarity": r.get("rarity", 5),
                     "grade": p_grade,
                     "score": p_score,
                 }
@@ -1456,6 +1502,13 @@ def parse_meta_target(game_id: str, char_name: str, element: str = "") -> Dict[s
 
 def get_overview() -> Dict[str, Any]:
     """Gera dados resumidos consolidados dos 3 jogos mesclando SQLite e arquivos locais."""
+    global _OVERVIEW_CACHE
+    now = time.time()
+    if _OVERVIEW_CACHE is not None:
+        cached_time, cached_val = _OVERVIEW_CACHE
+        if now - cached_time < CACHE_TTL:
+            return cached_val
+
     db_overview = {}
     try:
         db_overview = database.get_overview_data()
@@ -1533,6 +1586,7 @@ def get_overview() -> Dict[str, Any]:
                 ov["nickname"] = "Jogador"
             overview[game] = ov
 
+    _OVERVIEW_CACHE = (now, overview)
     return overview
 
 

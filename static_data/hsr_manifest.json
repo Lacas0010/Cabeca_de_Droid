@@ -1947,6 +1947,27 @@
       "hoyolab_id": "9999",
       "icon": ""
     },
+    "aeon_★_aha": {
+      "id": "aeon_★_aha",
+      "name": "Aeon ★ Aha",
+      "rarity": 5,
+      "element": "Quantum",
+      "path": "Elation",
+      "calyx_mat": "Cálice de Rastros da Via",
+      "calyx_tier2_name": "Esboço de Rastro (2★)",
+      "calyx_tier2_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+      "calyx_tier3_name": "Dinâmica de Rastro (3★)",
+      "calyx_tier3_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+      "calyx_tier4_name": "Conhecimento de Rastro (4★)",
+      "calyx_tier4_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
+      "stagnant_shadow_mat": "Sombra Estagnada",
+      "boss_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/201.png",
+      "echo_of_war_mat": "Eco da Guerra",
+      "weekly_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/3.png",
+      "schedule_type": "Daily",
+      "hoyolab_id": "1511",
+      "icon": "icon/character/1511.png"
+    },
     "desbravadora": {
       "id": "desbravadora",
       "name": "Desbravador(a)",
@@ -1967,27 +1988,6 @@
       "schedule_type": "Daily",
       "hoyolab_id": "8009",
       "icon": "https://act-webstatic.hoyoverse.com/darkmatter/hkrpg/prod_gf_cn/item_icon_ubd4re/b6775f1715693236bd6cfd5e8eacc28e.png"
-    },
-    "aeon__aha": {
-      "id": "aeon__aha",
-      "name": "Aeon ★ Aha",
-      "rarity": 5,
-      "element": "Quantum",
-      "path": "Elation",
-      "calyx_mat": "Cálice de Rastros da Via",
-      "calyx_tier2_name": "Esboço de Rastro (2★)",
-      "calyx_tier2_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
-      "calyx_tier3_name": "Dinâmica de Rastro (3★)",
-      "calyx_tier3_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
-      "calyx_tier4_name": "Conhecimento de Rastro (4★)",
-      "calyx_tier4_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110.png",
-      "stagnant_shadow_mat": "Sombra Estagnada",
-      "boss_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/201.png",
-      "echo_of_war_mat": "Eco da Guerra",
-      "weekly_icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/3.png",
-      "schedule_type": "Daily",
-      "hoyolab_id": "1511",
-      "icon": "https://act-webstatic.hoyoverse.com/darkmatter/hkrpg/prod_gf_cn/item_icon_ubd4re/9992dd2ff280e580fe05729d34279568.png"
     }
   }
 }

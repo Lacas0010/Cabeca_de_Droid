@@ -44,17 +44,446 @@ function getCharacterWeapon(char) {
     return "";
 }
 
-async function loadRoster(gameId) {
+// ==========================================================================
+// CONTROLE DE MODO DE VISUALIZAÇÃO: GRADE (GRID) OU LISTA (LIST)
+// ==========================================================================
+let currentRosterViewMode = (typeof localStorage !== "undefined" && localStorage.getItem("roster_view_mode")) || "grid";
+const _rosterRenderers = {};
+
+function setupRosterViewModeToggle() {
+    document.querySelectorAll(".view-mode-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const mode = btn.getAttribute("data-mode");
+            window.setRosterViewMode(mode);
+        });
+    });
+
+    window.setRosterViewMode(currentRosterViewMode, false);
+}
+
+window.setRosterViewMode = function(mode, shouldRerender = true) {
+    currentRosterViewMode = mode === "list" ? "list" : "grid";
+    try {
+        localStorage.setItem("roster_view_mode", currentRosterViewMode);
+    } catch(e) {}
+
+    // Sincroniza estado visual dos botões
+    document.querySelectorAll(".view-mode-btn").forEach(btn => {
+        if (btn.getAttribute("data-mode") === currentRosterViewMode) {
+            btn.classList.add("active");
+        } else {
+            btn.classList.remove("active");
+        }
+    });
+
+    // Atualiza classes CSS das galerias e dispara re-render imediato
+    ["zzz", "genshin", "hsr"].forEach(g => {
+        const gal = document.getElementById(`gallery-${g}`);
+        if (gal) {
+            if (currentRosterViewMode === "list") {
+                gal.classList.add("list-view");
+            } else {
+                gal.classList.remove("list-view");
+            }
+        }
+        if (shouldRerender && typeof _rosterRenderers[g] === "function") {
+            _rosterRenderers[g]();
+        }
+    });
+};
+
+// ==========================================================================
+// HELPERS DE EXTRAÇÃO PARA O MODO LISTA (OPÇÃO C: EQUILIBRADO / COMPLETO)
+// ==========================================================================
+const ROSTER_SET_STOPWORDS = new Set([
+    'de', 'da', 'do', 'das', 'dos', 'no', 'na', 'nos', 'nas',
+    'e', 'o', 'a', 'os', 'as', 'em', 'para', 'com', 'que', 'ao', 'aos', 'à', 'às'
+]);
+
+function extractRosterWeapon(char, gameId, isEn) {
+    if (!char) return null;
+    let weaponObj = null;
+    if (char.weapon && typeof char.weapon === 'object') {
+        weaponObj = { ...char.weapon };
+    } else if (typeof char.weapon === 'string' && char.weapon.trim()) {
+        weaponObj = { name: char.weapon.trim() };
+    } else if (char.weapon_name) {
+        weaponObj = {
+            name: char.weapon_name,
+            level: char.weapon_level,
+            rank: char.weapon_rank,
+            icon: char.weapon_icon,
+            rarity: char.weapon_rarity
+        };
+    }
+    if (!weaponObj || !weaponObj.name) return null;
+
+    const name = weaponObj.name;
+    const lvlPrefix = isEn ? 'Lv.' : 'Nv.';
+    const levelStr = weaponObj.level ? `${lvlPrefix} ${weaponObj.level}` : '';
+
+    // Prefixo de refinamento/sobreposição: S (HSR), W (ZZZ), R (Genshin)
+    const rankPrefix = gameId === 'hsr' ? 'S' : (gameId === 'zzz' ? 'W' : 'R');
+    const rawRank = weaponObj.rank !== undefined ? weaponObj.rank : (weaponObj.affix !== undefined ? weaponObj.affix : (weaponObj.refinement !== undefined ? weaponObj.refinement : null));
+    const rankStr = (rawRank !== null && rawRank !== undefined && String(rawRank).trim() !== '') ? `${rankPrefix}${rawRank}` : '';
+
+    let rarity = Number(weaponObj.rarity || (char && char.weapon_rarity)) || 0;
+    if (!rarity || rarity <= 0) {
+        rarity = 4;
+    }
+
+    const rarityBadge = gameId === 'zzz' ? (rarity === 5 ? 'Rank S' : (rarity === 3 ? 'Rank B' : 'Rank A')) : `${rarity}★`;
+    const detailStr = [rarityBadge, rankStr, levelStr].filter(Boolean).join(' • ');
+
+    let iconSrc = weaponObj.icon || '';
+    if (iconSrc.startsWith('http://') || iconSrc.startsWith('https://')) {
+        iconSrc = `/api/proxy_image?url=${encodeURIComponent(iconSrc)}&w=80&format=webp`;
+    } else if (iconSrc.includes('/api/proxy_image?') && !iconSrc.includes('&w=')) {
+        iconSrc = `${iconSrc}&w=80&format=webp`;
+    }
+    if (!iconSrc) {
+        const safeWFn = typeof getSafeFileName === 'function' ? getSafeFileName(name) : name.replace(/[^a-zA-Z0-9_-]/g, '_');
+        iconSrc = `/assets/weapons/${gameId}/${safeWFn}`;
+    }
+
+    const rarityClass = rarity === 5 ? 'rarity-5' : (rarity === 3 ? 'rarity-3' : (rarity === 1 ? 'rarity-1' : 'rarity-4'));
+
+    return {
+        name,
+        detailStr,
+        iconSrc,
+        rarity,
+        rarityClass
+    };
+}
+
+function extractRosterKeyStats(char, gameId, isEn) {
+    const stats = char && char.stats ? char.stats : null;
+    if (!stats || typeof stats !== 'object' || Object.keys(stats).length === 0) {
+        return null;
+    }
+
+    const keys = Object.keys(stats);
+    const getVal = (patterns) => {
+        for (const pat of patterns) {
+            const pLower = pat.toLowerCase();
+            for (const k of keys) {
+                const kLower = k.toLowerCase();
+                if (kLower === pLower || kLower.includes(pLower)) {
+                    return { key: k, val: stats[k] };
+                }
+            }
+        }
+        return null;
+    };
+
+    const items = [];
+
+    // 1. Taxa e Dano CRIT (CRIT Ratio)
+    const critRate = getVal(['taxa crit', 'chance de crit', 'crit rate', 'taxa']);
+    const critDmg = getVal(['dano crit', 'crit dmg', 'dano']);
+
+    if (critRate && critDmg) {
+        items.push({
+            icon: '🎯',
+            label: 'CRIT',
+            value: `${critRate.val} / ${critDmg.val}`,
+            highlight: true
+        });
+    } else if (critRate) {
+        items.push({
+            icon: '🎯',
+            label: 'CRIT Rate',
+            value: critRate.val,
+            highlight: true
+        });
+    } else if (critDmg) {
+        items.push({
+            icon: '💥',
+            label: 'CRIT DMG',
+            value: critDmg.val,
+            highlight: true
+        });
+    }
+
+    // 2. Velocidade ou Impacto
+    const spd = getVal(['vel', 'spd', 'velocidade']);
+    const impact = getVal(['impactoo', 'impacto', 'impact']);
+
+    if (spd) {
+        items.push({
+            icon: '⚡',
+            label: 'VEL',
+            value: spd.val,
+            highlight: false
+        });
+    } else if (impact) {
+        items.push({
+            icon: '🔨',
+            label: isEn ? 'Impact' : 'Impacto',
+            value: impact.val,
+            highlight: false
+        });
+    }
+
+    // 3. Atributo de Escala Principal (Quebra, Anomalia, ATQ, PV, DEF ou Recarga)
+    const breakEff = getVal(['quebra', 'break effect', 'break']);
+    const anomaly = getVal(['prof. anomalia', 'anomaly prof', 'maest. anomalia', 'proficiência de anomalia']);
+    const atk = getVal(['atq', 'atk', 'ataque']);
+    const hp = getVal(['pv', 'hp', 'vida']);
+    const def = getVal(['def', 'defesa']);
+    const er = getVal(['recarga', 'recharge', 'recup. energia', 'regen. energia', 'er']);
+
+    const cName = ((char && char.name) || '').toLowerCase();
+    const isBreak = cName.includes('vaga-lume') || cName.includes('firefly') || cName.includes('boothill') || cName.includes('rappa');
+    const isDefScaler = cName.includes('aventurine') || cName.includes('gepard') || cName.includes('noelle') || cName.includes('itto') || cName.includes('xilonen') || cName.includes('ben');
+    const isHpScaler = cName.includes('blade') || cName.includes('fu xuan') || cName.includes('furina') || cName.includes('neuvillette') || cName.includes('hu tao') || cName.includes('hutao');
+    const isAnomaly = anomaly !== null;
+
+    let thirdStat = null;
+    if (isBreak && breakEff) {
+        thirdStat = { icon: '🌀', label: isEn ? 'Break' : 'Quebra', value: breakEff.val, highlight: true };
+    } else if (isAnomaly && anomaly) {
+        thirdStat = { icon: '🧪', label: isEn ? 'Anomaly' : 'Anomalia', value: anomaly.val, highlight: true };
+    } else if (isDefScaler && def) {
+        thirdStat = { icon: '🛡️', label: 'DEF', value: def.val, highlight: false };
+    } else if (isHpScaler && hp) {
+        thirdStat = { icon: '❤️', label: 'HP', value: hp.val, highlight: false };
+    } else if (atk) {
+        thirdStat = { icon: '⚔️', label: 'ATQ', value: atk.val, highlight: false };
+    } else if (hp) {
+        thirdStat = { icon: '❤️', label: 'HP', value: hp.val, highlight: false };
+    } else if (def) {
+        thirdStat = { icon: '🛡️', label: 'DEF', value: def.val, highlight: false };
+    } else if (breakEff) {
+        thirdStat = { icon: '🌀', label: isEn ? 'Break' : 'Quebra', value: breakEff.val, highlight: false };
+    } else if (er) {
+        thirdStat = { icon: '🔄', label: isEn ? 'Energy' : 'Recarga', value: er.val, highlight: false };
+    }
+
+    if (thirdStat) {
+        items.push(thirdStat);
+    }
+
+    // Se ainda tiver menos de 3 status, completa com o primeiro status disponível que não foi usado
+    if (items.length < 3) {
+        for (const k of keys) {
+            const kLower = k.toLowerCase();
+            const alreadyUsed = items.some(it => it.label.toLowerCase() === kLower || kLower.includes(it.label.toLowerCase()));
+            if (!alreadyUsed) {
+                items.push({
+                    icon: '📊',
+                    label: k.length > 8 ? k.slice(0, 7) + '.' : k,
+                    value: stats[k],
+                    highlight: false
+                });
+                if (items.length >= 3) break;
+            }
+        }
+    }
+
+    return items.slice(0, 3);
+}
+
+function extractRosterSets(char, gameId, isEn) {
+    const rawSets = [];
+
+    // 1. Se char.sets já veio pronto
+    if (Array.isArray(char.sets) && char.sets.length > 0) {
+        char.sets.forEach(s => {
+            if (typeof s === 'string' && s.trim()) {
+                const mP = s.match(/^(.*?)\s*\((\d+)\s*(?:peças|pieces|pcs)\)$/i);
+                if (mP) {
+                    const count = Number(mP[2]);
+                    const fullSetName = mP[1].trim();
+                    if (count >= 2) {
+                        rawSets.push(`${count}p ${fullSetName}`);
+                    }
+                } else {
+                    const mCount = s.match(/^(\d+)p\s+(.*)$/i);
+                    if (mCount) {
+                        const count = Number(mCount[1]);
+                        const fullSetName = mCount[2].trim();
+                        if (count >= 2) {
+                            rawSets.push(`${count}p ${fullSetName}`);
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // 2. Extração a partir das peças equipadas (se char.sets estiver vazio)
+    const relics = char.relics || char.artifacts || char.discs || [];
+    if (rawSets.length === 0 && relics.length > 0) {
+        // A) Se as peças têm set_name preenchido diretamente
+        const setCountMap = {};
+        relics.forEach(r => {
+            if (r && typeof r === 'object') {
+                const sName = r.set_name || '';
+                if (sName) {
+                    setCountMap[sName] = (setCountMap[sName] || 0) + 1;
+                }
+            }
+        });
+
+        if (Object.keys(setCountMap).length > 0) {
+            Object.entries(setCountMap)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([setName, count]) => {
+                    if (count >= 4) rawSets.push(`4p ${setName}`);
+                    else if (count >= 2) rawSets.push(`2p ${setName}`);
+                });
+        } else {
+            // B) Formato ZZZ com índice entre colchetes: "Punk Hormonal [2]", "Techno Baiacu [1]"
+            const names = relics.map(r => (typeof r === 'object' && r ? r.name || '' : String(r))).filter(Boolean);
+            const discCounts = {};
+            let isDisc = false;
+            names.forEach(name => {
+                const m = name.match(/^(.*?)\s*\[\d+\]$/);
+                if (m) {
+                    isDisc = true;
+                    const setBase = m[1].trim();
+                    discCounts[setBase] = (discCounts[setBase] || 0) + 1;
+                }
+            });
+
+            if (isDisc) {
+                Object.entries(discCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .forEach(([setName, count]) => {
+                        if (count >= 4) rawSets.push(`4p ${setName}`);
+                        else if (count >= 2) rawSets.push(`2p ${setName}`);
+                    });
+            }
+        }
+    }
+
+    const eqCount = char.equipped_pieces !== undefined ? Number(char.equipped_pieces) : relics.length;
+    const maxSlots = char.max_pieces !== undefined ? Number(char.max_pieces) : (gameId === 'genshin' ? 5 : 6);
+
+    return {
+        sets: rawSets.slice(0, 3),
+        eqCount,
+        maxSlots
+    };
+}
+
+function extractRosterRelicPieces(char, gameId, isEn) {
+    const relics = (char && (char.relics || char.artifacts || char.discs)) || [];
+    const maxSlots = char && char.max_pieces !== undefined ? Number(char.max_pieces) : (gameId === 'genshin' ? 5 : 6);
+
+    const pieces = [];
+    for (let i = 0; i < maxSlots; i++) {
+        if (i < relics.length && relics[i]) {
+            const r = relics[i];
+            const name = r.name || (isEn ? `Piece ${i + 1}` : `Peça ${i + 1}`);
+            const slot = r.slot || String(i + 1);
+            const main = r.main || r.main_stat || '';
+            const sub = r.sub || r.sub_stats || '';
+            const grade = r.grade || '';
+            const rarity = Number(r.rarity) || 5;
+
+            let iconSrc = r.icon || '';
+            if (iconSrc.startsWith('http://') || iconSrc.startsWith('https://')) {
+                iconSrc = `/api/proxy_image?url=${encodeURIComponent(iconSrc)}&w=64&format=webp`;
+            } else if (iconSrc.includes('/api/proxy_image?') && !iconSrc.includes('&w=')) {
+                iconSrc = `${iconSrc}&w=64&format=webp`;
+            }
+
+            const gradeClass = grade ? `grade-${grade.toLowerCase()}` : '';
+            const rarityClass = rarity === 5 ? 'rarity-5' : (rarity === 4 ? 'rarity-4' : (rarity === 3 ? 'rarity-3' : (rarity === 1 ? 'rarity-1' : 'rarity-5')));
+
+            const mainLabel = isEn ? 'Main' : 'Principal';
+            const subLabel = isEn ? 'Sub' : 'Substatus';
+            const gradeLabel = isEn ? 'Roll Value' : 'Avaliação';
+            const starsStr = gameId === 'zzz' ? (rarity === 5 ? 'Rank S' : (rarity === 3 ? 'Rank B' : 'Rank A')) : '★'.repeat(rarity || 5);
+            const tooltipParts = [
+                `${starsStr} • ${slot ? slot + ': ' : ''}${name}`,
+                main ? `${mainLabel}: ${main}` : '',
+                sub ? `${subLabel}: ${sub}` : '',
+                grade ? `${gradeLabel}: ${grade}` : ''
+            ].filter(Boolean);
+
+            pieces.push({
+                isEquipped: true,
+                name,
+                slot,
+                iconSrc,
+                grade,
+                gradeClass,
+                rarity,
+                rarityClass,
+                tooltip: tooltipParts.join('\n')
+            });
+        } else {
+            pieces.push({
+                isEquipped: false,
+                slotNum: i + 1,
+                gradeClass: 'slot-empty',
+                rarityClass: 'slot-empty',
+                tooltip: isEn ? `Slot ${i + 1}: Not equipped` : `Slot ${i + 1}: Não equipado`
+            });
+        }
+    }
+
+    return {
+        pieces,
+        totalEquipped: relics.length,
+        maxSlots
+    };
+}
+
+if (typeof window !== 'undefined') {
+    window.extractRosterWeapon = extractRosterWeapon;
+    window.extractRosterKeyStats = extractRosterKeyStats;
+    window.extractRosterSets = extractRosterSets;
+    window.extractRosterRelicPieces = extractRosterRelicPieces;
+}
+
+// Deduplica requisições simultâneas de roster (startup + alternância rápida de abas)
+const _rosterInflight = {};
+function loadRoster(gameId) {
+    if (_rosterInflight[gameId]) return _rosterInflight[gameId];
+    _rosterInflight[gameId] = _loadRosterImpl(gameId).finally(() => {
+        _rosterInflight[gameId] = null;
+    });
+    return _rosterInflight[gameId];
+}
+
+async function _loadRosterImpl(gameId) {
     const gallery = document.getElementById(`gallery-${gameId}`);
-    gallery.innerHTML = Array(12).fill(0).map(() => `
-        <div class="skeleton-card">
-            <div class="skeleton-avatar"></div>
-            <div class="skeleton-info">
-                <div class="skeleton-name"></div>
-                <div class="skeleton-lvl"></div>
+    if (currentRosterViewMode === "list") {
+        gallery.classList.add("list-view");
+        gallery.innerHTML = Array(8).fill(0).map(() => `
+            <div class="skeleton-row" style="height: 76px; padding: 10px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+                <div style="display: flex; align-items: center; gap: 14px; flex: 1.2;">
+                    <div class="skeleton-box" style="width: 48px; height: 48px; border-radius: 10px;"></div>
+                    <div style="display: flex; flex-direction: column; gap: 6px; width: 60%;">
+                        <div class="skeleton-line" style="width: 70%; height: 14px;"></div>
+                        <div class="skeleton-line" style="width: 40%; height: 10px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-box" style="width: 140px; height: 38px; border-radius: 8px;"></div>
+                <div class="skeleton-box" style="width: 120px; height: 28px; border-radius: 6px;"></div>
+                <div class="skeleton-box" style="width: 70px; height: 28px; border-radius: 6px;"></div>
             </div>
-        </div>
-    `).join('');
+        `).join('');
+    } else {
+        gallery.classList.remove("list-view");
+        gallery.innerHTML = Array(12).fill(0).map(() => `
+            <div class="skeleton-card">
+                <div class="skeleton-avatar-container">
+                    <div class="skeleton-badge"></div>
+                    <div class="skeleton-avatar"></div>
+                </div>
+                <div class="skeleton-info">
+                    <div class="skeleton-name"></div>
+                    <div class="skeleton-lvl"></div>
+                </div>
+            </div>
+        `).join('');
+    }
     
     try {
         const res = await fetch(`/api/roster/${gameId}`);
@@ -80,13 +509,28 @@ async function loadRoster(gameId) {
         }
         
         if (!roster || roster.length === 0) {
+            const gameNames = { hsr: "Honkai: Star Rail", genshin: "Genshin Impact", zzz: "Zenless Zone Zero" };
+            const gName = gameNames[gameId] || gameId.toUpperCase();
+            const emptyTitle = isEn 
+                ? `${gName} Character Gallery` 
+                : `Galeria de Personagens de ${gName}`;
+            const emptyDesc = isEn
+                ? `This is where you view all your account characters, ascension levels, constellations/mindscapes, and Roll Value gear scores.`
+                : `Esta é a tela onde você visualiza todos os personagens da sua conta, níveis de ascensão, constelações e notas matemáticas de Roll Value dos equipamentos.`;
+            const emptyBtnText = isEn
+                ? `Sync ${gName} Characters Now`
+                : `Sincronizar Personagens de ${gName} Agora`;
 
-            const emptyTitle = window.t ? window.t("roster_empty_title", "Nenhum personagem extraído localmente.") : "Nenhum personagem extraído localmente.";
-            const emptyDesc = isEn ? `Check "Roster" and click "Sync ${gameId.toUpperCase()}" above to load your account!` : `Marque "Roster" e clique em "Sincronizar ${gameId.toUpperCase()}" acima para carregar sua conta!`;
             gallery.innerHTML = `
-                <div class="empty-gallery">
-                    <p>${emptyTitle}</p>
-                    <span>${emptyDesc}</span>
+                <div class="empty-state-box" style="grid-column: 1 / -1; padding: 48px 24px; text-align: center; background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(255, 255, 255, 0.15); border-radius: 16px; margin: 16px 0;">
+                    <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px; color: #38bdf8; font-size: 24px;">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <h3 style="color: var(--text-primary); font-size: 18px; font-weight: 700; margin-bottom: 8px;">${emptyTitle}</h3>
+                    <p style="color: var(--text-secondary); font-size: 13px; max-width: 480px; margin: 0 auto 20px auto; line-height: 1.5;">${emptyDesc}</p>
+                    <button class="primary-btn" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadRoster('${gameId}');" style="padding: 10px 22px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; cursor: pointer;">
+                        <i class="fa-solid fa-arrows-rotate"></i> ${emptyBtnText}
+                    </button>
                 </div>
             `;
             return;
@@ -105,6 +549,11 @@ async function loadRoster(gameId) {
         
         const renderCards = () => {
             gallery.innerHTML = "";
+            if (currentRosterViewMode === "list") {
+                gallery.classList.add("list-view");
+            } else {
+                gallery.classList.remove("list-view");
+            }
             const frag = document.createDocumentFragment();
 
             const lvlLabel = isEn ? "Level" : "Nível";
@@ -181,27 +630,167 @@ async function loadRoster(gameId) {
                 const teamPos = currentTeam.findIndex(m => m.name === char.name);
                 const inTeamClass = teamPos !== -1 ? " in-team-selected" : "";
                 
-                card.className = `char-card ${elemClass}${inTeamClass}`;
-                
                 const safeFn = getSafeFileName(char.name);
                 const defaultFallback = `/assets/${gameId}_icon.png`;
-                const avatarSrc = char.icon || defaultFallback;
-                card.innerHTML = `
-                    <div class="char-avatar-container">
-                        ${teamPos !== -1 ? `<div class="gallery-team-badge"><i class="fa-solid fa-users"></i> #${teamPos + 1}</div>` : ''}
-                        ${char.overall_grade ? `<div class="char-grade-badge badge-${char.overall_grade.toLowerCase()}">${char.overall_grade}</div>` : ''}
-                        <img class="char-avatar" src="${avatarSrc}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
-                        <div class="char-rank-badge">${char.rank_str || 'C0'}</div>
-                    </div>
+                let avatarSrc = char.icon || defaultFallback;
+                if (avatarSrc.startsWith("http://") || avatarSrc.startsWith("https://")) {
+                    avatarSrc = `/api/proxy_image?url=${encodeURIComponent(avatarSrc)}&w=160&format=webp`;
+                } else if (avatarSrc.includes("/api/proxy_image?") && !avatarSrc.includes("&w=")) {
+                    avatarSrc = `${avatarSrc}&w=160&format=webp`;
+                }
 
-                    <div class="char-info">
-                        <div class="char-name" title="${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}">
-                            <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
-                            ${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}
+                const formattedName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
+
+                if (currentRosterViewMode === "list") {
+                    card.className = `char-card char-list-row ${elemClass}${inTeamClass}`;
+
+                    const rarityNum = Number(char.rarity);
+                    const isFiveStar = rarityNum === 5 || char.rarity === "5" || String(char.rarity).toUpperCase() === "S";
+                    const elemDisplayName = typeof formatElementDisplayName === "function" ? formatElementDisplayName(char.element) : (char.element || "");
+
+                    let pathOrWeaponLabel = "";
+                    if (gameId === "hsr") {
+                        const rawP = char.path || getCharacterPath(char);
+                        pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawP, "hsr") : rawP;
+                    } else if (gameId === "genshin") {
+                        const rawW = char.weapon_type || getCharacterWeapon(char) || "";
+                        pathOrWeaponLabel = typeof window.t === "function" ? window.t(`weapon_${rawW}`, rawW) : rawW;
+                    } else if (gameId === "zzz") {
+                        pathOrWeaponLabel = char.specialty || char.role || "";
+                    }
+
+                    const rarityLabel = isFiveStar ? (gameId === 'zzz' ? 'Rank S' : '5★') : (gameId === 'zzz' ? 'Rank A' : '4★');
+
+                    const weaponData = extractRosterWeapon(char, gameId, isEn);
+                    const relicPiecesData = extractRosterRelicPieces(char, gameId, isEn);
+                    const setsData = extractRosterSets(char, gameId, isEn);
+
+                    let dotsHtml = '';
+                    for (let i = 0; i < setsData.maxSlots; i++) {
+                        dotsHtml += `<span class="char-relic-dot${i < setsData.eqCount ? ' filled' : ''}"></span>`;
+                    }
+
+                    const rawGrade = char.overall_grade || (setsData.eqCount === 0 ? "N/A" : "B");
+                    const isUnequipped = rawGrade === "N/A" || setsData.eqCount === 0;
+                    const gradeBadgeClass = isUnequipped ? "badge-na" : `badge-${rawGrade.toLowerCase()}`;
+                    const gradeScore = char.overall_score !== undefined ? char.overall_score : null;
+
+                    card.innerHTML = `
+                        <!-- Coluna 1: Personagem -->
+                        <div class="char-list-col-main">
+                            <div class="char-list-avatar-wrap">
+                                <img class="char-list-avatar" src="${avatarSrc}" width="48" height="48" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
+                                <div class="char-list-rank-chip">${char.rank_str || 'C0'}</div>
+                            </div>
+                            <div class="char-list-info">
+                                <div class="char-list-title-row">
+                                    <span class="char-list-name" title="${formattedName}">${formattedName}</span>
+                                    <span class="char-list-elem-tag">
+                                        <img src="/assets/elements/${gameId}_${elemKey}.png" width="14" height="14" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
+                                        ${elemDisplayName}
+                                    </span>
+                                    <span class="char-list-rarity-badge ${isFiveStar ? 'five-star' : 'four-star'}">${rarityLabel}</span>
+                                    ${teamPos !== -1 ? `<span class="char-list-badge-team"><i class="fa-solid fa-users"></i> #${teamPos + 1}</span>` : ''}
+                                </div>
+                                <div class="char-list-details-row">
+                                    <span class="char-list-badge-lvl">${lvlLabel} ${char.level}</span>
+                                    ${pathOrWeaponLabel ? `<span>• ${pathOrWeaponLabel}</span>` : ''}
+                                </div>
+                            </div>
                         </div>
-                        <div class="char-lvl">${lvlLabel} ${char.level}</div>
-                    </div>
-                `;
+
+                        <!-- Coluna 2: Arma com Thumbnail Oficial -->
+                        <div class="char-list-col-weapon">
+                            ${weaponData ? `
+                                <div class="char-list-weapon-wrap">
+                                    <div class="char-list-weapon-icon-box ${weaponData.rarityClass}">
+                                        <img src="${weaponData.iconSrc}" width="38" height="38" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='/assets/chat_icon.png';" alt="${weaponData.name}">
+                                    </div>
+                                    <div class="char-list-weapon-text">
+                                        <div class="char-list-weapon-name" title="${weaponData.name}">${weaponData.name}</div>
+                                        <div class="char-list-weapon-detail">${weaponData.detailStr || (isEn ? 'Equipped' : 'Equipada')}</div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="char-list-weapon-empty">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                    <span>${isEn ? 'No weapon noted' : 'Sem arma anotada'}</span>
+                                </div>
+                            `}
+                        </div>
+
+                        <!-- Coluna 3: Relíquias / Artefatos / Discos (Ícones Oficiais das Peças Equipadas) -->
+                        <div class="char-list-col-relics" title="${relicPiecesData.totalEquipped}/${relicPiecesData.maxSlots} ${isEn ? 'pieces equipped' : 'peças equipadas'}">
+                            <div class="char-relics-strip">
+                                ${relicPiecesData.pieces.map((p, pIdx) => p.isEquipped ? `
+                                    <div class="char-relic-piece-box ${p.rarityClass} ${p.gradeClass}" title="${p.tooltip}">
+                                        <img src="${p.iconSrc}" width="34" height="34" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='/assets/chat_icon.png';" alt="${p.name}">
+                                        ${p.grade && p.grade !== 'N/A' ? `<span class="piece-corner-grade piece-grade-${p.grade.toLowerCase()}">${p.grade}</span>` : ''}
+                                    </div>
+                                ` : `
+                                    <div class="char-relic-piece-box slot-empty" title="${p.tooltip}">
+                                        <span class="slot-empty-num">${p.slotNum || (pIdx + 1)}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <!-- Coluna 4: Conjuntos de Relíquias e Peças Equipadas -->
+                        <div class="char-list-col-sets">
+                            <div class="char-sets-tags">
+                                ${setsData.sets && setsData.sets.length > 0 ? `
+                                    ${setsData.sets.map(s => `
+                                        <span class="char-set-tag" title="${s}">
+                                            <i class="fa-solid fa-wand-magic-sparkles"></i> ${s}
+                                        </span>
+                                    `).join('')}
+                                ` : `
+                                    <span class="char-set-tag set-empty">
+                                        <i class="fa-solid fa-layer-group"></i> ${isEn ? 'Individual pieces' : 'Peças avulsas'}
+                                    </span>
+                                `}
+                            </div>
+                            <div class="char-relic-slots-bar" title="${setsData.eqCount}/${setsData.maxSlots} ${isEn ? 'pieces equipped' : 'peças equipadas'}">
+                                <div class="char-relic-dots">
+                                    ${dotsHtml}
+                                </div>
+                                <span class="char-relic-slots-text">${setsData.eqCount}/${setsData.maxSlots} ${isEn ? 'Equipped' : 'Peças'}</span>
+                            </div>
+                        </div>
+
+                        <!-- Coluna 5: Grade Roll Value e Ação -->
+                        <div class="char-list-col-actions">
+                            <div class="char-list-grade-wrap">
+                                <span class="char-grade-badge ${gradeBadgeClass}">
+                                    ${rawGrade}
+                                </span>
+                                ${gradeScore !== null ? `<span class="char-list-score-sub">${gradeScore} pts</span>` : ''}
+                            </div>
+                            <div class="char-list-btn-inspect" title="${isEn ? 'Inspect character' : 'Inspecionar personagem'}">
+                                <span class="char-list-inspect-label">${isEn ? 'Inspect' : 'Inspecionar'}</span>
+                                <i class="fa-solid fa-chevron-right char-list-chevron"></i>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    card.className = `char-card ${elemClass}${inTeamClass}`;
+                    card.innerHTML = `
+                        <div class="char-avatar-container">
+                            ${teamPos !== -1 ? `<div class="gallery-team-badge"><i class="fa-solid fa-users"></i> #${teamPos + 1}</div>` : ''}
+                            ${char.overall_grade ? `<div class="char-grade-badge badge-${char.overall_grade.toLowerCase()}">${char.overall_grade}</div>` : ''}
+                            <img class="char-avatar" src="${avatarSrc}" width="68" height="68" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
+                            <div class="char-rank-badge">${char.rank_str || 'C0'}</div>
+                        </div>
+
+                        <div class="char-info">
+                            <div class="char-name" title="${formattedName}">
+                                <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" width="16" height="16" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
+                                ${formattedName}
+                            </div>
+                            <div class="char-lvl">${lvlLabel} ${char.level}</div>
+                        </div>
+                    `;
+                }
                 
                 // Clique para abrir detalhes no Build Inspector lateral
                 card.addEventListener("click", () => {
@@ -213,6 +802,8 @@ async function loadRoster(gameId) {
             // Um único reflow em vez de um por personagem
             gallery.appendChild(frag);
         };
+        
+        _rosterRenderers[gameId] = renderCards;
         
         // Configura ouvintes de clique nos botões de filtro de elementos
         const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters):not(.weapon-filters):not(.path-filters)`);
@@ -296,21 +887,54 @@ async function loadRoster(gameId) {
             });
         }
         
-        // Evento de busca em tempo real
+        // Evento de busca em tempo real com debounce de ~300ms, AbortController e guarda de min 2 caracteres
         searchInput.replaceWith(searchInput.cloneNode(true)); // Limpa listeners antigos
         const newSearchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
-        let searchDebounce = null;
+        
+        const debouncedRosterSearch = window.createDebouncedSearch((e, signal) => {
+            if (signal?.aborted) return;
+            const rawVal = e?.target?.value ?? (typeof e === "string" ? e : "");
+            const trimmed = rawVal.toLowerCase().trim();
+            searchQuery = trimmed.length >= 2 ? trimmed : "";
+            renderCards();
+        }, { delay: 300, minLength: 2, immediateOnEmpty: true });
+
         newSearchInput.addEventListener("input", (e) => {
-            searchQuery = e.target.value.toLowerCase().trim();
-            clearTimeout(searchDebounce);
-            searchDebounce = setTimeout(renderCards, 150);
+            const rawVal = e.target.value.trim();
+            // Se o usuário apagou para < 2 caracteres mas não zero, reseta para lista cheia imediatamente
+            if (rawVal.length > 0 && rawVal.length < 2) {
+                debouncedRosterSearch.cancel();
+                if (searchQuery !== "") {
+                    searchQuery = "";
+                    renderCards();
+                }
+                return;
+            }
+            debouncedRosterSearch(e);
         });
         
         // Renderização inicial do Grid
         renderCards();
         
     } catch (err) {
-        gallery.innerHTML = `<div class="error-msg">Erro ao carregar roster: ${err.message}</div>`;
+        const errorTitle = isEn ? "Failed to load character roster" : "Não foi possível carregar os personagens";
+        const errorDesc = isEn 
+            ? "A temporary issue occurred while reading local data or account profile. Check your connection or retry."
+            : "Ocorreu uma instabilidade ao consultar o banco local ou os dados do perfil. Verifique sua conexão e tente novamente.";
+        const retryText = isEn ? "Try again" : "Tentar de novo";
+
+        gallery.innerHTML = `
+            <div class="error-state-box" style="grid-column: 1 / -1; padding: 40px 24px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 16px; margin: 16px 0;">
+                <div style="width: 50px; height: 50px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 14px; color: #ef4444; font-size: 22px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">${errorTitle}</h4>
+                <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 18px auto; line-height: 1.4;">${errorDesc}</p>
+                <button class="primary-btn" onclick="window.loadRoster('${gameId}')" style="padding: 8px 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; cursor: pointer; background: #ef4444;">
+                    <i class="fa-solid fa-rotate-right"></i> ${retryText}
+                </button>
+            </div>
+        `;
     }
 }
 
@@ -491,7 +1115,7 @@ async function inspectCharacter(gameId, char) {
     
     const elemKey = (char.element || "").toLowerCase();
     const displayElem = formatElementDisplayName(char.element);
-    const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
+    const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
     const pathVal = char.path || char.specialty || char.weapon_type || "";
     const pathDisplay = pathVal && typeof formatPathName === 'function' ? formatPathName(pathVal, gameId) : "";
     const pathHtml = pathDisplay ? ` • ${pathDisplay.toUpperCase()}` : "";
@@ -713,7 +1337,7 @@ async function inspectCharacter(gameId, char) {
                     iconSrc = gameId === 'zzz' ? `/assets/mindscapes/zzz/m${posNum}.png` : defaultElemIcon;
                 }
                 const rankFallbackIcon = gameId === 'zzz' ? `/assets/mindscapes/zzz/m${posNum}.png` : defaultElemIcon;
-                const iconHtml = `<img src="${iconSrc}" class="rank-icon-img" alt="${rkName}" loading="eager" onerror="if(!this.dataset.retried && !this.src.includes('/assets/elements/') && !this.src.includes('/assets/mindscapes/')){this.dataset.retried='1'; const orig=this.src; setTimeout(()=>{ this.src = orig + (orig.includes('?') ? '&retry=1' : '?retry=1'); }, 400);} else { this.onerror=null; this.src='${rankFallbackIcon}'; }">`;
+                const iconHtml = `<img src="${iconSrc}" class="rank-icon-img" alt="${rkName}" width="36" height="36" loading="lazy" decoding="async" onerror="if(!this.dataset.retried && !this.src.includes('/assets/elements/') && !this.src.includes('/assets/mindscapes/')){this.dataset.retried='1'; const orig=this.src; setTimeout(()=>{ this.src = orig + (orig.includes('?') ? '&retry=1' : '?retry=1'); }, 400);} else { this.onerror=null; this.src='${rankFallbackIcon}'; }">`;
 
                 nodeCard.innerHTML = `
                     <div class="rank-icon-frame">
@@ -810,7 +1434,7 @@ async function inspectCharacter(gameId, char) {
                     }
 
                     const iconHtml = skIconSrc
-                        ? `<img src="${skIconSrc}" class="skill-icon-img" alt="${sk.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><i class="fa-solid fa-wand-magic-sparkles" style="display:none; color: #c084fc; font-size: 16px;"></i>`
+                        ? `<img src="${skIconSrc}" class="skill-icon-img" alt="${sk.name}" width="32" height="32" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><i class="fa-solid fa-wand-magic-sparkles" style="display:none; color: #c084fc; font-size: 16px;"></i>`
                         : `<i class="fa-solid fa-wand-magic-sparkles" style="color: #c084fc; font-size: 16px;"></i>`;
 
                     skCard.innerHTML = `
@@ -851,8 +1475,11 @@ async function inspectCharacter(gameId, char) {
         
         if (char.weapon) {
             lblWeaponName.innerText = char.weapon.name || (isEn ? "Not equipped" : "Não equipado");
-            const refLabel = gameId === "hsr" ? (isEn ? "Superimposition: S" : "Sobreposição: S") : (isEn ? "Refinement: R" : "Refinamento: R");
-            lblWeaponMeta.innerText = `${isEn ? "Level" : "Nível"} ${char.weapon.level || 1} • ${refLabel}${char.weapon.rank || 1}`;
+            const refLabel = gameId === "hsr" ? (isEn ? "Superimposition: S" : "Sobreposição: S") : (gameId === "zzz" ? (isEn ? "W-Engine: W" : "Motor W: W") : (isEn ? "Refinement: R" : "Refinamento: R"));
+            const rVal = char.weapon.rarity || char.weapon_rarity || (build && build.weapon_rarity);
+            const rStar = rVal ? (gameId === "zzz" ? (Number(rVal) === 5 ? "Rank S" : "Rank A") : `${rVal}★`) : "";
+            const metaParts = [rStar, `${isEn ? "Level" : "Nível"} ${char.weapon.level || 1}`, `${refLabel}${char.weapon.rank || 1}`].filter(Boolean);
+            lblWeaponMeta.innerText = metaParts.join(" • ");
             
             const safeWFn = getSafeFileName(char.weapon.name || "");
             imgWeaponIcon.src = `/assets/weapons/${gameId}/${safeWFn}`;
@@ -1106,7 +1733,7 @@ function getSlotIcon(slotName) {
                 
                 const iconHtml = `
                     <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(255, 255, 255, 0.05); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden; position: relative;">
-                        <img class="relic-piece-icon" src="${rawIcon}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width: 100%; height: 100%; object-fit: cover;" alt="${piece.slot || ''}">
+                        <img class="relic-piece-icon" src="${rawIcon}" width="36" height="36" loading="lazy" decoding="async" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" style="width: 100%; height: 100%; object-fit: cover;" alt="${piece.slot || ''}">
                         <div style="display: none; width: 100%; height: 100%; align-items: center; justify-content: center; font-size: 16px;">${slotIconHtml}</div>
                     </div>
                 `;
@@ -1606,7 +2233,7 @@ async function generateBuildCardCanvas(char, gameId) {
         });
     }
 
-    const logoImg = (await loadImage("/assets/logo.svg")) || (await loadImage("/assets/logo.ico"));
+    const logoImg = (await loadImage("/assets/logo.png")) || (await loadImage("/assets/logo.webp")) || (await loadImage("/assets/logo.ico"));
 
     // 1. Fundo do Banner Landscape (16:9)
     const bgGrad = ctx.createLinearGradient(0, 0, width, height);
@@ -2415,7 +3042,7 @@ window.generateTierListCardCanvas = async (gameId, auditData) => {
         }
     }
 
-    const logoImg = (await loadImage(`/assets/${gameId}_icon.png`)) || (await loadImage("/assets/logo.svg"));
+    const logoImg = (await loadImage(`/assets/${gameId}_icon.png`)) || (await loadImage("/assets/logo.png"));
 
     const avatarPromises = [];
     const charImgMap = {};
@@ -2809,3 +3436,5 @@ if (typeof loadRoster !== 'undefined') window.loadRoster = loadRoster;
 if (typeof renderGameCharts !== 'undefined') window.renderGameCharts = renderGameCharts;
 if (typeof renderRosterCharts !== 'undefined') window.renderRosterCharts = renderRosterCharts;
 if (typeof setupHoyoCustomTooltip !== 'undefined') window.setupHoyoCustomTooltip = setupHoyoCustomTooltip;
+if (typeof setupRosterViewModeToggle !== 'undefined') window.setupRosterViewModeToggle = setupRosterViewModeToggle;
+if (typeof setRosterViewMode !== 'undefined') window.setRosterViewMode = setRosterViewMode;

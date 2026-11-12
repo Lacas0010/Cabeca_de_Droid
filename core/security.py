@@ -76,9 +76,30 @@ async def security_guard_middleware(request: Request, call_next):
 
 
 async def add_no_cache_header(request: Request, call_next):
-    """Middleware para desabilitar cache em respostas HTTP."""
+    """Middleware para gerenciar cache HTTP (permite cache em estáticos e protege rotas dinâmicas)."""
     response = await call_next(request)
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["Expires"] = "0"
+    path = request.url.path.lower()
+
+    is_static = (
+        path.startswith("/assets")
+        or path.startswith("/static")
+        or path.endswith((".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico", ".woff2", ".woff", ".ttf"))
+    )
+    is_proxy_image = path.startswith("/api/proxy_image")
+
+    if is_proxy_image:
+        if "Cache-Control" not in response.headers:
+            response.headers["Cache-Control"] = "public, max-age=604800"
+        response.headers["CDN-Cache-Control"] = "public, max-age=2592000"
+    elif is_static and path != "/" and not path.endswith(".html"):
+        response.headers["Cache-Control"] = "public, max-age=86400"
+        response.headers["CDN-Cache-Control"] = "public, max-age=2592000"
+        if "Pragma" in response.headers:
+            del response.headers["Pragma"]
+        if "Expires" in response.headers:
+            del response.headers["Expires"]
+    else:
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
     return response

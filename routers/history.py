@@ -7,11 +7,13 @@ router = APIRouter(tags=["Account History & Evolution"])
 
 
 @router.get("/api/history/{game_id}")
-async def get_account_history_endpoint(game_id: str):
-    """Retorna a timeline de evolução da conta com métricas salvas em snapshots."""
+async def get_account_history_endpoint(game_id: str, limit: int = 50, offset: int = 0):
+    """Retorna a timeline de evolução da conta com métricas salvas em snapshots com paginação."""
     try:
-        history = database.get_account_history(game_id=game_id)
-        return {"game_id": game_id, "history": history}
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+        history = database.get_account_history(game_id=game_id, limit=limit, offset=offset)
+        return {"game_id": game_id, "history": history, "limit": limit, "offset": offset}
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

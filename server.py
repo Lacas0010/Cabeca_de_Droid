@@ -3,8 +3,9 @@ import threading
 import time
 from typing import Dict, Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 # Core modules
@@ -167,6 +168,21 @@ def startup_static_data_sync_scheduler():
 
 
 # Middlewares
+async def request_latency_tracker_middleware(request: Request, call_next):
+    """Mede a latência de processamento das requisições, adiciona X-Process-Time e alerta rotas lentas (>500ms)."""
+    start_time = time.perf_counter()
+    response = await call_next(request)
+    process_time_ms = (time.perf_counter() - start_time) * 1000.0
+    response.headers["X-Process-Time"] = f"{process_time_ms:.2f}ms"
+
+    path = request.url.path
+    if process_time_ms > 500.0 and not path.startswith(("/api/sync/stream", "/api/proxy_image")):
+        print(f"[PERF-WARN] Rota lenta detectada: {request.method} {path} finalizada em {process_time_ms:.2f}ms")
+
+    return response
+
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -177,6 +193,7 @@ app.add_middleware(
 
 app.middleware("http")(add_no_cache_header)
 app.middleware("http")(security_guard_middleware)
+app.middleware("http")(request_latency_tracker_middleware)
 
 # Montagem de todos os módulos de rotas (APIRouters)
 for router in all_routers:

@@ -54,7 +54,24 @@ async function loadBuildComparison() {
         gameTag.textContent = `${activeInspectGame.toUpperCase()} • METAGAME BENCHMARK`;
     }
     
-    rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 25px 0; color: var(--text-muted);"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 8px;"></i> ${t("comp_loading", "Carregando comparação com o metagame...")}</td></tr>`;
+    rowsContainer.innerHTML = Array(5).fill(0).map((_, i) => `
+        <tr class="skeleton-table-row">
+            <td class="comparison-row-title">
+                <div class="skeleton-line" style="width: ${i % 2 === 0 ? '70%' : '55%'}; height: 14px;"></div>
+            </td>
+            <td class="comparison-val-current">
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <div class="skeleton-line" style="width: 80%; height: 14px;"></div>
+                    <div class="skeleton-line" style="width: 45%; height: 10px;"></div>
+                </div>
+            </td>
+            <td class="comparison-val-target">
+                <div style="display: flex; justify-content: flex-end;">
+                    <div class="skeleton-line" style="width: 75%; height: 14px;"></div>
+                </div>
+            </td>
+        </tr>
+    `).join("");
     if (scoreCard) scoreCard.style.display = "none";
     
     try {
@@ -63,6 +80,27 @@ async function loadBuildComparison() {
         
         const build = data.player_build || {};
         const target = data.meta_target || {};
+
+        if ((!build.weapon || build.weapon === "Não informado") && (!build.sets || build.sets.length === 0) && (!target.weapon || target.weapon === "Não informado")) {
+            rowsContainer.innerHTML = `
+                <tr>
+                    <td colspan="3" style="padding: 30px 15px; text-align: center;">
+                        <div style="max-width: 440px; margin: 0 auto; color: var(--text-secondary);">
+                            <i class="fa-solid fa-code-compare fa-2x" style="color: #38bdf8; margin-bottom: 10px;"></i>
+                            <h4 style="margin: 0 0 6px 0; font-size: 14px; color: var(--text-primary);">${isEn ? "No Build Data Found" : "Nenhum Dado de Build Encontrado"}</h4>
+                            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 14px;">
+                                ${isEn ? "The Metagame Comparator matches your character's weapons, sets, and benchmarks against community guidelines. Sync your roster to populate your build." : "O Comparador de Metagame avalia armas, relíquias e atributos contra referências oficiais do meta. Sincronize seu roster com o HoYoLAB para carregar as builds da sua conta."}
+                            </p>
+                            <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${activeInspectGame}\\']')?.click() || (window.syncRoster && window.syncRoster('${activeInspectGame}'))" style="padding: 7px 16px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                                <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Characters Now" : "Sincronizar Personagens Agora"}
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            if (scoreCard) scoreCard.style.display = "none";
+            return;
+        }
         
         // Dicionário de tradução bidirecional Português <-> Inglês estendido para itens/sets comuns
         const translationDict = {
@@ -764,7 +802,23 @@ async function loadBuildComparison() {
         
     } catch(err) {
         console.error("Erro ao carregar comparação de builds:", err);
-        rowsContainer.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px 0; color: var(--color-danger);">Erro ao carregar comparação: ${err.message}</td></tr>`;
+        const safeCharName = (activeInspectChar?.name || "").replace(/'/g, "\\'");
+        rowsContainer.innerHTML = `
+            <tr>
+                <td colspan="3" style="padding: 30px 15px; text-align: center;">
+                    <div style="max-width: 420px; margin: 0 auto; color: var(--text-secondary);">
+                        <i class="fa-solid fa-circle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                        <h4 style="margin: 0 0 6px 0; font-size: 14px; color: #f87171;">${isEn ? "Failed to Load Metagame Comparison" : "Não foi possível carregar o comparativo de metagame"}</h4>
+                        <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 14px;">
+                            ${isEn ? "Could not retrieve meta targets or player build. Please check your connection." : "Não foi possível consultar os alvos do meta ou os dados do personagem. Verifique sua conexão e tente novamente."}
+                        </p>
+                        <button class="primary-btn" onclick="window.loadComparison && window.loadComparison('${safeCharName}', '${activeInspectGame}')" style="padding: 7px 16px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
     }
 }
 
@@ -1297,9 +1351,44 @@ window.loadAccountHistory = async (gameId = "hsr") => {
     }
 
     container.innerHTML = `
-        <div style="padding: 40px; text-align: center; color: var(--text-secondary);">
-            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #ec4899;"></i>
-            <p style="margin-top: 12px; font-weight: 500;">${window.t ? window.t("history_searching") : "Buscando linha do tempo e realizando comparativo de evolução..."}</p>
+        <div class="history-compare-card" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(236, 72, 153, 0.2); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                    <div class="skeleton-line" style="width: 140px; height: 16px;"></div>
+                    <div class="skeleton-box" style="width: 160px; height: 32px; border-radius: 6px;"></div>
+                    <div class="skeleton-line" style="width: 20px; height: 16px;"></div>
+                    <div class="skeleton-box" style="width: 160px; height: 32px; border-radius: 6px;"></div>
+                </div>
+                <div class="skeleton-box" style="width: 130px; height: 32px; border-radius: 8px;"></div>
+            </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+            <div class="skeleton-line" style="width: 220px; height: 16px;"></div>
+        </div>
+        <div class="timeline-stepper" style="position: relative; padding-left: 24px; border-left: 3px solid rgba(236, 72, 153, 0.3); display: flex; flex-direction: column; gap: 28px; margin-left: 10px;">
+            ${[1, 2].map(() => `
+                <div class="timeline-item" style="position: relative;">
+                    <div style="position: absolute; left: -33px; top: 18px; width: 16px; height: 16px; border-radius: 50%; background: rgba(56, 189, 248, 0.5); border: 3px solid #0f172a;"></div>
+                    <div class="skeleton-timeline-card">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; border-bottom: 1px solid rgba(255,255,255,0.07); padding-bottom: 16px; margin-bottom: 16px;">
+                            <div style="width: 45%;">
+                                <div class="skeleton-line" style="width: 120px; height: 16px; margin-bottom: 8px;"></div>
+                                <div class="skeleton-line" style="width: 180px; height: 20px;"></div>
+                            </div>
+                            <div style="display: flex; gap: 12px; flex: 1; justify-content: flex-end;">
+                                <div class="skeleton-box" style="width: 90px; height: 50px; border-radius: 10px;"></div>
+                                <div class="skeleton-box" style="width: 90px; height: 50px; border-radius: 10px;"></div>
+                                <div class="skeleton-box" style="width: 90px; height: 50px; border-radius: 10px;"></div>
+                            </div>
+                        </div>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px;">
+                            <div class="skeleton-box" style="height: 60px; border-radius: 10px;"></div>
+                            <div class="skeleton-box" style="height: 60px; border-radius: 10px;"></div>
+                            <div class="skeleton-box" style="height: 60px; border-radius: 10px;"></div>
+                        </div>
+                    </div>
+                </div>
+            `).join("")}
         </div>
     `;
 
@@ -1314,8 +1403,11 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                     <i class="fa-solid fa-clock-rotate-left fa-3x" style="color: #ec4899; margin-bottom: 14px;"></i>
                     <h3 style="color: var(--text-primary); font-size: 18px; margin-bottom: 8px;">${window.t ? window.t("history_empty_title") : "Nenhum Snapshot de Evolução Registrado"}</h3>
                     <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 18px auto; line-height: 1.5;">
-                        ${window.t ? window.t("history_empty_desc") : "Faça uma sincronização global de conta ou clique no botão acima para registrar a primeira fotografia (snapshot) dos seus personagens e acompanhar a sua progressão ao longo do tempo!"}
+                        ${window.t ? window.t("history_empty_desc") : "A Linha do Tempo fotografa a progressão e builds da sua conta para comparar evolução com o passar das semanas. Crie seu primeiro snapshot agora!"}
                     </p>
+                    <button id="btn-empty-create-snapshot" class="primary-btn" onclick="document.getElementById('btn-create-snapshot-now')?.click()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #fff; font-size: 13px;">
+                        <i class="fa-solid fa-camera-retro"></i> ${window.t ? window.t("history_btn_create") : "Criar Primeiro Snapshot Agora"}
+                    </button>
                 </div>
             `;
             return;
@@ -1446,7 +1538,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                                 return `
                                                     <div onclick="window.openCharacterDiffModal(JSON.parse(this.dataset.cdiff))" data-cdiff="${dJson}" class="diff-card-clickable" style="background: rgba(15, 23, 42, 0.9); border: 1px solid ${d.is_new ? 'rgba(245, 158, 11, 0.5)' : 'rgba(255, 255, 255, 0.1)'}; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
                                                         <div style="position: relative; flex-shrink: 0;">
-                                                            <img src="${d.icon || '/assets/logo.svg'}" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'}; box-shadow: 0 0 10px ${d.is_new ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.3)'};" onerror="this.src='/assets/logo.svg'">
+                                                            <img src="${d.icon || '/assets/logo.png'}" width="46" height="46" loading="lazy" decoding="async" style="width: 46px; height: 46px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'}; box-shadow: 0 0 10px ${d.is_new ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.3)'};" onerror="this.src='/assets/logo.png'">
                                                             ${d.is_new ? `<span style="position: absolute; bottom: -4px; right: -4px; background: #f59e0b; color: #000; font-size: 9px; font-weight: 900; padding: 1px 5px; border-radius: 6px;">NEW</span>` : ''}
                                                         </div>
 
@@ -1493,7 +1585,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                     <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); gap: 10px; margin-top: 14px;">
                                         ${filteredChars.map(c => `
                                             <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 8px 10px; display: flex; align-items: center; gap: 10px;">
-                                                <img src="${c.icon || '/assets/logo.svg'}" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid ${c.rarity >= 5 ? '#f59e0b' : '#a855f7'};" onerror="this.src='/assets/logo.svg'">
+                                                <img src="${c.icon || '/assets/logo.png'}" width="34" height="34" loading="lazy" decoding="async" style="width: 34px; height: 34px; border-radius: 50%; object-fit: cover; border: 2px solid ${c.rarity >= 5 ? '#f59e0b' : '#a855f7'};" onerror="this.src='/assets/logo.png'">
                                                 <div style="overflow: hidden; flex: 1; min-width: 0;">
                                                     <strong style="display: block; font-size: 12px; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${c.name}</strong>
                                                     <div style="display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-top: 2px;">
@@ -1582,7 +1674,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                 const rankChg = d.diffs ? d.diffs.rank_changed : false;
                                 return `
                                     <div onclick="window.openCharacterDiffModal(JSON.parse(this.dataset.cdiff))" data-cdiff="${dJson}" class="diff-card-clickable" style="background: rgba(15, 23, 42, 0.95); border: 1px solid ${d.is_new ? 'rgba(245, 158, 11, 0.6)' : (d.is_modified ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.06)')}; border-radius: 10px; padding: 12px; display: flex; gap: 12px; align-items: center;">
-                                        <img src="${d.icon || '/assets/logo.svg'}" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'};" onerror="this.src='/assets/logo.svg'">
+                                        <img src="${d.icon || '/assets/logo.png'}" width="44" height="44" loading="lazy" decoding="async" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 2px solid ${d.is_new ? '#f59e0b' : '#38bdf8'};" onerror="this.src='/assets/logo.png'">
                                         <div style="flex: 1; min-width: 0;">
                                             <strong style="display: block; font-size: 13px; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.name}</strong>
                                             <div style="display: flex; gap: 6px; font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
@@ -1622,14 +1714,44 @@ window.loadAccountHistory = async (gameId = "hsr") => {
 
     } catch (err) {
         console.error("Erro ao carregar histórico:", err);
-        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">${isEn ? "Failed to load account evolution history." : "Falha ao carregar o histórico de evolução da conta."}</div>`;
+        container.innerHTML = `
+            <div style="padding: 30px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; max-width: 460px; margin: 20px auto;">
+                <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Timeline" : "Falha ao carregar a linha do tempo"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve account snapshots. Please try again." : "Não foi possível carregar os snapshots de evolução da conta."}</p>
+                <button class="primary-btn" onclick="window.loadAccountHistory && window.loadAccountHistory('${gameId}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                </button>
+            </div>
+        `;
     }
 };
 
 window.loadPromoCodes = async (gameId = "hsr") => {
     const container = document.getElementById("tab-codes-body");
     if (!container) return;
-    container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">${window.t ? window.t("codes_searching") : "Buscando códigos promocionais ativos e histórico de resgates..."}</p></div>`;
+    container.innerHTML = `
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                <div class="skeleton-line" style="width: 220px; height: 16px;"></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                ${[1, 2, 3].map(() => `
+                    <div class="skeleton-code-card">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div class="skeleton-box" style="width: 140px; height: 28px; border-radius: 6px;"></div>
+                                <div class="skeleton-box" style="width: 75px; height: 22px; border-radius: 6px;"></div>
+                            </div>
+                            <div class="skeleton-line" style="width: 200px; height: 12px; margin-top: 8px;"></div>
+                            <div class="skeleton-line" style="width: 100px; height: 10px; margin-top: 4px;"></div>
+                        </div>
+                        <div class="skeleton-box" style="width: 110px; height: 34px; border-radius: 6px;"></div>
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
 
     try {
         const [resCodes, resHistory] = await Promise.all([
@@ -1645,7 +1767,18 @@ window.loadPromoCodes = async (gameId = "hsr") => {
         });
 
         if (!codes.length && !history.length) {
-            container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--text-secondary);"><p>${window.t ? window.t("codes_empty", {game: gameId.toUpperCase()}) : `Nenhum código ativo encontrado para ${gameId.toUpperCase()}.`}</p></div>`;
+            container.innerHTML = `
+                <div class="overview-card" style="padding: 40px 20px; text-align: center; color: var(--text-secondary); max-width: 500px; margin: 20px auto;">
+                    <i class="fa-solid fa-gift fa-3x" style="color: #f59e0b; margin-bottom: 14px;"></i>
+                    <h3 style="color: var(--text-primary); font-size: 17px; margin-bottom: 8px;">${window.t ? window.t("codes_empty_title") : "Nenhum Código Ativo no Momento"}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
+                        ${window.t ? window.t("codes_empty_desc") : `A Central de Códigos monitora cupons promocionais oficiais de Gemas, Jades Estelares e Polycromes para resgate direto. Não foram encontrados novos códigos ativos para ${gameId.toUpperCase()}.`}
+                    </p>
+                    <button class="primary-btn" onclick="window.loadPromoCodes && window.loadPromoCodes('${gameId}')" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #020617; font-size: 13px;">
+                        <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Check for New Codes" : "Verificar Novos Códigos"}
+                    </button>
+                </div>
+            `;
             return;
         }
 
@@ -1747,7 +1880,16 @@ window.loadPromoCodes = async (gameId = "hsr") => {
 
     } catch (err) {
         console.error("Erro ao carregar códigos:", err);
-        container.innerHTML = `<div style="padding: 20px; text-align: center; color: #ef4444;">${isEn ? "Failed to load promo codes." : "Falha ao carregar códigos promocionais."}</div>`;
+        container.innerHTML = `
+            <div style="padding: 30px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; max-width: 460px; margin: 20px auto;">
+                <i class="fa-solid fa-circle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Promo Codes" : "Falha ao carregar códigos promocionais"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not connect to server to fetch promo codes." : "Não foi possível conectar ao servidor para buscar os códigos promocionais ativos."}</p>
+                <button class="primary-btn" onclick="window.loadPromoCodes && window.loadPromoCodes('${gameId}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                </button>
+            </div>
+        `;
     }
 };
 

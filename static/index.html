@@ -5,16 +5,13 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title data-i18n="app_name">Cabeça de Droid</title>
-<!-- Google Fonts: Outfit & Inter -->
-<link href="https://fonts.googleapis.com" rel="preconnect"/>
-<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Outfit:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<!-- Fontes auto-hospedadas locais (Inter & Outfit WOFF2) carregadas via style.css -->
 <!-- Marked.js para renderizar Markdown do RAG -->
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
 <!-- FontAwesome 6 Premium Icons -->
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet"/>
 <!-- html2canvas para renderização de cards e infográficos em alta resolução -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
 <!-- CSS Estilos Customizados -->
 <link href="style.css?v=22.0" rel="stylesheet"/>
 <style id="wish-inline-fx-styles">
@@ -323,7 +320,7 @@
 <aside class="sidebar" id="sidebar">
 <div class="brand">
 <div class="brand-icon">
-<img alt="Logo" class="brand-logo" src="/assets/logo.svg"/>
+<img alt="Logo" class="brand-logo" src="/assets/logo.webp" width="32" height="32" loading="eager" fetchpriority="high" decoding="sync"/>
 </div>
 <div class="brand-text">
 <h1 data-i18n="app_name">Cabeça de Droid</h1>
@@ -349,19 +346,19 @@
 </div>
 <nav class="nav-menu">
 <button class="nav-btn active" data-tab="home">
-<img alt="Home" class="tab-icon" src="/assets/home_icon.png" style="filter: hue-rotate(220deg);"/>
+<img alt="Home" class="tab-icon" src="/assets/home_icon.png" width="20" height="20" loading="lazy" decoding="async" style="filter: hue-rotate(220deg);"/>
 <span class="nav-text" data-i18n="nav_home">Início</span>
 </button>
 <button class="nav-btn" data-tab="zzz">
-<img alt="ZZZ" class="tab-icon" src="/assets/zzz_icon.png"/>
+<img alt="ZZZ" class="tab-icon" src="/assets/zzz_icon.png" width="20" height="20" loading="lazy" decoding="async"/>
 <span class="nav-text" data-i18n="nav_zzz">ZZZ (Zenless Zone Zero)</span>
 </button>
 <button class="nav-btn" data-tab="genshin">
-<img alt="Genshin" class="tab-icon" src="/assets/genshin_icon.png"/>
+<img alt="Genshin" class="tab-icon" src="/assets/genshin_icon.png" width="20" height="20" loading="lazy" decoding="async"/>
 <span class="nav-text" data-i18n="nav_genshin">Genshin Impact</span>
 </button>
 <button class="nav-btn" data-tab="hsr">
-<img alt="HSR" class="tab-icon" src="/assets/hsr_icon.png"/>
+<img alt="HSR" class="tab-icon" src="/assets/hsr_icon.png" width="20" height="20" loading="lazy" decoding="async"/>
 <span class="nav-text" data-i18n="nav_hsr">Honkai: Star Rail</span>
 </button>
 <button class="nav-btn" data-tab="gacha">
@@ -385,7 +382,7 @@
 <span class="nav-text" data-i18n="nav_audit">Tier List &amp; Audit</span>
 </button>
 <button class="nav-btn" data-tab="chat" style="display: none;">
-<img alt="Chat" class="tab-icon" src="/assets/chat_icon.png"/>
+<img alt="Chat" class="tab-icon" src="/assets/chat_icon.png" width="20" height="20" loading="lazy" decoding="async"/>
 <span class="nav-text" data-i18n="nav_chat">Chat IA Meta</span>
 </button>
 <button class="nav-btn" data-tab="history">
@@ -397,11 +394,11 @@
 <span class="nav-text" data-i18n="nav_codes">Códigos Promocionais</span>
 </button>
 <button class="nav-btn" data-tab="config">
-<img alt="Config" class="tab-icon" src="/assets/config_icon.png"/>
+<img alt="Config" class="tab-icon" src="/assets/config_icon.png" width="20" height="20" loading="lazy" decoding="async"/>
 <span class="nav-text" data-i18n="nav_config">Configurações</span>
 </button>
 <button class="nav-btn" data-tab="help">
-<img alt="Help" class="tab-icon" src="/assets/chat_icon.png" style="filter: hue-rotate(140deg);"/>
+<img alt="Help" class="tab-icon" src="/assets/chat_icon.png" width="20" height="20" loading="lazy" decoding="async" style="filter: hue-rotate(140deg);"/>
 <span class="nav-text" data-i18n="nav_help">Como Usar</span>
 </button>
 </nav>
@@ -424,7 +421,7 @@
 <i class="fa-solid fa-bars"></i>
 </button>
 <div class="mobile-brand">
-<img alt="Logo" class="mobile-logo" src="/assets/logo.svg"/>
+<img alt="Logo" class="mobile-logo" src="/assets/logo.webp" width="28" height="28" loading="eager" fetchpriority="high" decoding="sync"/>
 <span class="mobile-brand-title" data-i18n="app_name">Cabeça de Droid</span>
 </div>
 <div class="mobile-lang-wrapper" style="margin-left: auto;">
@@ -438,7 +435,7 @@
 <div class="game-banner home-banner">
 <div class="banner-overlay">
 <div class="banner-title-row">
-<img alt="Logo" class="banner-logo" src="/assets/logo.svg"/>
+<img alt="Logo" class="banner-logo" src="/assets/logo.webp" width="40" height="40" loading="eager" decoding="async"/>
 <h2 data-i18n="home_header_title">Cabeça de Droid</h2>
 </div>
 <p data-i18n="home_header_desc">Visão geral unificada das suas contas da HoYoverse e otimização IA</p>
@@ -492,7 +489,7 @@
 <!-- Card ZZZ -->
 <div class="overview-card game-card zzz-theme">
 <div class="overview-header">
-<img alt="ZZZ" class="game-logo" src="/assets/zzz_icon.png"/>
+<img alt="ZZZ" class="game-logo" src="/assets/zzz_icon.png" width="42" height="42" loading="lazy" decoding="async"/>
 <div>
 <h3>Zenless Zone Zero</h3>
 <span class="uid-label" data-i18n="ov_not_synced" id="ov-zzz-uid">Não sincronizado</span>
@@ -513,7 +510,7 @@
 <!-- Card Genshin -->
 <div class="overview-card game-card genshin-theme">
 <div class="overview-header">
-<img alt="Genshin" class="game-logo" src="/assets/genshin_icon.png"/>
+<img alt="Genshin" class="game-logo" src="/assets/genshin_icon.png" width="42" height="42" loading="lazy" decoding="async"/>
 <div>
 <h3>Genshin Impact</h3>
 <span class="uid-label" data-i18n="ov_not_synced" id="ov-genshin-uid">Não sincronizado</span>
@@ -534,7 +531,7 @@
 <!-- Card HSR -->
 <div class="overview-card game-card hsr-theme">
 <div class="overview-header">
-<img alt="HSR" class="game-logo" src="/assets/hsr_icon.png"/>
+<img alt="HSR" class="game-logo" src="/assets/hsr_icon.png" width="42" height="42" loading="lazy" decoding="async"/>
 <div>
 <h3>Honkai: Star Rail</h3>
 <span class="uid-label" data-i18n="ov_not_synced" id="ov-hsr-uid">Não sincronizado</span>
@@ -693,8 +690,14 @@
 <button class="action-btn sync-game-btn" data-game="zzz" data-i18n="sync_btn_zzz">Sincronizar ZZZ</button>
 <a class="action-btn" data-i18n-title="dl_zip_title_zzz" download="" href="/api/download/guides-zip?game_id=zzz" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 600;" title="Baixar todos os guias de ZZZ em .zip"><i class="fa-solid fa-file-zipper"></i> <span data-i18n="btn_dl_zip">Baixar ZIP</span></a>
 </div>
+<div class="control-panel-right">
 <div class="search-box">
 <input class="search-input" data-game="zzz" data-i18n-placeholder="search_agent_placeholder" placeholder="Buscar agente..." type="text"/>
+</div>
+<div class="view-mode-toggle" data-game="zzz" role="group" aria-label="Modo de visualização">
+<button class="view-mode-btn active" data-mode="grid" data-game="zzz" title="Visualização em Grade" data-i18n-title="view_mode_grid" aria-label="Visualização em Grade"><i class="fa-solid fa-table-cells"></i></button>
+<button class="view-mode-btn" data-mode="list" data-game="zzz" title="Visualização em Lista" data-i18n-title="view_mode_list" aria-label="Visualização em Lista"><i class="fa-solid fa-list-ul"></i></button>
+</div>
 </div>
 </div>
 <div class="sync-logger" id="sync-logger-zzz" style="display: none;">
@@ -732,12 +735,12 @@
 <!-- Filtro de Elemento -->
 <div class="element-filters" data-game="zzz" style="margin-bottom: 8px;">
 <button class="filter-btn active" data-filter="all" data-i18n="filter_elem_all">Todos os Elementos</button>
-<button class="filter-btn" data-filter="fire"><img class="filter-elem-icon" src="/assets/elements/zzz_fire.png"/> <span data-i18n="elem_fire">Fogo</span></button>
-<button class="filter-btn" data-filter="electric"><img class="filter-elem-icon" src="/assets/elements/zzz_electric.png"/> <span data-i18n="elem_electric">Elétrico</span></button>
-<button class="filter-btn" data-filter="ice"><img class="filter-elem-icon" src="/assets/elements/zzz_ice.png"/> <span data-i18n="elem_ice">Gelo</span></button>
-<button class="filter-btn" data-filter="physical"><img class="filter-elem-icon" src="/assets/elements/zzz_physical.png"/> <span data-i18n="elem_physical">Físico</span></button>
-<button class="filter-btn" data-filter="ether"><img class="filter-elem-icon" src="/assets/elements/zzz_ether.png"/> <span data-i18n="elem_ether">Éter</span></button>
-<button class="filter-btn" data-filter="lumiflux"><img class="filter-elem-icon" onerror="this.style.display='none';" src="/assets/elements/zzz_lumiflux.png"/> Lumiflux</button>
+<button class="filter-btn" data-filter="fire"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/zzz_fire.png" alt=""/> <span data-i18n="elem_fire">Fogo</span></button>
+<button class="filter-btn" data-filter="electric"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/zzz_electric.png" alt=""/> <span data-i18n="elem_electric">Elétrico</span></button>
+<button class="filter-btn" data-filter="ice"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/zzz_ice.png" alt=""/> <span data-i18n="elem_ice">Gelo</span></button>
+<button class="filter-btn" data-filter="physical"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/zzz_physical.png" alt=""/> <span data-i18n="elem_physical">Físico</span></button>
+<button class="filter-btn" data-filter="ether"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/zzz_ether.png" alt=""/> <span data-i18n="elem_ether">Éter</span></button>
+<button class="filter-btn" data-filter="lumiflux"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" onerror="this.style.display='none';" src="/assets/elements/zzz_lumiflux.png" alt=""/> Lumiflux</button>
 </div>
 <div class="element-filters rarity-filters" data-game="zzz" style="margin-bottom: 16px;">
 <button class="filter-btn active" data-i18n="filter_rarity_all" data-rarity="all">Todas as Raridades</button>
@@ -852,8 +855,14 @@
 <button class="action-btn sync-game-btn" data-game="genshin" data-i18n="sync_btn_genshin">Sincronizar Genshin</button>
 <a class="action-btn" data-i18n-title="dl_zip_title_genshin" download="" href="/api/download/guides-zip?game_id=genshin" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 600;" title="Baixar todos os guias de Genshin em .zip"><i class="fa-solid fa-file-zipper"></i> <span data-i18n="btn_dl_zip">Baixar ZIP</span></a>
 </div>
+<div class="control-panel-right">
 <div class="search-box">
 <input class="search-input" data-game="genshin" data-i18n-placeholder="search_char_placeholder" placeholder="Buscar personagem..." type="text"/>
+</div>
+<div class="view-mode-toggle" data-game="genshin" role="group" aria-label="Modo de visualização">
+<button class="view-mode-btn active" data-mode="grid" data-game="genshin" title="Visualização em Grade" data-i18n-title="view_mode_grid" aria-label="Visualização em Grade"><i class="fa-solid fa-table-cells"></i></button>
+<button class="view-mode-btn" data-mode="list" data-game="genshin" title="Visualização em Lista" data-i18n-title="view_mode_list" aria-label="Visualização em Lista"><i class="fa-solid fa-list-ul"></i></button>
+</div>
 </div>
 </div>
 <div class="sync-logger" id="sync-logger-genshin" style="display: none;">
@@ -891,13 +900,13 @@
 <!-- Filtro de Elemento -->
 <div class="element-filters" data-game="genshin" style="margin-bottom: 8px;">
 <button class="filter-btn active" data-filter="all" data-i18n="filter_elem_all">Todos os Elementos</button>
-<button class="filter-btn" data-filter="pyro"><img class="filter-elem-icon" src="/assets/elements/genshin_pyro.png"/> <span data-i18n="elem_pyro">Pyro</span></button>
-<button class="filter-btn" data-filter="hydro"><img class="filter-elem-icon" src="/assets/elements/genshin_hydro.png"/> <span data-i18n="elem_hydro">Hydro</span></button>
-<button class="filter-btn" data-filter="anemo"><img class="filter-elem-icon" src="/assets/elements/genshin_anemo.png"/> <span data-i18n="elem_anemo">Anemo</span></button>
-<button class="filter-btn" data-filter="electro"><img class="filter-elem-icon" src="/assets/elements/genshin_electro.png"/> <span data-i18n="elem_electro">Electro</span></button>
-<button class="filter-btn" data-filter="dendro"><img class="filter-elem-icon" src="/assets/elements/genshin_dendro.png"/> <span data-i18n="elem_dendro">Dendro</span></button>
-<button class="filter-btn" data-filter="cryo"><img class="filter-elem-icon" src="/assets/elements/genshin_cryo.png"/> <span data-i18n="elem_cryo">Cryo</span></button>
-<button class="filter-btn" data-filter="geo"><img class="filter-elem-icon" src="/assets/elements/genshin_geo.png"/> <span data-i18n="elem_geo">Geo</span></button>
+<button class="filter-btn" data-filter="pyro"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/genshin_pyro.png" alt=""/> <span data-i18n="elem_pyro">Pyro</span></button>
+<button class="filter-btn" data-filter="hydro"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/genshin_hydro.png" alt=""/> <span data-i18n="elem_hydro">Hydro</span></button>
+<button class="filter-btn" data-filter="anemo"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/genshin_anemo.png" alt=""/> <span data-i18n="elem_anemo">Anemo</span></button>
+<button class="filter-btn" data-filter="electro"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/genshin_electro.png" alt=""/> <span data-i18n="elem_electro">Electro</span></button>
+<button class="filter-btn" data-filter="dendro"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/genshin_dendro.png" alt=""/> <span data-i18n="elem_dendro">Dendro</span></button>
+<button class="filter-btn" data-filter="cryo"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/genshin_cryo.png" alt=""/> <span data-i18n="elem_cryo">Cryo</span></button>
+<button class="filter-btn" data-filter="geo"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/genshin_geo.png" alt=""/> <span data-i18n="elem_geo">Geo</span></button>
 </div>
 <div class="element-filters weapon-filters" data-game="genshin" style="margin-bottom: 8px;">
 <button class="filter-btn active" data-i18n="filter_weapon_all" data-weapon="all">Todas as Armas</button>
@@ -1020,8 +1029,14 @@
 <button class="action-btn sync-game-btn" data-game="hsr" data-i18n="sync_btn_hsr">Sincronizar HSR</button>
 <a class="action-btn" data-i18n-title="dl_zip_title_hsr" download="" href="/api/download/guides-zip?game_id=hsr" style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 600;" title="Baixar todos os guias de HSR em .zip"><i class="fa-solid fa-file-zipper"></i> <span data-i18n="btn_dl_zip">Baixar ZIP</span></a>
 </div>
+<div class="control-panel-right">
 <div class="search-box">
 <input class="search-input" data-game="hsr" data-i18n-placeholder="search_char_placeholder" placeholder="Buscar personagem..." type="text"/>
+</div>
+<div class="view-mode-toggle" data-game="hsr" role="group" aria-label="Modo de visualização">
+<button class="view-mode-btn active" data-mode="grid" data-game="hsr" title="Visualização em Grade" data-i18n-title="view_mode_grid" aria-label="Visualização em Grade"><i class="fa-solid fa-table-cells"></i></button>
+<button class="view-mode-btn" data-mode="list" data-game="hsr" title="Visualização em Lista" data-i18n-title="view_mode_list" aria-label="Visualização em Lista"><i class="fa-solid fa-list-ul"></i></button>
+</div>
 </div>
 </div>
 <div class="sync-logger" id="sync-logger-hsr" style="display: none;">
@@ -1059,13 +1074,13 @@
 <!-- Filtro de Elemento -->
 <div class="element-filters" data-game="hsr" style="margin-bottom: 8px;">
 <button class="filter-btn active" data-filter="all" data-i18n="filter_elem_all">Todos os Elementos</button>
-<button class="filter-btn" data-filter="fire"><img class="filter-elem-icon" src="/assets/elements/hsr_fire.png"/> <span data-i18n="elem_fire">Fogo</span></button>
-<button class="filter-btn" data-filter="ice"><img class="filter-elem-icon" src="/assets/elements/hsr_ice.png"/> <span data-i18n="elem_ice">Gelo</span></button>
-<button class="filter-btn" data-filter="physical"><img class="filter-elem-icon" src="/assets/elements/hsr_physical.png"/> <span data-i18n="elem_physical">Físico</span></button>
-<button class="filter-btn" data-filter="wind"><img class="filter-elem-icon" src="/assets/elements/hsr_wind.png"/> <span data-i18n="elem_wind">Vento</span></button>
-<button class="filter-btn" data-filter="lightning"><img class="filter-elem-icon" src="/assets/elements/hsr_lightning.png"/> <span data-i18n="elem_lightning">Raio</span></button>
-<button class="filter-btn" data-filter="quantum"><img class="filter-elem-icon" src="/assets/elements/hsr_quantum.png"/> <span data-i18n="elem_quantum">Quantum</span></button>
-<button class="filter-btn" data-filter="imaginary"><img class="filter-elem-icon" src="/assets/elements/hsr_imaginary.png"/> <span data-i18n="elem_imaginary">Imaginário</span></button>
+<button class="filter-btn" data-filter="fire"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/hsr_fire.png" alt=""/> <span data-i18n="elem_fire">Fogo</span></button>
+<button class="filter-btn" data-filter="ice"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/hsr_ice.png" alt=""/> <span data-i18n="elem_ice">Gelo</span></button>
+<button class="filter-btn" data-filter="physical"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/hsr_physical.png" alt=""/> <span data-i18n="elem_physical">Físico</span></button>
+<button class="filter-btn" data-filter="wind"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/hsr_wind.png" alt=""/> <span data-i18n="elem_wind">Vento</span></button>
+<button class="filter-btn" data-filter="lightning"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/hsr_lightning.png" alt=""/> <span data-i18n="elem_lightning">Raio</span></button>
+<button class="filter-btn" data-filter="quantum"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/hsr_quantum.png" alt=""/> <span data-i18n="elem_quantum">Quantum</span></button>
+<button class="filter-btn" data-filter="imaginary"><img class="filter-elem-icon" width="16" height="16" loading="lazy" decoding="async" src="/assets/elements/hsr_imaginary.png" alt=""/> <span data-i18n="elem_imaginary">Imaginário</span></button>
 </div>
 <div class="element-filters path-filters" data-game="hsr" style="margin-bottom: 8px;">
 <button class="filter-btn active" data-i18n="filter_path_all" data-path="all">Todos os Caminhos</button>
@@ -1248,7 +1263,7 @@
 </div>
 <!-- Frame do Banner Oficial In-Game -->
 <div class="gacha-banner-ingame-frame" id="gacha-banner-frame">
-<img alt="Banner In-Game" class="gacha-banner-ingame-img" id="gacha-banner-art-img" onerror="this.style.display='none';" src="" style="display: none;"/>
+<img alt="Banner In-Game" class="gacha-banner-ingame-img" id="gacha-banner-art-img" width="780" height="380" loading="lazy" decoding="async" onerror="this.style.display='none';" src="" style="display: none;"/>
 <div class="gacha-banner-ingame-overlay"></div>
 <div class="gacha-banner-ingame-badge-top" id="gacha-banner-ingame-badge-top">
 <i class="fa-solid fa-sparkles"></i> <span data-i18n="gacha_event_banner_type" id="gacha-banner-type-badge">Evento Promocional</span>
@@ -1272,7 +1287,7 @@
 <!-- Personagem 5★ Promocional -->
 <div class="gacha-banner-5star-section">
 <div class="gacha-banner-5star-avatar-wrap">
-<img alt="5★ Destaque" id="gacha-banner-5star-avatar" onerror="this.style.display='none';" src=""/>
+<img alt="5★ Destaque" id="gacha-banner-5star-avatar" width="48" height="48" loading="lazy" decoding="async" onerror="this.style.display='none';" src=""/>
 </div>
 <div class="gacha-banner-5star-details">
 <span class="gacha-banner-5star-label">
@@ -1305,7 +1320,7 @@
 <div class="gacha-char-hero-card" id="gacha-char-hero-preview">
 <div class="gacha-char-hero-bg" id="gacha-hero-bg"></div>
 <div class="gacha-char-avatar-frame" id="gacha-hero-avatar-frame">
-<img alt="Avatar" id="gacha-hero-avatar-img" src="" style="display: none;"/>
+<img alt="Avatar" id="gacha-hero-avatar-img" width="64" height="64" loading="lazy" decoding="async" src="" style="display: none;"/>
 <div id="gacha-hero-avatar-fallback" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#f59e0b; font-size:24px;">
 <i class="fa-solid fa-user-astronaut"></i>
 </div>
@@ -2884,7 +2899,7 @@
 <aside class="build-inspector" id="build-inspector">
 <div class="inspector-header">
 <div class="inspector-title">
-<img alt="Avatar" class="ins-char-avatar" id="ins-avatar" src=""/>
+<img alt="Avatar" class="ins-char-avatar" id="ins-avatar" width="52" height="52" loading="lazy" decoding="async" src=""/>
 <div>
 <h3 data-i18n="filter_character" id="ins-name">Personagem</h3>
 <span data-i18n="ins_meta_sample" id="ins-meta">Rank • Elemento • Nv. 90</span>
@@ -2915,7 +2930,7 @@
 <div class="inspector-card">
 <h4><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="ins_card_weapon">Equipamento / Arma</span></h4>
 <div class="weapon-detail">
-<img alt="Arma" class="weapon-icon" id="ins-weapon-icon" src=""/>
+<img alt="Arma" class="weapon-icon" id="ins-weapon-icon" width="48" height="48" loading="lazy" decoding="async" src=""/>
 <div>
 <strong data-i18n="ins_weapon_sample_name" id="ins-weapon-name">Nome do Equipamento</strong>
 <span data-i18n="ins_weapon_sample_meta" id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
@@ -3080,7 +3095,7 @@
 <span data-i18n="export_generating">Gerando imagem em alta resolução...</span>
 </div>
 <div class="export-preview-wrapper" style="width: 100%; display: flex; justify-content: center; overflow: hidden; border-radius: 12px; border: 1px solid var(--border-color); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-<img alt="Build Card Preview" id="export-preview-img" src="" style="width: 100%; height: auto; display: block; border-radius: 12px;"/>
+<img alt="Build Card Preview" id="export-preview-img" width="1200" height="675" loading="lazy" decoding="async" src="" style="width: 100%; height: auto; display: block; border-radius: 12px;"/>
 </div>
 </div>
 <div class="modal-card-footer" style="padding: 14px 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: rgba(255, 255, 255, 0.02);">
@@ -3304,7 +3319,7 @@
 <div class="modal-card-content" style="background: #0f172a; border: 1px solid rgba(236, 72, 153, 0.4); border-radius: 16px; width: 94%; max-width: 960px; padding: 22px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.6);">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 12px; flex-wrap: wrap; gap: 10px;">
 <div style="display: flex; align-items: center; gap: 12px;">
-<img id="diff-modal-char-icon" onerror="this.src='/assets/logo.svg'" src="" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ec4899; object-fit: cover;"/>
+<img id="diff-modal-char-icon" width="50" height="50" loading="lazy" decoding="async" onerror="this.src='/assets/logo.png'" src="" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #ec4899; object-fit: cover;"/>
 <div>
 <h3 data-i18n="diff_modal_sample_char" id="diff-modal-char-name" style="margin: 0; color: #fff; font-size: 19px; font-weight: 700;">Nome do Personagem</h3>
 <span data-i18n="diff_modal_sample_sub" id="diff-modal-char-sub" style="font-size: 12px; color: var(--text-secondary);">Análise de Evolução de Build</span>
@@ -3374,7 +3389,7 @@
 <div id="wish-card-glow" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 650px; height: 650px; border-radius: 50%; filter: blur(100px); z-index: 1; opacity: 0.85; pointer-events: none;"></div>
 <!-- SPLASH ART GIGANTE DO PERSONAGEM EM DESTAQUE NO CENTRO (IGUAL AO JOGO) -->
 <div style="position: relative; z-index: 2; display: flex; justify-content: center; align-items: center; max-width: 90vw; max-height: 62vh; margin-bottom: 12px;">
-<img alt="Splash Art" id="wish-card-art" onerror="if(window.handleWishArtError) window.handleWishArtError(this); else this.style.display='none';" style="max-width: 100%; max-height: 62vh; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.85)); display: none;"/>
+<img alt="Splash Art" id="wish-card-art" width="1024" height="576" loading="lazy" decoding="async" onerror="if(window.handleWishArtError) window.handleWishArtError(this); else this.style.display='none';" style="max-width: 100%; max-height: 62vh; object-fit: contain; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.85)); display: none;"/>
 </div>
 <!-- INFORMAÇÕES DO PERSONAGEM (NOME, ESTRELAS, BADGE E PITY) -->
 <div style="position: relative; z-index: 3; text-align: center; max-width: 600px; padding: 0 20px;">

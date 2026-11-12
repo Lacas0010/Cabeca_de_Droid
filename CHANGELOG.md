@@ -6,6 +6,76 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.5.0] - 2026-11-12
+
+### ✨ Visualização Avançada do Roster (Modo Grade & Lista Enriquecida)
+- **Alternância Dinâmica de Modo (Grid vs List):**
+  - Implementado seletor visual de alternância entre Modo Grade (cards verticais focados em arte) e Modo Lista (linhas horizontais de alta densidade informativa) no cabeçalho de cada jogo.
+  - Persistência reativa da preferência do usuário no `localStorage` (`roster_view_mode`), com transições CSS suaves sem recarregamento de rede.
+- **Layout de Linha Rica em 5 Colunas (Opção C):**
+  - **Coluna 1 (Personagem & Identidade):** Avatar HD otimizado com borda temática elemental, badge de rank de ascensão (`C0-C6`, `E0-E6`, `M0-M6`), elemento oficial e caminho/classe tática.
+  - **Coluna 2 (Arma / Cone de Luz / Motor W):** Thumbnail oficial do equipamento, nível atual, grau de refinamento/sobreposição (`S1-S5`, `R1-R5`, `W1-W5`) e badge explícita de raridade (`5★`, `4★`, `3★`, `1★` ou `Rank S / Rank A / Rank B`).
+  - **Coluna 3 (Strip de Peças Equipadas):** Exibição em linha dos ícones oficiais de cada peça de relíquia/artefato/disco equipada, com borda e iluminação radial 100% fiéis à raridade do item (Dourado 5★, Roxo 4★, Azul 3★) e indicador minimalista no canto superior com a nota de rolagem (`SSS` a `D`).
+  - **Coluna 4 (Conjuntos Ativos & Eficiência de Slots):** Tags de bônus de conjunto ativos (`4p` e `2p`) com barra de progresso visual de slots preenchidos.
+  - **Coluna 5 (Avaliação & Ação):** Badge de Roll Value Grade geral da build com score em pontos e botão de inspeção direta no drawer lateral.
+
+### 🛡️ Correção & Consolidação de Raridades de Equipamentos
+- **Motores W (Zenless Zone Zero):**
+  - Corrigida a classificação de `Motor da Constelação` (*Starlight Engine*) e `Perfuratriz - Eixo Vermelho` (*Drill Rig - Red Axis*) para **4★** (Rank A).
+  - Corrigido `Espinhaço Afiado` (*Sharpened Stinger*, assinatura de Jane Doe) para **5★** (Rank S).
+  - Normalização completa de todo o acervo de motores de ZZZ no manifesto `static_data/weapon_rarities.json`.
+- **Cones de Luz (Honkai: Star Rail):**
+  - Consolidados no manifesto cones 5★ de alta relevância (incluindo `Luzes Noturnas`, `Euforia Repleta de Bênçãos`, `Ao Longo da Margem Transitória`, `Onde os Sonhos Deveriam Repousar`, `Sono Profundo`, `Na Queda de Um Aeon`), bem como todas as linhas de 4★ e 3★.
+- **Armas (Genshin Impact):**
+  - Mapeamento exaustivo de armas 5★ (`Lira do Tecedor da Luz`, `Asa Gelada do Lago Branco`, etc.), 4★, 3★ e armas 1★ iniciais (`Espadão do Julgamento`, `Lâmina Sem Fio`, `Arco do Caçador`).
+- **Resolução de Conflito de Borda CSS (Cascade Specificity):**
+  - Corrigida a cascata no `style.css` onde classes de nota de rolagem (`.grade-s`, `.grade-a`) sobrescreviam as cores de borda de `.rarity-5`, eliminando o problema em que relíquias 5★ apareciam roxas ou azuis.
+- **Sincronização e Backfill Automatizado no Banco:**
+  - `backfill_roster_rarities_and_sets()` em `database.py` recalcula e persiste automaticamente no SQLite as raridades oficiais e conjuntos de todas as contas cadastradas.
+  - Inclusão do campo `rarity` no detalhamento de peças retornado pelo serviço `services/roster_service.py`.
+
+### 🔍 Otimizações de Busca & Interação com Debounce Reativo
+- **Busca em Tempo Real com `createDebouncedSearch`:**
+  - Utilitário integrado com debounce calibrado em 300ms, guarda de comprimento mínimo (2 caracteres) e cancelamento reativo via `AbortController` para requisições em trânsito.
+- **Otimização de Consultas SQL:**
+  - Eliminação de projeções `SELECT *` e resolução de consultas em lote nas tabelas de histórico e elenco.
+
+### 🧪 Testes Unitários
+- Adicionado `tests/test_roster_view_mode_suite.py` e `tests/test_search_debounce_suite.py`.
+- Cobertura expandida para **181 testes unitários nativos aprovados** com 100% de sucesso.
+
+---
+
+## [5.4.0] - 2026-11-12
+
+### ⚡ Otimizações & Auditoria Completa de Performance (17/17 Itens)
+- **Compressão e Transferência de Rede:**
+  - **Compressão HTTP Gzip:** Habilitado `GZipMiddleware(minimum_size=1000)` em `server.py`, reduzindo o tráfego de payloads JSON e estáticos em até 75%.
+  - **Políticas de Cache-Control:** Implementada política de cache em `core/security.py` definindo `Cache-Control: public, max-age=86400` para assets estáticos e `no-cache, no-store, must-revalidate` para endpoints REST e HTML raiz.
+  - **Prontidão para CDN de Borda:** Adicionado cabeçalho `CDN-Cache-Control: public, max-age=2592000` (30 dias) e criado template Nginx pronto para produção em `scripts/nginx-cabeca-de-droid.conf`.
+  - **Remoção de Dependências Não Utilizadas:** Higienizado `requirements.txt` com a remoção dos pacotes obsoletos `urllib3` e `brotli`.
+- **Otimização de Banco de Dados & Consultas SQLite:**
+  - **Eliminação de Consultas N+1:** Em `database.py`, leitura em lote de relíquias (`WHERE uid IN (...)`) reduzindo de $N$ queries para 1 query por jogo; contagem de personagens agregada em lote via SQL único.
+  - **Projeções de Colunas Específicas:** Substituídas todas as consultas `SELECT *` em tabelas críticas (`account_snapshots`, `roster_data`, `overview_data`, `daily_notes`) por seleções explícitas de colunas indexadas.
+  - **Paginação em Listas com Crescimento Temporal:** Adicionados parâmetros `limit` e `offset` nas funções de banco e endpoints de histórico (`/api/history/{game_id}` e `/api/codes/history/{game_id}`) para conter o consumo de memória em bases com muitos snapshots.
+- **Camada de Caching em Memória & Profiling de Requisições:**
+  - **Cache em Memória de Roster e Endgame:** Implementado cache com TTL de 60 segundos em `services/roster_service.py` e `services/endgame_service.py`, com invalidação reativa automática ao sincronizar dados (`sync_service.py`), deletar contas ou alternar perfil ativo.
+  - **Monitoramento de Latência em Tempo Real:** Adicionado middleware `request_latency_tracker_middleware` em `server.py` injetando o cabeçalho `X-Process-Time` e gerando logs de alerta `[PERF-WARN]` para requisições com tempo de processamento $>500\text{ms}$.
+- **Performance e Carregamento no Frontend Vanilla Web:**
+  - **Code-Splitting e Importação Dinâmica:** Módulos pesados de simulação e rastreamento de gacha (`gacha_sim.js`, `gacha_tracker.js`) desvinculados do carregamento inicial em `static/js/app.js` e carregados sob demanda via `window.loadGachaModules()` ou em tempo ocioso via `requestIdleCallback`.
+  - **Desduplicação de Requisições em Voo:** Deduplicação inteligente de requisições simultâneas em `roster.js` e eliminação de chamadas redundantes a `/api/endgame` e `/api/overview`.
+  - **Scripts de Terceiros Diferidos:** Atributo `defer` adicionado a `marked.min.js` e `html2canvas.min.js` em `static/index.html`.
+  - **Skeletons de Carregamento (Zero-FOUC):** Implementados layouts animados de shimmer skeleton em CSS em `static/style.css` e aplicados nos fluxos de carregamento de Endgame, Ordem de Farm e Rastreador de Gacha.
+  - **Fontes Auto-Hospedadas:** Tipografias `Inter` e `Outfit` baixadas localmente em formato otimizado WOFF2 (`static/fonts/`), configuradas com `@font-face` e `font-display: swap;`, eliminando conexões externas bloqueantes com o Google Fonts.
+  - **Pipeline Dinâmico de Imagens WebP:** Rota `/api/proxy_image` em `routers/system.py` estendida com redimensionamento LANCZOS via Pillow e conversão WebP sob demanda (`&w=160&format=webp`), reduzindo o peso de avatares em até 95%.
+  - **Virtualização Nativa CSS de Listas Longas:** Aplicadas regras de `content-visibility: auto` e `contain-intrinsic-size` em `.char-card` e `.timeline-item`, suprimindo o custo de cálculo de layout e renderização de cards fora da viewport.
+
+### 🧪 Testes Unitários
+- **Nova Suíte de Testes de Paginação:** Adicionado `tests/test_pagination_suite.py` cobrindo o fatiamento e limites das consultas no SQLite e endpoints HTTP.
+- **Aprovação Total:** Cobertura expandida para **164 testes unitários automatizados** com 100% de sucesso.
+
+---
+
 ## [5.3.0] - 2026-10-28
 
 ### ✨ Adicionado

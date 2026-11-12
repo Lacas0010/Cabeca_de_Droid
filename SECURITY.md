@@ -1,6 +1,6 @@
 # 🛡️ Política de Segurança e Governança de Dados
 
-Este documento descreve as práticas de segurança, gestão de credenciais locais, privacidade e a arquitetura de proteção implementada no **Cabeça de Droid (v5.2+)**.
+Este documento descreve as práticas de segurança, gestão de credenciais locais, privacidade e a arquitetura de proteção implementada no **Cabeça de Droid (v5.5+)**.
 
 ---
 
@@ -32,7 +32,8 @@ O aplicativo opera estritamente de forma **local** com duas categorias de dados 
 | **4. Isolamento Loopback Padrão** | Servidor inicia vinculado a `127.0.0.1`. Acesso via rede local (`0.0.0.0`) exige ativação explícita pelo usuário. | [`core/config.py`](core/config.py) / [`main.py`](main.py) |
 | **5. Bloqueio Local por PIN** | Proteção por PIN com hash `PBKDF2-HMAC-SHA256` (120.000 iterações com salt individual) e bloqueio HTTP 423. | [`routers/security.py`](routers/security.py) |
 | **6. Purga Instantânea de Dados** | Endpoint `POST /api/security/clear_credentials` para exclusão imediata e permanente de todas as credenciais do cofre. | [`routers/security.py`](routers/security.py) |
-| **7. Suíte de Testes Criptográficos** | 150 testes unitários automatizados cobrindo sanitização, mascaramento, hash de PIN e fallback DPAPI/AES. | [`tests/`](tests/) |
+| **7. Suíte de Testes Criptográficos** | 181 testes unitários automatizados cobrindo sanitização, mascaramento, hash de PIN, fallback DPAPI/AES e integridade das rotas. | [`tests/`](tests/) |
+| **8. Governança de Cabeçalhos HTTP** | Políticas de cabeçalhos com bloqueio de cache para dados dinâmicos (`Cache-Control: no-cache, no-store`), `X-Content-Type-Options: nosniff` e proxy seguro. | [`core/security.py`](core/security.py) |
 
 ---
 

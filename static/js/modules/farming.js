@@ -115,7 +115,24 @@ function formatFarmingNote(noteStr) {
         const body = document.getElementById(targetContainerId);
         if (!body) return;
 
-        body.innerHTML = `<div style='color:#94a3b8; padding: 20px; text-align: center;'><i class='fa-solid fa-spinner fa-spin'></i> ${isEn ? "Loading calendar, character list, and recommendations..." : "Carregando calendário, lista de personagens e recomendações..."}</div>`;
+        body.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 14px; padding: 12px 0;">
+                <div class="skeleton-box" style="height: 52px; border-radius: 12px;"></div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px;">
+                    ${Array(4).fill(0).map(() => `
+                        <div class="skeleton-box" style="height: 140px; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
+                            <div class="skeleton-line" style="width: 55%; height: 16px;"></div>
+                            <div style="display: flex; gap: 8px;">
+                                <div class="skeleton-box" style="width: 38px; height: 38px; border-radius: 8px;"></div>
+                                <div class="skeleton-box" style="width: 38px; height: 38px; border-radius: 8px;"></div>
+                                <div class="skeleton-box" style="width: 38px; height: 38px; border-radius: 8px;"></div>
+                            </div>
+                            <div class="skeleton-line" style="width: 75%; height: 12px; margin-top: auto;"></div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
         
         try {
             const storageKey = `hoyo_farm_selected_${gameId}`;
@@ -219,7 +236,7 @@ function formatFarmingNote(noteStr) {
                     const cIcon = charIconMap[cName] || '';
                     html += `
                         <div class="farm-target-chip">
-                            ${cIcon ? `<img src="${cIcon}" onerror="this.src='/assets/logo.svg'">` : `<i class="fa-solid fa-user" style="font-size:11px; color:#38bdf8;"></i>`}
+                            ${cIcon ? `<img src="${cIcon}" width="20" height="20" loading="lazy" decoding="async" onerror="this.src='/assets/logo.png'">` : `<i class="fa-solid fa-user" style="font-size:11px; color:#38bdf8;"></i>`}
                             <span>${typeof formatCharacterName === 'function' ? formatCharacterName(cName) : cName}</span>
                             <button class="btn-remove-chip" title="${isEn ? 'Remove focus' : 'Remover foco'}" onclick="window.quickRemoveFarmTarget('${gameId}', '${cName}', '${targetContainerId}')">✕</button>
                         </div>
@@ -301,7 +318,7 @@ function formatFarmingNote(noteStr) {
                             <!-- Cabeçalho do Personagem com Tema Elemental -->
                             <div style="display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:10px; margin-bottom:12px; flex-wrap:wrap; gap:8px;">
                                 <div style="display:flex; align-items:center; gap:12px;">
-                                    ${t.icon ? `<img src="${t.icon}" style="width:44px; height:44px; border-radius:50%; background:rgba(0,0,0,0.5); object-fit:cover; border:2px solid ${elemTheme.color}; box-shadow:0 0 10px ${elemTheme.color}66;">` : ''}
+                                    ${t.icon ? `<img src="${t.icon}" width="44" height="44" loading="lazy" decoding="async" style="width:44px; height:44px; border-radius:50%; background:rgba(0,0,0,0.5); object-fit:cover; border:2px solid ${elemTheme.color}; box-shadow:0 0 10px ${elemTheme.color}66;">` : ''}
                                     <div>
                                         <div style="display:flex; align-items:center; gap:8px;">
                                             <strong style="color:#ffffff; font-size:16px;">${t.name}</strong>
@@ -492,15 +509,15 @@ function formatFarmingNote(noteStr) {
 
                     const finalIcons = Object.assign({}, defaultIconsByGame[gameIdStr] || defaultIconsByGame.genshin, ic);
 
-                    const moraIcon = `<img src="${finalIcons.mora}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
-                    const xpIcon = `<img src="${finalIcons.xp}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
-                    const talentIcon = `<img src="${finalIcons.talent_book}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
-                    const bossIcon = `<img src="${finalIcons.boss}" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const moraIcon = `<img src="${finalIcons.mora}" width="18" height="18" loading="lazy" decoding="async" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const xpIcon = `<img src="${finalIcons.xp}" width="18" height="18" loading="lazy" decoding="async" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const talentIcon = `<img src="${finalIcons.talent_book}" width="18" height="18" loading="lazy" decoding="async" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
+                    const bossIcon = `<img src="${finalIcons.boss}" width="18" height="18" loading="lazy" decoding="async" style="width:18px; height:18px; vertical-align:middle; margin-right:4px; object-fit:contain;" onerror="this.onerror=null; this.outerHTML=' ';">`;
 
                     // Helper para renderizar ícone com fallback seguro
                     const makeMatIcon = (src, fallbackSrc, size = 18) => {
                         const effectiveSrc = src || fallbackSrc;
-                        return `<img src="${effectiveSrc}" style="width:${size}px; height:${size}px; vertical-align:middle; margin-right:4px; object-fit:contain; border-radius:3px;" onerror="this.onerror=null; this.src='${fallbackSrc}';">`;
+                        return `<img src="${effectiveSrc}" width="${size}" height="${size}" loading="lazy" decoding="async" style="width:${size}px; height:${size}px; vertical-align:middle; margin-right:4px; object-fit:contain; border-radius:3px;" onerror="this.onerror=null; this.src='${fallbackSrc}';">`;
                     };
 
                     // 1. Ascensão de Personagem
@@ -556,7 +573,7 @@ function formatFarmingNote(noteStr) {
                             if (td.weekly_boss_mats > 0) matsList.push(`${makeMatIcon(td.weekly_boss_mat_icon, finalIcons.weekly_boss)} ${td.weekly_boss_mats}x ${td.weekly_boss_mat_name || terms.weekly_boss_mat}`);
                             if (td.crowns_needed > 0) matsList.push(`${makeMatIcon(td.crown_icon, finalIcons.crown)} ${td.crowns_needed}x ${td.crown_mat_name || terms.crown_mat}`);
 
-                            const skillIconHtml = td.skill_icon ? `<img src="${td.skill_icon}" style="width:20px; height:20px; vertical-align:middle; margin-right:6px; object-fit:contain; border-radius:4px; background:rgba(0,0,0,0.3); padding:2px;">` : talentIcon;
+                            const skillIconHtml = td.skill_icon ? `<img src="${td.skill_icon}" width="20" height="20" loading="lazy" decoding="async" style="width:20px; height:20px; vertical-align:middle; margin-right:6px; object-fit:contain; border-radius:4px; background:rgba(0,0,0,0.3); padding:2px;">` : talentIcon;
 
                             html += `
                                 <div style="background:rgba(0,0,0,0.3); padding:8px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
@@ -582,7 +599,7 @@ function formatFarmingNote(noteStr) {
                     // 3. Arma / W-Engine Equipado
                     if (t.items_needed && t.items_needed.weapon_upgrade_details) {
                         const wd = t.items_needed.weapon_upgrade_details;
-                        const wIconImg = wd.weapon_icon ? `<img src="${wd.weapon_icon}" style="width:24px; height:24px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:4px; padding:2px; border:1px solid rgba(255,255,255,0.1);">` : '';
+                        const wIconImg = wd.weapon_icon ? `<img src="${wd.weapon_icon}" width="24" height="24" loading="lazy" decoding="async" style="width:24px; height:24px; object-fit:contain; background:rgba(0,0,0,0.4); border-radius:4px; padding:2px; border:1px solid rgba(255,255,255,0.1);">` : '';
 
                         let wMats = [];
                         if (wd.ores_needed > 0) wMats.push(`<div>${makeMatIcon(wd.ore_icon, finalIcons.weapon_ore)} <strong>${wd.ore_name || terms.ore_name}:</strong> ~${wd.ores_needed} un.</div>`);
@@ -638,12 +655,14 @@ function formatFarmingNote(noteStr) {
         } catch (e) {
             console.error("Erro na Central de Farm:", e);
             body.innerHTML = `
-                <div style='color:#ef4444; padding:20px; text-align:center; background:rgba(239,68,68,0.08); border-radius:10px; border:1px solid rgba(239,68,68,0.3);'>
-                    <i class='fa-solid fa-triangle-exclamation fa-2x' style='margin-bottom:8px; display:block;'></i>
-                    <strong style='font-size:14px; display:block; margin-bottom:4px;'>Erro ao carregar dados da Central de Farm</strong>
-                    <span style='font-size:12px; color:#cbd5e1; display:block; margin-bottom:12px;'>${e.message || e}</span>
-                    <button onclick="window.loadFarmData('${gameId}', '${targetContainerId}')" style="padding:6px 14px; background:rgba(56,189,248,0.2); color:#38bdf8; border:1px solid rgba(56,189,248,0.4); border-radius:6px; cursor:pointer; font-size:12px;">
-                        <i class="fa-solid fa-rotate-right"></i> Tentar Novamente
+                <div class="error-state-box" style="padding: 32px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 14px;">
+                    <div style="width: 46px; height: 46px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #ef4444; font-size: 20px;">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível carregar a Central de Farm</h4>
+                    <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.4;">Ocorreu uma falha ao obter o cronograma de domínios. Verifique sua conexão e tente novamente.</p>
+                    <button onclick="window.loadFarmData('${gameId}', '${targetContainerId}')" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                        <i class="fa-solid fa-rotate-right"></i> Tentar de novo
                     </button>
                 </div>
             `;
@@ -732,14 +751,16 @@ function formatFarmingNote(noteStr) {
         window.openFarmCharSelectorModal(gameId, window.currentFarmModalContainer);
     };
 
-    window.renderFarmModalGrid = () => {
+    window.renderFarmModalGrid = (signal) => {
+        if (signal?.aborted) return;
         const grid = document.getElementById("farm-modal-char-grid");
         const countEl = document.getElementById("farm-modal-selection-count");
         if (!grid) return;
 
         const gameId = window.currentFarmModalGame || "genshin";
         const rosterList = window.farmRosterCache[gameId] || [];
-        const searchVal = (document.getElementById("farm-char-search-input")?.value || "").toLowerCase().trim();
+        const rawSearch = (document.getElementById("farm-char-search-input")?.value || "").toLowerCase().trim();
+        const searchVal = rawSearch.length >= 2 ? rawSearch : "";
         const filterType = window.currentFarmFilterPill || "all";
 
         let filtered = rosterList.filter(c => {
@@ -778,7 +799,7 @@ function formatFarmingNote(noteStr) {
                         <i class="fa-solid fa-check"></i>
                     </div>
                     <div class="avatar-wrapper">
-                        <img src="${c.icon || '/assets/logo.svg'}" onerror="this.src='/assets/logo.svg'" style="width: 100%; height: 100%; object-fit: cover;">
+                        <img src="${c.icon || '/assets/logo.png'}" width="38" height="38" loading="lazy" decoding="async" onerror="this.src='/assets/logo.png'" style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
                     <div style="font-weight: 700; color: #fff; font-size: 12px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; width: 100%;">
                         ${typeof formatCharacterName === 'function' ? formatCharacterName(c.name) : c.name}
@@ -837,8 +858,25 @@ function formatFarmingNote(noteStr) {
         window.renderFarmModalGrid();
     };
 
+    let _farmCharDebouncer = null;
     window.filterFarmCharCards = () => {
-        window.renderFarmModalGrid();
+        const inputEl = document.getElementById("farm-char-search-input");
+        const rawVal = (inputEl ? inputEl.value : "").trim();
+
+        if (!_farmCharDebouncer) {
+            _farmCharDebouncer = window.createDebouncedSearch((val, signal) => {
+                if (signal?.aborted) return;
+                window.renderFarmModalGrid(signal);
+            }, { delay: 300, minLength: 2, immediateOnEmpty: true });
+        }
+
+        if (rawVal.length > 0 && rawVal.length < 2) {
+            _farmCharDebouncer.cancel();
+            window.renderFarmModalGrid();
+            return;
+        }
+
+        _farmCharDebouncer(rawVal);
     };
 
     window.saveAndApplyFarmCharSelection = () => {
@@ -937,8 +975,40 @@ function formatFarmingNote(noteStr) {
             }
         });
 
-        const optimizingText = isEn ? "Optimizing daily energy schedule..." : "Otimizando roteiro diário de energia...";
-        container.innerHTML = `<div style='color: #94a3b8; text-align: center; padding: 20px;'><i class='fa-solid fa-spinner fa-spin'></i> ${optimizingText}</div>`;
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 10px 0;">
+                <div class="skeleton-row" style="height: 64px; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px; width: 60%;">
+                        <div class="skeleton-box" style="width: 40px; height: 40px;"></div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; width: 70%;">
+                            <div class="skeleton-line" style="width: 50%;"></div>
+                            <div class="skeleton-line" style="width: 80%;"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-box" style="width: 60px; height: 24px;"></div>
+                </div>
+                <div class="skeleton-row" style="height: 64px; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px; width: 60%;">
+                        <div class="skeleton-box" style="width: 40px; height: 40px;"></div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; width: 70%;">
+                            <div class="skeleton-line" style="width: 45%;"></div>
+                            <div class="skeleton-line" style="width: 75%;"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-box" style="width: 60px; height: 24px;"></div>
+                </div>
+                <div class="skeleton-row" style="height: 64px; justify-content: space-between;">
+                    <div style="display: flex; align-items: center; gap: 12px; width: 60%;">
+                        <div class="skeleton-box" style="width: 40px; height: 40px;"></div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; width: 70%;">
+                            <div class="skeleton-line" style="width: 55%;"></div>
+                            <div class="skeleton-line" style="width: 70%;"></div>
+                        </div>
+                    </div>
+                    <div class="skeleton-box" style="width: 60px; height: 24px;"></div>
+                </div>
+            </div>
+        `;
 
         try {
             const farmLang = window.isEn ? 'en' : 'pt';
@@ -996,8 +1066,16 @@ function formatFarmingNote(noteStr) {
 
             const tasks = data.tasks || [];
             if (tasks.length === 0) {
-                const noTasksText = isEn ? "No pending recommendations for today!" : "Nenhuma recomendação pendente para hoje!";
-                container.innerHTML = `<div style='color: #94a3b8; text-align: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 8px;'>${noTasksText}</div>`;
+                container.innerHTML = `
+                    <div class="empty-state-box" style="padding: 28px 16px; text-align: center; background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 12px;">
+                        <i class="fa-solid fa-clipboard-check" style="font-size: 24px; color: #10b981; margin-bottom: 8px; display: inline-block;"></i>
+                        <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 4px;">Ordem de Serviço do Dia</h4>
+                        <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Esta tela organiza um roteiro determinístico de gasto de energia e resina para os personagens abaixo da meta de build.</p>
+                        <button class="primary-btn" onclick="window.loadDailyFarmOrder('${gameId}')" style="padding: 6px 16px; font-size: 11px; border-radius: 6px; background: #10b981; cursor: pointer;">
+                            <i class="fa-solid fa-rotate-right"></i> Recalcular Roteiro
+                        </button>
+                    </div>
+                `;
                 return;
             }
 
@@ -1070,7 +1148,7 @@ function formatFarmingNote(noteStr) {
 
                         <!-- Avatar do Personagem ou Ícone -->
                         <div style="width: 38px; height: 38px; border-radius: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; position: relative;">
-                            ${t.character_icon ? `<img src="${t.character_icon}" style="width: 100%; height: 100%; object-fit: cover;">` : `<i class="fa-solid ${t.type_icon || 'fa-seedling'}" style="color: #38bdf8; font-size: 16px;"></i>`}
+                            ${t.character_icon ? `<img src="${t.character_icon}" width="38" height="38" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;">` : `<i class="fa-solid ${t.type_icon || 'fa-seedling'}" style="color: #38bdf8; font-size: 16px;"></i>`}
                             ${t.character_grade ? `<span style="position: absolute; bottom: 0; right: 0; font-size: 8px; font-weight: 800; background: rgba(0,0,0,0.8); color: #f59e0b; padding: 1px 3px; border-top-left-radius: 4px;">${t.character_grade}</span>` : ''}
                         </div>
 
@@ -1137,7 +1215,16 @@ function formatFarmingNote(noteStr) {
 
         } catch (e) {
             console.error("Erro ao carregar Ordem de Serviço:", e);
-            container.innerHTML = "<div style='color: #ef4444; padding: 14px;'>Erro ao calcular a Ordem de Serviço do dia.</div>";
+            container.innerHTML = `
+                <div class="error-state-box" style="padding: 24px 16px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 20px; margin-bottom: 8px; display: inline-block;"></i>
+                    <h4 style="color: var(--text-primary); font-size: 14px; font-weight: 700; margin-bottom: 4px;">Não foi possível calcular a Ordem do Dia</h4>
+                    <p style="color: var(--text-secondary); font-size: 11px; margin-bottom: 12px;">Ocorreu uma falha ao cruzar o elenco com os domínios abertos. Tente novamente.</p>
+                    <button class="primary-btn" onclick="window.loadDailyFarmOrder('${gameId}')" style="padding: 6px 14px; font-size: 11px; border-radius: 6px; background: #ef4444; cursor: pointer;">
+                        <i class="fa-solid fa-rotate-right"></i> Tentar de novo
+                    </button>
+                </div>
+            `;
         }
     };
 
@@ -1228,7 +1315,26 @@ function formatFarmingNote(noteStr) {
         const body = document.getElementById(targetContainerId);
         if (!body) return;
 
-        body.innerHTML = `<div style='color:#94a3b8; padding: 20px; text-align: center;'><i class='fa-solid fa-spinner fa-spin' style='margin-right: 8px;'></i> ${isEn ? "Analyzing relic inventory and calculating Crit Values against the metagame..." : "Analisando inventário de relíquias e calculando Crit Values contra o metagame..."}</div>`;
+        body.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 14px; padding: 10px 0;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
+                    <div class="skeleton-box" style="height: 100px; border-radius: 10px;"></div>
+                    <div class="skeleton-box" style="height: 100px; border-radius: 10px;"></div>
+                </div>
+                ${Array(4).fill(0).map(() => `
+                    <div class="skeleton-row" style="height: 64px; border-radius: 8px; justify-content: space-between; padding: 10px 14px;">
+                        <div style="display: flex; align-items: center; gap: 12px; width: 60%;">
+                            <div class="skeleton-box" style="width: 44px; height: 44px; border-radius: 8px;"></div>
+                            <div style="display: flex; flex-direction: column; gap: 6px; width: 70%;">
+                                <div class="skeleton-line" style="width: 60%; height: 14px;"></div>
+                                <div class="skeleton-line" style="width: 85%; height: 10px;"></div>
+                            </div>
+                        </div>
+                        <div class="skeleton-box" style="width: 50px; height: 20px;"></div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
         try {
             const res = await fetch(`/api/relics/trash/${gameId}`);
             const data = await res.json();
@@ -1236,9 +1342,13 @@ function formatFarmingNote(noteStr) {
             let html = "";
             if (!data.total_analyzed || data.total_analyzed === 0) {
                 html = `
-                    <div style="padding:16px; background:rgba(245, 158, 11, 0.08); border-radius:10px; border:1px solid rgba(245, 158, 11, 0.3); color:#f59e0b; font-size:13px; line-height:1.5;">
-                        <strong style="font-size:14px; display:block; margin-bottom:4px;"><i class="fa-solid fa-triangle-exclamation"></i> Nenhum dado de relíquias/artefatos encontrado no banco de dados.</strong>
-                        Sincronize seu perfil e lista de personagens no painel principal via HoyoLab / UID para importar suas relíquias equipadas para análise.
+                    <div class="empty-state-box" style="padding: 40px 20px; text-align: center; background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(245, 158, 11, 0.3); border-radius: 12px; margin: 16px 0;">
+                        <i class="fa-solid fa-trash-can" style="font-size: 26px; color: #f59e0b; margin-bottom: 12px; display: inline-block;"></i>
+                        <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">Filtro de Descarte & Peças Coringa</h4>
+                        <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 16px auto; line-height: 1.5;">Esta tela analisa suas peças equipadas e inventário para identificar equipamentos com atributos conflitantes para reciclagem em EXP.</p>
+                        <button class="primary-btn" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadTrashRelics('${gameId}', '${targetContainerId}');" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                            <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Relíquias da Conta
+                        </button>
                     </div>
                 `;
             } else {
@@ -1296,7 +1406,7 @@ function formatFarmingNote(noteStr) {
                             ? `<span style="font-size: 11px; color: #a78bfa; background: rgba(167, 139, 250, 0.1); padding: 2px 6px; border-radius: 4px;"><i class="fa-solid fa-user-check" style="margin-right: 4px;"></i>${r.character_name}</span>`
                             : "";
                         const iconImg = r.icon 
-                            ? `<img src="${r.icon}" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(0,0,0,0.4);" alt="${r.name}">` 
+                            ? `<img src="${r.icon}" width="36" height="36" loading="lazy" decoding="async" style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(168, 85, 247, 0.3); background: rgba(0,0,0,0.4);" alt="${r.name}">` 
                             : `<div style="width: 36px; height: 36px; border-radius: 6px; background: rgba(168, 85, 247, 0.15); display: flex; align-items: center; justify-content: center; color: #c084fc;"><i class="fa-solid fa-shield-halved"></i></div>`;
 
                         // Destaque nos substatus
@@ -1351,7 +1461,7 @@ function formatFarmingNote(noteStr) {
                     html += `<div style="display: flex; flex-direction: column; gap: 10px;">`;
                     trashList.forEach(r => {
                         const iconImg = r.icon 
-                            ? `<img src="${r.icon}" style="width: 34px; height: 34px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(0,0,0,0.4);" alt="${r.name}">` 
+                            ? `<img src="${r.icon}" width="34" height="34" loading="lazy" decoding="async" style="width: 34px; height: 34px; border-radius: 6px; object-fit: cover; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(0,0,0,0.4);" alt="${r.name}">` 
                             : `<div style="width: 34px; height: 34px; border-radius: 6px; background: rgba(239, 68, 68, 0.15); display: flex; align-items: center; justify-content: center; color: #f87171;"><i class="fa-solid fa-trash-can"></i></div>`;
                         const charBadge = r.character_name 
                             ? `<span style="font-size: 11px; color: #94a3b8; background: rgba(255, 255, 255, 0.05); padding: 2px 6px; border-radius: 4px;">Em: ${r.character_name}</span>`
@@ -1380,7 +1490,17 @@ function formatFarmingNote(noteStr) {
             }
             body.innerHTML = html;
         } catch (e) {
-            body.innerHTML = `<div style='color:#ef4444; padding: 12px;'>${isEn ? "Error analyzing trash relics and flex pieces." : "Erro ao analisar relíquias lixo e peças coringa."}</div>`;
+            console.error("Erro ao analisar relíquias:", e);
+            body.innerHTML = `
+                <div class="error-state-box" style="padding: 32px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 22px; margin-bottom: 10px; display: inline-block;"></i>
+                    <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível analisar as relíquias</h4>
+                    <p style="color: var(--text-secondary); font-size: 12px; max-width: 420px; margin: 0 auto 14px auto; line-height: 1.4;">Ocorreu uma falha ao processar as pontuações e regras de descarte. Tente novamente.</p>
+                    <button onclick="window.loadTrashRelics('${gameId}', '${targetContainerId}')" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                        <i class="fa-solid fa-rotate-right"></i> Tentar de novo
+                    </button>
+                </div>
+            `;
         }
     };
 
@@ -1400,10 +1520,41 @@ function formatFarmingNote(noteStr) {
         const body = document.getElementById(targetContainerId);
         if (!body) return;
 
-        body.innerHTML = "<div style='color:#94a3b8;'>Gerando relatório de auditoria e Tier List da conta...</div>";
+        body.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 14px; padding: 10px 0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div class="skeleton-box" style="height: 70px; border-radius: 10px;"></div>
+                    <div class="skeleton-box" style="height: 70px; border-radius: 10px;"></div>
+                    <div class="skeleton-box" style="height: 70px; border-radius: 10px;"></div>
+                </div>
+                ${Array(3).fill(0).map(() => `
+                    <div class="skeleton-row" style="height: 78px; border-radius: 12px; padding: 12px; gap: 14px;">
+                        <div class="skeleton-box" style="width: 54px; height: 54px; border-radius: 10px;"></div>
+                        <div style="display: flex; gap: 10px; flex: 1;">
+                            <div class="skeleton-box" style="width: 140px; height: 54px; border-radius: 10px;"></div>
+                            <div class="skeleton-box" style="width: 140px; height: 54px; border-radius: 10px;"></div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
         try {
             const res = await fetch(`/api/audit/${gameId}`);
             const data = await res.json();
+            
+            if (!data.total_characters || data.total_characters === 0) {
+                body.innerHTML = `
+                    <div class="empty-state-box" style="padding: 40px 20px; text-align: center; background: rgba(15, 23, 42, 0.5); border: 1px dashed rgba(168, 85, 247, 0.3); border-radius: 12px; margin: 16px 0;">
+                        <i class="fa-solid fa-trophy" style="font-size: 28px; color: #a855f7; margin-bottom: 12px; display: inline-block;"></i>
+                        <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">Tier List & Auditoria da Conta</h4>
+                        <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 16px auto; line-height: 1.5;">Esta tela gera o ranking dos seus personagens classificados em tiers de investimento (SSS a D) com base na eficiência das relíquias equipadas.</p>
+                        <button class="primary-btn" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadAuditReport('${gameId}', '${targetContainerId}');" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                            <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Personagens Agora
+                        </button>
+                    </div>
+                `;
+                return;
+            }
             
             let html = `
                 <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
@@ -1441,7 +1592,7 @@ function formatFarmingNote(noteStr) {
                 } else {
                     chars.forEach(c => {
                         const iconSrc = c.icon || '';
-                        const iconHtml = iconSrc ? `<img src="${iconSrc}" alt="${c.name}" style="width:52px; height:52px; border-radius:10px; object-fit:cover; border:2px solid ${color}; background:rgba(0,0,0,0.5); flex-shrink:0;" onerror="this.style.display='none'">` : '';
+                        const iconHtml = iconSrc ? `<img src="${iconSrc}" alt="${c.name}" width="52" height="52" loading="lazy" decoding="async" style="width:52px; height:52px; border-radius:10px; object-fit:cover; border:2px solid ${color}; background:rgba(0,0,0,0.5); flex-shrink:0;" onerror="this.style.display='none'">` : '';
                         html += `
                             <div style="display:flex; align-items:center; gap:10px; padding:8px 14px; background:rgba(255,255,255,0.06); border-radius:10px; border:1px solid rgba(255,255,255,0.1); min-height:64px; transition:all 0.2s ease;" onmouseover="this.style.borderColor='${color}'; this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='rgba(255,255,255,0.1)'; this.style.transform='none'">
                                 ${iconHtml}
@@ -1459,7 +1610,17 @@ function formatFarmingNote(noteStr) {
             }
             body.innerHTML = html;
         } catch (e) {
-            body.innerHTML = "<div style='color:#ef4444;'>Erro ao gerar auditoria da conta.</div>";
+            console.error("Erro ao gerar auditoria:", e);
+            body.innerHTML = `
+                <div class="error-state-box" style="padding: 32px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 12px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 22px; margin-bottom: 10px; display: inline-block;"></i>
+                    <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível gerar a auditoria da conta</h4>
+                    <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Ocorreu uma falha ao calcular o ranking dos personagens. Verifique os dados locais e tente novamente.</p>
+                    <button onclick="window.loadAuditReport('${gameId}', '${targetContainerId}')" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                        <i class="fa-solid fa-rotate-right"></i> Tentar de novo
+                    </button>
+                </div>
+            `;
         }
     };
 
@@ -1604,7 +1765,7 @@ window.openCharacterDiffModal = function(cData) {
     if (!modal || !bodyEl) return;
 
     const name = cData.name || (isEn ? "Character" : "Personagem");
-    iconEl.src = cData.icon || "/assets/logo.svg";
+    iconEl.src = cData.icon || "/assets/logo.png";
     nameEl.textContent = name;
 
     const base = cData.base || {};
@@ -1666,7 +1827,7 @@ window.openCharacterDiffModal = function(cData) {
                     <span style="font-size: 11px; color: #ef4444; display: block; margin-bottom: 6px; font-weight: 700;">SNAPSHOT ANTERIOR (BASE)</span>
                     ${wBase && wBase.name ? `
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <img src="${wBase.icon || '/assets/logo.svg'}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" onerror="this.src='/assets/logo.svg'">
+                            <img src="${wBase.icon || '/assets/logo.png'}" width="44" height="44" loading="lazy" decoding="async" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" onerror="this.src='/assets/logo.png'">
                             <div>
                                 <strong style="font-size: 13px; color: var(--text-primary); display: block;">${wBase.name}</strong>
                                 <span style="font-size: 11px; color: var(--text-secondary);">Nv. ${wBase.level || 1} ${wBase.rank ? `• Refinamento R${wBase.rank}` : ''}</span>
@@ -1681,7 +1842,7 @@ window.openCharacterDiffModal = function(cData) {
                     </div>
                     ${wTarget && wTarget.name ? `
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <img src="${wTarget.icon || '/assets/logo.svg'}" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 2px solid ${weaponSwapped ? '#ec4899' : '#10b981'}; box-shadow: 0 0 10px ${weaponSwapped ? 'rgba(236,72,153,0.3)' : 'rgba(16,185,129,0.3)'};" onerror="this.src='/assets/logo.svg'">
+                            <img src="${wTarget.icon || '/assets/logo.png'}" width="44" height="44" loading="lazy" decoding="async" style="width: 44px; height: 44px; border-radius: 8px; object-fit: cover; border: 2px solid ${weaponSwapped ? '#ec4899' : '#10b981'}; box-shadow: 0 0 10px ${weaponSwapped ? 'rgba(236,72,153,0.3)' : 'rgba(16,185,129,0.3)'};" onerror="this.src='/assets/logo.png'">
                             <div>
                                 <strong style="font-size: 13px; color: #fff; display: block;">${wTarget.name}</strong>
                                 <span style="font-size: 11px; color: #10b981; font-weight: 600;">Nv. ${wTarget.level || 1} ${wTarget.rank ? `• Refinamento R${wTarget.rank}` : ''}</span>
@@ -1715,7 +1876,7 @@ window.openCharacterDiffModal = function(cData) {
             html += `
                 <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255,255,255,0.05); padding: 8px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
                     <div style="display: flex; align-items: center; gap: 8px;">
-                        ${icon ? `<img src="${icon}" style="width: 24px; height: 24px; border-radius: 50%;" onerror="this.style.display='none'">` : ''}
+                        ${icon ? `<img src="${icon}" width="24" height="24" loading="lazy" decoding="async" style="width: 24px; height: 24px; border-radius: 50%;" onerror="this.style.display='none'">` : ''}
                         <span style="font-size: 12px; color: var(--text-primary); font-weight: 500;">${sName}</span>
                     </div>
                     <div style="display: flex; align-items: center; gap: 6px;">
@@ -1847,7 +2008,7 @@ window.openCharacterDiffModal = function(cData) {
                                     <span><i class="fa-solid fa-clock-rotate-left"></i> Anterior (Base)</span>
                                 </div>
                                 <div class="diff-relic-item-header">
-                                    <img src="${rb.icon || '/assets/logo.svg'}" class="diff-relic-thumb" onerror="this.src='/assets/logo.svg'">
+                                    <img src="${rb.icon || '/assets/logo.png'}" width="42" height="42" loading="lazy" decoding="async" class="diff-relic-thumb" onerror="this.src='/assets/logo.png'">
                                     <div>
                                         <div class="diff-relic-name-text" style="color: var(--text-muted); text-decoration: line-through;">${nameB}</div>
                                         <span class="diff-relic-mainstat-pill" style="opacity: 0.8;">${mainB || 'Sem Main'}</span>
@@ -1872,7 +2033,7 @@ window.openCharacterDiffModal = function(cData) {
                                     <span><i class="fa-solid fa-sparkles"></i> Atual (Comparado)</span>
                                 </div>
                                 <div class="diff-relic-item-header">
-                                    <img src="${rt.icon || '/assets/logo.svg'}" class="diff-relic-thumb thumb-active" onerror="this.src='/assets/logo.svg'">
+                                    <img src="${rt.icon || '/assets/logo.png'}" width="42" height="42" loading="lazy" decoding="async" class="diff-relic-thumb thumb-active" onerror="this.src='/assets/logo.png'">
                                     <div>
                                         <div class="diff-relic-name-text">${nameT}</div>
                                         <span class="diff-relic-mainstat-pill">${mainT}</span>
@@ -1895,7 +2056,7 @@ window.openCharacterDiffModal = function(cData) {
                             </div>
                             <div class="diff-relic-box box-atual">
                                 <div class="diff-relic-item-header">
-                                    <img src="${rt.icon || '/assets/logo.svg'}" class="diff-relic-thumb thumb-active" onerror="this.src='/assets/logo.svg'">
+                                    <img src="${rt.icon || '/assets/logo.png'}" width="42" height="42" loading="lazy" decoding="async" class="diff-relic-thumb thumb-active" onerror="this.src='/assets/logo.png'">
                                     <div>
                                         <div class="diff-relic-name-text">${nameT}</div>
                                         <span class="diff-relic-mainstat-pill">${mainT}</span>
@@ -1911,7 +2072,7 @@ window.openCharacterDiffModal = function(cData) {
                     ` : `
                         <!-- ARTEFATO MANTIDO (EXIBE DETALHADO DO ATUAL) -->
                         <div style="display: flex; gap: 12px; align-items: flex-start; margin-top: 4px;">
-                            <img src="${rt.icon || rb.icon || '/assets/logo.svg'}" class="diff-relic-thumb" onerror="this.src='/assets/logo.svg'">
+                            <img src="${rt.icon || rb.icon || '/assets/logo.png'}" width="42" height="42" loading="lazy" decoding="async" class="diff-relic-thumb" onerror="this.src='/assets/logo.png'">
                             <div style="flex: 1; min-width: 0;">
                                 <strong style="font-size: 13px; color: #fff; display: block;">${nameT || nameB}</strong>
                                 <span class="diff-relic-mainstat-pill" style="margin-top: 4px;">${mainT || mainB}</span>
@@ -2030,9 +2191,15 @@ window.loadAccountGapsAnalysis = async function(gameId) {
     });
 
     bodyEl.innerHTML = `
-        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
-            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #38bdf8;"></i>
-            <p style="margin-top: 12px; font-size: 13px;">Auditando Roster, Sinergias e Cobertura de ${gameId.toUpperCase()}...</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; margin-bottom: 20px;">
+            <div class="skeleton-box" style="height: 120px; border-radius: 16px;"></div>
+            <div class="skeleton-box" style="height: 120px; border-radius: 16px;"></div>
+        </div>
+        <div style="margin-bottom: 24px;">
+            <div class="skeleton-line" style="width: 240px; height: 16px; margin-bottom: 12px;"></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px;">
+                ${[1, 2, 3, 4].map(() => `<div class="skeleton-box" style="height: 140px; border-radius: 12px;"></div>`).join("")}
+            </div>
         </div>
     `;
 
@@ -2048,11 +2215,13 @@ window.loadAccountGapsAnalysis = async function(gameId) {
     } catch (err) {
         console.error("Erro ao carregar análise de lacunas:", err);
         bodyEl.innerHTML = `
-            <div style="padding: 24px; text-align: center; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px;">
-                <i class="fa-solid fa-triangle-exclamation" style="color: #f87171; font-size: 24px;"></i>
-                <h4 style="color: #fca5a5; margin: 8px 0;">Falha na Auditoria Estratégica</h4>
-                <p style="color: var(--text-muted); font-size: 12px;">${err.message}</p>
-                <button onclick="window.loadAccountGapsAnalysis('${gameId}')" class="primary-btn" style="margin-top: 10px; padding: 6px 14px; font-size: 12px;">Tentar Novamente</button>
+            <div style="padding: 30px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; max-width: 480px; margin: 20px auto;">
+                <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Strategic Diagnosis Failed" : "Falha na Auditoria Estratégica"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not audit account coverage and archetypes." : "Não foi possível auditar a cobertura e arquétipos da conta."}</p>
+                <button onclick="window.loadAccountGapsAnalysis('${gameId}')" class="primary-btn" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                </button>
             </div>
         `;
     }
@@ -2061,6 +2230,22 @@ window.loadAccountGapsAnalysis = async function(gameId) {
 window.renderAccountGapsResult = function(data) {
     const bodyEl = document.getElementById("tab-gaps-content-body");
     if (!bodyEl || !data) return;
+
+    if (!data.total_characters || data.total_characters === 0) {
+        bodyEl.innerHTML = `
+            <div class="overview-card" style="padding: 40px 20px; text-align: center; color: var(--text-secondary); max-width: 500px; margin: 20px auto;">
+                <i class="fa-solid fa-chess-knight fa-3x" style="color: #38bdf8; margin-bottom: 14px;"></i>
+                <h3 style="color: var(--text-primary); font-size: 17px; margin-bottom: 8px;">${isEn ? "No Characters Synced" : "Nenhum Personagem Sincronizado"}</h3>
+                <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
+                    ${isEn ? "The Strategic Planner checks elemental coverage, archetypes, and endgame readiness for your roster. Sync characters to generate this diagnosis." : "O Diagnóstico Estratégico analisa a cobertura elemental, arquétipos e prontidão para o endgame da sua conta. Sincronize seus personagens com o HoYoLAB para gerar o diagnóstico."}
+                </p>
+                <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${data?.game_id || 'hsr'}\\']')?.click() || (window.syncRoster && window.syncRoster('${data?.game_id || 'hsr'}'))" style="padding: 9px 20px; font-size: 13px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Characters Now" : "Sincronizar Personagens Agora"}
+                </button>
+            </div>
+        `;
+        return;
+    }
 
     const score = data.overall_score || 0;
     const grade = data.score_grade || "B";
@@ -2346,6 +2531,21 @@ window.loadMorningBriefing = async function() {
     const weekdayTag = document.getElementById("briefing-weekday-tag");
     if (!gridEl) return;
 
+    // Estado Carregando com Skeletons de altura idêntica aos cards finais
+    gridEl.innerHTML = Array(3).fill(0).map(() => `
+        <div class="skeleton-box" style="height: 140px; border-radius: 12px; padding: 14px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid rgba(255,255,255,0.06);">
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div class="skeleton-line" style="width: 45%; height: 14px;"></div>
+                    <div class="skeleton-line" style="width: 20%; height: 12px; border-radius: 8px;"></div>
+                </div>
+                <div class="skeleton-line" style="width: 85%; height: 12px; margin-bottom: 6px;"></div>
+                <div class="skeleton-line" style="width: 60%; height: 12px;"></div>
+            </div>
+            <div class="skeleton-line" style="width: 100%; height: 28px; border-radius: 6px; margin-top: 8px;"></div>
+        </div>
+    `).join('');
+
     try {
         const briefingLang = window.isEn ? 'en' : 'pt';
         const res = await fetch(`/api/briefing/today?lang=${briefingLang}`);
@@ -2522,16 +2722,34 @@ window.loadMorningBriefing = async function() {
             `;
         }
 
+        if (!html.trim()) {
+            gridEl.innerHTML = `
+                <div class="empty-state-box" style="grid-column: 1 / -1; padding: 36px 20px; text-align: center; background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(56, 189, 248, 0.3); border-radius: 14px;">
+                    <i class="fa-solid fa-sun" style="font-size: 28px; color: #38bdf8; margin-bottom: 10px; display: inline-block;"></i>
+                    <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">Resumo Diário da Conta</h4>
+                    <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 16px auto; line-height: 1.5;">Esta tela consolida as recomendações diárias de gasto de energia e tarefas prioritárias de todos os seus jogos para hoje.</p>
+                    <button class="primary-btn" onclick="document.querySelector('[data-tab=farm]')?.click();" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                        <i class="fa-solid fa-clipboard-list"></i> Ver Ordem do Dia
+                    </button>
+                </div>
+            `;
+            return;
+        }
+
         gridEl.innerHTML = html;
 
     } catch (err) {
         console.error("Erro ao carregar Morning Briefing:", err);
-        const errText = window.t ? window.t("briefing_error_load", "Não foi possível carregar o resumo matinal automaticamente.") : "Não foi possível carregar o resumo matinal automaticamente.";
-        const reloadText = window.t ? window.t("briefing_btn_reload", "Recarregar") : "Recarregar";
         gridEl.innerHTML = `
-            <div style="text-align: center; color: var(--text-muted); padding: 20px; grid-column: 1 / -1;">
-                <p style="margin: 0; font-size: 12px;">${errText}</p>
-                <button onclick="window.loadMorningBriefing()" class="secondary-btn" style="margin-top: 6px; padding: 4px 10px; font-size: 11px;">${reloadText}</button>
+            <div class="error-state-box" style="grid-column: 1 / -1; padding: 32px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; color: #ef4444; font-size: 20px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível carregar o resumo matinal</h4>
+                <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Ocorreu uma falha ao consultar os dados consolidados do dia. Verifique sua conexão e tente novamente.</p>
+                <button onclick="window.loadMorningBriefing()" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                    <i class="fa-solid fa-rotate-right"></i> Tentar de novo
+                </button>
             </div>
         `;
     }
@@ -2619,9 +2837,20 @@ window.loadCraftRecommendations = async function(gameId) {
     if (!bodyEl) return;
 
     bodyEl.innerHTML = `
-        <div style="text-align: center; color: var(--text-muted); padding: 40px;">
-            <i class="fa-solid fa-spinner fa-spin fa-2x" style="color: #f59e0b;"></i>
-            <p style="margin-top: 10px; font-size: 13px;">Calculando os melhores alvos para uso de Resina Automodeladora / Elixir...</p>
+        <div style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                <div class="skeleton-box" style="width: 36px; height: 36px; border-radius: 10px;"></div>
+                <div>
+                    <div class="skeleton-line" style="width: 180px; height: 16px; margin-bottom: 6px;"></div>
+                    <div class="skeleton-line" style="width: 280px; height: 11px;"></div>
+                </div>
+            </div>
+            <div class="skeleton-box" style="height: 38px; border-radius: 8px;"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px;">
+            ${[1, 2, 3].map(() => `
+                <div class="skeleton-box" style="height: 220px; border-radius: 14px;"></div>
+            `).join("")}
         </div>
     `;
 
@@ -2629,6 +2858,22 @@ window.loadCraftRecommendations = async function(gameId) {
         const res = await fetch(`/api/relics/craft-recommendations/${gameId}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+
+        if (!data.recommendations || data.recommendations.length === 0) {
+            bodyEl.innerHTML = `
+                <div class="overview-card" style="padding: 40px 20px; text-align: center; color: var(--text-secondary); max-width: 500px; margin: 20px auto;">
+                    <i class="fa-solid fa-wand-magic-sparkles fa-3x" style="color: #fbbf24; margin-bottom: 14px;"></i>
+                    <h3 style="color: var(--text-primary); font-size: 17px; margin-bottom: 8px;">${isEn ? "No Crafting Priorities" : "Nenhuma Prioridade de Síntese"}</h3>
+                    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
+                        ${isEn ? "The Crafting Optimizer identifies the worst-rolled pieces on meta characters so you spend Self-Modeling Resin or Elixir on high-value upgrades. No urgent upgrades needed." : "O Otimizador de Síntese calcula as piores peças dos personagens meta do seu roster para recomendar onde usar Resina Automodeladora ou Elixir. Nenhuma peça crítica foi encontrada."}
+                    </p>
+                    <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click() || (window.syncRoster && window.syncRoster('${gameId}'))" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; padding: 9px 20px; font-size: 13px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #020617;">
+                        <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Relics Now" : "Sincronizar Relíquias da Conta"}
+                    </button>
+                </div>
+            `;
+            return;
+        }
 
         let html = `
             <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(15, 23, 42, 0.9)); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 14px; padding: 18px; margin-bottom: 20px;">
@@ -2657,7 +2902,7 @@ window.loadCraftRecommendations = async function(gameId) {
                     <div>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                             <div style="display: flex; align-items: center; gap: 8px;">
-                                ${rec.character_icon ? `<img src="${rec.character_icon}" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #fbbf24;">` : ''}
+                                ${rec.character_icon ? `<img src="${rec.character_icon}" width="32" height="32" loading="lazy" decoding="async" style="width: 32px; height: 32px; border-radius: 50%; border: 1px solid #fbbf24;" alt="${rec.character_name}">` : ''}
                                 <strong style="font-size: 15px; color: var(--text-primary);">${rec.character_name}</strong>
                             </div>
                             <span style="background: linear-gradient(135deg, #f59e0b, #d97706); color: #020617; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;">
@@ -2695,8 +2940,13 @@ window.loadCraftRecommendations = async function(gameId) {
     } catch (err) {
         console.error("Erro ao carregar recomendações de craft:", err);
         bodyEl.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: var(--text-muted);">
-                <p>Não foi possível calcular as recomendações de síntese: ${err.message}</p>
+            <div style="padding: 30px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; max-width: 480px; margin: 20px auto;">
+                <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Calculate Crafting" : "Falha ao calcular recomendações de síntese"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not evaluate relic priorities. Please try again." : "Não foi possível avaliar as prioridades das peças de relíquia."}</p>
+                <button onclick="window.loadCraftRecommendations('${gameId}')" class="primary-btn" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                </button>
             </div>
         `;
     }

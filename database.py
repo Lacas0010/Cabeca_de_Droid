@@ -44,6 +44,129 @@ def parse_stats_from_raw_md(raw_md: str) -> Dict[str, str]:
     return res
 
 
+def parse_sets_from_raw_md(raw_md: str) -> List[str]:
+    """Extrai os conjuntos de relíquias/artefatos/discos ativos a partir do texto markdown do personagem.
+    Regra oficial HoYoverse: bônus de conjunto só ativa com 2 ou 4 peças. Peças avulsas (1 peça) são descartadas."""
+    if not raw_md:
+        return []
+    match = re.search(
+        r"- \*\*(?:Relíquias|Artefatos|Discos):\*\*\s*(.*?)(?=\n- |\n\n|\Z)", raw_md, re.DOTALL | re.I
+    )
+    if not match:
+        return []
+    line_content = match.group(1).strip()
+    if not line_content or "nenhum" in line_content.lower() or "sem " in line_content.lower():
+        return []
+
+    sets = []
+    parts = re.split(r"\s*\+\s*|\n", line_content)
+    for part in parts:
+        part = part.strip()
+        if not part:
+            continue
+        m = re.match(r"^(.*?)\s*\((\d+)\s*peças?\)", part, re.I)
+        if m:
+            s_name = clean_relic_name(m.group(1).strip())
+            count = int(m.group(2))
+            if count >= 2:
+                sets.append(f"{count}p {s_name}")
+        else:
+            m2 = re.match(r"^(\d+)p\s+(.*)", part, re.I)
+            if m2:
+                count = int(m2.group(1))
+                if count >= 2:
+                    sets.append(f"{count}p {clean_relic_name(m2.group(2).strip())}")
+    return sets
+
+
+_WEAPON_RARITIES_CACHE: Optional[Dict[str, Dict[str, List[str]]]] = None
+
+
+def get_weapon_rarity(game_id: str, weapon_name: str) -> int:
+    """Retorna a raridade oficial (1-5 estrelas) da arma/cone/W-Engine a partir do manifesto em static_data."""
+    global _WEAPON_RARITIES_CACHE
+    if not weapon_name:
+        return 4
+    if _WEAPON_RARITIES_CACHE is None:
+        try:
+            rarity_path = os.path.join(BASE_DIR, "static_data", "weapon_rarities.json")
+            if os.path.exists(rarity_path):
+                with open(rarity_path, "r", encoding="utf-8") as f:
+                    _WEAPON_RARITIES_CACHE = json.load(f)
+            else:
+                _WEAPON_RARITIES_CACHE = {}
+        except Exception:
+            _WEAPON_RARITIES_CACHE = {}
+
+    g_clean = (game_id or "").lower().strip()
+    game_dict = _WEAPON_RARITIES_CACHE.get(g_clean, {}) if _WEAPON_RARITIES_CACHE else {}
+    name_clean = weapon_name.lower().strip()
+    name_stripped = re.sub(r"[^\w\s]", "", name_clean)
+
+    # 1. Correspondência exata em todas as categorias (5, 4, 3, 1)
+    for rarity_str, names in game_dict.items():
+        try:
+            r_int = int(rarity_str)
+        except ValueError:
+            continue
+        for n in names:
+            n_clean = n.lower().strip()
+            if name_clean == n_clean or name_stripped == re.sub(r"[^\w\s]", "", n_clean):
+                return r_int
+
+    # 2. Correspondência por substring onde o nome canônico está contido no nome da arma
+    for rarity_str, names in game_dict.items():
+        try:
+            r_int = int(rarity_str)
+        except ValueError:
+            continue
+        for n in names:
+            n_clean = n.lower().strip()
+            if len(n_clean) >= 4 and n_clean in name_clean:
+                return r_int
+
+    return 4
+
+
+def backfill_roster_rarities_and_sets() -> None:
+    """Preenche retroativamente raridade de armas, conjuntos e peças no banco de dados SQLite."""
+    global _WEAPON_RARITIES_CACHE
+    _WEAPON_RARITIES_CACHE = None
+    try:
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT uid, game_id, name, weapon_name, weapon_rarity, raw_md, sets_json FROM characters")
+            chars = cur.fetchall()
+            for c in chars:
+                w_rarity = c["weapon_rarity"]
+                w_name = c["weapon_name"]
+                changed = False
+                new_w_rarity = w_rarity
+                if w_name:
+                    calc_w_rarity = get_weapon_rarity(c["game_id"], w_name)
+                    if calc_w_rarity != w_rarity:
+                        new_w_rarity = calc_w_rarity
+                        changed = True
+
+                s_json = c["sets_json"]
+                new_sets_json = s_json
+                if not s_json and c["raw_md"]:
+                    parsed_sets = parse_sets_from_raw_md(c["raw_md"])
+                    if parsed_sets:
+                        new_sets_json = json.dumps(parsed_sets, ensure_ascii=False)
+                        changed = True
+
+                if changed:
+                    cur.execute(
+                        "UPDATE characters SET weapon_rarity = ?, sets_json = ? WHERE uid = ? AND name = ?",
+                        (new_w_rarity, new_sets_json, c["uid"], c["name"]),
+                    )
+
+            cur.execute("UPDATE character_relics SET rarity = 5 WHERE rarity IS NULL OR rarity <= 0")
+    except Exception as err:
+        print(f"[AVISO] Falha no backfill de raridades de armas/peças e conjuntos: {err}")
+
+
 def parse_skills_from_raw_md(raw_md: str) -> List[Dict[str, Any]]:
     """Extrai a lista de habilidades/rastros a partir do texto markdown do personagem como fallback."""
     if not raw_md:
@@ -207,6 +330,16 @@ def init_db() -> None:
         except sqlite3.OperationalError:
             pass
 
+        try:
+            cursor.execute("ALTER TABLE characters ADD COLUMN weapon_rarity INTEGER")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE characters ADD COLUMN sets_json TEXT")
+        except sqlite3.OperationalError:
+            pass
+
         # 3. Tabela de Relíquias / Artefatos / Discos
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS character_relics (
@@ -218,9 +351,21 @@ def init_db() -> None:
             main_stat TEXT,
             sub_stats TEXT,
             icon TEXT,
+            rarity INTEGER DEFAULT 5,
+            set_name TEXT,
             FOREIGN KEY(uid, character_name) REFERENCES characters(uid, name) ON DELETE CASCADE
         )
         """)
+
+        try:
+            cursor.execute("ALTER TABLE character_relics ADD COLUMN rarity INTEGER DEFAULT 5")
+        except sqlite3.OperationalError:
+            pass
+
+        try:
+            cursor.execute("ALTER TABLE character_relics ADD COLUMN set_name TEXT")
+        except sqlite3.OperationalError:
+            pass
 
         # 4. Tabela de Cache de Notas Diárias (Resina / Energia)
         cursor.execute("""
@@ -415,6 +560,7 @@ def init_db() -> None:
     print("[INFO] Banco de dados SQLite inicializado com sucesso.")
     fix_skills_json_max_levels()
     backfill_snapshot_stats()
+    backfill_roster_rarities_and_sets()
 
 
 def fix_skills_json_max_levels():
@@ -649,7 +795,13 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
     """Compara minuciosamente dois snapshots quaisquer pelo ID para exibir diffs de personagens, atributos, armas e relíquias."""
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM account_snapshots WHERE id IN (?, ?)", (snap_id_a, snap_id_b))
+        cursor.execute(
+            """
+            SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
+            FROM account_snapshots WHERE id IN (?, ?)
+            """,
+            (snap_id_a, snap_id_b),
+        )
         rows = {r["id"]: dict(r) for r in cursor.fetchall()}
 
         if snap_id_a not in rows or snap_id_b not in rows:
@@ -837,7 +989,9 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
         }
 
 
-def get_account_history(game_id: str, uid: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_account_history(
+    game_id: str, uid: Optional[str] = None, limit: int = 50, offset: int = 0
+) -> List[Dict[str, Any]]:
     """Retorna o histórico de snapshots comparando o snapshot atual com o anterior para gerar o diff de cada personagem."""
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -845,17 +999,17 @@ def get_account_history(game_id: str, uid: Optional[str] = None) -> List[Dict[st
             cursor.execute(
                 """
             SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
-            FROM account_snapshots WHERE game_id = ? AND uid = ? ORDER BY created_at ASC
+            FROM account_snapshots WHERE game_id = ? AND uid = ? ORDER BY created_at ASC LIMIT ? OFFSET ?
             """,
-                (game_id, uid),
+                (game_id, uid, limit, offset),
             )
         else:
             cursor.execute(
                 """
             SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
-            FROM account_snapshots WHERE game_id = ? ORDER BY created_at ASC
+            FROM account_snapshots WHERE game_id = ? ORDER BY created_at ASC LIMIT ? OFFSET ?
             """,
-                (game_id,),
+                (game_id, limit, offset),
             )
         rows = cursor.fetchall()
 
@@ -930,6 +1084,8 @@ def get_account_history(game_id: str, uid: Optional[str] = None) -> List[Dict[st
                 snap["delta_avg_score"] = 0.0
 
             snap["char_diffs"] = char_diffs
+            # Remove a coluna pesada snapshot_json da listagem da timeline (reduz ~95% do payload)
+            snap.pop("snapshot_json", None)
 
             prev_chars_map = {(c.get("norm") or c.get("name", "").lower()): c for c in current_chars}
             prev_total_chars = snap["character_count"]
@@ -986,16 +1142,26 @@ def save_character(
     skills_json: Optional[str] = None,
     stats_json: Optional[str] = None,
     ranks_json: Optional[str] = None,
+    weapon_rarity: Optional[int] = None,
+    sets_json: Optional[str] = None,
 ) -> None:
     """Salva ou atualiza as informações de um personagem no SQLite."""
+    if weapon_rarity is None and weapon_name:
+        weapon_rarity = get_weapon_rarity(game_id, weapon_name)
+    if sets_json is None and raw_md:
+        parsed_sets = parse_sets_from_raw_md(raw_md)
+        if parsed_sets:
+            sets_json = json.dumps(parsed_sets, ensure_ascii=False)
+
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
         INSERT OR REPLACE INTO characters (
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
-            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json, ranks_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json, ranks_json,
+            weapon_rarity, sets_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 uid,
@@ -1016,6 +1182,8 @@ def save_character(
                 skills_json,
                 stats_json,
                 ranks_json,
+                weapon_rarity,
+                sets_json,
             ),
         )
 
@@ -1032,17 +1200,29 @@ def clear_character_relics(uid: str, character_name: str) -> None:
         )
 
 
-def save_relic(uid: str, character_name: str, name: str, slot: str, main_stat: str, sub_stats: str, icon: str) -> None:
+def save_relic(
+    uid: str,
+    character_name: str,
+    name: str,
+    slot: str,
+    main_stat: str,
+    sub_stats: str,
+    icon: str,
+    rarity: Optional[int] = 5,
+    set_name: Optional[str] = None,
+) -> None:
     """Salva uma nova relíquia/artefato/disco vinculado a um personagem."""
     with get_connection() as conn:
         cursor = conn.cursor()
         clean_name = clean_relic_name(name) if name else name
+        clean_set = clean_relic_name(set_name) if set_name else None
+        piece_rarity = rarity if (rarity is not None and rarity > 0) else 5
         cursor.execute(
             """
-        INSERT INTO character_relics (uid, character_name, name, slot, main_stat, sub_stats, icon)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO character_relics (uid, character_name, name, slot, main_stat, sub_stats, icon, rarity, set_name)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-            (uid, character_name, clean_name, slot, main_stat, sub_stats, icon),
+            (uid, character_name, clean_name, slot, main_stat, sub_stats, icon, piece_rarity, clean_set),
         )
 
 
@@ -1053,10 +1233,15 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
     with get_connection() as conn:
         cursor = conn.cursor()
         rows = []
+        char_cols = """
+            uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
+            weapon_name, weapon_level, weapon_rank, weapon_icon, char_id,
+            skills_json, stats_json, ranks_json, weapon_rarity, sets_json, raw_md
+        """
         if target_uid:
             cursor.execute(
-                """
-            SELECT * FROM characters WHERE game_id = ? AND uid = ? ORDER BY rarity DESC, level DESC
+                f"""
+            SELECT {char_cols} FROM characters WHERE game_id = ? AND uid = ? ORDER BY rarity DESC, level DESC
             """,
                 (game_clean, target_uid),
             )
@@ -1064,30 +1249,41 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
 
         if not rows:
             cursor.execute(
-                """
-            SELECT * FROM characters WHERE game_id = ? ORDER BY rarity DESC, level DESC
+                f"""
+            SELECT {char_cols} FROM characters WHERE game_id = ? ORDER BY rarity DESC, level DESC
             """,
                 (game_clean,),
             )
             rows = cursor.fetchall()
 
-        roster = []
-        for r in rows:
-            r_keys = r.keys()
+        # Pré-carrega todas as relíquias dos personagens retornados em uma única consulta em lote (elimina N+1)
+        uids_present = list({r["uid"] for r in rows if r["uid"]})
+        relics_by_char = {}
+        if uids_present:
+            placeholders = ",".join(["?"] * len(uids_present))
             cursor.execute(
-                """
-            SELECT name, slot, main_stat as main, sub_stats as sub, icon FROM character_relics 
-            WHERE uid = ? AND character_name = ?
-            """,
-                (r["uid"], r["name"]),
+                f"""
+                SELECT uid, character_name, name, slot, main_stat as main, sub_stats as sub, icon, rarity, set_name 
+                FROM character_relics 
+                WHERE uid IN ({placeholders})
+                """,
+                uids_present,
             )
-            relics_rows = cursor.fetchall()
-            relics_list = []
-            for rel in relics_rows:
+            for rel in cursor.fetchall():
+                key = (rel["uid"], rel["character_name"])
+                if key not in relics_by_char:
+                    relics_by_char[key] = []
                 r_dict = dict(rel)
                 if r_dict.get("name"):
                     r_dict["name"] = clean_relic_name(r_dict["name"])
-                relics_list.append(r_dict)
+                if not r_dict.get("rarity"):
+                    r_dict["rarity"] = 5
+                relics_by_char[key].append(r_dict)
+
+        roster = []
+        for r in rows:
+            r_keys = r.keys()
+            relics_list = relics_by_char.get((r["uid"], r["name"]), [])
 
             skills_list = []
             if "skills_json" in r_keys and r["skills_json"]:
@@ -1095,7 +1291,7 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                     skills_list = json.loads(r["skills_json"])
                 except Exception:
                     skills_list = []
-            if not skills_list and r["raw_md"]:
+            if not skills_list and "raw_md" in r_keys and r["raw_md"]:
                 skills_list = parse_skills_from_raw_md(r["raw_md"])
 
             stats_dict = {}
@@ -1104,7 +1300,7 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                     stats_dict = json.loads(r["stats_json"])
                 except Exception:
                     stats_dict = {}
-            if not stats_dict and r["raw_md"]:
+            if not stats_dict and "raw_md" in r_keys and r["raw_md"]:
                 stats_dict = parse_stats_from_raw_md(r["raw_md"])
 
             ranks_list = []
@@ -1132,6 +1328,29 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                         }
                     )
 
+            # Arma com raridade calculada/preservada
+            weapon_data = None
+            if r["weapon_name"]:
+                calc_rarity = get_weapon_rarity(game_clean, r["weapon_name"])
+                w_rarity = calc_rarity if calc_rarity else (r["weapon_rarity"] if ("weapon_rarity" in r_keys and r["weapon_rarity"]) else 4)
+                weapon_data = {
+                    "name": r["weapon_name"],
+                    "level": r["weapon_level"],
+                    "rank": r["weapon_rank"],
+                    "icon": r["weapon_icon"],
+                    "rarity": w_rarity,
+                }
+
+            # Conjuntos de relíquias com efeito ativo (>= 2 peças)
+            sets_list = []
+            if "sets_json" in r_keys and r["sets_json"]:
+                try:
+                    sets_list = json.loads(r["sets_json"])
+                except Exception:
+                    sets_list = []
+            if not sets_list and "raw_md" in r_keys and r["raw_md"]:
+                sets_list = parse_sets_from_raw_md(r["raw_md"])
+
             char_dict = {
                 "id": r["char_id"] if "char_id" in r_keys and r["char_id"] else "",
                 "uid": r["uid"],
@@ -1142,20 +1361,15 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                 "element": r["element"],
                 "icon": r["icon"],
                 "gacha_art": r["gacha_art"] if "gacha_art" in r_keys else None,
-                "weapon": {
-                    "name": r["weapon_name"],
-                    "level": r["weapon_level"],
-                    "rank": r["weapon_rank"],
-                    "icon": r["weapon_icon"],
-                }
-                if r["weapon_name"]
-                else None,
+                "weapon": weapon_data,
+                "sets": sets_list,
                 "relics": relics_list,
                 "skills": skills_list,
                 "ranks": ranks_list,
                 "constellations": ranks_list,
                 "mindscapes": ranks_list,
                 "stats": stats_dict,
+                "raw_md": r["raw_md"] if "raw_md" in r_keys else None,
             }
             roster.append(char_dict)
 
@@ -1205,7 +1419,8 @@ def get_cached_daily_notes() -> Dict[str, Dict[str, Any]]:
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT d.*, COALESCE(a.level, 0) as account_level
+            SELECT d.uid, d.game_id, d.nickname, d.current_energy, d.max_energy,
+                   d.recovery_time, d.extra_info, d.updated_at, COALESCE(a.level, 0) as account_level
             FROM daily_notes_cache d
             LEFT JOIN game_accounts a ON d.uid = a.uid AND d.game_id = a.game_id
         """)
@@ -1343,8 +1558,21 @@ def get_overview_data() -> Dict[str, Dict[str, Any]]:
     active_map = get_active_accounts_map()
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM game_accounts")
+        cursor.execute("SELECT uid, game_id, nickname, level FROM game_accounts")
         accounts_rows = cursor.fetchall()
+
+        # Pré-agrega contagens de personagens por conta em uma única query agrupada (elimina N+1)
+        cursor.execute(
+            """
+            SELECT game_id, uid, COUNT(*) as count_all, SUM(CASE WHEN rarity = 5 THEN 1 ELSE 0 END) as count_five 
+            FROM characters 
+            GROUP BY game_id, uid
+            """
+        )
+        stats_map = {
+            (row["game_id"], str(row["uid"])): (row["count_all"], row["count_five"] or 0)
+            for row in cursor.fetchall()
+        }
 
         overview = {}
         for r in accounts_rows:
@@ -1352,16 +1580,7 @@ def get_overview_data() -> Dict[str, Dict[str, Any]]:
             u_id = str(r["uid"])
             is_active_account = active_map.get(game_id) == u_id
 
-            cursor.execute(
-                """
-            SELECT COUNT(*), SUM(CASE WHEN rarity = 5 THEN 1 ELSE 0 END) 
-            FROM characters WHERE game_id = ? AND uid = ?
-            """,
-                (game_id, r["uid"]),
-            )
-            stats_row = cursor.fetchone()
-            count_all = stats_row[0] if stats_row else 0
-            count_five = stats_row[1] if stats_row else 0
+            count_all, count_five = stats_map.get((game_id, u_id), (0, 0))
 
             current_lvl = int(r["level"]) if r["level"] is not None else 0
             if (
@@ -1423,19 +1642,29 @@ def get_all_saved_accounts() -> List[Dict[str, Any]]:
             "SELECT uid, game_id, nickname, level, active_days, updated_at FROM game_accounts ORDER BY updated_at DESC"
         )
         rows = cursor.fetchall()
+
+        # Pré-agrega contagens de personagens por conta em uma única query agrupada (elimina N+1)
+        cursor.execute(
+            """
+            SELECT game_id, uid, COUNT(*) as char_count, SUM(CASE WHEN rarity = 5 THEN 1 ELSE 0 END) as five_stars_count 
+            FROM characters 
+            GROUP BY game_id, uid
+            """
+        )
+        stats_map = {
+            (row["game_id"], str(row["uid"])): (row["char_count"], row["five_stars_count"] or 0)
+            for row in cursor.fetchall()
+        }
+
         accounts = []
         for r in rows:
             acc = dict(r)
             g_id = acc["game_id"]
             u_id = str(acc["uid"])
             acc["is_active"] = active_map.get(g_id) == u_id
-            cursor.execute(
-                "SELECT COUNT(*), SUM(CASE WHEN rarity = 5 THEN 1 ELSE 0 END) FROM characters WHERE game_id = ? AND uid = ?",
-                (g_id, u_id),
-            )
-            st = cursor.fetchone()
-            acc["char_count"] = st[0] if st else 0
-            acc["five_stars_count"] = st[1] if st and st[1] else 0
+            c_count, f_count = stats_map.get((g_id, u_id), (0, 0))
+            acc["char_count"] = c_count
+            acc["five_stars_count"] = f_count
             accounts.append(acc)
         return accounts
 
@@ -1483,12 +1712,12 @@ def get_endgame_data(game_id: str, uid: Optional[str] = None) -> Optional[Dict[s
         cursor = conn.cursor()
         if uid:
             cursor.execute(
-                "SELECT uid, game_id, modes_json, raw_md, updated_at FROM endgame_records WHERE game_id = ? AND uid = ?",
+                "SELECT uid, game_id, modes_json, updated_at FROM endgame_records WHERE game_id = ? AND uid = ?",
                 (game_id_clean, str(uid)),
             )
         else:
             cursor.execute(
-                "SELECT uid, game_id, modes_json, raw_md, updated_at FROM endgame_records WHERE game_id = ? ORDER BY updated_at DESC LIMIT 1",
+                "SELECT uid, game_id, modes_json, updated_at FROM endgame_records WHERE game_id = ? ORDER BY updated_at DESC LIMIT 1",
                 (game_id_clean,),
             )
         row = cursor.fetchone()
@@ -1503,7 +1732,7 @@ def get_endgame_data(game_id: str, uid: Optional[str] = None) -> Optional[Dict[s
                 "uid": row["uid"],
                 "game_id": row["game_id"],
                 "modes": modes,
-                "raw_md": row["raw_md"],
+                "raw_md": None,
                 "updated_at": row["updated_at"],
             }
     return None
@@ -1665,23 +1894,25 @@ def get_redeemed_codes(game_id: str, uid: str) -> set:
         return {r["code"].upper() for r in rows}
 
 
-def get_code_redemption_history(game_id: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:
+def get_code_redemption_history(
+    game_id: Optional[str] = None, limit: int = 50, offset: int = 0
+) -> List[Dict[str, Any]]:
     """Retorna o histórico cronológico de resgates de códigos."""
     with get_connection() as conn:
         cursor = conn.cursor()
         if game_id:
             cursor.execute(
                 """
-            SELECT * FROM promo_code_history WHERE game_id = ? ORDER BY redeemed_at DESC LIMIT ?
+            SELECT code, status, message, redeemed_at, game_id FROM promo_code_history WHERE game_id = ? ORDER BY redeemed_at DESC LIMIT ? OFFSET ?
             """,
-                (game_id.lower().strip(), limit),
+                (game_id.lower().strip(), limit, offset),
             )
         else:
             cursor.execute(
                 """
-            SELECT * FROM promo_code_history ORDER BY redeemed_at DESC LIMIT ?
+            SELECT code, status, message, redeemed_at, game_id FROM promo_code_history ORDER BY redeemed_at DESC LIMIT ? OFFSET ?
             """,
-                (limit,),
+                (limit, offset),
             )
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
@@ -1714,7 +1945,7 @@ def get_static_data_manifests() -> List[Dict[str, Any]]:
     """Retorna o status de sincronização de todos os manifestos de dados estáticos."""
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM static_data_manifests ORDER BY game_id ASC")
+        cursor.execute("SELECT game_id, version, item_count, last_synced, status FROM static_data_manifests ORDER BY game_id ASC")
         rows = cursor.fetchall()
         return [dict(r) for r in rows]
 
@@ -1723,7 +1954,7 @@ def get_static_data_manifest(game_id: str) -> Optional[Dict[str, Any]]:
     """Retorna o manifesto de um jogo específico."""
     with get_connection() as conn:
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM static_data_manifests WHERE game_id = ?", (game_id.lower().strip(),))
+        cursor.execute("SELECT game_id, version, item_count, last_synced, status FROM static_data_manifests WHERE game_id = ?", (game_id.lower().strip(),))
         row = cursor.fetchone()
         return dict(row) if row else None
 
@@ -1942,15 +2173,20 @@ def get_gacha_goals(game_id: Optional[str] = None) -> List[Dict[str, Any]]:
     """Retorna as metas de gacha salvas enriquecidas com progresso temporal em tempo real."""
     with get_connection() as conn:
         cursor = conn.cursor()
+        cols = """
+            id, game_id, character_name, target_rank_str, current_pulls, current_pity,
+            is_guaranteed, target_days, has_daily_pass, success_rate, projected_pulls,
+            target_date, banner_phase, created_at
+        """
         if game_id and game_id.lower().strip() not in ["", "all", "todos"]:
             cursor.execute(
-                """
-            SELECT * FROM gacha_forecast_goals WHERE game_id = ? ORDER BY id DESC
+                f"""
+            SELECT {cols} FROM gacha_forecast_goals WHERE game_id = ? ORDER BY id DESC
             """,
                 (game_id.lower().strip(),),
             )
         else:
-            cursor.execute("SELECT * FROM gacha_forecast_goals ORDER BY id DESC")
+            cursor.execute(f"SELECT {cols} FROM gacha_forecast_goals ORDER BY id DESC")
         rows = cursor.fetchall()
         goals = []
         now_dt = datetime.now()

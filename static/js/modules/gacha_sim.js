@@ -785,7 +785,7 @@ window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, banner
                 pill.title = `${f4.name} (Taxa Aumentada de 4★)`;
                 pill.innerHTML = `
                     <div class="gacha-banner-4star-img-box">
-                        <img src="${f4.icon}" alt="${f4.name}" onerror="this.src='/assets/unknown_avatar.png';">
+                        <img src="${f4.icon}" width="32" height="32" loading="lazy" decoding="async" alt="${f4.name}" onerror="this.src='/assets/unknown_avatar.png';">
                     </div>
                     <div class="gacha-banner-4star-info">
                         <span class="gacha-banner-4star-name">${f4.name}</span>
@@ -1782,7 +1782,22 @@ window.loadGachaGoals = async function(gameFilter = "all") {
     const grid = document.getElementById("gacha-saved-goals-grid");
     if (!grid) return;
 
-    grid.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 40px; grid-column: 1 / -1;"><i class="fa-solid fa-spinner fa-spin fa-2x"></i><p style="margin-top: 10px;">Buscando metas salvas...</p></div>`;
+    grid.innerHTML = [1, 2].map(() => `
+        <div class="skeleton-box" style="height: 270px; border-radius: 14px; padding: 16px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 14px;">
+                    <div class="skeleton-box" style="width: 42px; height: 42px; border-radius: 10px;"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton-line" style="width: 70px; height: 10px; margin-bottom: 6px;"></div>
+                        <div class="skeleton-line" style="width: 130px; height: 16px;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-box" style="height: 50px; border-radius: 8px; margin-bottom: 12px;"></div>
+                <div class="skeleton-box" style="height: 60px; border-radius: 8px;"></div>
+            </div>
+            <div class="skeleton-box" style="height: 30px; border-radius: 6px;"></div>
+        </div>
+    `).join("");
 
     const goalFilterBtns = document.querySelectorAll(".goals-game-btn");
     goalFilterBtns.forEach(btn => {
@@ -1806,10 +1821,15 @@ window.loadGachaGoals = async function(gameFilter = "all") {
                 window.goalsCountdownTimerId = null;
             }
             grid.innerHTML = `
-                <div style="text-align: center; color: var(--text-muted); padding: 50px 20px; grid-column: 1 / -1; background: rgba(0,0,0,0.2); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.1);">
+                <div style="text-align: center; color: var(--text-muted); padding: 45px 20px; grid-column: 1 / -1; background: rgba(0,0,0,0.2); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.1); max-width: 520px; margin: 0 auto;">
                     <i class="fa-solid fa-bullseye" style="font-size: 36px; color: #64748b; margin-bottom: 12px;"></i>
-                    <h4 style="margin: 0 0 6px 0; color: #e2e8f0; font-size: 15px;">Nenhuma meta salva no momento</h4>
-                    <p style="margin: 0; font-size: 12px; color: #94a3b8;">Acesse a aba <strong>Gacha Forecast</strong> para planejar seus próximos banners e salvar metas estratégicas.</p>
+                    <h4 style="margin: 0 0 6px 0; color: #e2e8f0; font-size: 15px;">${isEn ? "No Saved Gacha Goals" : "Nenhuma Meta Salva no Momento"}</h4>
+                    <p style="margin: 0 0 16px 0; font-size: 12px; color: #94a3b8; line-height: 1.5;">
+                        ${isEn ? "The Gacha Goal Tracker calculates pulls needed, countdown, and success probability for future banners. Plan a banner to track it here." : "O Rastreador de Metas acompanha a economia de Gemas/Jades, contagem regressiva e chance de sucesso dos seus próximos banners planejados."}
+                    </p>
+                    <button class="primary-btn" onclick="document.querySelector('[data-tab=\\'forecast\\'], [data-gacha-tab=\\'forecast\\']')?.click() || (window.switchGachaTab && window.switchGachaTab('forecast'))" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        <i class="fa-solid fa-calculator"></i> ${isEn ? "Open Gacha Forecast" : "Planejar Nova Meta no Forecast"}
+                    </button>
                 </div>
             `;
             return;
@@ -1836,7 +1856,7 @@ window.loadGachaGoals = async function(gameFilter = "all") {
             const timePct = g.time_progress_pct !== undefined ? g.time_progress_pct : 0;
             const pullsNow = g.accumulated_pulls_now !== undefined ? g.accumulated_pulls_now : g.current_pulls;
             const charIconHtml = g.character_icon
-                ? `<img src="${g.character_icon}" alt="${g.character_name}" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover; border: 1px solid ${col}66; background: rgba(0,0,0,0.4);" onerror="this.style.display='none'">`
+                ? `<img src="${g.character_icon}" width="42" height="42" loading="lazy" decoding="async" alt="${g.character_name}" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover; border: 1px solid ${col}66; background: rgba(0,0,0,0.4);" onerror="this.style.display='none'">`
                 : `<div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; color: ${col};"><i class="fa-solid fa-star"></i></div>`;
 
             return `
@@ -1958,7 +1978,16 @@ window.loadGachaGoals = async function(gameFilter = "all") {
 
     } catch (e) {
         console.error("Erro ao carregar metas:", e);
-        grid.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 20px; grid-column: 1 / -1;">Erro ao carregar metas salvas.</div>`;
+        grid.innerHTML = `
+            <div style="text-align: center; padding: 30px 20px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; grid-column: 1 / -1; max-width: 480px; margin: 20px auto;">
+                <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Goals" : "Falha ao carregar metas de gacha"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve saved goals. Please try again." : "Não foi possível consultar as metas de gacha salvas."}</p>
+                <button class="primary-btn" onclick="window.loadGachaGoals && window.loadGachaGoals('${gameFilter}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                </button>
+            </div>
+        `;
     }
 };
 
@@ -2002,9 +2031,62 @@ window.loadLuckDashboard = async function(gameId) {
     if (!bodyEl) return;
 
     bodyEl.innerHTML = `
-        <div style="text-align: center; padding: 60px 20px;">
-            <i class="fa-solid fa-spinner fa-spin" style="font-size: 32px; color: #10b981; margin-bottom: 16px;"></i>
-            <p style="color: #94a3b8; font-size: 15px;">Analisando qualidade das rolagens das relíquias do ${gameId.toUpperCase()}...</p>
+        <div class="luck-hero-grid">
+            <!-- SKELETON CARD 1: SORTE GERAL -->
+            <div class="skeleton-luck-hero">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="skeleton-line" style="width: 140px; height: 14px;"></div>
+                    <div class="skeleton-box" style="width: 20px; height: 20px; border-radius: 50%;"></div>
+                </div>
+                <div class="luck-gauge-box">
+                    <div class="skeleton-line" style="width: 90px; height: 44px; margin-bottom: 8px;"></div>
+                    <div class="skeleton-line" style="width: 110px; height: 16px; margin-bottom: 8px;"></div>
+                    <div class="skeleton-box" style="width: 80px; height: 22px; border-radius: 12px;"></div>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <div class="skeleton-line" style="width: 180px; height: 12px;"></div>
+                </div>
+            </div>
+
+            <!-- SKELETON CARD 2: GOD ROLL -->
+            <div class="skeleton-luck-hero">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="skeleton-line" style="width: 160px; height: 14px;"></div>
+                    <div class="skeleton-box" style="width: 50px; height: 18px; border-radius: 10px;"></div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center; padding: 12px 0;">
+                    <div class="skeleton-box" style="width: 56px; height: 56px; border-radius: 10px;"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton-line" style="width: 70%; height: 15px; margin-bottom: 6px;"></div>
+                        <div class="skeleton-line" style="width: 45%; height: 12px;"></div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <div class="skeleton-box" style="width: 80px; height: 22px; border-radius: 6px;"></div>
+                    <div class="skeleton-box" style="width: 90px; height: 22px; border-radius: 6px;"></div>
+                    <div class="skeleton-box" style="width: 75px; height: 22px; border-radius: 6px;"></div>
+                </div>
+            </div>
+
+            <!-- SKELETON CARD 3: CURSED ROLL -->
+            <div class="skeleton-luck-hero">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="skeleton-line" style="width: 160px; height: 14px;"></div>
+                    <div class="skeleton-box" style="width: 50px; height: 18px; border-radius: 10px;"></div>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center; padding: 12px 0;">
+                    <div class="skeleton-box" style="width: 56px; height: 56px; border-radius: 10px;"></div>
+                    <div style="flex: 1;">
+                        <div class="skeleton-line" style="width: 70%; height: 15px; margin-bottom: 6px;"></div>
+                        <div class="skeleton-line" style="width: 45%; height: 12px;"></div>
+                    </div>
+                </div>
+                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                    <div class="skeleton-box" style="width: 80px; height: 22px; border-radius: 6px;"></div>
+                    <div class="skeleton-box" style="width: 90px; height: 22px; border-radius: 6px;"></div>
+                    <div class="skeleton-box" style="width: 75px; height: 22px; border-radius: 6px;"></div>
+                </div>
+            </div>
         </div>
     `;
 
@@ -2015,9 +2097,13 @@ window.loadLuckDashboard = async function(gameId) {
     } catch (e) {
         console.error("Erro ao carregar dashboard de sorte:", e);
         bodyEl.innerHTML = `
-            <div style="text-align: center; padding: 40px; color: #ef4444;">
-                <i class="fa-solid fa-triangle-exclamation" style="font-size: 32px; margin-bottom: 12px;"></i>
-                <p>Erro ao carregar dados do Índice de Sorte.</p>
+            <div style="text-align: center; padding: 40px 20px; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; max-width: 480px; margin: 20px auto;">
+                <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 12px;"></i>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Luck Index" : "Falha ao carregar o Índice de Sorte"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 16px 0;">${isEn ? "Could not calculate relic roll efficiency. Please try again." : "Não foi possível calcular a eficiência das rolagens das relíquias. Verifique a conexão com a API."}</p>
+                <button class="primary-btn" onclick="window.loadLuckDashboard && window.loadLuckDashboard('${gameId}')" style="background: #10b981; border: none; padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #fff;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                </button>
             </div>
         `;
     }
@@ -2121,8 +2207,14 @@ window.renderLuckDashboard = function(data) {
     if (!data || data.total_relics_analyzed === 0) {
         bodyEl.innerHTML = `
             <div style="text-align: center; padding: 60px 20px;" class="overview-card">
-                <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #64748b; margin-bottom: 16px;"></i>
-                <h3 style="color: #f8fafc; margin-bottom: 8px;">${isEn ? "No Relics Found" : "Nenhuma Relíquia Encontrada"}</h3><p style="color: #94a3b8; max-width: 500px; margin: 0 auto 20px auto;">${isEn ? "Sync your Roster with HoYoLAB to analyze luck and roll efficiency of your gear." : "Sincronize seu Roster com o HoYoLAB para analisar a sorte e a eficiência das rolagens de atributos dos seus equipamentos."}</p>
+                <i class="fa-solid fa-shield-halved" style="font-size: 40px; color: #10b981; margin-bottom: 16px;"></i>
+                <h3 style="color: #f8fafc; margin-bottom: 8px;">${isEn ? "No Relics Found" : "Nenhuma Relíquia Encontrada"}</h3>
+                <p style="color: #94a3b8; max-width: 520px; margin: 0 auto 20px auto; line-height: 1.5;">
+                    ${isEn ? "The Luck Index analyzes the statistical efficiency of every relic roll on your characters. Sync your Roster with HoYoLAB to calculate your account luck ranking." : "O Índice de Sorte analisa a eficiência matemática das rolagens de cada relíquia equipada nos seus personagens. Sincronize seu Roster com o HoYoLAB para calcular o ranking de sorte da sua conta."}
+                </p>
+                <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${data?.game_id || 'genshin'}\\']')?.click() || (window.syncRoster && window.syncRoster('${data?.game_id || 'genshin'}'))" style="background: #10b981; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #fff; font-size: 13px;">
+                    <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Relics Now" : "Sincronizar Relíquias da Conta"}
+                </button>
             </div>
         `;
         return;
@@ -2160,11 +2252,11 @@ window.renderLuckDashboard = function(data) {
                 </div>
                 ${god ? `
                 <div style="display: flex; align-items: center; gap: 14px; margin: 12px 0;">
-                    <img src="${god.character_icon || '/assets/logo.svg'}" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid #f59e0b; object-fit: cover; flex-shrink: 0;">
+                    <img src="${god.character_icon || '/assets/logo.png'}" width="54" height="54" loading="lazy" decoding="async" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid #f59e0b; object-fit: cover; flex-shrink: 0;" alt="${god.character_name}">
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 16px; font-weight: bold; color: #f8fafc;">${god.character_name}</div>
                         <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap;">
-                            ${god.relic_icon ? `<img src="${god.relic_icon}" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px;">` : ''}
+                            ${god.relic_icon ? `<img src="${god.relic_icon}" width="32" height="32" loading="lazy" decoding="async" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.4); padding: 2px;" alt="">` : ''}
                             <span style="font-size: 12px; font-weight: 800; color: #fbbf24; background: rgba(245, 158, 11, 0.2); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.4); display: inline-flex; align-items: center; gap: 4px;">
                                 ${window.translateSlotText(god.slot_display || god.slot)}
                             </span>
@@ -2192,11 +2284,11 @@ window.renderLuckDashboard = function(data) {
                 </div>
                 ${cursed ? `
                 <div style="display: flex; align-items: center; gap: 14px; margin: 12px 0;">
-                    <img src="${cursed.character_icon || '/assets/logo.svg'}" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid #ef4444; object-fit: cover; flex-shrink: 0;">
+                    <img src="${cursed.character_icon || '/assets/logo.png'}" width="54" height="54" loading="lazy" decoding="async" style="width: 54px; height: 54px; border-radius: 50%; border: 2px solid #ef4444; object-fit: cover; flex-shrink: 0;" alt="${cursed.character_name}">
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 16px; font-weight: bold; color: #f8fafc;">${cursed.character_name}</div>
                         <div style="display: flex; align-items: center; gap: 8px; margin: 6px 0; flex-wrap: wrap;">
-                            ${cursed.relic_icon ? `<img src="${cursed.relic_icon}" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px;">` : ''}
+                            ${cursed.relic_icon ? `<img src="${cursed.relic_icon}" width="32" height="32" loading="lazy" decoding="async" style="width: 32px; height: 32px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); padding: 2px;" alt="">` : ''}
                             <span style="font-size: 12px; font-weight: 800; color: #f87171; background: rgba(239, 68, 68, 0.2); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.4); display: inline-flex; align-items: center; gap: 4px;">
                                 ${window.translateSlotText(cursed.slot_display || cursed.slot)}
                             </span>
@@ -2222,7 +2314,7 @@ window.renderLuckDashboard = function(data) {
             ${data.luckiest_character ? `
             <div class="overview-card" style="border-left: 4px solid #10b981; margin:0;">
                 <div style="display: flex; align-items: center; gap: 14px;">
-                    <img src="${data.luckiest_character.character_icon || '/assets/logo.svg'}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #10b981; object-fit: cover;">
+                    <img src="${data.luckiest_character.character_icon || '/assets/logo.png'}" width="48" height="48" loading="lazy" decoding="async" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #10b981; object-fit: cover;" alt="${data.luckiest_character.character_name}">
                     <div style="flex: 1;">
                         <div style="font-size: 11px; color: #34d399; font-weight: 700; text-transform: uppercase;">${isEn ? "🌟 Luckiest Character" : "🌟 Personagem Mais Sortudo"}</div>
                         <div style="font-size: 16px; font-weight: bold; color: #fff;">${data.luckiest_character.character_name}</div>
@@ -2235,7 +2327,7 @@ window.renderLuckDashboard = function(data) {
             ${data.cursed_character ? `
             <div class="overview-card" style="border-left: 4px solid #ef4444; margin:0;">
                 <div style="display: flex; align-items: center; gap: 14px;">
-                    <img src="${data.cursed_character.character_icon || '/assets/logo.svg'}" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ef4444; object-fit: cover;">
+                    <img src="${data.cursed_character.character_icon || '/assets/logo.png'}" width="48" height="48" loading="lazy" decoding="async" style="width: 48px; height: 48px; border-radius: 50%; border: 2px solid #ef4444; object-fit: cover;" alt="${data.cursed_character.character_name}">
                     <div style="flex: 1;">
                         <div style="font-size: 11px; color: #f87171; font-weight: 700; text-transform: uppercase;">${isEn ? "🌧️ Most Cursed Character" : "🌧️ Personagem Mais Azarado"}</div>
                         <div style="font-size: 16px; font-weight: bold; color: #fff;">${data.cursed_character.character_name}</div>
@@ -2257,7 +2349,7 @@ window.renderLuckDashboard = function(data) {
                     const color = c.avg_luck >= 75 ? '#34d399' : (c.avg_luck >= 50 ? '#fbbf24' : '#f87171');
                     return `
                     <div class="luck-char-row">
-                        <img src="${c.character_icon || '/assets/logo.svg'}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid ${color};">
+                        <img src="${c.character_icon || '/assets/logo.png'}" width="40" height="40" loading="lazy" decoding="async" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid ${color};" alt="${c.character_name}">
                         <div style="flex: 1;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
                                 <span style="font-weight: 600; color: #f8fafc; font-size: 14px;">${c.character_name} <small style="color: #94a3b8; font-weight: normal;">(Nv. ${c.level} • ${c.rank_str})</small></span>
@@ -2282,10 +2374,10 @@ window.renderLuckDashboard = function(data) {
                 ${(data.all_relics || []).map((r, idx) => `
                 <div style="display: flex; align-items: center; gap: 14px; padding: 12px 14px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
                     <div style="font-weight: 900; font-size: 16px; color: ${idx < 3 ? '#fbbf24' : '#64748b'}; width: 28px; text-align: center;">#${idx + 1}</div>
-                    <img src="${r.character_icon || '/assets/logo.svg'}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0;">
+                    <img src="${r.character_icon || '/assets/logo.png'}" width="42" height="42" loading="lazy" decoding="async" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; flex-shrink: 0;" alt="${r.character_name}">
                     <div style="flex: 1; min-width: 0;">
                         <div style="font-size: 13px; font-weight: bold; color: #f8fafc; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                            ${r.relic_icon ? `<img src="${r.relic_icon}" style="width: 28px; height: 28px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); padding: 2px;">` : ''}
+                            ${r.relic_icon ? `<img src="${r.relic_icon}" width="28" height="28" loading="lazy" decoding="async" style="width: 28px; height: 28px; object-fit: contain; background: rgba(0,0,0,0.4); border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3); padding: 2px;" alt="">` : ''}
                             <span style="color: #fbbf24; font-size: 11px; font-weight: 700; background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.3);">
                                 ${window.translateSlotText(r.slot_display || r.slot)}
                             </span>
@@ -2371,7 +2463,7 @@ function playWishSound(type, rarity) {
 
 // Helper para gerar URL de Splash Art / Card do Personagem via Proxy
 function getWishCharacterSplash(gameId, charName) {
-    if (!charName) return "/assets/logo.svg";
+    if (!charName) return "/assets/logo.png";
     let clean = charName.replace(/\s*\(.*?\)/g, '').trim();
     
     let slug = clean.toLowerCase()
@@ -2403,7 +2495,7 @@ function getWishCharacterSplash(gameId, charName) {
     } else if (gameId === "zzz") {
         return `/api/proxy_image?url=${encodeURIComponent('https://cdn.prydwen.gg/images/zenless-zone-zero/characters/' + slug + '_full.webp')}`;
     }
-    return "/assets/logo.svg";
+    return "/assets/logo.png";
 }
 
 // 2. Lógica do Sorteio Individual com Soft Pity e 50/50 Real
@@ -2488,7 +2580,7 @@ function rollSingleWishItem(gameId, pity, isGuaranteed, targetCharName) {
         won5050: true,
         isGuaranteedNext: isGuaranteed,
         newPity: pity,
-        splashArt: "/assets/logo.svg"
+        splashArt: "/assets/logo.png"
     };
 }
 
@@ -2671,7 +2763,7 @@ window.showWishItemAtIndex = function(index) {
         if (item.rarity >= 4) {
             cardArt.src = item.splashArt || getWishCharacterSplash(wishGameId, item.name);
         } else {
-            cardArt.src = "/assets/logo.svg";
+            cardArt.src = "/assets/logo.png";
         }
     }
 
@@ -2755,12 +2847,12 @@ window.showWishSummaryGrid = function() {
                     ? 'linear-gradient(180deg, rgba(168, 85, 247, 0.3) 0%, rgba(15, 23, 42, 0.95) 100%)' 
                     : 'linear-gradient(180deg, rgba(56, 189, 248, 0.2) 0%, rgba(15, 23, 42, 0.95) 100%)');
 
-            const artUrl = r.rarity >= 4 ? (r.splashArt || getWishCharacterSplash(wishGameId, r.name)) : '/assets/logo.svg';
+            const artUrl = r.rarity >= 4 ? (r.splashArt || getWishCharacterSplash(wishGameId, r.name)) : '/assets/logo.png';
 
             return `
                 <div style="position: relative; background: ${bgGradient}; border: 2px solid ${borderCol}; border-radius: 16px; padding: 14px 8px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.6); transition: transform 0.2s;">
                     <div style="width: 72px; height: 92px; border-radius: 10px; overflow: hidden; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.2);">
-                        <img src="${artUrl}" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/logo.svg'">
+                        <img src="${artUrl}" width="72" height="92" loading="lazy" decoding="async" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='/assets/logo.png'">
                     </div>
                     <span style="font-size: 11px; font-weight: 800; color: #ffffff; line-height: 1.2; margin-bottom: 4px; max-width: 95px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${r.name}</span>
                     <div style="font-size: 12px; color: ${borderCol}; font-weight: bold;">${'★'.repeat(r.rarity)}</div>

@@ -19,29 +19,30 @@ Obrigado pelo seu interesse em contribuir com o **Cabeça de Droid**! Este docum
 
 O Cabeça de Droid é projetado como uma suíte **100% local, autônoma, resiliente e segura**. Nossas premissas inegociáveis são:
 - **Privacidade & Segurança em Primeiro Lugar:** Tokens e cookies de sessão nunca devem trafegar para serviços de terceiros e devem ser criptografados em repouso no Windows com DPAPI e no Linux com AES-256 derivado da máquina.
-- **Zero Regressão:** Todos os 150 testes unitários automatizados devem continuar passando a cada modificação.
+- **Zero Regressão:** Todos os 181 testes unitários automatizados devem continuar passando a cada modificação.
 - **Clean Architecture:** Desacoplamento estrito entre a camada de apresentação (`routers/`), contratos de dados (`schemas/`), regras de negócio (`services/`) e persistência/segurança (`core/` e `database.py`).
 - **Zero Hardcoding & Automação de Dados:** É proibido criar dicionários hardcoded com dados voláteis no código Python (tier lists, personagens, multiplicadores). Toda ingestão deve vir dinamicamente de scrapers para arquivos JSON em `static_data/`.
+- **Performance & Eficiência de Consultas:** Nunca utilize `SELECT *` em dados voláteis ou de crescimento contínuo; utilize projeções explícitas de colunas e paginação obrigatória (`LIMIT ? OFFSET ?`). Aplique virtualização nativa CSS (`content-visibility: auto`) em listas volumosas e respeite as políticas de cache em memória com invalidação reativa.
 - **Resiliência Offline:** O sistema deve sempre conter fallbacks e sementes locais (`static_data/`) para inicializar e operar mesmo sem conexão com a internet.
 
 ---
 
-## 📊 Evolução Arquitetural: Da v4.5 à v5.2
+## 📊 Evolução Arquitetural: Da v4.5 à v5.5
 
-A versão **5.2** consolida a modularização total tanto no backend quanto no frontend, adicionando módulos estocásticos de previsão de banners, contagem regressiva em tempo real e montador de times HD.
+A versão **5.5** consolida o modo de visualização flexível do elenco (Grade vs Lista rica Opção C), a padronização exaustiva de raridades de armas/cones/motores e peças, o debounce reativo de busca e otimizações de banco de dados, acompanhada por 181 suítes automatizadas.
 
 ### Comparativo Arquitetural
 
-| **Aspecto** | **Versão 4.5** | **Versão 5.x / 5.2 (Atual)** |
-| :--- | :--- | :--- |
-| **Ponto Central (`server.py`)** | Monólito com >3.200 linhas contendo rotas, lógica e SQL | Orquestrador limpo de ciclo de vida com ~200 linhas |
-| **Camada de Roteamento** | Endpoints misturados em funções soltas | 15 módulos `APIRouter` especializados em [`routers/`](routers/) |
-| **Contratos & Tipagem** | Dicionários `dict` brutos sem validação estrita | Modelos tipados [Pydantic v2](schemas/) em [`schemas/`](schemas/) |
-| **Regras de Negócio** | Lógica acoplada dentro dos handlers HTTP | Serviços isolados e testáveis em [`services/`](services/) |
-| **Frontend Web** | Script monolítico `app.js` | 12 módulos ES6 desacoplados em [`static/js/modules/`](static/js/modules/) com cache-busting |
-| **Metas de Gacha & Banners** | Ausente | Projeção Monte Carlo com cronômetro em tempo real e horários oficiais (23:30 / 20h / 14h) |
-| **Montador de Times** | Apenas recomendador de texto | Construtor visual de card de time HD, glassmorphism e cópia para Clipboard |
-| **Testes Automatizados** | 2 arquivos de teste isolados | 150 testes unitários em suítes automatizadas passando 100% |
+| **Aspecto** | **Versão 4.5** | **Versão 5.0 - 5.2** | **Versão 5.5 (Atual)** |
+| :--- | :--- | :--- | :--- |
+| **Ponto Central (`server.py`)** | Monólito com >3.200 linhas contendo rotas, lógica e SQL | Orquestrador com ~200 linhas | Orquestrador enxuto com `GZipMiddleware`, monitoramento de requisições lentas (`X-Process-Time`) e lifespan limpo |
+| **Camada de Roteamento** | Endpoints misturados em funções soltas | 15 módulos `APIRouter` especializados em [`routers/`](routers/) | Rotas desacopladas com paginação estrita (`limit/offset`), proxy dinâmico de imagens WebP e validação Pydantic v2 |
+| **Contratos & Tipagem** | Dicionários `dict` brutos sem validação estrita | Modelos tipados [Pydantic v2](schemas/) em [`schemas/`](schemas/) | Tipagem estrita ponta a ponta com contratos Pydantic v2 |
+| **Regras de Negócio & Cache** | Lógica acoplada nos handlers | Serviços isolados e testáveis | Serviços com camada de cache em memória TTL (60s) e auto-invalidação reativa nos syncs |
+| **Banco de Dados (SQLite)** | Consultas N+1 e `SELECT *` genéricos | SQLite estruturado em `database.py` | Consultas em lote otimizadas (`WHERE uid IN (...)`), sem N+1, sem `SELECT *`, índices rápidos e backfill automático de raridades |
+| **Frontend Web** | Script monolítico `app.js` | 12 módulos ES6 em [`static/js/modules/`](static/js/modules/) | Alternância Grade/Lista (Opção C rica), busca com debounce de 300ms + `AbortController`, fontes WOFF2 locais e virtualização CSS |
+| **Metas de Gacha & Banners** | Ausente | Projeção Monte Carlo com cronômetro | Monte Carlo de 10.000 iterações com horários oficiais, import/export UIGF/SRGF e carregamento diferido |
+| **Testes Automatizados** | 2 arquivos de teste isolados | 150 testes unitários | **181 testes unitários automatizados** com 100% de aprovação e suítes dedicadas de paginação, debounce e visualização do roster |
 
 ### Novos Recursos Adicionados na v5.0
 1. **Ordem de Serviço Diária (`routers/farming.py`):** Roteiro automatizado de gasto de resina e checklist de energia diário.
@@ -156,7 +157,7 @@ hoyo-projetos/
 Todos os testes utilizam o módulo nativo `unittest` do Python, dispensando bibliotecas adicionais:
 
 ```bash
-# Executar toda a suíte de testes (150 testes)
+# Executar toda a suíte de testes (181 testes)
 python -m unittest discover tests
 
 # Executar uma suíte de teste específica

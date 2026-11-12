@@ -8,7 +8,9 @@ from services.roster_service import (
     get_overview,
     parse_character_build_data,
     parse_meta_target,
+    invalidate_roster_cache,
 )
+from services.endgame_service import invalidate_endgame_cache
 from schemas.accounts import AccountsListResponse, SwitchAccountRequest
 
 router = APIRouter(tags=["Roster & Characters"])
@@ -33,6 +35,8 @@ async def switch_account_endpoint(req: SwitchAccountRequest):
         raise HTTPException(status_code=400, detail="Jogo inválido.")
     try:
         database.set_active_account(game_clean, req.uid)
+        invalidate_roster_cache(game_clean)
+        invalidate_endgame_cache(game_clean)
         return {
             "status": "success",
             "success": True,
@@ -49,6 +53,8 @@ async def delete_account_endpoint(uid: str):
     """Exclui com segurança os dados de um UID específico (personagens, relíquias, notas)."""
     try:
         deleted = database.delete_account_profile(uid)
+        invalidate_roster_cache()
+        invalidate_endgame_cache()
         return {
             "status": "success",
             "success": True,

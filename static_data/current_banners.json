@@ -54,7 +54,7 @@
         "banner_type": "weapon"
       }
     ],
-    "last_updated": "2026-11-11T09:21:43.133375"
+    "last_updated": "2026-11-12T15:11:52.456205"
   },
   "hsr": {
     "game_id": "hsr",
@@ -261,39 +261,17 @@
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1778524336072"
       }
     ],
-    "last_updated": "2026-11-11T09:03:39.474698"
+    "last_updated": "2026-11-12T14:38:59.734947"
   },
   "zzz": {
     "game_id": "zzz",
-    "patch_info": "Patch 3.3 Phase 1 Oct 21, 2026 – Nov 11, 2026",
+    "patch_info": "Patch 3.3 Phase 2 Nov 11, 2026 – Dec 1, 2026",
     "banners": [
-      {
-        "character_name": "Phoenix",
-        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1789201787211-db3c1bcd8ee476c4799ab74001708e53.webp",
-        "featured_4stars": [
-          "Nicole",
-          "Billy",
-          "Anby"
-        ],
-        "is_primary": true,
-        "banner_title": "Into the Flames of Life"
-      },
-      {
-        "character_name": "Velina",
-        "banner_image": "https://upload-os-bbs.hoyolab.com/upload/2026/10/18/0/ab52894afd4dadd30202f7732cdc6614_342236792291687595.png",
-        "featured_4stars": [
-          "Nicole",
-          "Billy",
-          "Anby"
-        ],
-        "is_primary": false,
-        "banner_title": "Graceful Gale"
-      },
       {
         "character_name": "Severian",
         "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1789201787070-9bdb7e64a0d96f6a3a948efb45887f14.webp",
         "featured_4stars": [],
-        "is_primary": false
+        "is_primary": true
       },
       {
         "character_name": "Norma",
@@ -304,35 +282,11 @@
     ],
     "weapon_banners": [
       {
-        "character_name": "Plume of Rebirth",
-        "banner_title": "Dissonant Sonata: Plume of Rebirth",
-        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1792340965728-1804aec61e7702871d7b4bb63af5e996.webp",
-        "featured_4stars": [
-          "Starlight Engine",
-          "Demara Battery Mark II"
-        ],
-        "is_primary": true,
-        "banner_type": "weapon",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/plume-of-rebirth_image.webp?v=1792490246573"
-      },
-      {
-        "character_name": "Joyau Dore",
-        "banner_title": "Dissonant Sonata: Joyau Dore",
-        "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/joyau-dore_image.webp?v=1781636511716",
-        "featured_4stars": [
-          "Starlight Engine",
-          "Demara Battery Mark II"
-        ],
-        "is_primary": false,
-        "banner_type": "weapon",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/joyau-dore_image.webp?v=1781636511716"
-      },
-      {
         "character_name": "Incarcerating Grip",
         "banner_title": "Incarcerating Grip",
         "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1794038246178-447aee70c75945e17a60c0432bd41879.webp",
         "featured_4stars": [],
-        "is_primary": false,
+        "is_primary": true,
         "banner_type": "weapon",
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/incarcerating-grip_image.webp?v=1794317654340"
       },
@@ -346,6 +300,6 @@
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/chief-sidekick_image.webp?v=1781636481144"
       }
     ],
-    "last_updated": "2026-11-11T08:49:43.482880"
+    "last_updated": "2026-11-12T09:10:10.280533"
   }
 }

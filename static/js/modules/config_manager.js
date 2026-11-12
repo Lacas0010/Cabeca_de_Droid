@@ -326,11 +326,14 @@ const GAME_DISPLAY_CONFIG = {
     hsr: { name: "Honkai: Star Rail", icon: "/assets/hsr_icon.png", color: "#c084fc", badge: "HSR" }
 };
 
-window.loadAccountsManagement = async function(showFeedback = false) {
+window.loadAccountsManagement = async function(showFeedback = false, preloadedData = null) {
     try {
-        const res = await fetch("/api/accounts");
-        if (!res.ok) throw new Error("Falha ao buscar contas salvas");
-        const data = await res.json();
+        let data = preloadedData;
+        if (!data) {
+            const res = await fetch("/api/accounts");
+            if (!res.ok) throw new Error("Falha ao buscar contas salvas");
+            data = await res.json();
+        }
         
         const accounts = Array.isArray(data) ? data : (data.accounts || []);
         const activeAccounts = data.active_accounts || {};
@@ -396,14 +399,14 @@ window.loadAccountsManagement = async function(showFeedback = false) {
             } else {
                 let html = "";
                 accounts.forEach(acc => {
-                    const cfg = GAME_DISPLAY_CONFIG[acc.game_id] || { name: acc.game_id.toUpperCase(), icon: "/assets/logo.svg", color: "#38bdf8", badge: acc.game_id.toUpperCase() };
+                    const cfg = GAME_DISPLAY_CONFIG[acc.game_id] || { name: acc.game_id.toUpperCase(), icon: "/assets/logo.png", color: "#38bdf8", badge: acc.game_id.toUpperCase() };
                     const isAct = (activeAccounts[acc.game_id] && String(activeAccounts[acc.game_id]) === String(acc.uid)) || acc.is_active;
                     
                     html += `
                         <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid ${isAct ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255,255,255,0.08)'}; border-radius: 12px; padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; box-shadow: ${isAct ? '0 0 15px rgba(56, 189, 248, 0.15)' : 'none'};">
                             <div style="display: flex; align-items: center; gap: 14px;">
                                 <div style="position: relative;">
-                                    <img src="${cfg.icon}" alt="${cfg.name}" style="width: 42px; height: 42px; border-radius: 10px; object-fit: contain; background: rgba(0,0,0,0.3); padding: 4px; border: 1px solid rgba(255,255,255,0.1);">
+                                    <img src="${cfg.icon}" alt="${cfg.name}" width="42" height="42" loading="lazy" decoding="async" style="width: 42px; height: 42px; border-radius: 10px; object-fit: contain; background: rgba(0,0,0,0.3); padding: 4px; border: 1px solid rgba(255,255,255,0.1);">
                                     <span style="position: absolute; bottom: -4px; right: -4px; font-size: 9px; font-weight: 800; padding: 1px 4px; border-radius: 4px; background: ${cfg.color}; color: #000;">${cfg.badge}</span>
                                 </div>
                                 <div>

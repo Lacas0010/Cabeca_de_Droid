@@ -84,11 +84,23 @@ function setupTabSwitching() {
             const targetPane = document.getElementById(`tab-${targetTab}`);
             if (targetPane) {
                 targetPane.classList.add("active");
-                if (targetTab === 'gacha' && window.initGachaSimulator) {
-                    window.initGachaSimulator();
+                if (targetTab === 'gacha') {
+                    if (window.loadGachaModules) {
+                        window.loadGachaModules().then(() => {
+                            if (window.initGachaSimulator) window.initGachaSimulator();
+                        });
+                    } else if (window.initGachaSimulator) {
+                        window.initGachaSimulator();
+                    }
                 }
-                if (targetTab === 'luck' && window.initLuckDashboard) {
-                    window.initLuckDashboard();
+                if (targetTab === 'luck') {
+                    if (window.loadGachaModules) {
+                        window.loadGachaModules().then(() => {
+                            if (window.initLuckDashboard) window.initLuckDashboard();
+                        });
+                    } else if (window.initLuckDashboard) {
+                        window.initLuckDashboard();
+                    }
                 }
                 if (targetTab === 'home') {
                     if (window.loadDailyFarmOrder) window.loadDailyFarmOrder(window.currentFarmOrderGame || 'genshin');

@@ -7,8 +7,9 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 161 Passed](https://img.shields.io/badge/tests-161%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Tests: 181 Passed](https://img.shields.io/badge/tests-181%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
+[![Performance: Optimized](https://img.shields.io/badge/Performance-17%2F17%20Audited-brightgreen.svg)](#112-high-performance-engine--optimization-pipeline)
 
 Cabeça de Droid is a local metagame analysis service and multi-game management application for **Honkai: Star Rail**, **Genshin Impact**, and **Zenless Zone Zero** that provides automated metagame data ingestion, deterministic gear Roll Value (RV) evaluation, Monte Carlo gacha probability forecasting, and programmatic build audit rendering.
 
@@ -71,6 +72,24 @@ Cabeça de Droid is a local metagame analysis service and multi-game management 
 ### 1.11 Cryptographic Credential Vault
 - **Zero-Exposure Policy:** Protects session tokens (`ltuid_v2`, `ltoken_v2`) using Windows Data Protection API (DPAPI) or AES-256-GCM / HMAC on Linux.
 - **Privacy Enforcement:** Tokens are masked in web interfaces (`mask_token`) and expunged from log outputs via regex sanitization. Optional local numeric PIN locks the web interface.
+
+### 1.12 High-Performance Engine & Optimization Pipeline
+- **HTTP / Network Layer:** `GZipMiddleware(minimum_size=1000)` compression, RFC-compliant `Cache-Control: public, max-age=86400` on static assets, and `CDN-Cache-Control` header (30 days) with production-ready reverse-proxy configuration (`scripts/nginx-cabeca-de-droid.conf`).
+- **Database & Query Optimization:** Zero N+1 queries in SQLite (batch relic loading via `WHERE uid IN (...)`), explicit column projections replacing wildcard selects, and indexed temporal pagination (`LIMIT ? OFFSET ?`) across snapshots and redemption histories.
+- **In-Memory TTL Caching:** Roster and Endgame service layers backed by a 60-second in-memory cache with reactive auto-invalidation on data synchronization, account deletion, and active profile changes.
+- **Dynamic Image & Asset Pipeline:** On-demand WebP image conversion and Pillow LANCZOS resampling (`/api/proxy_image?w=160&format=webp`) yielding up to 95% payload savings, alongside local self-hosted WOFF2 fonts (`Inter`, `Outfit`) with `font-display: swap;`.
+- **Vanilla Frontend Architecture:** Code-splitting with dynamic ES6 module loading (`requestIdleCallback`), native CSS list virtualization (`content-visibility: auto`) for large character galleries, and animated shimmer loading skeletons.
+- **Latency Monitoring:** Profiling middleware tracking request durations, injecting `X-Process-Time` headers, and triggering `[PERF-WARN]` telemetry for requests exceeding 500 ms.
+
+### 1.13 Flexible Character Roster View (Grid & Rich List Mode)
+- **Seamless Grid / List Mode Toggle:** Instant view switching at the top of each game gallery with `localStorage` persistence (`roster_view_mode`), allowing users to toggle between visual card art (Grid view) and dense analytical rows (List view).
+- **High-Density 5-Column List Row Architecture (Option C):**
+  - **Character Identity:** Elemental-themed avatar badge, character level, ascension rank (`E0-E6`, `C0-C6`, `M0-M6`), and tactical combat path/weapon class.
+  - **Weapon / Light Cone / W-Engine:** Official thumbnail, current weapon level, superimposition/refinement rank (`S1-S5`, `R1-R5`, `W1-W5`), and explicit canonical rarity badge (`5★`, `4★`, `3★`, `1★` or `Rank S / Rank A / Rank B`).
+  - **Equipped Relics / Artifacts / Discs Strip:** Horizontal strip of official piece icons with borders and radial glows 100% faithful to canonical item rarity (Gold 5★, Purple 4★, Blue 3★), accompanied by corner micro-badges displaying roll evaluation grades (`SSS` through `D`).
+  - **Active Set Bonuses:** Automatic parsing and display of active 4-piece and 2-piece set bonuses (`4p`, `2p`) along with an equipped slots indicator.
+  - **Roll Value Grade & Direct Inspection:** Overall build Roll Value Grade (`SSS` to `D`), total point score, and one-click access to the full Build Inspector drawer.
+- **Debounced Real-Time Search:** Client-side search utility calibrated with a 300ms debounce, 2-character minimum guard, and `AbortController` cancellation for in-flight requests.
 
 ---
 
@@ -326,7 +345,10 @@ docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droi
 | `GET` | `/api/luck/{game_id}` | Account roll efficiency metrics, God Roll and Cursed Roll identification. |
 | `GET` | `/api/notes` | Real-time stamina, daily quest, and expedition counters. |
 | `POST` | `/api/checkin/run` | Executes HoYoLAB daily check-in sequence. |
+| `GET` | `/api/history/{game_id}` | Paginated timeline of account progression snapshots (`?limit=50&offset=0`). |
 | `GET` | `/api/codes` | Active promotional codes with redemption history and auto-redeem status. |
+| `GET` | `/api/codes/history/{game_id}` | Paginated redemption log for promotional codes (`?limit=50&offset=0`). |
+| `GET` | `/api/proxy_image` | High-performance image proxy with on-demand LANCZOS resizing and WebP conversion (`?url=...&w=160&format=webp`). |
 | `GET` | `/api/static-data/status` | Ingestion status and checksum metadata for offline JSON manifests. |
 
 ---

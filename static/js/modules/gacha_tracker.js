@@ -82,6 +82,33 @@ function updateBannerFilterOptions(gameId) {
  */
 window.loadGachaTracker = async function(gameId) {
     const gid = gameId || window.currentTrackerGame || "hsr";
+    const bannersContainer = document.getElementById("tracker-banners-container");
+    if (bannersContainer) {
+        bannersContainer.innerHTML = [1, 2, 3].map(() => `
+            <div class="tracker-banner-card" style="min-height: 220px; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div class="skeleton-box" style="width: 20px; height: 20px; border-radius: 4px;"></div>
+                            <div class="skeleton-line" style="width: 140px; height: 16px;"></div>
+                        </div>
+                        <div class="skeleton-box" style="width: 80px; height: 20px; border-radius: 12px;"></div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px;">
+                        <div class="skeleton-line" style="width: 60px; height: 28px;"></div>
+                        <div class="skeleton-line" style="width: 100px; height: 12px;"></div>
+                    </div>
+                    <div class="skeleton-box" style="width: 100%; height: 10px; border-radius: 6px; margin-bottom: 14px;"></div>
+                </div>
+                <div style="display: flex; gap: 6px;">
+                    <div class="skeleton-box" style="width: 38px; height: 38px; border-radius: 8px;"></div>
+                    <div class="skeleton-box" style="width: 38px; height: 38px; border-radius: 8px;"></div>
+                    <div class="skeleton-box" style="width: 38px; height: 38px; border-radius: 8px;"></div>
+                </div>
+            </div>
+        `).join("");
+    }
+
     try {
         const res = await fetch(`/api/gacha/tracker/${gid}`);
         if (!res.ok) throw new Error("Falha ao carregar dados do rastreador");
@@ -106,7 +133,6 @@ window.loadGachaTracker = async function(gameId) {
         }
 
         // 2. Renderização Dinâmica dos Banners do Jogo Atual
-        const bannersContainer = document.getElementById("tracker-banners-container");
         if (bannersContainer) {
             const bannerList = data.banners && data.banners.length > 0
                 ? data.banners
@@ -120,6 +146,18 @@ window.loadGachaTracker = async function(gameId) {
 
     } catch (err) {
         console.error("Erro ao carregar dados do Gacha Tracker:", err);
+        if (bannersContainer) {
+            bannersContainer.innerHTML = `
+                <div style="grid-column: 1 / -1; padding: 30px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px;">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                    <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Gacha Tracker" : "Falha ao carregar o rastreador de gacha"}</h4>
+                    <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve pity and banner information." : "Não foi possível carregar os dados de pity e banners."}</p>
+                    <button class="primary-btn" onclick="window.loadGachaTracker && window.loadGachaTracker('${gid}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                    </button>
+                </div>
+            `;
+        }
     }
 };
 
@@ -236,7 +274,7 @@ function renderBannerCardHtml(gameId, banner) {
             const winColor = f.is_win_5050 ? "#34d399" : "#f87171";
             const winLabel = f.is_win_5050 ? "Vitória" : "50/50 Perdido";
             const imgTag = f.icon
-                ? `<img src="${f.icon}" alt="${f.name}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';"><i class="fa-solid fa-star" style="display: none; color: #fbbf24; font-size: 14px;"></i>`
+                ? `<img src="${f.icon}" alt="${f.name}" width="32" height="32" loading="lazy" decoding="async" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';"><i class="fa-solid fa-star" style="display: none; color: #fbbf24; font-size: 14px;"></i>`
                 : `<i class="fa-solid fa-star" style="color: #fbbf24; font-size: 14px;"></i>`;
 
             return `
@@ -304,10 +342,18 @@ function renderBannerCardHtml(gameId, banner) {
     `;
 }
 
+let _trackerHistoryController = null;
+
 /**
  * Consulta e renderiza o histórico detalhado paginado com imagens oficiais
  */
 window.loadGachaTrackerHistory = async function() {
+    if (_trackerHistoryController) {
+        _trackerHistoryController.abort();
+    }
+    _trackerHistoryController = new AbortController();
+    const signal = _trackerHistoryController.signal;
+
     const gid = window.currentTrackerGame || "hsr";
     const historyContainer = document.getElementById("tracker-history-container");
     if (!historyContainer) return;
@@ -327,15 +373,24 @@ window.loadGachaTrackerHistory = async function() {
 
     try {
         historyContainer.innerHTML = `
-            <div style="text-align: center; padding: 30px; color: var(--text-muted);">
-                <i class="fa-solid fa-spinner fa-spin" style="font-size: 20px; color: #38bdf8;"></i>
-                <p style="margin-top: 8px; font-size: 12px;">Carregando histórico de tiros...</p>
+            <div style="display: flex; flex-direction: column; gap: 8px; padding: 6px 0;">
+                ${Array(5).fill(0).map(() => `
+                    <div class="skeleton-row" style="height: 44px; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 10px; width: 50%;">
+                            <div class="skeleton-box" style="width: 28px; height: 28px; border-radius: 4px;"></div>
+                            <div class="skeleton-line" style="width: 60%; height: 12px;"></div>
+                        </div>
+                        <div class="skeleton-line" style="width: 20%; height: 10px;"></div>
+                        <div class="skeleton-box" style="width: 45px; height: 18px; border-radius: 12px;"></div>
+                    </div>
+                `).join("")}
             </div>
         `;
 
-        const res = await fetch(url);
+        const res = await fetch(url, { signal });
         if (!res.ok) throw new Error("Erro ao consultar histórico de tiros");
         const data = await res.json();
+        if (signal.aborted) return;
 
         window.currentHistoryTotal = data.total_pulls || 0;
 
@@ -358,12 +413,30 @@ window.loadGachaTrackerHistory = async function() {
 
         const pulls = data.pulls || [];
         if (pulls.length === 0) {
-            historyContainer.innerHTML = `
-                <div style="text-align: center; padding: 40px 20px; background: rgba(0,0,0,0.2); border-radius: 12px;">
-                    <i class="fa-solid fa-inbox" style="font-size: 28px; color: #64748b; margin-bottom: 8px;"></i>
-                    <p style="color: var(--text-muted); font-size: 13px; margin: 0;">Nenhum tiro encontrado com os filtros selecionados.</p>
-                </div>
-            `;
+            if (window.currentHistoryTotal === 0) {
+                historyContainer.innerHTML = `
+                    <div style="text-align: center; padding: 40px 20px; background: rgba(0,0,0,0.2); border-radius: 12px; max-width: 520px; margin: 10px auto;">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 32px; color: #38bdf8; margin-bottom: 12px;"></i>
+                        <h4 style="margin: 0 0 6px 0; color: var(--text-primary); font-size: 15px;">${isEn ? "No Pulls in Database" : "Nenhum Tiro no Histórico"}</h4>
+                        <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0 0 16px 0;">
+                            ${isEn ? "The Gacha Tracker consolidates your warp/wish history, current pity, and 50/50 status. Import your log via JSON (UIGF/SRGF) to view records." : "O Rastreador de Gacha consolida seu histórico de orações e saltos, taxa de pity e 50/50. Importe seu arquivo JSON (UIGF/SRGF) para visualizar todos os seus registros."}
+                        </p>
+                        <button class="primary-btn" onclick="document.getElementById('tracker-file-input')?.click()" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            <i class="fa-solid fa-file-import"></i> ${isEn ? "Import JSON History" : "Importar Histórico (UIGF/SRGF)"}
+                        </button>
+                    </div>
+                `;
+            } else {
+                historyContainer.innerHTML = `
+                    <div style="text-align: center; padding: 30px 20px; background: rgba(0,0,0,0.2); border-radius: 12px;">
+                        <i class="fa-solid fa-filter" style="font-size: 24px; color: #64748b; margin-bottom: 8px;"></i>
+                        <p style="color: var(--text-muted); font-size: 13px; margin: 0 0 12px 0;">${isEn ? "No pulls match the selected filters." : "Nenhum tiro encontrado com os filtros selecionados."}</p>
+                        <button class="secondary-btn" onclick="document.getElementById('tracker-history-filter-banner').value='all'; document.getElementById('tracker-history-filter-rarity').value='all'; window.loadGachaTrackerHistory();" style="padding: 6px 14px; font-size: 11px; border-radius: 6px; cursor: pointer;">
+                            <i class="fa-solid fa-rotate-left"></i> ${isEn ? "Clear Filters" : "Limpar Filtros"}
+                        </button>
+                    </div>
+                `;
+            }
             return;
         }
 
@@ -385,10 +458,19 @@ window.loadGachaTrackerHistory = async function() {
         `;
 
     } catch (err) {
+        if (err.name === "AbortError") {
+            // Requisição anterior cancelada intencionalmente para dar lugar à mais recente
+            return;
+        }
         console.error("Erro ao carregar histórico detalhado:", err);
         historyContainer.innerHTML = `
-            <div style="padding: 20px; text-align: center; color: #f87171;">
-                <i class="fa-solid fa-triangle-exclamation"></i> Falha ao carregar registros de histórico: ${err.message}
+            <div style="padding: 30px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; max-width: 480px; margin: 15px auto;">
+                <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Pull History" : "Falha ao carregar o histórico de tiros"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve gacha logs." : "Não foi possível carregar os registros de histórico do gacha."}</p>
+                <button class="primary-btn" onclick="window.loadGachaTrackerHistory && window.loadGachaTrackerHistory()" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
+                </button>
             </div>
         `;
     }
@@ -423,7 +505,7 @@ function renderHistoryRowHtml(pull) {
     // Miniatura de imagem com fallback gracioso
     const defaultIconClass = pull.item_type === 'bangboo' ? 'fa-robot' : pull.item_type === 'weapon' ? 'fa-wand-magic-sparkles' : 'fa-user';
     const imgHtml = pull.icon
-        ? `<img src="${pull.icon}" alt="${pull.name}" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';"><i class="fa-solid ${defaultIconClass}" style="display: none; color: ${nameColor}; font-size: 14px;"></i>`
+        ? `<img src="${pull.icon}" alt="${pull.name}" width="28" height="28" loading="lazy" decoding="async" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';"><i class="fa-solid ${defaultIconClass}" style="display: none; color: ${nameColor}; font-size: 14px;"></i>`
         : `<i class="fa-solid ${defaultIconClass}" style="color: ${nameColor}; font-size: 14px;"></i>`;
 
     const starsDisplay = "★".repeat(rarity);

@@ -7,8 +7,9 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Testes: 161 Aprovados](https://img.shields.io/badge/testes-161%20aprovados-success.svg?logo=pytest&logoColor=white)](tests/)
+[![Testes: 181 Aprovados](https://img.shields.io/badge/testes-181%20aprovados-success.svg?logo=pytest&logoColor=white)](tests/)
 [![Segurança: Cofre DPAPI](https://img.shields.io/badge/Seguran%C3%A7a-Cofre%20DPAPI-green.svg)](SECURITY.md)
+[![Performance: Otimizado](https://img.shields.io/badge/Performance-17%2F17%20Auditados-brightgreen.svg)](#112-motor-de-alta-performance--pipeline-de-otimização)
 
 O Cabeça de Droid é um serviço local de análise de metagame e gerenciamento multijogos para **Honkai: Star Rail**, **Genshin Impact** e **Zenless Zone Zero** que fornece ingestão automatizada de dados do meta, avaliação determinística de Valor de Rolagem (RV) de equipamentos, projeção probabilística de gacha via simulação de Monte Carlo e renderização programática de auditorias de build.
 
@@ -71,6 +72,24 @@ O Cabeça de Droid é um serviço local de análise de metagame e gerenciamento 
 ### 1.11 Cofre Criptográfico de Credenciais
 - **Premissa Zero-Exposure:** Protege tokens de autenticação (`ltuid_v2`, `ltoken_v2`) utilizando a Windows Data Protection API (DPAPI) ou criptografia AES-256-GCM / HMAC em sistemas POSIX.
 - **Garantia de Privacidade:** Tokens são mascarados na interface web (`mask_token`) e expurgados de qualquer saída de log via expressões regulares. Controle opcional de acesso local por PIN numérico.
+
+### 1.12 Motor de Alta Performance & Pipeline de Otimização
+- **Camada HTTP / Rede:** Compressão `GZipMiddleware(minimum_size=1000)`, cabeçalhos RFC `Cache-Control: public, max-age=86400` em assets estáticos e `CDN-Cache-Control` (30 dias) com manifesto Nginx para proxies reversos em nuvem (`scripts/nginx-cabeca-de-droid.conf`).
+- **Banco de Dados & Consultas Otimizadas:** Zero consultas N+1 no SQLite (leitura de relíquias em lote por `WHERE uid IN (...)`), projeções explícitas de colunas em vez de `SELECT *` e paginação indexada (`LIMIT ? OFFSET ?`) em snapshots e histórico de resgates.
+- **Cache em Memória com TTL:** Camada de serviço de Roster e Endgame com cache em RAM de 60 segundos e invalidação reativa em sincronizações, remoções e alternâncias de conta.
+- **Pipeline Dinâmico de Imagens & Tipografia:** Conversão WebP sob demanda e redimensionamento LANCZOS via Pillow (`/api/proxy_image?w=160&format=webp`) com economia de até 95% no payload, associado a fontes locais WOFF2 auto-hospedadas (`Inter`, `Outfit`) com `font-display: swap;`.
+- **Frontend Vanilla Web de Baixa Latência:** Code-splitting com dynamic imports ES6 (`requestIdleCallback`), virtualização nativa de listas longas via CSS (`content-visibility: auto`) e skeletons animados de carregamento (shimmer).
+- **Monitoramento de Latência:** Middleware de profiling registrando durações, injetando cabeçalhos `X-Process-Time` e gerando alertas `[PERF-WARN]` para requisições com tempo de resposta $>500\text{ms}$.
+
+### 1.13 Visualização Flexível do Elenco (Modo Grade & Modo Lista Enriquecida)
+- **Alternância Fluida Grid/List:** Alternância instantânea no topo do Roster com persistência em `localStorage` (`roster_view_mode`), permitindo escolher entre cartões visuais (modo grade) e linhas analíticas de alta densidade (modo lista).
+- **Layout Analítico de 5 Colunas (Opção C):**
+  - **Identidade do Personagem:** Avatar com borda temática elemental, nível, Eidolon/Constelação/Cinema Mental (`E0-E6`, `C0-C6`, `M0-M6`) e classe/caminho tático.
+  - **Arma / Cone de Luz / Motor W:** Ícone oficial do equipamento, nível, rank de sobreposição/refinamento (`S1-S5`, `R1-R5`, `W1-W5`) e badge explícita de raridade oficial (`5★`, `4★`, `3★`, `1★` ou `Rank S / Rank A / Rank B`).
+  - **Strip de Relíquias / Artefatos / Discos:** Ícones individuais de cada peça com molduras e brilhos radiais 100% fiéis à sua raridade canônica (dourado 5★, roxo 4★, azul 3★) sem interferência das notas de rolagem, acompanhadas de micro-indicador de nota de roll (`SSS` a `D`).
+  - **Conjuntos Ativos:** Identificação automática de conjuntos de 4 e 2 peças (`4p`, `2p`) com barra de preenchimento de espaços equipados.
+  - **Classificação & Inspeção:** Nota geral de Roll Value Grade (`SSS` a `D`), pontuação total e botão de inspeção direta no Build Inspector.
+- **Busca em Tempo Real com Debounce e Cancelamento:** Sistema de busca reativo calibrado em 300ms de debounce, filtro mínimo de 2 caracteres e descarte de respostas obsoletas via `AbortController`.
 
 ---
 
@@ -326,7 +345,10 @@ docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droi
 | `GET` | `/api/luck/{game_id}` | Métricas de eficiência de rolagem da conta com identificação de God Roll e Cursed Roll. |
 | `GET` | `/api/notes` | Contadores em tempo real de resina/energia, missões diárias e expedições. |
 | `POST` | `/api/checkin/run` | Executa rotina de check-in diário no HoYoLAB. |
+| `GET` | `/api/history/{game_id}` | Linha do tempo paginada de snapshots de evolução da conta (`?limit=50&offset=0`). |
 | `GET` | `/api/codes` | Códigos promocionais ativos com histórico de resgate e status do auto-redeem. |
+| `GET` | `/api/codes/history/{game_id}` | Histórico paginado de códigos promocionais resgatados (`?limit=50&offset=0`). |
+| `GET` | `/api/proxy_image` | Proxy de imagens de alta performance com redimensionamento LANCZOS e conversão WebP sob demanda (`?url=...&w=160&format=webp`). |
 | `GET` | `/api/static-data/status` | Estado de ingestão e somas de verificação (checksums) dos manifestos JSON offline. |
 
 ---

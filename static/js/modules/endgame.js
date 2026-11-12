@@ -181,15 +181,20 @@ function renderEndgameTeamCard(team, gameId) {
             const elemClass = ELEMENT_MAPPING[elemKey] || "el-physical";
             const rarityClass = (char.rarity === 5 || char.rarity === "5" || String(char.rarity).toUpperCase() === "S") ? "rarity-5" : "rarity-4";
             const fallbackIcon = `/assets/${gameId}_icon.png`;
-            const avatarSrc = char.icon || fallbackIcon;
+            let avatarSrc = char.icon || fallbackIcon;
+            if (avatarSrc.startsWith("http://") || avatarSrc.startsWith("https://")) {
+                avatarSrc = `/api/proxy_image?url=${encodeURIComponent(avatarSrc)}&w=80&format=webp`;
+            } else if (avatarSrc.includes("/api/proxy_image?") && !avatarSrc.includes("&w=")) {
+                avatarSrc = `${avatarSrc}&w=80&format=webp`;
+            }
             const rankBadge = char.rank_str ? `<span class="endgame-char-rank-badge">${char.rank_str}</span>` : "";
 
             const endgameCharName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
             charsHtml += `
                 <div class="endgame-char-mini ${elemClass} ${rarityClass}" data-char-name="${char.name}" title="${endgameCharName} (${checkIsEn() ? 'Lv.' : 'Nv.'} ${char.level || 80}) • ${checkIsEn() ? 'Inspect Build' : 'Inspecionar Build'}">
                     <div class="endgame-char-avatar-box" style="position: relative; width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; flex-shrink: 0; display: inline-block;">
-                        <img src="${avatarSrc}" class="endgame-char-avatar" style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; border-radius: 50%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${endgameCharName}">
-                        ${elemKey && elemKey !== "bangboo" ? `<img src="/assets/elements/${gameId}_${elemKey}.png" class="endgame-char-elem-icon" style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; min-width: 14px; min-height: 14px; max-width: 14px; max-height: 14px; border-radius: 50%; padding: 1px; object-fit: contain;" onerror="this.style.display='none';" alt="">` : ""}
+                        <img src="${avatarSrc}" class="endgame-char-avatar" width="38" height="38" loading="lazy" decoding="async" style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; border-radius: 50%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${endgameCharName}">
+                        ${elemKey && elemKey !== "bangboo" ? `<img src="/assets/elements/${gameId}_${elemKey}.png" class="endgame-char-elem-icon" width="14" height="14" loading="lazy" decoding="async" style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; min-width: 14px; min-height: 14px; max-width: 14px; max-height: 14px; border-radius: 50%; padding: 1px; object-fit: contain;" onerror="this.style.display='none';" alt="">` : ""}
                         ${rankBadge}
                     </div>
                     <span class="endgame-char-name-label">${endgameCharName}</span>
@@ -240,6 +245,31 @@ async function _loadEndgameImpl(gameId) {
     const container = document.getElementById(`endgame-container-${gameId}`);
     const badgeEl = document.getElementById(`endgame-badge-${gameId}`);
     if (!container) return;
+
+    if (!container.innerHTML.trim() || container.querySelector(".endgame-empty-state")) {
+        container.innerHTML = `
+            <div style="display: flex; flex-direction: column; gap: 14px; padding: 12px 0;">
+                <div class="skeleton-row" style="height: 120px; flex-direction: column; align-items: flex-start; justify-content: space-around; padding: 16px;">
+                    <div class="skeleton-line" style="width: 35%; height: 18px;"></div>
+                    <div class="skeleton-line" style="width: 70%; height: 12px;"></div>
+                    <div style="display: flex; gap: 10px; width: 100%; margin-top: 8px;">
+                        <div class="skeleton-box" style="width: 50px; height: 50px; border-radius: 50%;"></div>
+                        <div class="skeleton-box" style="width: 50px; height: 50px; border-radius: 50%;"></div>
+                        <div class="skeleton-box" style="width: 50px; height: 50px; border-radius: 50%;"></div>
+                        <div class="skeleton-box" style="width: 50px; height: 50px; border-radius: 50%;"></div>
+                    </div>
+                </div>
+                <div class="skeleton-row" style="height: 120px; flex-direction: column; align-items: flex-start; justify-content: space-around; padding: 16px;">
+                    <div class="skeleton-line" style="width: 40%; height: 18px;"></div>
+                    <div class="skeleton-line" style="width: 60%; height: 12px;"></div>
+                    <div style="display: flex; gap: 10px; width: 100%; margin-top: 8px;">
+                        <div class="skeleton-box" style="width: 50px; height: 50px; border-radius: 50%;"></div>
+                        <div class="skeleton-box" style="width: 50px; height: 50px; border-radius: 50%;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     try {
         const res = await fetch(`/api/endgame/${gameId}?lang=${checkIsEn() ? "en" : "pt"}`);
@@ -643,7 +673,12 @@ function renderTeamMatchCard(team, gameId) {
     let slotsHtml = `<div class="team-matcher-slots-grid">`;
     team.members.forEach(m => {
         const fallbackIcon = `/assets/${gameId}_icon.png`;
-        const avatarSrc = m.icon || fallbackIcon;
+        let avatarSrc = m.icon || fallbackIcon;
+        if (avatarSrc.startsWith("http://") || avatarSrc.startsWith("https://")) {
+            avatarSrc = `/api/proxy_image?url=${encodeURIComponent(avatarSrc)}&w=80&format=webp`;
+        } else if (avatarSrc.includes("/api/proxy_image?") && !avatarSrc.includes("&w=")) {
+            avatarSrc = `${avatarSrc}&w=80&format=webp`;
+        }
         const elemKey = (m.element || "").toLowerCase();
         const elemClass = ELEMENT_MAPPING[elemKey] || "el-physical";
         const rarityClass = (m.rarity === 5 || m.rarity === "5" || String(m.rarity).toUpperCase() === "S") ? "rarity-5" : "rarity-4";
@@ -653,7 +688,7 @@ function renderTeamMatchCard(team, gameId) {
             slotsHtml += `
                 <div class="team-matcher-slot owned" title="${mDisplayName} (Nv. ${m.level || 80} ${m.rank_str || ''}) • ${isEn ? "In your Roster" : "No seu Roster"}">
                     <div class="team-matcher-avatar-box ${elemClass} ${rarityClass}">
-                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${mDisplayName}">
+                        <img src="${avatarSrc}" width="38" height="38" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${mDisplayName}">
                     </div>
                     <span class="team-matcher-slot-name">${mDisplayName}</span>
                     <span class="team-matcher-slot-role">${formatEndgameRole(m.role)}</span>
@@ -664,7 +699,7 @@ function renderTeamMatchCard(team, gameId) {
             slotsHtml += `
                 <div class="team-matcher-slot missing" title="${mDisplayName} • ${isEn ? "Not Owned" : "Não Possuído"}">
                     <div class="team-matcher-avatar-box">
-                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${mDisplayName}">
+                        <img src="${avatarSrc}" width="38" height="38" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${mDisplayName}">
                     </div>
                     <span class="team-matcher-slot-name">${mDisplayName}</span>
                     <span class="team-matcher-slot-role">${formatEndgameRole(m.role)}</span>
@@ -692,7 +727,7 @@ function renderTeamMatchCard(team, gameId) {
                                 ${m.substitutes.map(sub => `
                                     <div class="team-matcher-sub-chip">
                                         <div class="team-matcher-sub-info">
-                                            <img src="${sub.icon || `/assets/${gameId}_icon.png`}" class="team-matcher-sub-avatar" onerror="this.onerror=null; this.src='/assets/${gameId}_icon.png';">
+                                            <img src="${sub.icon || `/assets/${gameId}_icon.png`}" class="team-matcher-sub-avatar" width="28" height="28" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='/assets/${gameId}_icon.png';">
                                             <div>
                                                 <strong style="color: #f8fafc;">${typeof formatCharacterName === 'function' ? formatCharacterName(sub.name) : sub.name}</strong> 
                                                 <span style="color: #94a3b8; font-size: 10px;">(${isEn ? "Lv." : "Nv."} ${sub.level} • ${sub.rank_str})</span>

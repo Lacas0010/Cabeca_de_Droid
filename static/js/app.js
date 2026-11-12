@@ -14,8 +14,25 @@ import "./modules/roster.js?v=24.0";
 import "./modules/build_comparator.js?v=24.0";
 import "./modules/chat_rag.js?v=24.0";
 import "./modules/farming.js?v=24.0";
-import "./modules/gacha_sim.js?v=24.0";
-import "./modules/gacha_tracker.js?v=24.0";
+
+// Módulos pesados carregados sob demanda via import() dinâmico:
+// gacha_sim.js e gacha_tracker.js são carregados apenas quando a aba Gacha/Sorte for ativada ou em idle
+let _gachaModulesPromise = null;
+window.loadGachaModules = function() {
+    if (!_gachaModulesPromise) {
+        _gachaModulesPromise = Promise.all([
+            import("./modules/gacha_sim.js?v=24.0"),
+            import("./modules/gacha_tracker.js?v=24.0")
+        ]).then(() => {
+            console.log("[PERF] Módulos de Gacha carregados dinamicamente sob demanda.");
+        }).catch(err => {
+            console.error("[PERF] Falha ao carregar módulos de Gacha sob demanda:", err);
+            _gachaModulesPromise = null;
+            throw err;
+        });
+    }
+    return _gachaModulesPromise;
+};
 
 // Inicialização da Aplicação
 // ==========================================================================
@@ -32,19 +49,23 @@ document.addEventListener("DOMContentLoaded", () => {
     setupInspectorTabs();
     setupSubnavTabs();
     setupPinSecurityUI();
+    if (typeof setupRosterViewModeToggle === "function") {
+        setupRosterViewModeToggle();
+    }
     
-    // Carrega dados iniciais
+    // Carrega dados iniciais sem duplicidade (loadRoster já orquestra loadEndgame)
     fetchConfig();
     loadOverview();
-    if (typeof loadAccountsManagement === "function") {
-        loadAccountsManagement();
-    }
     loadRoster("zzz");
     loadRoster("genshin");
     loadRoster("hsr");
-    loadEndgame("zzz");
-    loadEndgame("genshin");
-    loadEndgame("hsr");
+
+    // Pré-carregamento não bloqueante em background no tempo ocioso do navegador
+    if ("requestIdleCallback" in window) {
+        requestIdleCallback(() => window.loadGachaModules(), { timeout: 4000 });
+    } else {
+        setTimeout(() => window.loadGachaModules(), 3000);
+    }
 });
 
 async function loadOverview() {
@@ -65,6 +86,9 @@ async function loadOverview() {
             } else if (resAccounts.value.accounts) {
                 accountsList = resAccounts.value.accounts;
                 activeAccountsMap = resAccounts.value.active_accounts || {};
+            }
+            if (typeof window.loadAccountsManagement === "function") {
+                window.loadAccountsManagement(false, resAccounts.value);
             }
         }
 

@@ -309,6 +309,16 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
         except Exception as banner_err:
             log_game(game_id, f"Aviso ao sincronizar banners atuais: {banner_err}", "WARN")
 
+        # Invalida os caches em memória de Roster e Endgame para refletir a sincronização imediatamente
+        try:
+            from services.roster_service import invalidate_roster_cache
+            from services.endgame_service import invalidate_endgame_cache
+
+            invalidate_roster_cache(game_id)
+            invalidate_endgame_cache(game_id)
+        except Exception as cache_err:
+            log_game(game_id, f"Aviso ao invalidar cache em memória: {cache_err}", "WARN")
+
         log_game(game_id, "Sincronização concluída com sucesso!", "SUCCESS", progresso=1.0)
     except Exception as general_err:
         log_game(game_id, f"Erro crítico na sincronização: {general_err}", "ERROR", progresso=0.0)

@@ -533,13 +533,15 @@ window.initHelpHubHandlers = () => {
 
     let activeCategory = "all";
 
-    const filterCards = () => {
-        const query = (searchInput?.value || "").toLowerCase().trim();
+    const executeFilterCards = (query, signal) => {
+        if (signal?.aborted) return;
+        const rawVal = (query || "").toLowerCase().trim();
+        const activeQuery = rawVal.length >= 2 ? rawVal : "";
 
         cards.forEach(card => {
             const categoryMatch = activeCategory === "all" || card.dataset.category === activeCategory;
             const cardText = card.textContent.toLowerCase();
-            const searchMatch = !query || cardText.includes(query);
+            const searchMatch = !activeQuery || cardText.includes(activeQuery);
 
             if (categoryMatch && searchMatch) {
                 card.style.display = "flex";
@@ -549,8 +551,25 @@ window.initHelpHubHandlers = () => {
         });
     };
 
+    const filterCards = () => {
+        const query = searchInput ? searchInput.value : "";
+        executeFilterCards(query);
+    };
+
     if (searchInput) {
-        searchInput.addEventListener("input", filterCards);
+        const debouncedHelpSearch = window.createDebouncedSearch((val, signal) => {
+            executeFilterCards(val, signal);
+        }, { delay: 300, minLength: 2, immediateOnEmpty: true });
+
+        searchInput.addEventListener("input", (e) => {
+            const rawVal = e.target.value.trim();
+            if (rawVal.length > 0 && rawVal.length < 2) {
+                debouncedHelpSearch.cancel();
+                executeFilterCards("");
+                return;
+            }
+            debouncedHelpSearch(e.target.value);
+        });
     }
 
     pills.forEach(pill => {

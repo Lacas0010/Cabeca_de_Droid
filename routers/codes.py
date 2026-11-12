@@ -21,11 +21,13 @@ async def get_promo_codes_endpoint(game_id: str):
 
 
 @router.get("/api/codes/history/{game_id}")
-async def get_promo_codes_history_endpoint(game_id: str):
-    """Retorna o histórico cronológico de códigos promocionais resgatados para o jogo."""
+async def get_promo_codes_history_endpoint(game_id: str, limit: int = 50, offset: int = 0):
+    """Retorna o histórico cronológico de códigos promocionais resgatados para o jogo com paginação."""
     try:
-        history = database.get_code_redemption_history(game_id=game_id)
-        return {"game_id": game_id, "history": history}
+        limit = max(1, min(limit, 100))
+        offset = max(0, offset)
+        history = database.get_code_redemption_history(game_id=game_id, limit=limit, offset=offset)
+        return {"game_id": game_id, "history": history, "limit": limit, "offset": offset}
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

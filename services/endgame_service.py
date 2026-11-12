@@ -1,13 +1,29 @@
 import re
 import os
 import json
+import time
 import urllib.parse
-from typing import Dict, Any
+from typing import Dict, Any, Optional, Tuple
 
 import database
 import endgame_extractor
 from services.roster_service import get_roster
 from services.media_service import get_raw_url
+
+_ENDGAME_CACHE: Dict[Tuple[str, str], Tuple[float, Dict[str, Any]]] = {}
+CACHE_TTL = 60.0
+
+
+def invalidate_endgame_cache(game_id: Optional[str] = None) -> None:
+    """Invalida o cache em memória do endgame para forçar atualização imediata."""
+    global _ENDGAME_CACHE
+    if game_id:
+        clean_g = game_id.lower().strip()
+        keys_to_del = [k for k in _ENDGAME_CACHE if k[0] == clean_g]
+        for k in keys_to_del:
+            _ENDGAME_CACHE.pop(k, None)
+    else:
+        _ENDGAME_CACHE.clear()
 
 
 async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
@@ -15,6 +31,14 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
     game_id = game_id.lower().strip()
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise ValueError("Jogo inválido. Escolha 'hsr', 'genshin' ou 'zzz'.")
+
+    # Verifica cache em memória
+    cache_key = (game_id, lang)
+    now = time.time()
+    if cache_key in _ENDGAME_CACHE:
+        cached_time, cached_val = _ENDGAME_CACHE[cache_key]
+        if now - cached_time < CACHE_TTL:
+            return cached_val
 
     modes = []
     updated_at = ""
@@ -187,7 +211,7 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
                     if m.get("name") == "Inimigo":
                         m["name"] = "Enemy"
 
-    return {
+    res = {
         "status": "success",
         "game_id": game_id,
         "has_data": bool(modes and len(modes) > 0),
@@ -195,3 +219,5 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
         "uid": uid,
         "modes": modes or [],
     }
+    _ENDGAME_CACHE[cache_key] = (now, res)
+    return res

@@ -528,10 +528,100 @@ function getSafeFileName(name) {
     return name.toLowerCase().replace(/[^a-zA-Z0-9]/g, "_") + ".png";
 }
 
+/**
+ * Utilitário de alta performance para busca, filtro e salvamento com debounce de ~300ms,
+ * cancelamento assíncrono via AbortController e validação de tamanho mínimo (>= 2 caracteres).
+ * 
+ * Regras atendidas:
+ * 1. Debounce: Aguarda a pessoa parar de digitar por ~300ms antes de executar a ação.
+ * 2. AbortController: Cancela a requisição / busca anterior se uma nova tecla for pressionada,
+ *    evitando race conditions e respostas antigas sobrescrevendo dados recentes.
+ * 3. Tamanho mínimo: Não busca com menos de 2 caracteres. Se o campo for totalmente limpo (0 caracteres),
+ *    dispara imediatamente para resetar a visualização sem atrasos.
+ * 
+ * @param {Function} fn - Função de busca/filtro/salvamento: (query, signal, ...args) => void|Promise<void>
+ * @param {Object} [options]
+ * @param {number} [options.delay=300] - Tempo de espera em milissegundos
+ * @param {number} [options.minLength=2] - Mínimo de caracteres para disparar busca
+ * @param {boolean} [options.immediateOnEmpty=true] - Se true, reseta a lista imediatamente ao esvaziar
+ * @param {Function} [options.getValue] - Função customizada para extrair o valor da query a partir de args
+ * @returns {Function} Função debounced pronta para oninput / addEventListener
+ */
+function createDebouncedSearch(fn, { delay = 300, minLength = 2, immediateOnEmpty = true, getValue = null } = {}) {
+    let timeoutId = null;
+    let currentController = null;
 
+    const debounced = function(...args) {
+        let query = "";
+        if (typeof getValue === "function") {
+            query = getValue(...args);
+        } else if (args.length > 0) {
+            const first = args[0];
+            if (typeof first === "string") {
+                if (args.length > 1 && typeof args[1] === "string") {
+                    query = args[1];
+                } else {
+                    query = first;
+                }
+            } else if (first?.target?.value !== undefined) {
+                query = first.target.value;
+            } else if (first?.value !== undefined) {
+                query = first.value;
+            }
+        }
+        const trimmed = (query || "").trim();
 
+        // Cancela timer pendente se houver nova tecla
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+
+        // Aborta a requisição assíncrona anterior que ainda esteja em voo
+        if (currentController) {
+            currentController.abort();
+            currentController = null;
+        }
+
+        // Caso especial: input totalmente limpo (0 caracteres) -> restaura imediatamente sem aguardar 300ms
+        if (trimmed.length === 0) {
+            if (immediateOnEmpty) {
+                currentController = new AbortController();
+                const signal = currentController.signal;
+                return fn.apply(this, [...args, signal]);
+            }
+            return;
+        }
+
+        // Não busca se tiver menos de minLength caracteres (ex: 1 caractere)
+        if (trimmed.length < minLength) {
+            return;
+        }
+
+        // Agenda a execução com o delay configurado (~300ms)
+        timeoutId = setTimeout(() => {
+            currentController = new AbortController();
+            const signal = currentController.signal;
+            fn.apply(this, [...args, signal]);
+        }, delay);
+    };
+
+    debounced.cancel = function() {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+        if (currentController) {
+            currentController.abort();
+            currentController = null;
+        }
+    };
+
+    return debounced;
+}
 
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
+if (typeof createDebouncedSearch !== 'undefined') window.createDebouncedSearch = createDebouncedSearch;
 if (typeof API_URL !== 'undefined') window.API_URL = API_URL;
 if (typeof ELEMENT_MAPPING !== 'undefined') window.ELEMENT_MAPPING = ELEMENT_MAPPING;
 if (typeof SLOT_ICONS !== 'undefined') window.SLOT_ICONS = SLOT_ICONS;

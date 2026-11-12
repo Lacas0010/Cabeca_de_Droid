@@ -910,11 +910,15 @@ class HSRExtractor(BaseExtractor):
 
                 w_info = {}
                 if hasattr(char, "equip") and char.equip:
+                    w_rarity = getattr(char.equip, "rarity", None)
+                    if not w_rarity:
+                        w_rarity = database.get_weapon_rarity("hsr", char.equip.name)
                     w_info = {
                         "name": char.equip.name,
                         "level": getattr(char.equip, "level", 80),
                         "rank": getattr(char.equip, "rank", 1),
                         "icon": getattr(char.equip, "icon", ""),
+                        "rarity": w_rarity or 4,
                     }
 
                 relics_json = []
@@ -923,6 +927,23 @@ class HSRExtractor(BaseExtractor):
                     r_list.extend(char.relics)
                 if hasattr(char, "ornaments") and char.ornaments:
                     r_list.extend(char.ornaments)
+
+                set_counts = {}
+                for r in r_list:
+                    set_name = clean_relic_name(r.name)
+                    if hasattr(r, "wiki") and r.wiki:
+                        match = re.search(r"/entry/(\d+)", r.wiki)
+                        if match:
+                            w_id = match.group(1)
+                            set_name = clean_relic_name(wiki_map.get(w_id, f"Conjunto {w_id}"))
+                    set_counts[set_name] = set_counts.get(set_name, 0) + 1
+
+                char_sets = [
+                    f"{count}p {s_name}"
+                    for s_name, count in sorted(set_counts.items(), key=lambda x: x[1], reverse=True)
+                    if count >= 2
+                ]
+
                 for r in r_list:
                     pos = getattr(r, "pos", "?")
                     pos_name = hsr_slot_map.get(pos, f"Slot {pos}")
@@ -957,6 +978,14 @@ class HSRExtractor(BaseExtractor):
                             s_val = getattr(sub, "value", getattr(sub, "display_value", getattr(sub, "stat_value", "")))
                             s_clean = sanitize_stat_name(s_name)
                             subs.append(f"{s_clean}: {s_val}")
+
+                    r_set_name = clean_relic_name(r.name)
+                    if hasattr(r, "wiki") and r.wiki:
+                        match = re.search(r"/entry/(\d+)", r.wiki)
+                        if match:
+                            w_id = match.group(1)
+                            r_set_name = clean_relic_name(wiki_map.get(w_id, f"Conjunto {w_id}"))
+
                     relics_json.append(
                         {
                             "name": clean_relic_name(r.name),
@@ -964,6 +993,8 @@ class HSRExtractor(BaseExtractor):
                             "slot": pos_name,
                             "main": main_stat,
                             "sub": ", ".join(subs) if subs else "Sem substatus",
+                            "rarity": getattr(r, "rarity", 5),
+                            "set_name": r_set_name,
                         }
                     )
 
@@ -1041,6 +1072,7 @@ class HSRExtractor(BaseExtractor):
                         "splash_art": hsr_splash,
                         "eidolon_art": eidolon_art_url,
                         "weapon": w_info,
+                        "sets": char_sets,
                         "relics": relics_json,
                         "skills": skills_json,
                         "ranks": ranks_json,
@@ -1103,6 +1135,8 @@ class HSRExtractor(BaseExtractor):
                     skills_json=json.dumps(c.get("skills", [])),
                     stats_json=json.dumps(c.get("stats", {})),
                     ranks_json=json.dumps(c.get("ranks", [])),
+                    weapon_rarity=c["weapon"].get("rarity") if c["weapon"] else None,
+                    sets_json=json.dumps(c.get("sets", [])),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1114,6 +1148,8 @@ class HSRExtractor(BaseExtractor):
                         main_stat=r["main"],
                         sub_stats=r["sub"],
                         icon=r["icon"],
+                        rarity=r.get("rarity", 5),
+                        set_name=r.get("set_name", ""),
                     )
             print("[INFO] Roster HSR salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
@@ -1433,11 +1469,17 @@ class GenshinExtractor(BaseExtractor):
                     c_name = safe_char_name(char)
                     w_info = {}
                     if hasattr(char, "weapon") and char.weapon:
+                        w_rarity = getattr(char.weapon, "rarity", None)
+                        if not w_rarity:
+                            import database
+
+                            w_rarity = database.get_weapon_rarity("genshin", getattr(char.weapon, "name", ""))
                         w_info = {
                             "name": getattr(char.weapon, "name", "Nenhuma"),
                             "level": getattr(char.weapon, "level", 90),
                             "rank": getattr(char.weapon, "refinement", 1),
                             "icon": getattr(char.weapon, "icon", ""),
+                            "rarity": w_rarity or 4,
                         }
                     artifacts_json = []
                     if hasattr(char, "artifacts") and char.artifacts:
@@ -1484,6 +1526,9 @@ class GenshinExtractor(BaseExtractor):
                                     s_clean = sanitize_stat_name(s_name)
                                     subs.append(f"{s_clean}: {s_val}")
                             art_name = getattr(art, "name", "Artefato")
+                            art_set_name = ""
+                            if hasattr(art, "set") and art.set:
+                                art_set_name = clean_relic_name(getattr(art.set, "name", ""))
                             artifacts_json.append(
                                 {
                                     "name": clean_relic_name(art_name),
@@ -1491,8 +1536,21 @@ class GenshinExtractor(BaseExtractor):
                                     "slot": pos_name,
                                     "main": main_stat,
                                     "sub": ", ".join(subs) if subs else "Sem substatus",
+                                    "rarity": getattr(art, "rarity", 5),
+                                    "set_name": art_set_name,
                                 }
                             )
+
+                    genshin_set_counts = {}
+                    for art in getattr(char, "artifacts", []):
+                        if hasattr(art, "set") and art.set:
+                            s_n = clean_relic_name(getattr(art.set, "name", "Desconhecido"))
+                            genshin_set_counts[s_n] = genshin_set_counts.get(s_n, 0) + 1
+                    genshin_sets = [
+                        f"{cnt}p {s_n}"
+                        for s_n, cnt in sorted(genshin_set_counts.items(), key=lambda x: x[1], reverse=True)
+                        if cnt >= 2
+                    ]
 
                     char_icon = ""
                     try:
@@ -1625,6 +1683,7 @@ class GenshinExtractor(BaseExtractor):
                             "icon": sanitize_genshin_url(char_icon),
                             "gacha_art": sanitize_genshin_url(genshin_splash),
                             "weapon": w_info,
+                            "sets": genshin_sets,
                             "relics": artifacts_json,
                             "skills": skills_json,
                             "constellations": constellations_json,
@@ -1691,6 +1750,8 @@ class GenshinExtractor(BaseExtractor):
                     skills_json=json.dumps(c.get("skills", [])),
                     stats_json=json.dumps(c.get("stats", {})),
                     ranks_json=json.dumps(c.get("constellations", [])),
+                    weapon_rarity=c["weapon"].get("rarity") if c["weapon"] else None,
+                    sets_json=json.dumps(c.get("sets", [])),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -1702,6 +1763,8 @@ class GenshinExtractor(BaseExtractor):
                         main_stat=r["main"],
                         sub_stats=r["sub"],
                         icon=r["icon"],
+                        rarity=r.get("rarity", 5),
+                        set_name=r.get("set_name", ""),
                     )
             print("[INFO] Roster Genshin salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
@@ -1901,11 +1964,20 @@ class ZZZExtractor(BaseExtractor):
             for agent in sorted(agents, key=lambda a: (a.rarity, a.level), reverse=True):
                 w_info = {}
                 if hasattr(agent, "w_engine") and agent.w_engine:
+                    raw_w_rarity = str(getattr(agent.w_engine, "rarity", "A")).upper()
+                    w_rarity = 5 if raw_w_rarity in ["S", "5"] else (3 if raw_w_rarity in ["B", "3"] else 4)
+                    if hasattr(agent.w_engine, "name") and agent.w_engine.name:
+                        import database
+
+                        calc_r = database.get_weapon_rarity("zzz", agent.w_engine.name)
+                        if calc_r:
+                            w_rarity = calc_r
                     w_info = {
                         "name": agent.w_engine.name,
                         "level": getattr(agent.w_engine, "level", 60),
                         "rank": getattr(agent.w_engine, "refinement", 1),
                         "icon": getattr(agent.w_engine, "icon", ""),
+                        "rarity": w_rarity,
                     }
                 discs_json = []
                 if hasattr(agent, "discs") and agent.discs:
@@ -1952,6 +2024,13 @@ class ZZZExtractor(BaseExtractor):
                                 )
                                 s_clean = sanitize_stat_name(s_name)
                                 subs.append(f"{s_clean}: {s_val}")
+
+                        raw_disc_r = str(getattr(disc, "rarity", "S")).upper()
+                        disc_rarity = 5 if raw_disc_r in ["S", "5"] else (3 if raw_disc_r in ["B", "3"] else 4)
+                        disc_set_name = ""
+                        if hasattr(disc, "set_effect") and disc.set_effect:
+                            disc_set_name = clean_relic_name(getattr(disc.set_effect, "name", ""))
+
                         discs_json.append(
                             {
                                 "name": clean_relic_name(disc.name),
@@ -1959,8 +2038,21 @@ class ZZZExtractor(BaseExtractor):
                                 "slot": pos_name,
                                 "main": main_stat,
                                 "sub": ", ".join(subs) if subs else "Sem substatus",
+                                "rarity": disc_rarity,
+                                "set_name": disc_set_name,
                             }
                         )
+
+                disc_sets = {}
+                for disc in getattr(agent, "discs", []):
+                    if hasattr(disc, "set_effect") and disc.set_effect:
+                        disc_sets[clean_relic_name(disc.set_effect.name)] = disc.set_effect.owned_num
+
+                zzz_sets = [
+                    f"{cnt}p {s_name}"
+                    for s_name, cnt in sorted(disc_sets.items(), key=lambda x: x[1], reverse=True)
+                    if cnt >= 2
+                ]
                 icon_url = getattr(agent, "square_icon", getattr(agent, "rectangle_icon", getattr(agent, "icon", "")))
                 hoyolab_splash = getattr(
                     agent,
@@ -2025,6 +2117,7 @@ class ZZZExtractor(BaseExtractor):
                         "icon": icon_url,
                         "gacha_art": splash_url,
                         "weapon": w_info,
+                        "sets": zzz_sets,
                         "relics": discs_json,
                         "skills": skills_json,
                         "ranks": ranks_json,
@@ -2088,6 +2181,8 @@ class ZZZExtractor(BaseExtractor):
                     skills_json=json.dumps(c.get("skills", [])),
                     stats_json=json.dumps(c.get("stats", {})),
                     ranks_json=json.dumps(c.get("ranks", [])),
+                    weapon_rarity=c["weapon"].get("rarity") if c["weapon"] else None,
+                    sets_json=json.dumps(c.get("sets", [])),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -2099,6 +2194,8 @@ class ZZZExtractor(BaseExtractor):
                         main_stat=r["main"],
                         sub_stats=r["sub"],
                         icon=r["icon"],
+                        rarity=r.get("rarity", 5),
+                        set_name=r.get("set_name", ""),
                     )
             print("[INFO] Roster ZZZ salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:

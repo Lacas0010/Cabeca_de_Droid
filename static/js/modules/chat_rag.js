@@ -344,7 +344,7 @@ function updateTeamBuilderGrid(gameId) {
         const safeDataName = (char.name || "").replace(/"/g, "&quot;");
         return `
             <div class="team-char-select-card" data-name="${safeDataName}" style="position: relative; aspect-ratio: 1; cursor: pointer; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden; background: rgba(0,0,0,0.3); transition: all 0.2s;" onclick="window.toggleChatTeamCharacter(this, this.dataset.name, '${gameId}')">
-                <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${defaultFallback}';" style="width: 100%; height: 100%; object-fit: cover;" alt="${safeDataName}">
+                <img src="${avatarSrc}" width="40" height="40" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" style="width: 100%; height: 100%; object-fit: cover;" alt="${safeDataName}">
                 <div class="char-select-overlay" style="position: absolute; inset: 0; background: rgba(167, 139, 250, 0.45); display: none; align-items: center; justify-content: center; font-size: 14px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.5);">
                     <i class="fa-solid fa-check"></i>
                 </div>
@@ -500,29 +500,70 @@ window.clearTeam = function(gameId) {
     updateTeamUI(gameId);
 };
 
-// 4. Atualiza o nome do time digitado no input
-window.updateTeamName = function(gameId, newTitle) {
+// 4. Atualiza o nome do time digitado no input (com debounce de ~300ms e AbortController)
+const _teamNameDebouncers = {};
+function _rawUpdateTeamName(gameId, newTitle, signal) {
+    if (signal?.aborted) return;
     const team = teamBuilderState[gameId];
     if (!team) return;
-    team.teamName = newTitle || "Composição Personalizada";
+    team.teamName = (newTitle || "").trim() || "Composição Personalizada";
     const titleEl = document.getElementById(`team-title-display-${gameId}`);
     if (titleEl) {
         titleEl.textContent = team.teamName;
     }
+}
+
+window.updateTeamName = function(gameId, newTitle) {
+    if (!_teamNameDebouncers[gameId]) {
+        _teamNameDebouncers[gameId] = window.createDebouncedSearch((gId, title, signal) => {
+            _rawUpdateTeamName(gId, title, signal);
+        }, {
+            delay: 300,
+            minLength: 0,
+            immediateOnEmpty: true,
+            getValue: (gId, title) => title
+        });
+    }
+    _teamNameDebouncers[gameId](gameId, newTitle);
 };
 
-// 5. Filtra a grade visual de avatares obtidos
-window.filterTeamRoster = function(gameId, query) {
+// 5. Filtra a grade visual de avatares obtidos (com debounce de ~300ms, AbortController e min 2 caracteres)
+const _teamRosterDebouncers = {};
+function _rawFilterTeamRoster(gameId, query, signal) {
+    if (signal?.aborted) return;
     const q = (query || "").toLowerCase().trim();
+    const activeQuery = q.length >= 2 ? q : "";
     const items = document.querySelectorAll(`#team-roster-grid-${gameId} .team-picker-item`);
     items.forEach(el => {
         const name = (el.dataset.name || "").toLowerCase();
-        if (!q || name.includes(q)) {
+        if (!activeQuery || name.includes(activeQuery)) {
             el.style.display = "flex";
         } else {
             el.style.display = "none";
         }
     });
+}
+
+window.filterTeamRoster = function(gameId, query) {
+    const rawVal = (query || "").trim();
+    if (!_teamRosterDebouncers[gameId]) {
+        _teamRosterDebouncers[gameId] = window.createDebouncedSearch((gId, q, signal) => {
+            _rawFilterTeamRoster(gId, q, signal);
+        }, {
+            delay: 300,
+            minLength: 2,
+            immediateOnEmpty: true,
+            getValue: (gId, q) => q
+        });
+    }
+
+    if (rawVal.length > 0 && rawVal.length < 2) {
+        _teamRosterDebouncers[gameId].cancel();
+        _rawFilterTeamRoster(gameId, "");
+        return;
+    }
+
+    _teamRosterDebouncers[gameId](gameId, query);
 };
 
 // 6. Garante carregamento das informações detalhadas de build caso necessário
@@ -658,8 +699,8 @@ window.renderTeamRosterSelector = function(gameId) {
         return `
             <div class="team-picker-item ${inTeam ? 'in-team' : ''}" data-name="${safeDataName}" onclick="window.toggleCharacterInTeam('${gameId}', this.dataset.name)">
                 <div class="team-picker-avatar-box ${rarityClass}">
-                    <img class="team-picker-avatar-img" src="${avatarSrc}" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${safeDataName}">
-                    <img class="team-picker-elem-icon" src="${elemIconUrl}" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
+                    <img class="team-picker-avatar-img" src="${avatarSrc}" width="50" height="50" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${safeDataName}">
+                    <img class="team-picker-elem-icon" src="${elemIconUrl}" width="14" height="14" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                 </div>
                 ${inTeam ? `<div class="team-picker-pos-badge">${teamIdx + 1}</div>` : ''}
                 <span class="team-picker-name" title="${safeDataName}">${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}</span>
@@ -814,7 +855,7 @@ function getCharacterSplashArt(gameId, char) {
     // 3. Fallback inteligente via getWishCharacterSplash
     if (typeof getWishCharacterSplash === "function") {
         const wishArt = getWishCharacterSplash(gameId, char.name);
-        if (wishArt && !wishArt.includes("logo.svg")) {
+        if (wishArt && !wishArt.includes("logo.svg") && !wishArt.includes("logo.png")) {
             return proxyUrl(wishArt);
         }
     }
@@ -1123,7 +1164,7 @@ function renderTeamExportCard(gameId) {
                 <div class="team-char-subcard" style="--char-border: rgba(255, 255, 255, 0.12); --char-elem-color: ${rarityColor}; --char-rarity-color: ${rarityColor}; --char-rarity-glow: ${rarityGlow};">
                     <!-- Splash Art de fundo cobrindo o card todo -->
                     <div class="subcard-splash-bg">
-                        <img class="subcard-splash-img" src="${splashSrc}" decoding="async" onerror="this.onerror=null; this.src='${avatarSrc}';" alt="${char.name}">
+                        <img class="subcard-splash-img" src="${splashSrc}" width="240" height="460" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${avatarSrc}';" alt="${char.name}">
                     </div>
                     <div class="subcard-splash-gradient"></div>
 
@@ -1135,7 +1176,7 @@ function renderTeamExportCard(gameId) {
                     <!-- Topo Flutuante com Elemento, Nível e Rank -->
                     <div class="subcard-top-float-row">
                         <div class="subcard-elem-pill" title="Elemento: ${char.element || ''}">
-                            <img src="${elemIconUrl}" onerror="this.style.display='none';" alt="" class="subcard-elem-pill-icon">
+                            <img src="${elemIconUrl}" width="13" height="13" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="" class="subcard-elem-pill-icon">
                             <span>${(char.element || '').toUpperCase()}</span>
                         </div>
                         <div class="subcard-top-right-badges">
@@ -1159,7 +1200,7 @@ function renderTeamExportCard(gameId) {
                     <!-- Equipamento / Arma -->
                     <div class="subcard-equip-strip">
                         <div class="subcard-equip-icon-box" style="--equip-border: ${rarityColor};">
-                            <img src="${weapon.icon}" onerror="this.src='/assets/chat_icon.png';" alt="${weapon.name}">
+                            <img src="${weapon.icon}" width="32" height="32" loading="lazy" decoding="async" onerror="this.src='/assets/logo.png';" alt="${weapon.name}">
                         </div>
                         <div class="subcard-equip-details">
                             <div class="subcard-equip-name-row">
@@ -1175,9 +1216,9 @@ function renderTeamExportCard(gameId) {
                         <div class="subcard-relic-header">
                             ${relics.setIcon ? `
                                 <div class="subcard-set-icon-box">
-                                    <img src="${relics.setIcon}" class="subcard-set-icon-img" alt="${relics.setTitle}" onerror="this.parentElement.style.display='none';">
+                                    <img src="${relics.setIcon}" width="22" height="22" loading="lazy" decoding="async" class="subcard-set-icon-img" alt="${relics.setTitle}" onerror="this.parentElement.style.display='none';">
                                     ${relics.setIcons && relics.setIcons.length > 1 ? `
-                                        <img src="${relics.setIcons[1]}" class="subcard-set-icon-img subcard-set-icon-secondary" alt="" onerror="this.style.display='none';">
+                                        <img src="${relics.setIcons[1]}" width="22" height="22" loading="lazy" decoding="async" class="subcard-set-icon-img subcard-set-icon-secondary" alt="" onerror="this.style.display='none';">
                                     ` : ''}
                                 </div>
                             ` : `
