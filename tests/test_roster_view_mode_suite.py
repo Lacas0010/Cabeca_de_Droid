@@ -211,6 +211,111 @@ class TestRosterViewModeSuite(unittest.TestCase):
         self.assertIn(".char-relic-piece-box.rarity-4", css)
         self.assertIn(".char-relic-piece-box.rarity-3", css)
 
+    def test_html_smart_sort_and_audit_filters_structure(self):
+        """Valida a presença de ordenações inteligentes, contador, botão limpar e painel de auditoria no HTML dos 3 jogos."""
+        with open(self.html_path, "r", encoding="utf-8") as f:
+            html = f.read()
+
+        for game in ["zzz", "genshin", "hsr"]:
+            self.assertIn(f'class="roster-results-counter" data-game="{game}" id="roster-counter-{game}"', html)
+            self.assertIn(f'class="roster-sort-select" data-game="{game}" id="roster-sort-{game}"', html)
+            self.assertIn(f'class="btn-toggle-audit" data-game="{game}"', html)
+            self.assertIn(f'class="btn-clear-filters" data-game="{game}"', html)
+            self.assertIn(f'class="audit-filters-panel" id="audit-panel-{game}"', html)
+
+        # Valida opções do seletor de ordenação inteligente
+        self.assertIn('value="score_desc"', html)
+        self.assertIn('value="score_asc"', html)
+        self.assertIn('value="worst_piece_asc"', html)
+        self.assertIn('value="rank_desc"', html)
+        self.assertIn('value="rank_asc"', html)
+        self.assertIn('value="level_desc"', html)
+        self.assertIn('value="level_asc"', html)
+
+        # Valida grupos de auditoria universais
+        for game in ["zzz", "genshin", "hsr"]:
+            self.assertIn(f'data-game="{game}" data-filter-type="set"', html)
+            self.assertIn(f'data-game="{game}" data-filter-type="slot"', html)
+            self.assertIn(f'data-game="{game}" data-filter-type="grade"', html)
+            self.assertIn(f'data-game="{game}" data-filter-type="weapon-status"', html)
+
+        # Valida filtros específicos por jogo
+        self.assertIn('data-game="genshin" data-filter-type="region"', html)
+        self.assertIn('data-game="genshin" data-filter-type="mechanic"', html)
+        self.assertIn('data-game="genshin" data-filter-type="scale"', html)
+        self.assertIn('data-game="genshin" data-filter-type="main-stat"', html)
+
+        self.assertIn('data-game="hsr" data-filter-type="speed"', html)
+        self.assertIn('data-game="hsr" data-filter-type="planar"', html)
+
+        self.assertIn('data-game="zzz" data-filter-type="specialty"', html)
+        self.assertIn('data-game="zzz" data-filter-type="faction"', html)
+        self.assertIn('data-game="zzz" data-filter-type="archetype"', html)
+        self.assertIn('data-game="zzz" data-filter-type="discs-main"', html)
+
+    def test_css_smart_sort_and_audit_filters_styles(self):
+        """Valida que todas as regras CSS para ordenação inteligente, contador e painéis de auditoria estão no style.css."""
+        with open(self.css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+
+        self.assertIn(".roster-results-counter", css)
+        self.assertIn(".roster-sort-wrapper", css)
+        self.assertIn(".roster-sort-select", css)
+        self.assertIn(".btn-toggle-audit", css)
+        self.assertIn(".btn-clear-filters", css)
+        self.assertIn(".audit-filters-panel", css)
+        self.assertIn(".audit-group-title", css)
+        self.assertIn(".audit-row", css)
+        self.assertIn(".audit-label", css)
+        self.assertIn(".audit-pill", css)
+        self.assertIn(".audit-pill.active", css)
+        self.assertIn("#audit-panel-genshin .audit-pill.active", css)
+        self.assertIn("#audit-panel-zzz .audit-pill.active", css)
+        self.assertIn(".audit-select", css)
+
+    def test_roster_js_smart_sort_and_audit_functions(self):
+        """Valida se as funções lógicas de ordenação e filtros de auditoria estão implementadas no roster.js."""
+        with open(self.roster_path, "r", encoding="utf-8") as f:
+            js = f.read()
+
+        self.assertIn("function sortCharacters", js)
+        self.assertIn("function getWorstPieceScore", js)
+        self.assertIn("function getCharacterSetIntegrity", js)
+        self.assertIn("function getGenshinCharacterRegion", js)
+        self.assertIn("function matchGenshinScale", js)
+        self.assertIn("function matchGenshinMainStat", js)
+        self.assertIn("function matchZZZFaction", js)
+        self.assertIn("function matchZZZArchetype", js)
+        self.assertIn("function matchZZZDiscsMain", js)
+        self.assertIn("window.clearRosterFilters", js)
+
+    def test_i18n_smart_sort_and_audit_keys_present(self):
+        """Valida se as chaves i18n para ordenação, auditoria e contador existem em PT e EN."""
+        with open(self.i18n_path, "r", encoding="utf-8") as f:
+            code = f.read()
+
+        pt_match = re.search(r"pt:\s*\{(.*?)\n\s*\},?\s*en:\s*\{", code, re.DOTALL)
+        en_match = re.search(r"en:\s*\{(.*?)\n\s*\}\s*\};", code, re.DOTALL)
+        self.assertIsNotNone(pt_match)
+        self.assertIsNotNone(en_match)
+
+        pt_text = pt_match.group(1)
+        en_text = en_match.group(1)
+
+        keys = [
+            "counter_showing", "sort_default", "sort_score_desc", "sort_score_asc",
+            "sort_worst_piece", "sort_rank_desc", "sort_rank_asc", "sort_level_desc",
+            "sort_level_asc", "btn_clear_filters", "btn_audit_filters", "audit_title_universal",
+            "audit_set_integrity", "audit_slots", "audit_grade", "audit_weapon",
+            "audit_title_genshin", "audit_region", "audit_mechanic", "audit_scale", "audit_main_stat",
+            "audit_title_hsr", "audit_speed", "audit_planar",
+            "audit_title_zzz", "audit_specialty", "audit_faction", "audit_archetype", "audit_discs_main"
+        ]
+
+        for k in keys:
+            self.assertIn(k, pt_text, f"Chave {k} ausente no PT")
+            self.assertIn(k, en_text, f"Chave {k} ausente no EN")
+
 
 if __name__ == "__main__":
     unittest.main()

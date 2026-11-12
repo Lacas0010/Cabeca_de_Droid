@@ -45,6 +45,256 @@ function getCharacterWeapon(char) {
 }
 
 // ==========================================================================
+// METADADOS E HELPERS DE AUDITORIA DE BUILD E ORDENAÇÃO
+// ==========================================================================
+const GENSHIN_CHAR_REGIONS = {
+    "albedo": "mondstadt", "amber": "mondstadt", "barbara": "mondstadt", "bennett": "mondstadt",
+    "diluc": "mondstadt", "diona": "mondstadt", "eula": "mondstadt", "fischl": "mondstadt",
+    "jean": "mondstadt", "kaeya": "mondstadt", "klee": "mondstadt", "lisa": "mondstadt",
+    "mika": "mondstadt", "mona": "mondstadt", "noelle": "mondstadt", "razor": "mondstadt",
+    "rosaria": "mondstadt", "sucrose": "mondstadt", "venti": "mondstadt", "durin": "mondstadt",
+    "dahlia": "mondstadt", "aloy": "mondstadt",
+    "baizhu": "liyue", "beidou": "liyue", "chongyun": "liyue", "gaming": "liyue",
+    "ganyu": "liyue", "hu tao": "liyue", "hu_tao": "liyue", "hutao": "liyue",
+    "keqing": "liyue", "lan yan": "liyue", "lan_yan": "liyue", "ningguang": "liyue",
+    "qiqi": "liyue", "shenhe": "liyue", "xiangling": "liyue", "xianyun": "liyue",
+    "xiao": "liyue", "xingqiu": "liyue", "xinyan": "liyue", "yanfei": "liyue",
+    "yaoyao": "liyue", "yelan": "liyue", "yun jin": "liyue", "yun_jin": "liyue", "yunjin": "liyue",
+    "zhongli": "liyue",
+    "arataki itto": "inazuma", "arataki_itto": "inazuma", "itto": "inazuma",
+    "kamisato ayaka": "inazuma", "kamisato_ayaka": "inazuma", "ayaka": "inazuma",
+    "kamisato ayato": "inazuma", "kamisato_ayato": "inazuma", "ayato": "inazuma",
+    "chiori": "inazuma", "gorou": "inazuma", "kirara": "inazuma",
+    "kujou sara": "inazuma", "kujou_sara": "inazuma", "sara": "inazuma",
+    "kuki shinobu": "inazuma", "kuki_shinobu": "inazuma", "shinobu": "inazuma",
+    "raiden shogun": "inazuma", "raiden_shogun": "inazuma", "shogun raiden": "inazuma", "raiden": "inazuma",
+    "sangonomiya kokomi": "inazuma", "sangonomiya_kokomi": "inazuma", "kokomi": "inazuma",
+    "sayu": "inazuma", "shikanoin heizou": "inazuma", "shikanoin_heizou": "inazuma", "heizou": "inazuma",
+    "thoma": "inazuma", "yae miko": "inazuma", "yae_miko": "inazuma", "yae": "inazuma", "yoimiya": "inazuma",
+    "yumemizuki mizuki": "inazuma", "yumemizuki_mizuki": "inazuma",
+    "alhaitham": "sumeru", "candace": "sumeru", "collei": "sumeru", "cyno": "sumeru",
+    "dehya": "sumeru", "dori": "sumeru", "faruzan": "sumeru", "kaveh": "sumeru",
+    "layla": "sumeru", "nahida": "sumeru", "nilou": "sumeru", "sethos": "sumeru",
+    "tighnari": "sumeru", "wanderer": "sumeru", "andarilho": "sumeru", "scaramouche": "sumeru",
+    "arlecchino": "fontaine", "arlequino": "fontaine", "charlotte": "fontaine",
+    "chevreuse": "fontaine", "clorinde": "fontaine", "emilie": "fontaine",
+    "freminet": "fontaine", "furina": "fontaine", "lynette": "fontaine",
+    "lyney": "fontaine", "navia": "fontaine", "neuvillette": "fontaine",
+    "sigewinne": "fontaine", "wriothesley": "fontaine", "escoffier": "fontaine",
+    "chasca": "natlan", "citlali": "natlan", "iansan": "natlan", "kachina": "natlan",
+    "kinich": "natlan", "mavuika": "natlan", "mualani": "natlan", "ororon": "natlan",
+    "xilonen": "natlan", "varesa": "natlan", "ifa": "natlan",
+    "tartaglia": "snezhnaya", "childe": "snezhnaya", "columbina": "snezhnaya", "alyosha": "snezhnaya"
+};
+
+const GENSHIN_NIGHTSOUL_CHARS = new Set([
+    "chasca", "citlali", "iansan", "kachina", "kinich", "mavuika", "mualani", "ororon", "xilonen", "varesa", "ifa"
+]);
+
+const GENSHIN_PNEUMA_CHARS = new Set([
+    "furina", "neuvillette", "lyney", "freminet", "navia", "charlotte", "chiori", "emilie", "escoffier"
+]);
+
+const GENSHIN_OUSIA_CHARS = new Set([
+    "furina", "lynette", "wriothesley", "clorinde", "chevreuse", "sigewinne"
+]);
+
+const ZZZ_FACTIONS = {
+    "cunning_hares": ["anby", "billy", "nicole", "nekomata"],
+    "belobog": ["koleda", "anton", "ben", "grace"],
+    "victoria": ["ellen", "lycaon", "corin", "rina"],
+    "section6": ["miyabi", "yanagi", "harumasa", "soukaku", "hoshimi miyabi", "asaba harumasa", "tsukishiro yanagi"],
+    "calydon": ["caesar", "burnice", "lighter", "lucy", "piper", "caesar king", "burnice white"],
+    "public_security": ["zhu yuan", "zhu_yuan", "qingyi", "jane", "jane doe", "jane_doe", "seth"],
+    "defense_force": ["soldado 11", "soldier 11", "soldado_11", "soldier_11"],
+    "new_eridu": ["astra yao", "astra", "evelyn"]
+};
+
+function getGenshinCharacterRegion(name) {
+    if (!name) return "";
+    const clean = String(name).toLowerCase().trim().replace(/_/g, " ");
+    if (GENSHIN_CHAR_REGIONS[clean]) return GENSHIN_CHAR_REGIONS[clean];
+    const slug = clean.replace(/\s+/g, "_");
+    if (GENSHIN_CHAR_REGIONS[slug]) return GENSHIN_CHAR_REGIONS[slug];
+    for (const [k, reg] of Object.entries(GENSHIN_CHAR_REGIONS)) {
+        if (clean.includes(k) || k.includes(clean)) return reg;
+    }
+    return "";
+}
+
+function matchGenshinScale(char, scale) {
+    if (!char) return true;
+    const prio = (char.substats_priority || []).map(s => String(s).toLowerCase());
+    const weights = char.recommended_weights || {};
+    const n = (char.name || "").toLowerCase();
+    if (scale === "atk") {
+        return prio.includes("atk_pct") || (weights.atk_pct && weights.atk_pct >= 0.7);
+    }
+    if (scale === "hp") {
+        return prio.includes("hp_pct") || (weights.hp_pct && weights.hp_pct >= 0.7) ||
+            ["furina", "neuvillette", "hu tao", "zhongli", "baizhu", "yelan", "nilou", "columbina", "diona"].some(k => n.includes(k));
+    }
+    if (scale === "def") {
+        return prio.includes("def_pct") || (weights.def_pct && weights.def_pct >= 0.7) ||
+            ["albedo", "itto", "noelle", "xilonen", "chiori", "kachina", "gorou", "yun jin", "yunjin", "zibai"].some(k => n.includes(k));
+    }
+    if (scale === "em") {
+        return prio.includes("em") || (weights.em && weights.em >= 0.7) ||
+            ["nahida", "alhaitham", "kazuha", "sucrose", "tighnari", "sethos", "nilou", "cyno"].some(k => n.includes(k));
+    }
+    return true;
+}
+
+function matchGenshinMainStat(char, mainStat) {
+    const relics = char.relics || char.artifacts || [];
+    return relics.some(r => {
+        const slot = String(r.slot || "");
+        if (!["3", "4", "5", "Areia", "Cálice", "Tiara"].some(s => slot.includes(s))) return false;
+        const main = String(r.main || "").toLowerCase();
+        if (mainStat === "er") return main.includes("recarga") || main.includes("energy");
+        if (mainStat === "em") return main.includes("proficiência") || main.includes("proficiencia") || main.includes("mastery");
+        if (mainStat === "elem_dmg") return main.includes("dano ") || main.includes("dmg");
+        if (mainStat === "crit") return main.includes("crit");
+        if (mainStat === "atk") return main.includes("atq") && main.includes("%");
+        if (mainStat === "hp") return (main.includes("vida") || main.includes("pv")) && main.includes("%");
+        if (mainStat === "def") return main.includes("def") && main.includes("%");
+        return false;
+    });
+}
+
+function matchZZZFaction(charName, faction) {
+    if (!charName || !faction) return true;
+    const nameLower = charName.toLowerCase().trim();
+    const members = ZZZ_FACTIONS[faction] || [];
+    return members.some(m => nameLower.includes(m) || m.includes(nameLower));
+}
+
+function matchZZZArchetype(char, arch) {
+    if (!char) return true;
+    const spec = String(char.specialty || char.role || "").toLowerCase();
+    const prio = (char.substats_priority || []).map(s => String(s).toLowerCase());
+    if (arch === "anomaly") {
+        return spec.includes("anomaly") || prio.some(p => p.includes("anomaly") || p.includes("anomalia"));
+    }
+    if (arch === "crit") {
+        return spec.includes("attack") || spec.includes("stun") || prio.some(p => p.includes("crit"));
+    }
+    return true;
+}
+
+function matchZZZDiscsMain(char, filterVal) {
+    const discs = char.relics || char.discs || [];
+    return discs.some(d => {
+        const slot = String(d.slot || "").toLowerCase();
+        const is456 = slot.includes("4") || slot.includes("5") || slot.includes("6");
+        if (!is456) return false;
+        const main = String(d.main || "").toLowerCase();
+        if (filterVal === "crit") return main.includes("crit");
+        if (filterVal === "anomaly") return main.includes("anomalia") || main.includes("prof");
+        if (filterVal === "elem_dmg") return main.includes("dano ") || main.includes("fogo") || main.includes("elétrico") || main.includes("eletrico") || main.includes("gelo") || main.includes("físico") || main.includes("fisico") || main.includes("éter") || main.includes("eter");
+        if (filterVal === "er") return main.includes("energia");
+        if (filterVal === "impact") return main.includes("impacto");
+        if (filterVal === "atk") return main.includes("atq");
+        if (filterVal === "pen") return main.includes("perfuração") || main.includes("perfuracao") || main.includes("pen");
+        return false;
+    });
+}
+
+function getCharacterSetIntegrity(char) {
+    if (!char) return "broken";
+    const sets = Array.isArray(char.sets) ? char.sets : [];
+    if (sets.some(s => typeof s === 'string' && (s.startsWith("4p") || s.includes("4p ") || s.includes("4-peça") || s.includes("4-piece")))) {
+        return "4p";
+    }
+    const twoPieceSets = sets.filter(s => typeof s === 'string' && (s.startsWith("2p") || s.includes("2p ") || s.includes("2-peça") || s.includes("2-piece")));
+    if (twoPieceSets.length >= 2) {
+        return "2p+2p";
+    }
+    const relics = char.relics || char.artifacts || char.discs || [];
+    if (relics.length >= 4) {
+        const counts = {};
+        relics.forEach(r => {
+            const rawName = (r.set_name || r.name || "").replace(/\s*\[\d+\]\s*$/, "").trim();
+            if (rawName) counts[rawName] = (counts[rawName] || 0) + 1;
+        });
+        const maxCount = Math.max(0, ...Object.values(counts));
+        if (maxCount >= 4) return "4p";
+        const twoOrMore = Object.values(counts).filter(c => c >= 2).length;
+        if (twoOrMore >= 2) return "2p+2p";
+    }
+    return "broken";
+}
+
+function getWorstPieceScore(char) {
+    const relics = char.relics || char.artifacts || char.discs || [];
+    if (!relics || relics.length === 0) return 9999;
+    const scores = relics.map(r => {
+        if (typeof r.score === 'number') return r.score;
+        const parsed = parseFloat(r.score);
+        return isNaN(parsed) ? 0 : parsed;
+    });
+    return scores.length > 0 ? Math.min(...scores) : 9999;
+}
+
+function sortCharacters(list, sortMode) {
+    if (!Array.isArray(list) || list.length <= 1) return list;
+    const copy = list.slice();
+
+    if (sortMode === "score_desc") {
+        return copy.sort((a, b) => (b.overall_score ?? 0) - (a.overall_score ?? 0));
+    }
+    if (sortMode === "score_asc") {
+        return copy.sort((a, b) => (a.overall_score ?? 0) - (b.overall_score ?? 0));
+    }
+    if (sortMode === "worst_piece_asc") {
+        return copy.sort((a, b) => {
+            const wA = getWorstPieceScore(a);
+            const wB = getWorstPieceScore(b);
+            if (wA !== wB) return wA - wB;
+            return (b.overall_score ?? 0) - (a.overall_score ?? 0);
+        });
+    }
+    if (sortMode === "rank_desc") {
+        const getRank = (c) => parseInt(String(c.rank_str || "").match(/\d+/)?.[0] || "0", 10);
+        return copy.sort((a, b) => {
+            const diff = getRank(b) - getRank(a);
+            if (diff !== 0) return diff;
+            return (b.overall_score ?? 0) - (a.overall_score ?? 0);
+        });
+    }
+    if (sortMode === "rank_asc") {
+        const getRank = (c) => parseInt(String(c.rank_str || "").match(/\d+/)?.[0] || "0", 10);
+        return copy.sort((a, b) => {
+            const diff = getRank(a) - getRank(b);
+            if (diff !== 0) return diff;
+            return (b.overall_score ?? 0) - (a.overall_score ?? 0);
+        });
+    }
+    if (sortMode === "level_desc") {
+        return copy.sort((a, b) => {
+            const diff = (b.level ?? 0) - (a.level ?? 0);
+            if (diff !== 0) return diff;
+            return (b.overall_score ?? 0) - (a.overall_score ?? 0);
+        });
+    }
+    if (sortMode === "level_asc") {
+        return copy.sort((a, b) => {
+            const diff = (a.level ?? 0) - (b.level ?? 0);
+            if (diff !== 0) return diff;
+            return (a.level ?? 0) - (b.level ?? 0);
+        });
+    }
+    return copy;
+}
+
+const _rosterResetCallbacks = {};
+window.clearRosterFilters = function(g) {
+    if (g && _rosterResetCallbacks[g]) {
+        _rosterResetCallbacks[g]();
+    }
+};
+
+// ==========================================================================
 // CONTROLE DE MODO DE VISUALIZAÇÃO: GRADE (GRID) OU LISTA (LIST)
 // ==========================================================================
 let currentRosterViewMode = (typeof localStorage !== "undefined" && localStorage.getItem("roster_view_mode")) || "grid";
@@ -538,12 +788,57 @@ async function _loadRosterImpl(gameId) {
         
         gallery.innerHTML = ""; // Limpa spinner
         
-        // Estado dos filtros combinados
+        // Estado dos filtros combinados e ordenação inteligente
+        let activeSort = "default";
         let activeElementFilter = "all";
         let activeRarityFilter = "all";
         let activePathFilter = "all";
         let activeWeaponFilter = "all";
         let searchQuery = "";
+
+        // Filtros de Auditoria Universais
+        let activeSetFilter = "all";
+        let activeSlotFilter = "all";
+        let activeGradeFilter = "all";
+        let activeWeaponStatusFilter = "all";
+
+        // Filtros de Auditoria Específicos por Jogo
+        let activeRegionFilter = "all";
+        let activeMechanicFilter = "all";
+        let activeScaleFilter = "all";
+        let activeMainStatFilter = "all";
+
+        let activeSpeedFilter = "all";
+        let activePlanarFilter = "all";
+
+        let activeSpecialtyFilter = "all";
+        let activeFactionFilter = "all";
+        let activeArchetypeFilter = "all";
+        let activeDiscsMainFilter = "all";
+
+        // Preenche o seletor de ornamentos planares para HSR
+        if (gameId === "hsr") {
+            const planarSelect = document.getElementById("planar-filter-hsr");
+            if (planarSelect) {
+                const setsSet = new Set();
+                roster.forEach(c => {
+                    (c.relics || []).forEach(r => {
+                        const slot = String(r.slot || "").toLowerCase();
+                        if (slot.includes("esfera") || slot.includes("corda") || slot === "5" || slot === "6") {
+                            if (r.set_name) setsSet.add(r.set_name);
+                        }
+                    });
+                });
+                const currentVal = planarSelect.value || "all";
+                const allLabel = isEn ? "All Planar Ornaments" : "Todos os Ornamentos Planares";
+                let optsHtml = `<option value="all">${allLabel}</option>`;
+                Array.from(setsSet).sort().forEach(setName => {
+                    optsHtml += `<option value="${setName}">${setName}</option>`;
+                });
+                planarSelect.innerHTML = optsHtml;
+                if (setsSet.has(currentVal)) planarSelect.value = currentVal;
+            }
+        }
         
         const searchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
         
@@ -558,14 +853,18 @@ async function _loadRosterImpl(gameId) {
 
             const lvlLabel = isEn ? "Level" : "Nível";
             
-            // Filtra a lista local baseado na busca de texto, elemento E raridade
+            // 1. Aplica todos os filtros combinados (Universais + Específicos)
             const filtered = roster.filter(char => {
+                // A) Busca textual
                 const matchesSearch = char.name.toLowerCase().includes(searchQuery) || (typeof formatCharacterName === 'function' && formatCharacterName(char.name).toLowerCase().includes(searchQuery));
+                
+                // B) Elemento
                 const charElemLower = (char.element || "").toLowerCase();
                 const filterLower = activeElementFilter.toLowerCase();
                 const isLumifluxMatch = filterLower === "lumiflux" && (charElemLower === "lumiflux" || charElemLower === "element_300" || charElemLower === "element 300");
                 const matchesElement = activeElementFilter === "all" || charElemLower === filterLower || isLumifluxMatch;
                 
+                // C) Raridade
                 let matchesRarity = true;
                 if (activeRarityFilter !== "all") {
                     const rarityNum = Number(char.rarity);
@@ -577,6 +876,7 @@ async function _loadRosterImpl(gameId) {
                     }
                 }
                 
+                // D) Caminho (HSR)
                 let matchesPath = true;
                 if (gameId === "hsr" && activePathFilter !== "all") {
                     const charPath = String(char.path || getCharacterPath(char) || "").toLowerCase();
@@ -593,6 +893,7 @@ async function _loadRosterImpl(gameId) {
                     else matchesPath = charPath === pLower;
                 }
 
+                // E) Arma (Genshin)
                 let matchesWeapon = true;
                 if (gameId === "genshin" && activeWeaponFilter !== "all") {
                     const charWeapon = String(char.weapon_type || getCharacterWeapon(char) || char.path || "").toLowerCase();
@@ -604,21 +905,212 @@ async function _loadRosterImpl(gameId) {
                     else if (wLower === "catalyst") matchesWeapon = charWeapon.includes("catalyst") || charWeapon.includes("catalisador");
                     else matchesWeapon = charWeapon === wLower;
                 }
+
+                // F) Integridade do Set (4p, 2p+2p, Sem Bônus/Quebrado)
+                let matchesSet = true;
+                if (activeSetFilter !== "all") {
+                    matchesSet = getCharacterSetIntegrity(char) === activeSetFilter;
+                }
+
+                // G) Slots Incompletos / Completos
+                let matchesSlots = true;
+                if (activeSlotFilter !== "all") {
+                    const maxSlots = char.max_pieces || (gameId === "genshin" ? 5 : 6);
+                    const eqCount = char.equipped_pieces !== undefined ? char.equipped_pieces : (char.relics || char.artifacts || char.discs || []).length;
+                    if (activeSlotFilter === "incomplete") matchesSlots = eqCount < maxSlots;
+                    else if (activeSlotFilter === "complete") matchesSlots = eqCount >= maxSlots;
+                }
+
+                // H) Faixa de Rank da Build (SSS/SS, S, A, B, C/D)
+                let matchesGrade = true;
+                if (activeGradeFilter !== "all") {
+                    const grade = (char.overall_grade || "").toUpperCase();
+                    if (activeGradeFilter === "top") matchesGrade = ["SSS", "SS"].includes(grade);
+                    else if (activeGradeFilter === "s") matchesGrade = grade === "S";
+                    else if (activeGradeFilter === "a") matchesGrade = grade === "A";
+                    else if (activeGradeFilter === "b") matchesGrade = grade === "B";
+                    else if (activeGradeFilter === "cd") matchesGrade = ["C", "D"].includes(grade);
+                }
+
+                // I) Status da Arma / Cone / Motor-W
+                let matchesWeaponStatus = true;
+                if (activeWeaponStatusFilter !== "all") {
+                    const w = char.weapon && typeof char.weapon === 'object' ? char.weapon : {
+                        name: char.weapon_name, level: char.weapon_level, rank: char.weapon_rank, rarity: char.weapon_rarity
+                    };
+                    const wRarity = Number(w.rarity || char.weapon_rarity || 4);
+                    const wLevel = Number(w.level || char.weapon_level || 1);
+                    const rawRank = w.rank !== undefined ? w.rank : (w.affix !== undefined ? w.affix : (w.refinement !== undefined ? w.refinement : 1));
+                    const wRank = Number(rawRank) || 1;
+                    const maxGameLvl = gameId === "genshin" ? 90 : (gameId === "hsr" ? 80 : 60);
+
+                    if (activeWeaponStatusFilter === "w5") matchesWeaponStatus = wRarity === 5;
+                    else if (activeWeaponStatusFilter === "w4") matchesWeaponStatus = wRarity === 4;
+                    else if (activeWeaponStatusFilter === "wr5") matchesWeaponStatus = wRank >= 5;
+                    else if (activeWeaponStatusFilter === "wr1") matchesWeaponStatus = wRank === 1;
+                    else if (activeWeaponStatusFilter === "w_underleveled") matchesWeaponStatus = wLevel < maxGameLvl;
+                    else if (activeWeaponStatusFilter === "w_max") matchesWeaponStatus = wLevel >= maxGameLvl;
+                }
+
+                // J) Filtros Específicos: Genshin
+                let matchesRegion = true;
+                if (gameId === "genshin" && activeRegionFilter !== "all") {
+                    matchesRegion = getGenshinCharacterRegion(char.name) === activeRegionFilter;
+                }
+
+                let matchesMechanic = true;
+                if (gameId === "genshin" && activeMechanicFilter !== "all") {
+                    const cleanN = char.name.toLowerCase().trim().replace(/_/g, " ");
+                    if (activeMechanicFilter === "nightsoul") matchesMechanic = GENSHIN_NIGHTSOUL_CHARS.has(cleanN) || getGenshinCharacterRegion(cleanN) === "natlan";
+                    else if (activeMechanicFilter === "pneuma") matchesMechanic = GENSHIN_PNEUMA_CHARS.has(cleanN);
+                    else if (activeMechanicFilter === "ousia") matchesMechanic = GENSHIN_OUSIA_CHARS.has(cleanN);
+                }
+
+                let matchesScale = true;
+                if (gameId === "genshin" && activeScaleFilter !== "all") {
+                    matchesScale = matchGenshinScale(char, activeScaleFilter);
+                }
+
+                let matchesMainStat = true;
+                if (gameId === "genshin" && activeMainStatFilter !== "all") {
+                    matchesMainStat = matchGenshinMainStat(char, activeMainStatFilter);
+                }
+
+                // K) Filtros Específicos: HSR
+                let matchesSpeed = true;
+                if (gameId === "hsr" && activeSpeedFilter !== "all") {
+                    const spd = parseInt(char.stats?.VEL || char.stats?.Velocidade || char.stats?.SPD || 0, 10);
+                    if (activeSpeedFilter === "base") matchesSpeed = spd > 0 && spd < 134;
+                    else if (activeSpeedFilter === "134") matchesSpeed = spd >= 134;
+                    else if (activeSpeedFilter === "143") matchesSpeed = spd >= 143;
+                    else if (activeSpeedFilter === "160") matchesSpeed = spd >= 160;
+                }
+
+                let matchesPlanar = true;
+                if (gameId === "hsr" && activePlanarFilter !== "all") {
+                    const relics = char.relics || [];
+                    matchesPlanar = relics.some(r => {
+                        const slot = String(r.slot || "").toLowerCase();
+                        const isPlanarSlot = slot.includes("esfera") || slot.includes("corda") || slot === "5" || slot === "6";
+                        return isPlanarSlot && (r.set_name || "").toLowerCase() === activePlanarFilter.toLowerCase();
+                    });
+                }
+
+                // L) Filtros Específicos: ZZZ
+                let matchesSpecialty = true;
+                if (gameId === "zzz" && activeSpecialtyFilter !== "all") {
+                    const spec = String(char.specialty || char.role || "").toLowerCase();
+                    matchesSpecialty = spec.includes(activeSpecialtyFilter.toLowerCase());
+                }
+
+                let matchesFaction = true;
+                if (gameId === "zzz" && activeFactionFilter !== "all") {
+                    matchesFaction = matchZZZFaction(char.name, activeFactionFilter);
+                }
+
+                let matchesArchetype = true;
+                if (gameId === "zzz" && activeArchetypeFilter !== "all") {
+                    matchesArchetype = matchZZZArchetype(char, activeArchetypeFilter);
+                }
+
+                let matchesDiscsMain = true;
+                if (gameId === "zzz" && activeDiscsMainFilter !== "all") {
+                    matchesDiscsMain = matchZZZDiscsMain(char, activeDiscsMainFilter);
+                }
                 
-                return matchesSearch && matchesElement && matchesRarity && matchesPath && matchesWeapon;
+                return matchesSearch && matchesElement && matchesRarity && matchesPath && matchesWeapon &&
+                       matchesSet && matchesSlots && matchesGrade && matchesWeaponStatus &&
+                       matchesRegion && matchesMechanic && matchesScale && matchesMainStat &&
+                       matchesSpeed && matchesPlanar && matchesSpecialty && matchesFaction &&
+                       matchesArchetype && matchesDiscsMain;
             });
+
+            // 2. Aplica Ordenação Inteligente
+            const sorted = sortCharacters(filtered, activeSort);
+
+            // 3. Atualiza Contador de Resultados em Tempo Real
+            const counterEl = document.getElementById(`roster-counter-${gameId}`);
+            if (counterEl) {
+                const numEl = counterEl.querySelector(".counter-num");
+                const totalEl = counterEl.querySelector(".counter-total");
+                if (numEl) numEl.textContent = sorted.length;
+                if (totalEl) totalEl.textContent = roster.length;
+                if (sorted.length !== roster.length) {
+                    counterEl.classList.add("has-filter");
+                } else {
+                    counterEl.classList.remove("has-filter");
+                }
+            }
+
+            // 4. Atualiza Visibilidade do Botão "Limpar Filtros"
+            const clearBtn = document.querySelector(`.btn-clear-filters[data-game="${gameId}"]`);
+            const hasAnyActiveFilter = searchQuery !== "" ||
+                activeElementFilter !== "all" ||
+                activeRarityFilter !== "all" ||
+                activePathFilter !== "all" ||
+                activeWeaponFilter !== "all" ||
+                activeSort !== "default" ||
+                activeSetFilter !== "all" ||
+                activeSlotFilter !== "all" ||
+                activeGradeFilter !== "all" ||
+                activeWeaponStatusFilter !== "all" ||
+                activeRegionFilter !== "all" ||
+                activeMechanicFilter !== "all" ||
+                activeScaleFilter !== "all" ||
+                activeMainStatFilter !== "all" ||
+                activeSpeedFilter !== "all" ||
+                activePlanarFilter !== "all" ||
+                activeSpecialtyFilter !== "all" ||
+                activeFactionFilter !== "all" ||
+                activeArchetypeFilter !== "all" ||
+                activeDiscsMainFilter !== "all";
+
+            if (clearBtn) {
+                clearBtn.style.display = hasAnyActiveFilter ? "inline-flex" : "none";
+            }
+
+            // 5. Atualiza Badge no Botão "Auditoria"
+            const auditBadge = document.getElementById(`audit-badge-${gameId}`);
+            let auditCount = 0;
+            if (activeSetFilter !== "all") auditCount++;
+            if (activeSlotFilter !== "all") auditCount++;
+            if (activeGradeFilter !== "all") auditCount++;
+            if (activeWeaponStatusFilter !== "all") auditCount++;
+            if (activeRegionFilter !== "all") auditCount++;
+            if (activeMechanicFilter !== "all") auditCount++;
+            if (activeScaleFilter !== "all") auditCount++;
+            if (activeMainStatFilter !== "all") auditCount++;
+            if (activeSpeedFilter !== "all") auditCount++;
+            if (activePlanarFilter !== "all") auditCount++;
+            if (activeSpecialtyFilter !== "all") auditCount++;
+            if (activeFactionFilter !== "all") auditCount++;
+            if (activeArchetypeFilter !== "all") auditCount++;
+            if (activeDiscsMainFilter !== "all") auditCount++;
+
+            if (auditBadge) {
+                if (auditCount > 0) {
+                    auditBadge.textContent = auditCount;
+                    auditBadge.style.display = "inline-flex";
+                } else {
+                    auditBadge.style.display = "none";
+                }
+            }
             
-            if (filtered.length === 0) {
+            if (sorted.length === 0) {
                 const noMatchText = window.t ? window.t("roster_no_filter_match", "Nenhum personagem encontrado com os filtros ativos.") : "Nenhum personagem encontrado com os filtros ativos.";
+                const clearText = window.t ? window.t("btn_clear_filters", "Limpar Filtros") : "Limpar Filtros";
                 gallery.innerHTML = `
-                    <div class="empty-gallery" style="grid-column: 1 / -1; padding: 40px 0;">
-                        <p>${noMatchText}</p>
+                    <div class="empty-gallery" style="grid-column: 1 / -1; padding: 40px 0; text-align: center;">
+                        <p style="color: var(--text-secondary); margin-bottom: 14px;">${noMatchText}</p>
+                        <button class="primary-btn" onclick="window.clearRosterFilters('${gameId}')" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; font-size: 12px; border-radius: 8px; margin: 0 auto; cursor: pointer;">
+                            <i class="fa-solid fa-filter-circle-xmark"></i> ${clearText}
+                        </button>
                     </div>
                 `;
                 return;
             }
             
-            filtered.forEach(char => {
+            sorted.forEach(char => {
                 const card = document.createElement("div");
                 
                 // Normaliza o elemento para a classe CSS de borda colorida
@@ -912,6 +1404,166 @@ async function _loadRosterImpl(gameId) {
             }
             debouncedRosterSearch(e);
         });
+
+        // Configura seletor de ordenação inteligente
+        const sortSelect = document.getElementById(`roster-sort-${gameId}`);
+        if (sortSelect) {
+            const newSelect = sortSelect.cloneNode(true);
+            sortSelect.parentNode.replaceChild(newSelect, sortSelect);
+            const freshSelect = document.getElementById(`roster-sort-${gameId}`);
+            freshSelect.value = activeSort;
+            freshSelect.addEventListener("change", (e) => {
+                activeSort = e.target.value;
+                renderCards();
+            });
+        }
+
+        // Configura botão de alternar painel de auditoria
+        const toggleAuditBtn = document.querySelector(`.btn-toggle-audit[data-game="${gameId}"]`);
+        const auditPanel = document.getElementById(`audit-panel-${gameId}`);
+        if (toggleAuditBtn && auditPanel) {
+            const newToggle = toggleAuditBtn.cloneNode(true);
+            toggleAuditBtn.parentNode.replaceChild(newToggle, toggleAuditBtn);
+            const freshToggle = document.querySelector(`.btn-toggle-audit[data-game="${gameId}"]`);
+            freshToggle.addEventListener("click", () => {
+                const isVisible = auditPanel.style.display !== "none";
+                auditPanel.style.display = isVisible ? "none" : "flex";
+                if (!isVisible) freshToggle.classList.add("active");
+                else freshToggle.classList.remove("active");
+            });
+        }
+
+        // Configura pílulas e seletores do painel de auditoria
+        if (auditPanel) {
+            const pills = auditPanel.querySelectorAll(".audit-pill");
+            pills.forEach(pill => {
+                const newPill = pill.cloneNode(true);
+                pill.parentNode.replaceChild(newPill, pill);
+            });
+            const freshPills = auditPanel.querySelectorAll(".audit-pill");
+            freshPills.forEach(pill => {
+                pill.addEventListener("click", () => {
+                    const group = pill.closest(".filter-pills");
+                    if (!group) return;
+                    const filterType = group.getAttribute("data-filter-type");
+                    const val = pill.getAttribute("data-val") || "all";
+                    
+                    group.querySelectorAll(".audit-pill").forEach(p => p.classList.remove("active"));
+                    pill.classList.add("active");
+
+                    if (filterType === "set") activeSetFilter = val;
+                    else if (filterType === "slot") activeSlotFilter = val;
+                    else if (filterType === "grade") activeGradeFilter = val;
+                    else if (filterType === "weapon-status") activeWeaponStatusFilter = val;
+                    else if (filterType === "region") activeRegionFilter = val;
+                    else if (filterType === "mechanic") activeMechanicFilter = val;
+                    else if (filterType === "scale") activeScaleFilter = val;
+                    else if (filterType === "main-stat") activeMainStatFilter = val;
+                    else if (filterType === "speed") activeSpeedFilter = val;
+                    else if (filterType === "specialty") activeSpecialtyFilter = val;
+                    else if (filterType === "faction") activeFactionFilter = val;
+                    else if (filterType === "archetype") activeArchetypeFilter = val;
+                    else if (filterType === "discs-main") activeDiscsMainFilter = val;
+
+                    renderCards();
+                });
+            });
+
+            const auditSelects = auditPanel.querySelectorAll(".audit-select");
+            auditSelects.forEach(sel => {
+                const newSel = sel.cloneNode(true);
+                sel.parentNode.replaceChild(newSel, sel);
+            });
+            const freshSelects = auditPanel.querySelectorAll(".audit-select");
+            freshSelects.forEach(sel => {
+                sel.addEventListener("change", (e) => {
+                    const fType = sel.getAttribute("data-filter-type");
+                    if (fType === "planar") activePlanarFilter = sel.value;
+                    renderCards();
+                });
+            });
+        }
+
+        // Função para limpar todos os filtros ativos e resetar o estado
+        const resetAllFilters = () => {
+            searchQuery = "";
+            if (newSearchInput) newSearchInput.value = "";
+            if (debouncedRosterSearch && debouncedRosterSearch.cancel) debouncedRosterSearch.cancel();
+
+            activeSort = "default";
+            const sortSel = document.getElementById(`roster-sort-${gameId}`);
+            if (sortSel) sortSel.value = "default";
+
+            activeElementFilter = "all";
+            if (filterContainer) {
+                filterContainer.querySelectorAll(".filter-btn").forEach(b => {
+                    if (b.getAttribute("data-filter") === "all") b.classList.add("active");
+                    else b.classList.remove("active");
+                });
+            }
+
+            activeRarityFilter = "all";
+            if (rarityContainer) {
+                rarityContainer.querySelectorAll(".filter-btn").forEach(b => {
+                    if (b.getAttribute("data-rarity") === "all") b.classList.add("active");
+                    else b.classList.remove("active");
+                });
+            }
+
+            activePathFilter = "all";
+            if (pathContainer) {
+                pathContainer.querySelectorAll(".filter-btn").forEach(b => {
+                    if (b.getAttribute("data-path") === "all") b.classList.add("active");
+                    else b.classList.remove("active");
+                });
+            }
+
+            activeWeaponFilter = "all";
+            if (weaponContainer) {
+                weaponContainer.querySelectorAll(".filter-btn").forEach(b => {
+                    if (b.getAttribute("data-weapon") === "all") b.classList.add("active");
+                    else b.classList.remove("active");
+                });
+            }
+
+            activeSetFilter = "all";
+            activeSlotFilter = "all";
+            activeGradeFilter = "all";
+            activeWeaponStatusFilter = "all";
+            activeRegionFilter = "all";
+            activeMechanicFilter = "all";
+            activeScaleFilter = "all";
+            activeMainStatFilter = "all";
+            activeSpeedFilter = "all";
+            activePlanarFilter = "all";
+            activeSpecialtyFilter = "all";
+            activeFactionFilter = "all";
+            activeArchetypeFilter = "all";
+            activeDiscsMainFilter = "all";
+
+            if (auditPanel) {
+                auditPanel.querySelectorAll(".audit-pill").forEach(p => {
+                    if (p.getAttribute("data-val") === "all") p.classList.add("active");
+                    else p.classList.remove("active");
+                });
+                auditPanel.querySelectorAll(".audit-select").forEach(s => s.value = "all");
+            }
+
+            renderCards();
+        };
+
+        _rosterResetCallbacks[gameId] = resetAllFilters;
+
+        // Configura botão de limpar filtros na barra de busca
+        const clearBtn = document.querySelector(`.btn-clear-filters[data-game="${gameId}"]`);
+        if (clearBtn) {
+            const newClear = clearBtn.cloneNode(true);
+            clearBtn.parentNode.replaceChild(newClear, clearBtn);
+            const freshClear = document.querySelector(`.btn-clear-filters[data-game="${gameId}"]`);
+            freshClear.addEventListener("click", () => {
+                resetAllFilters();
+            });
+        }
         
         // Renderização inicial do Grid
         renderCards();
