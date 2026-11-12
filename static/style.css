@@ -3927,6 +3927,16 @@ h6 {
         margin-top: 6px;
     }
 
+    .audit-filters-panel {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    .audit-select {
+        width: 100%;
+        max-width: 100%;
+    }
+
     .search-box {
         flex: 1;
         width: auto;
