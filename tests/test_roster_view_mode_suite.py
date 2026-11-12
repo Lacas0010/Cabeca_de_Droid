@@ -231,6 +231,8 @@ class TestRosterViewModeSuite(unittest.TestCase):
         self.assertIn('value="rank_asc"', html)
         self.assertIn('value="level_desc"', html)
         self.assertIn('value="level_asc"', html)
+        self.assertIn('value="name_asc"', html)
+        self.assertIn('value="name_desc"', html)
 
         # Valida grupos de auditoria universais
         for game in ["zzz", "genshin", "hsr"]:
@@ -305,7 +307,7 @@ class TestRosterViewModeSuite(unittest.TestCase):
         keys = [
             "counter_showing", "sort_default", "sort_score_desc", "sort_score_asc",
             "sort_worst_piece", "sort_rank_desc", "sort_rank_asc", "sort_level_desc",
-            "sort_level_asc", "btn_clear_filters", "btn_audit_filters", "audit_title_universal",
+            "sort_level_asc", "sort_name_asc", "sort_name_desc", "btn_clear_filters", "btn_audit_filters", "audit_title_universal",
             "audit_set_integrity", "audit_slots", "audit_grade", "audit_weapon",
             "audit_title_genshin", "audit_region", "audit_mechanic", "audit_scale", "audit_main_stat",
             "audit_title_hsr", "audit_speed", "audit_planar",

@@ -284,6 +284,20 @@ function sortCharacters(list, sortMode) {
             return (a.level ?? 0) - (b.level ?? 0);
         });
     }
+    if (sortMode === "name_asc") {
+        return copy.sort((a, b) => {
+            const nameA = typeof formatCharacterName === 'function' ? formatCharacterName(a.name || '') : (a.name || '');
+            const nameB = typeof formatCharacterName === 'function' ? formatCharacterName(b.name || '') : (b.name || '');
+            return nameA.localeCompare(nameB, undefined, { sensitivity: 'base' });
+        });
+    }
+    if (sortMode === "name_desc") {
+        return copy.sort((a, b) => {
+            const nameA = typeof formatCharacterName === 'function' ? formatCharacterName(a.name || '') : (a.name || '');
+            const nameB = typeof formatCharacterName === 'function' ? formatCharacterName(b.name || '') : (b.name || '');
+            return nameB.localeCompare(nameA, undefined, { sensitivity: 'base' });
+        });
+    }
     return copy;
 }
 
