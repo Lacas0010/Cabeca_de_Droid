@@ -340,6 +340,11 @@ def init_db() -> None:
         except sqlite3.OperationalError:
             pass
 
+        try:
+            cursor.execute("ALTER TABLE characters ADD COLUMN ex_ranks_json TEXT")
+        except sqlite3.OperationalError:
+            pass
+
         # 3. Tabela de Relíquias / Artefatos / Discos
         cursor.execute("""
         CREATE TABLE IF NOT EXISTS character_relics (
@@ -1144,6 +1149,7 @@ def save_character(
     ranks_json: Optional[str] = None,
     weapon_rarity: Optional[int] = None,
     sets_json: Optional[str] = None,
+    ex_ranks_json: Optional[str] = None,
 ) -> None:
     """Salva ou atualiza as informações de um personagem no SQLite."""
     if weapon_rarity is None and weapon_name:
@@ -1160,8 +1166,8 @@ def save_character(
         INSERT OR REPLACE INTO characters (
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
             weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json, ranks_json,
-            weapon_rarity, sets_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            weapon_rarity, sets_json, ex_ranks_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 uid,
@@ -1184,6 +1190,7 @@ def save_character(
                 ranks_json,
                 weapon_rarity,
                 sets_json,
+                ex_ranks_json,
             ),
         )
 
@@ -1236,7 +1243,7 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
         char_cols = """
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
             weapon_name, weapon_level, weapon_rank, weapon_icon, char_id,
-            skills_json, stats_json, ranks_json, weapon_rarity, sets_json, raw_md
+            skills_json, stats_json, ranks_json, weapon_rarity, sets_json, ex_ranks_json, raw_md
         """
         if target_uid:
             cursor.execute(
@@ -1351,6 +1358,15 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
             if not sets_list and "raw_md" in r_keys and r["raw_md"]:
                 sets_list = parse_sets_from_raw_md(r["raw_md"])
 
+            ex_ranks_list = []
+            if "ex_ranks_json" in r_keys and r["ex_ranks_json"]:
+                try:
+                    parsed_ex = json.loads(r["ex_ranks_json"])
+                    if isinstance(parsed_ex, list):
+                        ex_ranks_list = parsed_ex
+                except Exception:
+                    ex_ranks_list = []
+
             char_dict = {
                 "id": r["char_id"] if "char_id" in r_keys and r["char_id"] else "",
                 "uid": r["uid"],
@@ -1366,6 +1382,7 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                 "relics": relics_list,
                 "skills": skills_list,
                 "ranks": ranks_list,
+                "ex_ranks": ex_ranks_list,
                 "constellations": ranks_list,
                 "mindscapes": ranks_list,
                 "stats": stats_dict,

@@ -673,6 +673,29 @@ def get_hsr_effective_id(char: Any) -> str:
     return c_id
 
 
+def enrich_ex_ranks(ex_ranks: Any) -> List[Dict[str, Any]]:
+    """Normaliza descrições e aplica proxy seguro de imagens para Affinitive Eidolons (ex_ranks)."""
+    if not isinstance(ex_ranks, list):
+        return []
+    enriched: List[Dict[str, Any]] = []
+    for er in ex_ranks:
+        if not isinstance(er, dict):
+            continue
+        item = dict(er)
+        if item.get("desc"):
+            item["desc"] = clean_hoyoverse_desc(item["desc"])
+        if item.get("icon"):
+            raw_icon = get_raw_url(item["icon"])
+            if raw_icon.startswith("http"):
+                item["icon"] = f"/api/proxy_image?url={urllib.parse.quote(raw_icon, safe='')}"
+        item.setdefault("pos", 0)
+        item.setdefault("name", "Affinitive Eidolon")
+        item["is_unlocked"] = bool(item.get("is_unlocked", False))
+        item.setdefault("type", "affinitive")
+        enriched.append(item)
+    return enriched
+
+
 async def get_roster(game_id: str) -> List[Dict[str, Any]]:
     """Retorna e enriquece os dados dos personagens salvos no roster local."""
     game_id = game_id.lower().strip()
@@ -710,16 +733,20 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
         data = parse_roster_md_fallback(game_id)
 
     if data:
-        # Enriquece gacha_art do JSON se faltar no banco
+        # Enriquece gacha_art e ex_ranks do JSON se faltar no banco
         json_path = f"{game_id}/roster_data_{game_id}.json"
         json_map = {}
+        json_ex_ranks_map = {}
         if os.path.exists(json_path):
             try:
                 with open(json_path, "r", encoding="utf-8") as jf:
                     jdata = json.load(jf)
                     for jc in jdata:
-                        if jc.get("name") and jc.get("gacha_art"):
-                            json_map[jc["name"]] = jc["gacha_art"]
+                        if jc.get("name"):
+                            if jc.get("gacha_art"):
+                                json_map[jc["name"]] = jc["gacha_art"]
+                            if jc.get("ex_ranks"):
+                                json_ex_ranks_map[jc["name"]] = jc["ex_ranks"]
             except Exception:
                 pass
 
@@ -728,6 +755,9 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
         for char in data:
             if char.get("name") in json_map and json_map[char["name"]]:
                 char["gacha_art"] = json_map[char["name"]]
+            if not char.get("ex_ranks") and char.get("name") in json_ex_ranks_map:
+                char["ex_ranks"] = json_ex_ranks_map[char["name"]]
+            char["ex_ranks"] = enrich_ex_ranks(char.get("ex_ranks") or [])
 
             # Garante fallback de gacha_art em HD para HSR (Skins e Eidolons screen art), ZZZ e skins do Genshin
             if game_id == "hsr":
@@ -1374,6 +1404,7 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
                 sk["desc"] = clean_hoyoverse_desc(sk["desc"])
 
         data["ranks"] = char_ranks
+        data["ex_ranks"] = enrich_ex_ranks(char_db.get("ex_ranks") or [])
         data["constellations"] = char_ranks
         data["mindscapes"] = char_ranks
         data["id"] = c_id
@@ -1439,7 +1470,12 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
         print(f"[WARN] Erro ao extrair conjuntos do markdown para {char_name}: {e}")
 
     # 3. Fallback de stats, skills e ranks do roster_data_{game_id}.json se ainda estiver vazio
-    if not data["stats"] or not data.get("skills") or not data.get("ranks"):
+    if (
+        not data["stats"]
+        or not data.get("skills")
+        or not data.get("ranks")
+        or (game_id == "hsr" and not data.get("ex_ranks"))
+    ):
         try:
             json_path = f"{game_id}/roster_data_{game_id}.json"
             if os.path.exists(json_path):
@@ -1454,9 +1490,12 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
                             data["skills"] = c["skills"]
                         if not data.get("ranks") and (c.get("ranks") or c.get("constellations")):
                             data["ranks"] = c.get("ranks") or c.get("constellations")
+                        if not data.get("ex_ranks") and c.get("ex_ranks"):
+                            data["ex_ranks"] = enrich_ex_ranks(c["ex_ranks"])
                         break
         except Exception:
             pass
+    data.setdefault("ex_ranks", [])
 
     if not data.get("ranks"):
         static_ranks = get_static_ranks_for_character(game_id, None, char_name, None)

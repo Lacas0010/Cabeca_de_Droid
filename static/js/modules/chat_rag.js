@@ -578,6 +578,7 @@ async function ensureCharacterBuildData(gameId, char) {
                 if (b.sets && b.sets.length > 0) char.sets = b.sets;
                 if (b.pieces && b.pieces.length > 0) char.relics = b.pieces;
                 if (b.weapon && typeof b.weapon === "object") char.weapon = b.weapon;
+                if (Array.isArray(b.ex_ranks)) char.ex_ranks = b.ex_ranks;
             }
         }
     } catch (err) {
@@ -695,6 +696,8 @@ window.renderTeamRosterSelector = function(gameId) {
         const elemKey = (char.element || "").toLowerCase();
         const elemIconUrl = `/assets/elements/${gameId}_${elemKey}.png`;
         const safeDataName = String(char.name || "").replace(/"/g, "&quot;");
+        const affEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
+        const affRankTag = affEid ? ` <span class="team-picker-aff-star" title="Affinitive Eidolon: ${String(affEid.name || "").replace(/"/g, "&quot;")}">✦</span>` : '';
 
         return `
             <div class="team-picker-item ${inTeam ? 'in-team' : ''}" data-name="${safeDataName}" onclick="window.toggleCharacterInTeam('${gameId}', this.dataset.name)">
@@ -704,7 +707,7 @@ window.renderTeamRosterSelector = function(gameId) {
                 </div>
                 ${inTeam ? `<div class="team-picker-pos-badge">${teamIdx + 1}</div>` : ''}
                 <span class="team-picker-name" title="${safeDataName}">${typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name}</span>
-                <span class="team-picker-rank">${char.rank_str || 'C0'} • Nv.${char.level}</span>
+                <span class="team-picker-rank">${char.rank_str || 'C0'}${affRankTag} • Nv.${char.level}</span>
             </div>
         `;
     }).join("");
@@ -1075,6 +1078,15 @@ function renderTeamExportCard(gameId) {
     const isEnCard = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
 
     const team = teamBuilderState[gameId] || { teamName: "Time", members: [] };
+    const rosterListForTeam = (window.globalRoster && window.globalRoster[gameId]) || [];
+    team.members.forEach(m => {
+        if (m && !Array.isArray(m.ex_ranks) && rosterListForTeam.length > 0) {
+            const fresh = rosterListForTeam.find(r => r && r.name === m.name);
+            if (fresh && Array.isArray(fresh.ex_ranks)) {
+                m.ex_ranks = fresh.ex_ranks;
+            }
+        }
+    });
     const maxSlots = TEAM_MAX_MEMBERS[gameId] || 4;
     const isThreeCol = maxSlots === 3;
 
@@ -1097,16 +1109,21 @@ function renderTeamExportCard(gameId) {
     // Resumo de Pity / Investimento
     let fiveStarCount = 0;
     let totalRanks = 0;
+    let totalAffinitive = 0;
     team.members.forEach(m => {
         const rNum = Number(m.rarity);
         if (rNum === 5 || m.rarity === "5" || String(m.rarity).toUpperCase() === "S") fiveStarCount++;
         const mRank = String(m.rank_str || "").match(/\d+/);
         if (mRank) totalRanks += parseInt(mRank[0]);
+        if (window.getUnlockedAffinitiveEidolon && window.getUnlockedAffinitiveEidolon(m)) {
+            totalAffinitive++;
+        }
     });
     const rankLabel = gameId === "genshin" ? "Constelações" : (gameId === "zzz" ? "Mindscapes" : "Eidolons");
+    const affSummaryPart = totalAffinitive > 0 ? ` | ${totalAffinitive}x Affinitive` : "";
     const pitySummary = isEnCard 
-        ? `Investment: ${fiveStarCount}x 5★ | ${totalRanks}x Active ${rankLabel}` 
-        : `Investimento: ${fiveStarCount}x 5★ | ${totalRanks}x ${rankLabel} Ativas`;
+        ? `Investment: ${fiveStarCount}x 5★ | ${totalRanks}x Active ${rankLabel}${affSummaryPart}` 
+        : `Investimento: ${fiveStarCount}x 5★ | ${totalRanks}x ${rankLabel} Ativas${affSummaryPart}`;
 
     // Identificação dinâmica do jogador via API/banco
     let playerNick = "Jogador";
@@ -1159,6 +1176,8 @@ function renderTeamExportCard(gameId) {
             else if (char.specialty) subRole = typeof formatPathName === 'function' ? formatPathName(char.specialty, gameId) : char.specialty;
             else if (char.element) subRole = formatElementDisplayName(char.element);
             const teamCharName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
+            const teamAffEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
+            const teamAffNameAttr = teamAffEid ? String(teamAffEid.name || "Affinitive Eidolon").replace(/"/g, "&quot;") : "";
 
             slotsHtml.push(`
                 <div class="team-char-subcard" style="--char-border: rgba(255, 255, 255, 0.12); --char-elem-color: ${rarityColor}; --char-rarity-color: ${rarityColor}; --char-rarity-glow: ${rarityGlow};">
@@ -1182,6 +1201,7 @@ function renderTeamExportCard(gameId) {
                         <div class="subcard-top-right-badges">
                             <span class="subcard-lvl-pill">Nv. ${char.level}</span>
                             <span class="subcard-rank-badge">${char.rank_str || 'C0'}</span>
+                            ${teamAffEid ? `<span class="subcard-affinitive-pill" title="Affinitive Eidolon: ${teamAffNameAttr}">${teamAffEid.icon ? `<img src="${teamAffEid.icon}" width="11" height="11" alt="" class="subcard-affinitive-mini-icon" onerror="this.style.display='none';">` : '✦'}<span>AE</span></span>` : ''}
                         </div>
                     </div>
 
@@ -1195,6 +1215,7 @@ function renderTeamExportCard(gameId) {
                             <span class="subcard-char-role">${subRole}</span>
                             <span class="subcard-char-stars">${'★'.repeat(Math.min(5, Math.max(4, isFiveStar ? 5 : 4)))}</span>
                         </div>
+                        ${teamAffEid ? `<div class="subcard-affinitive-line" title="Affinitive Eidolon: ${teamAffNameAttr}">✦ ${teamAffEid.name || 'Affinitive Eidolon'}</div>` : ''}
                     </div>
 
                     <!-- Equipamento / Arma -->

@@ -580,6 +580,43 @@ def extract_hsr_character_ranks(char) -> list:
     return ranks_json
 
 
+def extract_hsr_character_ex_ranks(char, raw_ex_ranks=None) -> list:
+    """Extrai os Affinitive Eidolons (ex_ranks) do personagem HSR retornados pela API da HoYoLAB."""
+    source = raw_ex_ranks if raw_ex_ranks is not None else getattr(char, "ex_ranks", None)
+    if not source:
+        return []
+
+    ex_ranks_json = []
+    for er in source:
+        if isinstance(er, dict):
+            er_id = er.get("id", "")
+            pos = int(er.get("pos", 0) or 0)
+            name = str(er.get("name") or "Affinitive Eidolon")
+            icon = str(er.get("icon") or er.get("icon_url") or er.get("image") or "")
+            desc = clean_hoyoverse_desc(er.get("desc") or er.get("description") or "")
+            is_unlocked = bool(er.get("is_unlocked", er.get("unlocked", False)))
+        else:
+            er_id = getattr(er, "id", "")
+            pos = int(getattr(er, "pos", 0) or 0)
+            name = str(getattr(er, "name", "Affinitive Eidolon") or "Affinitive Eidolon")
+            icon = str(getattr(er, "icon", getattr(er, "icon_url", getattr(er, "image", ""))) or "")
+            desc = clean_hoyoverse_desc(getattr(er, "desc", getattr(er, "description", "")) or "")
+            is_unlocked = bool(getattr(er, "is_unlocked", getattr(er, "unlocked", False)))
+
+        ex_ranks_json.append(
+            {
+                "id": er_id,
+                "pos": pos,
+                "name": name,
+                "icon": icon,
+                "desc": desc,
+                "is_unlocked": is_unlocked,
+                "type": "affinitive",
+            }
+        )
+    return ex_ranks_json
+
+
 def extract_genshin_character_constellations(char) -> list:
     """Extrai as 6 constelações do personagem Genshin com seus ícones, nomes e estado de ativação."""
     constellations_json = []
@@ -686,9 +723,26 @@ class HSRExtractor(BaseExtractor):
         uid = hsr_account.uid
 
         # 2. Obtém os dados de Battle Chronicle e a lista detalhada de personagens
+        raw_ex_ranks_by_id = {}
+        raw_ex_ranks_by_name = {}
         try:
             user_data = await self.client.get_starrail_user(uid)
-            characters_data = await self.client.get_starrail_characters(uid)
+            characters_data = None
+            req_record = getattr(self.client, "_request_starrail_record", None)
+            if callable(req_record):
+                raw_chars = await req_record("avatar/info", uid, payload={"need_wiki": "true"})
+                if isinstance(raw_chars, dict) and "avatar_list" in raw_chars:
+                    characters_data = genshin.models.StarRailDetailCharacterResponse(**raw_chars)
+                    for av in raw_chars.get("avatar_list", []) or []:
+                        if isinstance(av, dict) and av.get("ex_ranks"):
+                            av_id = str(av.get("id", ""))
+                            av_name = str(av.get("name", "")).lower().strip()
+                            if av_id:
+                                raw_ex_ranks_by_id[av_id] = av["ex_ranks"]
+                            if av_name:
+                                raw_ex_ranks_by_name[av_name] = av["ex_ranks"]
+            if characters_data is None:
+                characters_data = await self.client.get_starrail_characters(uid)
         except Exception as e:
             if isinstance(e, genshin.errors.DataNotPublic):
                 raise Exception(
@@ -761,10 +815,20 @@ class HSRExtractor(BaseExtractor):
         lines.append("| Personagem | Nível | Raridade | Eidolon | Caminho | Elemento |")
         lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
 
+        ex_ranks_cache = {}
+        for char in characters_data.avatar_list:
+            c_id_key = str(getattr(char, "id", ""))
+            c_name_key = str(getattr(char, "name", "")).lower().strip()
+            raw_ex = raw_ex_ranks_by_id.get(c_id_key) or raw_ex_ranks_by_name.get(c_name_key)
+            ex_ranks_cache[c_id_key or c_name_key] = extract_hsr_character_ex_ranks(char, raw_ex)
+
         # Ordena por raridade (decrescente) e nível (decrescente)
         for char in sorted(characters_data.avatar_list, key=lambda c: (c.rarity, c.level), reverse=True):
             stars = "⭐" * char.rarity
-            eidolon = f"E{char.rank}"
+            c_ex_key = str(getattr(char, "id", "")) or str(getattr(char, "name", "")).lower().strip()
+            c_ex_ranks = ex_ranks_cache.get(c_ex_key, [])
+            has_unlocked_ex = any(er.get("is_unlocked") for er in c_ex_ranks)
+            eidolon = f"E{char.rank} + Affinitive" if has_unlocked_ex else f"E{char.rank}"
 
             # Tradução e tratamento do Caminho
             p_name = char.path.name if hasattr(char.path, "name") else str(char.path)
@@ -834,10 +898,22 @@ class HSRExtractor(BaseExtractor):
             skills_str_list = [f"{s['name']}: Nv. {s['level']}/{s['max_level']}" for s in char_skills]
             skills_text = " | ".join(skills_str_list) if skills_str_list else "Sem informações de rastros"
 
+            c_ex_key = str(getattr(char, "id", "")) or str(getattr(char, "name", "")).lower().strip()
+            c_ex_ranks = ex_ranks_cache.get(c_ex_key, [])
+
             lines.append(f"**Personagem:** {char.name} | **Nível:** {char.level} | **Eidolon:** {eidolon}")
             lines.append(f"- **Cone de Luz:** {equip_text}")
             lines.append(f"- **Relíquias:** {relics_text}")
             lines.append(f"- **Rastros / Habilidades:** {skills_text}")
+            if c_ex_ranks:
+                ex_parts = []
+                for er in c_ex_ranks:
+                    status_lbl = "Ativo" if er.get("is_unlocked") else "Bloqueado"
+                    part = f"{er.get('name', 'Affinitive Eidolon')} ({status_lbl})"
+                    if er.get("desc"):
+                        part += f" — {er['desc']}"
+                    ex_parts.append(part)
+                lines.append(f"- **Affinitive Eidolon:** {' | '.join(ex_parts)}")
             lines.append(f"- **Status Finais:** {properties_text}")
 
             if relics_list:
@@ -1057,6 +1133,8 @@ class HSRExtractor(BaseExtractor):
 
                 skills_json = extract_hsr_character_skills(char)
                 ranks_json = extract_hsr_character_ranks(char)
+                c_ex_key = str(getattr(char, "id", "")) or str(getattr(char, "name", "")).lower().strip()
+                ex_ranks_json = ex_ranks_cache.get(c_ex_key, [])
 
                 char_json_list.append(
                     {
@@ -1076,6 +1154,7 @@ class HSRExtractor(BaseExtractor):
                         "relics": relics_json,
                         "skills": skills_json,
                         "ranks": ranks_json,
+                        "ex_ranks": ex_ranks_json,
                         "stats": hsr_stats,
                     }
                 )
@@ -1137,6 +1216,7 @@ class HSRExtractor(BaseExtractor):
                     ranks_json=json.dumps(c.get("ranks", [])),
                     weapon_rarity=c["weapon"].get("rarity") if c["weapon"] else None,
                     sets_json=json.dumps(c.get("sets", [])),
+                    ex_ranks_json=json.dumps(c.get("ex_ranks", []), ensure_ascii=False),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:
@@ -2183,6 +2263,7 @@ class ZZZExtractor(BaseExtractor):
                     ranks_json=json.dumps(c.get("ranks", [])),
                     weapon_rarity=c["weapon"].get("rarity") if c["weapon"] else None,
                     sets_json=json.dumps(c.get("sets", [])),
+                    ex_ranks_json=json.dumps(c.get("ex_ranks", []), ensure_ascii=False),
                 )
                 database.clear_character_relics(uid, c["name"])
                 for r in c["relics"]:

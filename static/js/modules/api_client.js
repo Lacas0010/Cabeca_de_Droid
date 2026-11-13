@@ -620,8 +620,20 @@ function createDebouncedSearch(fn, { delay = 300, minLength = 2, immediateOnEmpt
     return debounced;
 }
 
+function getAffinitiveEidolons(char) {
+    const list = (char && Array.isArray(char.ex_ranks)) ? char.ex_ranks : [];
+    return list.filter(er => er && typeof er === "object");
+}
+
+function getUnlockedAffinitiveEidolon(char) {
+    const list = getAffinitiveEidolons(char);
+    return list.find(er => Boolean(er.is_unlocked)) || null;
+}
+
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof createDebouncedSearch !== 'undefined') window.createDebouncedSearch = createDebouncedSearch;
+if (typeof getAffinitiveEidolons !== 'undefined') window.getAffinitiveEidolons = getAffinitiveEidolons;
+if (typeof getUnlockedAffinitiveEidolon !== 'undefined') window.getUnlockedAffinitiveEidolon = getUnlockedAffinitiveEidolon;
 if (typeof API_URL !== 'undefined') window.API_URL = API_URL;
 if (typeof ELEMENT_MAPPING !== 'undefined') window.ELEMENT_MAPPING = ELEMENT_MAPPING;
 if (typeof SLOT_ICONS !== 'undefined') window.SLOT_ICONS = SLOT_ICONS;

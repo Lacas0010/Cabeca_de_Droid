@@ -3,17 +3,17 @@
 // ==========================================================================
 
 // Importação ordenada dos módulos desacoplados
-import "./modules/i18n.js?v=24.0";
-import "./modules/api_client.js?v=24.0";
-import "./modules/modal.js?v=24.0";
-import "./modules/navigation.js?v=24.0";
-import "./modules/config_manager.js?v=24.0";
-import "./modules/sync_manager.js?v=24.0";
-import "./modules/endgame.js?v=24.0";
-import "./modules/roster.js?v=24.0";
-import "./modules/build_comparator.js?v=24.0";
-import "./modules/chat_rag.js?v=24.0";
-import "./modules/farming.js?v=24.0";
+import "./modules/i18n.js?v=25.0";
+import "./modules/api_client.js?v=25.0";
+import "./modules/modal.js?v=25.0";
+import "./modules/navigation.js?v=25.0";
+import "./modules/config_manager.js?v=25.0";
+import "./modules/sync_manager.js?v=25.0";
+import "./modules/endgame.js?v=25.0";
+import "./modules/roster.js?v=25.0";
+import "./modules/build_comparator.js?v=25.0";
+import "./modules/chat_rag.js?v=25.0";
+import "./modules/farming.js?v=25.0";
 
 // Módulos pesados carregados sob demanda via import() dinâmico:
 // gacha_sim.js e gacha_tracker.js são carregados apenas quando a aba Gacha/Sorte for ativada ou em idle

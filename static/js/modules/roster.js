@@ -1146,6 +1146,8 @@ async function _loadRosterImpl(gameId) {
                 }
 
                 const formattedName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
+                const affEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
+                const affTitleAttr = affEid ? String(affEid.name || "Affinitive Eidolon").replace(/"/g, "&quot;") : "";
 
                 if (currentRosterViewMode === "list") {
                     card.className = `char-card char-list-row ${elemClass}${inTeamClass}`;
@@ -1196,6 +1198,7 @@ async function _loadRosterImpl(gameId) {
                                         ${elemDisplayName}
                                     </span>
                                     <span class="char-list-rarity-badge ${isFiveStar ? 'five-star' : 'four-star'}">${rarityLabel}</span>
+                                    ${affEid ? `<span class="char-list-affinitive-pill" title="Affinitive Eidolon: ${affTitleAttr}">✦ Affinitive</span>` : ''}
                                     ${teamPos !== -1 ? `<span class="char-list-badge-team"><i class="fa-solid fa-users"></i> #${teamPos + 1}</span>` : ''}
                                 </div>
                                 <div class="char-list-details-row">
@@ -1286,6 +1289,7 @@ async function _loadRosterImpl(gameId) {
                             ${char.overall_grade ? `<div class="char-grade-badge badge-${char.overall_grade.toLowerCase()}">${char.overall_grade}</div>` : ''}
                             <img class="char-avatar" src="${avatarSrc}" width="68" height="68" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultFallback}';" alt="${char.name}">
                             <div class="char-rank-badge">${char.rank_str || 'C0'}</div>
+                            ${affEid ? `<div class="char-affinitive-badge" title="Affinitive Eidolon: ${affTitleAttr}">✦ AE</div>` : ''}
                         </div>
 
                         <div class="char-info">
@@ -1785,7 +1789,9 @@ async function inspectCharacter(gameId, char) {
     const pathVal = char.path || char.specialty || char.weapon_type || "";
     const pathDisplay = pathVal && typeof formatPathName === 'function' ? formatPathName(pathVal, gameId) : "";
     const pathHtml = pathDisplay ? ` • ${pathDisplay.toUpperCase()}` : "";
-    document.getElementById("ins-meta").innerHTML = `${char.rank_str || "C0"} • ${elemHtml}${pathHtml} • ${isEn ? "Level" : "Nível"} ${char.level}`;
+    const insAffEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
+    const insAffHtml = insAffEid ? ` <span class="ins-affinitive-pill" title="Affinitive Eidolon: ${String(insAffEid.name || "").replace(/"/g, "&quot;")}">✦ Affinitive</span>` : "";
+    document.getElementById("ins-meta").innerHTML = `${char.rank_str || "C0"}${insAffHtml} • ${elemHtml}${pathHtml} • ${isEn ? "Level" : "Nível"} ${char.level}`;
     
     // Configura e limpa o card do Otimizador IA
     const btnOptimize = document.getElementById("btn-ai-optimize");
@@ -1944,7 +1950,11 @@ async function inspectCharacter(gameId, char) {
         }
         
         // Atualiza referências locais e globais
+        const charExRanks = Array.isArray(build.ex_ranks) && build.ex_ranks.length > 0
+            ? build.ex_ranks
+            : (Array.isArray(char.ex_ranks) ? char.ex_ranks : []);
         char.ranks = charRanks;
+        char.ex_ranks = charExRanks;
         char.constellations = charRanks;
         char.mindscapes = charRanks;
         if (build.id) {
@@ -1958,6 +1968,7 @@ async function inspectCharacter(gameId, char) {
 
         if (window.currentInspectorChar) {
             window.currentInspectorChar.ranks = charRanks;
+            window.currentInspectorChar.ex_ranks = charExRanks;
             window.currentInspectorChar.constellations = charRanks;
             window.currentInspectorChar.mindscapes = charRanks;
             if (build.id) {
@@ -1970,8 +1981,21 @@ async function inspectCharacter(gameId, char) {
             if (build.gacha_art) window.currentInspectorChar.gacha_art = build.gacha_art;
         }
 
+        const unlockedExList = charExRanks.filter(er => er && er.is_unlocked);
+        const insMetaEl = document.getElementById("ins-meta");
+        if (insMetaEl && unlockedExList.length > 0 && !insMetaEl.querySelector(".ins-affinitive-pill")) {
+            const firstAffName = String(unlockedExList[0].name || "Affinitive Eidolon").replace(/"/g, "&quot;");
+            const firstSpaceIdx = insMetaEl.innerHTML.indexOf(" • ");
+            if (firstSpaceIdx !== -1) {
+                insMetaEl.innerHTML = insMetaEl.innerHTML.slice(0, firstSpaceIdx)
+                    + ` <span class="ins-affinitive-pill" title="Affinitive Eidolon: ${firstAffName}">✦ Affinitive</span>`
+                    + insMetaEl.innerHTML.slice(firstSpaceIdx);
+            }
+        }
+
         if (ranksBadgeEl) {
-            ranksBadgeEl.textContent = `${rankPrefix}${unlockedCount} / ${rankPrefix}6`;
+            const exSuffix = unlockedExList.length > 0 ? ` • +${unlockedExList.length} Affinitive` : "";
+            ranksBadgeEl.textContent = `${rankPrefix}${unlockedCount} / ${rankPrefix}6${exSuffix}`;
         }
 
         if (ranksGridEl) {
@@ -2019,6 +2043,47 @@ async function inspectCharacter(gameId, char) {
                 `;
                 ranksGridEl.appendChild(nodeCard);
             });
+
+            // Affinitive Eidolons (ex_ranks do HSR)
+            if (gameId === "hsr" && charExRanks.length > 0) {
+                const elemKey = (char.element || "").toLowerCase();
+                const defaultElemIcon = `/assets/elements/${gameId}_${elemKey}.png`;
+                charExRanks.forEach((er) => {
+                    if (!er || typeof er !== "object") return;
+                    const isUnlocked = Boolean(er.is_unlocked);
+                    const erName = er.name || "Affinitive Eidolon";
+                    const cleanDesc = cleanHoyoverseText(er.desc);
+                    const statusText = isUnlocked ? (isEn ? 'Active' : 'Ativo') : (isEn ? 'Locked' : 'Bloqueado');
+                    const iconSrc = er.icon || defaultElemIcon;
+                    const affCard = document.createElement("div");
+                    affCard.className = `rank-node-card rank-node--affinitive ${isUnlocked ? 'rank-node--affinitive-active' : 'rank-node--locked'}`;
+                    affCard.setAttribute('data-hoyo-tooltip', 'true');
+                    affCard.setAttribute('data-tooltip-title', `✦ ${erName}`);
+                    affCard.setAttribute('data-tooltip-type', 'Affinitive Eidolon');
+                    affCard.setAttribute('data-tooltip-status', statusText);
+                    affCard.setAttribute('data-tooltip-status-class', isUnlocked ? 'active' : 'locked');
+                    affCard.setAttribute('data-tooltip-desc', cleanDesc || (isEn ? 'No additional details provided.' : 'Nenhum detalhe adicional informado.'));
+                    affCard.title = cleanDesc ? `Affinitive Eidolon • ${erName} (${statusText})\n\n${cleanDesc}` : `Affinitive Eidolon • ${erName} (${statusText})`;
+
+                    const iconHtml = `<img src="${iconSrc}" class="rank-icon-img" alt="${erName}" width="40" height="40" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${defaultElemIcon}';">`;
+                    affCard.innerHTML = `
+                        <div class="rank-icon-frame rank-icon-frame--affinitive">
+                            ${iconHtml}
+                        </div>
+                        <div class="rank-node-details">
+                            <div class="rank-affinitive-header-row">
+                                <span class="rank-node-pos rank-node-pos--affinitive">✦ AFFINITIVE EIDOLON</span>
+                                <span class="rank-status-pill ${isUnlocked ? 'rank-status-pill--affinitive-active' : 'rank-status-pill--locked'}">
+                                    ${isUnlocked ? `<i class="fa-solid fa-circle-check"></i> ${statusText}` : `<i class="fa-solid fa-lock"></i> ${statusText}`}
+                                </span>
+                            </div>
+                            <span class="rank-node-name rank-node-name--affinitive" title="${erName}">${erName}</span>
+                            ${cleanDesc ? `<span class="rank-affinitive-desc-preview">${cleanDesc}</span>` : ''}
+                        </div>
+                    `;
+                    ranksGridEl.appendChild(affCard);
+                });
+            }
         }
 
         // 0.5 Renderiza Talentos & Habilidades / Traços
@@ -3310,6 +3375,42 @@ async function generateBuildCardCanvas(char, gameId) {
         }
     });
 
+    // 2.2b Affinitive Eidolon Bar (HSR ex_ranks) no Card Exportável do Personagem
+    const cardExRanks = gameId === "hsr" && Array.isArray(char.ex_ranks)
+        ? char.ex_ranks.filter(er => er && er.is_unlocked)
+        : [];
+    if (cardExRanks.length > 0) {
+        const affEr = cardExRanks[0];
+        const affIconUrl = affEr.icon || defaultElemIcon;
+        const affImg = (await loadImage(affIconUrl)) || (await loadImage(defaultElemIcon));
+        const affBoxY = rkBoxY + rkNodeH + 10;
+        const affBoxH = 30;
+        drawRoundedRect(rkBoxX - 4, affBoxY, rkTotalW + 8, affBoxH, 9, "rgba(14, 116, 144, 0.32)", "rgba(56, 189, 248, 0.80)", 1.2);
+        if (affImg) {
+            ctx.save();
+            ctx.drawImage(affImg, rkBoxX + 4, affBoxY + 4, 22, 22);
+            ctx.restore();
+        }
+        ctx.font = "bold 9px sans-serif";
+        ctx.fillStyle = "#38bdf8";
+        ctx.fillText("✦ AFFINITIVE", rkBoxX + 32, affBoxY + 13);
+
+        ctx.font = "bold 10.5px sans-serif";
+        ctx.fillStyle = "#f1f5f9";
+        let affNameTxt = affEr.name || "Affinitive Eidolon";
+        const maxAffW = rkTotalW - 56;
+        while (ctx.measureText(affNameTxt).width > maxAffW && affNameTxt.length > 4) {
+            affNameTxt = affNameTxt.slice(0, -1);
+        }
+        if (affNameTxt !== (affEr.name || "Affinitive Eidolon")) affNameTxt = affNameTxt.trim() + "…";
+        ctx.fillText(affNameTxt, rkBoxX + 32, affBoxY + 25);
+
+        ctx.beginPath();
+        ctx.arc(rkBoxX + rkTotalW - 6, affBoxY + affBoxH / 2, 3, 0, Math.PI * 2);
+        ctx.fillStyle = "#34d399";
+        ctx.fill();
+    }
+
     // Badge de Nota Geral no canto superior direito da Hero Column
     drawRoundedRect(hx + hw - 108, hy + 16, 92, 42, 10, gc.bg, gc.border, 1.5);
     ctx.font = "bold 13px sans-serif";
@@ -3945,6 +4046,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const bData = await bRes.json();
                 if (bData) {
                     if (bData.ranks && bData.ranks.length > 0) window.currentInspectorChar.ranks = bData.ranks;
+                    if (Array.isArray(bData.ex_ranks)) window.currentInspectorChar.ex_ranks = bData.ex_ranks;
                     if (bData.skills && bData.skills.length > 0) window.currentInspectorChar.skills = bData.skills;
                     if (bData.eidolon_art) window.currentInspectorChar.eidolon_art = bData.eidolon_art;
                     if (bData.portrait) window.currentInspectorChar.portrait = bData.portrait;
