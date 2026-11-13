@@ -1,6 +1,7 @@
 import os
 import re
 import json
+from typing import Any
 from curl_cffi import requests
 import asyncio
 import unicodedata
@@ -617,6 +618,66 @@ def extract_hsr_character_ex_ranks(char, raw_ex_ranks=None) -> list:
     return ex_ranks_json
 
 
+def resolve_hsr_variant_id(
+    name: str = "",
+    char_id: Any = "",
+    icon: str = "",
+    image: str = "",
+    figure_path: str = "",
+    costumes: Any = None,
+    costume_id: Any = None,
+) -> str:
+    """Resolve com segurança o ID efetivo de personagens e skins/versões SP do HSR sem colidir com hashes MD5."""
+    c_id_str = str(char_id or "").strip()
+    if costume_id and str(costume_id).isdigit():
+        return str(costume_id)
+
+    if costumes and isinstance(costumes, list) and len(costumes) > 0:
+        first_c = costumes[0]
+        if isinstance(first_c, (int, str)) and str(first_c).isdigit():
+            return str(first_c)
+        c_cid = getattr(first_c, "id", None) if not isinstance(first_c, dict) else first_c.get("id")
+        if c_cid and str(c_cid).isdigit():
+            return str(c_cid)
+
+    # Busca ID explícito de skin apenas em URLs estruturadas (nunca em hashes hexadecimais aleatórios)
+    url_blob = f"{icon or ''} {image or ''} {figure_path or ''}".lower()
+    url_skin_m = re.search(
+        r"(?:avatar_(?:skin_)?image|character_(?:portrait|preview))[/=](150[1-9]|151[0-5]|1414)\b",
+        url_blob,
+    )
+    if url_skin_m:
+        return url_skin_m.group(1)
+
+    if c_id_str.isdigit() and re.match(r"^(150[1-9]|151[0-5]|1414)$", c_id_str):
+        return c_id_str
+
+    # Regras nominais de variantes/skins restritas estritamente ao NOME do personagem
+    c_name_lower = str(name or "").lower().strip()
+    if "summeretto" in c_name_lower or "robin summer" in c_name_lower or "robin verão" in c_name_lower:
+        return "1512"
+    if "himeko - nova" in c_name_lower or "himeko nova" in c_name_lower:
+        return "1510"
+    if re.search(r"\bnv\.?\s*999\b", c_name_lower) or "loba prateada nv." in c_name_lower:
+        return "1506"
+    if "permansor" in c_name_lower:
+        return "1414" if "terrae" in c_name_lower else "1505"
+    if "veraneio" in c_name_lower:
+        return "1513"
+    if "noite de inverno" in c_name_lower or re.search(r"\bwinter\b", c_name_lower) or "sparxie" in c_name_lower:
+        return "1501"
+    if "evanescia" in c_name_lower:
+        return "1505"
+    if "mortenax" in c_name_lower:
+        return "1507"
+    if "tohsaka" in c_name_lower:
+        return "1508"
+    if "gilgamesh" in c_name_lower:
+        return "1509"
+
+    return c_id_str if c_id_str.isdigit() else c_id_str
+
+
 def extract_genshin_character_constellations(char) -> list:
     """Extrai as 6 constelações do personagem Genshin com seus ícones, nomes e estado de ativação."""
     constellations_json = []
@@ -1076,35 +1137,21 @@ class HSRExtractor(BaseExtractor):
 
                 char_icon = getattr(char, "icon", getattr(char, "image", ""))
                 char_id_str = str(getattr(char, "id", ""))
-
-                # Resolução de skins e costumes do HSR
-                effective_id = char_id_str
                 costumes = getattr(char, "costumes", getattr(char, "skins", getattr(char, "outfits", None)))
                 if costumes and isinstance(costumes, list) and len(costumes) > 0:
                     c_item = costumes[0]
-                    c_id = getattr(c_item, "id", None) if not isinstance(c_item, dict) else c_item.get("id")
-                    if c_id and str(c_id).isdigit():
-                        effective_id = str(c_id)
-                    char_icon = getattr(c_item, "icon", getattr(c_item, "image", char_icon))
+                    char_icon = getattr(c_item, "icon", getattr(c_item, "image", char_icon)) if not isinstance(c_item, dict) else (c_item.get("icon") or c_item.get("image") or char_icon)
 
                 raw_image = str(getattr(char, "image", "") or "")
                 raw_figure = str(getattr(char, "figure_path", "") or "")
-                check_str = f"{getattr(char, 'name', '')} {char_id_str} {char_icon} {raw_image} {raw_figure}".lower()
-                skin_m = re.search(r"\b(150[1-9]|151[0-5]|1414)\b", check_str)
-                if skin_m:
-                    effective_id = skin_m.group(1)
-                elif "summeretto" in check_str or "robin summer" in check_str:
-                    effective_id = "1512"
-                elif "himeko - nova" in check_str or "himeko nova" in check_str:
-                    effective_id = "1510"
-                elif "999" in check_str or "loba prateada nv." in check_str:
-                    effective_id = "1506"
-                elif "permansor" in check_str:
-                    effective_id = "1414" if "terrae" in check_str else "1505"
-                elif "veraneio" in check_str:
-                    effective_id = "1513"
-                elif "noite de inverno" in check_str or "winter" in check_str or "sparxie" in check_str:
-                    effective_id = "1501"
+                effective_id = resolve_hsr_variant_id(
+                    name=getattr(char, "name", ""),
+                    char_id=char_id_str,
+                    icon=char_icon,
+                    image=raw_image,
+                    figure_path=raw_figure,
+                    costumes=costumes,
+                )
 
                 eidolon_art_url = (
                     f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_preview/{effective_id}.png"
@@ -1190,7 +1237,7 @@ class HSRExtractor(BaseExtractor):
             database.save_endgame_data(str(uid), "hsr", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
-                pattern = rf"(\*\*(?:Personagem):\*\*\s*{re.escape(c['name'])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)"
+                pattern = rf"(\*\*(?:Personagem):\*\*\s*{re.escape(c['name'])}\s*(?:\||$|\r?\n).*?)(?=\n\*\*(?:Personagem)|\n## |\Z)"
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
@@ -1806,7 +1853,7 @@ class GenshinExtractor(BaseExtractor):
             database.save_endgame_data(str(uid), "genshin", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
-                pattern = rf"(\*\*(?:Personagem):\*\*\s*{re.escape(c['name'])}.*?)(?=\n\*\*(?:Personagem)|\n## |\Z)"
+                pattern = rf"(\*\*(?:Personagem):\*\*\s*{re.escape(c['name'])}\s*(?:\||$|\r?\n).*?)(?=\n\*\*(?:Personagem)|\n## |\Z)"
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()
@@ -2237,7 +2284,7 @@ class ZZZExtractor(BaseExtractor):
             database.save_endgame_data(str(uid), "zzz", endgame_modes_data, endgame_text)
             for c in char_json_list:
                 char_md = ""
-                pattern = rf"(\*\*(?:Agente):\*\*\s*{re.escape(c['name'])}.*?)(?=\n\*\*(?:Agente)|\n## |\Z)"
+                pattern = rf"(\*\*(?:Agente):\*\*\s*{re.escape(c['name'])}\s*(?:\||$|\r?\n).*?)(?=\n\*\*(?:Agente)|\n## |\Z)"
                 match = re.search(pattern, markdown_content, re.DOTALL | re.I)
                 if match:
                     char_md = match.group(1).strip()

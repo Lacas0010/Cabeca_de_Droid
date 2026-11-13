@@ -325,6 +325,34 @@ def fetch_fandom_shards_for_character(char_name: str, char_id: str = None) -> Li
     return []
 
 
+def _find_best_substring_rank_entry(db: Dict[str, Any], c_norm: str, alias_val: str = "") -> Any:
+    """Busca a entrada mais próxima em tamanho por substring no dicionário de constelações/eidolons."""
+    if not db:
+        return None
+
+    queries = []
+    if c_norm and len(c_norm) >= 4:
+        queries.append(c_norm)
+    if alias_val:
+        a_norm = normalize_char_name(alias_val)
+        if a_norm and len(a_norm) >= 4 and a_norm not in queries:
+            queries.append(a_norm)
+
+    best_entry = None
+    best_delta = float("inf")
+    for k, v in db.items():
+        if not isinstance(k, str):
+            continue
+        k_lower = k.lower()
+        for q in queries:
+            if q in k_lower or k_lower in q:
+                delta = abs(len(k_lower) - len(q))
+                if delta < best_delta:
+                    best_delta = delta
+                    best_entry = v
+    return best_entry
+
+
 def get_static_ranks_for_character(
     game_id: str, char_id: str = None, char_name: str = None, element: str = None
 ) -> List[Dict[str, Any]]:
@@ -377,13 +405,7 @@ def get_static_ranks_for_character(
                     break
 
             if not res:
-                # Substring e palavra chave
-                for k, v in db.items():
-                    if len(k) >= 3 and (
-                        k in c_norm or c_norm in k or (alias_val and (k in alias_val or alias_val in k))
-                    ):
-                        res = v
-                        break
+                res = _find_best_substring_rank_entry(db, c_norm, alias_val)
         if res:
             return [dict(item) for item in res]
 
@@ -430,12 +452,7 @@ def get_static_ranks_for_character(
                     break
 
             if not res:
-                for k, v in db.items():
-                    if len(k) >= 3 and (
-                        k in c_norm or c_norm in k or (alias_val and (k in alias_val or alias_val in k))
-                    ):
-                        res = v
-                        break
+                res = _find_best_substring_rank_entry(db, c_norm, alias_val)
 
         # Se não encontrou no cache local, tenta buscar automaticamente na API para personagens recém-lançados
         if not res and char_name:
@@ -546,6 +563,8 @@ def parse_roster_md_fallback(game_id: str) -> List[Dict[str, Any]]:
 
 def get_hsr_effective_id(char: Any) -> str:
     """Detecta com precisão o ID efetivo (incluindo skins 1501..1515, 1414) para Honkai: Star Rail."""
+    from extractor import resolve_hsr_variant_id
+
     if isinstance(char, dict):
         c_name = str(char.get("name") or "")
         c_id = str(char.get("id") or char.get("character_id") or "")
@@ -561,47 +580,16 @@ def get_hsr_effective_id(char: Any) -> str:
         costumes = getattr(char, "costumes", getattr(char, "skins", getattr(char, "outfits", []))) or []
         costume_id = getattr(char, "costume_id", getattr(char, "skin_id", getattr(char, "outfit_id", None)))
 
-    # 1. Se costume_id direto estiver presente
-    if costume_id and str(costume_id).isdigit():
-        return str(costume_id)
-
-    # 2. Se costumes list estiver presente na estrutura, pega o ID do primeiro costume
-    if costumes and isinstance(costumes, list) and len(costumes) > 0:
-        first_costume = costumes[0]
-        if isinstance(first_costume, (int, str)) and str(first_costume).isdigit():
-            return str(first_costume)
-        c_c_id = getattr(first_costume, "id", None) if not isinstance(first_costume, dict) else first_costume.get("id")
-        if c_c_id and str(c_c_id).isdigit():
-            return str(c_c_id)
-
-    check_str = f"{c_name} {c_id} {c_icon} {c_gacha}".lower()
-
-    # 3. Busca por ID de skin explícito nas strings (ex: 1512, 1510, 1506, 1414, etc.)
-    skin_match = re.search(r"\b(150[1-9]|151[0-5]|1414)\b", check_str)
-    if skin_match:
-        return skin_match.group(1)
-
-    # 4. Busca por sufixos ou nomes de skins conhecidas
-    if "summeretto" in check_str or "robin summer" in check_str or "robin verão" in check_str:
-        return "1512"
-    if "himeko - nova" in check_str or "himeko nova" in check_str:
-        return "1510"
-    if "999" in check_str or "loba prateada nv." in check_str:
-        return "1506"
-    if "permansor" in check_str:
-        return "1414" if "terrae" in check_str else "1505"
-    if "veraneio" in check_str:
-        return "1513"
-    if "noite de inverno" in check_str or "winter" in check_str or "sparxie" in check_str:
-        return "1501"
-    if "evanescia" in check_str:
-        return "1505"
-    if "mortenax" in check_str:
-        return "1507"
-    if "tohsaka" in check_str:
-        return "1508"
-    if "gilgamesh" in check_str:
-        return "1509"
+    resolved = resolve_hsr_variant_id(
+        name=c_name,
+        char_id=c_id,
+        icon=c_icon,
+        image=c_gacha,
+        costumes=costumes,
+        costume_id=costume_id,
+    )
+    if resolved and str(resolved).isdigit():
+        return str(resolved)
 
     # 5. Resolução dinâmica autônoma (se c_id ausente ou não numérico)
     if not c_id or not str(c_id).isdigit():
@@ -1180,7 +1168,7 @@ def get_character_build_detail(game_id: str, char_name: str) -> str:
     try:
         with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
-        pattern = rf"(\*\*(?:Personagem|Agente):\*\*\s*{re.escape(char_name)}.*?)(?=\n\*\*(?:Personagem|Agente):\*\*|\n## |\Z)"
+        pattern = rf"(\*\*(?:Personagem|Agente):\*\*\s*{re.escape(char_name)}\s*(?:\||$|\r?\n).*?)(?=\n\*\*(?:Personagem|Agente):\*\*|\n## |\Z)"
         match = re.search(pattern, content, re.DOTALL | re.I)
         if match:
             return match.group(1).strip()
@@ -1208,23 +1196,37 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
         c_lower = char_name.lower().strip()
         syn_id = _COMMON_SYNONYMS.get(game_id, {}).get(c_lower) or _COMMON_SYNONYMS.get(game_id, {}).get(c_norm)
 
+        # Passo 1: Correspondência exata (nome bruto ou normalizado) em todo o roster
         for c in roster:
             cand_name = c.get("name", "")
             cand_norm = normalize_char_name(cand_name)
             cand_lower = cand_name.lower().strip()
-            cand_id = str(c.get("id") or c.get("character_id") or "")
+            if cand_lower == c_lower or cand_norm == c_norm:
+                char_db = c
+                break
 
-            if cand_norm == c_norm or cand_lower == c_lower:
-                char_db = c
-                break
-            if syn_id and (cand_id == str(syn_id) or cand_norm == str(syn_id)):
-                char_db = c
-                break
-            if len(c_norm) >= 3 and (
-                c_norm in cand_norm or cand_norm in c_norm or c_lower in cand_lower or cand_lower in c_lower
-            ):
-                char_db = c
-                break
+        # Passo 2: Correspondência exata por ID de sinônimo / manifesto (apenas se o passo 1 falhar)
+        if not char_db and syn_id:
+            for c in roster:
+                cand_name = c.get("name", "")
+                cand_norm = normalize_char_name(cand_name)
+                cand_id = str(c.get("id") or c.get("character_id") or "")
+                if cand_id == str(syn_id) or cand_norm == str(syn_id):
+                    char_db = c
+                    break
+
+        # Passo 3: Fallback parcial por substring escolhendo a correspondência mais próxima em tamanho
+        if not char_db and len(c_norm) >= 3:
+            best_delta = float("inf")
+            for c in roster:
+                cand_name = c.get("name", "")
+                cand_norm = normalize_char_name(cand_name)
+                cand_lower = cand_name.lower().strip()
+                if c_norm in cand_norm or cand_norm in c_norm or c_lower in cand_lower or cand_lower in c_lower:
+                    delta = abs(len(cand_lower) - len(c_lower))
+                    if delta < best_delta:
+                        best_delta = delta
+                        char_db = c
     except Exception as e:
         print(f"[WARN] Erro ao consultar SQLite para {char_name}: {e}")
 

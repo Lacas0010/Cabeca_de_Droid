@@ -3013,7 +3013,8 @@ async function generateBuildCardCanvas(char, gameId) {
 
     if (gameId === 'hsr') {
         const rawGacha = String(char.gacha_art || char.splash_art || char.portrait || "");
-        const checkStr = `${char.name || ''} ${char.id || ''} ${char.character_id || ''} ${char.icon || ''} ${char.gacha_art || ''} ${char.portrait || ''} ${char.splash_art || ''}`.toLowerCase();
+        const charNameLower = String(char.name || "").toLowerCase();
+        const artUrlStr = `${char.icon || ''} ${char.gacha_art || ''} ${char.portrait || ''} ${char.splash_art || ''}`.toLowerCase();
 
         // 1. Resolução automática de ID a partir das propriedades diretas do personagem
         if (char.id && String(char.id).trim().match(/^\d+$/)) {
@@ -3022,16 +3023,7 @@ async function generateBuildCardCanvas(char, gameId) {
             effectiveId = String(char.character_id).trim();
         }
 
-        // 2. Resolução automática buscando padrão numérico nas strings do personagem (skins 1501..1515, 1414, ou IDs numéricos de 4 dígitos)
-        if (!effectiveId) {
-            const skinMatch = checkStr.match(/\b(150[1-9]|151[0-5]|1414|\d{4})\b/);
-            if (skinMatch) {
-                skinId = skinMatch[1];
-                effectiveId = skinMatch[1];
-            }
-        }
-
-        // 3. Resolução automática dinâmica via roster global em memória
+        // 2. Resolução automática dinâmica via roster global em memória (correspondência exata por nome)
         if (!effectiveId && window.globalRoster && Array.isArray(window.globalRoster[gameId])) {
             const found = window.globalRoster[gameId].find(c => 
                 c && (c.name === char.name || (char.name && c.name && c.name.toLowerCase().trim() === char.name.toLowerCase().trim()))
@@ -3041,10 +3033,19 @@ async function generateBuildCardCanvas(char, gameId) {
             }
         }
 
+        // 3. Fallback buscando padrão de ID apenas em URLs estruturadas de arte oficial (evita falsos positivos em hashes MD5)
+        if (!effectiveId) {
+            const skinMatch = artUrlStr.match(/(?:avatar_(?:skin_)?image|character_(?:portrait|preview))\/[^\s"']*?\/?(150[1-9]|151[0-5]|1414|\d{4})(?:@|\.|\/|$)/);
+            if (skinMatch) {
+                skinId = skinMatch[1];
+                effectiveId = skinMatch[1];
+            }
+        }
+
         if (rawGacha.includes("avatar_skin_image")) {
             splashUrl = rawGacha.startsWith("/api/proxy_image") ? rawGacha : `/api/proxy_image?url=${encodeURIComponent(rawGacha)}`;
-        } else if (effectiveId === "1505" || effectiveId === "1501" || checkStr.includes("evanescia") || checkStr.includes("sparxie")) {
-            const actId = (effectiveId === "1505" || checkStr.includes("evanescia")) ? "1505" : "1501";
+        } else if (effectiveId === "1505" || effectiveId === "1501" || charNameLower.includes("evanescia") || charNameLower.includes("sparxie")) {
+            const actId = (effectiveId === "1505" || charNameLower.includes("evanescia")) ? "1505" : "1501";
             splashUrl = `/api/proxy_image?url=${encodeURIComponent(`https://act-webstatic.hoyoverse.com/game_record/hkrpg/custom/avatar_skin_image/${actId}@2x.png`)}`;
         } else if (effectiveId) {
             const portraitUrl = `/api/proxy_image?url=${encodeURIComponent(`https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/image/character_portrait/${effectiveId}.png`)}`;
