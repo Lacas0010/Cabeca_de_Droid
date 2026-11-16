@@ -318,6 +318,15 @@ class TestRosterViewModeSuite(unittest.TestCase):
             self.assertIn(k, pt_text, f"Chave {k} ausente no PT")
             self.assertIn(k, en_text, f"Chave {k} ausente no EN")
 
+    def test_list_view_scroll_performance_css(self):
+        """Valida otimizações de GPU/compositor no modo lista para evitar engasgos durante a rolagem."""
+        with open(self.css_path, "r", encoding="utf-8") as f:
+            css = f.read()
+
+        self.assertIn("content-visibility: visible !important;", css)
+        self.assertIn("contain: layout style paint;", css)
+        self.assertNotIn(".char-relic-piece-box.grade-ss {\n    filter: drop-shadow", css)
+
 
 if __name__ == "__main__":
     unittest.main()

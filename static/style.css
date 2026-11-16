@@ -157,37 +157,33 @@ body::before {
 .glow-orb {
     position: absolute;
     border-radius: 50%;
-    filter: blur(140px);
-    opacity: 0.3;
-    /* Perf: orbs estáticos. A animação infinita + blur(140px) + mix-blend-mode forçava o navegador
-       a recompor a tela inteira (e re-borrar todo backdrop-filter acima) a cada frame. */
+    opacity: 0.28;
+    /* Perf: gradiente radial puro sem filter: blur(140px) nem animação contínua para evitar recomposição pesada ao rolar listas. */
 }
 
 .orb-1 {
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, var(--color-hsr) 0%, transparent 80%);
-    top: -100px;
-    left: -100px;
+    width: 780px;
+    height: 780px;
+    background: radial-gradient(circle, var(--color-hsr) 0%, rgba(99, 102, 241, 0.12) 40%, transparent 72%);
+    top: -190px;
+    left: -190px;
 }
 
 .orb-2 {
-    width: 700px;
-    height: 700px;
-    background: radial-gradient(circle, var(--color-genshin) 0%, transparent 80%);
-    bottom: -200px;
-    right: -100px;
-    animation-delay: -7s;
+    width: 880px;
+    height: 880px;
+    background: radial-gradient(circle, var(--color-genshin) 0%, rgba(16, 185, 129, 0.12) 40%, transparent 72%);
+    bottom: -290px;
+    right: -190px;
 }
 
 .orb-3 {
-    width: 500px;
-    height: 500px;
-    background: radial-gradient(circle, var(--color-zzz) 0%, transparent 80%);
+    width: 680px;
+    height: 680px;
+    background: radial-gradient(circle, var(--color-zzz) 0%, rgba(245, 158, 11, 0.10) 40%, transparent 72%);
     top: 35%;
     left: 50%;
     transform: translate(-50%, -50%);
-    animation-delay: -14s;
 }
 
 @keyframes float {
@@ -524,6 +520,9 @@ h6 {
     height: 100%;
     position: relative;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    contain: layout style;
     padding: 32px;
 }
 
@@ -1455,6 +1454,7 @@ h6 {
     display: flex !important;
     flex-direction: column !important;
     gap: 8px !important;
+    contain: layout style;
 }
 
 .char-card.char-list-row {
@@ -1465,25 +1465,25 @@ h6 {
     padding: 10px 18px !important;
     width: 100% !important;
     border-radius: 12px;
-    background: var(--bg-card);
+    background: #12141c;
     border: 1px solid var(--border-color);
     border-bottom: 1px solid var(--border-color);
     border-left: 4px solid var(--border-color) !important;
-    contain-intrinsic-size: auto 76px !important;
+    /* Perf: desativa content-visibility: auto na lista para evitar reflow/paint contínuo de 60-90 linhas a cada tick do scroll */
+    content-visibility: visible !important;
+    contain-intrinsic-size: none !important;
+    contain: layout style paint;
     gap: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                background-color 0.2s ease, 
-                border-color 0.2s ease, 
-                box-shadow 0.2s ease;
+    box-shadow: none;
+    transition: transform 0.15s ease, border-color 0.15s ease;
     cursor: pointer;
 }
 
 .char-card.char-list-row:hover {
-    transform: translateX(4px) !important;
-    background: var(--bg-card-hover) !important;
-    border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+    transform: translate3d(4px, 0, 0) !important;
+    background: #1a1d29 !important;
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: none;
 }
 
 /* Bordas esquerdas dos elementos na lista */
@@ -1679,24 +1679,22 @@ h6 {
 
 .char-list-weapon-icon-box.rarity-5 {
     border-color: rgba(245, 158, 11, 0.6);
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.25);
-    background: radial-gradient(circle at center, rgba(245, 158, 11, 0.18) 0%, rgba(15, 23, 42, 0.95) 100%);
+    background: rgba(245, 158, 11, 0.14);
 }
 
 .char-list-weapon-icon-box.rarity-4 {
     border-color: rgba(168, 85, 247, 0.5);
-    box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
-    background: radial-gradient(circle at center, rgba(168, 85, 247, 0.18) 0%, rgba(15, 23, 42, 0.95) 100%);
+    background: rgba(168, 85, 247, 0.14);
 }
 
 .char-list-weapon-icon-box.rarity-3 {
     border-color: rgba(56, 189, 248, 0.4);
-    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.15) 0%, rgba(15, 23, 42, 0.95) 100%);
+    background: rgba(56, 189, 248, 0.12);
 }
 
 .char-list-weapon-icon-box.rarity-1 {
     border-color: rgba(148, 163, 184, 0.35);
-    background: radial-gradient(circle at center, rgba(148, 163, 184, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%);
+    background: rgba(148, 163, 184, 0.10);
 }
 
 .char-list-weapon-text {
@@ -1759,9 +1757,7 @@ h6 {
     flex-shrink: 0;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
-                border-color 0.2s ease, 
-                box-shadow 0.2s ease;
+    transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
 .char-relic-piece-box:hover {
@@ -1778,42 +1774,30 @@ h6 {
 
 .char-relic-piece-box.rarity-5 {
     border-color: rgba(245, 158, 11, 0.75) !important;
-    box-shadow: 0 0 8px rgba(245, 158, 11, 0.3) !important;
-    background: radial-gradient(circle at center, rgba(245, 158, 11, 0.22) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+    background: rgba(245, 158, 11, 0.14) !important;
 }
 
 .char-relic-piece-box.rarity-4 {
     border-color: rgba(168, 85, 247, 0.65) !important;
-    box-shadow: 0 0 6px rgba(168, 85, 247, 0.25) !important;
-    background: radial-gradient(circle at center, rgba(168, 85, 247, 0.18) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+    background: rgba(168, 85, 247, 0.14) !important;
 }
 
 .char-relic-piece-box.rarity-3 {
     border-color: rgba(56, 189, 248, 0.55) !important;
-    box-shadow: 0 0 6px rgba(56, 189, 248, 0.2) !important;
-    background: radial-gradient(circle at center, rgba(56, 189, 248, 0.14) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+    background: rgba(56, 189, 248, 0.12) !important;
 }
 
 .char-relic-piece-box.rarity-1 {
     border-color: rgba(148, 163, 184, 0.4) !important;
-    box-shadow: 0 0 4px rgba(148, 163, 184, 0.15) !important;
-    background: radial-gradient(circle at center, rgba(148, 163, 184, 0.12) 0%, rgba(15, 23, 42, 0.95) 100%) !important;
+    background: rgba(148, 163, 184, 0.10) !important;
 }
 
+/* Perf: removido filter: drop-shadow em centenas de caixas de relíquia durante scroll */
 .char-relic-piece-box.grade-sss,
-.char-relic-piece-box.grade-ss {
-    filter: drop-shadow(0 0 4px rgba(245, 158, 11, 0.35));
-}
-
-.char-relic-piece-box.grade-s {
-    filter: drop-shadow(0 0 3px rgba(168, 85, 247, 0.25));
-}
-
+.char-relic-piece-box.grade-ss,
+.char-relic-piece-box.grade-s,
 .char-relic-piece-box.grade-a,
-.char-relic-piece-box.grade-b {
-    filter: drop-shadow(0 0 2px rgba(56, 189, 248, 0.18));
-}
-
+.char-relic-piece-box.grade-b,
 .char-relic-piece-box.grade-c,
 .char-relic-piece-box.grade-d {
     filter: none;
@@ -1827,7 +1811,7 @@ h6 {
     font-weight: 800;
     line-height: 1;
     font-family: 'Rajdhani', sans-serif;
-    text-shadow: 0 0 2px #000, 0 0 4px #000;
+    text-shadow: 0 1px 2px #000;
     pointer-events: none;
 }
 .piece-grade-sss,
@@ -1969,12 +1953,10 @@ h6 {
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: background-color 0.2s ease;
 }
 
 .char-relic-dot.filled {
     background: #10b981;
-    box-shadow: 0 0 6px rgba(16, 185, 129, 0.5);
     border-color: #10b981;
 }
 
@@ -2017,7 +1999,7 @@ h6 {
     color: #38bdf8;
     font-size: 11px;
     font-weight: 600;
-    transition: all 0.2s ease;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .char-card.char-list-row:hover .char-list-btn-inspect {
