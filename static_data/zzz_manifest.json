@@ -861,6 +861,54 @@
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
       "url": "https://www.prydwen.gg/zenless/characters/severian"
+    },
+    "kafka": {
+      "id": "kafka",
+      "name": "Kafka",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/kafka"
+    },
+    "robin": {
+      "id": "robin",
+      "name": "Robin",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/robin"
+    },
+    "sunbringer": {
+      "id": "sunbringer",
+      "name": "Sunbringer",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/sunbringer"
+    },
+    "the_storyteller": {
+      "id": "the_storyteller",
+      "name": "The Storyteller",
+      "rarity": 5,
+      "element": "Physical",
+      "specialty": "Attack",
+      "chip_type": "Chip de Combate Especializado",
+      "core_skill_mat": "Emblema de Especialista",
+      "weekly_boss_mat": "Material de Notorious Hunt",
+      "schedule_type": "Daily",
+      "url": "https://www.prydwen.gg/zenless/characters/the-storyteller"
     }
   }
 }

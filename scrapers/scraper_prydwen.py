@@ -6,6 +6,43 @@ from curl_cffi import requests
 from bs4 import BeautifulSoup
 
 
+def extract_prydwen_card_name(link, slug: str = "") -> str:
+    """
+    Extrai o nome limpo do personagem/agente a partir do card do Prydwen,
+    ignorando badges e tags visuais (<span class="tag new">New</span>, HSR, ZZZ, 7.3, etc.).
+    """
+    if link is not None:
+        name_el = link.find(class_=lambda c: c and any(k in c for k in ("emp-name", "card-name")))
+        if name_el:
+            clean = " ".join(name_el.get_text(" ", strip=True).split())
+            if clean:
+                return clean
+
+        # Extrai apenas textos fora de elementos marcados como tag/badge
+        text_parts = []
+        for s in link.find_all(string=True):
+            parent = s.parent
+            is_badge = False
+            while parent and parent is not link:
+                cls_str = " ".join(parent.get("class") or []).lower()
+                if any(b in cls_str.split() for b in ("tag", "badge")):
+                    is_badge = True
+                    break
+                parent = parent.parent
+            if not is_badge:
+                txt = s.strip()
+                if txt:
+                    text_parts.append(txt)
+
+        combined = " ".join(text_parts).strip()
+        if combined:
+            return combined
+
+    if slug:
+        return slug.replace("-", " ").title()
+    return ""
+
+
 class PrydwenScraper:
     def __init__(self):
         """
@@ -52,15 +89,12 @@ class PrydwenScraper:
                 if clean_href not in seen_urls:
                     seen_urls.add(clean_href)
 
-                    # Nome do personagem
-                    name = link.text.strip()
-                    if not name:
-                        slug = clean_href.split("/")[-1]
-                        name = slug.replace("-", " ").title()
-
-                    # Ignora links genéricos de filtro ou sub-rotas
+                    # Nome do personagem (sem badges/tags como 'New', 'ZZZ', 'HSR', etc.)
+                    slug = clean_href.rstrip("/").split("/")[-1]
                     if clean_href == "/star-rail/characters" or clean_href.endswith("/characters/"):
                         continue
+
+                    name = extract_prydwen_card_name(link, slug)
 
                     full_url = self.base_url + clean_href if clean_href.startswith("/") else clean_href
                     characters.append({"name": name, "url": full_url})
@@ -258,6 +292,7 @@ class PrydwenScraper:
             "planar_ornaments": [],
             "stats_main": [],
             "stats_sub": "",
+            "endgame_stats": [],
             "stats_info": "",
             "talent_priority": "",
             "teams": [],
@@ -417,58 +452,77 @@ class PrydwenScraper:
                         sub_text = sub_div.get_text().strip()
                         if sub_text.lower().startswith("substats:"):
                             raw_sub = sub_text[len("substats:") :].strip()
-                            # Remove completamente qualquer texto dentro de parênteses
+                            # Remove completamente parênteses e colchetes de agrupamento
                             cleaned_sub = re.sub(r"\(.*?\)", "", raw_sub)
+                            cleaned_sub = re.sub(r"[\[\]]", "", cleaned_sub)
 
                             # Divide por '>', limpa cada item e mapeia os atributos
                             parts = [p.strip() for p in cleaned_sub.split(">") if p.strip()]
 
+                            substat_map = {
+                                "spd": "vel",
+                                "speed": "vel",
+                                "vel": "vel",
+                                "velocidade": "vel",
+                                "crit rate": "crit_rate",
+                                "crit_rate": "crit_rate",
+                                "chance de crit": "crit_rate",
+                                "taxa crítica": "crit_rate",
+                                "taxa de crit": "crit_rate",
+                                "crit dmg": "crit_dmg",
+                                "crit_dmg": "crit_dmg",
+                                "dano crítico": "crit_dmg",
+                                "dano de crit": "crit_dmg",
+                                "break effect": "break_effect",
+                                "break_effect": "break_effect",
+                                "efeito de quebra": "break_effect",
+                                "quebra": "break_effect",
+                                "ehr": "ehr",
+                                "effect hit rate": "ehr",
+                                "taxa de acerto de efeito": "ehr",
+                                "res": "res",
+                                "effect res": "res",
+                                "resistência a efeito": "res",
+                                "atk%": "atk_pct",
+                                "atk percent": "atk_pct",
+                                "atk_pct": "atk_pct",
+                                "atk": "atk_flat",
+                                "hp%": "hp_pct",
+                                "hp percent": "hp_pct",
+                                "hp_pct": "hp_pct",
+                                "hp": "hp_flat",
+                                "def%": "def_pct",
+                                "def percent": "def_pct",
+                                "def_pct": "def_pct",
+                                "def": "def_flat",
+                            }
+
+                            def _map_sub_tok(raw_tok: str) -> str:
+                                tok = raw_tok.lstrip("= ").strip()
+                                tok = re.sub(
+                                    r"\s*\b(?:until|untill|to|up to|or more|or higher|in combat|pre[- ]combat|desired goal)\b.*$",
+                                    "",
+                                    tok,
+                                    flags=re.IGNORECASE,
+                                ).strip()
+                                tok_l = tok.lower()
+                                return substat_map.get(tok_l, tok)
+
                             mapped_parts = []
                             for part in parts:
-                                part_lower = part.lower()
-                                mapped_val = part  # Fallback
-
-                                substat_map = {
-                                    "spd": "vel",
-                                    "speed": "vel",
-                                    "vel": "vel",
-                                    "velocidade": "vel",
-                                    "crit rate": "crit_rate",
-                                    "crit_rate": "crit_rate",
-                                    "chance de crit": "crit_rate",
-                                    "taxa crítica": "crit_rate",
-                                    "taxa de crit": "crit_rate",
-                                    "crit dmg": "crit_dmg",
-                                    "crit_dmg": "crit_dmg",
-                                    "dano crítico": "crit_dmg",
-                                    "dano de crit": "crit_dmg",
-                                    "break effect": "break_effect",
-                                    "break_effect": "break_effect",
-                                    "efeito de quebra": "break_effect",
-                                    "quebra": "break_effect",
-                                    "ehr": "ehr",
-                                    "effect hit rate": "ehr",
-                                    "taxa de acerto de efeito": "ehr",
-                                    "res": "res",
-                                    "effect res": "res",
-                                    "resistência a efeito": "res",
-                                    "atk%": "atk_pct",
-                                    "atk percent": "atk_pct",
-                                    "atk_pct": "atk_pct",
-                                    "atk": "atk_flat",
-                                    "hp%": "hp_pct",
-                                    "hp percent": "hp_pct",
-                                    "hp_pct": "hp_pct",
-                                    "hp": "hp_flat",
-                                    "def%": "def_pct",
-                                    "def percent": "def_pct",
-                                    "def_pct": "def_pct",
-                                    "def": "def_flat",
-                                }
-
-                                if part_lower in substat_map:
-                                    mapped_val = substat_map[part_lower]
-                                mapped_parts.append(mapped_val)
+                                if "=" in part or "/" in part:
+                                    sub_segs = re.split(r"\s*([=/])\s*", part)
+                                    rebuilt = "".join(
+                                        f" {seg} " if seg in ("=", "/") else _map_sub_tok(seg)
+                                        for seg in sub_segs
+                                        if seg != ""
+                                    ).strip()
+                                    if rebuilt:
+                                        mapped_parts.append(rebuilt)
+                                else:
+                                    mapped_val = _map_sub_tok(part)
+                                    if mapped_val:
+                                        mapped_parts.append(mapped_val)
 
                             data["stats_sub"] = " > ".join(mapped_parts)
 
@@ -486,6 +540,40 @@ class PrydwenScraper:
                 info_div = stats_sec.find("div", class_="information")
                 if info_div:
                     data["stats_info"] = info_div.get_text().strip()
+
+            # Recommended Endgame Stats (padrão HSR no Prydwen fora/abaixo de build-stats)
+            for header in tab_build.find_all("div", class_="content-header"):
+                if "endgame stats" in header.get_text(" ", strip=True).lower():
+                    sib = header.find_next_sibling()
+                    if sib:
+                        seen_eg = set()
+                        items = sib.find_all("li") or sib.find_all("p")
+                        for item in items:
+                            first_p = item.find("p") if item.name == "li" else None
+                            node = first_p if first_p else item
+                            line_txt = " ".join(node.get_text(" ", strip=True).split())
+                            if not line_txt or ":" not in line_txt:
+                                continue
+                            s_label, s_val = [p.strip() for p in line_txt.split(":", 1)]
+                            s_label_l = s_label.lower()
+                            if not s_label or not s_val:
+                                continue
+                            if s_label_l.startswith(("note", "nota", "justificativa", "other ")):
+                                continue
+                            # Remove eventuais parágrafos/comentários longos colados no mesmo <p> após o valor
+                            if len(s_val) > 65:
+                                m_short = re.match(
+                                    r"^([0-9][0-9\.\,\-\+\s%or\/]*(?:\([^)]{1,35}\))?)",
+                                    s_val,
+                                    re.IGNORECASE,
+                                )
+                                if m_short and m_short.group(1).strip():
+                                    s_val = m_short.group(1).strip()
+                            formatted = f"{s_label}: {s_val}"
+                            if formatted not in seen_eg:
+                                seen_eg.add(formatted)
+                                data["endgame_stats"].append(formatted)
+                    break
 
             # Times
             teams_div = tab_build.find("div", class_="team-container-moc")
@@ -629,6 +717,12 @@ class PrydwenScraper:
         if data["stats_sub"]:
             lines.append("#### Subatributos Prioritários (Sub-stats)")
             lines.append(data["stats_sub"])
+            lines.append("")
+
+        if data.get("endgame_stats"):
+            lines.append("#### Atributos Finais Recomendados (Endgame Stats)")
+            for eg in data["endgame_stats"]:
+                lines.append(f"- {eg}")
             lines.append("")
 
         if data["stats_info"]:

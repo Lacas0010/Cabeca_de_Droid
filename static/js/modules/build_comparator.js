@@ -419,6 +419,7 @@ async function loadBuildComparison() {
                 .replace(/[0-9.,%+]/g, "")
                 .trim();
                 
+            if (s === "anything" || s === "any" || s.includes("qualquer") || s === "flex" || s === "flexible") return "anything";
             if (s.includes("quebra") || s.includes("break")) return "break";
             if (s.includes("taxa") || s.includes("rate") || s.includes("chance")) return "crit_rate";
             if (s.includes("dano crit") || s.includes("crit dmg") || s.includes("dano crt")) return "crit_dmg";
@@ -608,10 +609,11 @@ async function loadBuildComparison() {
                     const options = targetValLower.split(/[=/>|]|\bou\b/).map(s => s.trim());
                     
                     const mainNorm = normalizeStatTerm(matchedPiece.main);
-                    
-                    // Match exato com a primeira opção (Prioridade máxima)
+                    const isWildcardTarget = options.some(opt => normalizeStatTerm(opt) === "anything");
+
+                    // Match exato com a primeira opção (Prioridade máxima) ou curinga (Anything/Qualquer)
                     const firstOptNorm = normalizeStatTerm(options[0] || "");
-                    const isFirstMatch = mainNorm === firstOptNorm || mainNorm.includes(firstOptNorm) || firstOptNorm.includes(mainNorm);
+                    const isFirstMatch = isWildcardTarget || mainNorm === firstOptNorm || mainNorm.includes(firstOptNorm) || firstOptNorm.includes(mainNorm);
                     
                     // Match com qualquer opção alternativa
                     const isAnyMatch = isFirstMatch || options.slice(1).some(opt => {
@@ -716,15 +718,22 @@ async function loadBuildComparison() {
                 
                 if (matchedKey) {
                     playerVal = build.stats[matchedKey];
-                    const targetStr = endgameStats[key];
-                    const playerNum = parseFloat(playerVal.replace(/[^0-9.]/g, ""));
-                    const targetMinNum = parseFloat(targetStr.split(/[-+]/)[0].replace(/[^0-9.]/g, ""));
-                    
-                    if (!isNaN(playerNum) && !isNaN(targetMinNum) && targetMinNum > 0) {
+                    const targetStr = String(endgameStats[key] || "");
+                    const targetClean = targetStr.replace(/\([^)]*\)/g, "").trim();
+                    const playerNum = parseFloat(String(playerVal).replace(/[^0-9.]/g, ""));
+                    const hasBaseSpdOption = /\bbase\s*(?:spd|speed)\b/i.test(targetClean);
+                    const firstNumMatch = targetClean.match(/(\d+(?:\.\d+)?)/);
+                    const targetMinNum = firstNumMatch ? parseFloat(firstNumMatch[1]) : NaN;
+
+                    if (hasBaseSpdOption && !isNaN(playerNum) && playerNum >= 90) {
+                        scoreTotal += pointsPerBenchmark;
+                        statClass = "comparison-match";
+                        diffBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_meta_ok", "Meta OK")}</span>`;
+                    } else if (!isNaN(playerNum) && !isNaN(targetMinNum) && targetMinNum > 0) {
                         const diff = playerNum - targetMinNum;
-                        const isPercent = playerVal.includes("%") || targetStr.includes("%");
+                        const isPercent = String(playerVal).includes("%") || targetStr.includes("%");
                         const diffFormatted = (diff >= 0 ? `+` : ``) + (isPercent ? `${diff.toFixed(1)}%` : Math.round(diff));
-                        
+
                         if (playerNum >= targetMinNum) {
                             scoreTotal += pointsPerBenchmark;
                             statClass = "comparison-match";

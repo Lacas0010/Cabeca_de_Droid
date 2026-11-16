@@ -9,6 +9,8 @@ import requests
 from bs4 import BeautifulSoup
 from typing import Dict, List, Tuple, Optional, Any
 
+from core.config import get_resource_path
+
 
 # Expressões regulares pré-compiladas para alta performance
 RE_MULTIPLE_SPACES = re.compile(r"\s+")
@@ -719,46 +721,95 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
         "fugue": "tingyun fugue",
     }
 
-    # 2. Carrega roster local como fallback
+    # 2. Carrega roster local (JSON + SQLite) e manifestos estáticos dinamicamente (Zero Hardcoding)
+    def _register_dynamic_char(raw_char_name: str, raw_cid: str):
+        c_n = str(raw_char_name or "").strip()
+        c_i = str(raw_cid or "").strip()
+        if not c_n or not c_i or "nickname" in c_n.lower():
+            return
+        c_n_lower = c_n.lower()
+        norm_c = normalize_char_name(c_n)
+        if c_n_lower not in master_map:
+            master_map[c_n_lower] = c_i
+        if norm_c not in master_map:
+            master_map[norm_c] = c_i
+
+        if c_n_lower in aliases_pt_to_en:
+            en_alias = aliases_pt_to_en[c_n_lower]
+            en_lower = en_alias.lower()
+            norm_en = normalize_char_name(en_alias)
+            master_map.setdefault(en_lower, c_i)
+            master_map.setdefault(norm_en, c_i)
+
+        if norm_c in aliases_pt_to_en:
+            en_alias = aliases_pt_to_en[norm_c]
+            en_lower = en_alias.lower()
+            norm_en = normalize_char_name(en_alias)
+            master_map.setdefault(en_lower, c_i)
+            master_map.setdefault(norm_en, c_i)
+
     roster_file = f"{game_id}/roster_data_{game_id}.json"
     if os.path.exists(roster_file):
         try:
             with open(roster_file, "r", encoding="utf-8") as f:
-                roster_data = json.load(f)
-                for char in roster_data:
-                    c_name = char.get("name", "").strip()
-                    c_id = char.get("id") or char.get("character_id")
-                    if c_name and c_id:
-                        c_name_lower = c_name.lower()
-                        norm_c_name = normalize_char_name(c_name)
-
-                        if c_name_lower not in master_map:
-                            master_map[c_name_lower] = str(c_id)
-                        if norm_c_name not in master_map:
-                            master_map[norm_c_name] = str(c_id)
-
-                        # Cria o alias em inglês apontando para o ID real se não existir
-                        if c_name_lower in aliases_pt_to_en:
-                            en_alias = aliases_pt_to_en[c_name_lower]
-                            en_alias_lower = en_alias.lower()
-                            norm_en_alias = normalize_char_name(en_alias)
-
-                            if en_alias_lower not in master_map:
-                                master_map[en_alias_lower] = str(c_id)
-                            if norm_en_alias not in master_map:
-                                master_map[norm_en_alias] = str(c_id)
-
-                        if norm_c_name in aliases_pt_to_en:
-                            en_alias = aliases_pt_to_en[norm_c_name]
-                            en_alias_lower = en_alias.lower()
-                            norm_en_alias = normalize_char_name(en_alias)
-
-                            if en_alias_lower not in master_map:
-                                master_map[en_alias_lower] = str(c_id)
-                            if norm_en_alias not in master_map:
-                                master_map[norm_en_alias] = str(c_id)
+                for char in json.load(f):
+                    _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
         except Exception:
             pass
+
+    try:
+        import database
+
+        for char in database.get_roster_data(game_id) or []:
+            _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
+    except Exception:
+        pass
+
+    manifest_file = get_resource_path(os.path.join("static_data", f"{game_id}_manifest.json"))
+    if os.path.exists(manifest_file):
+        try:
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                m_data = json.load(f)
+                m_chars = m_data.get("characters", m_data) if isinstance(m_data, dict) else {}
+                if isinstance(m_chars, dict):
+                    for m_key, m_entry in m_chars.items():
+                        if not isinstance(m_entry, dict):
+                            continue
+                        hid = str(m_entry.get("hoyolab_id") or "").strip()
+                        if not hid or hid == "9999":
+                            continue
+                        _register_dynamic_char(m_entry.get("name", ""), hid)
+                        _register_dynamic_char(str(m_key).replace("_", " "), hid)
+        except Exception:
+            pass
+
+    # 3. Vincula aliases multilíngues e mapeamentos HoYoLAB estáticos se o destino já tiver ID
+    try:
+        aliases_file = get_resource_path(os.path.join("static_data", "character_aliases.json"))
+        hoyolab_file = get_resource_path(os.path.join("static_data", "hoyolab_mappings.json"))
+        slug_to_hid = {}
+        if os.path.exists(hoyolab_file):
+            with open(hoyolab_file, "r", encoding="utf-8") as f:
+                hmap = json.load(f).get(game_id, {})
+                for hid, slug in hmap.items():
+                    slug_to_hid[str(slug).lower().strip()] = str(hid)
+                    slug_to_hid[normalize_char_name(slug)] = str(hid)
+        for sl, hid in slug_to_hid.items():
+            master_map.setdefault(sl, hid)
+        if os.path.exists(aliases_file):
+            with open(aliases_file, "r", encoding="utf-8") as f:
+                amap = json.load(f).get(game_id, {})
+                for a_k, a_v in amap.items():
+                    target_id = (
+                        master_map.get(normalize_char_name(a_v))
+                        or master_map.get(str(a_v).lower().strip())
+                        or slug_to_hid.get(normalize_char_name(a_v))
+                    )
+                    if target_id:
+                        master_map.setdefault(str(a_k).lower().strip(), target_id)
+                        master_map.setdefault(normalize_char_name(a_k), target_id)
+    except Exception:
+        pass
 
     return master_map
 
@@ -1168,6 +1219,8 @@ STAT_NAME_MAP = {
     "physical": "physical_dmg",
     "quantum dmg": "quantum_dmg",
     "quantum dmg bonus": "quantum_dmg",
+    "bônus de dano quantum": "quantum_dmg",
+    "bonus de dano quantum": "quantum_dmg",
     "bônus de dano quântico": "quantum_dmg",
     "bonus de dano quantico": "quantum_dmg",
     "dano quântico": "quantum_dmg",
@@ -1356,16 +1409,21 @@ def sanitize_substats(raw_tokens: list, game_id: str) -> list:
 
     for raw in raw_tokens:
         token = re.sub(r"\([^)]*\)", "", raw)
-        token = re.sub(r"[#*\-]+", "", token)
+        token = re.sub(r"[#*\-\[\]]+", "", token)
         token = token.strip()
 
         if not token:
             continue
 
-        sub_tokens = re.split(r"\s*=\s*", token)
+        sub_tokens = re.split(r"\s*=\s*|\s+\bor\b\s+", token, flags=re.IGNORECASE)
 
         for st in sub_tokens:
-            st = st.strip()
+            st = re.sub(
+                r"\s*\b(?:until|untill|to|up to|or more|or higher|in combat|pre[- ]combat|desired goal)\b.*$",
+                "",
+                st.strip(),
+                flags=re.IGNORECASE,
+            ).strip()
             if not st:
                 continue
 
@@ -1524,10 +1582,9 @@ def score_relic(game_id: str, char_id: str, slot: str, main_stat: str, substats_
 
         if rec_mains:
             norm_rec = [normalize_stat_name(m) for m in rec_mains]
+            flex_tokens = {"anything", "any", "qualquer", "qualquer um", "qualquer atributo", "flexible", "flex"}
             if (
-                "anything" in norm_rec
-                or "any" in norm_rec
-                or "qualquer" in norm_rec
+                any(ft in norm_rec for ft in flex_tokens)
                 or any(is_stat_equivalent(main_stat_norm, m) for m in norm_rec)
                 or main_stat_norm in elemental_stats
             ):
@@ -2074,20 +2131,64 @@ def generate_meta_json_from_markdown(game_id: str):
             meta["substats_priority"] = sanitize_substats(raw_tokens, "hsr")
 
         benchmarks = {}
-        speed_goal = re.search(
-            r"(\d+)\s*speed\s*goal|speed\s*goal\s*of\s*(\d+)|breakpoint\s*of\s*(\d+)\s*spd|(\d+)\s*spd", content, re.I
+        endgame_sec = re.search(
+            r"#{2,4}\s*(?:Atributos Finais[^\n]*|Recommended Endgame Stats[^\n]*)\n(.*?)(?=\n#{1,4}\s|\Z)",
+            content,
+            re.S | re.I,
         )
-        if speed_goal:
-            val = next(v for v in speed_goal.groups() if v)
-            benchmarks["spd"] = f">= {val}"
-        crit_goal = re.search(r"crit\s*rate\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*crit\s*rate", content, re.I)
-        if crit_goal:
-            val = next(v for v in crit_goal.groups() if v)
-            benchmarks["crit_rate"] = f">= {val}%"
-        be_goal = re.search(r"break\s*effect\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*break\s*effect", content, re.I)
-        if be_goal:
-            val = next(v for v in be_goal.groups() if v)
-            benchmarks["break_effect"] = f">= {val}%"
+        if endgame_sec:
+            for line in endgame_sec.group(1).splitlines():
+                l_str = line.strip()
+                if not l_str or not (l_str.startswith("-") or l_str.startswith("*")) or ":" not in l_str:
+                    continue
+                s_label, s_raw = l_str.lstrip("-* \t").split(":", 1)
+                s_label = s_label.replace("**", "").replace("`", "").strip()
+                s_raw = s_raw.replace("**", "").replace("`", "").strip()
+                if not s_label or not s_raw or s_label.lower().startswith(("note", "nota", "justificativa", "other ")):
+                    continue
+                if not re.search(r"\d", s_raw):
+                    continue
+                norm_k = normalize_stat_name(s_label)
+                if not norm_k:
+                    continue
+                m_plus = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(%?)\s*\+", s_raw)
+                m_paren = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(%?)\s*(\([^)]{1,35}\))", s_raw)
+                if m_plus:
+                    formatted_val = f">= {m_plus.group(1)}{m_plus.group(2)}"
+                elif m_paren:
+                    formatted_val = f">= {m_paren.group(1)}{m_paren.group(2)} {m_paren.group(3)}"
+                else:
+                    formatted_val = s_raw
+                benchmarks[norm_k] = formatted_val
+        else:
+            # Fallback legado apenas dentro da seção de Atributos Recomendados (nunca sobre texto corrido de review/kit)
+            stats_sec_m = re.search(
+                r"#{2,4}\s*Atributos Recomendados[^\n]*\n(.*?)(?=\n##\s|\Z)",
+                content,
+                re.S | re.I,
+            )
+            scoped_txt = stats_sec_m.group(1) if stats_sec_m else ""
+            if scoped_txt:
+                speed_goal = re.search(
+                    r"(\d+)\s*speed\s*goal|speed\s*goal\s*of\s*(\d+)|breakpoint\s*of\s*(\d+)\s*spd|(\d+)\s*spd",
+                    scoped_txt,
+                    re.I,
+                )
+                if speed_goal:
+                    val = next(v for v in speed_goal.groups() if v)
+                    benchmarks["spd"] = f">= {val}"
+                crit_goal = re.search(
+                    r"crit\s*rate\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*crit\s*rate", scoped_txt, re.I
+                )
+                if crit_goal:
+                    val = next(v for v in crit_goal.groups() if v)
+                    benchmarks["crit_rate"] = f">= {val}%"
+                be_goal = re.search(
+                    r"break\s*effect\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*break\s*effect", scoped_txt, re.I
+                )
+                if be_goal:
+                    val = next(v for v in be_goal.groups() if v)
+                    benchmarks["break_effect"] = f">= {val}%"
         meta["general_benchmarks"] = benchmarks
         return meta
 
@@ -2177,9 +2278,70 @@ def generate_meta_json_from_markdown(game_id: str):
     else:
         parse_fn = parse_genshin
 
+    # Índice auxiliar dinâmico para resolução de títulos/variantes sem hardcoding (ex: 'Aha' <-> 'Aeon ★ Aha')
+    id_to_canonical_name = {}
+    id_to_tokens = {}
+    for m_name, m_cid in master_ids.items():
+        cid_s = str(m_cid)
+        norm_m = normalize_char_name(m_name)
+        if norm_m:
+            id_to_tokens.setdefault(cid_s, set()).update(t for t in norm_m.split("_") if len(t) >= 3)
+
+    # Prioriza nomes oficiais do roster/manifesto para exibição
+    for src_path in [
+        f"{game_id}/roster_data_{game_id}.json",
+        get_resource_path(os.path.join("static_data", f"{game_id}_manifest.json")),
+    ]:
+        if os.path.exists(src_path):
+            try:
+                with open(src_path, "r", encoding="utf-8") as sf:
+                    raw_s = json.load(sf)
+                    items_s = (
+                        raw_s
+                        if isinstance(raw_s, list)
+                        else list((raw_s.get("characters", raw_s) if isinstance(raw_s, dict) else {}).values())
+                    )
+                    for it in items_s:
+                        if not isinstance(it, dict):
+                            continue
+                        it_id = str(it.get("id") if isinstance(raw_s, list) else it.get("hoyolab_id") or "").strip()
+                        it_name = str(it.get("name") or "").strip()
+                        if it_id and it_name and "nickname" not in it_name.lower() and it_id != "9999":
+                            id_to_canonical_name.setdefault(it_id, it_name)
+                            norm_it = normalize_char_name(it_name)
+                            if norm_it:
+                                id_to_tokens.setdefault(it_id, set()).update(
+                                    t for t in norm_it.split("_") if len(t) >= 3
+                                )
+            except Exception:
+                pass
+
+    def _resolve_guide_id(raw_n: str, norm_r: str, doc_content: str) -> str:
+        direct = master_ids.get(norm_r) or master_ids.get(raw_n.lower())
+        if direct:
+            return str(direct)
+        if len(norm_r) >= 3:
+            # Busca dinâmica: token inteiro único no catálogo OU menção literal do nome canônico dentro do guia
+            token_hits = [cid for cid, toks in id_to_tokens.items() if norm_r in toks]
+            if len(token_hits) == 1:
+                return token_hits[0]
+            content_lower = doc_content.lower()
+            content_hits = [
+                cid
+                for cid in (token_hits or list(id_to_canonical_name.keys()))
+                if len(id_to_canonical_name.get(cid, "")) >= 5
+                and id_to_canonical_name[cid].lower() in content_lower
+                and norm_r in id_to_tokens.get(cid, set())
+            ]
+            if len(content_hits) == 1:
+                return content_hits[0]
+        return norm_r
+
+    preliminary_ids = set()
+
     if os.path.exists(guias_dir):
         try:
-            files = os.listdir(guias_dir)
+            files = sorted(os.listdir(guias_dir))
             for f in files:
                 if f.endswith(".md"):
                     raw_name = f[:-3].replace("_", " ").strip()
@@ -2187,17 +2349,26 @@ def generate_meta_json_from_markdown(game_id: str):
                     if display_name.lower().startswith("dan heng"):
                         display_name = display_name.replace("•", "•")
 
-                    # Cruza com a fonte mestre de IDs
                     normalized_raw = normalize_char_name(raw_name)
-                    char_id = master_ids.get(
-                        normalized_raw, master_ids.get(raw_name.lower(), raw_name.lower().replace(" ", "_"))
-                    )
                     filepath = os.path.join(guias_dir, f)
                     try:
                         with open(filepath, "r", encoding="utf-8") as file:
-                            char_meta = parse_fn(file.read())
-                            char_meta["name"] = display_name
-                            meta_db[str(char_id)] = char_meta
+                            content = file.read()
+                        is_prelim = "ai_preliminary" in content or "Guia Preliminar" in content
+                        char_id = str(_resolve_guide_id(raw_name, normalized_raw, content))
+
+                        # Guia oficial (Prydwen/atualizado) sempre tem precedência sobre guia preliminar Day-1
+                        if char_id in meta_db and is_prelim and char_id not in preliminary_ids:
+                            continue
+
+                        char_meta = parse_fn(content)
+                        canonical_disp = id_to_canonical_name.get(char_id)
+                        char_meta["name"] = canonical_disp if canonical_disp else display_name
+                        meta_db[char_id] = char_meta
+                        if is_prelim:
+                            preliminary_ids.add(char_id)
+                        else:
+                            preliminary_ids.discard(char_id)
                     except Exception as ex:
                         print(f"[WARN] Erro ao parsear {filepath}: {ex}")
         except Exception as e:

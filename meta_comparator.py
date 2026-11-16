@@ -184,10 +184,23 @@ def find_best_guide_file(
         f"{char_name}.md",
     ]
 
+    def _is_preliminary_file(fpath: str) -> bool:
+        try:
+            with open(fpath, "r", encoding="utf-8", errors="ignore") as gf:
+                head = gf.read(400)
+                return "ai_preliminary" in head or "Guia Preliminar" in head
+        except Exception:
+            return False
+
+    prelim_fallback = ""
+
     for cname in candidate_names:
         full_p = os.path.join(guides_dir, cname)
         if os.path.isfile(full_p):
-            return full_p
+            if not _is_preliminary_file(full_p):
+                return full_p
+            if not prelim_fallback:
+                prelim_fallback = full_p
 
     # 2. Varrer diretório de guias buscando correspondência aproximada/normalizada
     try:
@@ -200,14 +213,22 @@ def find_best_guide_file(
             f_norm = normalize_slug_text(f_stem)
 
             if f_norm == norm_target or f_norm == norm_char:
-                return os.path.join(guides_dir, fname)
+                cand_p = os.path.join(guides_dir, fname)
+                if not _is_preliminary_file(cand_p):
+                    return cand_p
+                if not prelim_fallback:
+                    prelim_fallback = cand_p
 
         # 3. Substring match segura
         if len(norm_target) >= 4:
             for fname in all_files:
                 f_norm = normalize_slug_text(fname[:-3])
                 if norm_target in f_norm or f_norm in norm_target:
-                    return os.path.join(guides_dir, fname)
+                    cand_p = os.path.join(guides_dir, fname)
+                    if not _is_preliminary_file(cand_p):
+                        return cand_p
+                    if not prelim_fallback:
+                        prelim_fallback = cand_p
 
         # 4. Fuzzy match com arquivos existentes
         try:
@@ -216,13 +237,17 @@ def find_best_guide_file(
             choices = {fname: fname[:-3] for fname in all_files}
             best = process.extractOne(canonical, choices, scorer=fuzz.token_set_ratio)
             if best and best[1] >= 80:
-                return os.path.join(guides_dir, best[2])
+                cand_p = os.path.join(guides_dir, best[2])
+                if not _is_preliminary_file(cand_p):
+                    return cand_p
+                if not prelim_fallback:
+                    prelim_fallback = cand_p
         except Exception:
             pass
     except Exception:
         pass
 
-    return ""
+    return prelim_fallback
 
 
 def clean_meta_item_name(s: str) -> str:

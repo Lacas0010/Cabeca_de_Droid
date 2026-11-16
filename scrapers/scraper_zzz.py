@@ -4,6 +4,8 @@ import json
 from curl_cffi import requests
 from bs4 import BeautifulSoup
 
+from scrapers.scraper_prydwen import extract_prydwen_card_name
+
 
 class PrydwenZZZScraper:
     def __init__(self):
@@ -54,9 +56,7 @@ class PrydwenZZZScraper:
                         continue
 
                     seen_urls.add(clean_href)
-                    name = link.text.strip()
-                    if not name:
-                        name = slug.replace("-", " ").title()
+                    name = extract_prydwen_card_name(link, slug)
 
                     full_url = self.domain + clean_href if clean_href.startswith("/") else clean_href
                     agents.append({"name": name, "url": full_url})

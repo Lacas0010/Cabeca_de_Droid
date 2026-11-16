@@ -4,6 +4,8 @@ import json
 from curl_cffi import requests
 from bs4 import BeautifulSoup
 
+from scrapers.scraper_prydwen import extract_prydwen_card_name
+
 
 class PrydwenGenshinScraper:
     def __init__(self):
@@ -53,12 +55,7 @@ class PrydwenGenshinScraper:
 
                 if rel not in seen_slugs:
                     seen_slugs.add(rel)
-                    raw_name = link.text.strip()
-                    if raw_name:
-                        name = re.sub(r"\d+\.\d+$", "", raw_name).strip()
-                        name = re.sub(r"New$", "", name).strip()
-                    else:
-                        name = rel.replace("-", " ").title()
+                    name = extract_prydwen_card_name(link, rel)
 
                     full_url = self.domain + href if href.startswith("/") else href
                     characters.append({"name": name, "url": full_url})
