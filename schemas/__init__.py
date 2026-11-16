@@ -21,6 +21,7 @@ from schemas.farming import (
 )
 from schemas.codes import RedeemCodeRequest
 from schemas.stats import BreakpointRequest
+from schemas.history import CreateSnapshotRequest, CreateSnapshotResponse, GlobalSyncResponse
 
 __all__ = [
     "ManualCookieRequest",
@@ -44,4 +45,7 @@ __all__ = [
     "MaterialsCalculateRequest",
     "RedeemCodeRequest",
     "BreakpointRequest",
+    "CreateSnapshotRequest",
+    "CreateSnapshotResponse",
+    "GlobalSyncResponse",
 ]

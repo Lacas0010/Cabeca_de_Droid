@@ -36,6 +36,7 @@ from services.gacha_service import (
     get_gacha_characters,
 )
 from services.roast_service import generate_account_roast_stream
+from services.history_service import create_manual_snapshot, sync_global_and_snapshot
 
 __all__ = [
     "traduzir_item",
@@ -68,4 +69,6 @@ __all__ = [
     "make_fallback_urls",
     "get_gacha_characters",
     "generate_account_roast_stream",
+    "create_manual_snapshot",
+    "sync_global_and_snapshot",
 ]

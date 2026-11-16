@@ -1,9 +1,21 @@
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from fastapi.responses import JSONResponse
 from schemas.sync import SyncRequest
+from schemas.history import GlobalSyncResponse
+from services import history_service
 from services.sync_service import sync_status, _bg_sync_thread
 
 router = APIRouter(tags=["Sync"])
+
+
+@router.post("/api/sync/global", response_model=GlobalSyncResponse)
+async def sync_global_endpoint():
+    """Executa sincronização rápida e cria snapshots de evolução para todos os jogos configurados."""
+    try:
+        res = await history_service.sync_global_and_snapshot()
+        return GlobalSyncResponse(**res)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/api/sync/{game_id}")

@@ -609,10 +609,14 @@ def fix_skills_json_max_levels():
 init_db()
 
 
-def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, Any]]) -> None:
+def save_account_snapshot(
+    uid: str, game_id: str, roster_data: List[Dict[str, Any]], force: bool = False
+) -> Optional[int]:
     """Calcula métricas agregadas ricas da conta e salva um snapshot completo com todos os personagens."""
     if not roster_data:
-        return
+        return None
+
+    uid = str(uid or "000000000").strip() or "000000000"
 
     from build_calculator import score_relic, normalize_char_name
 
@@ -699,6 +703,7 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
                 "weapon_level": weapon_data.get("level", 1),
                 "relics": relics,
                 "skills": c.get("skills", []),
+                "ex_ranks": c.get("ex_ranks", []),
                 "stats": c.get("stats", {}),
                 "score": char_score,
                 "grade": grade,
@@ -742,7 +747,7 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
         )
         latest_row = cursor.fetchone()
 
-        if latest_row:
+        if latest_row and not force:
             latest_json_str = latest_row["snapshot_json"]
             try:
                 latest_data = json.loads(latest_json_str or "{}")
@@ -775,6 +780,8 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
                             != json.dumps(prev_c.get("relics"), sort_keys=True)
                             or json.dumps(cur_c.get("skills"), sort_keys=True)
                             != json.dumps(prev_c.get("skills"), sort_keys=True)
+                            or json.dumps(cur_c.get("ex_ranks") or [], sort_keys=True)
+                            != json.dumps(prev_c.get("ex_ranks") or [], sort_keys=True)
                         ):
                             has_changes = True
                             break
@@ -783,7 +790,7 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
                         print(
                             f"[INFO] Roster de {game_id_clean.upper()} (UID {uid}) não sofreu nenhuma alteração. Nulo o salvamento de snapshot duplicado."
                         )
-                        return
+                        return int(latest_row["id"])
             except Exception as check_err:
                 print(f"[AVISO] Falha ao comparar com o último snapshot: {check_err}")
 
@@ -794,6 +801,7 @@ def save_account_snapshot(uid: str, game_id: str, roster_data: List[Dict[str, An
         """,
             (uid, game_id_clean, char_count, five_star_count, avg_score, summary_json, now_str),
         )
+        return int(cursor.lastrowid) if cursor.lastrowid is not None else None
 
 
 def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[str, Any]:
@@ -994,17 +1002,29 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
         }
 
 
+def get_account_history_count(game_id: str, uid: Optional[str] = None) -> int:
+    """Retorna o total de snapshots registrados para o jogo (e opcionalmente UID)."""
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if uid:
+            cursor.execute("SELECT COUNT(*) FROM account_snapshots WHERE game_id = ? AND uid = ?", (game_id, uid))
+        else:
+            cursor.execute("SELECT COUNT(*) FROM account_snapshots WHERE game_id = ?", (game_id,))
+        row = cursor.fetchone()
+        return int(row[0]) if row else 0
+
+
 def get_account_history(
     game_id: str, uid: Optional[str] = None, limit: int = 50, offset: int = 0
 ) -> List[Dict[str, Any]]:
-    """Retorna o histórico de snapshots comparando o snapshot atual com o anterior para gerar o diff de cada personagem."""
+    """Retorna os snapshots mais recentes em ordem cronológica, comparando cada snapshot com o anterior."""
     with get_connection() as conn:
         cursor = conn.cursor()
         if uid:
             cursor.execute(
                 """
             SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
-            FROM account_snapshots WHERE game_id = ? AND uid = ? ORDER BY created_at ASC LIMIT ? OFFSET ?
+            FROM account_snapshots WHERE game_id = ? AND uid = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?
             """,
                 (game_id, uid, limit, offset),
             )
@@ -1012,11 +1032,11 @@ def get_account_history(
             cursor.execute(
                 """
             SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
-            FROM account_snapshots WHERE game_id = ? ORDER BY created_at ASC LIMIT ? OFFSET ?
+            FROM account_snapshots WHERE game_id = ? ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?
             """,
                 (game_id, limit, offset),
             )
-        rows = cursor.fetchall()
+        rows = list(reversed(cursor.fetchall()))
 
         result = []
         prev_chars_map = {}

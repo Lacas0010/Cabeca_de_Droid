@@ -1332,6 +1332,7 @@ function listUniqueDictKeys(dictA, dictB) {
 }
 
 window.loadAccountHistory = async (gameId = "hsr") => {
+    window.currentGameIdHistory = gameId;
     const container = document.getElementById("tab-history-body");
     if (!container) return;
 
@@ -1339,16 +1340,22 @@ window.loadAccountHistory = async (gameId = "hsr") => {
     if (btnSnapshot && !btnSnapshot.dataset.bound) {
         btnSnapshot.dataset.bound = "true";
         btnSnapshot.addEventListener("click", async () => {
+            const activeTabBtn = document.querySelector(".tab-history-game-btn.active");
+            const targetGame = (activeTabBtn && activeTabBtn.dataset.game) || window.currentGameIdHistory || gameId || "hsr";
             btnSnapshot.disabled = true;
             btnSnapshot.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${window.t ? window.t("history_btn_creating") : "Gerando Snapshot..."}`;
             try {
-                const res = await fetch("/api/sync/global", { method: "POST" });
-                const resData = await res.json();
-                if (resData.success) {
+                const res = await fetch(`/api/history/${encodeURIComponent(targetGame)}/snapshot`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ refresh_from_hoyolab: true })
+                });
+                const resData = await res.json().catch(() => ({}));
+                if (res.ok && resData.success) {
                     showToast(window.t ? window.t("history_toast_created") : "Snapshot de evolução criado com sucesso!", "success");
-                    window.loadAccountHistory(currentGameIdHistory || gameId);
+                    window.loadAccountHistory(targetGame);
                 } else {
-                    showToast("Erro ao criar snapshot: " + (resData.message || "Erro desconhecido"));
+                    showToast("Erro ao criar snapshot: " + (resData.detail || resData.message || "Erro desconhecido"));
                 }
             } catch (e) {
                 showToast("Erro de rede ao criar snapshot.");
@@ -1422,7 +1429,8 @@ window.loadAccountHistory = async (gameId = "hsr") => {
             return;
         }
 
-        const totalSnapshots = rawHistory.length;
+        const totalSnapshots = Number(data.total_count || rawHistory.length);
+        const startSnapNum = Math.max(1, totalSnapshots - rawHistory.length + 1);
         // Inverte para cronológico reverso
         const history = rawHistory.slice().reverse();
         window.historySnapshotsCache = history;
@@ -1440,7 +1448,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                             <select id="select-snap-base" class="snap-select">
                                 ${rawHistory.map((s, i) => `
                                     <option value="${s.id}" ${i === Math.max(0, rawHistory.length - 2) ? 'selected' : ''}>
-                                        Snapshot #${i + 1} (${s.created_at})
+                                        Snapshot #${startSnapNum + i} (${s.created_at})
                                     </option>
                                 `).join('')}
                             </select>
@@ -1451,7 +1459,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                             <select id="select-snap-target" class="snap-select">
                                 ${rawHistory.map((s, i) => `
                                     <option value="${s.id}" ${i === rawHistory.length - 1 ? 'selected' : ''}>
-                                        Snapshot #${i + 1} (${s.created_at}) ${i === rawHistory.length - 1 ? ' (Mais Recente)' : ''}
+                                        Snapshot #${startSnapNum + i} (${s.created_at}) ${i === rawHistory.length - 1 ? ' (Mais Recente)' : ''}
                                     </option>
                                 `).join('')}
                             </select>
