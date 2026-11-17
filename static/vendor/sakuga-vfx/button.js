@@ -43,7 +43,7 @@ class SakugaButton extends fx.Base {
   }
   // the impact: what a click does. You can call it yourself.
   impact() {
-    const b = this.b, sq = this.sq, c = at(b), n = ++this.seq; this.ok.to = 0; this.ok.x = 0;
+    const b = this.b, sq = this.sq, c = at(b), n = ++this.seq; if (c.w <= 0 || c.h <= 0) return; this.ok.to = 0; this.ok.x = 0;
     sq.s.x = Math.min(sq.s.x, 0.6); sq.pop.x = 1.24; sq.tilt.x = -5; b.classList.add('inv'); later(190, () => b.classList.remove('inv'));
     burst(c.x, c.y, { r: 98, spikes: 17, life: 0.48, layer: this.back }); shards(c.x, c.y, { n: 11, speed: 260, size: 9, life: 0.95, arc: 6.28, grav: 300 });
       for (const [dx, dy] of [[-1, -0.5], [1, -1], [-1, 0.9], [1, 1]]) puff(c.x + dx * (c.w / 2 + 6), c.y + dy * 26, { size: rnd(12, 16), n: 5, vx: dx * 46, vy: dy * 30 - 6, life: rnd(0.75, 1.05) });
@@ -54,7 +54,7 @@ class SakugaButton extends fx.Base {
   }
   // a check lands on the button with a glint, and goes after a while. hold is how long it stays, in seconds.
   done(hold = 1.8) {
-    if (!this.primary || !this.b) return; const n = this.seq; this.ok.to = 1; const q = at(this.b, 1, 0);
+    if (!this.primary || !this.b) return; const q = at(this.b, 1, 0); if (q.w <= 0 || q.h <= 0) return; const n = this.seq; this.ok.to = 1;
     kira(q.x - 16, q.y + 2, { r: 15, life: 1 }); ticks(q.x - 2, q.y - 12, { dir: -0.8, n: 2, r: 6, len: 12 });
     if (hold > 0) later(hold * 1000, () => { if (n === this.seq) this.ok.to = 0; });
   }

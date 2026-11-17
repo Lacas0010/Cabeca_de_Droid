@@ -337,6 +337,12 @@ class TestSakugaVfxOfflineIntegration(unittest.TestCase):
             self.assertIn(css_var, css)
         self.assertIn("overflow: visible;", css)
 
+        progress_js = (build.ROOT_DIR / "static" / "vendor" / "sakuga-vfx" / "progress.js").read_text(encoding="utf-8")
+        button_js = (build.ROOT_DIR / "static" / "vendor" / "sakuga-vfx" / "button.js").read_text(encoding="utf-8")
+        self.assertIn("r.width > 0 && r.height > 0", progress_js)
+        self.assertIn("b.w <= 0 || b.h <= 0", progress_js)
+        self.assertIn("q.w <= 0 || q.h <= 0", button_js)
+
 
 if __name__ == "__main__":
     unittest.main()

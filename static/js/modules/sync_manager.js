@@ -53,7 +53,7 @@ async function triggerSync(gameId, run_roster, run_guides, run_meta) {
         
         if (res.ok) {
             const syncBtn = document.querySelector(`.sync-game-btn[data-game="${gameId}"]`);
-            if (syncBtn && typeof syncBtn.done === "function") syncBtn.done(1.2);
+            if (syncBtn && typeof syncBtn.done === "function" && syncBtn.getBoundingClientRect().width > 0) syncBtn.done(1.2);
             startPollingStatus(gameId);
         } else {
             const errData = await res.json();
@@ -98,7 +98,7 @@ function startPollingStatus(gameId) {
                 activePolling[gameId] = null;
                 if (skProg && typeof skProg.set === "function") skProg.set(1.0);
                 const syncBtn = document.querySelector(`.sync-game-btn[data-game="${gameId}"]`);
-                if (syncBtn && typeof syncBtn.done === "function") syncBtn.done();
+                if (syncBtn && typeof syncBtn.done === "function" && syncBtn.getBoundingClientRect().width > 0) syncBtn.done();
                 // Recarrega o roster visual e endgame do jogo que acabou de sincronizar
                 setTimeout(() => {
                     loadRoster(gameId);
