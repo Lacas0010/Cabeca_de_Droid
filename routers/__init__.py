@@ -13,6 +13,7 @@ from routers.checkin import router as checkin_router
 from routers.chat import router as chat_router
 from routers.static_data import router as static_data_router
 from routers.system import router as system_router
+from routers.updater import router as updater_router
 
 all_routers = [
     security_router,
@@ -30,6 +31,7 @@ all_routers = [
     chat_router,
     static_data_router,
     system_router,
+    updater_router,
 ]
 
 __all__ = ["all_routers"]

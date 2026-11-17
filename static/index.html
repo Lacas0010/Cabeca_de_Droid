@@ -13,7 +13,7 @@
 <!-- html2canvas para renderização de cards e infográficos em alta resolução -->
 <script defer="" src="/static/vendor/html2canvas/html2canvas.min.js"></script>
 <!-- CSS Estilos Customizados -->
-<link href="style.css?v=28.0" rel="stylesheet"/>
+<link href="style.css?v=29.0" rel="stylesheet"/>
 <style id="wish-inline-fx-styles">
         /* ANIMAÇÃO DO METEORO (GENSHIN IMPACT) */
         .wish-fx-meteor {
@@ -410,6 +410,13 @@
 <div class="conn-status">
 <span class="status-dot offline" id="api-status-dot"></span>
 <span class="status-text" data-i18n="status_checking" id="api-status-text">Buscando status...</span>
+</div>
+<div class="sidebar-version-row">
+<span class="version-badge" id="app-version-badge">v1.1.0</span>
+<sakuga-button class="sk-xs" id="btn-check-updates" title="Verificar atualizações no GitHub" variant="secondary">
+<i class="fa-solid fa-cloud-arrow-down"></i>
+<span>Atualizar</span>
+</sakuga-button>
 </div>
 </div>
 </aside>
@@ -3881,6 +3888,46 @@
 </div>
 </div>
 </div>
+<!-- MODAL DE AUTO-ATUALIZACAO SAKUGA VFX -->
+<div class="pin-lock-overlay updater-modal-overlay" id="modal-sakuga-updater" style="display: none;">
+<div class="pin-lock-card updater-modal-card">
+<div class="updater-modal-header">
+<div class="updater-icon-badge">
+<i class="fa-solid fa-rocket"></i>
+</div>
+<div>
+<h3 class="updater-title" id="updater-modal-title">Nova Atualização Disponível</h3>
+<p class="updater-version-diff">
+<span class="updater-ver-chip" id="updater-ver-current">v1.1.0</span>
+<i class="fa-solid fa-arrow-right"></i>
+<span class="updater-ver-chip is-new" id="updater-ver-latest">v1.2.0</span>
+</p>
+</div>
+</div>
+<div class="updater-notes-box" id="updater-release-notes">Carregando novidades da versão...</div>
+<div class="updater-progress-area" id="updater-progress-area" style="display: none;">
+<div class="updater-progress-meta">
+<span id="updater-status-text">Preparando atualização...</span>
+<span id="updater-progress-pct">0%</span>
+</div>
+<sakuga-progress class="sk-sync-progress" id="updater-progress-bar" label="" value="0"></sakuga-progress>
+</div>
+<div class="updater-actions" id="updater-decision-actions">
+<sakuga-button class="sk-sm" id="btn-updater-later" variant="secondary">Agora não</sakuga-button>
+<sakuga-button class="sk-sm" id="btn-updater-install">
+<i class="fa-solid fa-download"></i>
+<span>Atualizar agora</span>
+</sakuga-button>
+</div>
+<div class="updater-dev-notice" id="updater-dev-notice" style="display: none;">
+<p id="updater-dev-message"></p>
+<div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+<a class="updater-release-link" href="https://github.com/Lacas0010/Cabeca_de_Droid/releases/latest" id="updater-release-link" rel="noopener noreferrer" target="_blank">Abrir Release no GitHub</a>
+<sakuga-button class="sk-sm" id="btn-updater-close-dev" variant="secondary">Fechar</sakuga-button>
+</div>
+</div>
+</div>
+</div>
 <sakuga-toast duration="3.0" id="sakuga-global-toast" message="Pronto!"></sakuga-toast>
 <script src="/static/vendor/sakuga-vfx/button.js"></script>
 <script src="/static/vendor/sakuga-vfx/toggle.js"></script>
@@ -3894,6 +3941,6 @@
 <script src="/static/vendor/sakuga-vfx/toast.js"></script>
 <script src="/static/vendor/sakuga-vfx/tooltip.js"></script>
 <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-<script src="js/app.js?v=30.0" type="module"></script>
+<script src="js/app.js?v=31.0" type="module"></script>
 </body>
 </html>

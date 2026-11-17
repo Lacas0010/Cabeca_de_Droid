@@ -134,6 +134,9 @@ def build_pyinstaller_command(staging_assets: Path, icon_path: Path) -> List[str
         "httpx",
         "playwright",
         "pydantic",
+        "packaging",
+        "version",
+        "updater",
     ]
 
     collect_submodules = ["routers", "services", "schemas", "core", "scrapers"]

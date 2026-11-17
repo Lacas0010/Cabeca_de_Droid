@@ -14,6 +14,7 @@ import "./modules/roster.js?v=26.0";
 import "./modules/build_comparator.js?v=27.0";
 import "./modules/chat_rag.js?v=25.0";
 import "./modules/farming.js?v=25.0";
+import "./modules/updater_ui.js?v=1.0";
 
 // Módulos pesados carregados sob demanda via import() dinâmico:
 // gacha_sim.js e gacha_tracker.js são carregados apenas quando a aba Gacha/Sorte for ativada ou em idle
@@ -99,6 +100,9 @@ document.addEventListener("DOMContentLoaded", () => {
     setupPinSecurityUI();
     if (typeof setupRosterViewModeToggle === "function") {
         setupRosterViewModeToggle();
+    }
+    if (typeof setupUpdaterUI === "function") {
+        setupUpdaterUI();
     }
     
     // Carrega dados iniciais sem duplicidade (loadRoster já orquestra loadEndgame)

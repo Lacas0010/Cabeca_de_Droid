@@ -34,6 +34,14 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
+      - name: Stamp release version into version.py
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          python -c "import os, pathlib, re, subprocess; tag = (os.environ.get('INPUT_TAG') or (os.environ.get('REF_NAME') if os.environ.get('REF_TYPE') == 'tag' else '')).strip(); tag = tag or (subprocess.check_output(['git', 'describe', '--tags', '--abbrev=0'], text=True).strip() if not tag else ''); clean = re.sub(r'^v', '', tag, flags=re.IGNORECASE); clean and pathlib.Path('version.py').write_text(f'__version__ = \"{clean}\"\n', encoding='utf-8'); print('Stamped version:', clean or 'kept existing')"
+
       - name: Run packaging and import sanity tests
         run: |
           python -c "import server, build; build.verify_sakuga_vendor_assets(); print('FastAPI app and Sakuga vendor assets verified')"
