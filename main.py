@@ -38,11 +38,22 @@ def configure_runtime_environment() -> None:
             sys.stderr = log_file
 
 
+def _find_chromium_exe(pw_path: str) -> bool:
+    """Verifica se há pelo menos um executável chrome.exe completo dentro de ms-playwright."""
+    if not os.path.isdir(pw_path):
+        return False
+    for entry in os.listdir(pw_path):
+        if entry.startswith("chromium-"):
+            candidate = os.path.join(pw_path, entry, "chrome-win64", "chrome.exe")
+            if os.path.isfile(candidate):
+                return True
+    return False
+
+
 def setup_playwright() -> None:
     """
-    Garante que o executável Chromium do Playwright esteja disponível no ambiente do usuário.
-    Se estiver rodando empacotado via PyInstaller no Windows, força a busca na pasta AppData/Local padrão
-    e realiza o download em segundo plano para não bloquear a abertura da interface.
+    Configura PLAYWRIGHT_BROWSERS_PATH para o diretório padrão AppData/Local/ms-playwright no Windows.
+    O fallback inteligente em auth.py utiliza Chrome/Edge instalados ou baixa sob demanda se necessário.
     """
     if sys.platform != "win32":
         return
@@ -51,14 +62,7 @@ def setup_playwright() -> None:
     pw_path = os.path.join(local_app_data, "ms-playwright")
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = pw_path
 
-    has_browser = False
-    if os.path.exists(pw_path):
-        for f in os.listdir(pw_path):
-            if f.startswith("chromium-"):
-                has_browser = True
-                break
-
-    if not has_browser:
+    if not _find_chromium_exe(pw_path):
         def _install_chromium_bg() -> None:
             try:
                 from playwright._impl._driver import compute_driver_executable, get_driver_env

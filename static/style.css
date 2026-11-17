@@ -2267,11 +2267,13 @@ h6 {
    CONFIGURATIONS SCREEN
    ========================================================================== */
 .config-container {
-    max-width: 680px;
+    max-width: 1360px;
+    width: 100%;
+    margin: 0 auto;
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    padding: 32px;
+    padding: 28px 32px;
     backdrop-filter: blur(10px);
 }
 
@@ -2283,13 +2285,52 @@ h6 {
 .config-desc {
     font-size: 13px;
     color: var(--text-muted);
+    margin-bottom: 22px;
+}
+
+.config-sections-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: stretch;
     margin-bottom: 24px;
 }
 
 .config-section {
-    margin-bottom: 28px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 0;
+    padding: 20px;
+    background-color: var(--bg-surface, rgba(15, 23, 42, 0.45));
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-section--wide {
+    grid-column: 1 / -1;
+}
+
+.config-section--danger {
+    border-color: rgba(239, 68, 68, 0.35);
+    background-color: rgba(239, 68, 68, 0.04);
+}
+
+.config-notif-channels-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+@media (max-width: 1200px) {
+    .config-notif-channels-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 960px) {
+    .config-sections-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .config-section h3 {
@@ -4039,6 +4080,16 @@ h6 {
         border-radius: 12px;
         width: 100%;
         max-width: 100%;
+    }
+
+    .config-sections-grid,
+    .config-notif-channels-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .config-section {
+        padding: 16px;
     }
 
     .btn-row,

@@ -167,30 +167,52 @@ async function setupConfigForm() {
     // Auto Login Playwright
     if (autoLoginBtn) {
         autoLoginBtn.addEventListener("click", async () => {
+            const isEn = window.getLanguage && window.getLanguage() === "en";
+            const defaultLabel = isEn
+                ? '<i class="fa-solid fa-earth-americas"></i> Auto Login via Playwright'
+                : '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
             autoLoginBtn.disabled = true;
-            autoLoginBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Aguardando login no navegador...';
-            
+            autoLoginBtn.innerHTML = isEn
+                ? '<i class="fa-solid fa-spinner fa-spin"></i> Opening browser for login...'
+                : '<i class="fa-solid fa-spinner fa-spin"></i> Aguardando login no navegador...';
+
             try {
                 const res = await fetch("/api/login/auto", { method: "POST" });
                 if (res.ok) {
                     let attempts = 0;
                     const interval = setInterval(async () => {
                         attempts++;
-                        const checkRes = await fetch("/api/config");
-                        const checkCfg = await checkRes.json();
-                        if (checkCfg.has_cookies || attempts > 60) {
+                        try {
+                            const statusRes = await fetch("/api/login/auto/status");
+                            const loginState = statusRes.ok ? await statusRes.json() : { status: "running" };
+
+                            if (loginState.status === "success") {
+                                clearInterval(interval);
+                                autoLoginBtn.disabled = false;
+                                autoLoginBtn.innerHTML = defaultLabel;
+                                showToast(isEn ? "Cookies captured and encrypted successfully!" : "Cookies capturados e criptografados com sucesso!", "success");
+                                fetchConfig();
+                            } else if (loginState.status === "error" || attempts > 90) {
+                                clearInterval(interval);
+                                autoLoginBtn.disabled = false;
+                                autoLoginBtn.innerHTML = defaultLabel;
+                                const errMsg = loginState.error || (isEn ? "Login timeout or browser closed." : "Tempo esgotado ou navegador fechado.");
+                                showToast(isEn ? `Login failed: ${errMsg}` : `Falha no login automático: ${errMsg}`, "error");
+                            }
+                        } catch (pollErr) {
                             clearInterval(interval);
                             autoLoginBtn.disabled = false;
-                            autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
-
-                showToast(isEn ? "Cookies captured and encrypted successfully!" : "Cookies capturados e criptografados com sucesso!", "success");
-                            fetchConfig();
+                            autoLoginBtn.innerHTML = defaultLabel;
                         }
-                    }, 2000);
+                    }, 1500);
+                } else {
+                    autoLoginBtn.disabled = false;
+                    autoLoginBtn.innerHTML = defaultLabel;
+                    showToast(isEn ? "Failed to start browser login." : "Erro ao iniciar navegador de login.", "error");
                 }
             } catch (err) {
                 autoLoginBtn.disabled = false;
-                autoLoginBtn.innerHTML = '<i class="fa-solid fa-earth-americas"></i> Login Automático via Playwright';
+                autoLoginBtn.innerHTML = defaultLabel;
             }
         });
     }

@@ -156,9 +156,20 @@ async def test_notifications_endpoint(req: NotificationTestRequest):
     return {"status": "success", "results": res}
 
 
+_AUTO_LOGIN_STATE = {"status": "idle", "error": ""}
+
+
+@router.get("/api/login/auto/status")
+def get_auto_login_status():
+    """Retorna o estado atual da captura automática de cookies sem expor tokens."""
+    return _AUTO_LOGIN_STATE
+
+
 @router.post("/api/login/auto")
 async def auto_login_hoyolab(background_tasks: BackgroundTasks):
     """Dispara a janela do navegador via Playwright para capturar os cookies e salvá-los no cofre criptografado."""
+    _AUTO_LOGIN_STATE["status"] = "running"
+    _AUTO_LOGIN_STATE["error"] = ""
 
     def _run_login():
         print("[INFO] Abrindo navegador Playwright para capturar cookies...")
@@ -170,8 +181,15 @@ async def auto_login_hoyolab(background_tasks: BackgroundTasks):
 
             if cookies_captured:
                 security_vault.save_secure_cookies(cookies_captured)
+                _AUTO_LOGIN_STATE["status"] = "success"
+                _AUTO_LOGIN_STATE["error"] = ""
                 print("[SUCCESS] Cookies capturados, criptografados e salvos com sucesso no cofre DPAPI!")
+            else:
+                _AUTO_LOGIN_STATE["status"] = "error"
+                _AUTO_LOGIN_STATE["error"] = "Nenhum cookie capturado."
         except Exception as e:
+            _AUTO_LOGIN_STATE["status"] = "error"
+            _AUTO_LOGIN_STATE["error"] = str(e)
             print(f"[ERROR] Falha na captura automática de cookies: {e}")
 
     background_tasks.add_task(_run_login)

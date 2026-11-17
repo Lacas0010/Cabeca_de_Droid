@@ -2271,6 +2271,7 @@
 </div>
 </div>
 <p class="config-desc" data-i18n="cfg_desc">Todas as chaves de API, cookies de sessão e dados de contas são armazenados exclusivamente no seu computador com criptografia local (Windows DPAPI / AES-256).</p>
+<div class="config-sections-grid">
 <!-- 0. IDIOMA DO SISTEMA / SYSTEM LANGUAGE -->
 <div class="config-section">
 <h3><i class="fa-solid fa-language" style="color: #38bdf8;"></i> <span data-i18n="cfg_lang_title">Idioma do Sistema / System Language</span></h3>
@@ -2280,6 +2281,18 @@
 <option data-i18n="lang_pt_br" value="pt">🇧🇷 Português (Brasil)</option>
 <option data-i18n="lang_en_us" value="en">🇺🇸 English (US)</option>
 </select>
+</div>
+</div>
+<!-- 4. CONTROLE DE REDE LOCAL (LAN / WI-FI) -->
+<div class="config-section">
+<h3><i class="fa-solid fa-network-wired" style="color: #06b6d4;"></i> <span data-i18n="cfg_lan_title">Proteção de Rede Local (Isolamento LAN)</span></h3>
+<p class="section-desc" data-i18n="cfg_lan_desc">Por padrão, o servidor escuta exclusivamente no Loopback seguro (127.0.0.1).</p>
+<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+<label data-i18n="cfg_lan_allow_label" style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer;">
+<input id="cfg-lan-access-toggle" style="width: 16px; height: 16px; accent-color: #06b6d4;" type="checkbox"/>
+                                Permitir acesso de celular/tablet na rede local (Binding 0.0.0.0)
+                            </label>
+<span data-i18n="cfg_lan_isolated_active" id="cfg-lan-status-msg" style="font-size: 11px; color: var(--text-muted);">Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.</span>
 </div>
 </div>
 <!-- 2. COFRE DE COOKIES HOYOLAB (ENTRADA SEGURA) -->
@@ -2330,18 +2343,6 @@
 </div>
 </div>
 </div>
-<!-- 4. CONTROLE DE REDE LOCAL (LAN / WI-FI) -->
-<div class="config-section">
-<h3><i class="fa-solid fa-network-wired" style="color: #06b6d4;"></i> <span data-i18n="cfg_lan_title">Proteção de Rede Local (Isolamento LAN)</span></h3>
-<p class="section-desc" data-i18n="cfg_lan_desc">Por padrão, o servidor escuta exclusivamente no Loopback seguro (127.0.0.1).</p>
-<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
-<label data-i18n="cfg_lan_allow_label" style="display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600; color: #fff; cursor: pointer;">
-<input id="cfg-lan-access-toggle" style="width: 16px; height: 16px; accent-color: #06b6d4;" type="checkbox"/>
-                                Permitir acesso de celular/tablet na rede local (Binding 0.0.0.0)
-                            </label>
-<span data-i18n="cfg_lan_isolated_active" id="cfg-lan-status-msg" style="font-size: 11px; color: var(--text-muted);">Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.</span>
-</div>
-</div>
 <!-- 5. AGENDAMENTO AUTOMÁTICO DIÁRIO -->
 <div class="config-section">
 <h3><i class="fa-solid fa-clock-rotate-left" style="color: #ec4899;"></i> <span data-i18n="cfg_daily_sync_title">Sincronização Diária Agendada</span></h3>
@@ -2383,8 +2384,19 @@
 </ul>
 </div>
 </div>
+<!-- 8. ZONA DE PERIGO / RESET -->
+<div class="config-section config-section--danger">
+<h3 data-i18n="cfg_danger_header" style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Zona de Perigo / Limpeza de Dados</h3>
+<p class="section-desc" data-i18n="cfg_danger_desc">Apaga permanentemente as 3 pastas de guias e relatórios (output_guides, output_genshin, output_zzz) e reseta todas as tabelas do Banco de Dados local (SQLite).</p>
+<div class="btn-row">
+<button class="secondary-btn" data-i18n="cfg_danger_delete_btn" id="btn-reset-data" style="border-color: #ef4444; color: #f87171; background: rgba(239, 68, 68, 0.1); font-weight: 600;">
+<i class="fa-solid fa-trash-can"></i> Apagar Pastas e Banco de Dados
+                            </button>
+<span class="btn-info" data-i18n="cfg_danger_irreversible" style="color: #fca5a5;">Esta ação é irreversível!</span>
+</div>
+</div>
 <!-- 7. NOTIFICAÇÕES PROATIVAS (DISCORD & TELEGRAM) -->
-<div class="config-section" style="border-top: 1px solid rgba(56, 189, 248, 0.3); padding-top: 16px;">
+<div class="config-section config-section--wide" style="border-top: 2px solid rgba(56, 189, 248, 0.35);">
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
 <h3 data-i18n="cfg_notif_proactive_title" style="margin: 0; color: #38bdf8;"><i class="fa-solid fa-bell" style="color: #38bdf8;"></i> Notificações Proativas (Discord &amp; Telegram)</h3>
 <span data-i18n="cfg_notif_assistant_tag" style="font-size: 11px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">ASSISTENTE AUTÔNOMO</span>
@@ -2396,7 +2408,7 @@
                                 Ativar Envio de Notificações em Segundo Plano
                             </label>
 <!-- Painel de Canais (Discord & Telegram) -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 14px;">
+<div class="config-notif-channels-grid">
 <!-- Discord Webhook -->
 <div style="background: rgba(88, 101, 242, 0.08); border: 1px solid rgba(88, 101, 242, 0.25); border-radius: 10px; padding: 14px;">
 <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -2504,7 +2516,7 @@
 </div>
 </div>
 <!-- 8. SINCRONIZAÇÃO DE DADOS ESTÁTICOS & DATAMINES -->
-<div class="config-section" style="border-top: 1px solid rgba(16, 185, 129, 0.3); padding-top: 16px;">
+<div class="config-section config-section--wide" style="border-top: 2px solid rgba(16, 185, 129, 0.35);">
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;">
 <h3 data-i18n="cfg_datamines_title" style="margin: 0; color: #10b981;"><i class="fa-solid fa-database" style="color: #10b981;"></i> Dados Estáticos &amp; Datamines (GitHub / HoYoWiki)</h3>
 <span data-i18n="cfg_datamines_tag" style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);">ZERO SCRAPING FRÁGIL</span>
@@ -2543,7 +2555,7 @@
 <div id="static-sync-result-box" style="display: none; margin-top: 8px; font-size: 12px;"></div>
 </div>
 <!-- 9. TRANSPARÊNCIA & PRIVACIDADE DE DADOS -->
-<div class="config-section" style="border-top: 1px solid rgba(168, 85, 247, 0.3); padding-top: 16px;">
+<div class="config-section config-section--wide" style="border-top: 2px solid rgba(168, 85, 247, 0.35);">
 <h3 data-i18n="cfg_privacy_title" style="color: #c084fc;"><i class="fa-solid fa-shield-halved"></i> Transparência &amp; Privacidade de Dados</h3>
 <p class="section-desc" data-i18n="cfg_privacy_intro">Entenda detalhadamente quais dados são armazenados localmente no seu computador e quais nunca são acessados:</p>
 <div class="privacy-table-container">
@@ -2584,16 +2596,6 @@
 </tbody>
 </table>
 </div>
-</div>
-<!-- 8. ZONA DE PERIGO / RESET -->
-<div class="config-section" style="border-top: 1px solid rgba(239, 68, 68, 0.3); margin-top: 24px; padding-top: 16px;">
-<h3 data-i18n="cfg_danger_header" style="color: #ef4444;"><i class="fa-solid fa-triangle-exclamation"></i> Zona de Perigo / Limpeza de Dados</h3>
-<p class="section-desc" data-i18n="cfg_danger_desc">Apaga permanentemente as 3 pastas de guias e relatórios (output_guides, output_genshin, output_zzz) e reseta todas as tabelas do Banco de Dados local (SQLite).</p>
-<div class="btn-row">
-<button class="secondary-btn" data-i18n="cfg_danger_delete_btn" id="btn-reset-data" style="border-color: #ef4444; color: #f87171; background: rgba(239, 68, 68, 0.1); font-weight: 600;">
-<i class="fa-solid fa-trash-can"></i> Apagar Pastas e Banco de Dados
-                            </button>
-<span class="btn-info" data-i18n="cfg_danger_irreversible" style="color: #fca5a5;">Esta ação é irreversível!</span>
 </div>
 </div>
 <div class="config-actions">

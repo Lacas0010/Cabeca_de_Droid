@@ -4,8 +4,9 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
+import auth
 import build
 from core import paths
 
@@ -124,6 +125,62 @@ class TestBuildAndReleaseConfig(unittest.TestCase):
         self.assertIn("softprops/action-gh-release@v2", content)
         self.assertIn("generate_release_notes: true", content)
         self.assertIn("dist/Cabeca_de_Droid-Windows-x64.zip", content)
+
+
+class TestPlaywrightLoginFallbackAndSettingsLayout(unittest.TestCase):
+    def test_launch_login_browser_falls_back_to_system_msedge_when_bundled_missing(self):
+        import asyncio
+
+        async def _run():
+            fake_browser = MagicMock()
+            fake_p = MagicMock()
+            fake_p.chromium.executable_path = "/nonexistent/ms-playwright/chromium-1255/chrome.exe"
+
+            async def fake_launch(*args, **kwargs):
+                if kwargs.get("channel") == "chrome":
+                    raise RuntimeError("Chrome not found")
+                if kwargs.get("channel") == "msedge":
+                    return fake_browser
+                raise RuntimeError("Unexpected launch call")
+
+            fake_p.chromium.launch = AsyncMock(side_effect=fake_launch)
+            browser = await auth._launch_login_browser(fake_p)
+            self.assertIs(browser, fake_browser)
+            calls = [c.kwargs for c in fake_p.chromium.launch.call_args_list]
+            self.assertEqual(
+                calls,
+                [
+                    {"channel": "chrome", "headless": False},
+                    {"channel": "msedge", "headless": False},
+                ],
+            )
+
+        asyncio.run(_run())
+
+    def test_launch_login_browser_uses_bundled_when_present(self):
+        import asyncio
+
+        async def _run():
+            with tempfile.NamedTemporaryFile() as tmp_exe:
+                fake_browser = MagicMock()
+                fake_p = MagicMock()
+                fake_p.chromium.executable_path = tmp_exe.name
+                fake_p.chromium.launch = AsyncMock(return_value=fake_browser)
+
+                browser = await auth._launch_login_browser(fake_p)
+                self.assertIs(browser, fake_browser)
+                fake_p.chromium.launch.assert_called_once_with(headless=False)
+
+        asyncio.run(_run())
+
+    def test_settings_tab_uses_responsive_horizontal_grid(self):
+        html = (build.ROOT_DIR / "static" / "index.html").read_text(encoding="utf-8")
+        css = (build.ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+        self.assertIn('class="config-sections-grid"', html)
+        self.assertIn('class="config-section config-section--wide"', html)
+        self.assertIn('class="config-notif-channels-grid"', html)
+        self.assertIn(".config-sections-grid", css)
+        self.assertIn("max-width: 768px", css)
 
 
 if __name__ == "__main__":
