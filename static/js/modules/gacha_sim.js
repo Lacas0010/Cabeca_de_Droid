@@ -337,6 +337,9 @@ window.updateGachaGemConversion = function() {
 };
 
 window.initGachaSimulator = async function() {
+    if (typeof window.initGachaNavigation === "function") {
+        window.initGachaNavigation();
+    }
     const gamePills = document.querySelectorAll("#gacha-game-pills .gacha-game-pill");
     const gameSelectHidden = document.getElementById("tab-gacha-game-select");
     const simTypePills = document.querySelectorAll("#gacha-sim-type-pills .sim-type-btn");
@@ -349,6 +352,32 @@ window.initGachaSimulator = async function() {
     if (pullsInput) {
         pullsInput.addEventListener("input", window.updateGachaGemConversion);
     }
+
+    // Usabilidade por teclado (Enter para simular no Simulador e Forecast)
+    ["tab-gacha-pulls", "tab-gacha-pity"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.dataset.enterBound) {
+            el.dataset.enterBound = "true";
+            el.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    document.getElementById("tab-btn-run-gacha-sim")?.click();
+                }
+            });
+        }
+    });
+    ["forecast-pulls-cur", "forecast-pity-cur"].forEach(id => {
+        const el = document.getElementById(id);
+        if (el && !el.dataset.enterBound) {
+            el.dataset.enterBound = "true";
+            el.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    document.getElementById("btn-run-forecast-calc")?.click();
+                }
+            });
+        }
+    });
 
     // Toggle de Jogos (Genshin, HSR, ZZZ)
     gamePills.forEach(pill => {
@@ -1051,6 +1080,9 @@ window.runGachaSimulation = async function() {
                 distList.appendChild(item);
             }
         }
+        if (res.ok && runBtn && typeof runBtn.done === "function") {
+            runBtn.done();
+        }
     } catch (err) {
         console.error(err);
         if (typeof showToast === "function") showToast("Erro ao executar simulação de Gacha.");
@@ -1087,31 +1119,51 @@ window.forecastState = {
 };
 
 window.initGachaNavigation = function() {
+    const activateGachaSubView = (viewTarget) => {
+        document.querySelectorAll(".gacha-subview").forEach(sv => {
+            sv.style.display = "none";
+            sv.classList.remove("active");
+        });
+
+        const activeView = document.getElementById(`gacha-view-${viewTarget}`);
+        if (activeView) {
+            activeView.style.display = "block";
+            activeView.classList.add("active");
+        }
+
+        if (viewTarget === "forecast") {
+            window.initGachaForecast();
+        } else if (viewTarget === "goals") {
+            window.loadGachaGoals("all");
+        } else if (viewTarget === "tracker") {
+            window.loadGachaTracker(window.currentTrackerGame || "hsr");
+        }
+    };
+
+    window.switchGachaTab = function(viewTarget) {
+        const tabs = document.getElementById("gacha-subnav-tabs");
+        if (tabs) {
+            const idx = Array.from(tabs.children).findIndex(o => o.value === viewTarget);
+            if (idx >= 0) tabs.selected = idx;
+        }
+        activateGachaSubView(viewTarget);
+    };
+
+    const gachaTabs = document.getElementById("gacha-subnav-tabs");
+    if (gachaTabs && !gachaTabs.dataset.bound) {
+        gachaTabs.dataset.bound = "true";
+        gachaTabs.addEventListener("change", (e) => {
+            const viewTarget = e.detail?.value || gachaTabs.value || "sim";
+            activateGachaSubView(viewTarget);
+        });
+    }
+
     const viewBtns = document.querySelectorAll(".gacha-view-btn");
     viewBtns.forEach(btn => {
         btn.onclick = () => {
             viewBtns.forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-            const viewTarget = btn.dataset.view;
-
-            document.querySelectorAll(".gacha-subview").forEach(sv => {
-                sv.style.display = "none";
-                sv.classList.remove("active");
-            });
-
-            const activeView = document.getElementById(`gacha-view-${viewTarget}`);
-            if (activeView) {
-                activeView.style.display = "block";
-                activeView.classList.add("active");
-            }
-
-            if (viewTarget === "forecast") {
-                window.initGachaForecast();
-            } else if (viewTarget === "goals") {
-                window.loadGachaGoals("all");
-            } else if (viewTarget === "tracker") {
-                window.loadGachaTracker(window.currentTrackerGame || "hsr");
-            }
+            activateGachaSubView(btn.dataset.view);
         };
     });
 };
@@ -1170,7 +1222,10 @@ window.initGachaForecast = async function() {
 
     window.syncForecastDaysAndDate = function(daysVal) {
         const d = Math.max(1, parseInt(daysVal) || 21);
-        if (slider) slider.value = d;
+        if (slider && Math.round(Number(slider.value)) !== d) {
+            slider.value = d;
+            slider.setAttribute("value", String(d));
+        }
         if (sliderVal) sliderVal.innerText = `${d} ${d === 1 ? 'dia' : 'dias'}`;
 
         const gId = window.forecastState.gameId || "genshin";
@@ -1208,10 +1263,14 @@ window.initGachaForecast = async function() {
         });
     };
 
-    if (slider && sliderVal) {
-        slider.oninput = () => {
-            window.syncForecastDaysAndDate(slider.value);
+    if (slider && sliderVal && !slider.dataset.bound) {
+        slider.dataset.bound = "true";
+        const onSliderChange = (e) => {
+            const val = e.detail?.value ?? slider.value;
+            window.syncForecastDaysAndDate(val);
         };
+        slider.addEventListener("input", onSliderChange);
+        slider.addEventListener("change", onSliderChange);
     }
 
     if (dateInput) {
@@ -1493,6 +1552,9 @@ window.runGachaForecastCalculation = async function() {
         const data = await res.json();
         window.lastForecastResult = data;
         window.renderGachaForecastResult(data);
+        if (runBtn && typeof runBtn.done === "function") {
+            runBtn.done();
+        }
 
     } catch (err) {
         console.error("Erro no Gacha Forecast:", err);
@@ -1646,6 +1708,7 @@ window.saveCurrentGachaGoal = async function() {
             }
             window.updateGoalsCountBadge();
             if (saveBtn) {
+                if (typeof saveBtn.done === "function") saveBtn.done();
                 saveBtn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Meta Salva & Tempo Correndo!`;
                 setTimeout(() => {
 
@@ -1827,9 +1890,9 @@ window.loadGachaGoals = async function(gameFilter = "all") {
                     <p style="margin: 0 0 16px 0; font-size: 12px; color: #94a3b8; line-height: 1.5;">
                         ${isEn ? "The Gacha Goal Tracker calculates pulls needed, countdown, and success probability for future banners. Plan a banner to track it here." : "O Rastreador de Metas acompanha a economia de Gemas/Jades, contagem regressiva e chance de sucesso dos seus próximos banners planejados."}
                     </p>
-                    <button class="primary-btn" onclick="document.querySelector('[data-tab=\\'forecast\\'], [data-gacha-tab=\\'forecast\\']')?.click() || (window.switchGachaTab && window.switchGachaTab('forecast'))" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <sakuga-button class="sk-sm" onclick="window.switchGachaTab && window.switchGachaTab('forecast')">
                         <i class="fa-solid fa-calculator"></i> ${isEn ? "Open Gacha Forecast" : "Planejar Nova Meta no Forecast"}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
             return;
@@ -1966,9 +2029,9 @@ window.loadGachaGoals = async function(gameFilter = "all") {
 
                     <!-- Botões de Ação -->
                     <div style="display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 10px;">
-                        <button onclick="window.deleteGachaGoal(${g.id})" class="secondary-btn" style="padding: 6px 10px; font-size: 11px; color: #f87171; border-color: rgba(239, 68, 68, 0.4); flex: 1;">
+                        <sakuga-button onclick="window.deleteGachaGoal(${g.id})" variant="secondary" class="sk-xs sk-accent-danger" style="flex: 1;">
                             <i class="fa-solid fa-trash-can"></i> Excluir Meta
-                        </button>
+                        </sakuga-button>
                     </div>
                 </div>
             `;
@@ -1983,16 +2046,16 @@ window.loadGachaGoals = async function(gameFilter = "all") {
                 <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
                 <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Goals" : "Falha ao carregar metas de gacha"}</h4>
                 <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve saved goals. Please try again." : "Não foi possível consultar as metas de gacha salvas."}</p>
-                <button class="primary-btn" onclick="window.loadGachaGoals && window.loadGachaGoals('${gameFilter}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <sakuga-button class="sk-sm" onclick="window.loadGachaGoals && window.loadGachaGoals('${gameFilter}')">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
 };
 
 window.deleteGachaGoal = async function(goalId) {
-    if (!confirm("Deseja realmente excluir esta meta de banner?")) return;
+    if (!(await window.showSakugaConfirm("Deseja realmente excluir esta meta de banner?", "Excluir Meta"))) return;
     try {
         const res = await fetch(`/api/gacha/goals/${goalId}`, { method: "DELETE" });
         if (res.ok) {
@@ -2011,6 +2074,15 @@ window.deleteGachaGoal = async function(goalId) {
 // CONTROLADOR DO ÍNDICE DE SORTE & EFICIÊNCIA DE ROLAGENS (LUCK DASHBOARD)
 // ==========================================================================
 window.initLuckDashboard = function() {
+    const luckTabs = document.getElementById("luck-game-tabs");
+    if (luckTabs && !luckTabs.dataset.bound) {
+        luckTabs.dataset.bound = "true";
+        luckTabs.addEventListener("change", (e) => {
+            const gameId = e.detail?.value || luckTabs.value || "genshin";
+            window.loadLuckDashboard(gameId);
+        });
+    }
+
     const btns = document.querySelectorAll(".tab-luck-game-btn");
     btns.forEach(btn => {
         btn.onclick = () => {
@@ -2022,7 +2094,7 @@ window.initLuckDashboard = function() {
     });
 
     const activeBtn = document.querySelector(".tab-luck-game-btn.active");
-    const gameId = activeBtn ? activeBtn.getAttribute("data-game") : "genshin";
+    const gameId = luckTabs?.value || (activeBtn ? activeBtn.getAttribute("data-game") : "genshin");
     window.loadLuckDashboard(gameId);
 };
 
@@ -2101,9 +2173,9 @@ window.loadLuckDashboard = async function(gameId) {
                 <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 12px;"></i>
                 <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Luck Index" : "Falha ao carregar o Índice de Sorte"}</h4>
                 <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 16px 0;">${isEn ? "Could not calculate relic roll efficiency. Please try again." : "Não foi possível calcular a eficiência das rolagens das relíquias. Verifique a conexão com a API."}</p>
-                <button class="primary-btn" onclick="window.loadLuckDashboard && window.loadLuckDashboard('${gameId}')" style="background: #10b981; border: none; padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #fff;">
+                <sakuga-button class="sk-sm sk-accent-emerald" onclick="window.loadLuckDashboard && window.loadLuckDashboard('${gameId}')">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -2212,9 +2284,9 @@ window.renderLuckDashboard = function(data) {
                 <p style="color: #94a3b8; max-width: 520px; margin: 0 auto 20px auto; line-height: 1.5;">
                     ${isEn ? "The Luck Index analyzes the statistical efficiency of every relic roll on your characters. Sync your Roster with HoYoLAB to calculate your account luck ranking." : "O Índice de Sorte analisa a eficiência matemática das rolagens de cada relíquia equipada nos seus personagens. Sincronize seu Roster com o HoYoLAB para calcular o ranking de sorte da sua conta."}
                 </p>
-                <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${data?.game_id || 'genshin'}\\']')?.click() || (window.syncRoster && window.syncRoster('${data?.game_id || 'genshin'}'))" style="background: #10b981; border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #fff; font-size: 13px;">
+                <sakuga-button class="sk-sm sk-accent-emerald" onclick="document.querySelector('.sync-game-btn[data-game=\\'${data?.game_id || 'genshin'}\\']')?.click() || (window.syncRoster && window.syncRoster('${data?.game_id || 'genshin'}'))">
                     <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Relics Now" : "Sincronizar Relíquias da Conta"}
-                </button>
+                </sakuga-button>
             </div>
         `;
         return;
@@ -2897,8 +2969,9 @@ window.closeWishModal = function() {
 window.lastRoastMarkdown = "";
 
 window.openRoastModal = async function(gameId) {
+    const auditTabs = document.getElementById("audit-game-tabs");
     const activeTabBtn = document.querySelector(".tab-audit-game-btn.active");
-    const selectedGame = gameId || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || "hsr";
+    const selectedGame = gameId || auditTabs?.value || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || "hsr";
     
     const modal = document.getElementById("modal-roast");
     const bodyEl = document.getElementById("roast-content-body");
@@ -2977,16 +3050,21 @@ window.openRoastModal = async function(gameId) {
 
 window.copyRoastToClipboard = function() {
     if (!window.lastRoastMarkdown) {
-
-    alert(isEn ? "No Roast to copy yet!" : "Nenhum Roast para copiar ainda!");
+        if (typeof showToast === "function") {
+            showToast(window.isEn ? "No Roast to copy yet!" : "Nenhum Roast para copiar ainda!", "info");
+        }
         return;
     }
     navigator.clipboard.writeText(window.lastRoastMarkdown).then(() => {
         const btn = document.getElementById("btn-copy-roast");
         if (btn) {
+            if (typeof btn.done === "function") btn.done();
             const orig = btn.innerHTML;
             btn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Copiado!`;
             setTimeout(() => { btn.innerHTML = orig; }, 2000);
+        }
+        if (typeof showToast === "function") {
+            showToast(window.isEn ? "Roast copied to clipboard!" : "Roast copiado!", "success");
         }
     }).catch(err => {
         console.error("Erro ao copiar:", err);
@@ -3023,7 +3101,7 @@ window.addEventListener("app:languageChanged", () => {
     if (typeof window.loadGachaGoals === "function") {
         window.loadGachaGoals();
     }
-    const luckGame = document.querySelector(".tab-luck-game-btn.active")?.dataset?.game || "genshin";
+    const luckGame = document.getElementById("luck-game-tabs")?.value || document.querySelector(".tab-luck-game-btn.active")?.dataset?.game || "genshin";
     if (typeof window.loadLuckDashboard === "function") {
         window.loadLuckDashboard(luckGame);
     }

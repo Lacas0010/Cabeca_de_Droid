@@ -33,6 +33,7 @@ function setupSyncControls() {
         setTimeout(() => {
             syncAllBtn.disabled = false;
             syncAllBtn.innerHTML = '<i class="fa-solid fa-rotate"></i> Sincronização Global';
+            if (typeof syncAllBtn.done === "function") syncAllBtn.done();
         }, 8000);
     });
 }
@@ -40,6 +41,8 @@ function setupSyncControls() {
 async function triggerSync(gameId, run_roster, run_guides, run_meta) {
     const loggerDiv = document.getElementById(`sync-logger-${gameId}`);
     loggerDiv.style.display = "flex";
+    const skProg = document.getElementById(`sync-progress-${gameId}`);
+    if (skProg && typeof skProg.reset === "function") skProg.reset();
     
     try {
         const res = await fetch(`/api/sync/${gameId}`, {
@@ -49,6 +52,8 @@ async function triggerSync(gameId, run_roster, run_guides, run_meta) {
         });
         
         if (res.ok) {
+            const syncBtn = document.querySelector(`.sync-game-btn[data-game="${gameId}"]`);
+            if (syncBtn && typeof syncBtn.done === "function") syncBtn.done(1.2);
             startPollingStatus(gameId);
         } else {
             const errData = await res.json();
@@ -67,6 +72,7 @@ function startPollingStatus(gameId) {
     
     const loggerDiv = document.getElementById(`sync-logger-${gameId}`);
     const bar = loggerDiv.querySelector(".logger-progress-bar");
+    const skProg = document.getElementById(`sync-progress-${gameId}`);
     const perc = loggerDiv.querySelector(".logger-percentage");
     const msg = loggerDiv.querySelector(".logger-message");
     const term = loggerDiv.querySelector(".logger-terminal");
@@ -76,8 +82,10 @@ function startPollingStatus(gameId) {
             const res = await fetch(`/api/status/${gameId}`);
             const status = await res.json();
             
-            const progressPct = Math.round(status.progress * 100);
-            bar.style.width = `${progressPct}%`;
+            const rawProgress = Math.max(0, Math.min(1, Number(status.progress) || 0));
+            const progressPct = Math.round(rawProgress * 100);
+            if (bar) bar.style.width = `${progressPct}%`;
+            if (skProg && typeof skProg.set === "function") skProg.set(rawProgress);
             perc.innerText = `${progressPct}%`;
             msg.innerText = status.message;
             
@@ -88,6 +96,9 @@ function startPollingStatus(gameId) {
             if (!status.running) {
                 clearInterval(activePolling[gameId]);
                 activePolling[gameId] = null;
+                if (skProg && typeof skProg.set === "function") skProg.set(1.0);
+                const syncBtn = document.querySelector(`.sync-game-btn[data-game="${gameId}"]`);
+                if (syncBtn && typeof syncBtn.done === "function") syncBtn.done();
                 // Recarrega o roster visual e endgame do jogo que acabou de sincronizar
                 setTimeout(() => {
                     loadRoster(gameId);
@@ -252,6 +263,7 @@ function setupCheckinSystem() {
         try {
             const res = await fetch("/api/checkin/run", { method: "POST" });
             if (res.ok) {
+                if (typeof checkinBtn.done === "function") checkinBtn.done();
                 await loadLogs();
             }
         } catch (e) {
@@ -299,7 +311,7 @@ window.triggerBrowserNotification = function(title, message, icon) {
     try {
         const n = new Notification(title, {
             body: message,
-            icon: icon || "https://act.hoyolab.com/app/community-game-records/images/favicon.ico"
+            icon: icon || "/assets/logo.webp"
         });
         n.onclick = () => {
             window.focus();
@@ -413,6 +425,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 html += `</div>`;
                 if (statusBox) statusBox.innerHTML = html;
+                if (res.ok && typeof btnTestNotif.done === "function") btnTestNotif.done();
             } catch (err) {
                 console.error("Erro no teste de notificações:", err);
 
@@ -477,6 +490,12 @@ document.addEventListener("DOMContentLoaded", () => {
         btnSyncStatic.addEventListener("click", async () => {
             btnSyncStatic.disabled = true;
             btnSyncStatic.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Sincronizando Datamines...`;
+            const staticProg = document.getElementById("static-sync-progress");
+            if (staticProg) {
+                staticProg.style.display = "block";
+                if (typeof staticProg.reset === "function") staticProg.reset();
+                if (typeof staticProg.set === "function") staticProg.set(0.35);
+            }
             if (staticSyncResult) {
                 staticSyncResult.style.display = "block";
                 staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; color: #34d399;"><i class="fa-solid fa-spinner fa-spin"></i> Conectando com repositórios GitHub e HoYoWiki para atualizar JSONs...</div>`;
@@ -490,16 +509,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
                 const data = await res.json();
                 if (data.status === "success") {
-                    let html = `<div style="padding: 10px 14px; border-radius: 8px; background: rgba(16,185,129,0.12); border: 1px solid #10b981; color: #4ade80;">`;
-
-            html += `<strong><i class="fa-solid fa-check"></i> ${isEn ? "Sync completed successfully!" : "Sincronização concluída com sucesso!"}</strong><ul style="margin: 6px 0 0 16px; font-size: 11px;">`;
+                    if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(16,185,129,0.12); border: 1px solid #10b981; color: #34d399;"><strong><i class="fa-solid fa-check"></i> ${isEn ? "Sync completed successfully!" : "Sincronização concluída com sucesso!"}</strong><ul style="margin: 6px 0 0 16px; font-size: 11px;">`;
+                    let html = staticSyncResult ? staticSyncResult.innerHTML : "";
                     for (const [gid, info] of Object.entries(data.results || {})) {
                         html += `<li><strong>${gid.toUpperCase()}:</strong> ${info.character_count} ${isEn ? "characters updated via" : "personagens atualizados via"} ${info.source || 'Seed'} (${info.status})</li>`;
                     }
                     html += `</ul></div>`;
                     if (staticSyncResult) staticSyncResult.innerHTML = html;
+                    if (staticProg && typeof staticProg.set === "function") staticProg.set(1.0);
+                    if (res.ok && typeof btnSyncStatic.done === "function") btnSyncStatic.done();
                     window.loadStaticDataStatus();
                 } else {
+                    if (staticProg) staticProg.style.display = "none";
 
         if (staticSyncResult) staticSyncResult.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(239,68,68,0.15); border: 1px solid #ef4444; color: #f87171;">${isEn ? `Sync error: ${data.detail || "Unknown error"}` : `Erro na sincronização: ${data.detail || "Falha desconhecida"}`}</div>`;
                 }

@@ -87,10 +87,12 @@ function setupTabSwitching() {
                 if (targetTab === 'gacha') {
                     if (window.loadGachaModules) {
                         window.loadGachaModules().then(() => {
+                            if (window.initGachaNavigation) window.initGachaNavigation();
                             if (window.initGachaSimulator) window.initGachaSimulator();
                         });
-                    } else if (window.initGachaSimulator) {
-                        window.initGachaSimulator();
+                    } else {
+                        if (window.initGachaNavigation) window.initGachaNavigation();
+                        if (window.initGachaSimulator) window.initGachaSimulator();
                     }
                 }
                 if (targetTab === 'luck') {
@@ -128,7 +130,34 @@ function setupTabSwitching() {
 // ==========================================================================
 // CONTROLE DE SUB-NAVEGAÇÃO DAS ABAS DE JOGO (GALERIA / ENDGAME / STATS)
 // ==========================================================================
+function activateGameSubview(gameId, targetView) {
+    if (!gameId || !targetView) return;
+    const section = document.getElementById(`tab-${gameId}`);
+    if (!section) return;
+
+    section.querySelectorAll(".game-subview").forEach(v => v.classList.remove("active"));
+    const targetEl = document.getElementById(`view-${targetView}-${gameId}`);
+    if (targetEl) {
+        targetEl.classList.add("active");
+    }
+
+    if (targetView === "charts") {
+        renderRosterCharts();
+    }
+    if (targetView === "teamcard" && window.renderTeamBuilderView) {
+        window.renderTeamBuilderView(gameId);
+    }
+}
+
 function setupSubnavTabs() {
+    document.querySelectorAll("sakuga-tabs.sk-game-subnav").forEach(tabsEl => {
+        tabsEl.addEventListener("change", (e) => {
+            const gameId = tabsEl.getAttribute("data-game");
+            const targetView = e?.detail?.value || tabsEl.value;
+            activateGameSubview(gameId, targetView);
+        });
+    });
+
     document.querySelectorAll(".game-subnav-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const gameId = btn.getAttribute("data-game");
@@ -138,24 +167,9 @@ function setupSubnavTabs() {
             const section = document.getElementById(`tab-${gameId}`);
             if (!section) return;
 
-            // Atualiza botões da sub-barra
             section.querySelectorAll(".game-subnav-btn").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-
-            // Alterna subviews
-            section.querySelectorAll(".game-subview").forEach(v => v.classList.remove("active"));
-            const targetEl = document.getElementById(`view-${targetView}-${gameId}`);
-            if (targetEl) {
-                targetEl.classList.add("active");
-            }
-
-            // Se mudou para charts, redesenha os gráficos SVG
-            if (targetView === "charts") {
-                renderRosterCharts();
-            }
-            if (targetView === "teamcard" && window.renderTeamBuilderView) {
-                window.renderTeamBuilderView(gameId);
-            }
+            activateGameSubview(gameId, targetView);
         });
     });
 }

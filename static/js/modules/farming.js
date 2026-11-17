@@ -212,11 +212,11 @@ function formatFarmingNote(noteStr) {
                             </span>
                         </div>
                         <div style="display:flex; gap:6px; align-items:center;">
-                            <button onclick="window.openFarmCharSelectorModal('${gameId}', '${targetContainerId}')" style="padding:6px 14px; font-size:12px; font-weight:700; background:linear-gradient(135deg, #10b981, #059669); color:#fff; border:none; border-radius:8px; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow: 0 2px 10px rgba(16,185,129,0.35);">
+                            <sakuga-button class="sk-xs sk-accent-emerald" onclick="window.openFarmCharSelectorModal('${gameId}', '${targetContainerId}')">
                                 <i class="fa-solid fa-user-pen"></i> ${isEn ? "Select Target Characters" : "Escolher Personagens Alvo"}
-                            </button>
-                            <button onclick="window.quickSelectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(56,189,248,0.12); color:#38bdf8; border:1px solid rgba(56,189,248,0.3); border-radius:6px; cursor:pointer; font-weight:600;">${isEn ? "All" : "Todos"}</button>
-                            <button onclick="window.quickDeselectAllFarm('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:5px 9px; background:rgba(239,68,68,0.12); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:6px; cursor:pointer; font-weight:600;">${isEn ? "Deselect" : "Desmarcar"}</button>
+                            </sakuga-button>
+                            <sakuga-button variant="secondary" class="sk-xs sk-accent-cyan" onclick="window.quickSelectAllFarm('${gameId}', '${targetContainerId}')">${isEn ? "All" : "Todos"}</sakuga-button>
+                            <sakuga-button variant="secondary" class="sk-xs sk-accent-danger" onclick="window.quickDeselectAllFarm('${gameId}', '${targetContainerId}')">${isEn ? "Deselect" : "Desmarcar"}</sakuga-button>
                         </div>
                     </div>
 
@@ -228,7 +228,7 @@ function formatFarmingNote(noteStr) {
                 html += `
                     <div style="font-size:12px; color:#f87171; width:100%; padding:8px 12px; background:rgba(239,68,68,0.08); border-radius:8px; border:1px solid rgba(239,68,68,0.2); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
                         <span><i class="fa-solid fa-circle-exclamation"></i> Nenhum personagem focado no momento. O Farm e a Ordem Diária estão sem metas ativas.</span>
-                        <button onclick="window.openFarmCharSelectorModal('${gameId}', '${targetContainerId}')" style="font-size:11px; padding:4px 10px; background:#10b981; color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer;">Selecionar Alvos</button>
+                        <sakuga-button class="sk-xs sk-accent-emerald" onclick="window.openFarmCharSelectorModal('${gameId}', '${targetContainerId}')">Selecionar Alvos</sakuga-button>
                     </div>
                 `;
             } else {
@@ -238,7 +238,7 @@ function formatFarmingNote(noteStr) {
                         <div class="farm-target-chip">
                             ${cIcon ? `<img src="${cIcon}" width="20" height="20" loading="lazy" decoding="async" onerror="this.src='/assets/logo.png'">` : `<i class="fa-solid fa-user" style="font-size:11px; color:#38bdf8;"></i>`}
                             <span>${typeof formatCharacterName === 'function' ? formatCharacterName(cName) : cName}</span>
-                            <button class="btn-remove-chip" title="${isEn ? 'Remove focus' : 'Remover foco'}" onclick="window.quickRemoveFarmTarget('${gameId}', '${cName}', '${targetContainerId}')">✕</button>
+                            <sakuga-button variant="secondary" class="btn-remove-chip sk-xs" aria-label="${isEn ? 'Remove focus' : 'Remover foco'}" onclick="window.quickRemoveFarmTarget('${gameId}', '${cName}', '${targetContainerId}')">✕</sakuga-button>
                         </div>
                     `;
                 });
@@ -254,15 +254,12 @@ function formatFarmingNote(noteStr) {
             let isFarmableOnly = localStorage.getItem(farmableOnlyKey) === "true";
 
             html += `
-                <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 10px 0;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin:16px 0 10px 0; flex-wrap:wrap; gap:8px;">
                     <h4 style="margin:0; color:#f59e0b; font-size:15px; display:flex; align-items:center; gap:6px;">
                         <i class="fa-solid fa-bullseye"></i> ${isEn ? "Detailed Farming Suggestions & Materials" : "Sugestões e Itens de Farm Detalhados"}
                     </h4>
                     ${gameId === "genshin" ? `
-                        <label style="font-size:12px; color:#38bdf8; display:flex; align-items:center; gap:6px; background:rgba(56,189,248,0.1); padding:4px 10px; border-radius:8px; cursor:pointer; border:1px solid rgba(56,189,248,0.25);">
-                            <input type="checkbox" id="${targetContainerId}-farmable-only" ${isFarmableOnly ? 'checked' : ''}>
-                            <span> ${isEn ? "Only Materials Open Today" : "Apenas Materiais Abertos Hoje"}</span>
-                        </label>
+                        <sakuga-checkbox id="${targetContainerId}-farmable-only" ${isFarmableOnly ? 'checked' : ''}>${isEn ? "Only Materials Open Today" : "Apenas Materiais Abertos Hoje"}</sakuga-checkbox>
                     ` : ''}
                 </div>
             `;
@@ -661,9 +658,9 @@ function formatFarmingNote(noteStr) {
                     </div>
                     <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível carregar a Central de Farm</h4>
                     <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 16px auto; line-height: 1.4;">Ocorreu uma falha ao obter o cronograma de domínios. Verifique sua conexão e tente novamente.</p>
-                    <button onclick="window.loadFarmData('${gameId}', '${targetContainerId}')" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                    <sakuga-button onclick="window.loadFarmData('${gameId}', '${targetContainerId}')" class="sk-sm sk-accent-danger">
                         <i class="fa-solid fa-rotate-right"></i> Tentar de novo
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
@@ -933,15 +930,22 @@ function formatFarmingNote(noteStr) {
         }
     };
 
-    document.querySelectorAll(".farm-game-tab, .tab-farm-game-btn").forEach(btn => {
+    document.querySelectorAll(".farm-game-tab").forEach(btn => {
         btn.addEventListener("click", () => {
-            const containerClass = btn.classList.contains("tab-farm-game-btn") ? ".tab-farm-game-btn" : ".farm-game-tab";
-            const targetContainer = btn.classList.contains("tab-farm-game-btn") ? "tab-farm-content-body" : "farm-content-body";
-            document.querySelectorAll(containerClass).forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".farm-game-tab").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-            window.loadFarmData(btn.dataset.game, targetContainer);
+            window.loadFarmData(btn.dataset.game, "farm-content-body");
         });
     });
+
+    const farmGameTabs = document.getElementById("farm-game-tabs");
+    if (farmGameTabs && !farmGameTabs.dataset.bound) {
+        farmGameTabs.dataset.bound = "true";
+        farmGameTabs.addEventListener("change", (e) => {
+            const gameId = e.detail?.value || farmGameTabs.value || "genshin";
+            window.loadFarmData(gameId, "tab-farm-content-body");
+        });
+    }
 
     // ==========================================
     // 2.1 ORDEM DE SERVIÇO DO DIA (ROTEIRO DE ENERGIA)
@@ -1071,9 +1075,9 @@ function formatFarmingNote(noteStr) {
                         <i class="fa-solid fa-clipboard-check" style="font-size: 24px; color: #10b981; margin-bottom: 8px; display: inline-block;"></i>
                         <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 4px;">Ordem de Serviço do Dia</h4>
                         <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Esta tela organiza um roteiro determinístico de gasto de energia e resina para os personagens abaixo da meta de build.</p>
-                        <button class="primary-btn" onclick="window.loadDailyFarmOrder('${gameId}')" style="padding: 6px 16px; font-size: 11px; border-radius: 6px; background: #10b981; cursor: pointer;">
+                        <sakuga-button class="sk-xs sk-accent-emerald" onclick="window.loadDailyFarmOrder('${gameId}')">
                             <i class="fa-solid fa-rotate-right"></i> Recalcular Roteiro
-                        </button>
+                        </sakuga-button>
                     </div>
                 `;
                 return;
@@ -1143,7 +1147,7 @@ function formatFarmingNote(noteStr) {
                     <div class="farm-order-step-item" id="order-step-item-${t.id}" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: ${isDone ? 'rgba(16, 185, 129, 0.08)' : 'rgba(15, 23, 42, 0.7)'}; border: 1px solid ${isDone ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 12px; transition: all 0.25s ease; ${isDone ? 'opacity: 0.75;' : ''}">
                         <!-- Checkbox de Conclusão -->
                         <div style="padding-top: 2px;">
-                            <input type="checkbox" class="farm-order-step-cb" data-game="${gameId}" data-task-id="${t.id}" ${isDone ? 'checked' : ''} style="width: 18px; height: 18px; cursor: pointer; accent-color: #10b981;">
+                            <sakuga-checkbox class="farm-order-step-cb" data-game="${gameId}" data-task-id="${t.id}" ${isDone ? 'checked' : ''} style="transform: scale(0.75); transform-origin: top left;"></sakuga-checkbox>
                         </div>
 
                         <!-- Avatar do Personagem ou Ícone -->
@@ -1220,9 +1224,9 @@ function formatFarmingNote(noteStr) {
                     <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 20px; margin-bottom: 8px; display: inline-block;"></i>
                     <h4 style="color: var(--text-primary); font-size: 14px; font-weight: 700; margin-bottom: 4px;">Não foi possível calcular a Ordem do Dia</h4>
                     <p style="color: var(--text-secondary); font-size: 11px; margin-bottom: 12px;">Ocorreu uma falha ao cruzar o elenco com os domínios abertos. Tente novamente.</p>
-                    <button class="primary-btn" onclick="window.loadDailyFarmOrder('${gameId}')" style="padding: 6px 14px; font-size: 11px; border-radius: 6px; background: #ef4444; cursor: pointer;">
+                    <sakuga-button class="sk-xs sk-accent-danger" onclick="window.loadDailyFarmOrder('${gameId}')">
                         <i class="fa-solid fa-rotate-right"></i> Tentar de novo
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
@@ -1231,6 +1235,8 @@ function formatFarmingNote(noteStr) {
     // Listeners dos Botões da Ordem do Dia
     document.querySelectorAll(".farm-order-game-btn").forEach(btn => {
         btn.addEventListener("click", () => {
+            document.querySelectorAll(".farm-order-game-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
             window.loadDailyFarmOrder(btn.dataset.game);
         });
     });
@@ -1241,14 +1247,12 @@ function formatFarmingNote(noteStr) {
             const textToCopy = window.lastLoadedFarmOrder?.quick_summary_text;
             if (textToCopy) {
                 navigator.clipboard.writeText(textToCopy).then(() => {
+                    if (typeof btnCopyOrder.done === "function") btnCopyOrder.done();
                     const origHtml = btnCopyOrder.innerHTML;
                     btnCopyOrder.innerHTML = `<i class="fa-solid fa-check"></i> Roteiro Copiado!`;
-                    btnCopyOrder.style.borderColor = "#10b981";
-                    btnCopyOrder.style.color = "#4ade80";
+                    if (typeof showToast === "function") showToast("Roteiro copiado para a área de transferência!", "success");
                     setTimeout(() => {
                         btnCopyOrder.innerHTML = origHtml;
-                        btnCopyOrder.style.borderColor = "rgba(56,189,248,0.4)";
-                        btnCopyOrder.style.color = "#38bdf8";
                     }, 2500);
                 }).catch(err => {
                     console.error("Erro ao copiar texto:", err);
@@ -1270,15 +1274,15 @@ function formatFarmingNote(noteStr) {
                 });
                 const data = await res.json();
                 if (data.status === "success") {
+                    if (typeof btnSendOrderNotif.done === "function") btnSendOrderNotif.done();
                     btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-check"></i> Notificação Enviada!`;
-                    btnSendOrderNotif.style.color = "#4ade80";
+                    if (typeof showToast === "function") showToast("Ordem do Dia enviada!", "success");
                     setTimeout(() => {
                         btnSendOrderNotif.disabled = false;
                         btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord/Telegram`;
-                        btnSendOrderNotif.style.color = "#10b981";
                     }, 3000);
                 } else {
-                    alert("Aviso: Notificações estão desativadas nas Configurações ou os Webhooks não foram configurados.");
+                    if (typeof showToast === "function") showToast("Notificações desativadas ou Webhooks não configurados.", "error");
                     btnSendOrderNotif.disabled = false;
                     btnSendOrderNotif.innerHTML = `<i class="fa-solid fa-paper-plane"></i> Enviar p/ Discord/Telegram`;
                 }
@@ -1346,9 +1350,9 @@ function formatFarmingNote(noteStr) {
                         <i class="fa-solid fa-trash-can" style="font-size: 26px; color: #f59e0b; margin-bottom: 12px; display: inline-block;"></i>
                         <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">Filtro de Descarte & Peças Coringa</h4>
                         <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 16px auto; line-height: 1.5;">Esta tela analisa suas peças equipadas e inventário para identificar equipamentos com atributos conflitantes para reciclagem em EXP.</p>
-                        <button class="primary-btn" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadTrashRelics('${gameId}', '${targetContainerId}');" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                        <sakuga-button class="sk-sm" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadTrashRelics('${gameId}', '${targetContainerId}');">
                             <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Relíquias da Conta
-                        </button>
+                        </sakuga-button>
                     </div>
                 `;
             } else {
@@ -1496,23 +1500,46 @@ function formatFarmingNote(noteStr) {
                     <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 22px; margin-bottom: 10px; display: inline-block;"></i>
                     <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível analisar as relíquias</h4>
                     <p style="color: var(--text-secondary); font-size: 12px; max-width: 420px; margin: 0 auto 14px auto; line-height: 1.4;">Ocorreu uma falha ao processar as pontuações e regras de descarte. Tente novamente.</p>
-                    <button onclick="window.loadTrashRelics('${gameId}', '${targetContainerId}')" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                    <sakuga-button onclick="window.loadTrashRelics('${gameId}', '${targetContainerId}')" class="sk-sm sk-accent-danger">
                         <i class="fa-solid fa-rotate-right"></i> Tentar de novo
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
     };
 
-    document.querySelectorAll(".trash-game-tab, .tab-trash-game-btn").forEach(btn => {
+    document.querySelectorAll(".trash-game-tab").forEach(btn => {
         btn.addEventListener("click", () => {
-            const containerClass = btn.classList.contains("tab-trash-game-btn") ? ".tab-trash-game-btn" : ".trash-game-tab";
-            const targetContainer = btn.classList.contains("tab-trash-game-btn") ? "tab-trash-relics-body" : "trash-relics-body";
-            document.querySelectorAll(containerClass).forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".trash-game-tab").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-            window.loadTrashRelics(btn.dataset.game, targetContainer);
+            window.loadTrashRelics(btn.dataset.game, "trash-relics-body");
         });
     });
+
+    const trashSubnavTabs = document.getElementById("trash-subnav-tabs");
+    if (trashSubnavTabs && !trashSubnavTabs.dataset.bound) {
+        trashSubnavTabs.dataset.bound = "true";
+        trashSubnavTabs.addEventListener("change", (e) => {
+            const view = e.detail?.value || trashSubnavTabs.value || "finder";
+            if (typeof window.switchTrashSubView === "function") {
+                window.switchTrashSubView(view);
+            }
+        });
+    }
+
+    const trashGameTabs = document.getElementById("trash-game-tabs");
+    if (trashGameTabs && !trashGameTabs.dataset.bound) {
+        trashGameTabs.dataset.bound = "true";
+        trashGameTabs.addEventListener("change", (e) => {
+            const gameId = e.detail?.value || trashGameTabs.value || "hsr";
+            window.currentTrashGame = gameId;
+            if (window.currentTrashSubView === "craft" && typeof window.loadCraftRecommendations === "function") {
+                window.loadCraftRecommendations(gameId);
+            } else {
+                window.loadTrashRelics(gameId, "tab-trash-relics-body");
+            }
+        });
+    }
 
     // 4. TIER LIST & AUDIT REPORT
     window.loadAuditReport = async (gameId, targetContainerId = "audit-report-body") => {
@@ -1548,9 +1575,9 @@ function formatFarmingNote(noteStr) {
                         <i class="fa-solid fa-trophy" style="font-size: 28px; color: #a855f7; margin-bottom: 12px; display: inline-block;"></i>
                         <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">Tier List & Auditoria da Conta</h4>
                         <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 16px auto; line-height: 1.5;">Esta tela gera o ranking dos seus personagens classificados em tiers de investimento (SSS a D) com base na eficiência das relíquias equipadas.</p>
-                        <button class="primary-btn" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadAuditReport('${gameId}', '${targetContainerId}');" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                        <sakuga-button class="sk-sm" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadAuditReport('${gameId}', '${targetContainerId}');">
                             <i class="fa-solid fa-arrows-rotate"></i> Sincronizar Personagens Agora
-                        </button>
+                        </sakuga-button>
                     </div>
                 `;
                 return;
@@ -1616,23 +1643,52 @@ function formatFarmingNote(noteStr) {
                     <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444; font-size: 22px; margin-bottom: 10px; display: inline-block;"></i>
                     <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível gerar a auditoria da conta</h4>
                     <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Ocorreu uma falha ao calcular o ranking dos personagens. Verifique os dados locais e tente novamente.</p>
-                    <button onclick="window.loadAuditReport('${gameId}', '${targetContainerId}')" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                    <sakuga-button onclick="window.loadAuditReport('${gameId}', '${targetContainerId}')" class="sk-sm sk-accent-danger">
                         <i class="fa-solid fa-rotate-right"></i> Tentar de novo
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
     };
 
-    document.querySelectorAll(".audit-game-tab, .tab-audit-game-btn").forEach(btn => {
+    document.querySelectorAll(".audit-game-tab").forEach(btn => {
         btn.addEventListener("click", () => {
-            const containerClass = btn.classList.contains("tab-audit-game-btn") ? ".tab-audit-game-btn" : ".audit-game-tab";
-            const targetContainer = btn.classList.contains("tab-audit-game-btn") ? "tab-audit-report-body" : "audit-report-body";
-            document.querySelectorAll(containerClass).forEach(b => b.classList.remove("active"));
+            document.querySelectorAll(".audit-game-tab").forEach(b => b.classList.remove("active"));
             btn.classList.add("active");
-            window.loadAuditReport(btn.dataset.game, targetContainer);
+            window.loadAuditReport(btn.dataset.game, "audit-report-body");
         });
     });
+
+    const auditSubnavTabs = document.getElementById("audit-subnav-tabs");
+    if (auditSubnavTabs && !auditSubnavTabs.dataset.bound) {
+        auditSubnavTabs.dataset.bound = "true";
+        auditSubnavTabs.addEventListener("change", (e) => {
+            const view = e.detail?.value || auditSubnavTabs.value || "tierlist";
+            if (typeof window.switchAuditSubView === "function") {
+                window.switchAuditSubView(view);
+            }
+        });
+    }
+
+    const auditGameTabs = document.getElementById("audit-game-tabs");
+    if (auditGameTabs && !auditGameTabs.dataset.bound) {
+        auditGameTabs.dataset.bound = "true";
+        auditGameTabs.addEventListener("change", (e) => {
+            const gameId = e.detail?.value || auditGameTabs.value || "hsr";
+            window.loadAuditReport(gameId, "tab-audit-report-body");
+        });
+    }
+
+    const gapsGameTabs = document.getElementById("gaps-game-tabs");
+    if (gapsGameTabs && !gapsGameTabs.dataset.bound) {
+        gapsGameTabs.dataset.bound = "true";
+        gapsGameTabs.addEventListener("change", (e) => {
+            const gameId = e.detail?.value || gapsGameTabs.value || "hsr";
+            if (typeof window.loadAccountGapsAnalysis === "function") {
+                window.loadAccountGapsAnalysis(gameId);
+            }
+        });
+    }
 
     // Initialize upgraded Gacha Simulator handlers
     if (window.initGachaSimulator) {
@@ -1643,7 +1699,7 @@ function formatFarmingNote(noteStr) {
     const btnResetData = document.getElementById("btn-reset-data");
     if (btnResetData) {
         btnResetData.addEventListener("click", async () => {
-            const confirmed = confirm("ATENÇÃO: Deseja realmente apagar as 3 pastas (zzz, hsr, genshin) e todo o banco de dados? Esta ação não pode ser desfeita.");
+            const confirmed = await window.showSakugaConfirm("ATENÇÃO: Deseja realmente apagar as 3 pastas (zzz, hsr, genshin) e todo o banco de dados? Esta ação não pode ser desfeita.", "Zona de Perigo");
             if (!confirmed) return;
 
             btnResetData.disabled = true;
@@ -1653,15 +1709,15 @@ function formatFarmingNote(noteStr) {
                 const res = await fetch("/api/reset-data", { method: "POST" });
                 const data = await res.json();
                 if (res.ok) {
-
-    alert(data.message || (isEn ? "Folders and database deleted successfully!" : "Pastas e banco de dados apagados com sucesso!"));
-                    window.location.reload();
+                    if (typeof btnResetData.done === "function") btnResetData.done();
+                    if (typeof showToast === "function") showToast(data.message || (window.isEn ? "Folders and database deleted successfully!" : "Pastas e banco de dados apagados!"), "success");
+                    setTimeout(() => window.location.reload(), 900);
                 } else {
-                    alert("Erro ao apagar dados: " + (data.detail || "Erro desconhecido."));
+                    if (typeof showToast === "function") showToast("Erro ao apagar dados: " + (data.detail || "Erro desconhecido."), "error");
                 }
             } catch (err) {
                 console.error("Erro ao apagar dados:", err);
-                alert("Falha na comunicação com o servidor ao tentar apagar os dados.");
+                if (typeof showToast === "function") showToast("Falha na comunicação com o servidor ao tentar apagar os dados.", "error");
             } finally {
                 btnResetData.disabled = false;
                 btnResetData.innerHTML = '<i class="fa-solid fa-trash-can"></i> Apagar Pastas e Banco de Dados';
@@ -1671,13 +1727,14 @@ function formatFarmingNote(noteStr) {
 
 
 
-    document.querySelectorAll(".tab-history-game-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".tab-history-game-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            window.loadAccountHistory(btn.dataset.game);
+    const historyGameTabs = document.getElementById("history-game-tabs");
+    if (historyGameTabs && !historyGameTabs.dataset.bound) {
+        historyGameTabs.dataset.bound = "true";
+        historyGameTabs.addEventListener("change", (e) => {
+            const gameId = e.detail?.value || historyGameTabs.value || "hsr";
+            window.loadAccountHistory(gameId);
         });
-    });
+    }
 
     const btnToggleChanged = document.getElementById("btn-toggle-changed-only");
     if (btnToggleChanged && !btnToggleChanged.dataset.bound) {
@@ -1686,32 +1743,29 @@ function formatFarmingNote(noteStr) {
             window.historyOnlyChanged = !window.historyOnlyChanged;
             if (window.historyOnlyChanged) {
                 btnToggleChanged.classList.add("active");
-                btnToggleChanged.style.background = "#ec4899";
-                btnToggleChanged.style.color = "#fff";
+                btnToggleChanged.setAttribute("variant", "primary");
             } else {
                 btnToggleChanged.classList.remove("active");
-                btnToggleChanged.style.background = "";
-                btnToggleChanged.style.color = "#f472b6";
+                btnToggleChanged.setAttribute("variant", "secondary");
             }
-            const activeBtn = document.querySelector(".tab-history-game-btn.active");
-            const gameId = activeBtn ? activeBtn.dataset.game : "hsr";
+            const gameId = document.getElementById("history-game-tabs")?.value || "hsr";
             window.loadAccountHistory(gameId);
         });
     }
 
-    document.querySelectorAll(".tab-codes-game-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            document.querySelectorAll(".tab-codes-game-btn").forEach(b => b.classList.remove("active"));
-            btn.classList.add("active");
-            window.loadPromoCodes(btn.dataset.game);
+    const codesGameTabs = document.getElementById("codes-game-tabs");
+    if (codesGameTabs && !codesGameTabs.dataset.bound) {
+        codesGameTabs.dataset.bound = "true";
+        codesGameTabs.addEventListener("change", (e) => {
+            const gameId = e.detail?.value || codesGameTabs.value || "hsr";
+            window.loadPromoCodes(gameId);
         });
-    });
+    }
 
     const btnRedeemAllCodes = document.getElementById("btn-redeem-all-codes");
     if (btnRedeemAllCodes) {
         btnRedeemAllCodes.addEventListener("click", async () => {
-            const activeBtn = document.querySelector(".tab-codes-game-btn.active");
-            const gameId = activeBtn ? activeBtn.dataset.game : "hsr";
+            const gameId = document.getElementById("codes-game-tabs")?.value || "hsr";
             btnRedeemAllCodes.disabled = true;
             btnRedeemAllCodes.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Resgatando Lote...`;
             try {
@@ -1730,6 +1784,9 @@ function formatFarmingNote(noteStr) {
                         </ul>
                     </div>`;
                 }
+                if (res.ok && typeof btnRedeemAllCodes.done === "function") {
+                    btnRedeemAllCodes.done();
+                }
             } catch (e) {
                 showToast("Erro ao resgatar lote de códigos.");
             } finally {
@@ -1743,10 +1800,10 @@ function formatFarmingNote(noteStr) {
     document.querySelectorAll(".nav-btn").forEach(btn => {
         btn.addEventListener("click", () => {
             const tab = btn.getAttribute("data-tab");
-            if (tab === "farm") window.loadFarmData("genshin", "tab-farm-content-body");
-            if (tab === "trash") window.loadTrashRelics("genshin", "tab-trash-relics-body");
-            if (tab === "audit") window.loadAuditReport("hsr", "tab-audit-report-body");
-            if (tab === "history") window.loadAccountHistory("hsr");
+            if (tab === "farm") window.loadFarmData(document.getElementById("farm-game-tabs")?.value || "genshin", "tab-farm-content-body");
+            if (tab === "trash") window.loadTrashRelics(document.getElementById("trash-game-tabs")?.value || "hsr", "tab-trash-relics-body");
+            if (tab === "audit") window.loadAuditReport(document.getElementById("audit-game-tabs")?.value || "hsr", "tab-audit-report-body");
+            if (tab === "history") window.loadAccountHistory(document.getElementById("history-game-tabs")?.value || "hsr");
         });
     });
 
@@ -2137,42 +2194,20 @@ window.currentGapsGame = "hsr";
 window.lastGapsAnalysis = null;
 
 window.switchAuditSubView = function(viewName) {
-    const btnTierlist = document.getElementById("btn-subnav-audit-tierlist");
-    const btnGaps = document.getElementById("btn-subnav-audit-gaps");
+    const auditTabs = document.getElementById("audit-subnav-tabs");
+    if (auditTabs) auditTabs.selected = viewName === "gaps" ? 1 : 0;
     const viewTierlist = document.getElementById("audit-view-tierlist");
     const viewGaps = document.getElementById("audit-view-gaps");
 
     if (viewName === "tierlist") {
         if (viewTierlist) viewTierlist.style.display = "block";
         if (viewGaps) viewGaps.style.display = "none";
-        if (btnTierlist) {
-            btnTierlist.className = "subnav-btn active";
-            btnTierlist.style.border = "1px solid rgba(168, 85, 247, 0.4)";
-            btnTierlist.style.background = "rgba(168, 85, 247, 0.15)";
-            btnTierlist.style.color = "#c084fc";
-        }
-        if (btnGaps) {
-            btnGaps.className = "subnav-btn";
-            btnGaps.style.border = "1px solid rgba(255,255,255,0.1)";
-            btnGaps.style.background = "rgba(0,0,0,0.2)";
-            btnGaps.style.color = "var(--text-muted)";
-        }
     } else {
         if (viewTierlist) viewTierlist.style.display = "none";
         if (viewGaps) viewGaps.style.display = "block";
-        if (btnTierlist) {
-            btnTierlist.className = "subnav-btn";
-            btnTierlist.style.border = "1px solid rgba(255,255,255,0.1)";
-            btnTierlist.style.background = "rgba(0,0,0,0.2)";
-            btnTierlist.style.color = "var(--text-muted)";
-        }
-        if (btnGaps) {
-            btnGaps.className = "subnav-btn active";
-            btnGaps.style.border = "1px solid rgba(56, 189, 248, 0.4)";
-            btnGaps.style.background = "rgba(56, 189, 248, 0.15)";
-            btnGaps.style.color = "#38bdf8";
-        }
-        window.loadAccountGapsAnalysis(window.currentGapsGame || "hsr");
+        const gTabs = document.getElementById("gaps-game-tabs");
+        const targetGame = window.currentGapsGame || gTabs?.value || "hsr";
+        window.loadAccountGapsAnalysis(targetGame);
     }
 };
 
@@ -2181,14 +2216,11 @@ window.loadAccountGapsAnalysis = async function(gameId) {
     const bodyEl = document.getElementById("tab-gaps-content-body");
     if (!bodyEl) return;
 
-    // Atualiza pills de jogo ativas
-    document.querySelectorAll(".tab-gaps-game-btn").forEach(btn => {
-        if (btn.getAttribute("data-game") === gameId) {
-            btn.classList.add("active");
-        } else {
-            btn.classList.remove("active");
-        }
-    });
+    const gTabs = document.getElementById("gaps-game-tabs");
+    if (gTabs) {
+        const idx = Array.from(gTabs.children).findIndex(opt => opt.value === gameId);
+        if (idx >= 0 && gTabs.selected !== idx) gTabs.selected = idx;
+    }
 
     bodyEl.innerHTML = `
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 14px; margin-bottom: 20px;">
@@ -2219,9 +2251,9 @@ window.loadAccountGapsAnalysis = async function(gameId) {
                 <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
                 <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Strategic Diagnosis Failed" : "Falha na Auditoria Estratégica"}</h4>
                 <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not audit account coverage and archetypes." : "Não foi possível auditar a cobertura e arquétipos da conta."}</p>
-                <button onclick="window.loadAccountGapsAnalysis('${gameId}')" class="primary-btn" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <sakuga-button onclick="window.loadAccountGapsAnalysis('${gameId}')" class="sk-sm sk-accent-danger">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -2239,9 +2271,9 @@ window.renderAccountGapsResult = function(data) {
                 <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
                     ${isEn ? "The Strategic Planner checks elemental coverage, archetypes, and endgame readiness for your roster. Sync characters to generate this diagnosis." : "O Diagnóstico Estratégico analisa a cobertura elemental, arquétipos e prontidão para o endgame da sua conta. Sincronize seus personagens com o HoYoLAB para gerar o diagnóstico."}
                 </p>
-                <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${data?.game_id || 'hsr'}\\']')?.click() || (window.syncRoster && window.syncRoster('${data?.game_id || 'hsr'}'))" style="padding: 9px 20px; font-size: 13px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <sakuga-button class="sk-sm" onclick="document.querySelector('.sync-game-btn[data-game=\\'${data?.game_id || 'hsr'}\\']')?.click() || (window.syncRoster && window.syncRoster('${data?.game_id || 'hsr'}'))">
                     <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Characters Now" : "Sincronizar Personagens Agora"}
-                </button>
+                </sakuga-button>
             </div>
         `;
         return;
@@ -2431,9 +2463,9 @@ window.renderAccountGapsResult = function(data) {
                         <span style="font-size: 11px; color: var(--text-muted);">Recomendações customizadas em tempo real alimentadas pelo seu Roster</span>
                     </div>
                 </div>
-                <button id="btn-request-ai-verdict" onclick="window.consultAiAccountGaps()" class="primary-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; cursor: pointer; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;">
+                <sakuga-button id="btn-request-ai-verdict" onclick="window.consultAiAccountGaps()" class="sk-sm sk-accent-cyan">
                     <i class="fa-solid fa-wand-magic-sparkles"></i> Gerar Parecer Completo da IA
-                </button>
+                </sakuga-button>
             </div>
 
             <div id="ai-verdict-content-area" style="font-size: 13px; color: #cbd5e1; line-height: 1.6;">
@@ -2481,6 +2513,8 @@ window.consultAiAccountGaps = async function(customQuestion) {
         }
 
         const data = await res.json();
+        if (reqBtn && typeof reqBtn.done === "function") reqBtn.done();
+        if (topBtn && typeof topBtn.done === "function") topBtn.done();
         if (contentArea) {
             const parsedMd = typeof marked !== "undefined" ? marked.parse(data.ai_response || "") : data.ai_response;
             contentArea.innerHTML = `
@@ -2504,16 +2538,8 @@ window.consultAiAccountGaps = async function(customQuestion) {
     }
 };
 
-// Vinculação de eventos para as pills de jogo de lacunas
+// Carrega o Morning Briefing automaticamente ao abrir a aplicação
 document.addEventListener("DOMContentLoaded", () => {
-    document.querySelectorAll(".tab-gaps-game-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-            const g = btn.getAttribute("data-game");
-            if (g) window.loadAccountGapsAnalysis(g);
-        });
-    });
-
-    // Carrega o Morning Briefing automaticamente ao abrir a aplicação
     setTimeout(() => {
         if (typeof window.loadMorningBriefing === "function") {
             window.loadMorningBriefing();
@@ -2628,9 +2654,9 @@ window.loadMorningBriefing = async function() {
                         <strong style="color: #fbbf24; font-size: 11px; text-transform: uppercase; display: block; margin-bottom: 2px;">${curDomainType}:</strong>
                         ${curTopTask}
                     </div>
-                    <button onclick="document.querySelector('[data-tab=${g.game_id}]')?.click()" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer;">
+                    <sakuga-button onclick="document.querySelector('[data-tab=${g.game_id}]')?.click()" variant="secondary" class="sk-xs sk-block" style="width: 100%;">
                         ${openGalleryText}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         });
@@ -2655,9 +2681,9 @@ window.loadMorningBriefing = async function() {
                         </div>
                         <div>${goalsHtml}</div>
                     </div>
-                    <button onclick="document.querySelector('[data-tab=gacha]')?.click()" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer; margin-top: 8px;">
+                    <sakuga-button onclick="document.querySelector('[data-tab=gacha]')?.click()" variant="secondary" class="sk-xs sk-block" style="width: 100%; margin-top: 8px;">
                         ${viewSimText}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
@@ -2715,9 +2741,9 @@ window.loadMorningBriefing = async function() {
                             <div style="color: #34d399; font-size: 11px; margin-top: 4px;"><strong>${gainText}</strong> ${displayGain}</div>
                         </div>
                     </div>
-                    <button onclick="document.querySelector('[data-tab=trash]')?.click(); window.switchTrashSubView('craft');" class="secondary-btn" style="padding: 5px 10px; font-size: 11px; width: 100%; border-radius: 6px; cursor: pointer; margin-top: 8px;">
+                    <sakuga-button onclick="document.querySelector('[data-tab=trash]')?.click(); window.switchTrashSubView('craft');" variant="secondary" class="sk-xs sk-block" style="width: 100%; margin-top: 8px;">
                         ${viewCraftText}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
@@ -2728,9 +2754,9 @@ window.loadMorningBriefing = async function() {
                     <i class="fa-solid fa-sun" style="font-size: 28px; color: #38bdf8; margin-bottom: 10px; display: inline-block;"></i>
                     <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">Resumo Diário da Conta</h4>
                     <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 16px auto; line-height: 1.5;">Esta tela consolida as recomendações diárias de gasto de energia e tarefas prioritárias de todos os seus jogos para hoje.</p>
-                    <button class="primary-btn" onclick="document.querySelector('[data-tab=farm]')?.click();" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer;">
+                    <sakuga-button class="sk-sm" onclick="document.querySelector('[data-tab=farm]')?.click();">
                         <i class="fa-solid fa-clipboard-list"></i> Ver Ordem do Dia
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
             return;
@@ -2747,9 +2773,9 @@ window.loadMorningBriefing = async function() {
                 </div>
                 <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 6px;">Não foi possível carregar o resumo matinal</h4>
                 <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Ocorreu uma falha ao consultar os dados consolidados do dia. Verifique sua conexão e tente novamente.</p>
-                <button onclick="window.loadMorningBriefing()" class="primary-btn" style="padding: 7px 18px; font-size: 12px; border-radius: 8px; background: #ef4444; cursor: pointer;">
+                <sakuga-button onclick="window.loadMorningBriefing()" class="sk-sm sk-accent-danger">
                     <i class="fa-solid fa-rotate-right"></i> Tentar de novo
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -2771,10 +2797,9 @@ window.sendMorningBriefingNow = async function() {
     try {
         const res = await fetch("/api/briefing/send-now", { method: "POST" });
         const data = await res.json();
+        if (res.ok && btn && typeof btn.done === "function") btn.done();
         if (typeof showToast === "function") {
-    showToast(isEn ? "☀️ Morning Briefing successfully sent to your configured Webhooks!" : "☀️ Morning Briefing enviado com sucesso para seus Webhooks configurados!");
-        } else {
-    alert(isEn ? "Morning Briefing sent successfully!" : "Morning Briefing enviado com sucesso!");
+            showToast(window.isEn ? "Morning Briefing sent to configured Webhooks!" : "Morning Briefing enviado com sucesso!", "success");
         }
     } catch (err) {
         console.error("Erro ao enviar Morning Briefing:", err);
@@ -2792,42 +2817,21 @@ window.currentTrashGame = "hsr";
 
 window.switchTrashSubView = function(viewName) {
     window.currentTrashSubView = viewName;
-    const btnFinder = document.getElementById("btn-subnav-trash-finder");
-    const btnCraft = document.getElementById("btn-subnav-trash-craft");
+    const trashTabs = document.getElementById("trash-subnav-tabs");
+    if (trashTabs) trashTabs.selected = viewName === "craft" ? 1 : 0;
     const viewFinder = document.getElementById("trash-view-finder");
     const viewCraft = document.getElementById("trash-view-craft");
 
     if (viewName === "finder") {
         if (viewFinder) viewFinder.style.display = "block";
         if (viewCraft) viewCraft.style.display = "none";
-        if (btnFinder) {
-            btnFinder.className = "subnav-btn active";
-            btnFinder.style.border = "1px solid rgba(239, 68, 68, 0.4)";
-            btnFinder.style.background = "rgba(239, 68, 68, 0.15)";
-            btnFinder.style.color = "#f87171";
-        }
-        if (btnCraft) {
-            btnCraft.className = "subnav-btn";
-            btnCraft.style.border = "1px solid rgba(255,255,255,0.1)";
-            btnCraft.style.background = "rgba(0,0,0,0.2)";
-            btnCraft.style.color = "var(--text-muted)";
-        }
+        const targetGame = window.currentTrashGame || document.getElementById("trash-game-tabs")?.value || "hsr";
+        window.loadTrashRelics(targetGame, "tab-trash-relics-body");
     } else {
         if (viewFinder) viewFinder.style.display = "none";
         if (viewCraft) viewCraft.style.display = "block";
-        if (btnFinder) {
-            btnFinder.className = "subnav-btn";
-            btnFinder.style.border = "1px solid rgba(255,255,255,0.1)";
-            btnFinder.style.background = "rgba(0,0,0,0.2)";
-            btnFinder.style.color = "var(--text-muted)";
-        }
-        if (btnCraft) {
-            btnCraft.className = "subnav-btn active";
-            btnCraft.style.border = "1px solid rgba(245, 158, 11, 0.4)";
-            btnCraft.style.background = "rgba(245, 158, 11, 0.15)";
-            btnCraft.style.color = "#fbbf24";
-        }
-        window.loadCraftRecommendations(window.currentTrashGame || "hsr");
+        const targetGame = window.currentTrashGame || document.getElementById("trash-game-tabs")?.value || "hsr";
+        window.loadCraftRecommendations(targetGame);
     }
 };
 
@@ -2867,9 +2871,9 @@ window.loadCraftRecommendations = async function(gameId) {
                     <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
                         ${isEn ? "The Crafting Optimizer identifies the worst-rolled pieces on meta characters so you spend Self-Modeling Resin or Elixir on high-value upgrades. No urgent upgrades needed." : "O Otimizador de Síntese calcula as piores peças dos personagens meta do seu roster para recomendar onde usar Resina Automodeladora ou Elixir. Nenhuma peça crítica foi encontrada."}
                     </p>
-                    <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click() || (window.syncRoster && window.syncRoster('${gameId}'))" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; padding: 9px 20px; font-size: 13px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #020617;">
+                    <sakuga-button class="sk-sm sk-accent-amber" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click() || (window.syncRoster && window.syncRoster('${gameId}'))">
                         <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Relics Now" : "Sincronizar Relíquias da Conta"}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
             return;
@@ -2944,9 +2948,9 @@ window.loadCraftRecommendations = async function(gameId) {
                 <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
                 <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Calculate Crafting" : "Falha ao calcular recomendações de síntese"}</h4>
                 <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not evaluate relic priorities. Please try again." : "Não foi possível avaliar as prioridades das peças de relíquia."}</p>
-                <button onclick="window.loadCraftRecommendations('${gameId}')" class="primary-btn" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <sakuga-button onclick="window.loadCraftRecommendations('${gameId}')" class="sk-sm sk-accent-danger">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -2960,14 +2964,13 @@ if (typeof parseSubstats !== 'undefined') window.parseSubstats = parseSubstats;
 
 window.addEventListener("app:languageChanged", () => {
     // Farm
-    const activeFarmGameBtn = document.querySelector(".tab-farm-game-btn.active");
-    if (activeFarmGameBtn && typeof window.loadFarmData === "function") {
-        window.loadFarmData(activeFarmGameBtn.dataset.game || "genshin", "tab-farm-content-body");
+    const farmGame = document.getElementById("farm-game-tabs")?.value || document.querySelector(".tab-farm-game-btn.active")?.dataset?.game;
+    if (farmGame && typeof window.loadFarmData === "function") {
+        window.loadFarmData(farmGame, "tab-farm-content-body");
     }
 
     // Trash & Craft
-    const activeTrashGameBtn = document.querySelector(".tab-trash-game-btn.active");
-    const trashGame = activeTrashGameBtn?.dataset?.game || window.currentTrashGame || "hsr";
+    const trashGame = document.getElementById("trash-game-tabs")?.value || document.querySelector(".tab-trash-game-btn.active")?.dataset?.game || window.currentTrashGame || "hsr";
     if (window.currentTrashSubView === "craft" && typeof window.loadCraftRecommendations === "function") {
         window.loadCraftRecommendations(trashGame);
     } else if (typeof window.loadTrashRelics === "function") {
@@ -2975,7 +2978,7 @@ window.addEventListener("app:languageChanged", () => {
     }
 
     // Audit
-    const auditGame = window.currentAuditGameId || "hsr";
+    const auditGame = document.getElementById("audit-game-tabs")?.value || window.currentAuditGameId || "hsr";
     if (typeof window.loadAuditReport === "function") {
         window.loadAuditReport(auditGame, "tab-audit-report-body");
     }

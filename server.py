@@ -214,6 +214,7 @@ os.makedirs(static_dir, exist_ok=True)
 os.makedirs(assets_dir, exist_ok=True)
 
 app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+app.mount("/static", StaticFiles(directory=static_dir), name="static_files")
 app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
 
 if __name__ == "__main__":

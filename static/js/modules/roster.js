@@ -792,9 +792,9 @@ async function _loadRosterImpl(gameId) {
                     </div>
                     <h3 style="color: var(--text-primary); font-size: 18px; font-weight: 700; margin-bottom: 8px;">${emptyTitle}</h3>
                     <p style="color: var(--text-secondary); font-size: 13px; max-width: 480px; margin: 0 auto 20px auto; line-height: 1.5;">${emptyDesc}</p>
-                    <button class="primary-btn" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadRoster('${gameId}');" style="padding: 10px 22px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; border-radius: 10px; cursor: pointer;">
+                    <sakuga-button class="sk-sm" onclick="const btn = document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']'); if (btn) btn.click(); else window.loadRoster('${gameId}');">
                         <i class="fa-solid fa-arrows-rotate"></i> ${emptyBtnText}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
             return;
@@ -1116,9 +1116,9 @@ async function _loadRosterImpl(gameId) {
                 gallery.innerHTML = `
                     <div class="empty-gallery" style="grid-column: 1 / -1; padding: 40px 0; text-align: center;">
                         <p style="color: var(--text-secondary); margin-bottom: 14px;">${noMatchText}</p>
-                        <button class="primary-btn" onclick="window.clearRosterFilters('${gameId}')" style="display: inline-flex; align-items: center; gap: 8px; padding: 8px 18px; font-size: 12px; border-radius: 8px; margin: 0 auto; cursor: pointer;">
+                        <sakuga-button class="sk-sm" onclick="window.clearRosterFilters('${gameId}')">
                             <i class="fa-solid fa-filter-circle-xmark"></i> ${clearText}
-                        </button>
+                        </sakuga-button>
                     </div>
                 `;
                 return;
@@ -1398,8 +1398,7 @@ async function _loadRosterImpl(gameId) {
         }
         
         // Evento de busca em tempo real com debounce de ~300ms, AbortController e guarda de min 2 caracteres
-        searchInput.replaceWith(searchInput.cloneNode(true)); // Limpa listeners antigos
-        const newSearchInput = document.querySelector(`.search-input[data-game="${gameId}"]`);
+        const newSearchInput = searchInput;
         
         const debouncedRosterSearch = window.createDebouncedSearch((e, signal) => {
             if (signal?.aborted) return;
@@ -1409,8 +1408,8 @@ async function _loadRosterImpl(gameId) {
             renderCards();
         }, { delay: 300, minLength: 2, immediateOnEmpty: true });
 
-        newSearchInput.addEventListener("input", (e) => {
-            const rawVal = e.target.value.trim();
+        newSearchInput._onRosterSearchInput = (e) => {
+            const rawVal = (e?.detail?.value ?? newSearchInput.value ?? "").trim();
             // Se o usuário apagou para < 2 caracteres mas não zero, reseta para lista cheia imediatamente
             if (rawVal.length > 0 && rawVal.length < 2) {
                 debouncedRosterSearch.cancel();
@@ -1421,7 +1420,15 @@ async function _loadRosterImpl(gameId) {
                 return;
             }
             debouncedRosterSearch(e);
-        });
+        };
+        if (!newSearchInput.dataset.searchBound) {
+            newSearchInput.dataset.searchBound = "true";
+            newSearchInput.addEventListener("input", (e) => {
+                if (typeof newSearchInput._onRosterSearchInput === "function") {
+                    newSearchInput._onRosterSearchInput(e);
+                }
+            });
+        }
 
         // Configura seletor de ordenação inteligente
         const sortSelect = document.getElementById(`roster-sort-${gameId}`);
@@ -1600,9 +1607,9 @@ async function _loadRosterImpl(gameId) {
                 </div>
                 <h4 style="color: var(--text-primary); font-size: 16px; font-weight: 700; margin-bottom: 6px;">${errorTitle}</h4>
                 <p style="color: var(--text-secondary); font-size: 13px; max-width: 460px; margin: 0 auto 18px auto; line-height: 1.4;">${errorDesc}</p>
-                <button class="primary-btn" onclick="window.loadRoster('${gameId}')" style="padding: 8px 20px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; border-radius: 8px; cursor: pointer; background: #ef4444;">
+                <sakuga-button class="sk-sm sk-accent-danger" onclick="window.loadRoster('${gameId}')">
                     <i class="fa-solid fa-rotate-right"></i> ${retryText}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -2415,9 +2422,9 @@ async function inspectCharacter(gameId, char) {
                     <i class="fa-solid fa-award" style="color: #f59e0b;"></i> ${isEn ? "Overall Build Score" : "Nota Geral da Build"}${equippedInfo}
                 </div>
                 <div style="margin-top: 6px;">
-                    <button class="trigger-export-card action-btn" style="padding: 5px 12px; font-size: 11px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.35)); border: 1px solid rgba(245, 158, 11, 0.6); color: #fbbf24; border-radius: 6px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                    <sakuga-button class="trigger-export-card sk-xs sk-accent-amber" variant="secondary">
                         <i class="fa-solid fa-camera"></i> ${isEn ? "Generate Build Card (Splash Art)" : "Gerar Imagem da Build (Splash Art)"}
-                    </button>
+                    </sakuga-button>
                 </div>
             </div>
             <div class="overall-badge ${gradeClass}">
@@ -4074,8 +4081,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     const openExportTierListModalHandler = async (targetGameId) => {
+        const auditTabs = document.getElementById("audit-game-tabs");
         const activeTabBtn = document.querySelector(".tab-audit-game-btn.active") || document.querySelector(".audit-game-tab.active");
-        const gameId = targetGameId || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || window.activeGameTab || "hsr";
+        const gameId = targetGameId || auditTabs?.value || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || window.activeGameTab || "hsr";
         window.currentExportCardName = `TierList_${gameId.toUpperCase()}`;
         modalExportCard.style.display = "flex";
         exportCardStatus.style.display = "flex";
@@ -4112,8 +4120,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             if (e.target && e.target.closest(".trigger-export-tierlist")) {
                 const btn = e.target.closest(".trigger-export-tierlist");
+                const auditTabs = document.getElementById("audit-game-tabs");
                 const activeTabBtn = document.querySelector(".tab-audit-game-btn.active") || document.querySelector(".audit-game-tab.active");
-                const gId = btn.dataset.game || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || "hsr";
+                const gId = btn.dataset.game || auditTabs?.value || (activeTabBtn ? activeTabBtn.dataset.game : null) || window.currentAuditGameId || "hsr";
                 openExportTierListModalHandler(gId);
             }
         });
@@ -4141,6 +4150,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 link.download = `${fileName}.png`;
                 link.href = currentGeneratedCanvas.toDataURL("image/png");
                 link.click();
+                if (typeof btnDownloadCardImg.done === "function") btnDownloadCardImg.done();
                 showToast("Download da imagem iniciado!");
             });
         }
@@ -4156,6 +4166,7 @@ document.addEventListener("DOMContentLoaded", () => {
                         }
                         const item = new ClipboardItem({ "image/png": currentGeneratedBlob });
                         await navigator.clipboard.write([item]);
+                        if (typeof btnCopyCardImg.done === "function") btnCopyCardImg.done();
                         showToast("Imagem copiada para a área de transferência! (Pressione Ctrl+V no Discord/WhatsApp)");
                         return;
                     } catch (clipErr) {

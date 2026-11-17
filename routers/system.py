@@ -14,6 +14,7 @@ import database
 from core.config import get_resource_path, get_data_path
 from schemas.system import BrowserClientSignal
 from services.browser_lifecycle_service import browser_lifecycle_manager
+from services.media_service import get_element_icon_asset
 
 router = APIRouter(tags=["System & Utilities"])
 
@@ -306,3 +307,13 @@ async def browser_heartbeat(payload: BrowserClientSignal, request: Request):
 async def browser_disconnect(payload: BrowserClientSignal, request: Request):
     """Sinaliza fechamento de uma aba local; encerra o servidor após janela de tolerância se nenhuma restar."""
     return browser_lifecycle_manager.register_disconnect(payload.client_id, is_loopback=_is_loopback_request(request))
+
+
+@router.get("/assets/elements/{filename}")
+async def serve_element_icon_with_offline_fallback(filename: str):
+    """Serve ícone elemental em cache local ou fallback vetorial offline sem erros 404."""
+    try:
+        content, media_type = get_element_icon_asset(filename)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return Response(content=content, media_type=media_type)

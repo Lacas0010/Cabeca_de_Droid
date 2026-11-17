@@ -152,9 +152,9 @@ window.loadGachaTracker = async function(gameId) {
                     <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
                     <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Gacha Tracker" : "Falha ao carregar o rastreador de gacha"}</h4>
                     <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve pity and banner information." : "Não foi possível carregar os dados de pity e banners."}</p>
-                    <button class="primary-btn" onclick="window.loadGachaTracker && window.loadGachaTracker('${gid}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    <sakuga-button class="sk-sm" onclick="window.loadGachaTracker && window.loadGachaTracker('${gid}')">
                         <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
@@ -421,9 +421,9 @@ window.loadGachaTrackerHistory = async function() {
                         <p style="color: var(--text-muted); font-size: 13px; line-height: 1.5; margin: 0 0 16px 0;">
                             ${isEn ? "The Gacha Tracker consolidates your warp/wish history, current pity, and 50/50 status. Import your log via JSON (UIGF/SRGF) to view records." : "O Rastreador de Gacha consolida seu histórico de orações e saltos, taxa de pity e 50/50. Importe seu arquivo JSON (UIGF/SRGF) para visualizar todos os seus registros."}
                         </p>
-                        <button class="primary-btn" onclick="document.getElementById('tracker-file-input')?.click()" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        <sakuga-button class="sk-sm" onclick="document.getElementById('gacha-tracker-file-input')?.click()">
                             <i class="fa-solid fa-file-import"></i> ${isEn ? "Import JSON History" : "Importar Histórico (UIGF/SRGF)"}
-                        </button>
+                        </sakuga-button>
                     </div>
                 `;
             } else {
@@ -431,9 +431,9 @@ window.loadGachaTrackerHistory = async function() {
                     <div style="text-align: center; padding: 30px 20px; background: rgba(0,0,0,0.2); border-radius: 12px;">
                         <i class="fa-solid fa-filter" style="font-size: 24px; color: #64748b; margin-bottom: 8px;"></i>
                         <p style="color: var(--text-muted); font-size: 13px; margin: 0 0 12px 0;">${isEn ? "No pulls match the selected filters." : "Nenhum tiro encontrado com os filtros selecionados."}</p>
-                        <button class="secondary-btn" onclick="document.getElementById('tracker-history-filter-banner').value='all'; document.getElementById('tracker-history-filter-rarity').value='all'; window.loadGachaTrackerHistory();" style="padding: 6px 14px; font-size: 11px; border-radius: 6px; cursor: pointer;">
+                        <sakuga-button class="sk-xs" variant="secondary" onclick="document.getElementById('tracker-history-filter-banner').value='all'; document.getElementById('tracker-history-filter-rarity').value='all'; window.loadGachaTrackerHistory();">
                             <i class="fa-solid fa-rotate-left"></i> ${isEn ? "Clear Filters" : "Limpar Filtros"}
-                        </button>
+                        </sakuga-button>
                     </div>
                 `;
             }
@@ -468,9 +468,9 @@ window.loadGachaTrackerHistory = async function() {
                 <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
                 <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Pull History" : "Falha ao carregar o histórico de tiros"}</h4>
                 <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve gacha logs." : "Não foi possível carregar os registros de histórico do gacha."}</p>
-                <button class="primary-btn" onclick="window.loadGachaTrackerHistory && window.loadGachaTrackerHistory()" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <sakuga-button class="sk-sm sk-accent-danger" onclick="window.loadGachaTrackerHistory && window.loadGachaTrackerHistory()">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -642,7 +642,7 @@ window.exportGachaLogUIGF = async function() {
 window.clearGachaLogHistory = async function() {
     const gid = window.currentTrackerGame || "hsr";
 
-    if (!confirm(isEn ? `Are you sure you want to clear all pull history for ${gid.toUpperCase()} from local database?` : `Tem certeza que deseja apagar todo o histórico de tiros de ${gid.toUpperCase()} do banco local?`)) {
+    if (!(await window.showSakugaConfirm(isEn ? `Are you sure you want to clear all pull history for ${gid.toUpperCase()} from local database?` : `Tem certeza que deseja apagar todo o histórico de tiros de ${gid.toUpperCase()} do banco local?`, isEn ? "Clear Pull History" : "Apagar Histórico de Tiros"))) {
         return;
     }
 

@@ -266,5 +266,77 @@ class TestBrowserLifecycleShutdown(unittest.TestCase):
             self.assertFalse(main.should_enable_browser_watchdog(False))
 
 
+class TestSakugaVfxOfflineIntegration(unittest.TestCase):
+    def test_vendor_assets_exist_and_verify(self):
+        vendor_dir = build.verify_sakuga_vendor_assets()
+        self.assertTrue(vendor_dir.is_dir())
+        for filename in build.REQUIRED_SAKUGA_COMPONENTS:
+            path = vendor_dir / filename
+            self.assertTrue(path.is_file(), f"Arquivo ausente: {filename}")
+            self.assertGreater(path.stat().st_size, 1024)
+
+    def test_fastapi_serves_sakuga_vendor_scripts_and_index(self):
+        from fastapi.testclient import TestClient
+        import server
+
+        client = TestClient(server.app)
+        root_res = client.get("/")
+        self.assertEqual(root_res.status_code, 200)
+        self.assertIn("/static/vendor/sakuga-vfx/button.js", root_res.text)
+
+        for filename in build.REQUIRED_SAKUGA_COMPONENTS:
+            tag_name = f"sakuga-{Path(filename).stem}"
+            res = client.get(f"/static/vendor/sakuga-vfx/{filename}")
+            self.assertEqual(res.status_code, 200, f"Falha ao servir {filename}")
+            self.assertIn(tag_name, res.text)
+
+        for vendor_path in (
+            "/static/vendor/marked/marked.min.js",
+            "/static/vendor/html2canvas/html2canvas.min.js",
+            "/static/vendor/fontawesome/css/all.min.css",
+            "/assets/elements/zzz_physical.png",
+        ):
+            vres = client.get(vendor_path)
+            self.assertEqual(vres.status_code, 200, f"Falha ao servir {vendor_path}")
+
+    def test_index_and_css_configured_for_offline_dark_theme(self):
+        html = (build.ROOT_DIR / "static" / "index.html").read_text(encoding="utf-8")
+        css = (build.ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")
+
+        self.assertNotIn("raw.githubusercontent.com/finktheartist/sakuga-vfx", html)
+        self.assertNotIn("cdn.jsdelivr.net", html)
+        self.assertNotIn("cdnjs.cloudflare.com", html)
+        self.assertNotIn("<button", html)
+        self.assertIn('/static/vendor/marked/marked.min.js', html)
+        self.assertIn('/static/vendor/html2canvas/html2canvas.min.js', html)
+        self.assertIn('/static/vendor/fontawesome/css/all.min.css', html)
+        self.assertTrue((build.ROOT_DIR / "static" / "vendor" / "marked" / "marked.min.js").is_file())
+        self.assertTrue((build.ROOT_DIR / "static" / "vendor" / "html2canvas" / "html2canvas.min.js").is_file())
+        self.assertTrue((build.ROOT_DIR / "static" / "vendor" / "fontawesome" / "css" / "all.min.css").is_file())
+        self.assertTrue((build.ROOT_DIR / "static" / "vendor" / "fontawesome" / "webfonts" / "fa-solid-900.woff2").is_file())
+
+        for filename in build.REQUIRED_SAKUGA_COMPONENTS:
+            script_tag = f'<script src="/static/vendor/sakuga-vfx/{filename}"></script>'
+            self.assertIn(script_tag, html, f"Tag offline ausente para {filename}")
+
+        for tag_name in (
+            "<sakuga-button",
+            "<sakuga-tabs",
+            "<sakuga-input",
+            "<sakuga-toggle",
+            "<sakuga-checkbox",
+            "<sakuga-radio",
+            "<sakuga-slider",
+            "<sakuga-progress",
+            "<sakuga-tooltip",
+            "<sakuga-toast",
+        ):
+            self.assertIn(tag_name, html)
+
+        for css_var in ("--sk-card:", "--sk-ink:", "--sk-pri:", "--sk-acc:", "--sk-fill:"):
+            self.assertIn(css_var, css)
+        self.assertIn("overflow: visible;", css)
+
+
 if __name__ == "__main__":
     unittest.main()

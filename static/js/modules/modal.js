@@ -48,7 +48,7 @@ function setupPinSecurityUI() {
 
     if (pinInput) {
         pinInput.addEventListener("input", () => {
-            pinInput.value = pinInput.value.replace(/\D/g, "");
+            pinInput.value = pinInput.value.replace(/\D/g, "").slice(0, 6);
             updatePinDots(pinInput.value);
             if (errorEl) errorEl.innerText = "";
             if (pinInput.value.length === 6) {
@@ -84,6 +84,7 @@ function setupPinSecurityUI() {
             const data = await res.json();
 
             if (res.ok && data.status === "ok") {
+                if (submitBtn && typeof submitBtn.done === "function") submitBtn.done();
                 hidePinLockModal();
                 showToast("Acesso desbloqueado com sucesso!", "success");
                 fetchConfig();
@@ -108,48 +109,70 @@ function setupPinSecurityUI() {
 }
 
 function showToast(message, type = "info") {
-    let container = document.getElementById("app-toast-container");
-    if (!container) {
-        container = document.createElement("div");
-        container.id = "app-toast-container";
-        container.style.cssText = "position: fixed; bottom: 24px; right: 24px; z-index: 100000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;";
-        document.body.appendChild(container);
+    const sakugaToast = document.getElementById("sakuga-global-toast");
+    if (sakugaToast && typeof sakugaToast.show === "function") {
+        if (type === "error") {
+            sakugaToast.style.setProperty("--sk-pri", "#ef4444");
+            sakugaToast.style.setProperty("--sk-ink", "#fecaca");
+        } else if (type === "success") {
+            sakugaToast.style.setProperty("--sk-pri", "#10b981");
+            sakugaToast.style.setProperty("--sk-ink", "#f8fafc");
+        } else {
+            sakugaToast.style.setProperty("--sk-pri", "#8b5cf6");
+            sakugaToast.style.setProperty("--sk-ink", "#f8fafc");
+        }
+        sakugaToast.show(String(message || ""));
     }
-
-    const toast = document.createElement("div");
-    const colors = {
-        success: "background: rgba(16, 185, 129, 0.95); border: 1px solid #10b981; color: #fff;",
-        error: "background: rgba(239, 68, 68, 0.95); border: 1px solid #ef4444; color: #fff;",
-        info: "background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(168, 85, 247, 0.5); color: #e2e8f0;"
-    };
-    const icons = {
-        success: '<i class="fa-solid fa-circle-check"></i>',
-        error: '<i class="fa-solid fa-circle-exclamation"></i>',
-        info: '<i class="fa-solid fa-circle-info" style="color: #a855f7;"></i>'
-    };
-
-    toast.style.cssText = `padding: 10px 18px; border-radius: 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); backdrop-filter: blur(8px); transition: all 0.3s ease; opacity: 0; transform: translateY(10px); pointer-events: auto; ${colors[type] || colors.info}`;
-    toast.innerHTML = `${icons[type] || icons.info} <span>${message}</span>`;
-    container.appendChild(toast);
-
-    requestAnimationFrame(() => {
-        toast.style.opacity = "1";
-        toast.style.transform = "translateY(0)";
-    });
-
-    setTimeout(() => {
-        toast.style.opacity = "0";
-        toast.style.transform = "translateY(10px)";
-        setTimeout(() => toast.remove(), 300);
-    }, 4000);
 }
 window.showToast = showToast;
 
 
+
+function showSakugaConfirm(message, title = "Confirmar Ação") {
+    const modal = document.getElementById("modal-sakuga-confirm");
+    const titleEl = document.getElementById("sakuga-confirm-title");
+    const msgEl = document.getElementById("sakuga-confirm-message");
+    const btnOk = document.getElementById("btn-sakuga-confirm-ok");
+    const btnCancel = document.getElementById("btn-sakuga-confirm-cancel");
+
+    if (!modal || !msgEl || !btnOk || !btnCancel) {
+        return Promise.resolve(window.confirm(String(message || "")));
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    msgEl.textContent = String(message || "");
+    modal.style.display = "flex";
+
+    return new Promise((resolve) => {
+        const cleanup = (result) => {
+            modal.style.display = "none";
+            btnOk.removeEventListener("click", onOk);
+            btnCancel.removeEventListener("click", onCancel);
+            modal.removeEventListener("click", onOverlay);
+            document.removeEventListener("keydown", onKey);
+            resolve(result);
+        };
+        const onOk = () => cleanup(true);
+        const onCancel = () => cleanup(false);
+        const onOverlay = (e) => {
+            if (e.target === modal) cleanup(false);
+        };
+        const onKey = (e) => {
+            if (e.key === "Escape") cleanup(false);
+            if (e.key === "Enter") cleanup(true);
+        };
+        btnOk.addEventListener("click", onOk);
+        btnCancel.addEventListener("click", onCancel);
+        modal.addEventListener("click", onOverlay);
+        document.addEventListener("keydown", onKey);
+    });
+}
+window.showSakugaConfirm = showSakugaConfirm;
 
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof hidePinLockModal !== 'undefined') window.hidePinLockModal = hidePinLockModal;
 if (typeof setupPinSecurityUI !== 'undefined') window.setupPinSecurityUI = setupPinSecurityUI;
 if (typeof showPinLockModal !== 'undefined') window.showPinLockModal = showPinLockModal;
 if (typeof showToast !== 'undefined') window.showToast = showToast;
+if (typeof showSakugaConfirm !== 'undefined') window.showSakugaConfirm = showSakugaConfirm;
 if (typeof updatePinDots !== 'undefined') window.updatePinDots = updatePinDots;

@@ -26,6 +26,30 @@ EXE_NAME = f"{APP_NAME}.exe"
 ZIP_NAME = f"{APP_NAME}-Windows-x64.zip"
 
 EXCLUDED_ASSET_DIRS = {"cache", "elements", "shards"}
+REQUIRED_SAKUGA_COMPONENTS = (
+    "button.js",
+    "toggle.js",
+    "slider.js",
+    "checkbox.js",
+    "radio.js",
+    "input.js",
+    "tabs.js",
+    "progress.js",
+    "rating.js",
+    "toast.js",
+    "tooltip.js",
+)
+
+
+def verify_sakuga_vendor_assets() -> Path:
+    """Garante que os 11 Web Components do Sakuga VFX existem localmente para build 100% offline."""
+    vendor_dir = ROOT_DIR / "static" / "vendor" / "sakuga-vfx"
+    missing = [name for name in REQUIRED_SAKUGA_COMPONENTS if not (vendor_dir / name).is_file()]
+    if missing:
+        raise FileNotFoundError(
+            f"Componentes Sakuga VFX ausentes em {vendor_dir}: {', '.join(missing)}"
+        )
+    return vendor_dir
 
 
 def ensure_icon_file(staging_assets_dir: Path) -> Path:
@@ -176,6 +200,8 @@ def file_sha256(path: Path) -> str:
 
 
 def main() -> int:
+    print("[BUILD] Verificando Web Components offline do Sakuga VFX...")
+    verify_sakuga_vendor_assets()
     print("[BUILD] Preparando assets estáticos e ícone...")
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     DIST_DIR.mkdir(parents=True, exist_ok=True)

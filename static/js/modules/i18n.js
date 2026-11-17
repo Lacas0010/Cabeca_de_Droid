@@ -2233,18 +2233,30 @@ export function applyTranslations(container = document) {
                 } else {
                     el.textContent = translation;
                 }
+
+                // Se for <option> dentro de <sakuga-tabs>, sincroniza o botão correspondente no Shadow DOM
+                if (el.tagName === "OPTION" && el.parentElement?.tagName === "SAKUGA-TABS") {
+                    const tabsEl = el.parentElement;
+                    const idx = Array.from(tabsEl.querySelectorAll("option")).indexOf(el);
+                    if (idx >= 0 && tabsEl.tabs && tabsEl.tabs[idx]) {
+                        tabsEl.tabs[idx].textContent = translation;
+                    }
+                }
             }
         }
     });
 
-    // Placeholders de inputs
+    // Placeholders de inputs (suporta <input> nativo e <sakuga-input>)
     const placeholders = container.querySelectorAll("[data-i18n-placeholder]");
     placeholders.forEach(el => {
         const key = el.getAttribute("data-i18n-placeholder");
         if (key) {
             const translation = t(key);
             if (translation) {
-                el.placeholder = translation;
+                el.setAttribute("placeholder", translation);
+                if ("placeholder" in el) {
+                    el.placeholder = translation;
+                }
             }
         }
     });

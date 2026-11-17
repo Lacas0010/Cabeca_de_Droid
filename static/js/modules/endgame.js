@@ -285,9 +285,9 @@ async function _loadEndgameImpl(gameId) {
                     <i class="fa-solid fa-triangle-exclamation" style="color: #f87171;"></i>
                     <p>Erro ao carregar dados de endgame.</p>
                     <span>${err.message || "Tente sincronizar sua conta novamente."}</span>
-                    <button class="endgame-empty-action-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click()">
+                    <sakuga-button class="endgame-empty-action-btn sk-sm" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click()">
                         <i class="fa-solid fa-rotate"></i> Tentar Sincronizar
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
         }
@@ -318,12 +318,12 @@ function renderEndgame(gameId, data) {
                 <p>${isEn ? `No recent Endgame records collected for ${gameNames[gameId] || gameId.toUpperCase()}.` : `Nenhum registro de Endgame recente coletado para ${gameNames[gameId] || gameId.toUpperCase()}.`}</p>
                 <span>${isEn ? `Clear stages of ${modeExamples[gameId] || "Endgame"} in-game and sync your Roster to view teams and scores here!` : `Conclua andares do ${modeExamples[gameId] || "Endgame"} no jogo e sincronize seu Roster para visualizar os times e pontuações aqui!`}</span>
                 <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 12px;">
-                    <button class="endgame-empty-action-btn" onclick="document.querySelector('.sync-game-btn[data-game=\'${gameId}\']')?.click()">
+                    <sakuga-button class="endgame-empty-action-btn sk-sm" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click()">
                         <i class="fa-solid fa-rotate"></i> ${isEn ? `Sync ${gameId.toUpperCase()} Now` : `Sincronizar ${gameId.toUpperCase()} Agora`}
-                    </button>
-                    <button class="endgame-empty-action-btn" style="background: linear-gradient(135deg, #0284c7, #38bdf8); border: none;" onclick="activeEndgameView['${gameId}'] = 'team_matcher'; renderEndgame('${gameId}', { has_data: true, modes: [] });">
+                    </sakuga-button>
+                    <sakuga-button class="endgame-empty-action-btn sk-sm sk-accent-cyan" onclick="activeEndgameView['${gameId}'] = 'team_matcher'; renderEndgame('${gameId}', { has_data: true, modes: [] });">
                         <i class="fa-solid fa-people-group"></i> ${isEn ? "View Recommended Teams (Team Matcher)" : "Ver Times Recomendados (Team Matcher)"}
-                    </button>
+                    </sakuga-button>
                 </div>
             </div>
         `;
@@ -370,15 +370,15 @@ function renderEndgame(gameId, data) {
                 </div>
             </div>
             <div class="endgame-view-toggle-group">
-                <button class="endgame-view-toggle-btn ${currentView === 'single' ? 'active' : ''}" data-view="single" data-game="${gameId}">
+                <sakuga-button variant="secondary" class="endgame-view-toggle-btn sk-xs ${currentView === 'single' ? 'active' : ''}" data-view="single" data-game="${gameId}">
                     <i class="fa-solid fa-table-columns"></i> ${isEn ? "Focused Mode" : "Modo Focado"}
-                </button>
-                <button class="endgame-view-toggle-btn ${currentView === 'all' ? 'active' : ''}" data-view="all" data-game="${gameId}">
+                </sakuga-button>
+                <sakuga-button variant="secondary" class="endgame-view-toggle-btn sk-xs ${currentView === 'all' ? 'active' : ''}" data-view="all" data-game="${gameId}">
                     <i class="fa-solid fa-list-ul"></i> ${isEn ? "Overview" : "Visão Geral"} (${(data.modes || []).length})
-                </button>
-                <button class="endgame-view-toggle-btn ${currentView === 'team_matcher' ? 'active' : ''}" data-view="team_matcher" data-game="${gameId}" style="border-left: 2px solid #38bdf8; font-weight: 700;">
+                </sakuga-button>
+                <sakuga-button variant="secondary" class="endgame-view-toggle-btn sk-xs sk-accent-cyan ${currentView === 'team_matcher' ? 'active' : ''}" data-view="team_matcher" data-game="${gameId}">
                     <i class="fa-solid fa-people-group" style="color: #38bdf8;"></i> Team Matcher
-                </button>
+                </sakuga-button>
             </div>
         </div>
     `;
@@ -388,11 +388,11 @@ function renderEndgame(gameId, data) {
     
     // Botão Visão Geral
     pillsHtml += `
-        <button class="endgame-mode-tab-btn ${currentView === 'all' ? 'active' : ''}" data-mode-idx="all" data-game="${gameId}">
+        <sakuga-button variant="secondary" class="endgame-mode-tab-btn sk-xs ${currentView === 'all' ? 'active' : ''}" data-mode-idx="all" data-game="${gameId}">
             <i class="fa-solid fa-list-ul"></i>
             <span>${isEn ? "All Modes" : "Todos os Modos"}</span>
             <span class="tab-star-pill">${starsDisplay}</span>
-        </button>
+        </sakuga-button>
     `;
 
     data.modes.forEach((mode, idx) => {
@@ -404,11 +404,11 @@ function renderEndgame(gameId, data) {
 
         const isActive = (currentView === "single" && idx === currentIdx) ? "active" : "";
         pillsHtml += `
-            <button class="endgame-mode-tab-btn ${isActive}" data-mode-idx="${idx}" data-game="${gameId}">
+            <sakuga-button variant="secondary" class="endgame-mode-tab-btn sk-xs ${isActive}" data-mode-idx="${idx}" data-game="${gameId}">
                 <i class="fa-solid ${icon}"></i>
                 <span>${formatEndgameModeName(mode.name)}</span>
                 ${starPill}
-            </button>
+            </sakuga-button>
         `;
     });
     pillsHtml += `</div>`;

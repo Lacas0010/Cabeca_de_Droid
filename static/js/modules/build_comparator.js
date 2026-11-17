@@ -91,9 +91,9 @@ async function loadBuildComparison() {
                             <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 14px;">
                                 ${isEn ? "The Metagame Comparator matches your character's weapons, sets, and benchmarks against community guidelines. Sync your roster to populate your build." : "O Comparador de Metagame avalia armas, relíquias e atributos contra referências oficiais do meta. Sincronize seu roster com o HoYoLAB para carregar as builds da sua conta."}
                             </p>
-                            <button class="primary-btn" onclick="document.querySelector('.sync-game-btn[data-game=\\'${activeInspectGame}\\']')?.click() || (window.syncRoster && window.syncRoster('${activeInspectGame}'))" style="padding: 7px 16px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                            <sakuga-button class="sk-sm" onclick="document.querySelector('.sync-game-btn[data-game=\\'${activeInspectGame}\\']')?.click() || (window.syncRoster && window.syncRoster('${activeInspectGame}'))">
                                 <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Characters Now" : "Sincronizar Personagens Agora"}
-                            </button>
+                            </sakuga-button>
                         </div>
                     </td>
                 </tr>
@@ -821,9 +821,9 @@ async function loadBuildComparison() {
                         <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 14px;">
                             ${isEn ? "Could not retrieve meta targets or player build. Please check your connection." : "Não foi possível consultar os alvos do meta ou os dados do personagem. Verifique sua conexão e tente novamente."}
                         </p>
-                        <button class="primary-btn" onclick="window.loadComparison && window.loadComparison('${safeCharName}', '${activeInspectGame}')" style="padding: 7px 16px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                        <sakuga-button class="sk-sm sk-accent-danger" onclick="window.loadComparison && window.loadComparison('${safeCharName}', '${activeInspectGame}')">
                             <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                        </button>
+                        </sakuga-button>
                     </div>
                 </td>
             </tr>
@@ -878,6 +878,7 @@ window.generateAndOpenDiffCardModal = async function() {
                     canvas.toBlob(async (blob) => {
                         if (!blob) throw new Error("Falha ao criar blob.");
                         await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                        if (typeof copyBtn.done === "function") copyBtn.done();
                         showToast("Card de comparativo copiado para a área de transferência!", "success");
                     });
                 } catch (err) {
@@ -1340,8 +1341,9 @@ window.loadAccountHistory = async (gameId = "hsr") => {
     if (btnSnapshot && !btnSnapshot.dataset.bound) {
         btnSnapshot.dataset.bound = "true";
         btnSnapshot.addEventListener("click", async () => {
+            const historyTabs = document.getElementById("history-game-tabs");
             const activeTabBtn = document.querySelector(".tab-history-game-btn.active");
-            const targetGame = (activeTabBtn && activeTabBtn.dataset.game) || window.currentGameIdHistory || gameId || "hsr";
+            const targetGame = historyTabs?.value || (activeTabBtn && activeTabBtn.dataset.game) || window.currentGameIdHistory || gameId || "hsr";
             btnSnapshot.disabled = true;
             btnSnapshot.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${window.t ? window.t("history_btn_creating") : "Gerando Snapshot..."}`;
             try {
@@ -1352,6 +1354,7 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                 });
                 const resData = await res.json().catch(() => ({}));
                 if (res.ok && resData.success) {
+                    if (typeof btnSnapshot.done === "function") btnSnapshot.done();
                     showToast(window.t ? window.t("history_toast_created") : "Snapshot de evolução criado com sucesso!", "success");
                     window.loadAccountHistory(targetGame);
                 } else {
@@ -1421,9 +1424,9 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                     <p style="font-size: 13px; color: var(--text-muted); max-width: 500px; margin: 0 auto 18px auto; line-height: 1.5;">
                         ${window.t ? window.t("history_empty_desc") : "A Linha do Tempo fotografa a progressão e builds da sua conta para comparar evolução com o passar das semanas. Crie seu primeiro snapshot agora!"}
                     </p>
-                    <button id="btn-empty-create-snapshot" class="primary-btn" onclick="document.getElementById('btn-create-snapshot-now')?.click()" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #fff; font-size: 13px;">
+                    <sakuga-button id="btn-empty-create-snapshot" class="sk-sm sk-accent-pink" onclick="document.getElementById('btn-create-snapshot-now')?.click()">
                         <i class="fa-solid fa-camera-retro"></i> ${window.t ? window.t("history_btn_create") : "Criar Primeiro Snapshot Agora"}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
             return;
@@ -1464,9 +1467,9 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                                 `).join('')}
                             </select>
                         </div>
-                        <button id="btn-run-snap-compare" class="primary-btn history-compare-btn" style="padding: 8px 16px; font-size: 12px; background: linear-gradient(135deg, #ec4899, #8b5cf6); border: none; cursor: pointer; border-radius: 8px; font-weight: 600;">
+                        <sakuga-button id="btn-run-snap-compare" class="history-compare-btn sk-sm sk-accent-pink">
                             <i class="fa-solid fa-code-compare"></i> Comparar Diffs
-                        </button>
+                        </sakuga-button>
                     </div>
                     <div id="snap-compare-status-badge" class="diff-badge-gain history-status-badge" style="font-size: 11px; padding: 4px 10px; white-space: nowrap;">
                         <i class="fa-solid fa-check"></i> Comparando Snapshots Selecionados
@@ -1736,9 +1739,9 @@ window.loadAccountHistory = async (gameId = "hsr") => {
                 <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
                 <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Timeline" : "Falha ao carregar a linha do tempo"}</h4>
                 <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not retrieve account snapshots. Please try again." : "Não foi possível carregar os snapshots de evolução da conta."}</p>
-                <button class="primary-btn" onclick="window.loadAccountHistory && window.loadAccountHistory('${gameId}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <sakuga-button class="sk-sm sk-accent-danger" onclick="window.loadAccountHistory && window.loadAccountHistory('${gameId}')">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -1791,9 +1794,9 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                     <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
                         ${window.t ? window.t("codes_empty_desc") : `A Central de Códigos monitora cupons promocionais oficiais de Gemas, Jades Estelares e Polycromes para resgate direto. Não foram encontrados novos códigos ativos para ${gameId.toUpperCase()}.`}
                     </p>
-                    <button class="primary-btn" onclick="window.loadPromoCodes && window.loadPromoCodes('${gameId}')" style="background: linear-gradient(135deg, #f59e0b, #d97706); border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; color: #020617; font-size: 13px;">
+                    <sakuga-button class="sk-sm sk-accent-amber" onclick="window.loadPromoCodes && window.loadPromoCodes('${gameId}')">
                         <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Check for New Codes" : "Verificar Novos Códigos"}
-                    </button>
+                    </sakuga-button>
                 </div>
             `;
             return;
@@ -1828,9 +1831,9 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                                     <span style="display: block; font-size: 12px; color: var(--text-secondary); margin-top: 6px;"> ${window.t ? window.t("codes_rewards_label") : "Recompensas:"} ${c.rewards}</span>
                                     <span style="display: block; font-size: 10px; color: #10b981; margin-top: 2px;">• ${c.status}</span>
                                 </div>
-                                <button class="action-btn btn-redeem-single" data-game="${gameId}" data-code="${c.code}" style="padding: 8px 14px; font-size: 12px; background: ${isClaimed ? 'rgba(255,255,255,0.05)' : 'rgba(245, 158, 11, 0.15)'}; border-color: ${isClaimed ? 'rgba(255,255,255,0.1)' : 'rgba(245, 158, 11, 0.4)'}; color: ${isClaimed ? 'var(--text-muted)' : '#fbbf24'}; border-radius: 6px; cursor: pointer;">
+                                <sakuga-button variant="${isClaimed ? 'secondary' : 'primary'}" class="btn-redeem-single sk-xs ${isClaimed ? '' : 'sk-accent-amber'}" data-game="${gameId}" data-code="${c.code}">
                                     <i class="fa-solid fa-gift"></i> ${isClaimed ? (window.t ? window.t('codes_btn_redeem_again') : 'Resgatar Novamente') : (window.t ? window.t('codes_btn_redeem') : 'Resgatar Este')}
-                                </button>
+                                </sakuga-button>
                             </div>
                         `;
                     }).join('')}
@@ -1882,6 +1885,7 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                     const statusBox = document.getElementById("codes-redeem-status");
                     if (resData.results && resData.results.length) {
                         const item = resData.results[0];
+                        if (r.ok && typeof btn.done === "function") btn.done();
                         statusBox.innerHTML = `<div style="padding: 10px; border-radius: 6px; background: rgba(16,185,129,0.1); border: 1px solid #10b981; color: #4ade80;">${item.message}</div>`;
                         // Recarrega lista para atualizar badges
                         setTimeout(() => window.loadPromoCodes(game), 1500);
@@ -1902,9 +1906,9 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                 <i class="fa-solid fa-circle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
                 <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Failed to Load Promo Codes" : "Falha ao carregar códigos promocionais"}</h4>
                 <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not connect to server to fetch promo codes." : "Não foi possível conectar ao servidor para buscar os códigos promocionais ativos."}</p>
-                <button class="primary-btn" onclick="window.loadPromoCodes && window.loadPromoCodes('${gameId}')" style="padding: 8px 18px; font-size: 12px; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <sakuga-button class="sk-sm sk-accent-danger" onclick="window.loadPromoCodes && window.loadPromoCodes('${gameId}')">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
-                </button>
+                </sakuga-button>
             </div>
         `;
     }
@@ -2410,9 +2414,11 @@ window.executeRelicSwapSimulation = async function() {
     verdictText.textContent = data.verdict_summary || (isEn ? "Simulation completed successfully." : "Simulação concluída com sucesso.");
         }
 
+        if (btnSim && typeof btnSim.done === "function") {
+            btnSim.done();
+        }
         if (typeof showToast === "function") {
-
-        showToast(isEn ? "Swap simulation calculated successfully!" : "Simulação de troca calculada com sucesso!", "success");
+            showToast(isEn ? "Swap simulation calculated successfully!" : "Simulação de troca calculada com sucesso!", "success");
         }
     } catch (err) {
         console.error("Erro na simulação do Sandbox:", err);
@@ -2448,12 +2454,12 @@ window.addEventListener("app:languageChanged", () => {
     }
     const tabHistory = document.getElementById("tab-history");
     if (tabHistory && tabHistory.classList.contains("active") && typeof window.loadAccountHistory === "function") {
-        const activeGameBtn = document.querySelector(".tab-history-game-btn.active");
-        window.loadAccountHistory(activeGameBtn ? activeGameBtn.dataset.game : "hsr");
+        const historyGame = document.getElementById("history-game-tabs")?.value || document.querySelector(".tab-history-game-btn.active")?.dataset?.game || "hsr";
+        window.loadAccountHistory(historyGame);
     }
     const tabCodes = document.getElementById("tab-codes");
     if (tabCodes && tabCodes.classList.contains("active") && typeof window.loadPromoCodes === "function") {
-        const activeCodeBtn = document.querySelector(".tab-codes-game-btn.active");
-        window.loadPromoCodes(activeCodeBtn ? activeCodeBtn.dataset.game : "hsr");
+        const codeGame = document.getElementById("codes-game-tabs")?.value || document.querySelector(".tab-codes-game-btn.active")?.dataset?.game || "hsr";
+        window.loadPromoCodes(codeGame);
     }
 });

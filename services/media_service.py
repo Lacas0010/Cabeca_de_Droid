@@ -57,6 +57,34 @@ def download_element_icons() -> None:
                     print(f"[WARN] Falha ao baixar ícone de elemento {game}_{elem_name}: {e}")
 
 
+def get_element_icon_asset(filename: str) -> tuple[bytes, str]:
+    """Retorna ícone elemental em cache local ou fallback SVG vetorial offline (evita 404)."""
+    safe_name = os.path.basename(str(filename or "")).strip()
+    if not safe_name or not safe_name.lower().endswith((".png", ".webp", ".svg")):
+        raise ValueError("Invalid element icon filename")
+
+    local_path = get_data_path(os.path.join("assets", "elements", safe_name))
+    if os.path.isfile(local_path):
+        with open(local_path, "rb") as f:
+            data = f.read()
+        ext = safe_name.rsplit(".", 1)[-1].lower()
+        mime = "image/webp" if ext == "webp" else ("image/svg+xml" if ext == "svg" else "image/png")
+        return data, mime
+
+    palette = ("#38bdf8", "#a855f7", "#10b981", "#f59e0b", "#ec4899", "#ef4444")
+    accent = palette[sum(ord(ch) for ch in safe_name) % len(palette)]
+    tail = safe_name.rsplit(".", 1)[0].split("_")[-1]
+    letter = next((ch.upper() for ch in tail if ch.isalnum()), "E")
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+        f'<circle cx="12" cy="12" r="10.5" fill="#0f172a" stroke="{accent}" stroke-width="2"/>'
+        f'<path d="M12 4.5L18.5 12 12 19.5 5.5 12Z" fill="{accent}" fill-opacity="0.28" stroke="{accent}" stroke-width="1.3"/>'
+        f'<text x="12" y="15.2" text-anchor="middle" font-family="sans-serif" font-size="9" font-weight="700" fill="#f8fafc">{letter}</text>'
+        "</svg>"
+    )
+    return svg.encode("utf-8"), "image/svg+xml"
+
+
 def download_hsr_eidolon_shards(char_names=None) -> None:
     """Garante que os fragmentos de Eidolon do HSR estejam baixados localmente na pasta assets/shards/hsr/."""
     try:

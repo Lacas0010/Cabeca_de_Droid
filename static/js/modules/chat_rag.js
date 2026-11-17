@@ -55,6 +55,9 @@ function setupChatSystem() {
                 messagesArea.scrollTop = messagesArea.scrollHeight;
                 return;
             }
+            if (sendBtn && typeof sendBtn.done === "function") {
+                sendBtn.done();
+            }
             
             // Cria um balão vazio para receber a resposta de forma incremental (streaming)
             const responseId = appendChatMessage("assistant", "");
@@ -202,7 +205,7 @@ function setupChatSystem() {
                 ? "Deseja apagar TODO o histórico global de conversas com a IA?" 
                 : `Deseja apagar o histórico de conversas do ${currentGame.toUpperCase()}?`;
             
-            if (!confirm(confirmMsg)) return;
+            if (!(await window.showSakugaConfirm(confirmMsg, "Limpar Histórico"))) return;
 
             try {
                 const res = await fetch(`/api/chat/history/${encodeURIComponent(currentGame)}`, {
@@ -273,6 +276,9 @@ function setupChatSystem() {
                     appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro ao analisar sinergia.`);
                     messagesArea.scrollTop = messagesArea.scrollHeight;
                     return;
+                }
+                if (typeof teamAnalyzeBtn.done === "function") {
+                    teamAnalyzeBtn.done();
                 }
                 
                 const responseId = appendChatMessage("assistant", "");
@@ -367,7 +373,7 @@ function toggleChatTeamCharacter(element, charName, gameId) {
     } else {
         if (selectedTeam.length >= maxSelect) {
             const isEnAlert = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
-        alert(isEnAlert ? `You can only select up to ${maxSelect} characters for ${gameId.toUpperCase()} team!` : `Você só pode selecionar até ${maxSelect} personagens para o time de ${gameId.toUpperCase()}!`);
+            showToast(isEnAlert ? `You can only select up to ${maxSelect} characters for ${gameId.toUpperCase()} team!` : `Você só pode selecionar até ${maxSelect} personagens para o time de ${gameId.toUpperCase()}!`, "error");
             return;
         }
         selectedTeam.push(charName);
@@ -1188,9 +1194,9 @@ function renderTeamExportCard(gameId) {
                     <div class="subcard-splash-gradient"></div>
 
                     <!-- Botão de Remover Slot (Oculto na exportação PNG) -->
-                    <button class="slot-remove-btn" title="${isEnCard ? 'Remove character from team' : 'Remover personagem do time'}" onclick="window.removeTeamMember('${gameId}', ${i})">
+                    <sakuga-button class="slot-remove-btn sk-xs sk-accent-danger" variant="secondary" aria-label="${isEnCard ? 'Remove character from team' : 'Remover personagem do time'}" onclick="window.removeTeamMember('${gameId}', ${i})">
                         <i class="fa-solid fa-xmark"></i>
-                    </button>
+                    </sakuga-button>
 
                     <!-- Topo Flutuante com Elemento, Nível e Rank -->
                     <div class="subcard-top-float-row">

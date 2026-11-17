@@ -23,8 +23,8 @@ class TestRosterViewModeSuite(unittest.TestCase):
 
         for game in ["zzz", "genshin", "hsr"]:
             self.assertIn(f'class="view-mode-toggle" data-game="{game}"', html)
-            self.assertIn(f'data-mode="grid" data-game="{game}"', html)
-            self.assertIn(f'data-mode="list" data-game="{game}"', html)
+            self.assertRegex(html, rf'<sakuga-button[^>]*data-game="{game}"[^>]*data-mode="grid"|<sakuga-button[^>]*data-mode="grid"[^>]*data-game="{game}"')
+            self.assertRegex(html, rf'<sakuga-button[^>]*data-game="{game}"[^>]*data-mode="list"|<sakuga-button[^>]*data-mode="list"[^>]*data-game="{game}"')
 
         self.assertIn('data-i18n-title="view_mode_grid"', html)
         self.assertIn('data-i18n-title="view_mode_list"', html)
@@ -219,8 +219,8 @@ class TestRosterViewModeSuite(unittest.TestCase):
         for game in ["zzz", "genshin", "hsr"]:
             self.assertIn(f'class="roster-results-counter" data-game="{game}" id="roster-counter-{game}"', html)
             self.assertIn(f'class="roster-sort-select" data-game="{game}" id="roster-sort-{game}"', html)
-            self.assertIn(f'class="btn-toggle-audit" data-game="{game}"', html)
-            self.assertIn(f'class="btn-clear-filters" data-game="{game}"', html)
+            self.assertRegex(html, rf'class="btn-toggle-audit[^"]*"[^>]*data-game="{game}"')
+            self.assertRegex(html, rf'class="btn-clear-filters[^"]*"[^>]*data-game="{game}"')
             self.assertIn(f'class="audit-filters-panel" id="audit-panel-{game}"', html)
 
         # Valida opções do seletor de ordenação inteligente
@@ -234,26 +234,30 @@ class TestRosterViewModeSuite(unittest.TestCase):
         self.assertIn('value="name_asc"', html)
         self.assertIn('value="name_desc"', html)
 
+        def assert_attrs(game_val, filter_type_val):
+            pattern = rf'(?:data-game="{game_val}"[^>]*data-filter-type="{filter_type_val}"|data-filter-type="{filter_type_val}"[^>]*data-game="{game_val}")'
+            self.assertRegex(html, pattern)
+
         # Valida grupos de auditoria universais
         for game in ["zzz", "genshin", "hsr"]:
-            self.assertIn(f'data-game="{game}" data-filter-type="set"', html)
-            self.assertIn(f'data-game="{game}" data-filter-type="slot"', html)
-            self.assertIn(f'data-game="{game}" data-filter-type="grade"', html)
-            self.assertIn(f'data-game="{game}" data-filter-type="weapon-status"', html)
+            assert_attrs(game, "set")
+            assert_attrs(game, "slot")
+            assert_attrs(game, "grade")
+            assert_attrs(game, "weapon-status")
 
         # Valida filtros específicos por jogo
-        self.assertIn('data-game="genshin" data-filter-type="region"', html)
-        self.assertIn('data-game="genshin" data-filter-type="mechanic"', html)
-        self.assertIn('data-game="genshin" data-filter-type="scale"', html)
-        self.assertIn('data-game="genshin" data-filter-type="main-stat"', html)
+        assert_attrs("genshin", "region")
+        assert_attrs("genshin", "mechanic")
+        assert_attrs("genshin", "scale")
+        assert_attrs("genshin", "main-stat")
 
-        self.assertIn('data-game="hsr" data-filter-type="speed"', html)
-        self.assertIn('data-game="hsr" data-filter-type="planar"', html)
+        assert_attrs("hsr", "speed")
+        assert_attrs("hsr", "planar")
 
-        self.assertIn('data-game="zzz" data-filter-type="specialty"', html)
-        self.assertIn('data-game="zzz" data-filter-type="faction"', html)
-        self.assertIn('data-game="zzz" data-filter-type="archetype"', html)
-        self.assertIn('data-game="zzz" data-filter-type="discs-main"', html)
+        assert_attrs("zzz", "specialty")
+        assert_attrs("zzz", "faction")
+        assert_attrs("zzz", "archetype")
+        assert_attrs("zzz", "discs-main")
 
     def test_css_smart_sort_and_audit_filters_styles(self):
         """Valida que todas as regras CSS para ordenação inteligente, contador e painéis de auditoria estão no style.css."""

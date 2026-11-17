@@ -75,7 +75,9 @@ async function fetchConfig() {
         if (newPinInput) {
             newPinInput.value = "";
             const isEnPin = window.isEn;
-            newPinInput.placeholder = secStatus.pin_enabled ? (isEnPin ? "PIN Active (Change)" : "PIN Ativo (Alterar)") : (isEnPin ? "Enter 4 to 6 digits" : "Digite 4 a 6 dígitos");
+            const pinPh = secStatus.pin_enabled ? (isEnPin ? "PIN Active (Change)" : "PIN Ativo (Alterar)") : (isEnPin ? "Enter 4 to 6 digits" : "Digite 4 a 6 dígitos");
+            newPinInput.setAttribute("placeholder", pinPh);
+            newPinInput.placeholder = pinPh;
         }
 
         // 5. Controle de Acesso LAN
@@ -142,6 +144,7 @@ async function setupConfigForm() {
                 const data = await res.json();
                 
                 if (res.ok) {
+                    if (typeof saveBtn.done === "function") saveBtn.done();
                     if (statusMsg) {
                         statusMsg.className = "status-msg success";
 
@@ -220,7 +223,7 @@ async function setupConfigForm() {
     // Limpar Credenciais do Cofre
     if (clearCredsBtn) {
         clearCredsBtn.addEventListener("click", async () => {
-            if (!confirm("Deseja realmente apagar todos os cookies e chaves de IA armazenados no cofre?")) return;
+            if (!(await window.showSakugaConfirm("Deseja realmente apagar todos os cookies e chaves de IA armazenados no cofre?", "Limpar Cofre"))) return;
             try {
                 const res = await fetch("/api/security/clear_credentials", { method: "POST" });
                 if (res.ok) {
@@ -272,7 +275,7 @@ async function setupConfigForm() {
                 });
                 const data = await res.json();
                 if (res.ok) {
-
+                    if (typeof savePinBtn.done === "function") savePinBtn.done();
             showToast(isEn ? "Security PIN configured successfully!" : "PIN de segurança configurado com sucesso!", "success");
                     fetchConfig();
                 } else {
@@ -287,7 +290,7 @@ async function setupConfigForm() {
     // Desativar PIN
     if (disablePinBtn) {
         disablePinBtn.addEventListener("click", async () => {
-            if (!confirm("Deseja realmente desativar o bloqueio por PIN?")) {
+            if (!(await window.showSakugaConfirm("Deseja realmente desativar o bloqueio por PIN?", "Desativar PIN"))) {
                 if (pinCheckbox) pinCheckbox.checked = true;
                 return;
             }
@@ -446,17 +449,17 @@ window.loadAccountsManagement = async function(showFeedback = false, preloadedDa
                             </div>
                             <div style="display: flex; align-items: center; gap: 8px;">
                                 ${!isAct ? `
-                                    <button onclick="window.switchActiveAccount('${acc.game_id}', '${acc.uid}')" class="primary-btn" style="padding: 6px 14px; font-size: 12px; background: linear-gradient(135deg, #0284c7, #38bdf8); border: none; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+                                    <sakuga-button onclick="window.switchActiveAccount('${acc.game_id}', '${acc.uid}')" class="sk-xs sk-accent-cyan">
                                         <i class="fa-solid fa-right-left"></i> Ativar Conta
-                                    </button>
+                                    </sakuga-button>
                                 ` : `
-                                    <button disabled style="padding: 6px 14px; font-size: 12px; background: rgba(52, 211, 153, 0.15); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); border-radius: 8px; cursor: default; display: inline-flex; align-items: center; gap: 6px;">
+                                    <sakuga-button disabled variant="secondary" class="sk-xs sk-accent-emerald">
                                         <i class="fa-solid fa-check"></i> Conta Ativa
-                                    </button>
+                                    </sakuga-button>
                                 `}
-                                <button onclick="window.deleteAccountProfile('${acc.uid}')" title="Remover perfil do SQLite local" class="secondary-btn" style="padding: 6px 10px; font-size: 12px; border-color: rgba(239, 68, 68, 0.4); color: #f87171; background: rgba(239, 68, 68, 0.08); border-radius: 8px; cursor: pointer;">
+                                <sakuga-button onclick="window.deleteAccountProfile('${acc.uid}')" aria-label="Remover perfil do SQLite local" variant="secondary" class="sk-xs sk-accent-danger">
                                     <i class="fa-solid fa-trash-can"></i>
-                                </button>
+                                </sakuga-button>
                             </div>
                         </div>
                     `;
@@ -520,7 +523,7 @@ window.switchActiveAccount = async function(gameId, uid) {
 
 window.deleteAccountProfile = async function(uid) {
 
-    if (!confirm(isEn ? `Are you sure you want to delete profile UID ${uid} from the local database?\nThis will remove saved characters and relics for this profile in SQLite.` : `Tem certeza que deseja excluir o perfil UID ${uid} do banco de dados local?\nIsso removerá os personagens e relíquias salvos deste perfil no SQLite.`)) {
+    if (!(await window.showSakugaConfirm(isEn ? `Are you sure you want to delete profile UID ${uid} from the local database?\nThis will remove saved characters and relics for this profile in SQLite.` : `Tem certeza que deseja excluir o perfil UID ${uid} do banco de dados local?\nIsso removerá os personagens e relíquias salvos deste perfil no SQLite.`, isEn ? "Delete Profile" : "Excluir Perfil"))) {
         return;
     }
 

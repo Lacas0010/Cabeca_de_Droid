@@ -95,7 +95,7 @@
 
     --text-primary: #f4f4f5;
     --text-secondary: #a1a1aa;
-    --text-muted: #62626b;
+    --text-muted: #94a3b8;
 
     /* Cores de Jogo */
     --color-zzz: #f59e0b;
@@ -108,6 +108,29 @@
     /* Vermelho Erro */
     --color-success: #22c55e;
     /* Verde Sucesso */
+
+    /* Paleta Sakuga VFX adaptada ao tema escuro Cabeça de Droid */
+    --sk-card: #131c31;
+    --sk-ink: #f8fafc;
+    --sk-dim: #94a3b8;
+    --sk-soft: rgba(139, 92, 246, 0.35);
+    --sk-pri: #8b5cf6;
+    --sk-pri-ink: #ffffff;
+    --sk-acc: #ec4899;
+    --sk-on-pri: #ffffff;
+    --sk-track: #26334d;
+    --sk-fill: #38bdf8;
+    --sk-tick: #38bdf8;
+    --sk-btn-line: rgba(167, 139, 250, 0.72);
+    --sk-alt-line: rgba(148, 163, 184, 0.45);
+    --sk-bw: 2px;
+    --sk-r: 10px;
+    --sk-sh: 0 6px 18px rgba(0, 0, 0, 0.38);
+    --sk-btn-sh: 0 4px 16px rgba(139, 92, 246, 0.28);
+    --sk-alt-sh: 0 2px 10px rgba(0, 0, 0, 0.25);
+    --sk-input-width: 100%;
+    --sk-slider-width: 100%;
+    --sk-progress-width: 100%;
 }
 
 * {
@@ -580,7 +603,7 @@ h6 {
 
 .game-card {
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .game-card::before {
@@ -742,7 +765,7 @@ h6 {
     height: 180px;
     border-radius: 16px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     margin-bottom: 24px;
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.3);
@@ -751,6 +774,7 @@ h6 {
 .banner-overlay {
     position: absolute;
     inset: 0;
+    border-radius: 16px;
     background: linear-gradient(90deg, rgba(0, 0, 0, 0.85) 45%, rgba(0, 0, 0, 0.1) 100%);
     display: flex;
     flex-direction: column;
@@ -2035,7 +2059,7 @@ h6 {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 16px;
-    overflow: hidden;
+    overflow: visible;
     backdrop-filter: blur(24px);
     -webkit-backdrop-filter: blur(24px);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
@@ -2479,7 +2503,7 @@ h6 {
     transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
         opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
         visibility 0.3s ease;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .build-inspector.open {
@@ -2492,6 +2516,7 @@ h6 {
 .inspector-header {
     padding: 18px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px 20px 0 0;
     background: rgba(255, 255, 255, 0.02);
     display: flex;
     justify-content: space-between;
@@ -2594,7 +2619,7 @@ h6 {
     gap: 14px;
     min-width: 0;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .inspector-card {
@@ -2605,7 +2630,7 @@ h6 {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     min-width: 0;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
     box-sizing: border-box;
 }
 
@@ -4622,7 +4647,7 @@ h6 {
     border-radius: 20px;
     padding: 24px 28px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
     backdrop-filter: blur(16px);
 }
@@ -4730,7 +4755,7 @@ h6 {
     justify-content: space-between;
     transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     backdrop-filter: blur(12px);
 }
 
@@ -5361,7 +5386,7 @@ h6 {
     padding: 20px;
     backdrop-filter: blur(12px);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -6212,7 +6237,7 @@ h6 {
     box-shadow: 0 10px 35px rgba(0, 0, 0, 0.4);
     margin-bottom: 20px;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .endgame-view-wrapper::before {
@@ -6222,6 +6247,7 @@ h6 {
     left: 0;
     right: 0;
     height: 3px;
+    border-radius: 16px 16px 0 0;
     background: linear-gradient(90deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
 }
 
@@ -9821,8 +9847,528 @@ h6 {
         -webkit-line-clamp: 3;
     }
 
-    .char-list-affinitive-pill {
+    .rank-list-affinitive-pill {
         font-size: 9px;
         padding: 1px 5px;
+    }
+}
+
+/* ==========================================================================
+   SAKUGA VFX WEB COMPONENTS INTEGRATION & DARK COSMIC THEME OVERRIDES
+   ========================================================================== */
+sakuga-button,
+sakuga-toggle,
+sakuga-slider,
+sakuga-checkbox,
+sakuga-radio,
+sakuga-input,
+sakuga-tabs,
+sakuga-progress,
+sakuga-rating,
+sakuga-toast,
+sakuga-tooltip {
+    color: var(--sk-ink);
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+sakuga-button {
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+sakuga-button.sk-block {
+    display: flex;
+    width: 100%;
+}
+
+sakuga-button::part(button) {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    font-style: normal;
+    font-weight: 700;
+    font-size: 13px;
+    line-height: 1.2;
+    padding: 10px 18px;
+    border-radius: 10px;
+    color: var(--sk-ink);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+sakuga-button.sk-block::part(button) {
+    width: 100%;
+}
+
+sakuga-button.sk-sm::part(button) {
+    padding: 7px 14px;
+    font-size: 12px;
+    border-radius: 8px;
+}
+
+sakuga-button.sk-xs::part(button) {
+    padding: 5px 10px;
+    font-size: 11px;
+    border-radius: 7px;
+}
+
+sakuga-button.sk-accent-cyan {
+    --sk-btn-line: rgba(56, 189, 248, 0.78);
+    --sk-alt-line: rgba(56, 189, 248, 0.68);
+    --sk-card: rgba(14, 165, 233, 0.16);
+}
+sakuga-button.sk-accent-cyan::part(button) {
+    color: #bae6fd;
+}
+
+sakuga-button.sk-accent-amber {
+    --sk-btn-line: rgba(245, 158, 11, 0.82);
+    --sk-alt-line: rgba(245, 158, 11, 0.72);
+    --sk-card: rgba(245, 158, 11, 0.18);
+}
+sakuga-button.sk-accent-amber::part(button) {
+    color: #fde68a;
+}
+
+sakuga-button.sk-accent-emerald {
+    --sk-btn-line: rgba(16, 185, 129, 0.82);
+    --sk-alt-line: rgba(16, 185, 129, 0.72);
+    --sk-card: rgba(16, 185, 129, 0.18);
+}
+sakuga-button.sk-accent-emerald::part(button) {
+    color: #a7f3d0;
+}
+
+sakuga-button.sk-accent-danger {
+    --sk-btn-line: rgba(239, 68, 68, 0.78);
+    --sk-alt-line: rgba(239, 68, 68, 0.68);
+    --sk-card: rgba(239, 68, 68, 0.15);
+}
+sakuga-button.sk-accent-danger::part(button) {
+    color: #fecaca;
+}
+
+sakuga-button.sk-accent-pink {
+    --sk-btn-line: rgba(236, 72, 153, 0.82);
+    --sk-alt-line: rgba(236, 72, 153, 0.72);
+    --sk-card: rgba(236, 72, 153, 0.18);
+}
+sakuga-button.sk-accent-pink::part(button) {
+    color: #fbcfe8;
+}
+
+sakuga-button.sk-pill-rounded::part(button) {
+    border-radius: 25px;
+}
+
+/* Reset host box when legacy classes remain on <sakuga-button> (prevent double box) */
+sakuga-button.nav-btn,
+sakuga-button.sync-all-btn,
+sakuga-button.card-action-btn,
+sakuga-button.primary-btn,
+sakuga-button.secondary-btn,
+sakuga-button.action-btn,
+sakuga-button.guide-btn,
+sakuga-button.filter-btn,
+sakuga-button.audit-pill,
+sakuga-button.gacha-game-pill,
+sakuga-button.gacha-type-pill,
+sakuga-button.gacha-quick-btn,
+sakuga-button.forecast-game-btn,
+sakuga-button.forecast-type-btn,
+sakuga-button.forecast-quick-day-btn,
+sakuga-button.forecast-phase-btn,
+sakuga-button.goals-game-btn,
+sakuga-button.tracker-game-btn,
+sakuga-button.help-pill,
+sakuga-button.help-toggle-details-btn,
+sakuga-button.help-action-btn,
+sakuga-button.view-mode-btn,
+sakuga-button.btn-toggle-audit,
+sakuga-button.btn-clear-filters,
+sakuga-button.lang-btn,
+sakuga-button.lang-btn-mobile,
+sakuga-button.close-inspector-btn,
+sakuga-button.sidebar-close-btn,
+sakuga-button.sidebar-toggle-desktop-btn,
+sakuga-button.mobile-menu-btn,
+sakuga-button.ins-tab-btn,
+sakuga-button.farm-game-tab,
+sakuga-button.trash-game-tab,
+sakuga-button.audit-game-tab,
+sakuga-button.farm-modal-game-btn,
+sakuga-button.farm-filter-pill,
+sakuga-button.endgame-view-toggle-btn,
+sakuga-button.endgame-mode-tab-btn,
+sakuga-button.endgame-empty-action-btn {
+    background: none !important;
+    border: none !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border-left: none !important;
+    border-bottom: none !important;
+    color: inherit;
+    --sk-alt-sh: none;
+    --sk-sh: 0 3px 10px rgba(0, 0, 0, 0.28);
+}
+
+sakuga-button.sync-all-btn {
+    --sk-card: rgba(99, 102, 241, 0.92);
+    --sk-btn-line: rgba(129, 140, 248, 0.95);
+    --sk-btn-sh: 0 4px 18px rgba(99, 102, 241, 0.35);
+}
+sakuga-button.sync-all-btn::part(button) {
+    background: linear-gradient(135deg, #6366f1, #3b82f6);
+    color: #ffffff;
+    border-color: rgba(129, 140, 248, 0.85);
+}
+
+sakuga-button.sk-nav-btn {
+    display: flex;
+    width: 100%;
+    --sk-card: transparent;
+    --sk-alt-line: transparent;
+    --sk-alt-sh: none;
+}
+sakuga-button.sk-nav-btn::part(button) {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 10px 14px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    box-shadow: none;
+}
+sakuga-button.sk-nav-btn:hover::part(button) {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+sakuga-button.sk-nav-btn.active::part(button) {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.14);
+    border-left: 4px solid var(--sk-pri);
+    color: #ffffff;
+    font-weight: 700;
+}
+sakuga-button.sk-nav-btn[data-tab="zzz"].active::part(button) { border-left-color: var(--color-zzz); }
+sakuga-button.sk-nav-btn[data-tab="genshin"].active::part(button) { border-left-color: var(--color-genshin); }
+sakuga-button.sk-nav-btn[data-tab="hsr"].active::part(button) { border-left-color: var(--color-hsr); }
+sakuga-button.sk-nav-btn[data-tab="gacha"].active::part(button) { border-left-color: #f59e0b; }
+sakuga-button.sk-nav-btn[data-tab="farm"].active::part(button) { border-left-color: #10b981; }
+sakuga-button.sk-nav-btn[data-tab="trash"].active::part(button) { border-left-color: #ef4444; }
+sakuga-button.sk-nav-btn[data-tab="audit"].active::part(button) { border-left-color: #a855f7; }
+
+.sidebar.collapsed sakuga-button.sk-nav-btn::part(button) {
+    justify-content: center;
+    padding: 10px;
+}
+
+sakuga-button.filter-btn::part(button),
+sakuga-button.audit-pill::part(button),
+sakuga-button.gacha-game-pill::part(button),
+sakuga-button.gacha-type-pill::part(button),
+sakuga-button.gacha-quick-btn::part(button),
+sakuga-button.forecast-game-btn::part(button),
+sakuga-button.forecast-type-btn::part(button),
+sakuga-button.forecast-quick-day-btn::part(button),
+sakuga-button.forecast-phase-btn::part(button),
+sakuga-button.goals-game-btn::part(button),
+sakuga-button.tracker-game-btn::part(button),
+sakuga-button.help-pill::part(button),
+sakuga-button.farm-filter-pill::part(button),
+sakuga-button.farm-modal-game-btn::part(button),
+sakuga-button.farm-game-tab::part(button),
+sakuga-button.trash-game-tab::part(button),
+sakuga-button.audit-game-tab::part(button),
+sakuga-button.endgame-view-toggle-btn::part(button),
+sakuga-button.endgame-mode-tab-btn::part(button),
+sakuga-button.view-mode-btn::part(button),
+sakuga-button.btn-toggle-audit::part(button),
+sakuga-button.btn-clear-filters::part(button),
+sakuga-button.ins-tab-btn::part(button) {
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    color: #cbd5e1;
+    padding: 5px 11px;
+    font-size: 11.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+sakuga-button.filter-btn.active::part(button),
+sakuga-button.audit-pill.active::part(button),
+sakuga-button.gacha-game-pill.active::part(button),
+sakuga-button.gacha-type-pill.active::part(button),
+sakuga-button.forecast-game-btn.active::part(button),
+sakuga-button.forecast-type-btn.active::part(button),
+sakuga-button.forecast-quick-day-btn.active::part(button),
+sakuga-button.forecast-phase-btn.active::part(button),
+sakuga-button.goals-game-btn.active::part(button),
+sakuga-button.tracker-game-btn.active::part(button),
+sakuga-button.help-pill.active::part(button),
+sakuga-button.farm-filter-pill.active::part(button),
+sakuga-button.farm-modal-game-btn.active::part(button),
+sakuga-button.farm-game-tab.active::part(button),
+sakuga-button.trash-game-tab.active::part(button),
+sakuga-button.audit-game-tab.active::part(button),
+sakuga-button.endgame-view-toggle-btn.active::part(button),
+sakuga-button.endgame-mode-tab-btn.active::part(button),
+sakuga-button.view-mode-btn.active::part(button),
+sakuga-button.lang-btn.active::part(button),
+sakuga-button.ins-tab-btn.active::part(button) {
+    background: rgba(139, 92, 246, 0.28);
+    border-color: #a855f7;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.28);
+}
+
+sakuga-button.close-inspector-btn::part(button),
+sakuga-button.sidebar-close-btn::part(button),
+sakuga-button.sidebar-toggle-desktop-btn::part(button),
+sakuga-button.mobile-menu-btn::part(button) {
+    padding: 5px 9px;
+    min-width: 32px;
+    min-height: 32px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #e2e8f0;
+    border-radius: 8px;
+    box-shadow: none;
+}
+
+sakuga-button.lang-btn::part(button) {
+    padding: 2px 8px;
+    font-size: 11px;
+    background: transparent;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--text-muted);
+}
+
+sakuga-button.lang-btn.active::part(button) {
+    background: rgba(56, 189, 248, 0.25);
+    border-color: rgba(56, 189, 248, 0.5);
+    color: #7dd3fc;
+}
+
+sakuga-input.sk-pin-input::part(input) {
+    font-size: 22px;
+    text-align: center;
+    letter-spacing: 12px;
+    padding: 10px 16px;
+    border-radius: 12px;
+    border-color: rgba(168, 85, 247, 0.45);
+}
+
+sakuga-progress.sk-sync-progress::part(progress) {
+    padding-top: 46px;
+}
+sakuga-progress.sk-sync-progress::part(bar) {
+    height: 24px;
+    border-width: 2.5px;
+    border-radius: 12px;
+}
+sakuga-progress.sk-sync-progress::part(label) {
+    margin-top: 26px;
+    font-size: 15px;
+    padding: 2px 10px;
+}
+
+sakuga-input {
+    display: block;
+    width: 100%;
+}
+
+sakuga-input.sk-inline-input {
+    display: inline-block;
+    width: auto;
+    min-width: 180px;
+}
+
+sakuga-input::part(input) {
+    background: rgba(15, 23, 42, 0.85);
+    color: var(--sk-ink);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    border-radius: 8px;
+    padding: 9px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: none;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+sakuga-input.sk-search-pad::part(input) {
+    padding-left: 36px;
+}
+
+sakuga-tabs {
+    display: inline-block;
+    max-width: 100%;
+    vertical-align: middle;
+}
+
+sakuga-tabs::part(tabs) {
+    background: rgba(15, 23, 42, 0.86);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.32);
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+sakuga-tabs::part(tab) {
+    color: #e2e8f0;
+    font-size: 12.5px;
+    padding: 8px 13px;
+}
+
+sakuga-tabs::part(indicator) {
+    background: rgba(139, 92, 246, 0.32);
+    border-color: #a855f7;
+}
+
+sakuga-checkbox {
+    display: inline-flex;
+    align-items: center;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+sakuga-checkbox::part(box) {
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 2px solid rgba(148, 163, 184, 0.45);
+    box-shadow: none;
+}
+
+sakuga-checkbox::part(label) {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+sakuga-toggle.sk-toggle-inline {
+    transform: scale(0.54);
+    transform-origin: left center;
+    margin: -14px -44px -14px 0 !important;
+    flex-shrink: 0;
+}
+
+.sk-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    overflow: visible;
+}
+
+.sk-toggle-row-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sk-ink);
+}
+
+sakuga-radio {
+    display: block;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+sakuga-slider {
+    display: block;
+    width: 100%;
+    margin: 26px 0 4px;
+}
+
+sakuga-progress.sk-sync-progress {
+    width: 100%;
+    --sk-progress-width: 100%;
+    margin-top: 4px;
+}
+
+sakuga-tooltip.sk-inline-tip {
+    display: inline-flex;
+    vertical-align: middle;
+    margin-top: 0 !important;
+    transform: scale(0.68);
+    transform-origin: center center;
+}
+
+#sakuga-global-toast {
+    position: fixed;
+    left: 24px;
+    bottom: 24px;
+    width: min(380px, calc(100vw - 32px));
+    z-index: 2147482999;
+    pointer-events: none;
+}
+
+#sakuga-global-toast::part(toast) {
+    width: auto;
+    min-width: 260px;
+    max-width: min(380px, calc(100vw - 32px));
+    white-space: normal;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+#sakuga-global-toast::part(close) {
+    pointer-events: auto;
+}
+
+.modal-card-content {
+    overflow: visible !important;
+}
+
+.modal-card-header {
+    border-radius: 16px 16px 0 0;
+}
+
+.nav-menu {
+    overflow-x: visible;
+    overflow-y: auto;
+}
+
+.tab-pane,
+.control-panel,
+.sync-config,
+.overview-card,
+.config-section,
+.config-container,
+.sync-logger,
+.gacha-active-banner-wrapper,
+.gacha-subview,
+.inspector-body,
+.help-hub-container {
+    overflow: visible;
+}
+
+@media (max-width: 768px) {
+    sakuga-tabs {
+        display: block;
+        width: 100%;
+    }
+
+    sakuga-button.sk-mobile-full {
+        display: flex;
+        width: 100%;
+    }
+
+    sakuga-button.sk-mobile-full::part(button) {
+        width: 100%;
+    }
+
+    #sakuga-global-toast {
+        left: 12px;
+        bottom: 12px;
     }
 }
