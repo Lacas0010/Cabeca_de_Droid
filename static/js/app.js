@@ -7,7 +7,7 @@ import "./modules/i18n.js?v=25.0";
 import "./modules/api_client.js?v=25.0";
 import "./modules/modal.js?v=25.0";
 import "./modules/navigation.js?v=25.0";
-import "./modules/config_manager.js?v=25.0";
+import "./modules/config_manager.js?v=26.0";
 import "./modules/sync_manager.js?v=25.0";
 import "./modules/endgame.js?v=25.0";
 import "./modules/roster.js?v=26.0";
@@ -33,6 +33,54 @@ window.loadGachaModules = function() {
     }
     return _gachaModulesPromise;
 };
+
+// ==========================================================================
+// Monitor de Ciclo de Vida da Janela (Auto-Shutdown Desktop)
+// ==========================================================================
+(function setupBrowserLifecycleHeartbeat() {
+    const clientId = (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function")
+        ? crypto.randomUUID()
+        : `tab_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const bodyPayload = JSON.stringify({ client_id: clientId });
+    let disconnectSent = false;
+
+    const sendHeartbeat = () => {
+        fetch("/api/system/heartbeat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: bodyPayload,
+        }).catch(() => {});
+    };
+
+    const sendDisconnect = () => {
+        if (disconnectSent) return;
+        disconnectSent = true;
+        try {
+            if (navigator.sendBeacon) {
+                const blob = new Blob([bodyPayload], { type: "application/json" });
+                if (navigator.sendBeacon("/api/system/disconnect", blob)) {
+                    return;
+                }
+            }
+        } catch (_) {}
+        fetch("/api/system/disconnect", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: bodyPayload,
+            keepalive: true,
+        }).catch(() => {});
+    };
+
+    sendHeartbeat();
+    setInterval(sendHeartbeat, 4000);
+
+    window.addEventListener("pageshow", () => {
+        disconnectSent = false;
+        sendHeartbeat();
+    });
+    window.addEventListener("pagehide", sendDisconnect);
+    window.addEventListener("beforeunload", sendDisconnect);
+})();
 
 // Inicialização da Aplicação
 // ==========================================================================

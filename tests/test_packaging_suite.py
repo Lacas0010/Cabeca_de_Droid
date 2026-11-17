@@ -1,6 +1,7 @@
 import os
 import sys
 import tempfile
+import threading
 import unittest
 import zipfile
 from pathlib import Path
@@ -181,6 +182,77 @@ class TestPlaywrightLoginFallbackAndSettingsLayout(unittest.TestCase):
         self.assertIn('class="config-notif-channels-grid"', html)
         self.assertIn(".config-sections-grid", css)
         self.assertIn("max-width: 768px", css)
+
+
+class TestBrowserLifecycleShutdown(unittest.TestCase):
+    def test_disabled_watchdog_never_triggers_shutdown(self):
+        from services.browser_lifecycle_service import BrowserLifecycleManager
+
+        called = threading.Event()
+        mgr = BrowserLifecycleManager(disconnect_grace_sec=0.05, heartbeat_timeout_sec=0.1)
+        mgr.configure(enabled=False, on_shutdown=called.set)
+        try:
+            hb = mgr.register_heartbeat("tab-1", is_loopback=True)
+            self.assertFalse(hb["watchdog"])
+            dc = mgr.register_disconnect("tab-1", is_loopback=True)
+            self.assertFalse(dc["shutdown_scheduled"])
+            self.assertFalse(called.wait(0.15))
+        finally:
+            mgr.shutdown()
+
+    def test_closing_last_local_tab_triggers_shutdown_after_grace_period(self):
+        from services.browser_lifecycle_service import BrowserLifecycleManager
+
+        called = threading.Event()
+        mgr = BrowserLifecycleManager(disconnect_grace_sec=0.05, heartbeat_timeout_sec=10.0)
+        mgr.configure(enabled=True, on_shutdown=called.set)
+        try:
+            mgr.register_heartbeat("tab-1", is_loopback=True)
+            dc = mgr.register_disconnect("tab-1", is_loopback=True)
+            self.assertTrue(dc["shutdown_scheduled"])
+            self.assertTrue(called.wait(1.0))
+        finally:
+            mgr.shutdown()
+
+    def test_f5_reload_or_second_tab_cancels_shutdown(self):
+        from services.browser_lifecycle_service import BrowserLifecycleManager
+
+        called = threading.Event()
+        mgr = BrowserLifecycleManager(disconnect_grace_sec=0.15, heartbeat_timeout_sec=10.0)
+        mgr.configure(enabled=True, on_shutdown=called.set)
+        try:
+            mgr.register_heartbeat("tab-1", is_loopback=True)
+            mgr.register_disconnect("tab-1", is_loopback=True)
+            # Simula nova página após F5 enviando heartbeat antes do grace timeout
+            hb2 = mgr.register_heartbeat("tab-2", is_loopback=True)
+            self.assertEqual(hb2["active_clients"], 1)
+            self.assertFalse(called.wait(0.25))
+        finally:
+            mgr.shutdown()
+
+    def test_api_endpoints_and_frontend_beacon_present(self):
+        from fastapi.testclient import TestClient
+        import server
+        from services.browser_lifecycle_service import browser_lifecycle_manager
+
+        called = threading.Event()
+        browser_lifecycle_manager.configure(enabled=True, on_shutdown=called.set)
+        try:
+            client = TestClient(server.app)
+            r1 = client.post("/api/system/heartbeat", json={"client_id": "test-tab"})
+            self.assertEqual(r1.status_code, 200)
+            self.assertTrue(r1.json()["watchdog"])
+            r2 = client.post("/api/system/disconnect", json={"client_id": "test-tab"})
+            self.assertEqual(r2.status_code, 200)
+            self.assertTrue(r2.json()["shutdown_scheduled"])
+        finally:
+            browser_lifecycle_manager.configure(enabled=False, on_shutdown=None)
+            browser_lifecycle_manager.shutdown()
+
+        app_js = (build.ROOT_DIR / "static" / "js" / "app.js").read_text(encoding="utf-8")
+        self.assertIn("/api/system/heartbeat", app_js)
+        self.assertIn("/api/system/disconnect", app_js)
+        self.assertIn("sendBeacon", app_js)
 
 
 if __name__ == "__main__":

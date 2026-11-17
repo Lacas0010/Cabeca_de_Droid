@@ -57,7 +57,13 @@ async def security_guard_middleware(request: Request, call_next):
             path == "/"
             or path.startswith("/assets")
             or path.startswith("/static")
-            or path in ("/api/security/status", "/api/security/pin/verify", "/api/proxy_image")
+            or path in (
+                "/api/security/status",
+                "/api/security/pin/verify",
+                "/api/proxy_image",
+                "/api/system/heartbeat",
+                "/api/system/disconnect",
+            )
             or not path.startswith("/api")
         )
         if not is_public:

@@ -7,11 +7,13 @@ import hashlib
 import asyncio
 import traceback
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 
 import database
 from core.config import get_resource_path, get_data_path
+from schemas.system import BrowserClientSignal
+from services.browser_lifecycle_service import browser_lifecycle_manager
 
 router = APIRouter(tags=["System & Utilities"])
 
@@ -287,3 +289,20 @@ async def reset_all_data():
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Erro ao apagar dados: {str(e)}")
+
+
+def _is_loopback_request(request: Request) -> bool:
+    host = request.client.host if request.client else "127.0.0.1"
+    return host in ("127.0.0.1", "::1", "localhost", "testclient")
+
+
+@router.post("/api/system/heartbeat")
+async def browser_heartbeat(payload: BrowserClientSignal, request: Request):
+    """Registra atividade contínua de uma aba local aberta no navegador."""
+    return browser_lifecycle_manager.register_heartbeat(payload.client_id, is_loopback=_is_loopback_request(request))
+
+
+@router.post("/api/system/disconnect")
+async def browser_disconnect(payload: BrowserClientSignal, request: Request):
+    """Sinaliza fechamento de uma aba local; encerra o servidor após janela de tolerância se nenhuma restar."""
+    return browser_lifecycle_manager.register_disconnect(payload.client_id, is_loopback=_is_loopback_request(request))

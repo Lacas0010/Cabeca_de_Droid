@@ -265,6 +265,11 @@ def main() -> None:
             print(f"[INFO] System Tray indisponível: {tray_err}")
 
     should_open_browser = not args.no_browser and (sys.platform == "win32" or bool(os.environ.get("DISPLAY")))
+
+    from services.browser_lifecycle_service import browser_lifecycle_manager
+
+    browser_lifecycle_manager.configure(enabled=should_open_browser, on_shutdown=stop_event.set)
+
     if ready and should_open_browser:
         try:
             webbrowser.open(url_local)
@@ -277,11 +282,14 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\n[INFO] Servidor encerrado com sucesso pelo usuário.")
     finally:
+        browser_lifecycle_manager.shutdown()
         if _uvicorn_server is not None:
             _uvicorn_server.should_exit = True
         if tray_manager:
             tray_manager.stop()
         server_thread.join(timeout=3.0)
+        if is_frozen():
+            os._exit(0)
 
 
 if __name__ == "__main__":
