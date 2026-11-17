@@ -2,7 +2,7 @@ import os
 import json
 import urllib.parse
 from typing import Dict, Any
-from core.config import get_resource_path
+from core.config import get_resource_path, get_data_path
 
 
 def get_raw_url(url_str: str) -> str:
@@ -38,7 +38,7 @@ def download_element_icons() -> None:
     except ImportError:
         return
 
-    target_dir = get_resource_path(os.path.join("assets", "elements"))
+    target_dir = get_data_path(os.path.join("assets", "elements"))
     os.makedirs(target_dir, exist_ok=True)
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -75,7 +75,7 @@ def download_hsr_eidolon_shards(char_names=None) -> None:
     except Exception:
         return
 
-    target_dir = get_resource_path(os.path.join("assets", "shards", "hsr"))
+    target_dir = get_data_path(os.path.join("assets", "shards", "hsr"))
     os.makedirs(target_dir, exist_ok=True)
 
     session: Any = requests.Session(impersonate="chrome")

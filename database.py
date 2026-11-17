@@ -6,8 +6,9 @@ from datetime import datetime, timedelta
 import math
 from typing import Dict, List, Optional, Any, Tuple
 from extractor import clean_relic_name
+from core.paths import get_data_dir, get_resource_path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = get_data_dir()
 DATABASE_NAME = os.path.join(BASE_DIR, "hoyo_app.db")
 
 
@@ -89,7 +90,7 @@ def get_weapon_rarity(game_id: str, weapon_name: str) -> int:
         return 4
     if _WEAPON_RARITIES_CACHE is None:
         try:
-            rarity_path = os.path.join(BASE_DIR, "static_data", "weapon_rarities.json")
+            rarity_path = get_resource_path(os.path.join("static_data", "weapon_rarities.json"))
             if os.path.exists(rarity_path):
                 with open(rarity_path, "r", encoding="utf-8") as f:
                     _WEAPON_RARITIES_CACHE = json.load(f)

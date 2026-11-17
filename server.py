@@ -9,7 +9,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 
 # Core modules
-from core.config import get_resource_path, get_cookies, get_config, parse_cookie_string
+from core.config import get_resource_path, get_data_path, seed_bundled_resources, get_cookies, get_config, parse_cookie_string
 from core.security import (
     create_session,
     is_valid_session,
@@ -199,13 +199,16 @@ app.middleware("http")(request_latency_tracker_middleware)
 for router in all_routers:
     app.include_router(router)
 
+# Garante seed de manifestos/assets empacotados no diretório persistente gravável
+seed_bundled_resources()
+
 # Download proativo de ícones dos elementos e fragmentos de Eidolon
 download_element_icons()
 threading.Thread(target=download_hsr_eidolon_shards, daemon=True).start()
 
 # Montagem de arquivos estáticos da interface Web Glassmorphism
 static_dir = get_resource_path("static")
-assets_dir = get_resource_path("assets")
+assets_dir = get_data_path("assets")
 
 os.makedirs(static_dir, exist_ok=True)
 os.makedirs(assets_dir, exist_ok=True)

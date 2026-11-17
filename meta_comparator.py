@@ -3,8 +3,9 @@ import re
 import json
 import unicodedata
 from typing import Dict, List, Any, Optional
+from core.paths import get_data_dir, get_resource_path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = get_data_dir()
 STATIC_DATA_DIR = os.path.join(BASE_DIR, "static_data")
 
 # Cache em memória para acesso ultrarrápido aos dados estáticos
@@ -16,7 +17,7 @@ def _load_json_file(filename: str, default: Any) -> Any:
     if filename in _CACHE:
         return _CACHE[filename]
 
-    filepath = os.path.join(STATIC_DATA_DIR, filename)
+    filepath = get_resource_path(os.path.join("static_data", filename))
     if os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:

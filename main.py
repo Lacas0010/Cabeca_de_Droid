@@ -1,16 +1,48 @@
 import os
 import sys
 import time
+import socket
+import argparse
 import threading
 import subprocess
 import webbrowser
 import uvicorn
 
+from core.paths import get_data_dir, is_frozen, load_local_env
+
+
+def configure_runtime_environment() -> None:
+    """
+    Prepara o ambiente de execução compatível com modo desenvolvimento e executável PyInstaller (--noconsole):
+    - Carrega variáveis de ambiente locais opcionais (.env).
+    - Redireciona stdout/stderr ausentes (--noconsole) para arquivo de log em %APPDATA%/Cabeca_de_Droid/logs/app.log.
+    - Garante diretório de trabalho gravável fora de _MEIPASS quando empacotado.
+    """
+    load_local_env()
+    data_dir = get_data_dir()
+
+    if is_frozen():
+        try:
+            os.chdir(data_dir)
+        except OSError:
+            pass
+
+    if sys.stdout is None or sys.stderr is None:
+        log_dir = os.path.join(data_dir, "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        log_path = os.path.join(log_dir, "app.log")
+        log_file = open(log_path, "a", encoding="utf-8", buffering=1, errors="replace")
+        if sys.stdout is None:
+            sys.stdout = log_file
+        if sys.stderr is None:
+            sys.stderr = log_file
+
 
 def setup_playwright() -> None:
     """
     Garante que o executável Chromium do Playwright esteja disponível no ambiente do usuário.
-    Se estiver rodando empacotado via PyInstaller no Windows, força a busca na pasta AppData/Local padrão.
+    Se estiver rodando empacotado via PyInstaller no Windows, força a busca na pasta AppData/Local padrão
+    e realiza o download em segundo plano para não bloquear a abertura da interface.
     """
     if sys.platform != "win32":
         return
@@ -27,30 +59,33 @@ def setup_playwright() -> None:
                 break
 
     if not has_browser:
-        try:
-            from playwright._impl._driver import compute_driver_executable, get_driver_env
+        def _install_chromium_bg() -> None:
+            try:
+                from playwright._impl._driver import compute_driver_executable, get_driver_env
 
-            driver_executable, driver_cli = compute_driver_executable()
-            env = get_driver_env()
-            env["PLAYWRIGHT_BROWSERS_PATH"] = pw_path
+                driver_executable, driver_cli = compute_driver_executable()
+                env = get_driver_env()
+                env["PLAYWRIGHT_BROWSERS_PATH"] = pw_path
 
-            creationflags = subprocess.CREATE_NO_WINDOW
+                creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+                subprocess.run(
+                    [driver_executable, driver_cli, "install", "chromium"],
+                    env=env,
+                    creationflags=creationflags,
+                    check=False,
+                )
+            except Exception as e:
+                print(f"[WARN] Não foi possível verificar/instalar o Chromium do Playwright automaticamente: {e}")
 
-            subprocess.run(
-                [driver_executable, driver_cli, "install", "chromium"],
-                env=env,
-                creationflags=creationflags,
-                check=False,
-            )
-        except Exception as e:
-            print(f"[WARN] Não foi possível verificar/instalar o Chromium do Playwright automaticamente: {e}")
+        threading.Thread(target=_install_chromium_bg, daemon=True).start()
 
 
+configure_runtime_environment()
 setup_playwright()
 
 from server import app
 
-import socket
+_uvicorn_server = None
 
 
 def get_local_ip() -> str:
@@ -116,9 +151,6 @@ def wait_for_server(port: int, timeout: float = 10.0) -> bool:
     return False
 
 
-import argparse
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Cabeça de Droid - Assistente HoYoLAB")
     parser.add_argument(
@@ -147,8 +179,10 @@ def parse_args():
 
 def start_server(host: str, port: int) -> None:
     """Inicia o servidor web FastAPI usando Uvicorn com binding configurado."""
+    global _uvicorn_server
     config = uvicorn.Config(app, host=host, port=port, log_level="info")
     server = uvicorn.Server(config)
+    _uvicorn_server = server
     server.run()
 
 
@@ -239,8 +273,11 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\n[INFO] Servidor encerrado com sucesso pelo usuário.")
     finally:
+        if _uvicorn_server is not None:
+            _uvicorn_server.should_exit = True
         if tray_manager:
             tray_manager.stop()
+        server_thread.join(timeout=3.0)
 
 
 if __name__ == "__main__":

@@ -779,12 +779,15 @@ class PrydwenScraper:
         }
 
         # Carrega dados existentes do cache para não sobrescrever outros jogos
-        static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static_data")
+        from core.paths import get_data_path, get_resource_path
+
+        static_dir = get_data_path("static_data")
         cache_file = os.path.join(static_dir, "current_banners.json")
+        read_file = cache_file if os.path.exists(cache_file) else get_resource_path(os.path.join("static_data", "current_banners.json"))
         all_banners = {}
-        if os.path.exists(cache_file):
+        if os.path.exists(read_file):
             try:
-                with open(cache_file, "r", encoding="utf-8") as f:
+                with open(read_file, "r", encoding="utf-8") as f:
                     all_banners = json.load(f)
             except Exception:
                 all_banners = {}

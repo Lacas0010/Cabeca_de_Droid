@@ -18,6 +18,27 @@ Cabeça de Droid is a local metagame analysis service and multi-game management 
 
 ---
 
+## Como Baixar e Usar (Sem precisar instalar Python)
+
+Se você deseja apenas usar o **Cabeça de Droid** no Windows sem precisar instalar Python, Git ou qualquer dependência manualmente, siga os passos abaixo:
+
+1. Acesse a aba oficial de **[Releases no GitHub](https://github.com/Lacas0010/Cabeca_de_Droid/releases)**.
+2. Na versão mais recente, baixe o arquivo **`Cabeca_de_Droid-Windows-x64.zip`**.
+3. Extraia todo o conteúdo do arquivo `.zip` para uma pasta de sua preferência (por exemplo, `C:\Jogos\Cabeca_de_Droid`).
+4. Dê um duplo clique em **`Cabeca_de_Droid.exe`**.
+   - O aplicativo iniciará em segundo plano com ícone na bandeja do sistema (System Tray) e abrirá a interface automaticamente no seu navegador em `http://127.0.0.1:8000`.
+   - Seus dados (banco SQLite, credenciais criptografadas, cache e logs) são preservados com segurança em `%APPDATA%\Cabeca_de_Droid`.
+   - *(Opcional)* Para customizar porta ou acesso em rede local, renomeie `.env.example` para `.env` na mesma pasta do executável.
+
+> [!IMPORTANT]
+> **Aviso sobre o Windows SmartScreen (Falso Positivo Comum):**  
+> Como o executável é distribuído de forma independente (sem certificado pago de assinatura de código da Microsoft), o Windows Defender SmartScreen pode exibir a tela *"O Windows protegeu o computador"*.  
+> Para abrir normalmente, clique em **"Mais informações"** (*More info*) e depois em **"Executar assim mesmo"** (*Run anyway*).
+
+*(Para desenvolvedores que desejam contribuir ou rodar via código-fonte com Python/Git, consulte a seção técnica de instalação mais abaixo neste documento.)*
+
+---
+
 ## 1. Core Modules & Features
 
 ### 1.1 Multi-Game Metagame Data Ingestion

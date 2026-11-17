@@ -11,11 +11,11 @@ from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import JSONResponse
 
 import database
-from core.config import get_resource_path
+from core.config import get_resource_path, get_data_path
 
 router = APIRouter(tags=["System & Utilities"])
 
-_IMAGE_CACHE_DIR = get_resource_path(os.path.join("assets", "cache", "images"))
+_IMAGE_CACHE_DIR = get_data_path(os.path.join("assets", "cache", "images"))
 _PROXY_SESSION = None
 
 
@@ -242,7 +242,7 @@ async def download_guides_zip(game_id: Optional[str] = None):
 
         with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
             for folder in target_folders:
-                folder_path = get_resource_path(folder)
+                folder_path = get_data_path(folder)
                 if os.path.exists(folder_path):
                     for root, _, files in os.walk(folder_path):
                         for file in files:
@@ -275,7 +275,7 @@ async def reset_all_data():
     try:
         folders = ["zzz", "hsr", "genshin"]
         for folder in folders:
-            folder_path = get_resource_path(folder)
+            folder_path = get_data_path(folder)
             if os.path.exists(folder_path):
                 shutil.rmtree(folder_path, ignore_errors=True)
 

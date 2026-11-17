@@ -7,8 +7,9 @@ import hashlib
 import hmac
 import secrets
 from typing import Dict, Any, Optional, Tuple
+from core.paths import get_data_dir
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = get_data_dir()
 COOKIES_ENC_FILE = os.path.join(BASE_DIR, "cookies.enc")
 COOKIES_LEGACY_FILE = os.path.join(BASE_DIR, "cookies.json")
 CONFIG_ENC_FILE = os.path.join(BASE_DIR, "config.enc")

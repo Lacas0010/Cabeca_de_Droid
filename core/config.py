@@ -1,16 +1,17 @@
 import os
-import sys
 from typing import Dict, Any
 import security_vault
-
-
-def get_resource_path(relative_path: str) -> str:
-    """
-    Obtém o caminho absoluto para o recurso, compatível com desenvolvimento e executável do PyInstaller.
-    """
-    if hasattr(sys, "_MEIPASS"):
-        return os.path.join(sys._MEIPASS, relative_path)
-    return os.path.abspath(relative_path)
+from core.paths import (
+    APP_NAME,
+    PROJECT_ROOT,
+    is_frozen,
+    get_bundle_root,
+    get_data_dir,
+    get_data_path,
+    get_resource_path,
+    seed_bundled_resources,
+    load_local_env,
+)
 
 
 def get_cookies() -> Dict[str, Any]:

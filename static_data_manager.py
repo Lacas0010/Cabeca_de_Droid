@@ -5,9 +5,10 @@ import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
 import requests
+from core.paths import get_data_dir, get_resource_path
 
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = get_data_dir()
 STATIC_DATA_DIR = os.path.join(BASE_DIR, "static_data")
 
 
