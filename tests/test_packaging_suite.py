@@ -254,6 +254,17 @@ class TestBrowserLifecycleShutdown(unittest.TestCase):
         self.assertIn("/api/system/disconnect", app_js)
         self.assertIn("sendBeacon", app_js)
 
+    def test_browser_watchdog_enabled_only_in_frozen_releases(self):
+        import main
+
+        with patch.object(main, "is_frozen", return_value=False):
+            self.assertFalse(main.should_enable_browser_watchdog(True))
+            self.assertFalse(main.should_enable_browser_watchdog(False))
+
+        with patch.object(main, "is_frozen", return_value=True):
+            self.assertTrue(main.should_enable_browser_watchdog(True))
+            self.assertFalse(main.should_enable_browser_watchdog(False))
+
 
 if __name__ == "__main__":
     unittest.main()

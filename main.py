@@ -190,6 +190,11 @@ def start_server(host: str, port: int) -> None:
     server.run()
 
 
+def should_enable_browser_watchdog(should_open_browser: bool) -> bool:
+    """Ativa o encerramento automático ao fechar o navegador somente no executável empacotado (releases)."""
+    return is_frozen() and bool(should_open_browser)
+
+
 def main() -> None:
     """
     Ponto de entrada unificado da aplicação.
@@ -268,7 +273,10 @@ def main() -> None:
 
     from services.browser_lifecycle_service import browser_lifecycle_manager
 
-    browser_lifecycle_manager.configure(enabled=should_open_browser, on_shutdown=stop_event.set)
+    browser_lifecycle_manager.configure(
+        enabled=should_enable_browser_watchdog(should_open_browser),
+        on_shutdown=stop_event.set,
+    )
 
     if ready and should_open_browser:
         try:
