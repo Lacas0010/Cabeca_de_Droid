@@ -1,7 +1,7 @@
 [project]
 name = "cabeca-de-droid"
-version = "5.2.0"
-description = "Suíte local inteligente com interface Web Glassmorphism, Clean Architecture FastAPI, RAG e gestão de contas HoYoverse."
+version = "5.6.0"
+description = "Suíte local inteligente com interface Web Sakuga VFX Offline-First, Auto-Updater, Clean Architecture FastAPI, RAG e gestão de contas HoYoverse."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

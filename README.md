@@ -6,111 +6,98 @@
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![UI: Sakuga VFX](https://img.shields.io/badge/UI-Sakuga%20VFX%20(Offline)-ff477e.svg)](static/vendor/sakuga-vfx/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 181 Passed](https://img.shields.io/badge/tests-181%20passed-success.svg?logo=pytest&logoColor=white)](tests/)
-[![Security: DPAPI Protected](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
-[![Performance: Optimized](https://img.shields.io/badge/Performance-17%2F17%20Audited-brightgreen.svg)](#112-high-performance-engine--optimization-pipeline)
+[![Tests: 230 Passed](https://img.shields.io/badge/tests-230%20passed-success.svg?logo=python&logoColor=white)](tests/)
+[![Security: DPAPI Vault](https://img.shields.io/badge/Security-DPAPI%20Vault-green.svg)](SECURITY.md)
 
-Cabeça de Droid is a local metagame analysis service and multi-game management application for **Honkai: Star Rail**, **Genshin Impact**, and **Zenless Zone Zero** that provides automated metagame data ingestion, deterministic gear Roll Value (RV) evaluation, Monte Carlo gacha probability forecasting, and programmatic build audit rendering.
+**Cabeça de Droid** is a local metagame analysis suite and multi-game account manager for **Honkai: Star Rail**, **Genshin Impact**, and **Zenless Zone Zero**. It combines automated metagame data ingestion, deterministic equipment Roll Value (RV) scoring, Monte Carlo gacha forecasting, an offline-first **Sakuga VFX** web interface, and a standalone Windows executable with **in-app GitHub Releases auto-updating**.
 
 > [!NOTE]
-> **Name Origin:** "Cabeça de Droid" (Droid Head) references *Honkai: Star Rail* lore — the title given by Herta to the **Aeon Nous** (the Aeon of Erudition), an astronomical supercomputer elevated to divinity.
+> **Name Origin:** "Cabeça de Droid" (Droid Head) references *Honkai: Star Rail* lore — the epithet given by Herta to **Nous**, the Aeon of Erudition, an astronomical supercomputer elevated to divinity.
 
 ---
 
-## Como Baixar e Usar (Sem precisar instalar Python)
+## How to Download & Run (Windows Standalone — No Python Required)
 
-Se você deseja apenas usar o **Cabeça de Droid** no Windows sem precisar instalar Python, Git ou qualquer dependência manualmente, siga os passos abaixo:
+If you want to run **Cabeça de Droid** on Windows without installing Python, Git, or external dependencies:
 
-1. Acesse a aba oficial de **[Releases no GitHub](https://github.com/Lacas0010/Cabeca_de_Droid/releases)**.
-2. Na versão mais recente, baixe o arquivo **`Cabeca_de_Droid-Windows-x64.zip`**.
-3. Extraia todo o conteúdo do arquivo `.zip` para uma pasta de sua preferência (por exemplo, `C:\Jogos\Cabeca_de_Droid`).
-4. Dê um duplo clique em **`Cabeca_de_Droid.exe`**.
-   - O aplicativo iniciará em segundo plano com ícone na bandeja do sistema (System Tray) e abrirá a interface automaticamente no seu navegador em `http://127.0.0.1:8000`.
-   - Seus dados (banco SQLite, credenciais criptografadas, cache e logs) são preservados com segurança em `%APPDATA%\Cabeca_de_Droid`.
-   - *(Opcional)* Para customizar porta ou acesso em rede local, renomeie `.env.example` para `.env` na mesma pasta do executável.
+1. Open the official **[GitHub Releases](https://github.com/Lacas0010/Cabeca_de_Droid/releases)** page.
+2. In the latest release, download **`Cabeca_de_Droid-Windows-x64.zip`**.
+3. Extract the `.zip` archive to a folder of your choice (e.g., `C:\Games\Cabeca_de_Droid`).
+4. Double-click **`Cabeca_de_Droid.exe`**.
+   - The app starts locally with a Windows System Tray icon and automatically opens `http://127.0.0.1:8000` in your default browser.
+   - Your personal data (SQLite database, encrypted credential vault, caches, and logs) is stored safely in `%APPDATA%\Cabeca_de_Droid`.
+   - **Auto-Shutdown on Window Close:** In packaged desktop builds (`.exe`), closing all open Cabeça de Droid browser tabs automatically shuts down the background server via client heartbeat + `sendBeacon` lifecycle tracking (self-hosted/server launches stay online continuously).
+   - **In-App Auto-Updater:** On startup (or via the sidebar version badge / **Atualizar** button), the app checks GitHub Releases asynchronously and offers one-click downloading, ZipSlip-verified extraction, safe `.bat` replacement preserving your local database/vault/`.env`, and automatic restart.
+   - *(Optional)* Rename `.env.example` to `.env` alongside the executable to customize `HOST`, `PORT`, or `ALLOW_LAN`.
 
 > [!IMPORTANT]
-> **Aviso sobre o Windows SmartScreen (Falso Positivo Comum):**  
-> Como o executável é distribuído de forma independente (sem certificado pago de assinatura de código da Microsoft), o Windows Defender SmartScreen pode exibir a tela *"O Windows protegeu o computador"*.  
-> Para abrir normalmente, clique em **"Mais informações"** (*More info*) e depois em **"Executar assim mesmo"** (*Run anyway*).
+> **Windows Defender SmartScreen Notice:**  
+> Because this community open-source binary is not signed with a commercial Authenticode certificate, Windows SmartScreen may show *"Windows protected your PC"*. Click **"More info"** and then **"Run anyway"** to launch it.
 
-*(Para desenvolvedores que desejam contribuir ou rodar via código-fonte com Python/Git, consulte a seção técnica de instalação mais abaixo neste documento.)*
+*(Developers running from source via Python/Git or deploying on Linux/Docker can follow [Section 4](#4-prerequisites--developer-installation) and [Section 5](#5-self-hosted-deployment).)*
 
 ---
 
 ## 1. Core Modules & Features
 
 ### 1.1 Multi-Game Metagame Data Ingestion
-- **Automated Upstream Scraping:** Uses `curl_cffi` with browser TLS/JA3 fingerprint impersonation to bypass 403 CDN protections, scraping character guides, gear tier lists, and rotation metrics from community databases (Prydwen, Enka Network, HoYoLAB).
-- **Dynamic Character & Equipment Banner Scraping:** Parses live character and weapon banners (including *Epitome Invocation*, *Brilliant Fixation*, and *Dissonant Sonata*) for all three games in real time, saving normalized data into offline JSON manifests under `static_data/current_banners.json`.
-- **Deterministic Offline Cache:** System automatically operates from local static manifests when external network connectivity is unavailable.
+- **Automated Upstream Scraping:** Uses `curl_cffi` with browser TLS/JA3 fingerprint impersonation to bypass 403 CDN protections, collecting character guides, equipment benchmarks, and rotation metrics from community sources (Prydwen, Enka Network, HoYoLAB).
+- **Dynamic Character & Equipment Banner Scraping:** Parses live character and weapon banners (including *Epitome Invocation*, *Brilliant Fixation*, and *Dissonant Sonata*) for all three games into `static_data/current_banners.json`.
+- **Deterministic Offline Cache:** Operates autonomously from local static JSON manifests when external network connectivity is unavailable.
 
 ### 1.2 Deterministic Gear Roll Value (RV) Engine
 - **Cross-Game Gear Evaluation:**
-  - *Honkai: Star Rail:* Evaluates Relics and Planar Ornaments against 5★ canonical roll limits.
+  - *Honkai: Star Rail:* Evaluates Relics and Planar Ornaments against canonical 5★ roll limits.
   - *Genshin Impact:* Scores Artifacts (Flower, Plume, Sands, Goblet, Circlet) weighted by character scaling (ATK, HP, DEF, ER, EM, CRIT).
-  - *Zenless Zone Zero:* Evaluates Drive Discs (Slots 1 to 6) evaluating main stats, anomaly proficiency, and CRIT spreads.
+  - *Zenless Zone Zero:* Evaluates Drive Discs (Slots 1–6), main stats, Anomaly Proficiency, and CRIT spreads.
 - **Weighted Role Prioritization:** Substats receive deterministic priority weights ($1.00$ down to $0.40$) derived from benchmark community guides.
 - **Primary Stat Forgiveness:** Grants $+40\%$ baseline credit for recommended main stats, $+24\%$ for viable secondaries, and $0\%$ for incompatible types.
 - **Flat Stat Fallback:** Flat ATK, Flat HP, and Flat DEF automatically receive $50\%$ of their corresponding percentage stat weight if the percentage variant is prioritized.
 
-### 1.3 Monte Carlo Gacha Simulator & Pull Forecasting
-- **10,000-Iteration Stochastic Modeling:** Simulates exact probability distributions, expected pull counts, and confidence intervals for target character copies (C0–C6 / E0–E6 / M0–M6) and signature weapons/cones/engines (R1–R5).
-- **Accurate Engine Mechanics:** Implements official soft pity curves (starting at pull 74 for character banners, pull 63 for Genshin weapon banners, pull 65 for HSR light cone banners), base rates (0.6% / 0.8% / 1.0%), guaranteed 50/50 state tracking, and Fate Points / Epitomized Path rules.
-- **Pull Accumulation Projection:** Projects daily and monthly currency earnings (Daily Commissions/Errands, Monthly Shop Resets, Spiral Abyss/MoC/Shiyu resets, events, and Express Supply Pass / Welkin Moon).
-- **Warp / Wish / Signal History Tracker:** Imports and exports pull histories via UIGF v2.4 and SRGF standards, calculating exact account-level pity counters and historical luck percentages.
+### 1.3 Monte Carlo Gacha Simulator, Forecast & History Tracker
+- **10,000-Iteration Stochastic Modeling:** Simulates probability distributions, expected pull counts, and confidence intervals for target characters (C0–C6 / E0–E6 / M0–M6) and signature weapons/cones/engines (R1–R5).
+- **Accurate Pity Curves:** Implements soft pity thresholds (pull 74 for character banners, pull 63 for Genshin weapons, pull 65 for HSR light cones), base rates, 50/50 guaranteed state tracking, and Epitomized Path / Fate Points rules.
+- **Saved Banner Goals & Live Countdown:** Persists gacha targets in SQLite (`gacha_forecast_goals`) with second-by-second countdowns calibrated to official regional phase release schedules.
+- **Warp / Wish / Signal Tracker:** Imports and exports pull logs via UIGF v2.4 and SRGF schemas with exact pity counters and historical luck scoring.
 
 ### 1.4 Daily Farming Planner (Work Order)
-- **Domain Schedule Mapping:** Maps open talent, weapon ascension, and trace material domains in real time according to current server day.
-- **Roster-Prioritized Allocation:** Cross-references open domains against characters below level/build thresholds in the user's active roster, generating prioritized stamina/resin/battery expenditure schedules.
-- **Automated Work Order Export:** Copies or transmits daily farming itineraries formatted for Discord and Telegram webhooks.
+- **Domain Schedule Mapping:** Maps active talent books, weapon ascension domains, and trace materials according to server weekday rotation.
+- **Roster-Prioritized Allocation:** Cross-references open domains against characters below investment thresholds to build prioritized stamina/resin/battery schedules.
+- **Webhook Dispatch:** Exports or sends daily farming checklists directly to Discord Webhooks and Telegram Bots.
 
 ### 1.5 Equipment Discard Filter (Trash Finder) & Crafting Advisor
-- **Inventory Discard Identification:** Audits unequipped and locked gear against requirements of all indexed characters, identifying pieces with conflicting substats or low Roll Value for recycling into EXP or synthesis material.
-- **Crafting Recommendation Engine:** Recommends targeted piece creation using *Self-Modeling Resin* (HSR), *Sanctifying Elixir* (Genshin), or *Tuning/Dismantling* (ZZZ) focused on the lowest-scoring equipment slots of active teams.
+- **Inventory Discard Identification:** Audits unequipped and locked gear against every indexed character to spotlight conflicting substats or low Roll Value candidates for salvage.
+- **Crafting Recommendation Engine:** Recommends targeted piece synthesis via *Self-Modeling Resin* (HSR), *Sanctifying Elixir* (Genshin), or *Tuning/Dismantling* (ZZZ) targeting active teams' weakest slots.
 
-### 1.6 Account Roll Efficiency Index (Luck Score)
-- **Statistical Substat Distribution:** Calculates account-wide roll quality metrics by measuring the variance between observed rolls and theoretical 5★ maximum values across all equipped pieces.
-- **Record Identification:** Detects the account's top-performing equipment (**God Roll**) and lowest-efficiency piece (**Cursed Roll**).
+### 1.6 Account Roll Efficiency Index (Luck Score) & Programmatic Cards
+- **Substat Quality Variance:** Compares observed substat rolls against canonical 5★ ceilings across equipped gear, identifying each account's **God Roll** and **Cursed Roll**.
+- **2x HD Build & Team Card Export:** Renders 2400 × 1350 px character cards and 3/4-slot team showcase graphics locally via HTML5 Canvas (`html2canvas`) with one-click clipboard PNG copy.
 
-### 1.7 Programmatic Tier List & Build Cards
-- **Account Investment Matrix:** Classifies indexed rosters into standard grade tiers (**SSS** down to **D**) with elemental coverage and combat role distribution breakdowns.
-- **2x HD Canvas Export:** Generates 2400 × 1350 px build cards, relic roll distributions, and team summaries locally via HTML5 Canvas with no third-party framework dependencies.
+### 1.7 Endgame Compatibility & Affinitive Eidolons
+- **Combat Challenge Auditing:** Tracks clear stats across *Memory of Chaos (MoC)*, *Pure Fiction (PF)*, *Apocalyptic Shadow (AS)*, *Spiral Abyss*, *Imaginarium Theater*, and *Shiyu Defense* / *Deadly Assault*.
+- **Affinitive Eidolons & Alternate Paths:** Supports HSR Affinitive/Extra Eidolon nodes (`ex_ranks_json`) and variant/Trailblazer resolution without MD5/name collisions.
+- **Algorithmic Team Matcher:** Matches meta archetypes against SQLite roster ownership and suggests functional substitutions.
 
-### 1.8 Endgame Compatibility & Team Matcher
-- **Combat Challenge Auditing:** Tracks stages, clear times, cycle counts, and star ratings across *Memory of Chaos (MoC)*, *Pure Fiction (PF)*, *Apocalyptic Shadow (AS)*, *Spiral Abyss*, *Imaginarium Theater*, and *Shiyu Defense*.
-- **Algorithmic Composition Matching:** Compares active meta team archetypes against user characters stored in SQLite, computing readiness percentages and recommending functional substitutions.
+### 1.8 Account Evolution Timeline, Promo Codes & Auto-Login Fallback
+- **Temporal Snapshots:** Saves periodic snapshots (`account_snapshots`) and calculates stat/build progression diffs over time.
+- **Autonomous 3h Promo Code Redemption:** Scans and redeems Primogems, Stellar Jades, and Polychromes via official HoYoLAB endpoints, with desktop/Discord/Telegram alerts.
+- **Resilient Browser Login:** Captures HoYoLAB cookies via Playwright using Chromium, automatically falling back to system-installed Google Chrome or Microsoft Edge in frozen builds if bundled Playwright browsers are absent.
 
-### 1.9 Account Evolution Timeline & Snapshot Diffing
-- **Temporal Progression Tracking:** Stores periodic snapshots of roster stats, gear scores, and account levels.
-- **Evolution Diffing:** Compares snapshot differentials to display stat increases, newly acquired 5★ items, and relic score progression over time.
+### 1.9 Cryptographic Credential Vault & Zero-Exposure Security
+- **Hardware-Backed / OS Vault:** Encrypts session cookies (`ltuid_v2`, `ltoken_v2`, `cookie_token_v2`) using Windows DPAPI (`CryptProtectData`) or AES-256-GCM / HMAC on POSIX hosts.
+- **Privacy Enforcement:** Masks tokens in responses (`mask_token`), redacts credentials in real-time logs, defaults to `127.0.0.1` loopback binding, and supports optional PBKDF2-protected local PIN locking.
 
-### 1.10 Autonomous Code Redemption & Alerts
-- **3-Hour Scheduled Redemption:** Searches and redeems active promo codes for Primogems, Stellar Jades, and Polychromes via official HoYoLAB endpoints.
-- **Proactive Notifications:** Dispatches desktop toasts, Discord Webhook alerts, and Telegram Bot notifications when stamina caps, codes are redeemed, or banner rotations occur.
+### 1.10 Sakuga VFX Offline-First Interface & Roster Workspace
+- **100% Local Sakuga VFX Web Components (`static/vendor/sakuga-vfx/`):** Native zero-dependency custom elements (`<sakuga-button>`, `<sakuga-toggle>`, `<sakuga-slider>`, `<sakuga-checkbox>`, `<sakuga-radio>`, `<sakuga-input>`, `<sakuga-tabs>`, `<sakuga-progress>`, `<sakuga-rating>`, `<sakuga-toast>`, `<sakuga-tooltip>`) bundled locally for full offline operation.
+- **Bilingual UI (PT-BR / EN-US):** Live client/backend localization across all tabs, stats, endgame modes, and farm calendars (`i18n.js` + `translation_service.py`).
+- **Flexible Grid & High-Density List View:** Instant toggle (`localStorage`) between visual character cards and 5-column analytical rows showing weapon/relic canonical rarities, active set tags, RV grades, smart sorting (Power, RV, Level, A–Z/Z–A), audit filters, and debounced search (`AbortController`).
+- **Desktop Multi-Column Settings & High-Performance Backend:** Horizontal grid cards on desktop (`> 768px`), GZip compression, 60s TTL service caching with sync invalidation, batch SQLite relic queries, WebP/LANCZOS `/api/proxy_image`, and self-hosted WOFF2 fonts (`Inter` & `Outfit`).
 
-### 1.11 Cryptographic Credential Vault
-- **Zero-Exposure Policy:** Protects session tokens (`ltuid_v2`, `ltoken_v2`) using Windows Data Protection API (DPAPI) or AES-256-GCM / HMAC on Linux.
-- **Privacy Enforcement:** Tokens are masked in web interfaces (`mask_token`) and expunged from log outputs via regex sanitization. Optional local numeric PIN locks the web interface.
-
-### 1.12 High-Performance Engine & Optimization Pipeline
-- **HTTP / Network Layer:** `GZipMiddleware(minimum_size=1000)` compression, RFC-compliant `Cache-Control: public, max-age=86400` on static assets, and `CDN-Cache-Control` header (30 days) with production-ready reverse-proxy configuration (`scripts/nginx-cabeca-de-droid.conf`).
-- **Database & Query Optimization:** Zero N+1 queries in SQLite (batch relic loading via `WHERE uid IN (...)`), explicit column projections replacing wildcard selects, and indexed temporal pagination (`LIMIT ? OFFSET ?`) across snapshots and redemption histories.
-- **In-Memory TTL Caching:** Roster and Endgame service layers backed by a 60-second in-memory cache with reactive auto-invalidation on data synchronization, account deletion, and active profile changes.
-- **Dynamic Image & Asset Pipeline:** On-demand WebP image conversion and Pillow LANCZOS resampling (`/api/proxy_image?w=160&format=webp`) yielding up to 95% payload savings, alongside local self-hosted WOFF2 fonts (`Inter`, `Outfit`) with `font-display: swap;`.
-- **Vanilla Frontend Architecture:** Code-splitting with dynamic ES6 module loading (`requestIdleCallback`), native CSS list virtualization (`content-visibility: auto`) for large character galleries, and animated shimmer loading skeletons.
-- **Latency Monitoring:** Profiling middleware tracking request durations, injecting `X-Process-Time` headers, and triggering `[PERF-WARN]` telemetry for requests exceeding 500 ms.
-
-### 1.13 Flexible Character Roster View (Grid & Rich List Mode)
-- **Seamless Grid / List Mode Toggle:** Instant view switching at the top of each game gallery with `localStorage` persistence (`roster_view_mode`), allowing users to toggle between visual card art (Grid view) and dense analytical rows (List view).
-- **High-Density 5-Column List Row Architecture (Option C):**
-  - **Character Identity:** Elemental-themed avatar badge, character level, ascension rank (`E0-E6`, `C0-C6`, `M0-M6`), and tactical combat path/weapon class.
-  - **Weapon / Light Cone / W-Engine:** Official thumbnail, current weapon level, superimposition/refinement rank (`S1-S5`, `R1-R5`, `W1-W5`), and explicit canonical rarity badge (`5★`, `4★`, `3★`, `1★` or `Rank S / Rank A / Rank B`).
-  - **Equipped Relics / Artifacts / Discs Strip:** Horizontal strip of official piece icons with borders and radial glows 100% faithful to canonical item rarity (Gold 5★, Purple 4★, Blue 3★), accompanied by corner micro-badges displaying roll evaluation grades (`SSS` through `D`).
-  - **Active Set Bonuses:** Automatic parsing and display of active 4-piece and 2-piece set bonuses (`4p`, `2p`) along with an equipped slots indicator.
-  - **Roll Value Grade & Direct Inspection:** Overall build Roll Value Grade (`SSS` to `D`), total point score, and one-click access to the full Build Inspector drawer.
-- **Debounced Real-Time Search:** Client-side search utility calibrated with a 300ms debounce, 2-character minimum guard, and `AbortController` cancellation for in-flight requests.
+### 1.11 In-App GitHub Releases Auto-Updater
+- **Single-Source Versioning (`version.py`):** Automatically stamped by CI tag triggers (`v*.*.*`) before building Windows binaries.
+- **Safe Windows Replacement (`updater.py` & `routers/updater.py`):** Performs 5-second non-blocking startup checks against GitHub Releases API, streams `.zip` updates with progress tracking (`0.0`–`1.0`), enforces GitHub domain allowlists and ZipSlip checks, swaps binaries safely via a detached `%TEMP%` `.bat` waiting on PID exit without overwriting user DBs/vault/`.env`, and restarts automatically.
 
 ---
 
@@ -136,20 +123,15 @@ Where $W_i \in [0.0, 1.0]$ represents the weight assigned to substat $i$ based o
 - **Flat Stat Fallback:** Flat ATK, Flat HP, and Flat DEF automatically receive $50\%$ of the corresponding percentage stat weight if the percentage variant is prioritized.
 
 ### 2.2 Primary Stat Forgiveness
-
-Primary stats on slots with randomized types are evaluated as follows:
 - **Recommended Primary Stat:** $+40\%$ baseline credit added to the piece rating.
 - **Secondary / Viable Primary Stat:** $+24\%$ baseline credit.
 - **Non-Viable Primary Stat:** $0\%$ baseline credit.
 - **Fixed Primary Slots:** Base credit is fixed at $30\%$, with the remaining $70\%$ allocated to substat evaluation.
 
 ### 2.3 Account Build Score
-
 The overall build score evaluates all designated equipment slots ($N_{\text{slots}} = 6$ for HSR and ZZZ, $N_{\text{slots}} = 5$ for Genshin Impact):
 
 $$\text{Overall Build Score} = \frac{\sum_{k=1}^{N_{\text{equipped}}} \text{Piece Score}_k}{N_{\text{total slots}}}$$
-
-Unassigned equipment slots contribute $0.0$, proportionally penalizing incomplete builds.
 
 ### 2.4 Rating Scale
 
@@ -213,27 +195,29 @@ Unassigned equipment slots contribute $0.0$, proportionally penalizing incomplet
 
 ```mermaid
 graph TD
-    UI["Vanilla Web SPA (HTML5 / CSS3 / ES6 Modules)"] -->|REST API / SSE| API["FastAPI Application (server.py)"]
-    API --> Routers["API Routers (routers/)"]
-    Routers -.-> Schemas["Pydantic v2 Contracts (schemas/)"]
-    Routers --> Services["Service Layer (services/)"]
+    UI["Vanilla Web SPA (HTML5 / CSS3 / 14 ES6 Modules + Sakuga VFX)"] -->|REST API / SSE| API["FastAPI Application (server.py)"]
+    API --> Routers["16 API Routers (routers/)"]
+    Routers -.-> Schemas["16 Pydantic v2 Schemas (schemas/)"]
+    Routers --> Services["15 Service Modules (services/)"]
+    Routers --> Updater["Auto-Updater (updater.py & version.py)"]
     Services --> DB[("SQLite Database (hoyo_app.db)")]
-    Services --> Static["Static Manifests (static_data/)"]
+    Services --> Static["Offline Manifests (static_data/)"]
     Services --> Vault["Security Vault (core/security.py)"]
     Services --> Scrapers["Scrapers (curl_cffi / Playwright)"]
     Scrapers --> Ext["Upstream APIs & Databases (HoYoLAB / Prydwen / Enka)"]
 ```
 
 ### Component Stack
-- **Backend Framework:** Python 3.10+, FastAPI, Pydantic v2, Uvicorn.
-- **Ingestion & Web Scraping:** `curl_cffi` (browser TLS/JA3 impersonation), BeautifulSoup4, Playwright Chromium.
-- **Persistence & Caching:** SQLite (`hoyo_app.db`) with offline static JSON manifests (`static_data/`).
-- **Security:** Windows Data Protection API (DPAPI via `ctypes.windll.crypt32`) and AES-256-GCM / HMAC on POSIX systems.
-- **Frontend:** Vanilla HTML5, CSS3 with standard custom properties, and modular ES6 JavaScript without external compilation frameworks.
+- **Backend Framework:** Python 3.10+, FastAPI, Pydantic v2, Uvicorn, `httpx`, `packaging`.
+- **Ingestion & Web Scraping:** `curl_cffi` (browser TLS/JA3 impersonation), BeautifulSoup4, `genshin`, `rapidfuzz`, Playwright (Chromium + system Chrome/Edge fallback).
+- **Persistence & Caching:** SQLite (`hoyo_app.db` — 15 tables documented in [docs/db_schema.md](docs/db_schema.md)) + offline static JSON manifests (`static_data/`).
+- **Desktop Packaging & Tray:** `pyinstaller`, `pystray`, `Pillow`, `core/paths.py` (`sys._MEIPASS` & `%APPDATA%`), automated CI via [.github/workflows/release.yml](.github/workflows/release.yml).
+- **Security:** Windows DPAPI (`ctypes.windll.crypt32`) + AES-256-GCM / HMAC on POSIX.
+- **Frontend:** Vanilla HTML5, CSS3 custom properties (`--sk-*` + `:root`), 14 modular ES6 files, and 11 offline **Sakuga VFX** Web Components (`static/vendor/sakuga-vfx/`).
 
 ---
 
-## 4. Prerequisites & Installation
+## 4. Prerequisites & Developer Installation
 
 ### Requirements
 - Python 3.10 or higher
@@ -265,13 +249,19 @@ python main.py
 
 Default access URL: `http://127.0.0.1:8000`
 
+### Building the Windows Standalone ZIP Locally
+```bash
+python build.py
+```
+Outputs the portable executable and `dist/Cabeca_de_Droid-Windows-x64.zip` (verifying bundled Sakuga VFX assets automatically before compilation).
+
 ---
 
 ## 5. Self-Hosted Deployment
 
 ### 5.1 Systemd Service (Linux)
 
-Create `/etc/systemd/system/cabeca-de-droid.service`:
+Create `/etc/systemd/system/cabeca-de-droid.service` (or use [scripts/cabeca-de-droid.service](scripts/cabeca-de-droid.service)):
 
 ```ini
 [Unit]
@@ -352,30 +342,48 @@ docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droi
 | `GET` | `/api/build/{game_id}/{char_name}` | Equipment breakdown, skills, traces/talents, and progression tiers. |
 | `GET` | `/api/compare/{game_id}/{char_name}` | Deterministic build audit against community benchmark targets. |
 | `POST` | `/api/sync/{game_id}` | Triggers background synchronization of roster and guide manifests. |
+| `POST` | `/api/sync/all` | Triggers unified global synchronization across all configured games. |
 | `GET` | `/api/endgame/{game_id}` | Cleared stages, star counts, and cycle metrics for endgame modes. |
 | `GET` | `/api/endgame/team-match/{game_id}` | Archetype team compatibility calculations and substitute ranking. |
+| `GET` | `/api/strategy/account-gaps/{game_id}` | Deterministic coverage diagnostics across elements and combat roles. |
 | `GET` | `/api/gacha/current-banners` | Active character and weapon banners dynamically ingested from Prydwen. |
 | `POST` | `/api/gacha/current-banners/sync` | Forces real-time scraping of current character and weapon banners. |
 | `GET` | `/api/gacha/defaults/{game_id}` | Default simulator parameters (pity, guaranteed state, active banner item). |
 | `POST` | `/api/gacha/calculate` | Monte Carlo gacha probability calculation (10,000 iterations). |
 | `POST` | `/api/gacha/forecast/calculate` | Pull accumulation projections and target milestone forecasting. |
+| `GET` / `POST` | `/api/gacha/goals` | Manages persisted banner goals and live countdown targets. |
 | `GET` | `/api/gacha/tracker/{game_id}` | Warp/Wish/Signal logs, history distribution, and pity analytics. |
 | `POST` | `/api/gacha/tracker/import` | Standard UIGF v2.4 / SRGF warp log import. |
 | `GET` | `/api/farming/today` | Active material domains and prioritized stamina allocation work order. |
 | `GET` | `/api/trash/{game_id}` | Discard filter identifying conflicting or low-RV inventory gear. |
+| `GET` | `/api/relics/craft-recommendations/{game_id}` | Synthesis priorities for Resin, Elixir, and Drive Disc tuning. |
 | `GET` | `/api/luck/{game_id}` | Account roll efficiency metrics, God Roll and Cursed Roll identification. |
 | `GET` | `/api/notes` | Real-time stamina, daily quest, and expedition counters. |
 | `POST` | `/api/checkin/run` | Executes HoYoLAB daily check-in sequence. |
+| `GET` | `/api/briefing/today` | Unified 3-game executive daily briefing summary. |
 | `GET` | `/api/history/{game_id}` | Paginated timeline of account progression snapshots (`?limit=50&offset=0`). |
+| `POST` | `/api/history/{game_id}/snapshot` | Manually records an account progression snapshot. |
 | `GET` | `/api/codes` | Active promotional codes with redemption history and auto-redeem status. |
 | `GET` | `/api/codes/history/{game_id}` | Paginated redemption log for promotional codes (`?limit=50&offset=0`). |
-| `GET` | `/api/proxy_image` | High-performance image proxy with on-demand LANCZOS resizing and WebP conversion (`?url=...&w=160&format=webp`). |
-| `GET` | `/api/static-data/status` | Ingestion status and checksum metadata for offline JSON manifests. |
+| `GET` | `/api/proxy_image` | High-performance image proxy with on-demand LANCZOS resizing and WebP conversion. |
+| `GET` / `POST` | `/api/static-data/status` & `/sync` | Status and live synchronization of offline JSON manifests. |
+| `GET` | `/api/updater/check` | Non-blocking GitHub Releases semantic version check and Windows `.zip` resolution. |
+| `POST` | `/api/updater/start` | Starts background `.zip` download & safe binary swap (`dev_mode` notice when unfrozen). |
+| `GET` | `/api/updater/status` | Live progress (`0.0`–`1.0`) and stage polling for the in-app updater modal. |
+| `POST` | `/api/system/heartbeat` & `/disconnect` | Browser tab lifecycle tracking for safe auto-shutdown in `.exe` mode. |
 
 ---
 
-## 8. License & Contributing
+## 8. Bundled Frontend Libraries & Credits
+
+To guarantee 100% offline execution inside standalone builds, frontend vendor libraries are bundled locally under `static/vendor/`:
+- **[Sakuga VFX](https://github.com/finktheartist/sakuga-vfx)** — Native animated Web Components.
+- **FontAwesome**, **Marked.js**, **html2canvas**, and self-hosted **Inter / Outfit** WOFF2 fonts.
+
+---
+
+## 9. License & Contributing
 
 - **License:** Distributed under the [MIT License](LICENSE).
-- **Contributing:** Technical pull requests targeting `main` must pass automated linting (`ruff check .`), formatting (`ruff format --check .`), type checking (`mypy schemas/ services/`), and the unit test suite (`python -m unittest discover tests`). Detailed workflow rules are documented in [CONTRIBUTING.md](CONTRIBUTING.md).
-- **Security Disclosures:** For vulnerability reporting and cryptographic vault specifications, refer to [SECURITY.md](SECURITY.md).
+- **Contributing:** Pull requests targeting `main` must pass the offline unit test suite (`python -m unittest discover tests` — currently **230 tests**). Optional static checks (`ruff`, `mypy`) configured in [pyproject.toml](pyproject.toml) are also recommended. See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture and frontend rules.
+- **Security Disclosures:** Refer to [SECURITY.md](SECURITY.md) for cryptographic vault, updater verification, and vulnerability handling details.

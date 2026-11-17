@@ -51,6 +51,9 @@ CREATE TABLE IF NOT EXISTS characters (
     skills_json TEXT,
     stats_json TEXT,
     ranks_json TEXT,
+    weapon_rarity INTEGER,
+    sets_json TEXT,
+    ex_ranks_json TEXT,
     PRIMARY KEY (uid, name)
 );
 ```
@@ -67,6 +70,8 @@ CREATE TABLE IF NOT EXISTS character_relics (
     main_stat TEXT,
     sub_stats TEXT,
     icon TEXT,
+    rarity INTEGER DEFAULT 5,
+    set_name TEXT,
     FOREIGN KEY(uid, character_name) REFERENCES characters(uid, name) ON DELETE CASCADE
 );
 ```
@@ -199,7 +204,9 @@ CREATE TABLE IF NOT EXISTS gacha_forecast_goals (
     success_rate REAL NOT NULL,
     projected_pulls INTEGER NOT NULL,
     notes TEXT,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    target_date TEXT,
+    banner_phase INTEGER DEFAULT 1
 );
 ```
 

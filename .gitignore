@@ -1,4 +1,4 @@
-# Virtual Environments & Packages
+# Virtual Environments, Packages & Environment Configs
 .venv/
 venv/
 ENV/
@@ -9,8 +9,10 @@ env/
 !.env.example
 node_modules/
 *.egg-info/
+*.whl
+pip-wheel-metadata/
 
-# Python Cache & Bytecode
+# Python Cache, Bytecode & QA/Test Artifacts
 __pycache__/
 *.pyc
 *.pyo
@@ -20,10 +22,14 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .coverage
+.coverage.*
+coverage.xml
 htmlcov/
+pytestdebug.log
 
 # Playwright & Browser Sessions
 .playwright/
+.playwright-mcp/
 *playwright*.log
 user_data_google/
 
@@ -86,12 +92,14 @@ assets/banners/
 assets/logo.ico
 static/assets/
 
-# Logs, Compressed Archives & Temporary Scratch Scripts
+# Logs, Compressed Archives, Auto-Updater Temp & Scratch Scripts
 *.log
 *.tmp
 *.zip
 *.tar.gz
 *.bak
+cabeca_updater_*/
+cabeca_apply_*.bat
 scratch_*.py
 temp_*.py
 check_*.py

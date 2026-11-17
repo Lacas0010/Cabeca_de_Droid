@@ -1,11 +1,11 @@
-# Backend Web Server & Framework (FastAPI REST API & SSE Streaming)
+# Backend Web Server, API & Auto-Updater (FastAPI, SSE Streaming & GitHub Releases SemVer)
 fastapi>=0.109.0
 uvicorn>=0.27.0
 pydantic>=2.6.0
 httpx>=0.26.0
 packaging>=24.0
 
-# HTTP Requests & Web Scraping (curl_cffi com perfil de navegador anti-403)
+# HTTP Requests & Web Scraping (curl_cffi com perfil de navegador TLS/JA3 anti-403)
 requests>=2.31.0
 curl_cffi>=0.7.0
 beautifulsoup4>=4.12.0
@@ -13,15 +13,15 @@ beautifulsoup4>=4.12.0
 # HoYoLAB API Integration (Genshin Impact, Honkai: Star Rail & Zenless Zone Zero)
 genshin>=1.7.0
 
-# Playwright (Auto-login e captura automatizada de cookies de sessão em Chromium)
+# Playwright (Auto-login e captura automatizada de cookies em Chromium / Chrome / Edge)
 playwright>=1.41.0
 
 # Fuzzy String Matching & Dynamic Entity Resolution (Resolução autônoma de personagens sem aliases manuais)
 rapidfuzz>=3.0.0
 
-# Executable Packaging (Compilação para executável portable .exe no Windows)
+# Executable Packaging (Empacotamento standalone Windows .exe via PyInstaller)
 pyinstaller>=6.3.0
 
-# Windows System Tray & Background Daemon (Ícone na bandeja do sistema com menu de contexto)
+# Windows System Tray & Image Optimization Pipeline (Bandeja Windows + redimensionamento WebP/LANCZOS)
 pystray>=0.19.5
 Pillow>=10.0.0

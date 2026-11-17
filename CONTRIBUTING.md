@@ -19,30 +19,30 @@ Obrigado pelo seu interesse em contribuir com o **Cabeça de Droid**! Este docum
 
 O Cabeça de Droid é projetado como uma suíte **100% local, autônoma, resiliente e segura**. Nossas premissas inegociáveis são:
 - **Privacidade & Segurança em Primeiro Lugar:** Tokens e cookies de sessão nunca devem trafegar para serviços de terceiros e devem ser criptografados em repouso no Windows com DPAPI e no Linux com AES-256 derivado da máquina.
-- **Zero Regressão:** Todos os 181 testes unitários automatizados devem continuar passando a cada modificação.
-- **Clean Architecture:** Desacoplamento estrito entre a camada de apresentação (`routers/`), contratos de dados (`schemas/`), regras de negócio (`services/`) e persistência/segurança (`core/` e `database.py`).
+- **Zero Regressão:** Todos os **230 testes unitários automatizados** (`30` suítes em `tests/`) devem continuar passando a cada modificação.
+- **Clean Architecture:** Desacoplamento estrito entre a camada de apresentação (`routers/`), contratos de dados (`schemas/`), regras de negócio (`services/`) e persistência/segurança (`core/`, `database.py`, `updater.py`).
 - **Zero Hardcoding & Automação de Dados:** É proibido criar dicionários hardcoded com dados voláteis no código Python (tier lists, personagens, multiplicadores). Toda ingestão deve vir dinamicamente de scrapers para arquivos JSON em `static_data/`.
-- **Performance & Eficiência de Consultas:** Nunca utilize `SELECT *` em dados voláteis ou de crescimento contínuo; utilize projeções explícitas de colunas e paginação obrigatória (`LIMIT ? OFFSET ?`). Aplique virtualização nativa CSS (`content-visibility: auto`) em listas volumosas e respeite as políticas de cache em memória com invalidação reativa.
-- **Resiliência Offline:** O sistema deve sempre conter fallbacks e sementes locais (`static_data/`) para inicializar e operar mesmo sem conexão com a internet.
+- **Performance & Eficiência de Consultas:** Nunca utilize `SELECT *` em dados voláteis ou de crescimento contínuo; utilize projeções explícitas de colunas e paginação obrigatória (`LIMIT ? OFFSET ?`). Aplique virtualização nativa CSS onde aplicável sem gerar thrashing de scroll e respeite as políticas de cache em memória com invalidação reativa.
+- **Resiliência Offline:** O sistema deve sempre conter fallbacks e sementes locais (`static_data/` e `static/vendor/sakuga-vfx/`) para inicializar e operar mesmo sem conexão com a internet.
 
 ---
 
-## 📊 Evolução Arquitetural: Da v4.5 à v5.5
+## 📊 Evolução Arquitetural: Da v4.5 à v5.6
 
-A versão **5.5** consolida o modo de visualização flexível do elenco (Grade vs Lista rica Opção C), a padronização exaustiva de raridades de armas/cones/motores e peças, o debounce reativo de busca e otimizações de banco de dados, acompanhada por 181 suítes automatizadas.
+A versão **5.6** (empacotamento standalone **v1.2.0**) consolida a interface 100% offline em **Sakuga VFX**, o empacotamento standalone Windows com fallback de auto-login e auto-shutdown ao fechar a aba no desktop, além do **Auto-Updater via GitHub Releases** e **230 testes unitários** aprovados.
 
 ### Comparativo Arquitetural
 
-| **Aspecto** | **Versão 4.5** | **Versão 5.0 - 5.2** | **Versão 5.5 (Atual)** |
+| **Aspecto** | **Versão 4.5** | **Versão 5.0 - 5.5** | **Versão 5.6 (Atual)** |
 | :--- | :--- | :--- | :--- |
-| **Ponto Central (`server.py`)** | Monólito com >3.200 linhas contendo rotas, lógica e SQL | Orquestrador com ~200 linhas | Orquestrador enxuto com `GZipMiddleware`, monitoramento de requisições lentas (`X-Process-Time`) e lifespan limpo |
-| **Camada de Roteamento** | Endpoints misturados em funções soltas | 15 módulos `APIRouter` especializados em [`routers/`](routers/) | Rotas desacopladas com paginação estrita (`limit/offset`), proxy dinâmico de imagens WebP e validação Pydantic v2 |
-| **Contratos & Tipagem** | Dicionários `dict` brutos sem validação estrita | Modelos tipados [Pydantic v2](schemas/) em [`schemas/`](schemas/) | Tipagem estrita ponta a ponta com contratos Pydantic v2 |
-| **Regras de Negócio & Cache** | Lógica acoplada nos handlers | Serviços isolados e testáveis | Serviços com camada de cache em memória TTL (60s) e auto-invalidação reativa nos syncs |
-| **Banco de Dados (SQLite)** | Consultas N+1 e `SELECT *` genéricos | SQLite estruturado em `database.py` | Consultas em lote otimizadas (`WHERE uid IN (...)`), sem N+1, sem `SELECT *`, índices rápidos e backfill automático de raridades |
-| **Frontend Web** | Script monolítico `app.js` | 12 módulos ES6 em [`static/js/modules/`](static/js/modules/) | Alternância Grade/Lista (Opção C rica), busca com debounce de 300ms + `AbortController`, fontes WOFF2 locais e virtualização CSS |
-| **Metas de Gacha & Banners** | Ausente | Projeção Monte Carlo com cronômetro | Monte Carlo de 10.000 iterações com horários oficiais, import/export UIGF/SRGF e carregamento diferido |
-| **Testes Automatizados** | 2 arquivos de teste isolados | 150 testes unitários | **181 testes unitários automatizados** com 100% de aprovação e suítes dedicadas de paginação, debounce e visualização do roster |
+| **Ponto Central (`server.py`)** | Monólito com >3.200 linhas | Orquestrador enxuto com `GZipMiddleware` e `X-Process-Time` | Lifespan com `browser_lifecycle_service` (auto-shutdown apenas quando `sys.frozen`) |
+| **Camada de Roteamento** | Endpoints misturados em funções soltas | 15 módulos `APIRouter` em [`routers/`](routers/) | **16 módulos `APIRouter`** incluindo [`routers/updater.py`](routers/updater.py) |
+| **Contratos & Tipagem** | Dicionários `dict` brutos | Modelos Pydantic v2 em [`schemas/`](schemas/) | **16 arquivos de contrato** Pydantic v2 ponta a ponta |
+| **Regras de Negócio & Cache** | Lógica acoplada nos handlers | Serviços isolados com cache TTL (60s) | **15 módulos de serviço** + `updater.py` com verificação GitHub e troca via `.bat` |
+| **Banco de Dados (SQLite)** | Consultas N+1 e `SELECT *` | SQLite em lote (`WHERE uid IN (...)`), sem N+1 e backfill | Suporte a `ex_ranks_json` (Affinitive Eidolons HSR), `weapon_rarity`, `sets_json` e metas de banner |
+| **Frontend Web** | Script monolítico `app.js` | 12 módulos ES6, modo Lista Opção C, fontes WOFF2 | **14 módulos ES6** + **11 Web Components Sakuga VFX locais**, grade horizontal desktop e modal de Auto-Updater |
+| **Distribuição & Releases** | Apenas execução Python local | Script manual e systemd | PyInstaller (`build.py`), Bandeja Windows (`pystray`), CI GitHub Actions e Auto-Updater `version.py` |
+| **Testes Automatizados** | 2 arquivos isolados | 181 testes unitários | **230 testes unitários automatizados** em **30 suítes** com 100% de aprovação |
 
 ### Novos Recursos Adicionados na v5.0
 1. **Ordem de Serviço Diária (`routers/farming.py`):** Roteiro automatizado de gasto de resina e checklist de energia diário.
@@ -88,39 +88,30 @@ playwright install chromium
 
 ```
 hoyo-projetos/
-├── core/                    # Infraestrutura, configurações globais e segurança
-│   ├── config.py            # Paths, leitura de cofre e resolução de recursos
+├── core/                    # Infraestrutura, paths (sys._MEIPASS / %APPDATA%), tray e segurança
+│   ├── config.py            # Configurações globais e resolução de recursos
+│   ├── paths.py             # Caminhos empacotados vs desenvolvimento
+│   ├── tray.py              # Ícone na bandeja do sistema Windows (pystray)
 │   └── security.py          # Windows DPAPI, AES-GCM, PBKDF2 e sanitização de logs
-├── schemas/                 # Contratos Pydantic (Type Hints & Validação de Entrada/Saída)
-│   ├── auth_security.py     # Modelos de PIN e status de segurança
-│   ├── config.py            # Modelos de configuração, webhooks e agendador
-│   ├── chat.py              # Modelos de requisições RAG e montador de times
-│   ├── gacha.py             # Modelos de cálculo Monte Carlo, previsões e metas
-│   ├── farming.py           # Modelos de ordem de serviço, cálculo de XP e passos
-│   └── ...
-├── services/                # Regras de Negócio (Lógica desacoplada e reutilizável)
-│   ├── sync_service.py      # Sincronização assíncrona de metagame e rosters
-│   ├── checkin_service.py   # Automação do check-in diário no HoYoLAB
-│   ├── promo_codes_service.py # Varredura e resgate autônomo de códigos promocionais
-│   ├── gacha_service.py     # Simulações estocásticas e metas de banners
-│   ├── roast_service.py     # Serviço de avaliação de conta
-│   └── ...
-├── routers/                 # Controladores REST FastAPI (Definição de Rotas e Endpoints)
-│   ├── security.py          # Rotas de cofre, PIN e controle de rede LAN
-│   ├── gacha.py             # Rotas do simulador de tiros e metas
-│   ├── farming.py           # Rotas de farm diário e ordem de serviço
-│   └── ...
+├── schemas/                 # 16 contratos Pydantic v2 (Entrada/Saída de API)
+├── services/                # 15 módulos de Regras de Negócio e Ciclo de Vida
+├── routers/                 # 16 controladores REST FastAPI (inclui updater.py)
 ├── static_data/             # Bases de dados estáticas desacopladas (JSON puro)
-├── static/                  # Frontend Web SPA (HTML5, Vanilla CSS, JS ES6+)
+├── static/                  # Frontend Web SPA (HTML5, Vanilla CSS, ES6+ e Sakuga VFX)
+│   ├── vendor/sakuga-vfx/   # 11 Web Components locais (100% offline)
 │   ├── js/
 │   │   ├── app.js           # Ponto de entrada e orquestrador de eventos
-│   │   └── modules/         # 12 submódulos desacoplados (api_client, chat_rag, gacha_sim, etc.)
-│   ├── style.css            # Folha de estilos Glassmorphism e responsividade
+│   │   └── modules/         # 14 submódulos ES6 desacoplados (inclui updater_ui.js)
+│   ├── style.css            # Variáveis :root, tema escuro Sakuga --sk-* e responsividade
 │   └── index.html           # Documento principal da SPA
 ├── assets/                  # Ícones estáticos e avatares oficiais
-├── scrapers/                # Raspadores de metagame e guias do Prydwen (HSR, Genshin, ZZZ)
-├── scripts/                 # Scripts utilitários e serviços do sistema (systemd)
-├── tests/                   # Suíte de 150 testes unitários automatizados
+├── scrapers/                # Raspadores de metagame e guias (Prydwen, Genshin, ZZZ)
+├── scripts/                 # Scripts utilitários, Nginx e serviço systemd
+├── tests/                   # 30 suítes (230 testes unitários offline via unittest)
+├── .github/workflows/       # Pipeline release.yml (carimbo version.py + build Windows)
+├── build.py                 # Gerador PyInstaller e Cabeca_de_Droid-Windows-x64.zip
+├── version.py               # Fonte única da versão da aplicação
+├── updater.py               # Verificação GitHub Releases e instalador seguro Windows
 ├── server.py                # Orquestrador FastAPI modular e ciclo de vida
 └── main.py                  # Entrypoint principal de execução
 ```
@@ -139,11 +130,13 @@ hoyo-projetos/
    - **Nunca** exiba tokens brutos (`ltoken_v2`, `ltuid_v2`, `cookie_token_v2`) ou chaves de API nos logs ou respostas de API. Utilize o `mask_token` do [`core/security.py`](core/security.py).
    - Não armazene arquivos de credenciais em texto claro; utilize o cofre `security_vault`.
 
-3. **Frontend (Vanilla HTML5 / CSS3 / JavaScript ES6+):**
-   - Não utilize frameworks pesados (React, Vue, Tailwind) para manter o carregamento instantâneo.
-   - Todo código JavaScript novo deve ser estruturado em submódulos dentro de `static/js/modules/` e importado pelo `app.js` com query string de cache-busting (ex: `?v=23.5`).
+3. **Frontend (Vanilla HTML5 / CSS3 / JavaScript ES6+ & Sakuga VFX):**
+   - Não utilize frameworks pesados (React, Vue, Tailwind) nem CDNs externas.
+   - Use sempre os Web Components locais em `static/vendor/sakuga-vfx/` (`<sakuga-button>`, `<sakuga-input>`, `<sakuga-toggle>`, `<sakuga-checkbox>`, `<sakuga-radio>`, `<sakuga-slider>`, `<sakuga-tabs>`, `<sakuga-progress>`, `<sakuga-rating>`, `<sakuga-toast>`, `<sakuga-tooltip>`).
+   - Mantenha `overflow: visible` nos ancestrais próximos de `<sakuga-button>` / `<sakuga-progress>` para não cortar bursts e fumaças, e mantenha modais abaixo de `canvas.sakuga-fx` (`z-index < 2147483000`).
+   - Todo código JavaScript novo deve ser estruturado em submódulos dentro de `static/js/modules/` e importado pelo `app.js` com query string de cache-busting (ex: `?v=31.0`).
    - Utilize variáveis CSS de tokens definidas em `:root` no [`static/style.css`](static/style.css).
-   - Todo novo componente deve possuir media query responsiva para telas verticais de smartphones ($\le 768\text{px}$ e $\le 480\text{px}$).
+   - Todo novo componente deve possuir media query responsiva para telas verticais de smartphones ($\le 768\text{px}$).
 
 4. **Horários Oficiais de Lançamento de Banners:**
    - Ao manipular datas de término ou chegada de banners:
@@ -157,18 +150,18 @@ hoyo-projetos/
 Todos os testes utilizam o módulo nativo `unittest` do Python, dispensando bibliotecas adicionais:
 
 ```bash
-# Executar toda a suíte de testes (181 testes)
+# Executar toda a suíte de testes (230 testes)
 python -m unittest discover tests
 
 # Executar uma suíte de teste específica
 python -m unittest tests.test_security_suite
-python -m unittest tests.test_gacha_forecast_suite
-python -m unittest tests.test_static_data_suite
+python -m unittest tests.test_updater_suite
+python -m unittest tests.test_packaging_suite
 ```
 
 ### Regras para Novos Testes
 * Toda nova funcionalidade ou rota adicionada **deve** vir acompanhada de um teste unitário correspondente na pasta `tests/`.
-* Testes que envolvem chamadas de rede externas (HoYoLAB, Prydwen) **devem utilizar mocks** (`unittest.mock.patch`) para execução 100% determinística e offline.
+* Testes que envolvem chamadas de rede externas (HoYoLAB, Prydwen, GitHub Releases) **devem utilizar mocks** (`unittest.mock.patch`) para execução 100% determinística e offline.
 
 ---
 
@@ -178,9 +171,14 @@ Ao atualizar a aplicação e publicar na VM remota:
 1. Valide a integridade local: `python -m unittest discover tests`.
 2. Commit e push para o GitHub: `git push origin main`.
 3. Dispare a atualização remota via SSH:
-   ```bash
-   ssh -i "path/to/ssh-key.key" ubuntu@147.15.40.30 "cd ~/Cabeca_de_Droid && git pull origin main && sudo systemctl restart cabeca-de-droid"
-   ```
+   - **Sem novas dependências:**
+     ```bash
+     ssh -i "path/to/ssh-key.key" ubuntu@147.15.40.30 "cd ~/Cabeca_de_Droid && git pull origin main && sudo systemctl restart cabeca-de-droid"
+     ```
+   - **Se houver alterações em `requirements.txt`:**
+     ```bash
+     ssh -i "path/to/ssh-key.key" ubuntu@147.15.40.30 "cd ~/Cabeca_de_Droid && git pull origin main && source venv/bin/activate && pip install -r requirements.txt && sudo systemctl restart cabeca-de-droid"
+     ```
 4. Verifique o status ativo do serviço:
    ```bash
    ssh -i "path/to/ssh-key.key" ubuntu@147.15.40.30 "sudo systemctl is-active cabeca-de-droid && sudo journalctl -u cabeca-de-droid -n 15 --no-pager"

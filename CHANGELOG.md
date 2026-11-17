@@ -6,6 +6,39 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.6.0] / Release Standalone [v1.2.0] - 2026-11-17
+
+### ✨ Adicionado
+- **Sistema Completo de Auto-Updater via GitHub Releases (`version.py`, `updater.py`, `routers/updater.py`):**
+  - Fonte única da versão em `version.py`, carimbada automaticamente pelo workflow do GitHub Actions (`.github/workflows/release.yml`) a partir da tag disparada antes do build do PyInstaller.
+  - Endpoints `/api/updater/check`, `/api/updater/start` e `/api/updater/status` com consulta assíncrona não bloqueante (timeout 5s), comparação semântica via `packaging.version`, rastreamento de progresso (`0.0` a `1.0`), proteção contra ZipSlip e allowlist estrita de domínios oficiais do GitHub.
+  - Substituição segura no Windows contornando trava de executável via script `.bat` desanexado em `%TEMP%` que aguarda o encerramento do PID atual, preserva banco SQLite, cofre criptográfico, `.env` e caches de jogos, reinicia o novo `.exe` e remove os temporários.
+  - Modal interativo em Sakuga VFX (`#modal-sakuga-updater`), badge discreta da versão atual (`#app-version-badge`) e botão manual **Atualizar** no rodapé da barra lateral (`static/js/modules/updater_ui.js`).
+- **Migração Integral da Interface para Sakuga VFX Offline-First (`static/vendor/sakuga-vfx/`):**
+  - Integração local dos 11 Web Components (`button.js`, `checkbox.js`, `input.js`, `progress.js`, `radio.js`, `rating.js`, `slider.js`, `tabs.js`, `toast.js`, `toggle.js`, `tooltip.js`) garantindo funcionamento 100% sem internet no executável.
+  - Revisão ponta a ponta corrigindo sobreposições (`overflow: visible`, camadas `z-index` abaixo de `canvas.sakuga-fx`), feedback imperativo (`done()`, `set()`) e filtragem para evitar renderização de fumaça/VFX em elementos ocultos na origem `(0, 0)`.
+- **Empacotamento Standalone Windows & Automação CI/CD (`build.py`, `.github/workflows/release.yml`):**
+  - Geração automática de `Cabeca_de_Droid.exe` (via PyInstaller sem console, com ícone na bandeja do sistema via `pystray` e resolução de caminhos em `%APPDATA%\Cabeca_de_Droid` / `sys._MEIPASS`) e artefato limpo `Cabeca_de_Droid-Windows-x64.zip`.
+  - Pipeline automatizado no GitHub Actions para publicação de Releases ao enviar tags semânticas (`v*.*.*`) ou execução manual via `workflow_dispatch`.
+- **Ciclo de Vida Desktop & Fallback de Auto-Login (`services/browser_lifecycle_service.py`, `auth.py`):**
+  - Monitoramento de abas via heartbeat + `sendBeacon("/api/system/disconnect")`: quando empacotado (`.exe`), encerrar todas as janelas no navegador fecha automaticamente o servidor; em servidores contínuos/VM com `--no-browser`, o processo permanece online.
+  - Fallback automático no auto-login HoYoLAB via Playwright usando Google Chrome ou Microsoft Edge do sistema caso o Chromium embutido não esteja presente na máquina do usuário.
+- **Eidolons Adicionais no HSR (`ex_ranks_json`), Filtros & Ordenações do Roster:**
+  - Extração e exibição de Affinitive Eidolons no inspetor, lista de personagens e card de time, além de resolução livre de colisões MD5 para variantes/Desbravadores.
+  - Ordenação alfabética (A–Z / Z–A), filtros universais de auditoria de build, filtros específicos por jogo, endpoints manuais de snapshot (`POST /api/history/{game_id}/snapshot`) e sincronização global (`POST /api/sync/all`).
+
+### ⚡ Otimizado & Corrigido
+- **Desempenho de Scroll no Modo Lista:** Removidos passes pesados de blur/drop-shadow e thrashing de `content-visibility` durante rolagem contínua em galerias grandes.
+- **Configurações em Layout Horizontal (Desktop):** Reorganização em grade horizontal na aba Configurações para melhor aproveitamento de tela em resoluções maiores que 768px.
+- **Extração Endgame Prydwen:** Limpeza aprimorada de estatísticas flexíveis/qualificadas por personagem.
+
+### 🧪 Testes Unitários & Documentação
+- Adicionadas suítes `tests/test_updater_suite.py`, `tests/test_packaging_suite.py`, `tests/test_tray_suite.py`, `tests/test_hsr_affinitive_eidolons.py`, `tests/test_hsr_variant_resolution.py` e `tests/test_prydwen_endgame_and_names.py`.
+- Cobertura total ampliada para **230 testes unitários nativos aprovados** com mocks offline (`unittest`).
+- Documentação completa atualizada (`README.md`, `README.pt-BR.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `docs/db_schema.md`, `requirements.txt`, `.gitignore`).
+
+---
+
 ## [5.5.0] - 2026-11-12
 
 ### ✨ Visualização Avançada do Roster (Modo Grade & Lista Enriquecida)
