@@ -315,9 +315,10 @@ class TestSakugaVfxOfflineIntegration(unittest.TestCase):
         self.assertTrue((build.ROOT_DIR / "static" / "vendor" / "fontawesome" / "css" / "all.min.css").is_file())
         self.assertTrue((build.ROOT_DIR / "static" / "vendor" / "fontawesome" / "webfonts" / "fa-solid-900.woff2").is_file())
 
+        import re
         for filename in build.REQUIRED_SAKUGA_COMPONENTS:
-            script_tag = f'<script src="/static/vendor/sakuga-vfx/{filename}"></script>'
-            self.assertIn(script_tag, html, f"Tag offline ausente para {filename}")
+            pattern = rf'<script src="/static/vendor/sakuga-vfx/{re.escape(filename)}(?:\?v=[^"]+)?"></script>'
+            self.assertRegex(html, pattern, f"Tag offline ausente para {filename}")
 
         for tag_name in (
             "<sakuga-button",
@@ -344,6 +345,8 @@ class TestSakugaVfxOfflineIntegration(unittest.TestCase):
         self.assertIn("r.width > 0 && r.height > 0", progress_js)
         self.assertIn("b.w <= 0 || b.h <= 0", progress_js)
         self.assertIn("q.w <= 0 || q.h <= 0", button_js)
+        self.assertIn("fx.isOccluded", progress_js)
+        self.assertIn("clearTransient", button_js)
 
 
 if __name__ == "__main__":

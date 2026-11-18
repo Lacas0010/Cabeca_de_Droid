@@ -48,7 +48,7 @@ class SakugaButton extends fx.Base {
     burst(c.x, c.y, { r: 98, spikes: 17, life: 0.48, layer: this.back }); shards(c.x, c.y, { n: 11, speed: 260, size: 9, life: 0.95, arc: 6.28, grav: 300 });
       for (const [dx, dy] of [[-1, -0.5], [1, -1], [-1, 0.9], [1, 1]]) puff(c.x + dx * (c.w / 2 + 6), c.y + dy * 26, { size: rnd(12, 16), n: 5, vx: dx * 46, vy: dy * 30 - 6, life: rnd(0.75, 1.05) });
       sfx('don', c.x + 10, c.y - 84, { size: 176, rot: -0.12, life: 1.05 }); ticks(c.x - 96, c.y - 70, { dir: -2.4, n: 2, r: 4, len: 22, life: 0.45 }); ticks(c.x + 110, c.y - 60, { dir: -0.7, n: 2, r: 4, len: 22, life: 0.45 });
-    later(200, () => { if (n !== this.seq) return; sq.s.x = 1.22; wob(c.x - c.w / 2 - 8, c.y, { dir: -1 }); wob(c.x + c.w / 2 + 8, c.y, { dir: 1 });
+    later(200, () => { if (n !== this.seq) return; sq.s.x = 1.22; if (fx.isOccluded?.(this)) return; wob(c.x - c.w / 2 - 8, c.y, { dir: -1 }); wob(c.x + c.w / 2 + 8, c.y, { dir: 1 });
       donut(c.x + 6, c.y - 44, { r: 30, vx: 22, vy: -52, life: 1.25 }); later(90, () => donut(c.x + 54, c.y - 50, { r: 18, vx: 34, vy: -40, life: 1.1 })); later(170, () => donut(c.x + 86, c.y - 46, { r: 10, vx: 40, vy: -30, life: 0.95 }));
         shards(c.x - 30, c.y + 30, { n: 2, speed: 20, size: 6, dir: Math.PI / 2, arc: 1, grav: 380 }); shards(c.x + 34, c.y + 30, { n: 2, speed: 20, size: 6, dir: Math.PI / 2, arc: 1, grav: 380 }); });
   }
@@ -313,13 +313,31 @@ class Base extends HTMLElement {
 }
 const define = (tag, cls) => { if (!customElements.get(tag)) customElements.define(tag, cls); };
 
+const isOccluded = (hostEl) => {
+  if (!hostEl || !hostEl.isConnected) return true;
+  const overlays = document.querySelectorAll('.build-inspector.open, .modal-overlay, .pin-lock-overlay, .wish-modal-overlay');
+  let topOverlay = null;
+  let topZ = -1;
+  for (const ov of overlays) {
+    const cs = getComputedStyle(ov);
+    const visible = (ov.classList.contains('build-inspector') || cs.display !== 'none') && cs.visibility !== 'hidden';
+    if (!visible) continue;
+    const z = parseInt(cs.zIndex, 10) || 0;
+    if (z >= topZ) { topZ = z; topOverlay = ov; }
+  }
+  return !!(topOverlay && !topOverlay.contains(hostEl));
+};
+const clearTransient = () => {
+  for (const L of layers) L.live = L.live.filter((p) => p.life === Infinity);
+};
+
 const api = window.SakugaFX = {
   version: 1, paused: false,
   get P() { return P; }, get calm() { return calm; }, get now() { return now; },
   TAU, clamp, lerp, rnd, Spring,
   advance, later, persist, blob, shape, get g() { return g; },
   puff, burst, shards, ring, splash, slash, lines, ticks, donut, wob, kira, sfx, hollow, dotted,
-  at, esc, squashy, Base, define,
+  at, esc, squashy, Base, define, isOccluded, clearTransient,
 };
 })();
 // <<< sakuga core

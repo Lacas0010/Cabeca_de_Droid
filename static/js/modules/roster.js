@@ -1767,6 +1767,10 @@ async function inspectCharacter(gameId, char) {
     const inspectorOverlay = document.getElementById("inspector-overlay");
     if (inspector) inspector.classList.add("open");
     if (inspectorOverlay) inspectorOverlay.classList.add("active");
+    if (window.SakugaFX?.clearTransient) {
+        window.SakugaFX.clearTransient();
+        requestAnimationFrame(() => window.SakugaFX?.clearTransient?.());
+    }
     
     activeInspectGame = gameId;
     activeInspectChar = char;
@@ -1915,6 +1919,10 @@ async function inspectCharacter(gameId, char) {
     
     // Abre a aba lateral
     inspector.classList.add("open");
+    if (window.SakugaFX?.clearTransient) {
+        window.SakugaFX.clearTransient();
+        requestAnimationFrame(() => window.SakugaFX?.clearTransient?.());
+    }
     
     try {
         const res = await fetch(`/api/build/${gameId}/${encodeURIComponent(char.name)}`);

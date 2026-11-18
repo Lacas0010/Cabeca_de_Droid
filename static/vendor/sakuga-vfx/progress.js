@@ -46,7 +46,7 @@ class SakugaProgress extends fx.Base {
   disconnectedCallback() { super.disconnectedCallback(); if (this.layer) { this.layer.dead = true; this.layer = null; } }
   // the ground, the pebbles, the cloud and the check: drawn every frame on the effects layer
   paint(tt, dt) {
-    if (!this.vis) return; const b = at(this.bar); if (b.w <= 0 || b.h <= 0) return; const g = fx.g, P = fx.P, L = b.x - b.w / 2, R = b.x + b.w / 2, p = this.p, done = this.doneAt, lead = L + 4 + (b.w - 8) * p, cy = b.y, gy = cy + b.h / 2 + 30;
+    if (!this.vis || fx.isOccluded?.(this)) return; const b = at(this.bar); if (b.w <= 0 || b.h <= 0) return; const g = fx.g, P = fx.P, L = b.x - b.w / 2, R = b.x + b.w / 2, p = this.p, done = this.doneAt, lead = L + 4 + (b.w - 8) * p, cy = b.y, gy = cy + b.h / 2 + 30;
     const reach = clamp(p * 1.25 + (done ? 1 : 0)), gx1 = lerp(L + 10, R - 10, reach);   // the ground draws itself out under the fill
     if (reach > 0.02) { g.strokeStyle = P.line; g.lineWidth = 1.4; g.beginPath(); g.moveTo(L + 10, gy); g.lineTo(gx1, gy); for (let x = L + 26; x < gx1 - 6; x += 37) { g.moveTo(x, gy); g.lineTo(x + 3, gy - 4); g.moveTo(x + 5, gy); g.lineTo(x + 6.5, gy - 2.5); } g.stroke(); }
     for (const q of this.peb) {   // a pebble lifts when the edge goes over it and drops when the load is done
@@ -67,7 +67,7 @@ class SakugaProgress extends fx.Base {
       const s = 15 * (0.9 + 0.1 * Math.sin(tt * 5)), q = s * 0.14, sp = new Path2D(); g.translate(74, 28); sp.moveTo(0, -s); sp.quadraticCurveTo(q, -q, s * 0.75, 0); sp.quadraticCurveTo(q, q, 0, s); sp.quadraticCurveTo(-q, q, -s * 0.75, 0); sp.quadraticCurveTo(-q, -q, 0, -s); g.fillStyle = P.fill; g.fill(sp); g.strokeStyle = P.ink; g.lineWidth = 2.4; g.stroke(sp); g.restore(); }
   }
   frame(dt) {
-    this.t += dt; const r = this.box.getBoundingClientRect(); this.vis = r.width > 0 && r.height > 0 && r.bottom > -80 && r.top < innerHeight + 80;
+    this.t += dt; const r = this.box.getBoundingClientRect(); this.vis = r.width > 0 && r.height > 0 && r.bottom > -80 && r.top < innerHeight + 80 && !fx.isOccluded?.(this);
     const demo = this.hasAttribute('demo');
     if (demo && !this.doneAt) this.goal = Math.min(1, this.goal + dt * (0.14 + 0.115 * Math.sin(this.t * 2.1) + 0.07 * Math.sin(this.t * 4.7)));   // it loads in surges, not at one speed
     const was = this.p; if (!this.doneAt && this.p < this.goal) this.p = Math.min(this.goal, this.p + dt * clamp((this.goal - this.p) * 3, 0.12, 0.9));
