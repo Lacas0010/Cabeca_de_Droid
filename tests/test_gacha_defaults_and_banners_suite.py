@@ -1,3 +1,5 @@
+import os
+import tempfile
 import unittest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
@@ -49,7 +51,9 @@ class TestGachaDefaultsAndBannersSuite(unittest.TestCase):
         mock_get.return_value = mock_resp
 
         scraper = PrydwenScraper()
-        result = scraper.get_current_banners("genshin")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch("core.paths.get_data_path", side_effect=lambda *parts: os.path.join(tmpdir, *parts)):
+                result = scraper.get_current_banners("genshin")
 
         self.assertIn("banners", result)
         banners = result["banners"]
@@ -105,7 +109,9 @@ class TestGachaDefaultsAndBannersSuite(unittest.TestCase):
         mock_get.return_value = mock_resp
 
         scraper = PrydwenScraper()
-        result = scraper.get_current_banners("genshin")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with patch("core.paths.get_data_path", side_effect=lambda *parts: os.path.join(tmpdir, *parts)):
+                result = scraper.get_current_banners("genshin")
 
         self.assertIn("weapon_banners", result)
         wb = result["weapon_banners"]

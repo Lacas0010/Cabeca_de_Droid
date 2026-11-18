@@ -37,6 +37,16 @@ class TestI18nTranslationSuite(unittest.TestCase):
         self.assertEqual(traduzir_caminho("Remembrance", lang="pt"), "Recordação")
         self.assertEqual(traduzir_personagem("Trailblazer (Remembrance)", lang="pt"), "Desbravador (Recordação)")
 
+        # Glossário compartilhado /api/i18n/glossary e ausência de hardcoding no roster.js
+        gl_res = self.client.get("/api/i18n/glossary")
+        self.assertEqual(gl_res.status_code, 200)
+        gl = gl_res.json()
+        self.assertEqual(gl["paths_pt"].get("remembrance"), "Recordação")
+        self.assertEqual(gl["paths_en"].get("recordação"), "Remembrance")
+        roster_js = open(os.path.join("static", "js", "modules", "roster.js"), "r", encoding="utf-8").read()
+        self.assertNotIn("HSR_CHAR_PATHS", roster_js)
+        self.assertNotIn("GENSHIN_CHAR_WEAPONS", roster_js)
+
     def test_config_schema_language_support(self):
         """Valida que o schema ConfigSaveRequest aceita o campo language."""
         req_pt = ConfigSaveRequest(language="pt")

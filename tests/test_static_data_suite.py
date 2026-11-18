@@ -90,7 +90,13 @@ class TestStaticDataSuite(unittest.TestCase):
         mock_resp.status_code = 200
         mock_resp.json.return_value = mock_hsr_upstream
 
-        with patch("requests.get", return_value=mock_resp):
+        import tempfile
+
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("static_data_manager.requests.get", return_value=mock_resp),
+            patch.object(static_data_manager, "_get_file_path", side_effect=lambda k: os.path.join(tmpdir, f"{k}.json")),
+        ):
             sync_res = static_data_manager.sync_upstream_data("hsr")
             self.assertEqual(sync_res["hsr"]["status"], "success")
             self.assertIn("StarRailRes", sync_res["hsr"]["source"])
@@ -100,8 +106,15 @@ class TestStaticDataSuite(unittest.TestCase):
             self.assertIsNotNone(new_char)
             self.assertEqual(new_char["element"], "Fire")
 
+        # Limpa personagem sintético de memória e recarrega o cache real offline
+        static_data_manager._cache.get("hsr", {}).get("characters", {}).pop("novo personagem teste", None)
+
         # Simula falha de rede/timeout -> Graceful fallback
-        with patch("requests.get", side_effect=Exception("Connection timed out")):
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("static_data_manager.requests.get", side_effect=Exception("Connection timed out")),
+            patch.object(static_data_manager, "_get_file_path", side_effect=lambda k: os.path.join(tmpdir, f"{k}.json")),
+        ):
             sync_fallback = static_data_manager.sync_upstream_data("hsr")
             self.assertIn(sync_fallback["hsr"]["status"], ["offline_ready", "success"])
             # Continua funcionando 100% offline
@@ -146,8 +159,16 @@ class TestStaticDataSuite(unittest.TestCase):
         self.assertEqual(data_status["status"], "success")
         self.assertIn("summary", data_status)
 
-        # 2. POST /api/static-data/sync
-        res_sync = self.client.post("/api/static-data/sync", json={"game_id": "genshin"})
+        # 2. POST /api/static-data/sync (mockado para execução 100% offline e determinística)
+        with (
+            patch.object(
+                static_data_manager,
+                "sync_upstream_data",
+                return_value={"genshin": {"status": "offline_ready", "character_count": 85, "source": "seed"}},
+            ),
+            patch("scrapers.scraper_prydwen.PrydwenScraper.get_current_banners", return_value={}),
+        ):
+            res_sync = self.client.post("/api/static-data/sync", json={"game_id": "genshin"})
         self.assertEqual(res_sync.status_code, 200)
         data_sync = res_sync.json()
         self.assertEqual(data_sync["status"], "success")

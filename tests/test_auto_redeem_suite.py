@@ -107,6 +107,7 @@ class TestAutoRedeemSuite(unittest.TestCase):
                 new_callable=AsyncMock,
                 return_value={"code": "MANUALTEST", "status": "success", "message": "Resgatado!"},
             ),
+            patch.object(notifier, "notify_promo_codes"),
             patch("asyncio.sleep", new_callable=AsyncMock),
         ):
             redeem_res = self.client.post("/api/codes/redeem", json={"game_id": "hsr", "code": "MANUALTEST"})

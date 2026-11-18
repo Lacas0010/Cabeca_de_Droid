@@ -1,7 +1,7 @@
 import os
 import re
 import json
-from typing import Dict
+from typing import Any, Dict
 from core.config import get_resource_path
 
 TRANSLATIONS: Dict[str, str] = {}
@@ -412,3 +412,61 @@ def traduzir_item(nome_item: str, lang: str = "pt") -> str:
             traduzido = pattern.sub(pt_val, traduzido)
 
     return traduzido + suffix
+
+
+def get_frontend_glossary() -> Dict[str, Any]:
+    """
+    Expõe os dicionários canônicos de tradução (Caminhos, Elementos, Personagens)
+    como fonte única de verdade para hidratar o frontend sem duplicação manual.
+    """
+    paths_pt = {k.lower(): v for k, v in PATH_TRANSLATIONS.items()}
+    paths_pt["hunt"] = PATH_TRANSLATIONS["The Hunt"]
+
+    paths_en: Dict[str, str] = {v.lower(): k for k, v in PATH_TRANSLATIONS.items()}
+    for alias_pt, canonical_en in REVERSE_TRANSLATIONS.items():
+        if canonical_en in PATH_TRANSLATIONS or canonical_en in PATH_TRANSLATIONS.values():
+            paths_en[alias_pt] = canonical_en
+    paths_en.update(
+        {
+            "remembrança": "Remembrance",
+            "reminiscência": "Remembrance",
+            "reminiscencia": "Remembrance",
+            "destruicao": "Destruction",
+            "caca": "The Hunt",
+            "erudicao": "Erudition",
+            "inexistencia": "Nihility",
+            "preservacao": "Preservation",
+            "abundancia": "Abundance",
+            "recordacao": "Remembrance",
+            "espadao": "Claymore",
+            "lanca": "Polearm",
+        }
+    )
+
+    elements_pt = {k.lower(): v for k, v in ELEMENT_TRANSLATIONS.items()}
+    elements_en: Dict[str, str] = {v.lower(): k for k, v in ELEMENT_TRANSLATIONS.items()}
+    elements_en.update(
+        {
+            "fisico": "Physical",
+            "eletrico": "Electric",
+            "eter": "Ether",
+            "quantico": "Quantum",
+            "imaginario": "Imaginary",
+        }
+    )
+
+    characters_en: Dict[str, str] = {v.lower(): k for k, v in CHARACTER_TRANSLATIONS.items()}
+    for alias_pt, canonical_en in REVERSE_TRANSLATIONS.items():
+        if any(
+            canonical_en == ch or canonical_en.startswith(ch + " ")
+            for ch in ("Silver Wolf", "Trailblazer", "March 7th", "Evernight", "The Dahlia", "Traveler", "Wanderer", "Firefly", "Sparkle", "Topaz & Numby", "Dan Heng", "Tingyun", "Dr. Ratio", "Soldier 11", "Anby", "Orphie", "Cissia", "Mannequin")
+        ):
+            characters_en[alias_pt] = canonical_en
+
+    return {
+        "paths_pt": paths_pt,
+        "paths_en": paths_en,
+        "elements_pt": elements_pt,
+        "elements_en": elements_en,
+        "characters_en": characters_en,
+    }

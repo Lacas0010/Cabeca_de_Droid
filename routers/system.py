@@ -309,6 +309,14 @@ async def browser_disconnect(payload: BrowserClientSignal, request: Request):
     return browser_lifecycle_manager.register_disconnect(payload.client_id, is_loopback=_is_loopback_request(request))
 
 
+@router.get("/api/i18n/glossary")
+async def get_i18n_glossary():
+    """Retorna glossário centralizado de caminhos, elementos e personagens do backend."""
+    from services.translation_service import get_frontend_glossary
+
+    return get_frontend_glossary()
+
+
 @router.get("/assets/elements/{filename}")
 async def serve_element_icon_with_offline_fallback(filename: str):
     """Serve ícone elemental em cache local ou fallback vetorial offline sem erros 404."""

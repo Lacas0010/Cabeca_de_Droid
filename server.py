@@ -6,10 +6,12 @@ from typing import Dict, Any
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 # Core modules
 from core.config import get_resource_path, get_data_path, seed_bundled_resources, get_cookies, get_config, parse_cookie_string
+from core.static_cache import inject_app_js_cache_busters, inject_index_cache_busters
 from core.security import (
     create_session,
     is_valid_session,
@@ -212,6 +214,30 @@ assets_dir = get_data_path("assets")
 
 os.makedirs(static_dir, exist_ok=True)
 os.makedirs(assets_dir, exist_ok=True)
+
+
+def _read_static_text(rel_path: str) -> str:
+    target = os.path.join(static_dir, *rel_path.split("/"))
+    with open(target, "r", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/", include_in_schema=False)
+@app.get("/index.html", include_in_schema=False)
+async def serve_index_with_cache_busters():
+    html = _read_static_text("index.html")
+    return HTMLResponse(content=inject_index_cache_busters(html, static_dir))
+
+
+@app.get("/js/app.js", include_in_schema=False)
+@app.get("/static/js/app.js", include_in_schema=False)
+async def serve_app_js_with_cache_busters():
+    js_src = _read_static_text("js/app.js")
+    return Response(
+        content=inject_app_js_cache_busters(js_src, static_dir),
+        media_type="application/javascript",
+    )
+
 
 app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 app.mount("/static", StaticFiles(directory=static_dir), name="static_files")

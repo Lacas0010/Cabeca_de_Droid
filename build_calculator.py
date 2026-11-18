@@ -5,7 +5,7 @@ import random
 from datetime import datetime, timedelta
 import unicodedata
 import time
-import requests
+from curl_cffi import requests
 from bs4 import BeautifulSoup
 from typing import Dict, List, Tuple, Optional, Any
 
@@ -4347,7 +4347,7 @@ def fetch_live_promo_codes(game_id: str) -> List[Dict[str, Any]]:
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
 
     try:
-        r = requests.get(url, headers=headers, timeout=6)
+        r = requests.get(url, headers=headers, impersonate="chrome", timeout=6)
         if r.status_code != 200:
             return []
 

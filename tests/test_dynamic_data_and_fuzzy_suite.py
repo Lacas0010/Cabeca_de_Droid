@@ -5,6 +5,8 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 import unittest
 import shutil
+import tempfile
+from unittest.mock import patch
 from static_data_manager import static_data_manager
 from meta_comparator import resolve_character_canonical_slug, find_best_guide_file, parse_meta_target
 from services.ai_build_generator import AIBuildGenerator, sanitize_stat_name
@@ -17,8 +19,13 @@ class TestDynamicDataAndFuzzySuite(unittest.TestCase):
         static_data_manager.load_all()
 
     def test_01_dynamic_upstream_sync(self):
-        """Verifica se a sincronização upstream do HSR, Genshin e ZZZ funciona com sucesso ou fallback resiliente."""
-        results = static_data_manager.sync_upstream_data()
+        """Verifica se a sincronização upstream do HSR, Genshin e ZZZ funciona com fallback offline isolado."""
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("static_data_manager.requests.get", side_effect=OSError("offline test")),
+            patch.object(static_data_manager, "_get_file_path", side_effect=lambda k: os.path.join(tmpdir, f"{k}.json")),
+        ):
+            results = static_data_manager.sync_upstream_data()
         self.assertIn("hsr", results)
         self.assertIn("genshin", results)
         self.assertIn("zzz", results)

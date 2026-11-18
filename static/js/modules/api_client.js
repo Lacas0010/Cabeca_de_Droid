@@ -45,6 +45,30 @@ const ELEMENT_MAPPING = {
     "element_500": "el-ether", "element 500": "el-ether"
 };
 
+const ELEMENT_EN_MAP = {
+    "físico": "Physical", "fisico": "Physical",
+    "fogo": "Fire",
+    "gelo": "Ice",
+    "elétrico": "Electric", "eletrico": "Electric",
+    "éter": "Ether", "eter": "Ether",
+    "vento": "Wind",
+    "raio": "Lightning",
+    "quântico": "Quantum", "quantico": "Quantum",
+    "imaginário": "Imaginary", "imaginario": "Imaginary"
+};
+
+const ELEMENT_PT_MAP = {
+    "physical": "Físico",
+    "fire": "Fogo",
+    "ice": "Gelo",
+    "electric": "Elétrico",
+    "ether": "Éter",
+    "wind": "Vento",
+    "lightning": "Raio",
+    "quantum": "Quântico",
+    "imaginary": "Imaginário"
+};
+
 // Helper global para formatar o nome de exibição de elementos (ex: ELEMENT_300 -> Lumiflux)
 function formatElementDisplayName(rawElem) {
     const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
@@ -56,34 +80,11 @@ function formatElementDisplayName(rawElem) {
     if (upper === "ELEMENT_200" || upper === "ELEMENT 200") return isEn ? "Fire" : "Fogo";
     if (upper === "ELEMENT_400" || upper === "ELEMENT 400") return isEn ? "Electric" : "Elétrico";
     if (upper === "ELEMENT_500" || upper === "ELEMENT 500") return isEn ? "Ether" : "Éter";
+    const lower = str.toLowerCase();
     if (isEn) {
-        const enMap = {
-            "físico": "Physical", "fisico": "Physical",
-            "fogo": "Fire",
-            "gelo": "Ice",
-            "elétrico": "Electric", "eletrico": "Electric",
-            "éter": "Ether", "eter": "Ether",
-            "vento": "Wind",
-            "raio": "Lightning",
-            "quântico": "Quantum", "quantico": "Quantum",
-            "imaginário": "Imaginary", "imaginario": "Imaginary"
-        };
-        const lower = str.toLowerCase();
-        if (enMap[lower]) return enMap[lower];
+        if (ELEMENT_EN_MAP[lower]) return ELEMENT_EN_MAP[lower];
     } else {
-        const ptMap = {
-            "physical": "Físico",
-            "fire": "Fogo",
-            "ice": "Gelo",
-            "electric": "Elétrico",
-            "ether": "Éter",
-            "wind": "Vento",
-            "lightning": "Raio",
-            "quantum": "Quântico",
-            "imaginary": "Imaginário"
-        };
-        const lower = str.toLowerCase();
-        if (ptMap[lower]) return ptMap[lower];
+        if (ELEMENT_PT_MAP[lower]) return ELEMENT_PT_MAP[lower];
     }
     return str;
 }
@@ -263,6 +264,22 @@ function formatPathName(rawPath, gameId) {
         return PATH_MAP_PT[lower] || str;
     }
 }
+
+// Sincroniza glossário canônico do backend (services/translation_service.py) como fonte única de verdade
+(function hydrateGlossaryFromBackend() {
+    if (typeof fetch !== "function") return;
+    fetch("/api/i18n/glossary")
+        .then(r => (r.ok ? r.json() : null))
+        .then(data => {
+            if (!data || typeof data !== "object") return;
+            if (data.paths_en) Object.assign(PATH_MAP_EN, data.paths_en);
+            if (data.paths_pt) Object.assign(PATH_MAP_PT, data.paths_pt);
+            if (data.elements_en) Object.assign(ELEMENT_EN_MAP, data.elements_en);
+            if (data.elements_pt) Object.assign(ELEMENT_PT_MAP, data.elements_pt);
+            if (data.characters_en) Object.assign(CHARACTER_NAME_MAP_EN, data.characters_en);
+        })
+        .catch(() => {});
+})();
 
 const STAT_SHORT_NAMES_EN = {
     "velocidade": "Speed", "vel": "SPD",

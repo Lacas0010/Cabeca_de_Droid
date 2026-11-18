@@ -4,7 +4,7 @@ import json
 import time
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Tuple
-import requests
+from curl_cffi import requests
 from core.paths import get_data_dir, get_resource_path
 
 
@@ -33,7 +33,7 @@ def fetch_json_with_retry(
     for url in urls:
         for attempt in range(max_retries + 1):
             try:
-                resp = requests.get(url, headers=req_headers, timeout=8)
+                resp = requests.get(url, headers=req_headers, impersonate="chrome", timeout=8)
 
                 if resp.status_code == 200:
                     return resp.json(), url

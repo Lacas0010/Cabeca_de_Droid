@@ -91,13 +91,14 @@ async def add_no_cache_header(request: Request, call_next):
         or path.startswith("/static")
         or path.endswith((".css", ".js", ".png", ".jpg", ".jpeg", ".webp", ".svg", ".ico", ".woff2", ".woff", ".ttf"))
     )
+    is_app_entrypoint = path in ("/js/app.js", "/static/js/app.js")
     is_proxy_image = path.startswith("/api/proxy_image")
 
     if is_proxy_image:
         if "Cache-Control" not in response.headers:
             response.headers["Cache-Control"] = "public, max-age=604800"
         response.headers["CDN-Cache-Control"] = "public, max-age=2592000"
-    elif is_static and path != "/" and not path.endswith(".html"):
+    elif is_static and path != "/" and not path.endswith(".html") and not is_app_entrypoint:
         response.headers["Cache-Control"] = "public, max-age=86400"
         response.headers["CDN-Cache-Control"] = "public, max-age=2592000"
         if "Pragma" in response.headers:
