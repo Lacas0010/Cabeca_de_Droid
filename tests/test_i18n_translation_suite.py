@@ -33,6 +33,10 @@ class TestI18nTranslationSuite(unittest.TestCase):
         res_suffix = traduzir_item("Musketeer of Wild Wheat (4-PC)", lang="pt")
         self.assertTrue(res_suffix.endswith("(4-PC)"))
 
+        # Caminho Remembrance em PT-BR deve usar o termo oficial Recordação
+        self.assertEqual(traduzir_caminho("Remembrance", lang="pt"), "Recordação")
+        self.assertEqual(traduzir_personagem("Trailblazer (Remembrance)", lang="pt"), "Desbravador (Recordação)")
+
     def test_config_schema_language_support(self):
         """Valida que o schema ConfigSaveRequest aceita o campo language."""
         req_pt = ConfigSaveRequest(language="pt")

@@ -6,6 +6,15 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.6.3] / Release Standalone [v1.2.3] - 2026-11-18
+
+### 🐛 Corrigido
+- **Localização PT-BR do Caminho Recordação no HSR (`services/translation_service.py`, `static/js/modules/i18n.js`, `static/js/modules/api_client.js`, `static/js/modules/roster.js`, `static/index.html`, `build_calculator.py`):**
+  - Substituído o termo incorreto `"Reminiscência"`/`"Rememoração"` por `"Recordação"` na tradução do Caminho `Remembrance`, nos filtros de caminhos do Roster (HTML/i18n), no mapa de exibição do `api_client.js` e no nome do Desbravador em `build_calculator.py`.
+  - Atualizado o filtro `roster.js` para reconhecer `"recorda"` além de `"remembr"`/`"reminisc"`.
+
+---
+
 ## [5.6.2] / Release Standalone [v1.2.2] - 2026-11-18
 
 ### 🐛 Corrigido

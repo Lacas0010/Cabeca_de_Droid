@@ -181,7 +181,7 @@ const TRANSLATIONS = {
         path_nihility: "Inexistência",
         path_preservation: "Preservação",
         path_abundance: "Abundância",
-        path_remembrance: "Reminiscência",
+        path_remembrance: "Recordação",
         path_elation: "Euforia",
 
         filter_weapon_all: "Todas as Armas",

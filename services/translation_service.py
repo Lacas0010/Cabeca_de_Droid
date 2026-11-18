@@ -79,7 +79,7 @@ PATH_TRANSLATIONS: Dict[str, str] = {
     "Nihility": "Inexistência",
     "Preservation": "Preservação",
     "Abundance": "Abundância",
-    "Remembrance": "Reminiscência",
+    "Remembrance": "Recordação",
     "Elation": "Euforia",
     # ZZZ Specialties
     "Attack": "Ataque",

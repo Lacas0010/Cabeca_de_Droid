@@ -238,7 +238,7 @@ const PATH_MAP_PT = {
     "nihility": "Inexistência",
     "preservation": "Preservação",
     "abundance": "Abundância",
-    "remembrance": "Reminiscência",
+    "remembrance": "Recordação",
     "elation": "Euforia",
     "attack": "Ataque",
     "stun": "Atordoamento",

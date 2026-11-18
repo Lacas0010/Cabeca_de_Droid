@@ -902,7 +902,7 @@ async function _loadRosterImpl(gameId) {
                     else if (pLower === "nihility") matchesPath = charPath.includes("nihil") || charPath.includes("inexist");
                     else if (pLower === "preservation") matchesPath = charPath.includes("preserv");
                     else if (pLower === "abundance") matchesPath = charPath.includes("abund");
-                    else if (pLower === "remembrance") matchesPath = charPath.includes("remembr") || charPath.includes("reminisc");
+                    else if (pLower === "remembrance") matchesPath = charPath.includes("remembr") || charPath.includes("recorda") || charPath.includes("reminisc");
                     else if (pLower === "elation") matchesPath = charPath.includes("elat") || charPath.includes("eufor") || charPath.includes("júbil") || charPath.includes("jubil");
                     else matchesPath = charPath === pLower;
                 }

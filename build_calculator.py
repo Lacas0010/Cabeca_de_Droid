@@ -126,6 +126,9 @@ CHAR_ALIASES = {
     "desbravadora harmonia": "trailblazer_harmony",
     "desbravadora a harmonia": "trailblazer_harmony",
     "trailblazer harmony": "trailblazer_harmony",
+    "desbravador recordacao": "trailblazer_remembrance",
+    "desbravador a recordacao": "trailblazer_remembrance",
+    "desbravadora recordacao": "trailblazer_remembrance",
     "desbravador remembranca": "trailblazer_remembrance",
     "desbravador a remembranca": "trailblazer_remembrance",
     "desbravador rememoracao": "trailblazer_remembrance",
@@ -284,7 +287,7 @@ CHAR_DISPLAY_NAMES_PT = {
     # HSR
     "trailblazer": "Desbravador (Harmonia)",
     "trailblazer_harmony": "Desbravador (Harmonia)",
-    "trailblazer_remembrance": "Desbravador (Rememoração)",
+    "trailblazer_remembrance": "Desbravador (Recordação)",
     "trailblazer_preservation": "Desbravador (Preservação)",
     "trailblazer_destruction": "Desbravador (Destruição)",
     "trailblazer_elation": "Desbravador (Júbilo)",
