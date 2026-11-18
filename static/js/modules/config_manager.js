@@ -13,11 +13,18 @@ async function fetchConfig() {
             fetch("/api/security/status")
         ]);
 
-        const config = await cfgRes.json();
+        const config = cfgRes.ok ? await cfgRes.json() : {};
         let secStatus = {};
         if (secRes.ok) {
             secStatus = await secRes.json();
         }
+
+        const effectiveHasCookies = cfgRes.ok
+            ? Boolean(config.has_cookies)
+            : Boolean(secStatus?.cookies_summary?.has_cookies);
+        const effectiveCookiesPreview = cfgRes.ok
+            ? (config.cookies_preview || "")
+            : (secStatus?.cookies_summary?.preview || "");
         
         // 0. Idioma
         if (config.language) {
@@ -32,8 +39,8 @@ async function fetchConfig() {
         const previewEl = document.getElementById("cfg-cookies-preview-text");
         const previewTag = document.getElementById("cfg-cookies-status-tag");
         if (previewEl) {
-            if (config.has_cookies && config.cookies_preview) {
-                previewEl.innerHTML = `<i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 6px;"></i><code>${config.cookies_preview}</code>`;
+            if (effectiveHasCookies && effectiveCookiesPreview) {
+                previewEl.innerHTML = `<i class="fa-solid fa-shield-halved" style="color: #34d399; margin-right: 6px;"></i><code>${effectiveCookiesPreview}</code>`;
                 if (previewTag) previewTag.style.display = "inline-block";
             } else {
                 const isEnCookie = window.isEn;
@@ -93,7 +100,7 @@ async function fetchConfig() {
                 : (isEnLan ? "Secure isolation active: Only this computer can access APIs and data." : "Isolamento seguro ativo: Apenas este computador tem acesso às APIs e aos dados.");
         }
         
-        updateApiStatusIndicator(config.has_cookies);
+        updateApiStatusIndicator(effectiveHasCookies);
     } catch (err) {
         console.error("Erro ao buscar configurações:", err);
     }
@@ -127,12 +134,13 @@ async function setupConfigForm() {
     // Salvar Configurações (Cookies + Idioma)
     if (saveBtn) {
         saveBtn.addEventListener("click", async () => {
-                        const cookies_raw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
+            const isEn = window.getLanguage && window.getLanguage() === "en";
+            const cookies_raw = document.getElementById("cfg-hoyolab-cookies")?.value || "";
             const language = window.getLanguage ? window.getLanguage() : (document.getElementById("cfg-app-language")?.value || "pt");
             
             if (statusMsg) {
                 statusMsg.className = "status-msg";
-                statusMsg.innerText = "Criptografando e salvando...";
+                statusMsg.innerText = isEn ? "Encrypting and saving..." : "Criptografando e salvando...";
             }
             
             try {
@@ -147,15 +155,14 @@ async function setupConfigForm() {
                     if (typeof saveBtn.done === "function") saveBtn.done();
                     if (statusMsg) {
                         statusMsg.className = "status-msg success";
-
-        statusMsg.innerText = isEn ? "Settings saved to vault successfully!" : "Configurações salvas no cofre com sucesso!";
+                        statusMsg.innerText = isEn ? "Settings saved to vault successfully!" : "Configurações salvas no cofre com sucesso!";
                     }
-                    showToast("Configurações atualizadas e criptografadas!", "success");
+                    showToast(isEn ? "Settings updated and encrypted!" : "Configurações atualizadas e criptografadas!", "success");
                     fetchConfig();
                 } else {
                     if (statusMsg) {
                         statusMsg.className = "status-msg error";
-                        statusMsg.innerText = `Erro: ${data.detail || "Erro desconhecido"}`;
+                        statusMsg.innerText = `Erro: ${data.detail || data.error || "Erro desconhecido"}`;
                     }
                 }
             } catch (err) {

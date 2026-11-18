@@ -174,6 +174,36 @@ class TestServerSecurityEndpoints(unittest.TestCase):
         # Com PIN desativado, novo cliente sem sessão acessa normalmente
         anon_client = self.client.__class__(self.client.app)
 
+    def test_security_status_exposes_masked_cookies_summary_when_config_401_on_lan(self):
+        from pathlib import Path
+        from unittest.mock import patch
+
+        sample_cookies = {
+            "ltuid_v2": "282000147",
+            "ltoken_v2": "v2_CAESE_MASKED_TEST_TOKEN_wA8A",
+            "cookie_token_v2": "v2_SECRET_COOKIE_TOKEN_VALUE",
+        }
+        with (
+            patch("database.is_lan_access_allowed", return_value=True),
+            patch("routers.security.get_cookies", return_value=sample_cookies),
+        ):
+            lan_client = self.client.__class__(self.client.app, client=("100.103.131.45", 55000))
+            cfg_res = lan_client.get("/api/config")
+            self.assertEqual(cfg_res.status_code, 401)
+
+            sec_res = lan_client.get("/api/security/status")
+            self.assertEqual(sec_res.status_code, 200)
+            summary = sec_res.json().get("cookies_summary") or {}
+            self.assertTrue(summary.get("has_cookies"))
+            self.assertIn("282***47", summary.get("preview", ""))
+            self.assertNotIn("v2_SECRET_COOKIE_TOKEN_VALUE", str(summary))
+
+        cm_js = (Path(__file__).resolve().parent.parent / "static" / "js" / "modules" / "config_manager.js").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("secStatus?.cookies_summary?.has_cookies", cm_js)
+        self.assertIn("updateApiStatusIndicator(effectiveHasCookies)", cm_js)
+
     def test_lan_access_env_override(self):
         # Testa se ALLOW_LAN=1 sobrepõe o banco e permite conexões externas
         old_val = os.environ.get("ALLOW_LAN")
