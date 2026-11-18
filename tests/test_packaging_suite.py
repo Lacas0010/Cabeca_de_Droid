@@ -336,6 +336,8 @@ class TestSakugaVfxOfflineIntegration(unittest.TestCase):
         for css_var in ("--sk-card:", "--sk-ink:", "--sk-pri:", "--sk-acc:", "--sk-fill:"):
             self.assertIn(css_var, css)
         self.assertIn("overflow: visible;", css)
+        self.assertNotIn(".modal-card-content {\n    overflow: visible !important;", css.replace("\r\n", "\n"))
+        self.assertIn("flex: 1 1 auto;\n    min-height: 0;\n    overflow-y: auto;", css.replace("\r\n", "\n"))
 
         progress_js = (build.ROOT_DIR / "static" / "vendor" / "sakuga-vfx" / "progress.js").read_text(encoding="utf-8")
         button_js = (build.ROOT_DIR / "static" / "vendor" / "sakuga-vfx" / "button.js").read_text(encoding="utf-8")

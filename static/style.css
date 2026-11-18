@@ -561,9 +561,11 @@ h6 {
 /* CONTEÚDO PRINCIPAL */
 .main-content {
     flex-grow: 1;
+    min-width: 0;
     height: 100%;
     position: relative;
     overflow-y: auto;
+    overflow-x: hidden;
     overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
     contain: layout style;
@@ -1308,8 +1310,6 @@ h6 {
     align-items: center;
     padding-bottom: 8px;
     aspect-ratio: 0.85;
-    content-visibility: auto;
-    contain-intrinsic-size: auto 160px;
 }
 
 .timeline-item {
@@ -2598,13 +2598,25 @@ h6 {
     transform: scale(1.05);
 }
 
+.inspector-tabs {
+    flex-shrink: 0;
+}
+
 .inspector-body {
-    flex-grow: 1;
+    flex: 1 1 auto;
+    min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 20px 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
+}
+
+.inspector-panel {
+    flex-shrink: 0;
 }
 
 .inspector-body::-webkit-scrollbar {
@@ -3788,8 +3800,12 @@ h6 {
     }
 
     .main-content {
+        flex: 1 1 auto;
+        height: auto;
+        min-height: 0;
         padding: 16px;
         overflow-y: auto;
+        overflow-x: hidden;
     }
 
     .game-banner {
@@ -6984,6 +7000,8 @@ h6 {
     display: flex;
     justify-content: center;
     align-items: center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .pin-lock-card {
@@ -10346,8 +10364,31 @@ sakuga-tooltip.sk-inline-tip {
     pointer-events: auto;
 }
 
+.modal-overlay {
+    overflow-y: auto;
+    padding: 16px;
+    overscroll-behavior: contain;
+}
+
 .modal-card-content {
-    overflow: visible !important;
+    max-height: 90vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+}
+
+.modal-card-body,
+#roast-content-body,
+#farm-modal-char-grid {
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.modal-card-footer,
+.modal-actions {
+    overflow: visible;
+    flex-shrink: 0;
 }
 
 .modal-card-header {
@@ -10368,7 +10409,6 @@ sakuga-tooltip.sk-inline-tip {
 .sync-logger,
 .gacha-active-banner-wrapper,
 .gacha-subview,
-.inspector-body,
 .help-hub-container {
     overflow: visible;
 }
