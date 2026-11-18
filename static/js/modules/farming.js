@@ -1073,8 +1073,8 @@ function formatFarmingNote(noteStr) {
                 container.innerHTML = `
                     <div class="empty-state-box" style="padding: 28px 16px; text-align: center; background: rgba(15, 23, 42, 0.6); border: 1px dashed rgba(16, 185, 129, 0.3); border-radius: 12px;">
                         <i class="fa-solid fa-clipboard-check" style="font-size: 24px; color: #10b981; margin-bottom: 8px; display: inline-block;"></i>
-                        <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 4px;">Ordem de Serviço do Dia</h4>
-                        <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Esta tela organiza um roteiro determinístico de gasto de energia e resina para os personagens abaixo da meta de build.</p>
+                        <h4 style="color: var(--text-primary); font-size: 15px; font-weight: 700; margin-bottom: 4px;">Farm do Dia</h4>
+                        <p style="color: var(--text-secondary); font-size: 12px; max-width: 440px; margin: 0 auto 14px auto; line-height: 1.4;">Organiza a prioridade de gasto de Resina e energia para os personagens abaixo da meta.</p>
                         <sakuga-button class="sk-xs sk-accent-emerald" onclick="window.loadDailyFarmOrder('${gameId}')">
                             <i class="fa-solid fa-rotate-right"></i> Recalcular Roteiro
                         </sakuga-button>

@@ -19,7 +19,7 @@ router = APIRouter(tags=["Security & Auth"])
 
 @router.get("/api/security/status")
 async def get_security_status_endpoint(request: Request):
-    """Retorna o status consolidado de segurança da aplicação."""
+    """Status do cofre local, PIN e acesso LAN."""
     client_ip = request.client.host if request.client else "127.0.0.1"
     is_loopback = client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
     token = request.cookies.get("hoyo_session") or request.headers.get("X-Session-Token")

@@ -1,6 +1,6 @@
-# Esquema Oficial do Banco de Dados SQLite (`hoyo_app.db`)
+# Esquema do Banco de Dados SQLite (`hoyo_app.db`)
 
-Este documento serve como a fonte de verdade para a estrutura de tabelas e índices do banco local do **Cabeça de Droid**. Ao criar novas queries ou modificar `database.py`, utilize estritamente os nomes de colunas e tipos definidos abaixo.
+Referência das tabelas e índices do banco local do **Cabeça de Droid**. Ao criar novas queries ou mexer no `database.py`, mantenha exatamente os nomes de colunas e tipos abaixo.
 
 ---
 
@@ -122,7 +122,7 @@ CREATE TABLE IF NOT EXISTS account_snapshots (
 ```
 
 ### 8. `endgame_records`
-Relatórios e registros das modalidades de endgame (MoC, Pure Fiction, Apocalyptic Shadow, Abismo Espiral, Teatro Imaginário, Shiyu Defense).
+Relatórios e registros dos modos de endgame (MoC, Ficção Pura, Sombra Apocalíptica, Espiral do Abismo, Teatro Imaginário, Defesa Shiyu, Assalto Mortal).
 ```sql
 CREATE TABLE IF NOT EXISTS endgame_records (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS static_data_manifests (
 ```
 
 ### 12. `daily_farm_tasks_completed`
-Controle diário de tarefas concluídas na ordem de serviço de farm diário.
+Controle diário das tarefas concluídas no farm diário.
 ```sql
 CREATE TABLE IF NOT EXISTS daily_farm_tasks_completed (
     date TEXT NOT NULL,

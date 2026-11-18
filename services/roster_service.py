@@ -591,7 +591,7 @@ def get_hsr_effective_id(char: Any) -> str:
     if resolved and str(resolved).isdigit():
         return str(resolved)
 
-    # 5. Resolução dinâmica autônoma (se c_id ausente ou não numérico)
+    # 5. Busca no banco e manifestos se c_id estiver ausente ou não numérico
     if not c_id or not str(c_id).isdigit():
         c_norm = normalize_char_name(c_name)
         c_lower = c_name.lower().strip()
@@ -1542,7 +1542,7 @@ def parse_meta_target(game_id: str, char_name: str, element: str = "") -> Dict[s
 
 
 def get_overview() -> Dict[str, Any]:
-    """Gera dados resumidos consolidados dos 3 jogos mesclando SQLite e arquivos locais."""
+    """Resumo das contas dos 3 jogos (SQLite + cache local)."""
     global _OVERVIEW_CACHE
     now = time.time()
     if _OVERVIEW_CACHE is not None:

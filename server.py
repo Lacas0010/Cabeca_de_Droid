@@ -147,9 +147,9 @@ def startup_static_data_sync_scheduler():
                     status=info.get("status", "success"),
                     source=info.get("source", "seed"),
                 )
-            print("[STATIC-DATA] Manifestos de dados estáticos e datamines inicializados com sucesso.")
+            print("[STATIC-DATA] Dados locais carregados.")
         except Exception as s_err:
-            print(f"[STATIC-DATA] Erro na inicialização dos dados estáticos: {s_err}")
+            print(f"[STATIC-DATA] Erro ao inicializar: {s_err}")
 
         while True:
             time.sleep(86400)
@@ -197,18 +197,15 @@ app.middleware("http")(add_no_cache_header)
 app.middleware("http")(security_guard_middleware)
 app.middleware("http")(request_latency_tracker_middleware)
 
-# Montagem de todos os módulos de rotas (APIRouters)
 for router in all_routers:
     app.include_router(router)
 
-# Garante seed de manifestos/assets empacotados no diretório persistente gravável
+# Copia assets/manifestos empacotados para o diretório gravável
 seed_bundled_resources()
 
-# Download proativo em segundo plano de ícones dos elementos e fragmentos de Eidolon
 threading.Thread(target=download_element_icons, daemon=True).start()
 threading.Thread(target=download_hsr_eidolon_shards, daemon=True).start()
 
-# Montagem de arquivos estáticos da interface Web Glassmorphism
 static_dir = get_resource_path("static")
 assets_dir = get_data_path("assets")
 

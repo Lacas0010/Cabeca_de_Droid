@@ -246,18 +246,14 @@ def main() -> None:
     url_local = f"http://127.0.0.1:{port}/?v=5.1"
     url_rede = f"http://{local_ip}:{port}/?v=5.1"
 
-    print("[INFO] Iniciando Cabeça de Droid v5.1 (Blindagem de Segurança Ativa)...")
-    print(f"[INFO] Servidor escutando em: {bind_host}:{port}")
-    print(f"[INFO] Acesso local: {url_local}")
+    print("[INFO] Iniciando Cabeça de Droid...")
+    print(f"[INFO] Servidor em {bind_host}:{port} -> {url_local}")
     if allow_lan or bind_host == "0.0.0.0":
-        print(f"[SUCCESS] Acesso LAN / Tailscale / VPN HABILITADO na porta {port} (IP local: {local_ip})")
+        print(f"[SUCCESS] LAN liberada na porta {port} (IP: {local_ip})")
     else:
-        print("[SECURITY] Isolamento de Rede Ativo: Servidor vinculado exclusivamente a 127.0.0.1 (Loopback).")
-        print(
-            "[TIP] Para liberar o acesso via Tailscale/VPN na VM, inicie com: python main.py --lan (ou --host 0.0.0.0)"
-        )
+        print("[SECURITY] Servidor restrito a 127.0.0.1 (local).")
+        print("[TIP] Para liberar LAN, rode: python main.py --lan")
 
-    # Inicialização do Ícone na Bandeja do Sistema (Windows System Tray)
     stop_event = threading.Event()
     tray_manager = None
     if not args.no_tray:
@@ -288,7 +284,7 @@ def main() -> None:
         while server_thread.is_alive() and not stop_event.is_set():
             time.sleep(0.5)
     except KeyboardInterrupt:
-        print("\n[INFO] Servidor encerrado com sucesso pelo usuário.")
+        print("\n[INFO] Servidor encerrado.")
     finally:
         browser_lifecycle_manager.shutdown()
         if _uvicorn_server is not None:

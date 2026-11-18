@@ -87,7 +87,7 @@ function openUpdaterModal(checkData) {
     if (els.verLatest) els.verLatest.textContent = formatVersionLabel(checkData.latest_version);
     if (els.notesBox) {
         const notes = String(checkData.release_notes || "").trim();
-        els.notesBox.textContent = notes || "Melhorias de estabilidade, otimizações e correções gerais.";
+        els.notesBox.textContent = notes || "Correções e melhorias nesta versão.";
     }
     if (els.releaseLink) {
         els.releaseLink.href = checkData.release_url || DEFAULT_RELEASE_URL;
@@ -115,7 +115,7 @@ function showDevModeNotice(message, releaseUrl) {
     if (els.decisionActions) els.decisionActions.style.display = "none";
     if (els.devMessage) {
         els.devMessage.textContent = message || (
-            "Você está executando o projeto via Python/Git. O auto-updater automático atua apenas no executável compilado (.exe)."
+            "Você está rodando via Python/Git. A atualização automática funciona só no .exe."
         );
     }
     if (els.releaseLink) {
@@ -301,14 +301,14 @@ export async function checkUpdates(manual = false) {
 
         if (manual && typeof window.showToast === "function") {
             window.showToast(
-                `Você já está na versão mais recente (${formatVersionLabel(data.current_version)}).`,
+                `Já está na última versão (${formatVersionLabel(data.current_version)}).`,
                 "success"
             );
         }
         return data;
     } catch (_) {
         if (manual && typeof window.showToast === "function") {
-            window.showToast("Sem conexão para verificar atualizações no momento.", "info");
+            window.showToast("Não foi possível checar atualizações agora.", "info");
         }
         return null;
     } finally {

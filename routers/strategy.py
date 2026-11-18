@@ -36,7 +36,7 @@ async def get_account_gaps_endpoint(game_id: str):
 
 @router.post("/api/strategy/ask-ai-gaps")
 async def ask_ai_account_gaps(req: StrategyAskAIRequest):
-    """Retorna a auditoria determinística de lacunas da conta (Módulo de IA temporariamente desativado)."""
+    """Retorna a análise de lacunas da conta."""
     game_id = req.game_id.lower().strip()
     if game_id not in ["genshin", "hsr", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido.")
@@ -48,7 +48,7 @@ async def ask_ai_account_gaps(req: StrategyAskAIRequest):
 
         return {
             "analysis": gap_analysis,
-            "ai_response": gap_analysis.get("rag_summary_markdown", "Análise determinística de lacunas concluída."),
+            "ai_response": gap_analysis.get("rag_summary_markdown", "Análise de lacunas concluída."),
             "has_ai": False,
         }
     except Exception as e:

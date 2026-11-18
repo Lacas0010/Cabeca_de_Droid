@@ -1088,7 +1088,7 @@ window.runGachaSimulation = async function() {
         if (typeof showToast === "function") showToast("Erro ao executar simulação de Gacha.");
     } finally {
         if (runBtn) {
-            runBtn.innerHTML = `<i class="fa-solid fa-dice"></i> Monte Carlo`;
+            runBtn.innerHTML = `<i class="fa-solid fa-dice"></i> ${typeof window.t === "function" ? window.t("gacha_btn_monte_carlo", "Simular (10 mil)") : "Simular (10 mil)"}`;
             runBtn.disabled = false;
         }
     }
@@ -1518,7 +1518,7 @@ window.runGachaForecastCalculation = async function() {
     const runBtn = document.getElementById("btn-run-forecast-calc");
     if (runBtn) {
 
-    runBtn.innerHTML = isEn ? `<i class="fa-solid fa-spinner fa-spin"></i> Projecting gem accumulation & Monte Carlo...` : `<i class="fa-solid fa-spinner fa-spin"></i> Projetando acúmulo de gemas & Monte Carlo...`;
+    runBtn.innerHTML = isEn ? `<i class="fa-solid fa-spinner fa-spin"></i> Running 10k simulation...` : `<i class="fa-solid fa-spinner fa-spin"></i> Simulando projeção (10 mil)...`;
         runBtn.disabled = true;
     }
 
@@ -1561,7 +1561,7 @@ window.runGachaForecastCalculation = async function() {
         if (typeof showToast === "function") showToast("Erro ao calcular o Gacha Forecast: " + err.message);
     } finally {
         if (runBtn) {
-            runBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Calcular Projeção & Monte Carlo`;
+            runBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> ${typeof window.t === "function" ? window.t("forecast_btn_calc", "Calcular Projeção") : "Calcular Projeção"}`;
             runBtn.disabled = false;
         }
     }

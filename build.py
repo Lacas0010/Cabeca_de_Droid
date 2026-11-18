@@ -139,7 +139,7 @@ def build_pyinstaller_command(staging_assets: Path, icon_path: Path) -> List[str
         "updater",
     ]
 
-    collect_submodules = ["routers", "services", "schemas", "core", "scrapers"]
+    collect_submodules = ["routers", "services", "schemas", "core", "scrapers", "calculators"]
     collect_data = ["curl_cffi", "genshin"]
 
     cmd = [

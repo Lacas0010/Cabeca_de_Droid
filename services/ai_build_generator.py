@@ -121,10 +121,7 @@ class AIBuildPayload(BaseModel):
 
 
 class AIBuildGenerator:
-    """
-    Gerador autônomo e determinístico de builds Day-1 com validação Pydantic,
-    sanitização de status e rastreamento de proveniência ('ai_preliminary').
-    """
+    """Gerador de guias Day-1 com validação Pydantic e tag 'ai_preliminary'."""
 
     @staticmethod
     def is_ai_preliminary_guide(file_path: str) -> bool:
@@ -253,7 +250,7 @@ class AIBuildGenerator:
 
     @staticmethod
     def _generate_template_guide(game_id: str, name: str, element: str, role: str, rarity: int) -> str:
-        """Template determinístico inteligente baseado no arquétipo do personagem."""
+        """Template Day-1 baseado na função do personagem."""
         now_iso = datetime.now().isoformat()
         is_support = any(
             k in str(role).lower()

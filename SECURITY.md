@@ -1,46 +1,41 @@
-# 🛡️ Política de Segurança e Governança de Dados
+# Segurança e Proteção Local de Dados
 
-Este documento descreve as práticas de segurança, gestão de credenciais locais, privacidade e a arquitetura de proteção implementada no **Cabeça de Droid (v5.6+ / Release v1.2.0)**.
+O **Cabeça de Droid** roda localmente e guarda cookies, banco e configurações na sua máquina. Abaixo está como esses dados são protegidos.
 
 ---
 
-## 🔒 1. Tratamento de Credenciais Sensíveis
+## 1. Dados sensíveis usados pelo app
 
-O aplicativo opera estritamente de forma **local** com duas categorias de dados sensíveis:
+1. **Cookies do HoYoLAB (`cookies.enc`):**
+   - `ltuid_v2` / `account_id_v2`: ID público da conta no HoYoLAB.
+   - `ltoken_v2`: token de sessão usado para ler elenco, notas diárias (Resina, Poder de Desbravamento, Bateria) e fazer check-in.
+   - `cookie_token_v2`: token usado para resgate de códigos promocionais e dados web.
+   - **Senhas e `stoken`:** nunca são pedidos nem gravados.
 
-1. **Tokens de Sessão da HoYoLAB (`cookies.enc`):**
-   - `ltuid_v2` / `account_id_v2`: Identificador público da conta no HoYoLAB.
-   - `ltoken_v2`: Token de sessão para leitura de Roster, notas diárias (resina/energia) e check-in.
-   - `cookie_token_v2`: Token para resgate de códigos promocionais e dados web.
-   - **Senhas e `stoken`:** **NUNCA** solicitados, interceptados ou armazenados.
-
-2. **Chaves Privadas de Infraestrutura & Deploy (`*.key` / `*.pem`):**
-   - Chaves SSH de acesso à VM de produção Oracle Cloud, mantidas fora da árvore Git e blindadas pelo `.gitignore`.
+2. **Chaves privadas (`*.key` / `*.pem`):**
+   - Chaves SSH usadas apenas para deploy em servidor próprio; ficam fora do Git via `.gitignore`.
 
 > [!CAUTION]
-> Mesmo que esses cookies não permitam alteração de senha da sua conta HoYoverse, trate seus arquivos `.enc` e chaves `.key` como credenciais estritamente privadas. Nunca compartilhe dumps de cookies, chaves de API ou arquivos cifrados em repositórios públicos.
+> Mesmo sem darem acesso à troca de senha da conta HoYoverse, nunca compartilhe seus arquivos `.enc`, dumps de cookies ou chaves `.key`.
 
 ---
 
-## 🏗️ 2. Medidas de Proteção Implementadas
+## 2. Como o app protege esses dados
 
-| Camada de Segurança | Mecanismo Implementado | Arquivo / Módulo |
+| Proteção | Como funciona | Onde está |
 | :--- | :--- | :--- |
-| **1. Cofre Criptográfico DPAPI** | Criptografia em repouso no Windows (`CryptProtectData` via `ctypes.windll.crypt32`) e AES-256 no Linux. | [`core/security.py`](core/security.py) / [`security_vault.py`](security_vault.py) |
-| **2. Zero-Exposure no Frontend** | O servidor **nunca** devolve cookies em texto claro para a UI; envia apenas previews mascarados (`ltuid_v2=282***47`). | [`routers/config.py`](routers/config.py) |
-| **3. Sanitização de Logs em Tempo Real** | Filtro regex que censura automaticamente tokens de sessão e cabeçalhos `Bearer` antes da saída no terminal/SSE. | [`core/security.py`](core/security.py) |
-| **4. Isolamento Loopback Padrão** | Servidor inicia vinculado a `127.0.0.1`. Acesso via rede local (`0.0.0.0`) exige ativação explícita pelo usuário. | [`core/config.py`](core/config.py) / [`main.py`](main.py) |
-| **5. Bloqueio Local por PIN** | Proteção por PIN com hash `PBKDF2-HMAC-SHA256` (120.000 iterações com salt individual) e bloqueio HTTP 423. | [`routers/security.py`](routers/security.py) |
-| **6. Purga Instantânea de Dados** | Endpoint `POST /api/security/clear_credentials` para exclusão imediata e permanente de todas as credenciais do cofre. | [`routers/security.py`](routers/security.py) |
-| **7. Suíte de Testes Criptográficos & Updater** | **230 testes unitários automatizados** cobrindo sanitização, mascaramento, hash de PIN, fallback DPAPI/AES, ZipSlip e allowlist do updater. | [`tests/`](tests/) |
-| **8. Governança de Cabeçalhos HTTP** | Políticas de cabeçalhos com bloqueio de cache para dados dinâmicos (`Cache-Control: no-cache, no-store`), `X-Content-Type-Options: nosniff` e proxy seguro. | [`core/security.py`](core/security.py) |
-| **9. Verificação do Auto-Updater** | Download restrito aos prefixos oficiais do GitHub (`github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`, `codeload.github.com`) e validação prévia de caminhos contra ZipSlip antes da extração. | [`updater.py`](updater.py) |
+| **Cofre criptografado** | Criptografa cookies com DPAPI no Windows (`CryptProtectData`) e AES-256 no Linux. | [`core/security.py`](core/security.py), [`security_vault.py`](security_vault.py) |
+| **Mascaramento na API e UI** | O servidor nunca devolve cookies brutos para o frontend; envia só um trecho mascarado (`ltuid_v2=282***47`). | [`routers/config.py`](routers/config.py) |
+| **Filtro nos logs** | Regex limpa tokens de sessão e cabeçalhos `Bearer` antes de imprimir no console ou SSE. | [`core/security.py`](core/security.py) |
+| **Loopback por padrão** | O servidor sobe preso em `127.0.0.1`. Acesso na rede local (`0.0.0.0`) só liga se você ativar. | [`core/config.py`](core/config.py), [`main.py`](main.py) |
+| **PIN opcional** | Trava local com hash `PBKDF2-HMAC-SHA256` (120 mil iterações e salt único) e bloqueio HTTP 423. | [`routers/security.py`](routers/security.py) |
+| **Limpeza rápida** | `POST /api/security/clear_credentials` apaga todas as credenciais salvas. | [`routers/security.py`](routers/security.py) |
+| **Cabeçalhos HTTP** | Bloqueia cache em rotas privadas (`Cache-Control: no-cache, no-store`) e envia `X-Content-Type-Options: nosniff`. | [`core/security.py`](core/security.py) |
+| **Checks do Auto-Updater** | Só baixa releases de domínios oficiais do GitHub (`github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`, `codeload.github.com`) e bloqueia ZipSlip antes de extrair. | [`updater.py`](updater.py) |
 
 ---
 
-## 🛡️ 3. Regras de Exclusão no Git (`.gitignore`)
-
-Os seguintes arquivos são permanentemente ignorados pelo controle de versão para impedir qualquer vazamento acidental:
+## 3. Arquivos ignorados no Git (`.gitignore`)
 
 ```gitignore
 config.json
@@ -68,9 +63,8 @@ user_data_google/
 
 ---
 
-## 🚨 4. Procedimento em Caso de Suspeita de Exposição
+## 4. Se você achar que algum cookie vazou
 
-Se suspeitar que seus tokens foram expostos:
-1. **Invalidar Sessões HoYoLAB:** Acesse [hoyolab.com](https://www.hoyolab.com), vá em configurações de conta e clique em **Sair de Todas as Sessões** (ou altere sua senha HoYoVerse).
-2. **Limpar Cofre Local:** Clique no botão **Limpar Credenciais** na aba de Configurações do app.
-3. **Rotacionar Chaves SSH:** Gere um novo par de chaves SSH para conexões na nuvem caso uma chave `.key` seja comprometida.
+1. Entre em [hoyolab.com](https://www.hoyolab.com), vá nas configurações da conta e clique em **Sair de Todas as Sessões** (ou troque sua senha).
+2. Clique em **Limpar Credenciais** na aba de Configurações do app.
+3. Se tiver vazado uma chave `.key` de servidor, gere um par SSH novo.

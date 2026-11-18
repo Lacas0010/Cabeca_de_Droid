@@ -1158,15 +1158,23 @@ async function _loadRosterImpl(gameId) {
                     const elemDisplayName = typeof formatElementDisplayName === "function" ? formatElementDisplayName(char.element) : (char.element || "");
 
                     let pathOrWeaponLabel = "";
+                    let rawPathOrWeapon = "";
                     if (gameId === "hsr") {
-                        const rawP = char.path || getCharacterPath(char);
-                        pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawP, "hsr") : rawP;
+                        rawPathOrWeapon = char.path || getCharacterPath(char) || "";
+                        pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawPathOrWeapon, "hsr") : rawPathOrWeapon;
                     } else if (gameId === "genshin") {
-                        const rawW = char.weapon_type || getCharacterWeapon(char) || "";
-                        pathOrWeaponLabel = typeof window.t === "function" ? window.t(`weapon_${rawW}`, rawW) : rawW;
+                        rawPathOrWeapon = char.weapon_type || getCharacterWeapon(char) || "";
+                        pathOrWeaponLabel = typeof window.t === "function" ? window.t(`weapon_${rawPathOrWeapon}`, rawPathOrWeapon) : rawPathOrWeapon;
                     } else if (gameId === "zzz") {
-                        pathOrWeaponLabel = char.specialty || char.role || "";
+                        rawPathOrWeapon = char.specialty || char.role || "";
+                        pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawPathOrWeapon, "zzz") : rawPathOrWeapon;
                     }
+                    const pathOrWeaponIconUrl = (rawPathOrWeapon && typeof getPathOrWeaponIconUrl === "function")
+                        ? getPathOrWeaponIconUrl(gameId, rawPathOrWeapon)
+                        : "";
+                    const pathOrWeaponIconHtml = pathOrWeaponIconUrl
+                        ? `<img src="${pathOrWeaponIconUrl}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px; margin-right:3px;" onerror="this.style.display='none';" alt="">`
+                        : "";
 
                     const rarityLabel = isFiveStar ? (gameId === 'zzz' ? 'Rank S' : '5★') : (gameId === 'zzz' ? 'Rank A' : '4★');
 
@@ -1204,7 +1212,7 @@ async function _loadRosterImpl(gameId) {
                                 </div>
                                 <div class="char-list-details-row">
                                     <span class="char-list-badge-lvl">${lvlLabel} ${char.level}</span>
-                                    ${pathOrWeaponLabel ? `<span>• ${pathOrWeaponLabel}</span>` : ''}
+                                    ${pathOrWeaponLabel ? `<span style="display:inline-flex; align-items:center;">•&nbsp;${pathOrWeaponIconHtml}${pathOrWeaponLabel}</span>` : ''}
                                 </div>
                             </div>
                         </div>
@@ -1839,7 +1847,9 @@ async function inspectCharacter(gameId, char) {
     const elemHtml = `<img src="${getElementIconUrl(gameId, char.element || elemKey)}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
     const pathVal = char.path || char.specialty || char.weapon_type || "";
     const pathDisplay = pathVal && typeof formatPathName === 'function' ? formatPathName(pathVal, gameId) : "";
-    const pathHtml = pathDisplay ? ` • ${pathDisplay.toUpperCase()}` : "";
+    const pathIconUrl = (pathVal && typeof getPathOrWeaponIconUrl === 'function') ? getPathOrWeaponIconUrl(gameId, pathVal) : "";
+    const pathIconHtml = pathIconUrl ? `<img src="${pathIconUrl}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px; margin-right:3px;" onerror="this.style.display='none';">` : "";
+    const pathHtml = pathDisplay ? ` • ${pathIconHtml}${pathDisplay.toUpperCase()}` : "";
     const insAffEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
     const insAffHtml = insAffEid ? ` <span class="ins-affinitive-pill" title="Affinitive Eidolon: ${String(insAffEid.name || "").replace(/"/g, "&quot;")}">✦ Affinitive</span>` : "";
     document.getElementById("ins-meta").innerHTML = `${char.rank_str || "C0"}${insAffHtml} • ${elemHtml}${pathHtml} • ${isEn ? "Level" : "Nível"} ${char.level}`;

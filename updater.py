@@ -421,7 +421,7 @@ async def start_update_process(
             running=False,
             stage="dev_mode",
             progress=1.0,
-            message="Modo desenvolvimento (Python/Git): execute 'git pull origin main' ou baixe a release manualmente.",
+            message="Modo dev (Python/Git): rode 'git pull origin main' ou baixe a release no GitHub.",
             target_version=target_version,
             release_url=latest_url,
             error=None,

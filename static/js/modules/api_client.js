@@ -673,8 +673,42 @@ function getElementIconUrl(gameId, rawElem) {
     return `/assets/elements/${String(gameId || "hsr").toLowerCase()}_${canon}.png?v=2`;
 }
 
+function getPathOrWeaponIconUrl(gameId, rawVal) {
+    if (!rawVal) return "";
+    const g = String(gameId || "").trim().toLowerCase();
+    const keyLow = String(rawVal).trim().toLowerCase();
+    const enVal = (typeof PATH_MAP_EN !== "undefined" && PATH_MAP_EN[keyLow]) ? PATH_MAP_EN[keyLow].toLowerCase() : keyLow;
+    const canonMap = {
+        "the hunt": "hunt", "hunt": "hunt",
+        "destruction": "destruction",
+        "erudition": "erudition",
+        "harmony": "harmony",
+        "nihility": "nihility",
+        "preservation": "preservation",
+        "abundance": "abundance",
+        "remembrance": "remembrance",
+        "elation": "elation",
+        "attack": "attack",
+        "stun": "stun",
+        "anomaly": "anomaly",
+        "support": "support",
+        "defense": "defense", "defence": "defense",
+        "rupture": "rupture",
+        "armorer": "armorer",
+        "sword": "sword",
+        "claymore": "claymore",
+        "polearm": "polearm",
+        "bow": "bow",
+        "catalyst": "catalyst"
+    };
+    const canon = canonMap[enVal] || canonMap[keyLow] || "";
+    if (!canon || !g) return "";
+    return `/assets/icons/${g}_${canon}.png?v=1`;
+}
+
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof getElementIconUrl !== 'undefined') window.getElementIconUrl = getElementIconUrl;
+if (typeof getPathOrWeaponIconUrl !== 'undefined') window.getPathOrWeaponIconUrl = getPathOrWeaponIconUrl;
 if (typeof createDebouncedSearch !== 'undefined') window.createDebouncedSearch = createDebouncedSearch;
 if (typeof getAffinitiveEidolons !== 'undefined') window.getAffinitiveEidolons = getAffinitiveEidolons;
 if (typeof getUnlockedAffinitiveEidolon !== 'undefined') window.getUnlockedAffinitiveEidolon = getUnlockedAffinitiveEidolon;

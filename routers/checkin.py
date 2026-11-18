@@ -32,7 +32,7 @@ async def get_checkin_today():
 
 @router.get("/api/briefing/today")
 async def get_today_morning_briefing(lang: str = "pt"):
-    """Retorna os dados consolidados do Morning Briefing do dia atual."""
+    """Retorna o resumo diário dos 3 jogos."""
     try:
         config = get_config()
         briefing = notifier.generate_morning_briefing(config, lang=lang or "pt")

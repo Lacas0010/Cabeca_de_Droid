@@ -281,7 +281,6 @@ def calculate_gacha_tracker_stats(game_id: str, uid: Optional[str] = None) -> Ga
     clean_game = (game_id or "hsr").lower().strip()
     target_uid = str(uid).strip() if uid else database.get_active_uid(clean_game)
     if not target_uid:
-        # Retorna estrutura vazia graciosa
         empty_banner = lambda cat, name, hard=90, soft=74: BannerTrackerStats(
             banner_category=cat, display_name=name, hard_pity_cap=hard, soft_pity_start=soft
         )

@@ -172,7 +172,7 @@ async def auto_login_hoyolab(background_tasks: BackgroundTasks):
     _AUTO_LOGIN_STATE["error"] = ""
 
     def _run_login():
-        print("[INFO] Abrindo navegador Playwright para capturar cookies...")
+        print("[INFO] Abrindo navegador para login no HoYoLAB...")
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
@@ -183,14 +183,14 @@ async def auto_login_hoyolab(background_tasks: BackgroundTasks):
                 security_vault.save_secure_cookies(cookies_captured)
                 _AUTO_LOGIN_STATE["status"] = "success"
                 _AUTO_LOGIN_STATE["error"] = ""
-                print("[SUCCESS] Cookies capturados, criptografados e salvos com sucesso no cofre DPAPI!")
+                print("[SUCCESS] Cookies salvos no cofre DPAPI.")
             else:
                 _AUTO_LOGIN_STATE["status"] = "error"
                 _AUTO_LOGIN_STATE["error"] = "Nenhum cookie capturado."
         except Exception as e:
             _AUTO_LOGIN_STATE["status"] = "error"
             _AUTO_LOGIN_STATE["error"] = str(e)
-            print(f"[ERROR] Falha na captura automática de cookies: {e}")
+            print(f"[ERROR] Falha no login automático: {e}")
 
     background_tasks.add_task(_run_login)
     return {"status": "started", "message": "Navegador de Login Automático iniciado em segundo plano."}

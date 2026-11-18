@@ -20,10 +20,7 @@ def _get_active_cookies() -> Dict[str, Any]:
 
 
 async def perform_auto_promo_code_redeem() -> Dict[str, Any]:
-    """
-    Rastreador autônomo: Busca códigos promocionais ativos e tenta resgatá-los
-    em todas as contas registradas no HoYoLAB, evitando códigos já tentados anteriormente.
-    """
+    """Busca códigos promocionais ativos e resgata os pendentes nas contas do HoYoLAB."""
     cookies = _get_active_cookies()
     if not cookies:
         return {"status": "no_cookies", "redeemed": {}}
@@ -151,7 +148,7 @@ async def redeem_promo_codes_for_game(game_id: str, code: Optional[str] = None) 
 
 
 def start_auto_code_redeemer() -> None:
-    """Inicia thread de verificação e resgate autônomo de códigos promocionais a cada 3 horas."""
+    """Inicia thread que checa e resgata novos códigos a cada 3h."""
 
     def auto_codes_loop():
         time.sleep(45)

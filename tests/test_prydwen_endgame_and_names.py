@@ -404,6 +404,30 @@ class TestPrydwenEndgameAndNames(unittest.TestCase):
         self.assertIn("ruptura", roster_js)
         self.assertIn("armeiro", roster_js)
 
+    def test_official_icons_for_zzz_specialties_hsr_paths_and_genshin_weapons(self):
+        with open(os.path.join("static", "index.html"), "r", encoding="utf-8") as hf:
+            soup = BeautifulSoup(hf.read(), "html.parser")
+
+        bars = [
+            ("zzz", "specialty-filters", "data-specialty"),
+            ("hsr", "path-filters", "data-path"),
+            ("genshin", "weapon-filters", "data-weapon"),
+        ]
+        for game_id, cls_name, attr_name in bars:
+            bar = soup.find("div", class_=cls_name, attrs={"data-game": game_id})
+            self.assertIsNotNone(bar)
+            for btn in bar.find_all(class_="filter-btn"):
+                val = btn.get(attr_name)
+                if val == "all":
+                    continue
+                self.assertIsNone(btn.find("i"), f"Generic icon remains in {game_id}/{val}")
+                img = btn.find("img")
+                self.assertIsNotNone(img, f"Official icon missing in {game_id}/{val}")
+                expected_src = f"/assets/icons/{game_id}_{val}.png"
+                self.assertEqual(img.get("src"), expected_src)
+                disk_path = expected_src.lstrip("/")
+                self.assertTrue(os.path.exists(disk_path), f"Missing asset file: {disk_path}")
+
 
 if __name__ == "__main__":
     unittest.main()

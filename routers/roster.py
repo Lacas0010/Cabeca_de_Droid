@@ -79,7 +79,7 @@ async def get_roster_endpoint(game_id: str, uid: Optional[str] = None):
 
 @router.get("/api/overview")
 async def get_overview_endpoint():
-    """Gera dados resumidos consolidados dos 3 jogos mesclando SQLite e arquivos locais."""
+    """Resumo das contas dos 3 jogos (SQLite + cache local)."""
     return get_overview()
 
 
@@ -159,7 +159,7 @@ async def compare_build_endpoint(game_id: str, char_name: str):
 
 @router.get("/api/optimize/{game_id}/{char_name}")
 async def optimize_character_build(game_id: str, char_name: str):
-    """Gera sugestões determinísticas de otimização de build com base nos dados do roster e no guia de meta."""
+    """Sugestões de melhoria de build comparando o personagem com o guia recomendado."""
     game_id = game_id.lower().strip()
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise HTTPException(status_code=400, detail="Jogo inválido.")

@@ -36,7 +36,7 @@ router = APIRouter(tags=["Gacha & Banners"])
 
 @router.post("/api/gacha/calculate")
 async def calculate_gacha_sim(req: GachaRequest):
-    """Executa simulação Monte Carlo para probabilidade de obtenção em banners gacha."""
+    """Roda 10 mil simulações de gacha para calcular a chance de conseguir o alvo."""
     try:
         res = simulate_gacha_probabilities(
             game_id=req.game_id,
@@ -56,10 +56,7 @@ async def calculate_gacha_sim(req: GachaRequest):
 
 @router.post("/api/gacha/forecast/calculate")
 async def calculate_gacha_forecast_endpoint(req: GachaForecastRequest):
-    """
-    Calcula o acúmulo futuro de tiros/gemas (diárias, passe, eventos, resets de loja/endgame)
-    e roda o Monte Carlo para prever a probabilidade de bater a meta de banner.
-    """
+    """Calcula acúmulo futuro de tiros e simula a chance de bater a meta do banner."""
     try:
         res = calculate_gacha_forecast(
             game_id=req.game_id,

@@ -1,3 +1,3 @@
-"""Fonte única de verdade da versão da aplicação Cabeça de Droid."""
+"""Versão atual do Cabeça de Droid."""
 
-__version__ = "1.2.4"
+__version__ = "1.3.0"

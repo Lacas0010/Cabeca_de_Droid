@@ -6,6 +6,25 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.7.0] / Release Standalone [v1.3.0] - 2026-11-18
+
+### ✨ Adicionado
+- **Filtros rápidos de especialidades no ZZZ (`static/index.html`, `static/js/modules/roster.js`, `static/js/modules/i18n.js`):** barra de filtros rápidos com todas as especialidades (*Ataque*, *Atordoamento*, *Anomalia*, *Suporte*, *Defesa*, *Ruptura* e *Armeiro*) sincronizada com os filtros avançados do ZZZ.
+- **Ícones oficiais no lugar dos genéricos (`assets/icons/`, `static/index.html`, `static/js/modules/api_client.js`, `static/js/modules/roster.js`):** 21 ícones oficiais transparentes (PNG 34×34) para especialidades do ZZZ, caminhos do HSR e armas do Genshin nos filtros, lista de personagens e `#build-inspector`.
+
+### ♻️ Melhorado & Modularizado
+- **Extração dinâmica de especialidades do Prydwen (`scrapers/scraper_zzz.py`, `static_data_manager.py`):** `get_agent_list()` e `_sync_zzz()` passam a extrair especialidade, elemento e raridade reais dos cards do Prydwen em vez de cair no fallback `"Attack"` / `"Physical"`.
+- **Modularização do backend e frontend (`calculators/`, `static_data/`, `static/css/`, `static/js/modules/`):**
+  - Calculadoras de gacha, breakpoints de velocidade/status e lacunas de conta separadas em `calculators/` e catálogos estáticos movidos de `static_data_manager.py` para JSONs em `static_data/`.
+  - Gráficos e exportação de imagem movidos de `roster.js` para `roster_charts.js` e `card_exporter.js`; CSS dividido em `gacha.css`, `help_security.css`, `endgame_strategy.css` e `team_card.css`.
+  - Redução de texto repetido e jargões na documentação, interface (PT/EN) e logs, mantendo intactas todas as nomenclaturas dos 3 jogos.
+
+### 🐛 Corrigido
+- **Ícones de elementos dos 3 jogos (`assets/elements/`, `services/media_service.py`, `static/js/modules/api_client.js`):** substituição da fonte antiga (403 no Wikia) pelos ícones corretos do Prydwen, adição de `zzz_wind`, normalização PT-BR e cache-busting (`?v=2`).
+- **Compatibilidade CSS `line-clamp` (`static/style.css`):** adicionada a propriedade padrão `line-clamp` junto a `-webkit-line-clamp` no card de Affinitive Eidolons (desktop e mobile).
+
+---
+
 ## [5.6.4] / Release Standalone [v1.2.4] - 2026-11-18
 
 ### 🐛 Corrigido
