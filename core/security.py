@@ -99,11 +99,12 @@ async def add_no_cache_header(request: Request, call_next):
             response.headers["Cache-Control"] = "public, max-age=604800"
         response.headers["CDN-Cache-Control"] = "public, max-age=2592000"
     elif is_static and path != "/" and not path.endswith(".html") and not is_app_entrypoint:
-        response.headers["Cache-Control"] = "public, max-age=86400"
-        response.headers["CDN-Cache-Control"] = "public, max-age=2592000"
-        if "Pragma" in response.headers:
+        if "Cache-Control" not in response.headers:
+            response.headers["Cache-Control"] = "public, max-age=86400"
+            response.headers["CDN-Cache-Control"] = "public, max-age=2592000"
+        if "Pragma" in response.headers and "no-store" not in response.headers.get("Cache-Control", ""):
             del response.headers["Pragma"]
-        if "Expires" in response.headers:
+        if "Expires" in response.headers and "no-store" not in response.headers.get("Cache-Control", ""):
             del response.headers["Expires"]
     else:
         response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"

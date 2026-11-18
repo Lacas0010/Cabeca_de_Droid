@@ -61,6 +61,10 @@ jobs:
           python -c "import server, build; build.verify_sakuga_vendor_assets(); print('FastAPI app and Sakuga vendor assets verified')"
           python -m unittest tests.test_packaging_suite tests.test_updater_suite -v
 
+      - name: Prefetch official element icons for offline packaging
+        run: |
+          python -c "from services.media_service import download_element_icons; download_element_icons()"
+
       - name: Build Windows standalone executable and ZIP
         run: |
           python build.py

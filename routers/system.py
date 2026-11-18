@@ -324,4 +324,5 @@ async def serve_element_icon_with_offline_fallback(filename: str):
         content, media_type = get_element_icon_asset(filename)
     except ValueError:
         raise HTTPException(status_code=400, detail="Invalid filename")
-    return Response(content=content, media_type=media_type)
+    headers = {"Cache-Control": "no-store"} if media_type == "image/svg+xml" else {}
+    return Response(content=content, media_type=media_type, headers=headers)

@@ -322,6 +322,34 @@ class TestSakugaVfxOfflineIntegration(unittest.TestCase):
             vres = client.get(vendor_path)
             self.assertEqual(vres.status_code, 200, f"Falha ao servir {vendor_path}")
 
+    def test_element_icons_normalization_validation_and_offline_fallback(self):
+        import tempfile
+        from services import media_service
+
+        # Rejeita HTML 403 como imagem válida
+        self.assertEqual(media_service._detect_valid_image_mime(b"<!DOCTYPE html><html>403</html>"), "")
+        self.assertEqual(media_service._normalize_element_filename("hsr_gelo.png"), "hsr_ice.png")
+        self.assertEqual(media_service._normalize_element_filename("zzz_element 300.png"), "zzz_lumiflux.png")
+
+        # Verifica cache local PNG válido + conversão/escrita segura
+        png_stub = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch.object(media_service, "get_data_path", side_effect=lambda p: str(Path(tmpdir) / p)),
+            patch.object(media_service, "get_resource_path", side_effect=lambda p: str(Path(tmpdir) / p)),
+        ):
+            dest = str(Path(tmpdir) / "assets" / "elements" / "hsr_ice.png")
+            self.assertTrue(media_service._save_element_png(png_stub, dest))
+            data, mime = media_service.get_element_icon_asset("hsr_gelo.png")
+            self.assertEqual(mime, "image/png")
+            self.assertEqual(data, png_stub)
+
+            # Fallback SVG quando ausente e offline
+            with patch("curl_cffi.requests.get", side_effect=OSError("offline")):
+                svg_data, svg_mime = media_service.get_element_icon_asset("genshin_pyro.png")
+                self.assertEqual(svg_mime, "image/svg+xml")
+                self.assertIn(b"<svg", svg_data)
+
     def test_index_and_css_configured_for_offline_dark_theme(self):
         html = (build.ROOT_DIR / "static" / "index.html").read_text(encoding="utf-8")
         css = (build.ROOT_DIR / "static" / "style.css").read_text(encoding="utf-8")

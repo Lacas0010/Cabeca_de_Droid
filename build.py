@@ -25,7 +25,7 @@ APP_NAME = "Cabeca_de_Droid"
 EXE_NAME = f"{APP_NAME}.exe"
 ZIP_NAME = f"{APP_NAME}-Windows-x64.zip"
 
-EXCLUDED_ASSET_DIRS = {"cache", "elements", "shards"}
+EXCLUDED_ASSET_DIRS = {"cache", "shards"}
 REQUIRED_SAKUGA_COMPONENTS = (
     "button.js",
     "toggle.js",

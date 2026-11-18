@@ -204,8 +204,8 @@ for router in all_routers:
 # Garante seed de manifestos/assets empacotados no diretório persistente gravável
 seed_bundled_resources()
 
-# Download proativo de ícones dos elementos e fragmentos de Eidolon
-download_element_icons()
+# Download proativo em segundo plano de ícones dos elementos e fragmentos de Eidolon
+threading.Thread(target=download_element_icons, daemon=True).start()
 threading.Thread(target=download_hsr_eidolon_shards, daemon=True).start()
 
 # Montagem de arquivos estáticos da interface Web Glassmorphism
