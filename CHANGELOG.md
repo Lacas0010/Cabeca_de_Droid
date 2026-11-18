@@ -6,6 +6,15 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.6.1] / Release Standalone [v1.2.1] - 2026-11-18
+
+### 🐛 Corrigido
+- **Scroll no Inspetor de Builds, Modais e Layout Mobile (`static/style.css`):** removidas regras globais de `overflow: visible` que bloqueavam a rolagem em `.inspector-body` e `.modal-card-content`, adicionado `flex-shrink: 0` em `.inspector-tabs`/`.inspector-panel`, corrigido o ajuste de altura de `.main-content` em telas móveis (`<= 768px`) e removido `content-visibility: auto` em `.char-card` para eliminar saltos na barra de rolagem.
+- **Sobreposição de VFX Sakuga sobre Janelas de Personagens (`static/vendor/sakuga-vfx/button.js`, `progress.js`, `static/js/modules/roster.js`):** adicionada verificação `SakugaFX.isOccluded()` e `SakugaFX.clearTransient()` impedindo que barras de progresso (`<sakuga-progress>`) ou cliques em botões de fundo pintem nuvens/linhas por cima de `#build-inspector` ou modais abertos.
+- **Status e Preview de Cookies via Tailscale / LAN (`static/js/modules/config_manager.js`):** fallback automático para `cookies_summary` de `GET /api/security/status` quando `/api/config` exige sessão LAN (`401`), exibindo corretamente `Cookies Conectados` e o preview mascarado no cofre.
+
+---
+
 ## [5.6.0] / Release Standalone [v1.2.0] - 2026-11-17
 
 ### ✨ Adicionado

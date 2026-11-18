@@ -21,6 +21,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Python 3.11
         uses: actions/setup-python@v5
@@ -70,10 +72,45 @@ jobs:
           name: Cabeca_de_Droid-Windows-x64
           path: dist/Cabeca_de_Droid-Windows-x64.zip
 
+      - name: Generate What's Changed release notes
+        if: startsWith(github.ref, 'refs/tags/') || inputs.tag != ''
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          @'
+          import os, pathlib, subprocess
+          cur_tag = (os.environ.get("INPUT_TAG") or os.environ.get("REF_NAME") or "HEAD").strip()
+          prev_tag = ""
+          try:
+              prev_tag = subprocess.check_output(
+                  ["git", "describe", "--tags", "--abbrev=0", f"{cur_tag}^"],
+                  text=True,
+                  stderr=subprocess.DEVNULL,
+              ).strip()
+          except Exception:
+              try:
+                  tags = subprocess.check_output(["git", "tag", "--sort=-creatordate"], text=True).splitlines()
+                  tags = [t.strip() for t in tags if t.strip() and t.strip() != cur_tag]
+                  prev_tag = tags[0] if tags else ""
+              except Exception:
+                  prev_tag = ""
+          rev_range = f"{prev_tag}..{cur_tag}" if prev_tag else cur_tag
+          commits_raw = subprocess.check_output(
+              ["git", "log", "--no-merges", "--pretty=format:- %s (%h)", rev_range],
+              text=True,
+          ).strip()
+          lines = ["## What's Changed", ""]
+          lines.append(commits_raw if commits_raw else "- Release build and packaging updates.")
+          pathlib.Path("release_notes.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+          print(pathlib.Path("release_notes.md").read_text(encoding="utf-8"))
+          '@ | python -
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/') || inputs.tag != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.tag != '' && inputs.tag || github.ref_name }}
+          body_path: release_notes.md
           generate_release_notes: true
           files: dist/Cabeca_de_Droid-Windows-x64.zip
