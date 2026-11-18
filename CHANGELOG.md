@@ -6,6 +6,16 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.6.2] / Release Standalone [v1.2.2] - 2026-11-18
+
+### 🐛 Corrigido
+- **Substituição do Executável e Reinício Automático no PyInstaller `--onefile` (`updater.py`, `static/js/modules/updater_ui.js`):**
+  - O script `.bat` de atualização agora aguarda tanto o processo filho (`os.getpid()`) quanto o bootloader pai do PyInstaller (`os.getppid()`), evitando bloqueio de arquivo pelo `_MEI`.
+  - Substituído `timeout` (incompatível com processos sem console) por `ping -n`, limitado `robocopy` a `/R:3 /W:1` e adicionado loop de substituição resiliente do `.exe` (`copy /Y` + fallback `move /Y` para `.old`) com suporte a pastas com espaços/parênteses e UTF-8 (`chcp 65001`).
+  - Sanitização completa de variáveis internas `_PYI_*` / `_MEIPASS*` e entrada `_MEI` do `PATH` antes de reiniciar o novo executável (`start "" /D "%DST_DIR%" "%EXE_PATH%"`), além de reload automático da aba web assim que o servidor atualizado responde.
+
+---
+
 ## [5.6.1] / Release Standalone [v1.2.1] - 2026-11-18
 
 ### 🐛 Corrigido

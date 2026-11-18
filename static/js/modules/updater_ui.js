@@ -166,12 +166,14 @@ async function pollUpdateStatus() {
                 }
                 stopUpdatePolling();
                 _isUpdating = false;
+                scheduleReloadAfterRestart();
             }
         } catch (_) {
             if (lastStage === "applying") {
                 stopUpdatePolling();
                 _isUpdating = false;
                 updateProgressVisual(1, "Aplicando arquivos e reiniciando...");
+                scheduleReloadAfterRestart();
             }
         }
     };
@@ -180,6 +182,28 @@ async function pollUpdateStatus() {
     if (_pollTimer === null && _isUpdating) {
         _pollTimer = setInterval(tick, 350);
     }
+}
+
+let _restartWatchStarted = false;
+function scheduleReloadAfterRestart() {
+    if (_restartWatchStarted) return;
+    _restartWatchStarted = true;
+    let tries = 0;
+    const waitTimer = setInterval(async () => {
+        tries += 1;
+        if (tries < 3) return; // aguarda encerramento e troca do .exe
+        if (tries > 20) {
+            clearInterval(waitTimer);
+            return;
+        }
+        try {
+            const res = await fetch("/api/updater/check", { cache: "no-store" });
+            if (res.ok) {
+                clearInterval(waitTimer);
+                window.location.reload();
+            }
+        } catch (_) {}
+    }, 1500);
 }
 
 async function handleInstallClick() {

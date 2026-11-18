@@ -162,8 +162,10 @@ class TestUpdaterSuite(unittest.TestCase):
         client_cm.__exit__.return_value = False
 
         captured_bat_scripts: list[str] = []
+        captured_popen_kwargs: list[dict] = []
 
         def _fake_popen(cmd, **kwargs):
+            captured_popen_kwargs.append(kwargs)
             bat_file = Path(cmd[2])
             if bat_file.exists():
                 captured_bat_scripts.append(bat_file.read_text(encoding="utf-8"))
@@ -173,10 +175,21 @@ class TestUpdaterSuite(unittest.TestCase):
         with tempfile.TemporaryDirectory() as app_tmp:
             fake_exe = Path(app_tmp) / "Cabeca_de_Droid.exe"
             fake_exe.write_bytes(b"MZ_OLD")
+            fake_mei = str(Path(app_tmp) / "_MEI_FAKE")
 
             with (
                 patch("updater.httpx.Client", return_value=client_cm),
                 patch.object(sys, "executable", str(fake_exe)),
+                patch.object(sys, "_MEIPASS", fake_mei, create=True),
+                patch.dict(
+                    os.environ,
+                    {
+                        "_PYI_ARCHIVE_FILE": str(fake_exe),
+                        "_PYI_PARENT_PROCESS_LEVEL": "1",
+                        "_MEIPASS2": fake_mei,
+                        "PATH": fake_mei + os.pathsep + os.environ.get("PATH", ""),
+                    },
+                ),
                 patch("updater.time.sleep"),
                 patch("updater.subprocess.Popen", side_effect=_fake_popen) as mock_popen,
                 patch("updater.os._exit") as mock_exit,
@@ -191,11 +204,20 @@ class TestUpdaterSuite(unittest.TestCase):
             self.assertEqual(len(captured_bat_scripts), 1)
             bat = captured_bat_scripts[0]
             self.assertIn(f"set PID={os.getpid()}", bat)
+            self.assertIn("set PPID=", bat)
             self.assertIn(".env", bat)
             self.assertIn("hoyo_app.db", bat)
             self.assertIn("*.db *.sqlite", bat)
-            self.assertIn('start ""', bat)
+            self.assertIn("/R:3 /W:1", bat)
+            self.assertIn(":copy_exe_loop", bat)
+            self.assertIn('start "" /D "%DST_DIR%" "%EXE_PATH%"', bat)
             self.assertIn('del "%~f0"', bat)
+
+            popen_env = captured_popen_kwargs[0].get("env", {})
+            self.assertNotIn("_PYI_ARCHIVE_FILE", popen_env)
+            self.assertNotIn("_PYI_PARENT_PROCESS_LEVEL", popen_env)
+            self.assertNotIn("_MEIPASS2", popen_env)
+            self.assertNotIn(fake_mei.lower(), popen_env.get("PATH", "").lower())
 
             status = updater.get_updater_status()
             self.assertEqual(status["stage"], "applying")

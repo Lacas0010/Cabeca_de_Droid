@@ -191,40 +191,82 @@ def build_windows_update_batch_script(
     target_dir: Path,
     exe_path: Path,
     temp_root: Path,
+    parent_pid: Optional[int] = None,
+    log_path: Optional[Path] = None,
 ) -> str:
     """
-    Gera um script .bat em %TEMP% que aguarda o encerramento do processo atual,
-    copia os novos binários preservando arquivos locais do usuário, reinicia o .exe
-    e remove os temporários.
+    Gera um script .bat em %TEMP% que aguarda o encerramento do processo atual
+    (e do bootloader pai do PyInstaller --onefile), substitui o executável e
+    demais arquivos preservando dados do usuário, reinicia o novo .exe em ambiente
+    limpo e remove os temporários.
     """
     preserved_list = " ".join(f'"{name}"' for name in PRESERVED_USER_NAMES)
+    resolved_ppid = int(parent_pid) if (parent_pid and int(parent_pid) > 0 and int(parent_pid) != int(pid)) else 0
+    resolved_log = log_path or (temp_root.parent / "cabeca_updater_last.log")
     return "\r\n".join(
         [
             "@echo off",
+            "chcp 65001 >NUL 2>&1",
             "setlocal enabledelayedexpansion",
             f"set PID={int(pid)}",
+            f"set PPID={resolved_ppid}",
             f'set "SRC_DIR={source_dir}"',
             f'set "DST_DIR={target_dir}"',
             f'set "EXE_PATH={exe_path}"',
+            f'set "EXE_NAME={exe_path.name}"',
             f'set "TMP_ROOT={temp_root}"',
+            f'set "LOG_FILE={resolved_log}"',
             "",
+            'echo [Updater] Inicio %DATE% %TIME% PID=%PID% PPID=%PPID% > "%LOG_FILE%"',
+            'echo [Updater] SRC=%SRC_DIR% >> "%LOG_FILE%"',
+            'echo [Updater] DST=%DST_DIR% >> "%LOG_FILE%"',
+            "",
+            "set WAIT_TRIES=0",
             ":wait_exit",
-            'tasklist /FI "PID eq %PID%" 2>NUL | find /I "%PID%" >NUL',
-            "if not errorlevel 1 (",
-            "    timeout /t 1 /nobreak >NUL",
+            "set STILL_RUNNING=0",
+            'tasklist /FI "PID eq %PID%" 2>NUL | findstr /R "\\<%PID%\\>" >NUL',
+            "if not errorlevel 1 set STILL_RUNNING=1",
+            'if not "%PPID%"=="0" (',
+            '    tasklist /FI "PID eq %PPID%" 2>NUL | findstr /R "\\<%PPID%\\>" >NUL',
+            "    if not errorlevel 1 set STILL_RUNNING=1",
+            ")",
+            'if "%STILL_RUNNING%"=="1" (',
+            "    ping -n 2 127.0.0.1 >NUL",
             "    set /a WAIT_TRIES+=1",
             "    if !WAIT_TRIES! LSS 30 goto wait_exit",
             ")",
             "",
+            "ping -n 2 127.0.0.1 >NUL",
             'if not exist "%DST_DIR%" mkdir "%DST_DIR%"',
-            # Preserva configurações e bancos locais existentes do usuário (/XC /XN /XO para dados, sobrescreve binários novos)
-            f'robocopy "%SRC_DIR%" "%DST_DIR%" /E /IS /IT /XF {preserved_list} *.db *.sqlite *.sqlite3 *.enc *.key /XD zzz hsr genshin logs cache >NUL 2>&1',
-            "if %ERRORLEVEL% GEQ 8 (",
-            '    copy /Y "%SRC_DIR%\\*.exe" "%DST_DIR%\\" >NUL 2>&1',
-            ")",
+            'if exist "%DST_DIR%\\%EXE_NAME%.old" del /F /Q "%DST_DIR%\\%EXE_NAME%.old" >NUL 2>&1',
             "",
-            'start "" "%EXE_PATH%"',
-            "timeout /t 2 /nobreak >NUL",
+            f'robocopy "%SRC_DIR%" "%DST_DIR%" /E /IS /IT /R:3 /W:1 /XF {preserved_list} *.db *.sqlite *.sqlite3 *.enc *.key *.exe /XD zzz hsr genshin logs cache >> "%LOG_FILE%" 2>&1',
+            "",
+            "set COPY_TRIES=0",
+            ":copy_exe_loop",
+            'copy /Y "%SRC_DIR%\\%EXE_NAME%" "%EXE_PATH%" >> "%LOG_FILE%" 2>&1',
+            "if not errorlevel 1 goto exe_replaced",
+            'if exist "%EXE_PATH%" (',
+            '    move /Y "%EXE_PATH%" "%DST_DIR%\\%EXE_NAME%.old" >NUL 2>&1',
+            '    copy /Y "%SRC_DIR%\\%EXE_NAME%" "%EXE_PATH%" >> "%LOG_FILE%" 2>&1',
+            "    if not errorlevel 1 goto exe_replaced",
+            ")",
+            "set /a COPY_TRIES+=1",
+            "if !COPY_TRIES! LSS 20 (",
+            "    ping -n 2 127.0.0.1 >NUL",
+            "    goto copy_exe_loop",
+            ")",
+            'echo [Updater] ERRO: Nao foi possivel substituir "%EXE_PATH%" >> "%LOG_FILE%"',
+            "goto cleanup",
+            "",
+            ":exe_replaced",
+            'echo [Updater] Executavel atualizado com sucesso em "%EXE_PATH%" >> "%LOG_FILE%"',
+            'if exist "%DST_DIR%\\%EXE_NAME%.old" del /F /Q "%DST_DIR%\\%EXE_NAME%.old" >NUL 2>&1',
+            'start "" /D "%DST_DIR%" "%EXE_PATH%"',
+            'echo [Updater] Novo processo iniciado >> "%LOG_FILE%"',
+            "",
+            ":cleanup",
+            "ping -n 3 127.0.0.1 >NUL",
             'if exist "%TMP_ROOT%" rmdir /S /Q "%TMP_ROOT%" >NUL 2>&1',
             '(goto) 2>nul & del "%~f0"',
             "",
@@ -232,12 +274,41 @@ def build_windows_update_batch_script(
     )
 
 
+def _build_clean_subprocess_env() -> Dict[str, str]:
+    """Remove variáveis internas do PyInstaller (_PYI_* / _MEIPASS*) para que o novo .exe reinicie limpo."""
+    clean_env = dict(os.environ)
+    for key in list(clean_env.keys()):
+        upper = key.upper()
+        if upper.startswith("_PYI_") or upper.startswith("_MEIPASS") or upper in (
+            "PYTHONHOME",
+            "PYTHONPATH",
+            "TCL_LIBRARY",
+            "TK_LIBRARY",
+        ):
+            clean_env.pop(key, None)
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass and "PATH" in clean_env:
+        norm_mei = os.path.normcase(os.path.normpath(str(meipass)))
+        filtered_paths = [
+            p for p in clean_env["PATH"].split(os.pathsep)
+            if p and os.path.normcase(os.path.normpath(p)) != norm_mei
+        ]
+        clean_env["PATH"] = os.pathsep.join(filtered_paths)
+    return clean_env
+
+
 def _launch_detached_batch_and_exit(bat_path: Path) -> None:
     creation_flags = getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0x00000200) | getattr(
-        subprocess, "DETACHED_PROCESS", 0x00000008
+        subprocess, "CREATE_NO_WINDOW", 0x08000000
     )
     subprocess.Popen(
         ["cmd", "/c", str(bat_path)],
+        cwd=str(bat_path.parent),
+        env=_build_clean_subprocess_env(),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         creationflags=creation_flags,
         close_fds=True,
     )
@@ -304,12 +375,14 @@ def _run_frozen_update_worker(download_url: str, target_version: str) -> None:
         bat_path = Path(bat_raw)
         bat_content = build_windows_update_batch_script(
             pid=os.getpid(),
+            parent_pid=os.getppid(),
             source_dir=payload_dir,
             target_dir=app_dir,
             exe_path=target_exe_path,
             temp_root=temp_dir,
         )
-        bat_path.write_text(bat_content, encoding="utf-8")
+        with open(bat_path, "w", encoding="utf-8", newline="") as bat_file:
+            bat_file.write(bat_content)
 
         _set_state(
             running=False,
@@ -317,7 +390,7 @@ def _run_frozen_update_worker(download_url: str, target_version: str) -> None:
             progress=1.0,
             message="Reiniciando aplicação para concluir atualização...",
         )
-        time.sleep(1.2)
+        time.sleep(1.5)
         _launch_detached_batch_and_exit(bat_path)
     except Exception as exc:
         if temp_dir and temp_dir.exists():
