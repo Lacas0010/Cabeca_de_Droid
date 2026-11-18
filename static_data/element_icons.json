@@ -24,6 +24,7 @@
     "physical": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/ele_physical.webp",
     "ether": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/ele_ether.webp",
     "lumiflux": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/ele_lumiflux.webp",
-    "frost": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/ele_frost.webp"
+    "frost": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/ele_frost.webp",
+    "wind": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/ele_wind.webp"
   }
 }

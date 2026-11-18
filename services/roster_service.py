@@ -876,7 +876,7 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                     rk_icon = s_rk.get("icon", "")
                     rk_name = s_rk.get("name", f"{name_prefix} {p}")
                     if not rk_icon and char_elem:
-                        rk_icon = f"/assets/elements/{game_id}_{char_elem}.png"
+                        rk_icon = f"/assets/elements/{game_id}_{char_elem}.png?v=2"
                     ranks.append(
                         {
                             "pos": p,
@@ -905,7 +905,7 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                         if not rk.get("desc") and static_ranks[idx].get("desc"):
                             rk["desc"] = static_ranks[idx]["desc"]
                     if not rk.get("icon") and char_elem:
-                        rk["icon"] = f"/assets/elements/{game_id}_{char_elem}.png"
+                        rk["icon"] = f"/assets/elements/{game_id}_{char_elem}.png?v=2"
 
             for rk in ranks:
                 if rk.get("icon"):
@@ -1348,7 +1348,7 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
                 rk_icon = s_rk.get("icon", "")
                 rk_name = s_rk.get("name", f"{name_prefix} {p}")
                 if not rk_icon and c_elem:
-                    rk_icon = f"/assets/elements/{game_id}_{c_elem}.png"
+                    rk_icon = f"/assets/elements/{game_id}_{c_elem}.png?v=2"
                 char_ranks.append(
                     {
                         "pos": p,
@@ -1377,7 +1377,7 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
                     if not rk.get("desc") and static_ranks[idx].get("desc"):
                         rk["desc"] = static_ranks[idx]["desc"]
                 if not rk.get("icon") and c_elem:
-                    rk["icon"] = f"/assets/elements/{game_id}_{c_elem}.png"
+                    rk["icon"] = f"/assets/elements/{game_id}_{c_elem}.png?v=2"
 
         if game_id == "zzz":
             c_clean = re.sub(r"[^a-z0-9_]", "", (char_name or "").lower().replace(" ", "_"))

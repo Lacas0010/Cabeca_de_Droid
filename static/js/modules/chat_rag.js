@@ -700,7 +700,7 @@ window.renderTeamRosterSelector = function(gameId) {
         const defaultFallback = `/assets/${gameId}_icon.png`;
         const avatarSrc = char.icon || defaultFallback;
         const elemKey = (char.element || "").toLowerCase();
-        const elemIconUrl = `/assets/elements/${gameId}_${elemKey}.png`;
+        const elemIconUrl = typeof getElementIconUrl === 'function' ? getElementIconUrl(gameId, char.element || elemKey) : `/assets/elements/${gameId}_${elemKey}.png?v=2`;
         const safeDataName = String(char.name || "").replace(/"/g, "&quot;");
         const affEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
         const affRankTag = affEid ? ` <span class="team-picker-aff-star" title="Affinitive Eidolon: ${String(affEid.name || "").replace(/"/g, "&quot;")}">✦</span>` : '';
@@ -1171,7 +1171,7 @@ function renderTeamExportCard(gameId) {
             const avatarSrc = char.icon || defaultFallback;
             const splashSrc = getCharacterSplashArt(gameId, char);
             const elemKey = (char.element || "").toLowerCase();
-            const elemIconUrl = `/assets/elements/${gameId}_${elemKey}.png`;
+            const elemIconUrl = typeof getElementIconUrl === 'function' ? getElementIconUrl(gameId, char.element || elemKey) : `/assets/elements/${gameId}_${elemKey}.png?v=2`;
 
             const weapon = extractTeamCardWeapon(gameId, char);
             const relics = extractTeamCardRelics(gameId, char);

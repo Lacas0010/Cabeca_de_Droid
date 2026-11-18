@@ -1184,7 +1184,7 @@ async function _loadRosterImpl(gameId) {
                                 <div class="char-list-title-row">
                                     <span class="char-list-name" title="${formattedName}">${formattedName}</span>
                                     <span class="char-list-elem-tag">
-                                        <img src="/assets/elements/${gameId}_${elemKey}.png" width="14" height="14" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
+                                        <img src="${getElementIconUrl(gameId, char.element || elemKey)}" width="14" height="14" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                                         ${elemDisplayName}
                                     </span>
                                     <span class="char-list-rarity-badge ${isFiveStar ? 'five-star' : 'four-star'}">${rarityLabel}</span>
@@ -1284,7 +1284,7 @@ async function _loadRosterImpl(gameId) {
 
                         <div class="char-info">
                             <div class="char-name" title="${formattedName}">
-                                <img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" width="16" height="16" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
+                                <img src="${getElementIconUrl(gameId, char.element || elemKey)}" class="element-icon-inline" width="16" height="16" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                                 ${formattedName}
                             </div>
                             <div class="char-lvl">${lvlLabel} ${char.level}</div>
@@ -1786,7 +1786,7 @@ async function inspectCharacter(gameId, char) {
     
     const elemKey = (char.element || "").toLowerCase();
     const displayElem = formatElementDisplayName(char.element);
-    const elemHtml = `<img src="/assets/elements/${gameId}_${elemKey}.png" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
+    const elemHtml = `<img src="${getElementIconUrl(gameId, char.element || elemKey)}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
     const pathVal = char.path || char.specialty || char.weapon_type || "";
     const pathDisplay = pathVal && typeof formatPathName === 'function' ? formatPathName(pathVal, gameId) : "";
     const pathHtml = pathDisplay ? ` • ${pathDisplay.toUpperCase()}` : "";
@@ -2026,7 +2026,7 @@ async function inspectCharacter(gameId, char) {
                 nodeCard.title = cleanDesc ? `${rankPrefix}${posNum} • ${rkName} (${statusText})\n\n${cleanDesc}` : `${rankPrefix}${posNum} • ${rkName} (${statusText})`;
 
                 const elemKey = (char.element || "").toLowerCase();
-                const defaultElemIcon = `/assets/elements/${gameId}_${elemKey}.png`;
+                const defaultElemIcon = getElementIconUrl(gameId, char.element || elemKey);
                 let iconSrc = rk.icon;
                 if (!iconSrc || (gameId === 'zzz' && iconSrc.includes('/assets/elements/'))) {
                     iconSrc = gameId === 'zzz' ? `/assets/mindscapes/zzz/m${posNum}.png` : defaultElemIcon;
@@ -2052,7 +2052,7 @@ async function inspectCharacter(gameId, char) {
             // Affinitive Eidolons (ex_ranks do HSR)
             if (gameId === "hsr" && charExRanks.length > 0) {
                 const elemKey = (char.element || "").toLowerCase();
-                const defaultElemIcon = `/assets/elements/${gameId}_${elemKey}.png`;
+                const defaultElemIcon = getElementIconUrl(gameId, char.element || elemKey);
                 charExRanks.forEach((er) => {
                     if (!er || typeof er !== "object") return;
                     const isUnlocked = Boolean(er.is_unlocked);

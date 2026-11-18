@@ -477,7 +477,7 @@ async function generateBuildCardCanvas(char, gameId) {
         }
     }
 
-    const defaultElemIcon = `/assets/elements/${gameId}_${elemKey}.png`;
+    const defaultElemIcon = typeof getElementIconUrl === 'function' ? getElementIconUrl(gameId, char.element || elemKey) : `/assets/elements/${gameId}_${elemKey}.png?v=2`;
     const rankImgs = await Promise.all(cardRanks.slice(0, 6).map(async rk => {
         const iconUrl = rk && rk.icon ? rk.icon : defaultElemIcon;
         return (await loadImage(iconUrl)) || (await loadImage(defaultElemIcon));

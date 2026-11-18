@@ -647,7 +647,30 @@ function getUnlockedAffinitiveEidolon(char) {
     return list.find(er => Boolean(er.is_unlocked)) || null;
 }
 
+function getElementIconUrl(gameId, rawElem) {
+    const aliasMap = {
+        "fogo": "fire",
+        "gelo": "ice",
+        "físico": "physical", "fisico": "physical",
+        "vento": "wind",
+        "raio": "lightning",
+        "elétrico": "electric", "eletrico": "electric",
+        "quântico": "quantum", "quantico": "quantum",
+        "imaginário": "imaginary", "imaginario": "imaginary",
+        "éter": "ether", "eter": "ether",
+        "element_100": "physical", "element 100": "physical",
+        "element_200": "fire", "element 200": "fire",
+        "element_300": "lumiflux", "element 300": "lumiflux", "auric ink": "lumiflux",
+        "element_400": "electric", "element 400": "electric",
+        "element_500": "ether", "element 500": "ether"
+    };
+    const keyLow = String(rawElem || "physical").trim().toLowerCase();
+    const canon = aliasMap[keyLow] || keyLow || "physical";
+    return `/assets/elements/${String(gameId || "hsr").toLowerCase()}_${canon}.png?v=2`;
+}
+
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
+if (typeof getElementIconUrl !== 'undefined') window.getElementIconUrl = getElementIconUrl;
 if (typeof createDebouncedSearch !== 'undefined') window.createDebouncedSearch = createDebouncedSearch;
 if (typeof getAffinitiveEidolons !== 'undefined') window.getAffinitiveEidolons = getAffinitiveEidolons;
 if (typeof getUnlockedAffinitiveEidolon !== 'undefined') window.getUnlockedAffinitiveEidolon = getUnlockedAffinitiveEidolon;
