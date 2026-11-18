@@ -43,7 +43,8 @@ class TestI18nTranslationSuite(unittest.TestCase):
         gl = gl_res.json()
         self.assertEqual(gl["paths_pt"].get("remembrance"), "Recordação")
         self.assertEqual(gl["paths_en"].get("recordação"), "Remembrance")
-        roster_js = open(os.path.join("static", "js", "modules", "roster.js"), "r", encoding="utf-8").read()
+        with open(os.path.join("static", "js", "modules", "roster.js"), "r", encoding="utf-8") as rf:
+            roster_js = rf.read()
         self.assertNotIn("HSR_CHAR_PATHS", roster_js)
         self.assertNotIn("GENSHIN_CHAR_WEAPONS", roster_js)
 

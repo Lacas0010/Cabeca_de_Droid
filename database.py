@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import json
+import logging
 import re
 from datetime import datetime, timedelta
 import math
@@ -8,8 +9,21 @@ from typing import Dict, List, Optional, Any, Tuple
 from extractor import clean_relic_name
 from core.paths import get_data_dir, get_resource_path
 
+logger = logging.getLogger(__name__)
+
 BASE_DIR = get_data_dir()
 DATABASE_NAME = os.path.join(BASE_DIR, "hoyo_app.db")
+
+
+def _safe_json_loads(raw_value: Any, default: Any, field_name: str = "json") -> Any:
+    """Decodifica JSON do SQLite de forma segura, registrando falha estrutural sem quebrar consultas."""
+    if not raw_value:
+        return default() if callable(default) else default
+    try:
+        return json.loads(raw_value)
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        logger.warning("[DB] Falha ao decodificar %s: %s", field_name, exc)
+        return default() if callable(default) else default
 
 
 def get_connection() -> sqlite3.Connection:
@@ -19,8 +33,8 @@ def get_connection() -> sqlite3.Connection:
     try:
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.execute("PRAGMA synchronous=NORMAL;")
-    except Exception:
-        pass
+    except sqlite3.Error as exc:
+        logger.debug("[DB] PRAGMA WAL indisponível: %s", exc)
     return conn
 
 
@@ -96,7 +110,8 @@ def get_weapon_rarity(game_id: str, weapon_name: str) -> int:
                     _WEAPON_RARITIES_CACHE = json.load(f)
             else:
                 _WEAPON_RARITIES_CACHE = {}
-        except Exception:
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("[DB] Falha ao carregar weapon_rarities.json: %s", exc)
             _WEAPON_RARITIES_CACHE = {}
 
     g_clean = (game_id or "").lower().strip()
@@ -208,12 +223,9 @@ def backfill_snapshot_stats() -> None:
             char_map = {}
             for r in cur.fetchall():
                 r_keys = r.keys()
-                st = {}
-                if "stats_json" in r_keys and r["stats_json"]:
-                    try:
-                        st = json.loads(r["stats_json"])
-                    except Exception:
-                        st = {}
+                st = _safe_json_loads(r["stats_json"], dict, "characters.stats_json") if "stats_json" in r_keys else {}
+                if not isinstance(st, dict):
+                    st = {}
                 if not st and r["raw_md"]:
                     st = parse_stats_from_raw_md(r["raw_md"])
                 if st:
@@ -229,9 +241,8 @@ def backfill_snapshot_stats() -> None:
                 s_json_str = s["snapshot_json"]
                 if not s_json_str:
                     continue
-                try:
-                    s_json = json.loads(s_json_str)
-                except Exception:
+                s_json = _safe_json_loads(s_json_str, None, "account_snapshots.snapshot_json")
+                if not isinstance(s_json, dict):
                     continue
 
                 all_c = s_json.get("all_characters") or []
@@ -510,8 +521,8 @@ def init_db() -> None:
         # Atualiza automaticamente o horário oficial de metas já salvas na inicialização
         try:
             update_all_saved_goals_schedule()
-        except Exception:
-            pass
+        except (sqlite3.Error, ValueError, TypeError) as exc:
+            logger.warning("[DB] Falha ao atualizar cronograma das metas de gacha no boot: %s", exc)
 
         # Garante linha única de configuração de segurança
         cursor.execute(
@@ -604,10 +615,6 @@ def fix_skills_json_max_levels():
                     )
     except Exception as e:
         print(f"[Aviso] Erro ao atualizar max_level das habilidades: {e}")
-
-
-# Inicializa o banco ao carregar o módulo
-init_db()
 
 
 def save_account_snapshot(
@@ -851,12 +858,9 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
         char_db_map = {}
         for r in cursor.fetchall():
             r_keys = r.keys()
-            st = {}
-            if "stats_json" in r_keys and r["stats_json"]:
-                try:
-                    st = json.loads(r["stats_json"])
-                except Exception:
-                    st = {}
+            st = _safe_json_loads(r["stats_json"], dict, "characters.stats_json") if "stats_json" in r_keys else {}
+            if not isinstance(st, dict):
+                st = {}
             if not st and r["raw_md"]:
                 st = parse_stats_from_raw_md(r["raw_md"])
             if st:
@@ -1047,12 +1051,9 @@ def get_account_history(
 
         for idx, r in enumerate(rows):
             snap = dict(r)
-            details = {}
-            if snap.get("snapshot_json"):
-                try:
-                    details = json.loads(snap["snapshot_json"])
-                except Exception:
-                    details = {}
+            details = _safe_json_loads(snap.get("snapshot_json"), dict, "account_snapshots.snapshot_json")
+            if not isinstance(details, dict):
+                details = {}
 
             snap["details"] = details
             current_chars = details.get("all_characters") or details.get("top_built_characters") or []
@@ -1313,30 +1314,33 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
             r_keys = r.keys()
             relics_list = relics_by_char.get((r["uid"], r["name"]), [])
 
-            skills_list = []
-            if "skills_json" in r_keys and r["skills_json"]:
-                try:
-                    skills_list = json.loads(r["skills_json"])
-                except Exception:
-                    skills_list = []
+            skills_list = (
+                _safe_json_loads(r["skills_json"], list, "characters.skills_json")
+                if "skills_json" in r_keys
+                else []
+            )
+            if not isinstance(skills_list, list):
+                skills_list = []
             if not skills_list and "raw_md" in r_keys and r["raw_md"]:
                 skills_list = parse_skills_from_raw_md(r["raw_md"])
 
-            stats_dict = {}
-            if "stats_json" in r_keys and r["stats_json"]:
-                try:
-                    stats_dict = json.loads(r["stats_json"])
-                except Exception:
-                    stats_dict = {}
+            stats_dict = (
+                _safe_json_loads(r["stats_json"], dict, "characters.stats_json")
+                if "stats_json" in r_keys
+                else {}
+            )
+            if not isinstance(stats_dict, dict):
+                stats_dict = {}
             if not stats_dict and "raw_md" in r_keys and r["raw_md"]:
                 stats_dict = parse_stats_from_raw_md(r["raw_md"])
 
-            ranks_list = []
-            if "ranks_json" in r_keys and r["ranks_json"]:
-                try:
-                    ranks_list = json.loads(r["ranks_json"])
-                except Exception:
-                    ranks_list = []
+            ranks_list = (
+                _safe_json_loads(r["ranks_json"], list, "characters.ranks_json")
+                if "ranks_json" in r_keys
+                else []
+            )
+            if not isinstance(ranks_list, list):
+                ranks_list = []
 
             if not ranks_list:
                 rank_str_val = r["rank_str"] if "rank_str" in r_keys and r["rank_str"] else "C0"
@@ -1370,23 +1374,21 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                 }
 
             # Conjuntos de relíquias com efeito ativo (>= 2 peças)
-            sets_list = []
-            if "sets_json" in r_keys and r["sets_json"]:
-                try:
-                    sets_list = json.loads(r["sets_json"])
-                except Exception:
-                    sets_list = []
+            sets_list = (
+                _safe_json_loads(r["sets_json"], list, "characters.sets_json")
+                if "sets_json" in r_keys
+                else []
+            )
+            if not isinstance(sets_list, list):
+                sets_list = []
             if not sets_list and "raw_md" in r_keys and r["raw_md"]:
                 sets_list = parse_sets_from_raw_md(r["raw_md"])
 
             ex_ranks_list = []
             if "ex_ranks_json" in r_keys and r["ex_ranks_json"]:
-                try:
-                    parsed_ex = json.loads(r["ex_ranks_json"])
-                    if isinstance(parsed_ex, list):
-                        ex_ranks_list = parsed_ex
-                except Exception:
-                    ex_ranks_list = []
+                parsed_ex = _safe_json_loads(r["ex_ranks_json"], list, "characters.ex_ranks_json")
+                if isinstance(parsed_ex, list):
+                    ex_ranks_list = parsed_ex
 
             char_dict = {
                 "id": r["char_id"] if "char_id" in r_keys and r["char_id"] else "",
@@ -1760,12 +1762,9 @@ def get_endgame_data(game_id: str, uid: Optional[str] = None) -> Optional[Dict[s
             )
         row = cursor.fetchone()
         if row:
-            modes = []
-            if row["modes_json"]:
-                try:
-                    modes = json.loads(row["modes_json"])
-                except Exception:
-                    modes = []
+            modes = _safe_json_loads(row["modes_json"], list, "endgame_progress.modes_json")
+            if not isinstance(modes, list):
+                modes = []
             return {
                 "uid": row["uid"],
                 "game_id": row["game_id"],
@@ -1885,7 +1884,8 @@ def is_lan_access_allowed() -> bool:
             cursor.execute("SELECT allow_lan_access FROM security_settings WHERE id = 1")
             row = cursor.fetchone()
             return bool(row["allow_lan_access"]) if row else False
-    except Exception:
+    except sqlite3.Error as exc:
+        logger.debug("[DB] Falha ao consultar allow_lan_access: %s", exc)
         return False
 
 
@@ -2082,7 +2082,7 @@ def _parse_iso_datetime(dt_str: Optional[str], fallback: datetime) -> datetime:
         if parsed.tzinfo is not None:
             parsed = parsed.astimezone().replace(tzinfo=None)
         return parsed
-    except Exception:
+    except (ValueError, TypeError):
         return fallback
 
 
@@ -2434,7 +2434,8 @@ def save_gacha_pulls(game_id: str, uid: str, pulls: List[Dict[str, Any]]) -> Tup
                     inserted_count += 1
                 else:
                     ignored_count += 1
-            except Exception:
+            except sqlite3.Error as exc:
+                logger.warning("[DB] Falha ao inserir pull %s (%s): %s", pull_id, clean_game, exc)
                 ignored_count += 1
 
     return inserted_count, ignored_count
@@ -2545,3 +2546,7 @@ def get_gacha_pulls_filtered(
         rows = [dict(r) for r in cursor.fetchall()]
 
         return rows, total_count
+
+
+# Inicializa o banco após todas as funções auxiliares estarem definidas
+init_db()

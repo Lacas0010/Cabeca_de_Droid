@@ -1,7 +1,9 @@
 import os
 import re
 import json
+import logging
 import random
+import sqlite3
 from datetime import datetime, timedelta
 import unicodedata
 import time
@@ -10,6 +12,8 @@ from bs4 import BeautifulSoup
 from typing import Dict, List, Tuple, Optional, Any
 
 from core.config import get_resource_path
+
+logger = logging.getLogger(__name__)
 
 
 # Expressões regulares pré-compiladas para alta performance
@@ -705,8 +709,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
                         n_lower = db_char.name.lower().strip()
                         master_map[n_lower] = c_str
                         master_map[normalize_char_name(n_lower)] = c_str
-        except Exception:
-            pass
+        except (ImportError, KeyError, TypeError, AttributeError) as exc:
+            logger.debug("[CALC] Falha ao ler mapa genshin.py para %s: %s", game_id, exc)
 
     aliases_pt_to_en = {
         "cisne negro": "black swan",
@@ -757,16 +761,16 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             with open(roster_file, "r", encoding="utf-8") as f:
                 for char in json.load(f):
                     _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
+            logger.warning("[CALC] Falha ao carregar %s: %s", roster_file, exc)
 
     try:
         import database
 
         for char in database.get_roster_data(game_id) or []:
             _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
-    except Exception:
-        pass
+    except (ImportError, sqlite3.Error, TypeError, AttributeError) as exc:
+        logger.debug("[CALC] Roster SQLite indisponível em get_master_ids(%s): %s", game_id, exc)
 
     manifest_file = get_resource_path(os.path.join("static_data", f"{game_id}_manifest.json"))
     if os.path.exists(manifest_file):
@@ -783,8 +787,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
                             continue
                         _register_dynamic_char(m_entry.get("name", ""), hid)
                         _register_dynamic_char(str(m_key).replace("_", " "), hid)
-        except Exception:
-            pass
+        except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
+            logger.warning("[CALC] Falha ao ler manifesto %s: %s", manifest_file, exc)
 
     # 3. Vincula aliases multilíngues e mapeamentos HoYoLAB estáticos se o destino já tiver ID
     try:
@@ -811,8 +815,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
                     if target_id:
                         master_map.setdefault(str(a_k).lower().strip(), target_id)
                         master_map.setdefault(normalize_char_name(a_k), target_id)
-    except Exception:
-        pass
+    except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
+        logger.warning("[CALC] Falha ao vincular aliases para %s: %s", game_id, exc)
 
     return master_map
 
@@ -2316,8 +2320,8 @@ def generate_meta_json_from_markdown(game_id: str):
                                 id_to_tokens.setdefault(it_id, set()).update(
                                     t for t in norm_it.split("_") if len(t) >= 3
                                 )
-            except Exception:
-                pass
+            except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
+                logger.warning("[CALC] Falha ao indexar nomes canônicos de %s: %s", src_path, exc)
 
     def _resolve_guide_id(raw_n: str, norm_r: str, doc_content: str) -> str:
         direct = master_ids.get(norm_r) or master_ids.get(raw_n.lower())
@@ -2488,8 +2492,8 @@ def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[st
                 weekly_boss_mat = char_profile.get("weekly_boss_mat")
                 domain_days = char_profile.get("domain_days")
                 open_today = char_profile.get("open_today", True)
-        except Exception:
-            pass
+        except (ImportError, KeyError, TypeError, AttributeError) as exc:
+            logger.debug("[CALC] Perfil estático indisponível para %s (%s): %s", char_name, game_id, exc)
 
     daily_energy = 180 if game_id == "genshin" else 240
     boss_cost_per_run = 40 if game_id in ["genshin", "zzz"] else 30
@@ -3190,8 +3194,8 @@ def is_genshin_farmable_today(char_name: str, day_of_week: int) -> bool:
         c_clean = char_name.lower().strip()
         if any(c_clean == fc or fc in c_clean or c_clean in fc for fc in farmable_chars):
             return True
-    except Exception:
-        pass
+    except (ImportError, KeyError, TypeError, AttributeError) as exc:
+        logger.debug("[CALC] Agenda diária dinâmica indisponível para %s: %s", char_name, exc)
 
     mon_thu = {
         "amber",
@@ -3446,8 +3450,8 @@ def get_daily_farm_recommendations(
                     from database import parse_skills_from_raw_md
 
                     skills = parse_skills_from_raw_md(char["raw_md"])
-                except Exception:
-                    pass
+                except (ImportError, ValueError, TypeError, AttributeError) as exc:
+                    logger.debug("[CALC] Falha ao extrair skills do markdown de %s: %s", name, exc)
 
             # Se a lista de skills vier vazia do backend, injeta habilidades padrões oficiais do jogo
             if not skills:
@@ -3531,8 +3535,8 @@ def get_daily_farm_recommendations(
                     char_profile = static_data_manager.get_character_profile(game_id, name)
                     if not char_profile:
                         char_profile = static_data_manager._enrich_character_profile(game_id, dict(char))
-                except Exception:
-                    pass
+                except (ImportError, KeyError, TypeError, AttributeError) as exc:
+                    logger.debug("[CALC] Perfil estático indisponível em farm (%s): %s", name, exc)
 
                 items_needed = {"icons": icons, "terms": terms}
 
@@ -3699,8 +3703,8 @@ def get_daily_farm_recommendations(
                         from static_data_manager import static_data_manager
 
                         w_prof = static_data_manager.get_weapon_profile(game_id, w_name)
-                    except Exception:
-                        pass
+                    except (ImportError, KeyError, TypeError, AttributeError) as exc:
+                        logger.debug("[CALC] Perfil de arma indisponível (%s): %s", w_name, exc)
 
                     weapon_details = {
                         "weapon_name": w_name,
@@ -4521,13 +4525,15 @@ def generate_daily_farm_order(
             import database
 
             roster = database.get_roster_data(g)
-        except Exception:
+        except (ImportError, sqlite3.Error, TypeError) as exc:
+            logger.debug("[CALC] Falha ao carregar roster SQLite (%s): %s", g, exc)
             roster = []
 
     if meta_data is None:
         try:
             meta_data = get_meta_data(g)
-        except Exception:
+        except (OSError, json.JSONDecodeError, TypeError) as exc:
+            logger.warning("[CALC] Falha ao carregar meta_data (%s): %s", g, exc)
             meta_data = {}
 
     # Obtenção de Energia via Cache se não fornecida
@@ -4541,8 +4547,8 @@ def generate_daily_farm_order(
                     current_energy = int(cached_notes[g]["current_energy"])
                 if max_energy is None:
                     max_energy = int(cached_notes[g].get("max_energy", cfg["default_max"]))
-        except Exception:
-            pass
+        except (ImportError, sqlite3.Error, ValueError, TypeError) as exc:
+            logger.debug("[CALC] Falha ao consultar notas diárias (%s): %s", g, exc)
 
     if current_energy is None:
         current_energy = cfg["default_current"]
@@ -4555,8 +4561,8 @@ def generate_daily_farm_order(
         import database
 
         completed_task_ids = set(database.get_completed_farm_tasks(today_str, g))
-    except Exception:
-        pass
+    except (ImportError, sqlite3.Error, TypeError) as exc:
+        logger.debug("[CALC] Falha ao consultar tarefas de farm concluídas (%s): %s", g, exc)
 
     # Consulta de recomendações de farm diárias
     recs_data = get_daily_farm_recommendations(

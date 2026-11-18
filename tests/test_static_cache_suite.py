@@ -25,6 +25,8 @@ class TestStaticCacheSuite(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn("no-cache", res.headers.get("cache-control", "").lower())
         self.assertRegex(res.text, rf'import "\./modules/i18n\.js\?v={re.escape(__version__)}-\d+"')
+        self.assertRegex(res.text, rf'import "\./modules/roster_charts\.js\?v={re.escape(__version__)}-\d+"')
+        self.assertRegex(res.text, rf'import "\./modules/card_exporter\.js\?v={re.escape(__version__)}-\d+"')
         self.assertRegex(res.text, rf'import\("\./modules/gacha_sim\.js\?v={re.escape(__version__)}-\d+"\)')
 
 
