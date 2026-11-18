@@ -16,6 +16,7 @@ class TestStaticCacheSuite(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn("no-cache", res.headers.get("cache-control", "").lower())
         html = res.text
+        self.assertRegex(html, rf'href="css/gacha\.css\?v={re.escape(__version__)}-\d+"')
         self.assertRegex(html, rf'href="style\.css\?v={re.escape(__version__)}-\d+"')
         self.assertRegex(html, rf'src="js/app\.js\?v={re.escape(__version__)}-\d+"')
         self.assertRegex(html, rf'src="/static/vendor/sakuga-vfx/button\.js\?v={re.escape(__version__)}-\d+"')
