@@ -773,6 +773,16 @@
 <sakuga-button class="filter-btn sk-xs" data-filter="ether" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/elements/zzz_ether.png" width="16"/> <span data-i18n="elem_ether">Éter</span></sakuga-button>
 <sakuga-button class="filter-btn sk-xs" data-filter="lumiflux" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/elements/zzz_lumiflux.png" width="16"/> Lumiflux</sakuga-button>
 </div>
+<div class="element-filters specialty-filters" data-game="zzz" style="margin-bottom: 8px;">
+<sakuga-button class="filter-btn active sk-xs" data-i18n="filter_specialty_all" data-specialty="all" variant="secondary">Todas as Especialidades</sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="attack" variant="secondary"><i class="fa-solid fa-burst"></i> <span data-i18n="spec_attack">Ataque</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="stun" variant="secondary"><i class="fa-solid fa-bolt"></i> <span data-i18n="spec_stun">Atordoamento</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="anomaly" variant="secondary"><i class="fa-solid fa-flask"></i> <span data-i18n="spec_anomaly">Anomalia</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="support" variant="secondary"><i class="fa-solid fa-hand-holding-heart"></i> <span data-i18n="spec_support">Suporte</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="defense" variant="secondary"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="spec_defense">Defesa</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="rupture" variant="secondary"><i class="fa-solid fa-meteor"></i> <span data-i18n="spec_rupture">Ruptura</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="armorer" variant="secondary"><i class="fa-solid fa-hammer"></i> <span data-i18n="spec_armorer">Armeiro</span></sakuga-button>
+</div>
 <div class="element-filters rarity-filters" data-game="zzz" style="margin-bottom: 12px;">
 <sakuga-button class="filter-btn active sk-xs" data-i18n="filter_rarity_all" data-rarity="all" variant="secondary">Todas as Raridades</sakuga-button>
 <sakuga-button class="filter-btn sk-xs" data-rarity="5" variant="secondary"><i class="fa-solid fa-star" style="color: #f59e0b;"></i> <span data-i18n="rarity_s_rank">Rank S</span></sakuga-button>
@@ -822,11 +832,13 @@
 <span class="audit-label"><i class="fa-solid fa-crosshairs"></i> <span data-i18n="audit_specialty">Especialidade:</span></span>
 <div class="filter-pills" data-filter-type="specialty" data-game="zzz">
 <sakuga-button class="audit-pill active sk-xs" data-i18n="audit_all" data-val="all" variant="secondary">Todas</sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="attack" variant="secondary">Ataque</sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="stun" variant="secondary">Atordoamento</sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="anomaly" variant="secondary">Anomalia</sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="support" variant="secondary">Suporte</sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="defense" variant="secondary">Defesa</sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-i18n="spec_attack" data-val="attack" variant="secondary">Ataque</sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-i18n="spec_stun" data-val="stun" variant="secondary">Atordoamento</sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-i18n="spec_anomaly" data-val="anomaly" variant="secondary">Anomalia</sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-i18n="spec_support" data-val="support" variant="secondary">Suporte</sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-i18n="spec_defense" data-val="defense" variant="secondary">Defesa</sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-i18n="spec_rupture" data-val="rupture" variant="secondary">Ruptura</sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-i18n="spec_armorer" data-val="armorer" variant="secondary">Armeiro</sakuga-button>
 </div>
 <span class="audit-label audit-label-sep"><i class="fa-solid fa-building-shield"></i> <span data-i18n="audit_faction">Facção:</span></span>
 <div class="filter-pills" data-filter-type="faction" data-game="zzz">
@@ -3945,6 +3957,6 @@
 <script src="/static/vendor/sakuga-vfx/toast.js"></script>
 <script src="/static/vendor/sakuga-vfx/tooltip.js"></script>
 <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-<script src="js/app.js?v=36.0" type="module"></script>
+<script src="js/app.js?v=37.0" type="module"></script>
 </body>
 </html>

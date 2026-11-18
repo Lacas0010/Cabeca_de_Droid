@@ -59,9 +59,59 @@ class PrydwenZZZScraper:
                     name = extract_prydwen_card_name(link, slug)
 
                     full_url = self.domain + clean_href if clean_href.startswith("/") else clean_href
-                    agents.append({"name": name, "url": full_url})
+                    entry = {"name": name, "url": full_url}
+                    entry.update(self._extract_agent_card_meta(link))
+                    agents.append(entry)
 
         return sorted(agents, key=lambda x: x["name"])
+
+    @staticmethod
+    def _extract_agent_card_meta(link) -> dict:
+        """Extrai especialidade, elemento e raridade do card de agente do Prydwen."""
+        meta = {}
+        cls_div = link.find("div", class_="class")
+        if cls_div:
+            cls_img = cls_div.find("img")
+            if cls_img:
+                src = cls_img.get("src", "")
+                alt = cls_img.get("alt", "")
+                raw_spec = ""
+                if "style_" in src:
+                    raw_spec = src.split("style_")[-1].split(".")[0].strip()
+                elif alt:
+                    m = re.search(r"([A-Za-z]+)\s+style$", alt.strip(), re.IGNORECASE)
+                    if m:
+                        raw_spec = m.group(1)
+                if raw_spec:
+                    spec_low = raw_spec.lower()
+                    meta["specialty"] = {"defence": "Defense"}.get(spec_low, spec_low.capitalize())
+
+        el_div = link.find("div", class_="element")
+        if el_div:
+            el_img = el_div.find("img")
+            if el_img:
+                alt = el_img.get("alt", "")
+                src = el_img.get("src", "")
+                raw_el = ""
+                if alt:
+                    m = re.search(r"([A-Za-z]+)\s+element$", alt.strip(), re.IGNORECASE)
+                    if m:
+                        raw_el = m.group(1)
+                if not raw_el and "ele_" in src:
+                    raw_el = src.split("ele_")[-1].split(".")[0].strip()
+                    raw_el = {"frost": "Ice", "yi": "Ether", "honest": "Physical"}.get(raw_el.lower(), raw_el)
+                if raw_el:
+                    meta["element"] = raw_el.capitalize()
+
+        av_div = link.find("div", class_="avatar")
+        if av_div:
+            av_classes = av_div.get("class") or []
+            if "rarity-S" in av_classes:
+                meta["rarity"] = 5
+            elif "rarity-A" in av_classes:
+                meta["rarity"] = 4
+
+        return meta
 
     def translate_to_portuguese(self, text: str) -> str:
         """

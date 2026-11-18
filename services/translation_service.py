@@ -87,6 +87,8 @@ PATH_TRANSLATIONS: Dict[str, str] = {
     "Anomaly": "Anomalia",
     "Support": "Suporte",
     "Defense": "Defesa",
+    "Rupture": "Ruptura",
+    "Armorer": "Armeiro",
     # Genshin Weapon Types
     "Sword": "Espada",
     "Claymore": "Espadão",

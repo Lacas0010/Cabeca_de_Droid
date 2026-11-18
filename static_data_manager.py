@@ -1123,19 +1123,33 @@ class StaticDataManager:
                     if not ag_name:
                         continue
                     safe_id = ag_name.lower().replace(" ", "_").replace("•", "").replace("'", "").replace(":", "")
+                    ag_spec = ag.get("specialty")
+                    ag_elem = ag.get("element")
+                    ag_rar = ag.get("rarity")
                     if safe_id not in current_chars:
                         current_chars[safe_id] = {
                             "id": safe_id,
                             "name": ag_name,
-                            "rarity": 5,
-                            "element": "Physical",
-                            "specialty": "Attack",
+                            "rarity": ag_rar if ag_rar in (4, 5) else 5,
+                            "element": ag_elem or "Physical",
+                            "specialty": ag_spec or "Attack",
                             "chip_type": "Chip de Combate Especializado",
                             "core_skill_mat": "Emblema de Especialista",
                             "weekly_boss_mat": "Material de Notorious Hunt",
                             "schedule_type": "Daily",
                             "url": ag.get("url", ""),
                         }
+                    else:
+                        existing = current_chars[safe_id]
+                        if ag.get("url") and not existing.get("url"):
+                            existing["url"] = ag["url"]
+                        if "expert_key" not in existing:
+                            if ag_spec:
+                                existing["specialty"] = ag_spec
+                            if ag_elem:
+                                existing["element"] = ag_elem
+                            if ag_rar in (4, 5):
+                                existing["rarity"] = ag_rar
         except Exception:
             pass
 

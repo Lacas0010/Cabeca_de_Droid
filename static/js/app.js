@@ -3,14 +3,14 @@
 // ==========================================================================
 
 // Importação ordenada dos módulos desacoplados
-import "./modules/i18n.js?v=26.0";
-import "./modules/api_client.js?v=26.0";
+import "./modules/i18n.js?v=27.0";
+import "./modules/api_client.js?v=27.0";
 import "./modules/modal.js?v=25.0";
 import "./modules/navigation.js?v=25.0";
 import "./modules/config_manager.js?v=27.0";
 import "./modules/sync_manager.js?v=25.0";
 import "./modules/endgame.js?v=25.0";
-import "./modules/roster.js?v=28.0";
+import "./modules/roster.js?v=29.0";
 import "./modules/roster_charts.js?v=1.0";
 import "./modules/card_exporter.js?v=1.0";
 import "./modules/build_comparator.js?v=27.0";

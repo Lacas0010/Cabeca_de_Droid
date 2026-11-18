@@ -293,6 +293,117 @@ class TestPrydwenEndgameAndNames(unittest.TestCase):
             self.assertIn(grade_feet, ("SS", "SSS"))
             self.assertIn(grade_sphere, ("SS", "SSS"))
 
+    @patch("scrapers.scraper_zzz.requests.get")
+    def test_zzz_agent_list_extracts_specialty_element_and_rarity(self, mock_get):
+        resp = MagicMock()
+        resp.raise_for_status = MagicMock()
+        resp.text = """
+        <html><body>
+          <a href="/zenless/characters/yixuan">
+            <div class="avatar pw-card zzz rarity-S">
+              <div class="element"><img alt="Yixuan Ether element" src="https://cdn.prydwen.gg/ele_yi.webp"/></div>
+              <div class="class"><img alt="Yixuan Rupture style" src="https://cdn.prydwen.gg/style_rupture.webp"/></div>
+              <span class="emp-name">Yixuan</span>
+            </div>
+          </a>
+          <a href="/zenless/characters/pan-yinhu">
+            <div class="avatar pw-card zzz rarity-A">
+              <div class="element"><img alt="Pan Yinhu Physical element" src="https://cdn.prydwen.gg/ele_physical.webp"/></div>
+              <div class="class"><img alt="Pan Yinhu Defence style" src="https://cdn.prydwen.gg/style_defence.webp"/></div>
+              <span class="emp-name">Pan Yinhu</span>
+            </div>
+          </a>
+          <a href="/zenless/characters/claret">
+            <div class="avatar pw-card zzz rarity-S">
+              <div class="element"><img alt="Claret Electric element" src="https://cdn.prydwen.gg/ele_electric.webp"/></div>
+              <div class="class"><img alt="Claret Armorer style" src="https://cdn.prydwen.gg/style_armorer.webp"/></div>
+              <span class="emp-name">Claret</span>
+            </div>
+          </a>
+        </body></html>
+        """
+        mock_get.return_value = resp
+
+        agents = {a["name"]: a for a in PrydwenZZZScraper().get_agent_list()}
+        self.assertEqual(agents["Yixuan"]["specialty"], "Rupture")
+        self.assertEqual(agents["Yixuan"]["element"], "Ether")
+        self.assertEqual(agents["Yixuan"]["rarity"], 5)
+
+        self.assertEqual(agents["Pan Yinhu"]["specialty"], "Defense")
+        self.assertEqual(agents["Pan Yinhu"]["element"], "Physical")
+        self.assertEqual(agents["Pan Yinhu"]["rarity"], 4)
+
+        self.assertEqual(agents["Claret"]["specialty"], "Armorer")
+        self.assertEqual(agents["Claret"]["element"], "Electric")
+        self.assertEqual(agents["Claret"]["rarity"], 5)
+
+    def test_sync_zzz_updates_non_curated_specialty_from_prydwen(self):
+        from static_data_manager import StaticDataManager
+
+        mgr = StaticDataManager.__new__(StaticDataManager)
+        mgr._cache = {
+            "zzz": {
+                "characters": {
+                    "yixuan": {
+                        "id": "yixuan",
+                        "name": "Yixuan",
+                        "rarity": 5,
+                        "element": "Physical",
+                        "specialty": "Attack",
+                    },
+                    "astra": {
+                        "id": "astra",
+                        "name": "Astra Yao",
+                        "rarity": 5,
+                        "element": "Ether",
+                        "specialty": "Support",
+                        "expert_key": "new_eridu",
+                    },
+                }
+            }
+        }
+        mocked_agents = [
+            {"name": "Yixuan", "url": "https://www.prydwen.gg/zenless/characters/yixuan", "specialty": "Rupture", "element": "Ether", "rarity": 5},
+            {"name": "Zhao", "url": "https://www.prydwen.gg/zenless/characters/zhao", "specialty": "Defense", "element": "Ice", "rarity": 5},
+        ]
+        with tempfile.TemporaryDirectory() as tmpdir:
+            manifest_path = os.path.join(tmpdir, "zzz_manifest.json")
+            with patch.object(mgr, "_get_file_path", return_value=manifest_path), patch(
+                "scrapers.PrydwenZZZScraper.get_agent_list", return_value=mocked_agents
+            ):
+                res = mgr._sync_zzz()
+                self.assertEqual(res["status"], "success")
+                self.assertEqual(mgr._cache["zzz"]["characters"]["yixuan"]["specialty"], "Rupture")
+                self.assertEqual(mgr._cache["zzz"]["characters"]["yixuan"]["element"], "Ether")
+                self.assertEqual(mgr._cache["zzz"]["characters"]["zhao"]["specialty"], "Defense")
+                self.assertEqual(mgr._cache["zzz"]["characters"]["zhao"]["element"], "Ice")
+                self.assertEqual(mgr._cache["zzz"]["characters"]["astra"]["specialty"], "Support")
+
+    def test_zzz_quick_specialty_filter_ui_and_js_wiring(self):
+        with open(os.path.join("static", "index.html"), "r", encoding="utf-8") as hf:
+            soup = BeautifulSoup(hf.read(), "html.parser")
+
+        spec_bar = soup.find("div", class_="specialty-filters", attrs={"data-game": "zzz"})
+        self.assertIsNotNone(spec_bar)
+        spec_vals = [b.get("data-specialty") for b in spec_bar.find_all(class_="filter-btn")]
+        self.assertEqual(
+            spec_vals,
+            ["all", "attack", "stun", "anomaly", "support", "defense", "rupture", "armorer"],
+        )
+
+        audit_group = soup.select_one('#audit-panel-zzz .filter-pills[data-filter-type="specialty"]')
+        self.assertIsNotNone(audit_group)
+        audit_vals = [b.get("data-val") for b in audit_group.find_all(class_="audit-pill")]
+        self.assertEqual(audit_vals, spec_vals)
+
+        with open(os.path.join("static", "js", "modules", "roster.js"), "r", encoding="utf-8") as rf:
+            roster_js = rf.read()
+        self.assertIn(":not(.specialty-filters)", roster_js)
+        self.assertIn('.specialty-filters[data-game="${gameId}"]', roster_js)
+        self.assertIn("syncSpecialtyUI", roster_js)
+        self.assertIn("ruptura", roster_js)
+        self.assertIn("armeiro", roster_js)
+
 
 if __name__ == "__main__":
     unittest.main()

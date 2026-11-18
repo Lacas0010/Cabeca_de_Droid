@@ -8,7 +8,8 @@
       "specialty": "Anomaly",
       "expert_key": "section6",
       "weekly_key": "butcher_ferocity",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/miyabi"
     },
     "harumasa": {
       "id": "harumasa",
@@ -18,7 +19,8 @@
       "specialty": "Attack",
       "expert_key": "section6",
       "weekly_key": "butcher_ferocity",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/harumasa"
     },
     "astra": {
       "id": "astra",
@@ -38,7 +40,8 @@
       "specialty": "Attack",
       "expert_key": "victoria",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/ellen"
     },
     "zhu_yuan": {
       "id": "zhu_yuan",
@@ -48,7 +51,8 @@
       "specialty": "Attack",
       "expert_key": "public_security",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/zhu-yuan"
     },
     "jane": {
       "id": "jane",
@@ -68,7 +72,8 @@
       "specialty": "Defense",
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/caesar"
     },
     "burnice": {
       "id": "burnice",
@@ -78,7 +83,8 @@
       "specialty": "Anomaly",
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/burnice"
     },
     "qingyi": {
       "id": "qingyi",
@@ -88,7 +94,8 @@
       "specialty": "Stun",
       "expert_key": "public_security",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/qingyi"
     },
     "yanagi": {
       "id": "yanagi",
@@ -98,7 +105,8 @@
       "specialty": "Anomaly",
       "expert_key": "section6",
       "weekly_key": "butcher_ferocity",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/yanagi"
     },
     "lighter": {
       "id": "lighter",
@@ -108,7 +116,8 @@
       "specialty": "Stun",
       "expert_key": "calydon",
       "weekly_key": "pompey_bite",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/lighter"
     },
     "lycaon": {
       "id": "lycaon",
@@ -118,7 +127,8 @@
       "specialty": "Stun",
       "expert_key": "victoria",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/lycaon"
     },
     "rina": {
       "id": "rina",
@@ -128,7 +138,8 @@
       "specialty": "Support",
       "expert_key": "victoria",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/rina"
     },
     "soldier_11": {
       "id": "soldier_11",
@@ -138,7 +149,8 @@
       "specialty": "Attack",
       "expert_key": "defense_force",
       "weekly_key": "silent_death",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/soldier-11"
     },
     "koleda": {
       "id": "koleda",
@@ -148,7 +160,8 @@
       "specialty": "Stun",
       "expert_key": "belobog",
       "weekly_key": "silent_death",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/koleda"
     },
     "grace": {
       "id": "grace",
@@ -158,7 +171,8 @@
       "specialty": "Anomaly",
       "expert_key": "belobog",
       "weekly_key": "silent_death",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/grace-howard"
     },
     "nekomata": {
       "id": "nekomata",
@@ -168,7 +182,8 @@
       "specialty": "Attack",
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/nekomata"
     },
     "nicole": {
       "id": "nicole",
@@ -178,7 +193,8 @@
       "specialty": "Support",
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/nicole-demara"
     },
     "anby": {
       "id": "anby",
@@ -188,7 +204,8 @@
       "specialty": "Stun",
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/anby-demara"
     },
     "billy": {
       "id": "billy",
@@ -198,7 +215,8 @@
       "specialty": "Attack",
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/billy-kid"
     },
     "corin": {
       "id": "corin",
@@ -208,7 +226,8 @@
       "specialty": "Attack",
       "expert_key": "victoria",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/corin"
     },
     "seth": {
       "id": "seth",
@@ -218,7 +237,8 @@
       "specialty": "Defense",
       "expert_key": "public_security",
       "weekly_key": "corrupted_heart",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/seth"
     },
     "piper": {
       "id": "piper",
@@ -228,7 +248,8 @@
       "specialty": "Anomaly",
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/piper"
     },
     "lucy": {
       "id": "lucy",
@@ -238,7 +259,8 @@
       "specialty": "Support",
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "url": "https://www.prydwen.gg/zenless/characters/lucy"
     },
     "soukaku": {
       "id": "soukaku",
@@ -248,14 +270,15 @@
       "specialty": "Support",
       "expert_key": "section6",
       "weekly_key": "silent_death",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "url": "https://www.prydwen.gg/zenless/characters/soukaku"
     },
     "alice": {
       "id": "alice",
       "name": "Alice",
       "rarity": 5,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -266,7 +289,7 @@
       "id": "anby_soldier_0",
       "name": "Anby: Soldier 0",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Electric",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -277,8 +300,8 @@
     "anton": {
       "id": "anton",
       "name": "Anton",
-      "rarity": 5,
-      "element": "Physical",
+      "rarity": 4,
+      "element": "Electric",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -290,8 +313,8 @@
       "id": "aria",
       "name": "Aria",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ether",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -302,8 +325,8 @@
       "id": "astra_yao",
       "name": "Astra Yao",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ether",
+      "specialty": "Support",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -314,8 +337,8 @@
       "id": "banyue",
       "name": "Banyue",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Fire",
+      "specialty": "Rupture",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -325,9 +348,9 @@
     "ben": {
       "id": "ben",
       "name": "Ben",
-      "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "rarity": 4,
+      "element": "Fire",
+      "specialty": "Defense",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -339,7 +362,7 @@
       "name": "Billy - Starlight",
       "rarity": 5,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Rupture",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -350,7 +373,7 @@
       "id": "cissia",
       "name": "Cissia",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Electric",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -362,8 +385,8 @@
       "id": "claret",
       "name": "Claret",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Electric",
+      "specialty": "Armorer",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -375,7 +398,7 @@
       "name": "Dialyn",
       "rarity": 5,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Stun",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -386,7 +409,7 @@
       "id": "evelyn",
       "name": "Evelyn",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Fire",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -398,7 +421,7 @@
       "id": "hugo",
       "name": "Hugo",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Ice",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -411,7 +434,7 @@
       "name": "Jane Doe",
       "rarity": 5,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -422,8 +445,8 @@
       "id": "ju_fufu",
       "name": "Ju Fufu",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Fire",
+      "specialty": "Stun",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -434,8 +457,8 @@
       "id": "lucia",
       "name": "Lucia",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ether",
+      "specialty": "Support",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -445,9 +468,9 @@
     "manato": {
       "id": "manato",
       "name": "Manato",
-      "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "rarity": 4,
+      "element": "Fire",
+      "specialty": "Rupture",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -458,8 +481,8 @@
       "id": "nangong_yu",
       "name": "Nangong Yu",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ether",
+      "specialty": "Stun",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -470,8 +493,8 @@
       "id": "norma",
       "name": "Norma",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Fire",
+      "specialty": "Stun",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -482,7 +505,7 @@
       "id": "orphie_&_magus",
       "name": "Orphie & Magus",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Fire",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -493,9 +516,9 @@
     "pan_yinhu": {
       "id": "pan_yinhu",
       "name": "Pan Yinhu",
-      "rarity": 5,
+      "rarity": 4,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Defense",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -518,8 +541,8 @@
       "id": "promeia",
       "name": "Promeia",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ice",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -529,9 +552,9 @@
     "pulchra": {
       "id": "pulchra",
       "name": "Pulchra",
-      "rarity": 5,
+      "rarity": 4,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Stun",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -542,7 +565,7 @@
       "id": "pyrois",
       "name": "Pyrois",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Ether",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -554,8 +577,8 @@
       "id": "remielle",
       "name": "Remielle",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Lumiflux",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -578,7 +601,7 @@
       "id": "seed",
       "name": "Seed",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Electric",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -602,7 +625,7 @@
       "id": "sigrid",
       "name": "Sigrid",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Ice",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -627,7 +650,7 @@
       "name": "Sunna",
       "rarity": 5,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Support",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -650,8 +673,8 @@
       "id": "trigger",
       "name": "Trigger",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Electric",
+      "specialty": "Stun",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -662,8 +685,8 @@
       "id": "velina",
       "name": "Velina",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Wind",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -674,8 +697,8 @@
       "id": "vivian",
       "name": "Vivian",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ether",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -698,8 +721,8 @@
       "id": "yidhari",
       "name": "Yidhari",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ice",
+      "specialty": "Rupture",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -710,8 +733,8 @@
       "id": "yixuan",
       "name": "Yixuan",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ether",
+      "specialty": "Rupture",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -723,7 +746,7 @@
       "name": "Yuzuha",
       "rarity": 5,
       "element": "Physical",
-      "specialty": "Attack",
+      "specialty": "Support",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -734,8 +757,8 @@
       "id": "zhao",
       "name": "Zhao",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Ice",
+      "specialty": "Defense",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -794,8 +817,8 @@
       "id": "phoenix",
       "name": "Phoenix",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Fire",
+      "specialty": "Anomaly",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -818,8 +841,8 @@
       "id": "roxy",
       "name": "Roxy",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Wind",
+      "specialty": "Stun",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
@@ -842,7 +865,7 @@
       "id": "severian",
       "name": "Severian",
       "rarity": 5,
-      "element": "Physical",
+      "element": "Wind",
       "specialty": "Attack",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
@@ -890,8 +913,8 @@
       "id": "sunbringer",
       "name": "Sunbringer",
       "rarity": 5,
-      "element": "Physical",
-      "specialty": "Attack",
+      "element": "Fire",
+      "specialty": "Armorer",
       "chip_type": "Chip de Combate Especializado",
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",

@@ -1003,8 +1003,19 @@ async function _loadRosterImpl(gameId) {
                 // L) Filtros Específicos: ZZZ
                 let matchesSpecialty = true;
                 if (gameId === "zzz" && activeSpecialtyFilter !== "all") {
-                    const spec = String(char.specialty || char.role || "").toLowerCase();
-                    matchesSpecialty = spec.includes(activeSpecialtyFilter.toLowerCase());
+                    const specAliases = {
+                        attack: ["attack", "ataque"],
+                        stun: ["stun", "atordoamento"],
+                        anomaly: ["anomaly", "anomalia"],
+                        support: ["support", "suporte"],
+                        defense: ["defense", "defesa", "defence"],
+                        rupture: ["rupture", "ruptura"],
+                        armorer: ["armorer", "armeiro"],
+                    };
+                    const spec = String(char.specialty || char.role || char.path || "").trim().toLowerCase();
+                    const filterKey = activeSpecialtyFilter.toLowerCase();
+                    const candidates = specAliases[filterKey] || [filterKey];
+                    matchesSpecialty = candidates.some(alias => spec.includes(alias));
                 }
 
                 let matchesFaction = true;
@@ -1306,7 +1317,7 @@ async function _loadRosterImpl(gameId) {
         _rosterRenderers[gameId] = renderCards;
         
         // Configura ouvintes de clique nos botões de filtro de elementos
-        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters):not(.weapon-filters):not(.path-filters)`);
+        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters):not(.weapon-filters):not(.path-filters):not(.specialty-filters)`);
         if (filterContainer) {
             const filterBtns = filterContainer.querySelectorAll(".filter-btn");
             filterBtns.forEach(btn => {
@@ -1382,6 +1393,39 @@ async function _loadRosterImpl(gameId) {
                     freshWeaponBtns.forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
                     activeWeaponFilter = btn.getAttribute("data-weapon") || "all";
+                    renderCards();
+                });
+            });
+        }
+
+        // Configura ouvintes de clique nos botões de filtro de especialidade (ZZZ)
+        const specialtyContainer = document.querySelector(`.specialty-filters[data-game="${gameId}"]`);
+        const syncSpecialtyUI = (val) => {
+            if (specialtyContainer) {
+                specialtyContainer.querySelectorAll(".filter-btn").forEach(b => {
+                    if ((b.getAttribute("data-specialty") || "all") === val) b.classList.add("active");
+                    else b.classList.remove("active");
+                });
+            }
+            const specAuditGroup = document.querySelector(`#audit-panel-${gameId} .filter-pills[data-filter-type="specialty"]`);
+            if (specAuditGroup) {
+                specAuditGroup.querySelectorAll(".audit-pill").forEach(p => {
+                    if ((p.getAttribute("data-val") || "all") === val) p.classList.add("active");
+                    else p.classList.remove("active");
+                });
+            }
+        };
+        if (specialtyContainer) {
+            const specialtyBtns = specialtyContainer.querySelectorAll(".filter-btn");
+            specialtyBtns.forEach(btn => {
+                const newBtn = btn.cloneNode(true);
+                btn.parentNode.replaceChild(newBtn, btn);
+            });
+            const freshSpecialtyBtns = specialtyContainer.querySelectorAll(".filter-btn");
+            freshSpecialtyBtns.forEach(btn => {
+                btn.addEventListener("click", () => {
+                    activeSpecialtyFilter = btn.getAttribute("data-specialty") || "all";
+                    syncSpecialtyUI(activeSpecialtyFilter);
                     renderCards();
                 });
             });
@@ -1475,7 +1519,10 @@ async function _loadRosterImpl(gameId) {
                     else if (filterType === "scale") activeScaleFilter = val;
                     else if (filterType === "main-stat") activeMainStatFilter = val;
                     else if (filterType === "speed") activeSpeedFilter = val;
-                    else if (filterType === "specialty") activeSpecialtyFilter = val;
+                    else if (filterType === "specialty") {
+                        activeSpecialtyFilter = val;
+                        syncSpecialtyUI(val);
+                    }
                     else if (filterType === "faction") activeFactionFilter = val;
                     else if (filterType === "archetype") activeArchetypeFilter = val;
                     else if (filterType === "discs-main") activeDiscsMainFilter = val;
@@ -1540,6 +1587,9 @@ async function _loadRosterImpl(gameId) {
                     else b.classList.remove("active");
                 });
             }
+
+            activeSpecialtyFilter = "all";
+            syncSpecialtyUI("all");
 
             activeSetFilter = "all";
             activeSlotFilter = "all";

@@ -214,6 +214,10 @@ class TestI18nTranslationSuite(unittest.TestCase):
         self.assertEqual(traduzir_caminho("Harmonia", lang="en"), "Harmony")
         self.assertEqual(traduzir_caminho("Destruição", lang="en"), "Destruction")
         self.assertEqual(traduzir_caminho("Atordoamento", lang="en"), "Stun")
+        self.assertEqual(traduzir_caminho("Ruptura", lang="en"), "Rupture")
+        self.assertEqual(traduzir_caminho("Rupture", lang="pt"), "Ruptura")
+        self.assertEqual(traduzir_caminho("Armeiro", lang="en"), "Armorer")
+        self.assertEqual(traduzir_caminho("Armorer", lang="pt"), "Armeiro")
         self.assertEqual(traduzir_caminho("Espada", lang="en"), "Sword")
 
         self.assertEqual(traduzir_status("Velocidade", lang="en"), "Speed")
