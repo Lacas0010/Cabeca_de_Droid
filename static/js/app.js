@@ -72,12 +72,21 @@ window.loadGachaModules = function() {
         }).catch(() => {});
     };
 
-    sendHeartbeat();
-    setInterval(sendHeartbeat, 4000);
-
-    window.addEventListener("pageshow", () => {
+    const refreshActiveClient = () => {
         disconnectSent = false;
         sendHeartbeat();
+    };
+
+    sendHeartbeat();
+    setInterval(sendHeartbeat, 15000);
+
+    window.addEventListener("pageshow", refreshActiveClient);
+    window.addEventListener("focus", refreshActiveClient);
+    document.addEventListener("resume", refreshActiveClient);
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            refreshActiveClient();
+        }
     });
     window.addEventListener("pagehide", sendDisconnect);
     window.addEventListener("beforeunload", sendDisconnect);

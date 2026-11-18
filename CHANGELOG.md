@@ -6,6 +6,15 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.6.4] / Release Standalone [v1.2.4] - 2026-11-18
+
+### 🐛 Corrigido
+- **Auto-Shutdown apenas ao Fechar a Aba do Navegador (`services/browser_lifecycle_service.py`, `static/js/app.js`):**
+  - Removida a expiração por timeout de heartbeat (`heartbeat_timeout_sec=None` por padrão) que encerrava o servidor quando a aba/janela ficava em segundo plano ou fora de foco (devido ao throttling/congelamento de timers pelos navegadores).
+  - O servidor desktop agora só é encerrado automaticamente quando o navegador fecha efetivamente todas as abas locais (`pagehide` / `beforeunload` via `sendBeacon`), mantendo a tolerância de 4s para recarregamentos via `F5` e renovando o sinal ao retornar o foco (`visibilitychange` / `focus` / `resume`).
+
+---
+
 ## [5.6.3] / Release Standalone [v1.2.3] - 2026-11-18
 
 ### 🐛 Corrigido

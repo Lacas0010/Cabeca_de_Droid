@@ -265,6 +265,29 @@ class TestBrowserLifecycleShutdown(unittest.TestCase):
             self.assertTrue(main.should_enable_browser_watchdog(True))
             self.assertFalse(main.should_enable_browser_watchdog(False))
 
+    def test_unfocused_tab_never_triggers_heartbeat_timeout_shutdown(self):
+        from services.browser_lifecycle_service import BrowserLifecycleManager
+
+        called = threading.Event()
+        mgr = BrowserLifecycleManager(disconnect_grace_sec=0.05)
+        self.assertIsNone(mgr.heartbeat_timeout_sec)
+        mgr.configure(enabled=True, on_shutdown=called.set)
+        try:
+            hb = mgr.register_heartbeat("tab-bg", is_loopback=True)
+            self.assertEqual(hb["active_clients"], 1)
+            # Simula 10 horas fora de foco com timers congelados pelo navegador
+            future = mgr.active_clients["tab-bg"] + 36000.0
+            self.assertFalse(mgr.check_stale_clients(now=future))
+            self.assertIn("tab-bg", mgr.active_clients)
+            self.assertFalse(called.is_set())
+
+            # Deve fechar somente quando a aba realmente dispara disconnect
+            dc = mgr.register_disconnect("tab-bg", is_loopback=True)
+            self.assertTrue(dc["shutdown_scheduled"])
+            self.assertTrue(called.wait(1.0))
+        finally:
+            mgr.shutdown()
+
 
 class TestSakugaVfxOfflineIntegration(unittest.TestCase):
     def test_vendor_assets_exist_and_verify(self):

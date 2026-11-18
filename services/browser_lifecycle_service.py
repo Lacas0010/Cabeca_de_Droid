@@ -11,7 +11,11 @@ class BrowserLifecycleManager:
     Permanece desativado em servidores headless (--no-browser), como a VM Oracle.
     """
 
-    def __init__(self, disconnect_grace_sec: float = 4.0, heartbeat_timeout_sec: float = 20.0):
+    def __init__(
+        self,
+        disconnect_grace_sec: float = 4.0,
+        heartbeat_timeout_sec: Optional[float] = None,
+    ):
         self.disconnect_grace_sec = disconnect_grace_sec
         self.heartbeat_timeout_sec = heartbeat_timeout_sec
         self._lock = threading.Lock()
@@ -30,7 +34,14 @@ class BrowserLifecycleManager:
             self._on_shutdown = on_shutdown
             self._cancel_pending_timer_locked()
 
-            if self.enabled and (self._reaper_thread is None or not self._reaper_thread.is_alive()):
+            timeout_enabled = (
+                self.heartbeat_timeout_sec is not None and self.heartbeat_timeout_sec > 0
+            )
+            if (
+                self.enabled
+                and timeout_enabled
+                and (self._reaper_thread is None or not self._reaper_thread.is_alive())
+            ):
                 self._reaper_stop.clear()
                 self._reaper_thread = threading.Thread(target=self._reaper_loop, daemon=True)
                 self._reaper_thread.start()
@@ -88,9 +99,14 @@ class BrowserLifecycleManager:
 
     def check_stale_clients(self, now: Optional[float] = None) -> bool:
         """
-        Expira clientes silenciosos (caso o navegador trave sem disparar pagehide)
-        e dispara o callback de encerramento se nenhum cliente ativo restar.
+        Expira clientes apenas se `heartbeat_timeout_sec` estiver explicitamente
+        configurado (> 0). Por padrão permanece desativado para que abas em
+        segundo plano ou fora de foco (onde navegadores congelam timers) não
+        encerrem o servidor antes de o usuário fechar a aba.
         """
+        if self.heartbeat_timeout_sec is None or self.heartbeat_timeout_sec <= 0:
+            return False
+
         callback = None
         current = time.monotonic() if now is None else now
         with self._lock:
