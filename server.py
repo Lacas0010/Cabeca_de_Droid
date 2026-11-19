@@ -139,6 +139,7 @@ def startup_static_data_sync_scheduler():
         time.sleep(5)
         try:
             from build_calculator import generate_meta_json_from_markdown
+            from services.roster_service import invalidate_roster_cache
 
             results = static_data_manager.sync_upstream_data()
             database.save_static_data_manifests(results)
@@ -157,6 +158,7 @@ def startup_static_data_sync_scheduler():
             time.sleep(86400)
             try:
                 from build_calculator import generate_meta_json_from_markdown
+                from services.roster_service import invalidate_roster_cache
 
                 results = static_data_manager.sync_upstream_data()
                 database.save_static_data_manifests(results)
