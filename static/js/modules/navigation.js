@@ -84,29 +84,60 @@ function setupTabSwitching() {
             const targetPane = document.getElementById(`tab-${targetTab}`);
             if (targetPane) {
                 targetPane.classList.add("active");
+                if (targetTab !== "gacha" && window.stopGoalsLiveCountdown) {
+                    window.stopGoalsLiveCountdown();
+                }
+                if (["zzz", "genshin", "hsr"].includes(targetTab) && window._flushDirtyRosterLang) {
+                    window._flushDirtyRosterLang(targetTab);
+                }
                 if (targetTab === 'gacha') {
-                    if (window.loadGachaModules) {
-                        window.loadGachaModules().then(() => {
-                            if (window.initGachaNavigation) window.initGachaNavigation();
-                            if (window.initGachaSimulator) window.initGachaSimulator();
-                        });
-                    } else {
+                    const onGachaReady = () => {
                         if (window.initGachaNavigation) window.initGachaNavigation();
                         if (window.initGachaSimulator) window.initGachaSimulator();
+                        const goalsView = document.getElementById("gacha-view-goals");
+                        if (goalsView?.classList.contains("active")) {
+                            if (window._dirtyLangTabs?.gachaGoals) {
+                                window._dirtyLangTabs.gachaGoals = false;
+                                window.loadGachaGoals?.("all");
+                            } else if (document.querySelector(".gacha-goal-live-card")) {
+                                window.startGoalsLiveCountdown?.();
+                            }
+                        }
+                    };
+                    if (window.loadGachaModules) {
+                        window.loadGachaModules().then(onGachaReady).catch(err => {
+                            console.error("[NAV] Falha ao carregar módulos de Gacha:", err);
+                            if (typeof showToast === "function") {
+                                showToast(window.isEn ? "Failed to load Gacha module. Please reload." : "Falha ao carregar o módulo de Gacha. Tente recarregar.", "error");
+                            }
+                        });
+                    } else {
+                        onGachaReady();
                     }
                 }
                 if (targetTab === 'luck') {
                     if (window.loadGachaModules) {
                         window.loadGachaModules().then(() => {
+                            if (window._dirtyLangTabs?.luck) window._dirtyLangTabs.luck = false;
                             if (window.initLuckDashboard) window.initLuckDashboard();
+                        }).catch(err => {
+                            console.error("[NAV] Falha ao carregar módulo Luck:", err);
+                            if (typeof showToast === "function") {
+                                showToast(window.isEn ? "Failed to load Roll Efficiency module." : "Falha ao carregar o módulo Roll Efficiency.", "error");
+                            }
                         });
                     } else if (window.initLuckDashboard) {
+                        if (window._dirtyLangTabs?.luck) window._dirtyLangTabs.luck = false;
                         window.initLuckDashboard();
                     }
                 }
                 if (targetTab === 'home') {
                     if (window.loadDailyFarmOrder) window.loadDailyFarmOrder(window.currentFarmOrderGame || 'genshin');
                     if (window.loadAccountsManagement) window.loadAccountsManagement();
+                    if (window._dirtyLangTabs?.homeBriefing && typeof window.loadMorningBriefing === "function") {
+                        window._dirtyLangTabs.homeBriefing = false;
+                        window.loadMorningBriefing();
+                    }
                 }
                 if (targetTab === 'config' && window.loadAccountsManagement) {
                     window.loadAccountsManagement();

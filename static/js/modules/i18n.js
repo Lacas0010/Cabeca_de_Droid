@@ -5,7 +5,7 @@ if (typeof window !== "undefined") {
             get: function() {
                 return (window.currentLang === "en") || 
                        (window.getLanguage && window.getLanguage() === "en") || 
-                       (localStorage.getItem("hoyo_app_language") === "en");
+                       (localStorage.getItem("app_lang") === "en");
             },
             configurable: true
         });

@@ -1,10 +1,95 @@
 import re
+import unicodedata
 from typing import Dict, List, Tuple, Optional, Any, Union
 import database
-from build_calculator import score_relic, normalize_slot_name, calculate_stat_breakpoints, get_meta_data
+from build_calculator import score_relic, normalize_slot_name, calculate_stat_breakpoints
 from schemas.simulation import RelicPieceModel, SimulateSwapRequest, SimulateSwapResponse, SimulatedStatDiff
 
 RE_NUM = re.compile(r"([0-9]+(?:\.[0-9]+)?)")
+
+_CURRENT_STAT_KEY_ALIASES = {
+    "speed": "speed",
+    "spd": "speed",
+    "vel": "speed",
+    "velocidade": "speed",
+    "crit_rate": "crit_rate",
+    "crit_pct": "crit_rate",
+    "taxa_critica": "crit_rate",
+    "taxa_crit": "crit_rate",
+    "taxa critica": "crit_rate",
+    "taxa crit": "crit_rate",
+    "crit rate": "crit_rate",
+    "crit_dmg": "crit_dmg",
+    "crit_dmg_pct": "crit_dmg",
+    "dano_critico": "crit_dmg",
+    "dano_crit": "crit_dmg",
+    "dano critico": "crit_dmg",
+    "dano crit": "crit_dmg",
+    "crit dmg": "crit_dmg",
+    "er": "er",
+    "err": "er",
+    "energy_recharge": "er",
+    "recarga_energia": "er",
+    "recarga": "er",
+    "recarga de energia": "er",
+    "energy recharge": "er",
+    "regeneracao de energia": "er",
+    "regen energia": "er",
+    "ehr": "ehr",
+    "effect_hit_rate": "ehr",
+    "taxa_acerto_efeito": "ehr",
+    "acerto de efeito": "ehr",
+    "acerto efeito": "ehr",
+    "effect hit rate": "ehr",
+    "ap": "ap",
+    "anomaly_prof": "ap",
+    "anomaly_proficiency": "ap",
+    "proficiencia_anomalia": "ap",
+    "proficiencia de anomalia": "ap",
+    "proficiencia": "ap",
+    "prof anomalia": "ap",
+    "impact": "impact",
+    "impacto": "impact",
+    "atk_pct": "atk_pct",
+    "atk%": "atk_pct",
+    "ataque%": "atk_pct",
+    "hp_pct": "hp_pct",
+    "hp%": "hp_pct",
+    "vida%": "hp_pct",
+    "def_pct": "def_pct",
+    "def%": "def_pct",
+    "defesa%": "def_pct",
+    "atk_flat": "atk_flat",
+    "atk": "atk_flat",
+    "hp_flat": "hp_flat",
+    "hp": "hp_flat",
+    "def_flat": "def_flat",
+    "def": "def_flat",
+}
+
+
+def _normalize_current_stats(raw_stats: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    """Normaliza chaves e valores numéricos de current_stats para chaves canônicas de simulação."""
+    normalized: Dict[str, Any] = {}
+    if not raw_stats:
+        return normalized
+    for raw_k, raw_v in raw_stats.items():
+        k_str = str(raw_k or "").strip()
+        k_no_acc = "".join(
+            c for c in unicodedata.normalize("NFKD", k_str.lower()) if not unicodedata.combining(c)
+        )
+        k_clean = " ".join(k_no_acc.replace(".", " ").split())
+        canon = _CURRENT_STAT_KEY_ALIASES.get(k_no_acc) or _CURRENT_STAT_KEY_ALIASES.get(k_clean)
+        num_val: Any = raw_v
+        if not isinstance(raw_v, (int, float)):
+            m = RE_NUM.search(str(raw_v))
+            if m:
+                num_val = float(m.group(1))
+        if canon:
+            normalized[canon] = num_val
+        else:
+            normalized[raw_k] = raw_v
+    return normalized
 
 
 def parse_stat_line(line: str) -> Tuple[Optional[str], float]:
@@ -205,7 +290,7 @@ def simulate_relic_swap(req: SimulateSwapRequest) -> SimulateSwapResponse:
     }
 
     stat_diffs: List[SimulatedStatDiff] = []
-    simulated_final_stats = dict(req.current_stats or {})
+    simulated_final_stats = _normalize_current_stats(req.current_stats)
 
     for k in sorted(all_stat_keys):
         o_val = old_piece_stats.get(k, 0.0)

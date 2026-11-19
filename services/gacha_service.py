@@ -5,12 +5,21 @@ import urllib.parse
 from typing import Dict, Any, List, Set, Optional, Tuple
 
 import database
-from core.config import get_resource_path
+from core.config import get_data_path, get_resource_path
 from services.roster_service import get_roster
+from static_data_manager import static_data_manager
+
+
+def _resolve_static_file(filename: str) -> str:
+    rel = os.path.join("static_data", filename)
+    data_p = get_data_path(rel)
+    if os.path.exists(data_p):
+        return data_p
+    return get_resource_path(rel)
 
 
 def _load_known_4star_names() -> Set[str]:
-    filepath = get_resource_path(os.path.join("static_data", "known_4star_characters.json"))
+    filepath = _resolve_static_file("known_4star_characters.json")
     if os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
@@ -28,7 +37,7 @@ KNOWN_4STAR_NAMES: Set[str] = _load_known_4star_names()
 
 
 def _load_slug_mappings() -> Dict[str, str]:
-    filepath = get_resource_path(os.path.join("static_data", "prydwen_slug_mappings.json"))
+    filepath = _resolve_static_file("prydwen_slug_mappings.json")
     if os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
@@ -133,9 +142,8 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
     # Adicionar personagens 5★ do roster
     for name, c in roster_map.items():
         rank_str = c.get("rank_str") or "C0"
-        rank_num = 0
-        if rank_str and len(rank_str) > 1 and rank_str[1:].isdigit():
-            rank_num = int(rank_str[1:])
+        m_rank = re.search(r"\d+", str(rank_str))
+        rank_num = int(m_rank.group(0)) if m_rank else 0
 
         icon = c.get("icon")
         gacha_art = c.get("gacha_art")
@@ -232,7 +240,7 @@ def get_current_banners(game_id: Optional[str] = None) -> Dict[str, Any]:
     Retorna os banners atuais extraídos do manifesto static_data/current_banners.json.
     Se o arquivo não existir, executa o scraper para obter e consolidar os dados em tempo real.
     """
-    filepath = get_resource_path(os.path.join("static_data", "current_banners.json"))
+    filepath = _resolve_static_file("current_banners.json")
     data = {}
     if os.path.exists(filepath):
         try:
@@ -270,10 +278,7 @@ def resolve_character_icon(game_id: str, char_name: str, item_type: str = "chara
         print(f"[WARN] Erro ao resolver ícone via tracker para {char_name}: {e}")
 
     try:
-        from static_data_manager import StaticDataManager
-
-        sdm = StaticDataManager()
-        prof = sdm.get_character_profile(clean_g, char_name)
+        prof = static_data_manager.get_character_profile(clean_g, char_name)
         if prof and prof.get("icon"):
             raw_icon = prof["icon"]
             if raw_icon.startswith("http"):
@@ -302,10 +307,7 @@ def get_character_mini_info(
     element = None
 
     try:
-        from static_data_manager import StaticDataManager
-
-        sdm = StaticDataManager()
-        prof = sdm.get_character_profile(clean_g, char_name)
+        prof = static_data_manager.get_character_profile(clean_g, char_name)
         if prof:
             if "rarity" in prof:
                 try:

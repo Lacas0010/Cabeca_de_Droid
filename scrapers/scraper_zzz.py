@@ -6,6 +6,77 @@ from bs4 import BeautifulSoup
 
 from scrapers.scraper_prydwen import extract_prydwen_card_name
 
+_ZZZ_REPLACEMENTS = {
+    "W-Engine": "W-Engine",
+    "W-Engines": "W-Engines",
+    "Audio Discs": "Discos de Áudio",
+    "Audio Disc": "Disco de Áudio",
+    "Disk Drives": "Discos de Áudio",
+    "Disk Drive": "Disco de Áudio",
+    "Disk Sets": "Conjuntos de Discos",
+    "Disk Set": "Conjunto de Discos",
+    "Mindscape Cinema": "Cinema de Mente",
+    "Mindscape Cinemas": "Cinemas de Mente",
+    "Mindscape": "Cinema (Mindscape)",
+    "Mindscapes": "Cinemas (Mindscapes)",
+    "Anomaly Mastery": "Maestria de Anomalia",
+    "Anomaly Proficiency": "Proficiência de Anomalia",
+    "Impact": "Impacto",
+    "Daze": "Atordoamento (Daze)",
+    "PEN Rate": "Taxa de Perfuração",
+    "PEN": "Perfuração",
+    "Energy Regen": "Recuperação de Energia",
+    "Basic Attack": "Ataque Básico",
+    "Dodge Counter": "Contra-ataque de Esquiva",
+    "Dodge": "Esquiva",
+    "Special Attack": "Ataque Especial",
+    "EX Special Attack": "Ataque Especial EX",
+    "Chain Attack": "Ataque em Cadeia",
+    "Ultimate": "Suprema (Ultimate)",
+    "Assist Follow-Up": "Ataque de Suporte",
+    "Defensive Assist": "Suporte Defensivo",
+    "Quick Assist": "Suporte Rápido",
+    "Additional Ability": "Habilidade Adicional",
+    "Core Passive": "Passiva de Núcleo",
+    "Core Passive Bonuses": "Bônus de Passiva de Núcleo",
+    "Substats": "Substatus",
+    "CRIT Rate": "Taxa Crítica",
+    "CRIT DMG": "Dano Crítico",
+    "Electric DMG Bonus": "Bônus de Dano Elétrico",
+    "Electric DMG": "Dano Elétrico",
+    "Physical DMG Bonus": "Bônus de Dano Físico",
+    "Physical DMG": "Dano Físico",
+    "Fire DMG Bonus": "Bônus de Dano de Fogo",
+    "Fire DMG": "Dano de Fogo",
+    "Ice DMG Bonus": "Bônus de Dano de Gelo",
+    "Ice DMG": "Dano de Gelo",
+    "Ether DMG Bonus": "Bônus de Dano de Éter",
+    "Ether DMG": "Dano de Éter",
+    "Wind DMG Bonus": "Bônus de Dano de Vento",
+    "Wind DMG": "Dano de Vento",
+    "Shiyu Defense": "Defesa de Shiyu",
+    "Deadly Assault": "Assalto Mortal (Deadly Assault)",
+    "pros": "Prós",
+    "cons": "Contras",
+    "Pros": "Prós",
+    "Cons": "Contras",
+    "Support": "Suporte",
+    "Stun": "Atordoamento (Stun)",
+    "Anomaly": "Anomalia",
+    "Attack": "Ataque",
+    "Defense": "Defesa",
+}
+_ZZZ_LOWER_MAP = {k.lower(): v for k, v in _ZZZ_REPLACEMENTS.items()}
+_ZZZ_TRANSLATE_RE = re.compile(
+    "|".join(rf"\b{re.escape(k)}\b" for k in sorted(_ZZZ_REPLACEMENTS.keys(), key=len, reverse=True)),
+    re.IGNORECASE,
+)
+
+
+def _zzz_replacer(match):
+    matched_str = match.group(0)
+    return _ZZZ_LOWER_MAP.get(matched_str.lower(), matched_str)
+
 
 class PrydwenZZZScraper:
     def __init__(self):
@@ -117,77 +188,9 @@ class PrydwenZZZScraper:
         """
         Traduz termos comuns de ZZZ de inglês para português de forma segura.
         """
-        replacements = {
-            "W-Engine": "W-Engine",
-            "W-Engines": "W-Engines",
-            "Audio Discs": "Discos de Áudio",
-            "Audio Disc": "Disco de Áudio",
-            "Disk Drives": "Discos de Áudio",
-            "Disk Drive": "Disco de Áudio",
-            "Disk Sets": "Conjuntos de Discos",
-            "Disk Set": "Conjunto de Discos",
-            "Mindscape Cinema": "Cinema de Mente",
-            "Mindscape Cinemas": "Cinemas de Mente",
-            "Mindscape": "Cinema (Mindscape)",
-            "Mindscapes": "Cinemas (Mindscapes)",
-            "Anomaly Mastery": "Maestria de Anomalia",
-            "Anomaly Proficiency": "Proficiência de Anomalia",
-            "Impact": "Impacto",
-            "Daze": "Atordoamento (Daze)",
-            "PEN Rate": "Taxa de Perfuração",
-            "PEN": "Perfuração",
-            "Energy Regen": "Recuperação de Energia",
-            "Basic Attack": "Ataque Básico",
-            "Dodge Counter": "Contra-ataque de Esquiva",
-            "Dodge": "Esquiva",
-            "Special Attack": "Ataque Especial",
-            "EX Special Attack": "Ataque Especial EX",
-            "Chain Attack": "Ataque em Cadeia",
-            "Ultimate": "Suprema (Ultimate)",
-            "Assist Follow-Up": "Ataque de Suporte",
-            "Defensive Assist": "Suporte Defensivo",
-            "Quick Assist": "Suporte Rápido",
-            "Additional Ability": "Habilidade Adicional",
-            "Core Passive": "Passiva de Núcleo",
-            "Core Passive Bonuses": "Bônus de Passiva de Núcleo",
-            "Substats": "Substatus",
-            "CRIT Rate": "Taxa Crítica",
-            "CRIT DMG": "Dano Crítico",
-            "Electric DMG Bonus": "Bônus de Dano Elétrico",
-            "Electric DMG": "Dano Elétrico",
-            "Physical DMG Bonus": "Bônus de Dano Físico",
-            "Physical DMG": "Dano Físico",
-            "Fire DMG Bonus": "Bônus de Dano de Fogo",
-            "Fire DMG": "Dano de Fogo",
-            "Ice DMG Bonus": "Bônus de Dano de Gelo",
-            "Ice DMG": "Dano de Gelo",
-            "Ether DMG Bonus": "Bônus de Dano de Éter",
-            "Ether DMG": "Dano de Éter",
-            "Wind DMG Bonus": "Bônus de Dano de Vento",
-            "Wind DMG": "Dano de Vento",
-            "Shiyu Defense": "Defesa de Shiyu",
-            "Deadly Assault": "Assalto Mortal (Deadly Assault)",
-            "pros": "Prós",
-            "cons": "Contras",
-            "Pros": "Prós",
-            "Cons": "Contras",
-            "Support": "Suporte",
-            "Stun": "Atordoamento (Stun)",
-            "Anomaly": "Anomalia",
-            "Attack": "Ataque",
-            "Defense": "Defesa",
-        }
-        sorted_keys = sorted(replacements.keys(), key=len, reverse=True)
-        pattern = re.compile("|".join(rf"\b{re.escape(k)}\b" for k in sorted_keys), re.IGNORECASE)
-
-        def replacer(match):
-            matched_str = match.group(0)
-            for k in sorted_keys:
-                if k.lower() == matched_str.lower():
-                    return replacements[k]
-            return matched_str
-
-        return pattern.sub(replacer, text)
+        if not text:
+            return text
+        return _ZZZ_TRANSLATE_RE.sub(_zzz_replacer, text)
 
     def scrape_agent_guide(self, agent_name: str, url: str) -> dict:
         """

@@ -2,22 +2,38 @@ import os
 import re
 import json
 import unicodedata
-from typing import Dict, List, Any, Optional
-from core.paths import get_data_dir, get_resource_path
+from typing import Dict, List, Any, Optional, Tuple
+from core.paths import get_data_dir, get_data_path, get_resource_path
 
 BASE_DIR = get_data_dir()
 STATIC_DATA_DIR = os.path.join(BASE_DIR, "static_data")
 
-# Cache em memória para acesso ultrarrápido aos dados estáticos
+# Cache em memória para acesso ultrarrápido aos dados estáticos e índice de guias
 _CACHE: Dict[str, Any] = {}
+_GUIDE_DIR_INDEX_CACHE: Dict[str, Tuple[float, List[str]]] = {}
+_GUIDE_PRELIM_CACHE: Dict[str, Tuple[float, bool]] = {}
+
+_RE_SLUG_PUNCT = re.compile(r"[\'\"’`\(\)•·・:!?,]")
+_RE_SLUG_SEP = re.compile(r"[\s\-_/\.]+")
+_RE_META_PCT = re.compile(r"\s*\(\s*\d+(?:\.\d+)?%[^)]*\)")
+_RE_META_RANK = re.compile(r"\s*\(\s*[SR]\d+\s*\)")
+_RE_META_PC = re.compile(r"\s*\(\s*\d+-[Pp][Cc]\s*\)")
+_RE_META_PECAS = re.compile(r"\s*\(\s*\d+\s*peças\s*\)", re.IGNORECASE)
+_RE_META_EFIC = re.compile(r"\s*\(\s*\d+\s*de eficácia\s*\)", re.IGNORECASE)
+_RE_META_EMDASH = re.compile(r"\s*-\s*—\s*$")
+_RE_META_DASH = re.compile(r"\s*-\s*$")
+_RE_META_STARS = re.compile(r"\s*[1-5]\s*[\*★]\s*$")
+_RE_BOLD_ITEM = re.compile(r"-\s*\*\*([^*]+)\*\*")
 
 
 def _load_json_file(filename: str, default: Any) -> Any:
-    """Carrega um arquivo JSON da pasta static_data com cache em memória."""
+    """Carrega um arquivo JSON da pasta static_data com cache em memória (priorizando get_data_path)."""
     if filename in _CACHE:
         return _CACHE[filename]
 
-    filepath = get_resource_path(os.path.join("static_data", filename))
+    rel = os.path.join("static_data", filename)
+    data_p = get_data_path(rel)
+    filepath = data_p if os.path.exists(data_p) else get_resource_path(rel)
     if os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
@@ -52,8 +68,8 @@ def normalize_slug_text(text: str) -> str:
         return ""
     text = unicodedata.normalize("NFKD", str(text)).encode("ASCII", "ignore").decode("utf-8")
     text = text.lower().strip()
-    text = re.sub(r"[\'\"’`\(\)•·・:!?,]", "", text)
-    text = re.sub(r"[\s\-_/\.]+", " ", text)
+    text = _RE_SLUG_PUNCT.sub("", text)
+    text = _RE_SLUG_SEP.sub(" ", text)
     return text.strip()
 
 
@@ -163,7 +179,11 @@ def resolve_character_canonical_slug(
 
 
 def find_best_guide_file(
-    game_id: str, char_name: str, element: str = "", roster_data: Optional[List[Dict[str, Any]]] = None
+    game_id: str,
+    char_name: str,
+    element: str = "",
+    roster_data: Optional[List[Dict[str, Any]]] = None,
+    canonical_slug: Optional[str] = None,
 ) -> str:
     """Encontra o arquivo Markdown do guia oficial correspondente ao personagem com busca tolerante a variações."""
     g = game_id.lower().strip()
@@ -172,7 +192,7 @@ def find_best_guide_file(
     if not os.path.exists(guides_dir):
         return ""
 
-    canonical = resolve_character_canonical_slug(g, char_name, element, roster_data)
+    canonical = canonical_slug or resolve_character_canonical_slug(g, char_name, element, roster_data)
 
     # 1. Tentar arquivos candidatos exatos
     candidate_names = [
@@ -187,9 +207,15 @@ def find_best_guide_file(
 
     def _is_preliminary_file(fpath: str) -> bool:
         try:
+            mtime = os.path.getmtime(fpath)
+            cached_p = _GUIDE_PRELIM_CACHE.get(fpath)
+            if cached_p and cached_p[0] == mtime:
+                return cached_p[1]
             with open(fpath, "r", encoding="utf-8", errors="ignore") as gf:
                 head = gf.read(400)
-                return "ai_preliminary" in head or "Guia Preliminar" in head
+                is_prelim = "ai_preliminary" in head or "Guia Preliminar" in head
+            _GUIDE_PRELIM_CACHE[fpath] = (mtime, is_prelim)
+            return is_prelim
         except Exception:
             return False
 
@@ -203,12 +229,18 @@ def find_best_guide_file(
             if not prelim_fallback:
                 prelim_fallback = full_p
 
-    # 2. Varrer diretório de guias buscando correspondência aproximada/normalizada
+    # 2. Varrer diretório de guias com índice cacheado por mtime do diretório
     try:
         norm_target = normalize_slug_text(canonical)
         norm_char = normalize_slug_text(char_name)
 
-        all_files = [f for f in os.listdir(guides_dir) if f.endswith(".md")]
+        dir_mtime = os.path.getmtime(guides_dir)
+        cached_dir = _GUIDE_DIR_INDEX_CACHE.get(guides_dir)
+        if cached_dir and cached_dir[0] == dir_mtime:
+            all_files = cached_dir[1]
+        else:
+            all_files = [f for f in os.listdir(guides_dir) if f.endswith(".md")]
+            _GUIDE_DIR_INDEX_CACHE[guides_dir] = (dir_mtime, all_files)
         for fname in all_files:
             f_stem = fname[:-3]
             f_norm = normalize_slug_text(f_stem)
@@ -256,14 +288,14 @@ def clean_meta_item_name(s: str) -> str:
     if not s:
         return ""
     s = s.replace("**", "").replace("`", "").strip()
-    s = re.sub(r"\s*\(\s*\d+(?:\.\d+)?%[^)]*\)", "", s)
-    s = re.sub(r"\s*\(\s*[SR]\d+\s*\)", "", s)
-    s = re.sub(r"\s*\(\s*\d+-[Pp][Cc]\s*\)", "", s)
-    s = re.sub(r"\s*\(\s*\d+\s*peças\s*\)", "", s, flags=re.I)
-    s = re.sub(r"\s*\(\s*\d+\s*de eficácia\s*\)", "", s, flags=re.I)
-    s = re.sub(r"\s*-\s*—\s*$", "", s)
-    s = re.sub(r"\s*-\s*$", "", s)
-    s = re.sub(r"\s*[1-5]\s*[\*★]\s*$", "", s)
+    s = _RE_META_PCT.sub("", s)
+    s = _RE_META_RANK.sub("", s)
+    s = _RE_META_PC.sub("", s)
+    s = _RE_META_PECAS.sub("", s)
+    s = _RE_META_EFIC.sub("", s)
+    s = _RE_META_EMDASH.sub("", s)
+    s = _RE_META_DASH.sub("", s)
+    s = _RE_META_STARS.sub("", s)
     return s.strip()
 
 
@@ -370,7 +402,10 @@ def parse_meta_target(
     stat_en_to_pt = get_stat_mappings()
     benchmarks_db = get_character_benchmarks().get(game_id, {})
 
-    guide_path = find_best_guide_file(game_id, char_name, element, roster_data)
+    canonical_slug = resolve_character_canonical_slug(game_id, char_name, element, roster_data)
+    guide_path = find_best_guide_file(
+        game_id, char_name, element, roster_data, canonical_slug=canonical_slug
+    )
     if not guide_path or not os.path.exists(guide_path):
         try:
             from services.ai_build_generator import AIBuildGenerator
@@ -413,7 +448,7 @@ def parse_meta_target(
             ],
         )
         for l in w_lines:
-            m = re.search(r"-\s*\*\*([^*]+)\*\*", l)
+            m = _RE_BOLD_ITEM.search(l)
             if m:
                 w_name = clean_meta_item_name(m.group(1))
                 if (
@@ -440,7 +475,7 @@ def parse_meta_target(
             ],
         )
         for l in s_lines:
-            m = re.search(r"-\s*\*\*([^*]+)\*\*", l)
+            m = _RE_BOLD_ITEM.search(l)
             if m:
                 s_name = clean_meta_item_name(m.group(1))
                 if (
@@ -539,7 +574,6 @@ def parse_meta_target(
 
     # 5. Resolução Inteligente de Benchmarks Específicos do Personagem
     guide_slug = os.path.basename(guide_path).replace(".md", "").lower() if guide_path else ""
-    canonical_slug = resolve_character_canonical_slug(game_id, char_name, element, roster_data)
 
     char_bench = benchmarks_db.get(canonical_slug)
     if not char_bench and guide_slug:

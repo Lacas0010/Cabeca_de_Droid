@@ -3,19 +3,19 @@
 // ==========================================================================
 
 // Importação ordenada dos módulos desacoplados
-import "./modules/i18n.js?v=28.0";
-import "./modules/api_client.js?v=28.0";
+import "./modules/i18n.js?v=29.0";
+import "./modules/api_client.js?v=29.0";
 import "./modules/modal.js?v=25.0";
-import "./modules/navigation.js?v=25.0";
+import "./modules/navigation.js?v=26.0";
 import "./modules/config_manager.js?v=27.0";
-import "./modules/sync_manager.js?v=25.0";
-import "./modules/endgame.js?v=25.0";
-import "./modules/roster.js?v=30.0";
+import "./modules/sync_manager.js?v=26.0";
+import "./modules/endgame.js?v=26.0";
+import "./modules/roster.js?v=31.0";
 import "./modules/roster_charts.js?v=1.0";
-import "./modules/card_exporter.js?v=1.0";
-import "./modules/build_comparator.js?v=27.0";
-import "./modules/chat_rag.js?v=25.0";
-import "./modules/farming.js?v=26.0";
+import "./modules/card_exporter.js?v=2.0";
+import "./modules/build_comparator.js?v=28.0";
+import "./modules/chat_rag.js?v=26.0";
+import "./modules/farming.js?v=27.0";
 import "./modules/updater_ui.js?v=3.0";
 
 // Módulos pesados carregados sob demanda via import() dinâmico:
@@ -24,8 +24,8 @@ let _gachaModulesPromise = null;
 window.loadGachaModules = function() {
     if (!_gachaModulesPromise) {
         _gachaModulesPromise = Promise.all([
-            import("./modules/gacha_sim.js?v=25.0"),
-            import("./modules/gacha_tracker.js?v=24.0")
+            import("./modules/gacha_sim.js?v=26.0"),
+            import("./modules/gacha_tracker.js?v=25.0")
         ]).then(() => {
             console.log("[PERF] Módulos de Gacha carregados dinamicamente sob demanda.");
         }).catch(err => {
@@ -124,10 +124,15 @@ document.addEventListener("DOMContentLoaded", () => {
     loadRoster("hsr");
 
     // Pré-carregamento não bloqueante em background no tempo ocioso do navegador
+    const preloadGacha = () => {
+        window.loadGachaModules().catch(err => {
+            console.warn("[PERF] Pré-carregamento em background de Gacha falhou:", err);
+        });
+    };
     if ("requestIdleCallback" in window) {
-        requestIdleCallback(() => window.loadGachaModules(), { timeout: 4000 });
+        requestIdleCallback(preloadGacha, { timeout: 4000 });
     } else {
-        setTimeout(() => window.loadGachaModules(), 3000);
+        setTimeout(preloadGacha, 3000);
     }
 });
 

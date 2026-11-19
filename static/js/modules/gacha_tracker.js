@@ -669,7 +669,9 @@ window.addEventListener("app:languageChanged", () => {
     if (typeof updateBannerFilterOptions === "function") {
         updateBannerFilterOptions(window.currentTrackerGame || "hsr");
     }
-    if (typeof window.loadGachaTracker === "function") {
+    const tabGacha = document.getElementById("tab-gacha");
+    const trackerView = document.getElementById("gacha-view-tracker");
+    if (tabGacha?.classList.contains("active") && trackerView?.classList.contains("active") && typeof window.loadGachaTracker === "function") {
         window.loadGachaTracker(window.currentTrackerGame || "hsr");
     }
 });

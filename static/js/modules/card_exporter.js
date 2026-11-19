@@ -3,10 +3,6 @@
 // Gerador de Cards HD (Build & Tier List) e Modal de Exportação PNG
 // ==========================================================================
 
-function _cardIsEn() {
-    return Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
-}
-
 function getZzzPrydwenSlug(name) {
     if (!name) return "";
     const noAccents = String(name).normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -102,7 +98,7 @@ async function generateBuildCardCanvas(char, gameId) {
         wind: { primary: "#10b981", accent: "#059669", bg: "rgba(16, 185, 129, 0.15)", pill: "#059669" }
     };
 
-    const isEn = _cardIsEn();
+    const isEn = Boolean(window.isEn);
     const elemKey = (char.element || "").toLowerCase();
     const theme = elemColors[elemKey] || elemColors.physical;
 
@@ -947,7 +943,7 @@ async function generateBuildCardCanvas(char, gameId) {
 window.generateTierListCardCanvas = async (gameId, auditData) => {
     const gameNames = { hsr: "HONKAI: STAR RAIL", genshin: "GENSHIN IMPACT", zzz: "ZENLESS ZONE ZERO" };
     const themeColors = { hsr: "#ec4899", genshin: "#38bdf8", zzz: "#f59e0b" };
-    const isEn = _cardIsEn();
+    const isEn = Boolean(window.isEn);
     const themeColor = themeColors[gameId] || "#a855f7";
     const tierList = (auditData && auditData.tier_list) || {};
     const tierKeys = ["S+", "S", "A", "B", "C/D"];
@@ -1207,7 +1203,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentGeneratedBlob = null;
 
     const openExportModalHandler = async () => {
-        const isEn = _cardIsEn();
+        const isEn = Boolean(window.isEn);
         if (!window.currentInspectorChar || !window.currentInspectorGameId) {
 
     showToast(isEn ? "Error: No character selected." : "Erro: Nenhum personagem selecionado.");
@@ -1317,7 +1313,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btnDownloadCardImg) {
             btnDownloadCardImg.addEventListener("click", () => {
                 if (!currentGeneratedCanvas) return;
-                const isEn = _cardIsEn();
+                const isEn = Boolean(window.isEn);
 
     const charName = window.currentInspectorChar ? window.currentInspectorChar.name : (isEn ? "Character" : "Personagem");
                 const gameId = window.currentInspectorGameId || "hoyo";
@@ -1351,7 +1347,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 showToast("Navegadores em conexões HTTP de celular/rede local bloqueiam a cópia direta. Baixando PNG...");
-                const isEn = _cardIsEn();
+                const isEn = Boolean(window.isEn);
                 const charName = window.currentInspectorChar ? window.currentInspectorChar.name : (isEn ? "Character" : "Personagem");
                 const gameId = window.currentInspectorGameId || "hoyo";
                 const link = document.createElement("a");

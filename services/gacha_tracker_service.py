@@ -1,11 +1,13 @@
 import os
 import json
+import time
 import urllib.parse
 import unicodedata
 from datetime import datetime
 from typing import Dict, List, Tuple, Optional, Any, Union
 
 import database
+from core.config import get_data_path, get_resource_path
 from schemas.gacha_tracker import (
     GachaPullItem,
     FiveStarRecord,
@@ -52,14 +54,52 @@ STANDARD_5_STARS = {
     "zzz": ["koleda", "nekomata", "grace", "rina", "lycaon", "soldier 11", "soldado 11"],
 }
 
-# Cache em memória para os manifestos de ícones estáticos
+# Cache em memória para os manifestos de ícones estáticos e ícones do SQLite
 _STATIC_ICONS_CACHE: Dict[str, Dict[str, str]] = {}
+_DB_ICONS_CACHE: Dict[str, Tuple[float, Dict[str, str]]] = {}
+_DB_ICONS_TTL = 60.0
 
 
-def get_gacha_item_icon(game_id: str, item_name: str, item_type: str = "character") -> str:
+def _get_db_icons_map(clean_game: str) -> Dict[str, str]:
+    """Carrega em lote os ícones de personagens e armas do SQLite para evitar queries N+1."""
+    now = time.time()
+    cached = _DB_ICONS_CACHE.get(clean_game)
+    if cached and (now - cached[0]) < _DB_ICONS_TTL:
+        return cached[1]
+
+    icons_map: Dict[str, str] = {}
+    try:
+        with database.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT name, icon, weapon_name, weapon_icon FROM characters WHERE game_id = ?",
+                (clean_game,),
+            )
+            for row in cursor.fetchall():
+                c_name = str(row["name"] or "").strip().lower()
+                c_icon = str(row["icon"] or "").strip()
+                if c_name and c_icon and c_name not in icons_map:
+                    icons_map[c_name] = c_icon
+                w_name = str(row["weapon_name"] or "").strip().lower()
+                w_icon = str(row["weapon_icon"] or "").strip()
+                if w_name and w_icon and w_name not in icons_map:
+                    icons_map[w_name] = w_icon
+    except Exception:
+        pass
+
+    _DB_ICONS_CACHE[clean_game] = (now, icons_map)
+    return icons_map
+
+
+def get_gacha_item_icon(
+    game_id: str,
+    item_name: str,
+    item_type: str = "character",
+    db_icons_map: Optional[Dict[str, str]] = None,
+) -> str:
     """
     Resolve o ícone oficial ou arte do item (personagem, cone, arma, motor-w ou bangboo)
-    utilizando cache local de manifestos, banco SQLite e fallbacks com proxy.
+    utilizando cache local de manifestos, mapa em lote do banco SQLite e fallbacks com proxy.
     """
     clean_game = (game_id or "hsr").lower().strip()
     name_clean = (item_name or "").strip()
@@ -70,7 +110,11 @@ def get_gacha_item_icon(game_id: str, item_name: str, item_type: str = "characte
     # 1. Carrega manifest de ícones estáticos do jogo se não estiver em cache
     if clean_game not in _STATIC_ICONS_CACHE or not _STATIC_ICONS_CACHE[clean_game]:
         _STATIC_ICONS_CACHE[clean_game] = {}
-        manifest_path = os.path.join(database.BASE_DIR, "static_data", f"{clean_game}_gacha_icons.json")
+        rel_icon_path = os.path.join("static_data", f"{clean_game}_gacha_icons.json")
+        data_manifest = get_data_path(rel_icon_path)
+        manifest_path = data_manifest if os.path.exists(data_manifest) else get_resource_path(rel_icon_path)
+        if not os.path.exists(manifest_path):
+            manifest_path = os.path.join(database.BASE_DIR, "static_data", f"{clean_game}_gacha_icons.json")
         if os.path.exists(manifest_path):
             try:
                 with open(manifest_path, "r", encoding="utf-8") as f:
@@ -117,33 +161,13 @@ def get_gacha_item_icon(game_id: str, item_name: str, item_type: str = "characte
             return f"/api/proxy_image?url={urllib.parse.quote(cached_icon, safe='')}"
         return cached_icon
 
-    # 2. Consulta tabela characters no banco SQLite
-    try:
-        with database.get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute(
-                "SELECT icon FROM characters WHERE game_id = ? AND LOWER(name) = ? LIMIT 1",
-                (clean_game, name_lower),
-            )
-            row = cursor.fetchone()
-            if row and row["icon"]:
-                raw_url = str(row["icon"])
-                if raw_url.startswith("http"):
-                    return f"/api/proxy_image?url={urllib.parse.quote(raw_url, safe='')}"
-                return raw_url
-
-            cursor.execute(
-                "SELECT weapon_icon FROM characters WHERE game_id = ? AND LOWER(weapon_name) = ? LIMIT 1",
-                (clean_game, name_lower),
-            )
-            row_w = cursor.fetchone()
-            if row_w and row_w["weapon_icon"]:
-                raw_w = str(row_w["weapon_icon"])
-                if raw_w.startswith("http"):
-                    return f"/api/proxy_image?url={urllib.parse.quote(raw_w, safe='')}"
-                return raw_w
-    except Exception:
-        pass
+    # 2. Consulta mapa em lote da tabela characters no banco SQLite (sem queries N+1)
+    icons_lookup = db_icons_map if db_icons_map is not None else _get_db_icons_map(clean_game)
+    db_icon = icons_lookup.get(name_lower)
+    if db_icon:
+        if db_icon.startswith("http"):
+            return f"/api/proxy_image?url={urllib.parse.quote(db_icon, safe='')}"
+        return db_icon
 
     # 3. Fallbacks inteligentes por jogo
     slug = name_lower.replace(" ", "-").replace("'", "").replace("[", "").replace("]", "").replace(":", "")
@@ -200,13 +224,15 @@ def get_gacha_item_icon(game_id: str, item_name: str, item_type: str = "characte
 
 
 def reload_icons_cache(game_id: Optional[str] = None) -> None:
-    """Invalida e recarrega o cache de manifestos de ícones estáticos em memória."""
-    global _STATIC_ICONS_CACHE
+    """Invalida e recarrega o cache de manifestos de ícones estáticos e ícones DB em memória."""
+    global _STATIC_ICONS_CACHE, _DB_ICONS_CACHE
     if game_id:
         clean = game_id.lower().strip()
         _STATIC_ICONS_CACHE.pop(clean, None)
+        _DB_ICONS_CACHE.pop(clean, None)
     else:
         _STATIC_ICONS_CACHE.clear()
+        _DB_ICONS_CACHE.clear()
 
 
 def normalize_banner_category(game_id: str, gacha_type: str, fallback_cat: str = "") -> str:
@@ -268,9 +294,11 @@ def normalize_banner_category(game_id: str, gacha_type: str, fallback_cat: str =
 def is_standard_5_star(game_id: str, item_name: str) -> bool:
     """Verifica se o item/personagem 5★ pertence ao mochileiro permanente (derrota no 50/50)."""
     game_clean = (game_id or "hsr").lower().strip()
-    name_clean = (item_name or "").lower().strip()
+    name_clean = " ".join((item_name or "").lower().strip().split())
+    if not name_clean:
+        return False
     std_list = STANDARD_5_STARS.get(game_clean, [])
-    return any(s in name_clean or name_clean in s for s in std_list)
+    return name_clean in std_list
 
 
 def calculate_gacha_tracker_stats(game_id: str, uid: Optional[str] = None) -> GachaTrackerOverviewResponse:
@@ -295,6 +323,7 @@ def calculate_gacha_tracker_stats(game_id: str, uid: Optional[str] = None) -> Ga
         )
 
     all_pulls = database.get_gacha_pulls(clean_game, uid=target_uid, limit=50000)
+    db_icons_map = _get_db_icons_map(clean_game)
 
     # Separação por categorias completas
     pulls_by_cat: Dict[str, List[Dict[str, Any]]] = {
@@ -364,7 +393,7 @@ def calculate_gacha_tracker_stats(game_id: str, uid: Optional[str] = None) -> Ga
                     is_rate_up = not is_std
 
                 # Encontra o ícone oficial do item
-                icon_url = get_gacha_item_icon(clean_game, name, itype)
+                icon_url = get_gacha_item_icon(clean_game, name, itype, db_icons_map=db_icons_map)
 
                 five_stars.append(
                     FiveStarRecord(
@@ -526,11 +555,12 @@ def get_gacha_pulls_history_detailed(
         offset=offset,
     )
 
+    db_icons_map = _get_db_icons_map(clean_game)
     pull_items: List[GachaPullItem] = []
     for r in rows:
         name = str(r.get("item_name") or "Item Desconhecido")
         itype = str(r.get("item_type") or "character")
-        icon_url = get_gacha_item_icon(clean_game, name, itype)
+        icon_url = get_gacha_item_icon(clean_game, name, itype, db_icons_map=db_icons_map)
 
         pity_val = r.get("pity_count")
         pity_int = int(pity_val) if pity_val is not None else 1

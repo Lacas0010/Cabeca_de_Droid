@@ -77,10 +77,17 @@ function startPollingStatus(gameId) {
     const msg = loggerDiv.querySelector(".logger-message");
     const term = loggerDiv.querySelector(".logger-terminal");
     
+    let consecutiveErrors = 0;
+    const MAX_POLL_ERRORS = 10;
+
     activePolling[gameId] = setInterval(async () => {
         try {
             const res = await fetch(`/api/status/${gameId}`);
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
             const status = await res.json();
+            consecutiveErrors = 0;
             
             const rawProgress = Math.max(0, Math.min(1, Number(status.progress) || 0));
             const progressPct = Math.round(rawProgress * 100);
@@ -90,7 +97,7 @@ function startPollingStatus(gameId) {
             msg.innerText = status.message;
             
             // Une e exibe a lista de logs no console retrátil
-            term.innerText = status.logs.join("\n");
+            term.innerText = (status.logs || []).join("\n");
             term.scrollTop = term.scrollHeight; // Auto-scroll
             
             if (!status.running) {
@@ -107,7 +114,17 @@ function startPollingStatus(gameId) {
                 }, 1000);
             }
         } catch (err) {
-            console.error(`Erro ao consultar status de ${gameId}:`, err);
+            consecutiveErrors += 1;
+            console.error(`Erro ao consultar status de ${gameId} (${consecutiveErrors}/${MAX_POLL_ERRORS}):`, err);
+            if (consecutiveErrors >= MAX_POLL_ERRORS) {
+                clearInterval(activePolling[gameId]);
+                activePolling[gameId] = null;
+                const errText = window.isEn
+                    ? "Connection lost while checking sync status."
+                    : "Conexão perdida ao acompanhar o status da sincronização.";
+                if (msg) msg.innerText = errText;
+                if (typeof showToast === "function") showToast(errText, "error");
+            }
         }
     }, 1000);
 }
@@ -611,7 +628,7 @@ window.initHelpHubHandlers = () => {
             const details = card?.querySelector(".help-card-details");
             if (details) {
                 const isOpen = details.classList.contains("open");
-                const isEn = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+                const isEn = Boolean(window.isEn || (window.getLanguage && window.getLanguage() === "en") || (localStorage.getItem("app_lang") === "en"));
                 if (isOpen) {
                     details.classList.remove("open");
                     toggleBtn.innerHTML = `<i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">${isEn ? "Details" : "Detalhes"}</span>`;

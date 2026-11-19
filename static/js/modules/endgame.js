@@ -23,12 +23,8 @@ const ENDGAME_MODE_EN_MAP = {
     "Cavidade Zero": "Hollow Zero"
 };
 
-function checkIsEn() {
-    return Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en');
-}
-
 function formatEndgameModeName(name) {
-    if (!checkIsEn() || !name) return name;
+    if (!Boolean(window.isEn) || !name) return name;
     if (ENDGAME_MODE_EN_MAP[name]) return ENDGAME_MODE_EN_MAP[name];
     let res = String(name);
     for (const [pt, en] of Object.entries(ENDGAME_MODE_EN_MAP)) {
@@ -38,7 +34,7 @@ function formatEndgameModeName(name) {
 }
 
 function formatEndgameStage(stage) {
-    if (!checkIsEn() || !stage) return stage;
+    if (!Boolean(window.isEn) || !stage) return stage;
     let s = String(stage);
     return s.replace(/Piso\s*(\d+)/gi, 'Floor $1')
             .replace(/Câmara\s*(\d+)/gi, 'Chamber $1')
@@ -57,7 +53,7 @@ function formatEndgameStage(stage) {
 }
 
 function formatEndgameTeamName(teamName) {
-    if (!checkIsEn() || !teamName) return teamName;
+    if (!Boolean(window.isEn) || !teamName) return teamName;
     let t = String(teamName);
     return t.replace(/Lado\s*(\d+)/gi, 'Side $1')
             .replace(/Primeira Metade/gi, 'First Half')
@@ -68,7 +64,7 @@ function formatEndgameTeamName(teamName) {
 }
 
 function formatEndgameRole(role) {
-    if (!checkIsEn() || !role) return role;
+    if (!Boolean(window.isEn) || !role) return role;
     const rLower = String(role).toLowerCase().trim();
     const roleMap = {
         'dps principal': 'Main DPS',
@@ -91,7 +87,7 @@ function formatEndgameRole(role) {
 }
 
 function formatSynergyReason(reason) {
-    if (!checkIsEn() || !reason) return reason;
+    if (!Boolean(window.isEn) || !reason) return reason;
     let r = String(reason);
     return r.replace(/Mesmo papel tático/gi, 'Same tactical role')
             .replace(/e mesmo elemento/gi, 'and same element')
@@ -123,12 +119,12 @@ function normalizeEndgameChar(char, gameId) {
     // Normaliza nomes desconhecidos do Desbravador e Viajante
     if (!name || name.toLowerCase().includes("desconhecido") || name.toLowerCase().includes("avatar")) {
         if (id.startsWith("800") || id.startsWith("801") || name.includes("8009") || name.includes("800")) {
-            name = checkIsEn() ? "Trailblazer" : "Desbravador(a)";
+            name = Boolean(window.isEn) ? "Trailblazer" : "Desbravador(a)";
             char.name = name;
             if (!char.element) char.element = "ice";
             char.rarity = 5;
         } else if (id === "10000005" || id === "10000007" || name.includes("1000000")) {
-            name = checkIsEn() ? "Traveler" : "Viajante";
+            name = Boolean(window.isEn) ? "Traveler" : "Viajante";
             char.name = name;
             char.rarity = 5;
         }
@@ -191,14 +187,14 @@ function renderEndgameTeamCard(team, gameId) {
 
             const endgameCharName = typeof formatCharacterName === 'function' ? formatCharacterName(char.name) : char.name;
             charsHtml += `
-                <div class="endgame-char-mini ${elemClass} ${rarityClass}" data-char-name="${char.name}" title="${endgameCharName} (${checkIsEn() ? 'Lv.' : 'Nv.'} ${char.level || 80}) • ${checkIsEn() ? 'Inspect Build' : 'Inspecionar Build'}">
+                <div class="endgame-char-mini ${elemClass} ${rarityClass}" data-char-name="${char.name}" title="${endgameCharName} (${Boolean(window.isEn) ? 'Lv.' : 'Nv.'} ${char.level || 80}) • ${Boolean(window.isEn) ? 'Inspect Build' : 'Inspecionar Build'}">
                     <div class="endgame-char-avatar-box" style="position: relative; width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; flex-shrink: 0; display: inline-block;">
                         <img src="${avatarSrc}" class="endgame-char-avatar" width="38" height="38" loading="lazy" decoding="async" style="width: 38px; height: 38px; min-width: 38px; min-height: 38px; max-width: 38px; max-height: 38px; border-radius: 50%; object-fit: cover; display: block;" onerror="this.onerror=null; this.src='${fallbackIcon}';" alt="${endgameCharName}">
                         ${elemKey && elemKey !== "bangboo" ? `<img src="${typeof getElementIconUrl === 'function' ? getElementIconUrl(gameId, char.element || elemKey) : `/assets/elements/${gameId}_${elemKey}.png?v=2`}" class="endgame-char-elem-icon" width="14" height="14" loading="lazy" decoding="async" style="position: absolute; bottom: -2px; right: -2px; width: 14px; height: 14px; min-width: 14px; min-height: 14px; max-width: 14px; max-height: 14px; border-radius: 50%; padding: 1px; object-fit: contain;" onerror="this.style.display='none';" alt="">` : ""}
                         ${rankBadge}
                     </div>
                     <span class="endgame-char-name-label">${endgameCharName}</span>
-                    <span class="endgame-char-lvl-label">${checkIsEn() ? 'Lv.' : 'Nv.'} ${char.level || 80}</span>
+                    <span class="endgame-char-lvl-label">${Boolean(window.isEn) ? 'Lv.' : 'Nv.'} ${char.level || 80}</span>
                 </div>
             `;
         });
@@ -209,8 +205,8 @@ function renderEndgameTeamCard(team, gameId) {
     if (team.monsters && team.monsters.length > 0) {
         monstersHtml = `<div class="endgame-enemies-row">`;
         team.monsters.forEach(m => {
-            const mName = m.name || (checkIsEn() ? "Enemy" : "Inimigo");
-            const mLvl = m.level ? ` (${checkIsEn() ? 'Lv.' : 'Nv.'}${m.level})` : "";
+            const mName = m.name || (Boolean(window.isEn) ? "Enemy" : "Inimigo");
+            const mLvl = m.level ? ` (${Boolean(window.isEn) ? 'Lv.' : 'Nv.'}${m.level})` : "";
             monstersHtml += `<span class="endgame-enemy-chip" title="${mName}${mLvl}"><i class="fa-solid fa-skull"></i> ${mName}${mLvl}</span>`;
         });
         monstersHtml += `</div>`;
@@ -223,7 +219,7 @@ function renderEndgameTeamCard(team, gameId) {
                     <span class="endgame-side-dot"></span>
                     <span>${formatEndgameTeamName(team.name)}</span>
                 </div>
-                <span style="font-size: 10.5px; color: #94a3b8; font-weight: 500;">${(team.characters || []).length} ${checkIsEn() ? "Deployed" : "Mobilizados"}</span>
+                <span style="font-size: 10.5px; color: #94a3b8; font-weight: 500;">${(team.characters || []).length} ${Boolean(window.isEn) ? "Deployed" : "Mobilizados"}</span>
             </div>
             ${charsHtml}
             ${monstersHtml}
@@ -272,7 +268,7 @@ async function _loadEndgameImpl(gameId) {
     }
 
     try {
-        const res = await fetch(`/api/endgame/${gameId}?lang=${checkIsEn() ? "en" : "pt"}`);
+        const res = await fetch(`/api/endgame/${gameId}?lang=${Boolean(window.isEn) ? "en" : "pt"}`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         
@@ -300,7 +296,7 @@ function renderEndgame(gameId, data) {
     if (!container) return;
 
         if (!data || !data.has_data || !data.modes || data.modes.length === 0) {
-        const isEn = checkIsEn();
+        const isEn = Boolean(window.isEn);
         if (badgeEl) badgeEl.innerText = isEn ? "No Data" : "Sem Dados";
         const gameNames = { hsr: "Honkai: Star Rail", genshin: "Genshin Impact", zzz: "Zenless Zone Zero" };
         const modeExamples = isEn ? {
@@ -588,7 +584,7 @@ async function renderTeamMatcher(gameId) {
     const state = teamMatcherFilterState[gameId] || { mode: "", minMatch: 0 };
     
     try {
-        let url = `/api/endgame/team-match/${gameId}?min_match=${state.minMatch}&lang=${checkIsEn() ? "en" : "pt"}`;
+        let url = `/api/endgame/team-match/${gameId}?min_match=${state.minMatch}&lang=${Boolean(window.isEn) ? "en" : "pt"}`;
         if (state.mode) {
             url += `&mode=${encodeURIComponent(state.mode)}`;
         }
@@ -612,7 +608,7 @@ async function renderTeamMatcher(gameId) {
 
 function renderTeamMatcherContent(gameId, container, data) {
     const state = teamMatcherFilterState[gameId] || { mode: "", minMatch: 0 };
-    const isEn = checkIsEn();
+    const isEn = Boolean(window.isEn);
     const modesList = data.available_modes || [];
     
     // Barra de Filtros

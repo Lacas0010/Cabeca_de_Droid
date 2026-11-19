@@ -6,6 +6,109 @@
 // ==========================================================================
 // ASSISTENTE DE CHAT IA RAG
 // ==========================================================================
+function _isChatEn() {
+    return Boolean(
+        window.isEn ||
+        (window.getLanguage && window.getLanguage() === "en") ||
+        window.currentLang === "en" ||
+        (typeof localStorage !== "undefined" && localStorage.getItem("app_lang") === "en")
+    );
+}
+
+function getDefaultWelcomeHTML() {
+    if (_isChatEn()) {
+        return `
+            <div class="chat-msg assistant">
+                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="msg-content">
+                    <p>Hello! I am your AI assistant integrated with your local database from HoYoLAB, Prydwen, and KQM. How can I help you today?</p>
+                    <ul>
+                        <li><em>"Which HSR team do you suggest based on my current roster?"</em></li>
+                        <li><em>"Based on my Genshin artifacts, how can I improve my damage?"</em></li>
+                        <li><em>"What are the best drive discs for the agent I chose in ZZZ?"</em></li>
+                    </ul>
+                </div>
+            </div>
+        `;
+    }
+    return `
+        <div class="chat-msg assistant">
+            <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+            <div class="msg-content">
+                <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
+                <ul>
+                    <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
+                    <li><em>${window.t ? window.t("rag_prompt_genshin") : "Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"}</em></li>
+                    <li><em>${window.t ? window.t("rag_prompt_zzz") : "Quais são os melhores discos para o agente que escolhi no ZZZ?"}</em></li>
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+/**
+ * Lê um stream SSE e coalesça marked.parse + auto-scroll em requestAnimationFrame
+ * para evitar re-parse O(N^2) e layout thrashing por token.
+ */
+async function streamChatResponse(res, responseEl, messagesArea) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let rawText = "";
+    let buffer = "";
+    let rafId = null;
+
+    const renderNow = () => {
+        rafId = null;
+        if (responseEl) {
+            responseEl.innerHTML = typeof marked !== "undefined" ? marked.parse(rawText) : rawText;
+        }
+        if (messagesArea) {
+            messagesArea.scrollTop = messagesArea.scrollHeight;
+        }
+    };
+
+    const scheduleRender = () => {
+        if (rafId !== null) return;
+        rafId = requestAnimationFrame(renderNow);
+    };
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            // Salva a última linha incompleta de volta no buffer
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (line.startsWith("data: ")) {
+                    try {
+                        const parsed = JSON.parse(line.substring(6));
+                        if (parsed.token) {
+                            rawText += parsed.token;
+                            scheduleRender();
+                        } else if (parsed.error) {
+                            rawText += `\n\n<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro: ${parsed.error}`;
+                            scheduleRender();
+                        }
+                    } catch (e) {
+                        // Ignora erros parciais
+                    }
+                }
+            }
+        }
+    } finally {
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
+        renderNow();
+    }
+    return rawText;
+}
+
 function setupChatSystem() {
     const chatInput = document.getElementById("chat-input");
     const sendBtn = document.getElementById("chat-send-btn");
@@ -48,7 +151,7 @@ function setupChatSystem() {
             });
             
             // Remove o balão de digitando
-            document.getElementById(typingId).remove();
+            document.getElementById(typingId)?.remove();
             
             if (!res.ok) {
                 appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro na API do Chat.`);
@@ -61,40 +164,8 @@ function setupChatSystem() {
             
             // Cria um balão vazio para receber a resposta de forma incremental (streaming)
             const responseId = appendChatMessage("assistant", "");
-            const responseEl = document.getElementById(responseId).querySelector(".msg-content");
-            
-            const reader = res.body.getReader();
-            const decoder = new TextDecoder();
-            let rawText = "";
-            let buffer = "";
-            
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-                
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split("\n");
-                // Salva a última linha incompleta de volta no buffer
-                buffer = lines.pop();
-                
-                for (const line of lines) {
-                    if (line.startsWith("data: ")) {
-                        try {
-                            const parsed = JSON.parse(line.substring(6));
-                            if (parsed.token) {
-                                rawText += parsed.token;
-                                responseEl.innerHTML = marked.parse(rawText);
-                                messagesArea.scrollTop = messagesArea.scrollHeight;
-                            } else if (parsed.error) {
-                                rawText += `\n\n<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro: ${parsed.error}`;
-                                responseEl.innerHTML = marked.parse(rawText);
-                            }
-                        } catch (e) {
-                            // Ignora erros parciais
-                        }
-                    }
-                }
-            }
+            const responseEl = document.getElementById(responseId)?.querySelector(".msg-content");
+            const rawText = await streamChatResponse(res, responseEl, messagesArea);
             
             // Grava no histórico de memória
             chatHistory.push({ role: "user", text: message });
@@ -106,9 +177,9 @@ function setupChatSystem() {
             }
             messagesArea.scrollTop = messagesArea.scrollHeight;
         } catch (err) {
-            document.getElementById(typingId).remove();
+            document.getElementById(typingId)?.remove();
 
-    appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> ${isEn ? `Failed to connect to local server: ${err.message}` : `Falha ao conectar ao servidor local: ${err.message}`}`);
+            appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> ${_isChatEn() ? `Failed to connect to local server: ${err.message}` : `Falha ao conectar ao servidor local: ${err.message}`}`);
             messagesArea.scrollTop = messagesArea.scrollHeight;
         }
     };
@@ -126,39 +197,6 @@ function setupChatSystem() {
     // ==========================================
     const contextSelect = document.getElementById("chat-context-select");
     const clearHistoryBtn = document.getElementById("btn-clear-chat-history");
-
-    const getDefaultWelcomeHTML = () => {
-        const isEn = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
-        if (isEn) {
-            return `
-                <div class="chat-msg assistant">
-                    <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
-                    <div class="msg-content">
-                        <p>Hello! I am your AI assistant integrated with your local database from HoYoLAB, Prydwen, and KQM. How can I help you today?</p>
-                        <ul>
-                            <li><em>"Which HSR team do you suggest based on my current roster?"</em></li>
-                            <li><em>"Based on my Genshin artifacts, how can I improve my damage?"</em></li>
-                            <li><em>"What are the best drive discs for the agent I chose in ZZZ?"</em></li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-        }
-        return `
-            <div class="chat-msg assistant">
-                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
-                <div class="msg-content">
-                    <p>Olá! Eu sou o assistente de IA integrado com o seu banco de dados local da HoYoLAB, Prydwen e KQM. Como posso te ajudar hoje?</p>
-                    <ul>
-                        <li><em>"Qual time de HSR você me sugere com o que eu tenho no Roster?"</em></li>
-                        <li><em>${window.t ? window.t("rag_prompt_genshin") : "Com base nos meus artefatos de Genshin, como posso melhorar o meu dano?"}</em></li>
-                        <li><em>${window.t ? window.t("rag_prompt_zzz") : "Quais são os melhores discos para o agente que escolhi no ZZZ?"}</em></li>
-                    </ul>
-                </div>
-            </div>
-        `;
-    };
-    const defaultWelcomeHTML = getDefaultWelcomeHTML();
 
     const loadPersistedChatHistory = async (gameId) => {
         try {
@@ -251,7 +289,7 @@ function setupChatSystem() {
         teamAnalyzeBtn.addEventListener("click", async () => {
             if (selectedTeam.length === 0) return;
             const gameId = teamGameSelect.value;
-            const isEn = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+            const isEn = _isChatEn();
             const message = isEn ? `Team Analysis: ${selectedTeam.join(", ")}` : `Análise do Time: ${selectedTeam.join(", ")}`;
             
             appendChatMessage("user", isEn ? `Analyze team synergy: **${selectedTeam.join(", ")}**` : `Fazer análise de sinergia da equipe: **${selectedTeam.join(", ")}**`);
@@ -270,7 +308,7 @@ function setupChatSystem() {
                     })
                 });
                 
-                document.getElementById(typingId).remove();
+                document.getElementById(typingId)?.remove();
                 
                 if (!res.ok) {
                     appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro ao analisar sinergia.`);
@@ -282,43 +320,14 @@ function setupChatSystem() {
                 }
                 
                 const responseId = appendChatMessage("assistant", "");
-                const responseEl = document.getElementById(responseId).querySelector(".msg-content");
-                
-                const reader = res.body.getReader();
-                const decoder = new TextDecoder();
-                let rawText = "";
-                let buffer = "";
-                
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-                    
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split("\n");
-                    buffer = lines.pop();
-                    
-                    for (const line of lines) {
-                        if (line.startsWith("data: ")) {
-                            try {
-                                const parsed = JSON.parse(line.substring(6));
-                                if (parsed.token) {
-                                    rawText += parsed.token;
-                                    responseEl.innerHTML = marked.parse(rawText);
-                                    messagesArea.scrollTop = messagesArea.scrollHeight;
-                                } else if (parsed.error) {
-                                    rawText += `\n\n<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro: ${parsed.error}`;
-                                    responseEl.innerHTML = marked.parse(rawText);
-                                }
-                            } catch (e) {}
-                        }
-                    }
-                }
+                const responseEl = document.getElementById(responseId)?.querySelector(".msg-content");
+                const rawText = await streamChatResponse(res, responseEl, messagesArea);
                 
                 chatHistory.push({ role: "user", text: message });
                 chatHistory.push({ role: "model", text: rawText });
                 
             } catch (err) {
-                document.getElementById(typingId).remove();
+                document.getElementById(typingId)?.remove();
                 appendChatMessage("assistant", `<i class="fa-solid fa-circle-xmark" style="color: var(--color-danger); margin-right: 6px;"></i> Erro ao processar: ${err.message}`);
                 messagesArea.scrollTop = messagesArea.scrollHeight;
             }
@@ -339,7 +348,7 @@ function updateTeamBuilderGrid(gameId) {
     
     const roster = (window.globalRoster && window.globalRoster[gameId]) || globalRoster[gameId] || [];
     if (roster.length === 0) {
-        const isEnGrid = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+        const isEnGrid = _isChatEn();
     grid.innerHTML = `<div style="grid-column: span 4; font-size: 10px; color: var(--text-secondary); text-align: center; padding: 12px;">${isEnGrid ? `${gameId.toUpperCase()} roster not synchronized.` : `Roster do ${gameId.toUpperCase()} não sincronizado.`}</div>`;
         return;
     }
@@ -372,7 +381,7 @@ function toggleChatTeamCharacter(element, charName, gameId) {
         if (overlay) overlay.style.display = "none";
     } else {
         if (selectedTeam.length >= maxSelect) {
-            const isEnAlert = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+            const isEnAlert = _isChatEn();
             showToast(isEnAlert ? `You can only select up to ${maxSelect} characters for ${gameId.toUpperCase()} team!` : `Você só pode selecionar até ${maxSelect} personagens para o time de ${gameId.toUpperCase()}!`, "error");
             return;
         }
@@ -459,20 +468,20 @@ function toggleCharacterInTeam(arg1, arg2, arg3) {
     if (existingIdx !== -1) {
         team.members.splice(existingIdx, 1);
         if (typeof showToast === "function") {
-            const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+            const isEnToast = _isChatEn();
             showToast(isEnToast ? `${char.name} removed from team.` : `${char.name} removido do time.`, "info");
         }
     } else {
         if (team.members.length >= maxSlots) {
             if (typeof showToast === "function") {
-                const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+                const isEnToast = _isChatEn();
                 showToast(isEnToast ? `Limit of ${maxSlots} slots for ${gameId.toUpperCase()} reached! Remove a character to add another.` : `Limite de ${maxSlots} slots para ${gameId.toUpperCase()} atingido! Remova um personagem para adicionar outro.`, "warning");
             }
             return;
         }
         team.members.push(char);
         if (typeof showToast === "function") {
-            const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+            const isEnToast = _isChatEn();
             showToast(isEnToast ? `${char.name} added to team (#${team.members.length})!` : `${char.name} adicionado ao time (#${team.members.length})!`, "success");
         }
         ensureCharacterBuildData(gameId, char);
@@ -500,7 +509,7 @@ window.clearTeam = function(gameId) {
     if (!team) return;
     team.members = [];
     if (typeof showToast === "function") {
-        const isEnToast = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+        const isEnToast = _isChatEn();
         showToast(isEnToast ? "Team cleared successfully." : "Time esvaziado com sucesso.", "info");
     }
     updateTeamUI(gameId);
@@ -1040,12 +1049,7 @@ function extractTeamCardRelics(gameId, char) {
     }
     const setIcon = setIcons.length > 0 ? setIcons[0] : null;
 
-    const isEn = Boolean(
-        window.isEn ||
-        (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') ||
-        window.currentLang === 'en' ||
-        (typeof localStorage !== 'undefined' && localStorage.getItem("app_language") === 'en')
-    );
+    const isEn = _isChatEn();
     const cleanChipStat = (raw) => formatChipStat(raw, gameId, isEn);
 
     const chips = [];
@@ -1081,7 +1085,7 @@ function extractTeamCardRelics(gameId, char) {
 function renderTeamExportCard(gameId) {
     const cardContainer = document.getElementById(`team-export-card-${gameId}`);
     if (!cardContainer) return;
-    const isEnCard = (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || (localStorage.getItem("app_language") === "en");
+    const isEnCard = _isChatEn();
 
     const team = teamBuilderState[gameId] || { teamName: "Time", members: [] };
     const rosterListForTeam = (window.globalRoster && window.globalRoster[gameId]) || [];

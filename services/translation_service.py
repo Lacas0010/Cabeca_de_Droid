@@ -375,6 +375,15 @@ def traduzir_elemento(elemento: str, lang: str = "pt") -> str:
         return e
 
 
+_SUFFIX_RE = re.compile(r"\s*(\((?:\d-PC|\d-pc|S\d|R\d)\))\s*$", re.I)
+_TRANSLATIONS_LOWER: Dict[str, str] = {k.lower(): v for k, v in TRANSLATIONS.items()}
+_SHORT_TRANSLATION_PATTERNS = [
+    (re.compile(rf"\b{re.escape(eng_key)}\b", re.IGNORECASE), pt_val)
+    for eng_key, pt_val in TRANSLATIONS.items()
+    if len(eng_key) < 30
+]
+
+
 def traduzir_item(nome_item: str, lang: str = "pt") -> str:
     """Traduz nomes de armas, relíquias e atributos do inglês para PT-BR (ou vice-versa se lang='en')."""
     if not nome_item:
@@ -384,7 +393,7 @@ def traduzir_item(nome_item: str, lang: str = "pt") -> str:
 
     # Extrai sufixos comuns como (4-PC), (2-PC), (S1), (R5)
     suffix = ""
-    match_suffix = re.search(r"\s*(\((?:\d-PC|\d-pc|S\d|R\d)\))\s*$", nome_clean, re.I)
+    match_suffix = _SUFFIX_RE.search(nome_clean)
     if match_suffix:
         suffix = " " + match_suffix.group(1)
         nome_clean = nome_clean[: match_suffix.start()].strip()
@@ -400,18 +409,15 @@ def traduzir_item(nome_item: str, lang: str = "pt") -> str:
     if nome_clean in TRANSLATIONS:
         return TRANSLATIONS[nome_clean] + suffix
 
-    # Tenta correspondência case-insensitive (EN -> PT)
+    # Tenta correspondência case-insensitive O(1) (EN -> PT)
     nome_lower = nome_clean.lower()
-    for eng_key, pt_val in TRANSLATIONS.items():
-        if eng_key.lower() == nome_lower:
-            return pt_val + suffix
+    if nome_lower in _TRANSLATIONS_LOWER:
+        return _TRANSLATIONS_LOWER[nome_lower] + suffix
 
-    # Tenta substituir termos dentro de expressões maiores (como em status principais)
+    # Tenta substituir termos dentro de expressões maiores (usando regexes pré-compilados)
     traduzido = nome_clean
-    for eng_key, pt_val in TRANSLATIONS.items():
-        if len(eng_key) < 30:
-            pattern = re.compile(rf"\b{re.escape(eng_key)}\b", re.IGNORECASE)
-            traduzido = pattern.sub(pt_val, traduzido)
+    for pattern, pt_val in _SHORT_TRANSLATION_PATTERNS:
+        traduzido = pattern.sub(pt_val, traduzido)
 
     return traduzido + suffix
 

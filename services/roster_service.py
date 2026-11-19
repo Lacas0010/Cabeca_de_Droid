@@ -6,10 +6,11 @@ import urllib.parse
 from typing import List, Dict, Any, Optional, Tuple
 
 import database
-from core.config import get_resource_path
+from core.config import get_data_path, get_resource_path
 from services.media_service import get_raw_url
 from services.translation_service import traduzir_item
 from extractor import clean_relic_name, sanitize_stat_name, clean_hoyoverse_desc
+from static_data_manager import static_data_manager
 from build_calculator import (
     score_relic,
     get_meta_data,
@@ -22,25 +23,51 @@ import meta_comparator
 # Cache em memória para Roster e Overview com TTL e invalidação inteligente
 _ROSTER_CACHE: Dict[Tuple[str, str], Tuple[float, List[Dict[str, Any]]]] = {}
 _OVERVIEW_CACHE: Optional[Tuple[float, Dict[str, Any]]] = None
+_META_ENDGAME_HSR_PATH_CACHE: Optional[Dict[str, str]] = None
 CACHE_TTL = 60.0
+
+_RE_NON_ALNUM = re.compile(r"[^a-z0-9]")
+_RE_NON_ALNUM_UNDER = re.compile(r"[^a-z0-9_]")
+_RE_META_ENDGAME_LINE = re.compile(r"-\s*([^(\n]+?)\s*\(\d+★\s*([^-]+?)\s*-\s*([^\)]+?)\)")
+
+
+def _resolve_static_file(filename: str) -> str:
+    """Resolve arquivo em static_data priorizando get_data_path antes de get_resource_path."""
+    rel = os.path.join("static_data", filename)
+    data_p = get_data_path(rel)
+    if os.path.exists(data_p):
+        return data_p
+    return get_resource_path(rel)
 
 
 def invalidate_roster_cache(game_id: Optional[str] = None) -> None:
-    """Invalida o cache em memória do roster e overview para forçar atualização imediata."""
-    global _ROSTER_CACHE, _OVERVIEW_CACHE
+    """Invalida o cache em memória do roster, overview e manifestos para forçar atualização imediata."""
+    global _ROSTER_CACHE, _OVERVIEW_CACHE, _MANIFESTS_CACHE, _META_ENDGAME_HSR_PATH_CACHE
     _OVERVIEW_CACHE = None
     if game_id:
         clean_g = game_id.lower().strip()
         keys_to_del = [k for k in _ROSTER_CACHE if k[0] == clean_g]
         for k in keys_to_del:
             _ROSTER_CACHE.pop(k, None)
+        _MANIFESTS_CACHE.pop(clean_g, None)
+        if clean_g == "hsr":
+            _META_ENDGAME_HSR_PATH_CACHE = None
     else:
         _ROSTER_CACHE.clear()
+        _MANIFESTS_CACHE.clear()
+        _META_ENDGAME_HSR_PATH_CACHE = None
+
+    try:
+        from services.team_matcher_service import invalidate_team_matcher_cache
+
+        invalidate_team_matcher_cache(game_id)
+    except Exception:
+        pass
 
 
 # Carrega elementos conhecidos de static_data
 def _load_character_elements() -> Dict[str, Dict[str, str]]:
-    elements_file = get_resource_path(os.path.join("static_data", "character_elements.json"))
+    elements_file = _resolve_static_file("character_elements.json")
     if os.path.exists(elements_file):
         try:
             with open(elements_file, "r", encoding="utf-8") as f:
@@ -65,7 +92,7 @@ def _get_skills_cache(game_id: str) -> Dict[str, Any]:
     global _HSR_SKILLS_CACHE, _GENSHIN_SKILLS_CACHE, _ZZZ_SKILLS_CACHE
     if game_id == "hsr":
         if _HSR_SKILLS_CACHE is None:
-            p = get_resource_path(os.path.join("static_data", "hsr_skills.json"))
+            p = _resolve_static_file("hsr_skills.json")
             if os.path.exists(p):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
@@ -77,7 +104,7 @@ def _get_skills_cache(game_id: str) -> Dict[str, Any]:
         return _HSR_SKILLS_CACHE
     elif game_id == "genshin":
         if _GENSHIN_SKILLS_CACHE is None:
-            p = get_resource_path(os.path.join("static_data", "genshin_skills.json"))
+            p = _resolve_static_file("genshin_skills.json")
             if os.path.exists(p):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
@@ -89,7 +116,7 @@ def _get_skills_cache(game_id: str) -> Dict[str, Any]:
         return _GENSHIN_SKILLS_CACHE
     elif game_id == "zzz":
         if _ZZZ_SKILLS_CACHE is None:
-            p = get_resource_path(os.path.join("static_data", "zzz_skills.json"))
+            p = _resolve_static_file("zzz_skills.json")
             if os.path.exists(p):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
@@ -213,7 +240,7 @@ def enrich_character_skills(game_id: str, char_name: str, skills: list) -> list:
 def _get_character_aliases() -> Dict[str, Dict[str, str]]:
     global _ALIASES_CACHE
     if _ALIASES_CACHE is None:
-        p = get_resource_path(os.path.join("static_data", "character_aliases.json"))
+        p = _resolve_static_file("character_aliases.json")
         if os.path.exists(p):
             try:
                 with open(p, "r", encoding="utf-8") as f:
@@ -227,17 +254,18 @@ def _get_character_aliases() -> Dict[str, Dict[str, str]]:
 
 def _get_manifest(game_id: str) -> Dict[str, Any]:
     global _MANIFESTS_CACHE
-    if game_id not in _MANIFESTS_CACHE:
-        p = get_resource_path(os.path.join("static_data", f"{game_id}_manifest.json"))
+    g_clean = game_id.lower().strip()
+    if g_clean not in _MANIFESTS_CACHE:
+        p = _resolve_static_file(f"{g_clean}_manifest.json")
         if os.path.exists(p):
             try:
                 with open(p, "r", encoding="utf-8") as f:
-                    _MANIFESTS_CACHE[game_id] = json.load(f).get("characters", {})
+                    _MANIFESTS_CACHE[g_clean] = json.load(f).get("characters", {})
             except Exception:
-                _MANIFESTS_CACHE[game_id] = {}
+                _MANIFESTS_CACHE[g_clean] = {}
         else:
-            _MANIFESTS_CACHE[game_id] = {}
-    return _MANIFESTS_CACHE[game_id]
+            _MANIFESTS_CACHE[g_clean] = {}
+    return _MANIFESTS_CACHE[g_clean]
 
 
 # Mapa de sinônimos universais comuns (PT/EN) para ID base
@@ -354,7 +382,11 @@ def _find_best_substring_rank_entry(db: Dict[str, Any], c_norm: str, alias_val: 
 
 
 def get_static_ranks_for_character(
-    game_id: str, char_id: str = None, char_name: str = None, element: str = None
+    game_id: str,
+    char_id: str = None,
+    char_name: str = None,
+    element: str = None,
+    allow_network: bool = False,
 ) -> List[Dict[str, Any]]:
     """Carrega dados e ícones estáticos de Constelações (Genshin) e Eidolons (HSR) em alta definição."""
     global _GENSHIN_CONST_CACHE, _HSR_EIDOLON_CACHE
@@ -364,7 +396,7 @@ def get_static_ranks_for_character(
 
     if game_id == "genshin":
         if _GENSHIN_CONST_CACHE is None:
-            p = get_resource_path(os.path.join("static_data", "genshin_constellations.json"))
+            p = _resolve_static_file("genshin_constellations.json")
             if os.path.exists(p):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
@@ -411,7 +443,7 @@ def get_static_ranks_for_character(
 
     elif game_id == "hsr":
         if _HSR_EIDOLON_CACHE is None:
-            p = get_resource_path(os.path.join("static_data", "hsr_eidolons.json"))
+            p = _resolve_static_file("hsr_eidolons.json")
             if os.path.exists(p):
                 try:
                     with open(p, "r", encoding="utf-8") as f:
@@ -454,8 +486,8 @@ def get_static_ranks_for_character(
             if not res:
                 res = _find_best_substring_rank_entry(db, c_norm, alias_val)
 
-        # Se não encontrou no cache local, tenta buscar automaticamente na API para personagens recém-lançados
-        if not res and char_name:
+        # Se não encontrou no cache local, só busca na API quando allow_network=True (não bloqueia async get_roster)
+        if not res and char_name and allow_network:
             auto_ranks = fetch_fandom_shards_for_character(char_name, char_id)
             if auto_ranks:
                 res = auto_ranks
@@ -463,7 +495,8 @@ def get_static_ranks_for_character(
                     if char_id:
                         _HSR_EIDOLON_CACHE[str(char_id)] = auto_ranks
                     _HSR_EIDOLON_CACHE[char_name.lower().strip()] = auto_ranks
-                    p_path = get_resource_path(os.path.join("static_data", "hsr_eidolons.json"))
+                    p_path = get_data_path(os.path.join("static_data", "hsr_eidolons.json"))
+                    os.makedirs(os.path.dirname(p_path), exist_ok=True)
                     with open(p_path, "w", encoding="utf-8") as f:
                         json.dump(_HSR_EIDOLON_CACHE, f, indent=2, ensure_ascii=False)
                 except Exception:
@@ -561,7 +594,7 @@ def parse_roster_md_fallback(game_id: str) -> List[Dict[str, Any]]:
     return chars
 
 
-def get_hsr_effective_id(char: Any) -> str:
+def get_hsr_effective_id(char: Any, hsr_roster: Optional[List[Dict[str, Any]]] = None) -> str:
     """Detecta com precisão o ID efetivo (incluindo skins 1501..1515, 1414) para Honkai: Star Rail."""
     from extractor import resolve_hsr_variant_id
 
@@ -595,25 +628,28 @@ def get_hsr_effective_id(char: Any) -> str:
     if not c_id or not str(c_id).isdigit():
         c_norm = normalize_char_name(c_name)
         c_lower = c_name.lower().strip()
-        c_clean = re.sub(r"[^a-z0-9]", "", c_lower)
+        c_clean = _RE_NON_ALNUM.sub("", c_lower)
+
+        # Carrega roster HSR uma única vez por chamada
+        if hsr_roster is None:
+            try:
+                hsr_roster = database.get_roster_data("hsr") or []
+            except Exception:
+                hsr_roster = []
 
         # 5.1 Busca exata no banco SQLite local (Roster)
-        try:
-            roster = database.get_roster_data("hsr")
-            for c in roster:
-                cn = c.get("name", "")
-                if re.sub(r"[^a-z0-9]", "", cn.lower()) == c_clean:
-                    cid = str(c.get("id") or c.get("character_id") or "")
-                    if cid and cid.isdigit():
-                        return cid
-        except Exception:
-            pass
+        for c in hsr_roster:
+            cn = c.get("name", "")
+            if _RE_NON_ALNUM.sub("", cn.lower()) == c_clean:
+                cid = str(c.get("id") or c.get("character_id") or "")
+                if cid and cid.isdigit():
+                    return cid
 
         # 5.2 Busca exata no manifesto de metadados HSR
         man = _get_manifest("hsr")
         for k, v in man.items():
-            k_clean = re.sub(r"[^a-z0-9]", "", k)
-            v_name_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
+            k_clean = _RE_NON_ALNUM.sub("", k)
+            v_name_clean = _RE_NON_ALNUM.sub("", v.get("name", "").lower())
             if k == c_lower or k == c_norm or k_clean == c_clean or v_name_clean == c_clean:
                 hid = str(v.get("hoyolab_id") or v.get("id") or "")
                 if hid and hid.isdigit():
@@ -623,7 +659,7 @@ def get_hsr_effective_id(char: Any) -> str:
         try:
             global _HSR_EIDOLON_CACHE
             if _HSR_EIDOLON_CACHE is None:
-                p = get_resource_path(os.path.join("static_data", "hsr_eidolons.json"))
+                p = _resolve_static_file("hsr_eidolons.json")
                 if os.path.exists(p):
                     with open(p, "r", encoding="utf-8") as f:
                         _HSR_EIDOLON_CACHE = json.load(f)
@@ -636,27 +672,25 @@ def get_hsr_effective_id(char: Any) -> str:
         except Exception:
             pass
 
-        # 5.4 Busca parcial / por aproximação no Roster local
-        try:
-            roster = database.get_roster_data("hsr")
-            for c in roster:
+        # 5.4 Busca parcial / por aproximação no Roster local (reutilizando hsr_roster)
+        if len(c_clean) >= 3:
+            for c in hsr_roster:
                 cn = c.get("name", "")
-                cn_clean = re.sub(r"[^a-z0-9]", "", cn.lower())
-                if len(c_clean) >= 3 and (c_clean in cn_clean or cn_clean in c_clean):
+                cn_clean = _RE_NON_ALNUM.sub("", cn.lower())
+                if c_clean in cn_clean or cn_clean in c_clean:
                     cid = str(c.get("id") or c.get("character_id") or "")
                     if cid and cid.isdigit():
                         return cid
-        except Exception:
-            pass
 
         # 5.5 Busca parcial no manifesto HSR
-        for k, v in man.items():
-            k_clean = re.sub(r"[^a-z0-9]", "", k)
-            v_name_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
-            if len(c_clean) >= 3 and (c_clean in k_clean or k_clean in c_clean or c_clean in v_name_clean or v_name_clean in c_clean):
-                hid = str(v.get("hoyolab_id") or v.get("id") or "")
-                if hid and hid.isdigit():
-                    return hid
+        if len(c_clean) >= 3:
+            for k, v in man.items():
+                k_clean = _RE_NON_ALNUM.sub("", k)
+                v_name_clean = _RE_NON_ALNUM.sub("", v.get("name", "").lower())
+                if c_clean in k_clean or k_clean in c_clean or c_clean in v_name_clean or v_name_clean in c_clean:
+                    hid = str(v.get("hoyolab_id") or v.get("id") or "")
+                    if hid and hid.isdigit():
+                        return hid
 
     return c_id
 
@@ -682,6 +716,32 @@ def enrich_ex_ranks(ex_ranks: Any) -> List[Dict[str, Any]]:
         item.setdefault("type", "affinitive")
         enriched.append(item)
     return enriched
+
+
+def _get_hsr_meta_endgame_paths() -> Dict[str, str]:
+    """Lê e cacheia os caminhos de HSR a partir de hsr/meta_endgame_hsr.md uma única vez."""
+    global _META_ENDGAME_HSR_PATH_CACHE
+    if _META_ENDGAME_HSR_PATH_CACHE is not None:
+        return _META_ENDGAME_HSR_PATH_CACHE
+
+    parsed: Dict[str, str] = {}
+    meta_path = os.path.join(database.BASE_DIR, "hsr", "meta_endgame_hsr.md")
+    if os.path.exists(meta_path):
+        try:
+            with open(meta_path, "r", encoding="utf-8") as mf:
+                for line in mf:
+                    if line.startswith("-") and "(" in line and "★" in line:
+                        m_cand = _RE_META_ENDGAME_LINE.search(line)
+                        if m_cand:
+                            cand_clean = _RE_NON_ALNUM.sub("", m_cand.group(1).lower())
+                            raw_p = m_cand.group(3).strip()
+                            clean_p = re.split(r"[\s\(]", raw_p)[0].strip()
+                            if cand_clean and clean_p:
+                                parsed[cand_clean] = clean_p.capitalize()
+        except Exception:
+            pass
+    _META_ENDGAME_HSR_PATH_CACHE = parsed
+    return _META_ENDGAME_HSR_PATH_CACHE
 
 
 async def get_roster(game_id: str) -> List[Dict[str, Any]]:
@@ -740,6 +800,9 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
 
         # Pondera e calcula as notas de cada relíquia do roster e a nota geral da build
         max_slots = 5 if game_id == "genshin" else 6
+        meta_db = get_meta_data(game_id)
+        manifest = _get_manifest(game_id)
+        aliases = _get_character_aliases().get(game_id, {})
         for char in data:
             if char.get("name") in json_map and json_map[char["name"]]:
                 char["gacha_art"] = json_map[char["name"]]
@@ -751,7 +814,9 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
             if game_id == "hsr":
                 orig_gacha = char.get("gacha_art") or ""
                 raw_gacha = get_raw_url(orig_gacha)
-                char_id_val = get_hsr_effective_id(char) or str(char.get("id") or char.get("character_id") or "")
+                char_id_val = get_hsr_effective_id(char, hsr_roster=data) or str(
+                    char.get("id") or char.get("character_id") or ""
+                )
                 if char_id_val:
                     char["id"] = char_id_val
                     char["character_id"] = char_id_val
@@ -917,7 +982,6 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
             char["mindscapes"] = ranks
 
             char_id_val = str(char.get("id") or char.get("character_id") or "")
-            meta_db = get_meta_data(game_id)
             c_name = char.get("name") or ""
             char_meta = (
                 meta_db.get(char_id_val)
@@ -930,8 +994,6 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                 char["recommended_weights"] = extract_weights_from_guide(game_id, char_id_val)
 
             # Enriquece caminho (Path/Specialty) e elemento a partir do manifesto se ausente
-            manifest = _get_manifest(game_id)
-            aliases = _get_character_aliases().get(game_id, {})
             c_slug = (
                 aliases.get(c_name.lower())
                 or aliases.get(normalize_char_name(c_name))
@@ -1052,34 +1114,23 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                         else:
                             char["path"] = "Destruction"
                     else:
-                        from static_data_manager import StaticDataManager
-
-                        prof = StaticDataManager().get_character_profile("hsr", c_name)
+                        prof = static_data_manager.get_character_profile("hsr", c_name)
                         if prof and prof.get("path"):
                             char["path"] = prof["path"]
                         else:
-                            c_clean = re.sub(r"[^a-z0-9]", "", c_name.lower())
-                            man_entry = _get_manifest("hsr").get(c_name.lower().strip())
+                            c_clean = _RE_NON_ALNUM.sub("", c_name.lower())
+                            man_entry = manifest.get(c_name.lower().strip())
                             if man_entry and man_entry.get("path"):
                                 char["path"] = man_entry["path"]
                             else:
-                                meta_path = os.path.join(database.BASE_DIR, "hsr", "meta_endgame_hsr.md")
-                                if os.path.exists(meta_path):
-                                    try:
-                                        with open(meta_path, "r", encoding="utf-8") as mf:
-                                            for line in mf:
-                                                if line.startswith("-") and "(" in line and "★" in line:
-                                                    m_cand = re.search(r"-\s*([^(\n]+?)\s*\(\d+★\s*([^-]+?)\s*-\s*([^\)]+?)\)", line)
-                                                    if m_cand:
-                                                        cand_clean = re.sub(r"[^a-z0-9]", "", m_cand.group(1).lower())
-                                                        if cand_clean == c_clean or (len(c_clean) >= 3 and (c_clean in cand_clean or cand_clean in c_clean)):
-                                                            raw_p = m_cand.group(3).strip()
-                                                            clean_p = re.split(r"[\s\(]", raw_p)[0].strip()
-                                                            if clean_p:
-                                                                char["path"] = clean_p.capitalize()
-                                                                break
-                                    except Exception:
-                                        pass
+                                meta_paths = _get_hsr_meta_endgame_paths()
+                                if c_clean in meta_paths:
+                                    char["path"] = meta_paths[c_clean]
+                                elif len(c_clean) >= 3:
+                                    for cand_clean, cand_path in meta_paths.items():
+                                        if c_clean in cand_clean or cand_clean in c_clean:
+                                            char["path"] = cand_path
+                                            break
 
             # Garante que raridade da arma esteja definida
             if isinstance(char.get("weapon"), dict):
@@ -1558,6 +1609,14 @@ def get_overview() -> Dict[str, Any]:
 
     overview = {}
     for game in ["hsr", "genshin", "zzz"]:
+        db_game = db_overview.get(game, {})
+        has_active_db = bool(db_game and db_game.get("active") and int(db_game.get("char_count") or 0) > 0)
+
+        # Evita leituras redundantes em disco quando o SQLite já possui dados ativos completos
+        if has_active_db and db_game.get("nickname"):
+            overview[game] = db_game
+            continue
+
         fallback_info = {
             "active": False,
             "uid": "Não sincronizado",
@@ -1570,7 +1629,7 @@ def get_overview() -> Dict[str, Any]:
         json_path = f"{game}/roster_data_{game}.json"
         md_path = f"{game}/roster_{game}.md"
 
-        if os.path.exists(json_path):
+        if not has_active_db and os.path.exists(json_path):
             try:
                 with open(json_path, "r", encoding="utf-8") as f:
                     data = json.load(f)
@@ -1608,8 +1667,7 @@ def get_overview() -> Dict[str, Any]:
             except Exception:
                 pass
 
-        db_game = db_overview.get(game, {})
-        if db_game and db_game.get("active") and int(db_game.get("char_count") or 0) > 0:
+        if has_active_db:
             if (
                 not db_game.get("nickname")
                 and fallback_info.get("nickname")

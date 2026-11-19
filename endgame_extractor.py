@@ -36,6 +36,9 @@ def format_team_node(node_name: str, characters: list, monsters: list = None, ch
     return "\n".join(lines)
 
 
+_RE_IDE_URL = re.compile(r"/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_")
+
+
 def sanitize_genshin_url(url_str: str) -> str:
     """Sanitiza URLs de ícones e splash art do Genshin eliminando .png.png e ide_ de URLs do Enka/Yatta."""
     if not url_str:
@@ -43,7 +46,7 @@ def sanitize_genshin_url(url_str: str) -> str:
     clean = str(url_str).strip()
     while clean.endswith(".png.png"):
         clean = clean[:-4]
-    clean = re.sub(r"/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_", r"/\1", clean)
+    clean = _RE_IDE_URL.sub(r"/\1", clean)
     if "gi.yatta.moe/assets/UI/" in clean:
         clean = clean.replace("https://gi.yatta.moe/assets/UI/", "https://enka.network/ui/")
     return clean

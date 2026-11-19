@@ -10,6 +10,7 @@ from core.paths import get_data_dir, get_resource_path
 
 BASE_DIR = get_data_dir()
 STATIC_DATA_DIR = os.path.join(BASE_DIR, "static_data")
+_RE_NON_ALNUM = re.compile(r"[^a-z0-9]")
 
 
 def fetch_json_with_retry(
@@ -148,7 +149,7 @@ class StaticDataManager:
 
         chars_dict = self._cache[g].get("characters", {})
         query = char_name_or_id.lower().strip().replace(" ", "_").replace("•", "").replace("'", "")
-        q_clean = re.sub(r"[^a-z0-9]", "", char_name_or_id.lower())
+        q_clean = _RE_NON_ALNUM.sub("", char_name_or_id.lower())
 
         found_item = None
         # 1. Busca direta por chave
@@ -158,8 +159,8 @@ class StaticDataManager:
             # 2. Busca por matching flexível de nome
             for k, v in chars_dict.items():
                 name_clean = v.get("name", "").lower().replace(" ", "_").replace("•", "").replace("'", "")
-                k_clean = re.sub(r"[^a-z0-9]", "", k.lower())
-                vn_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
+                k_clean = _RE_NON_ALNUM.sub("", k.lower())
+                vn_clean = _RE_NON_ALNUM.sub("", v.get("name", "").lower())
                 if (
                     query == name_clean
                     or k_clean == q_clean
@@ -180,8 +181,8 @@ class StaticDataManager:
             else:
                 for k, v in seed_dict.items():
                     name_clean = v.get("name", "").lower().replace(" ", "_").replace("•", "").replace("'", "")
-                    k_clean = re.sub(r"[^a-z0-9]", "", k.lower())
-                    vn_clean = re.sub(r"[^a-z0-9]", "", v.get("name", "").lower())
+                    k_clean = _RE_NON_ALNUM.sub("", k.lower())
+                    vn_clean = _RE_NON_ALNUM.sub("", v.get("name", "").lower())
                     if (
                         query == name_clean
                         or k_clean == q_clean
@@ -216,15 +217,14 @@ class StaticDataManager:
                     break
         if seed_char:
             for k, v in seed_char.items():
-                if k not in item or not item[k]:
-                    item[k] = v
+                if k not in enriched or not enriched[k]:
                     enriched[k] = v
 
         if game_id == "genshin":
             # 1. Livros de Talento
-            t_key = item.get("talent_key")
+            t_key = enriched.get("talent_key")
             if not t_key:
-                raw_book = str(item.get("talent_book", ""))
+                raw_book = str(enriched.get("talent_book", ""))
                 for k in GENSHIN_TALENT_BOOKS.keys():
                     if k in raw_book.lower() or GENSHIN_TALENT_BOOKS[k]["base"].lower() in raw_book.lower():
                         t_key = k
@@ -232,8 +232,8 @@ class StaticDataManager:
 
             # Se ainda não encontrou t_key, busca nos domínios oficiais pelo nome do personagem
             if not t_key:
-                c_name = str(item.get("name", "")).lower()
-                c_id = str(item.get("id", "")).lower()
+                c_name = str(enriched.get("name", "")).lower()
+                c_id = str(enriched.get("id", "")).lower()
                 domains_data = self._cache.get("genshin", {}).get("domains", GENSHIN_DOMAINS_SCHEDULE)
                 for nat, data in domains_data.get("talent_books", {}).items():
                     for sch_key, sch in data.get("schedules", {}).items():
@@ -251,7 +251,7 @@ class StaticDataManager:
 
             if not t_key:
                 # Default inteligente por elemento
-                el = str(item.get("element", "")).lower()
+                el = str(enriched.get("element", "")).lower()
                 if "anemo" in el:
                     t_key = "poemas"
                 elif "geo" in el:
@@ -279,10 +279,10 @@ class StaticDataManager:
                 enriched["talent_book"] = f"{tb_data['base']} ({tb_data['t4']})"
 
             # 2. Chefe de Campo (Boss Mat & Icon)
-            boss_name = item.get("boss_mat")
-            boss_icon = item.get("boss_icon")
+            boss_name = enriched.get("boss_mat")
+            boss_icon = enriched.get("boss_icon")
             if not boss_name or boss_name in ["Material de Chefe", ""]:
-                el = str(item.get("element", "")).lower()
+                el = str(enriched.get("element", "")).lower()
                 if "pyro" in el:
                     boss_name, boss_icon = "Semente de Fogo Eterno", "https://enka.network/ui/UI_ItemIcon_113009.png"
                 elif "hydro" in el:
@@ -309,10 +309,10 @@ class StaticDataManager:
             enriched["boss_mat_icon"] = boss_icon
 
             # 3. Especialidade Local
-            spec_name = item.get("local_specialty")
-            spec_icon = item.get("specialty_icon")
+            spec_name = enriched.get("local_specialty")
+            spec_icon = enriched.get("specialty_icon")
             if not spec_name or spec_name in ["Especialidade Local", ""]:
-                el = str(item.get("element", "")).lower()
+                el = str(enriched.get("element", "")).lower()
                 if "hydro" in el:
                     spec_name, spec_icon = "Lírio de Lakelight", "https://enka.network/ui/UI_ItemIcon_101235.png"
                 elif "anemo" in el:
@@ -331,17 +331,17 @@ class StaticDataManager:
             enriched["local_specialty_icon"] = spec_icon
 
             # 4. Chefe Semanal
-            wk_name = item.get("weekly_boss_mat")
-            wk_icon = item.get("weekly_icon")
+            wk_name = enriched.get("weekly_boss_mat")
+            wk_icon = enriched.get("weekly_icon")
             if not wk_name or wk_name in ["Material de Chefe Semanal", ""]:
                 wk_name, wk_icon = "Massa Sem Luz", "https://enka.network/ui/UI_ItemIcon_113054.png"
             enriched["weekly_boss_mat_name"] = wk_name
             enriched["weekly_boss_mat_icon"] = wk_icon
 
             # 5. Drops de Inimigos Comuns
-            e_key = item.get("enemy_key")
+            e_key = enriched.get("enemy_key")
             if not e_key or e_key not in GENSHIN_MOB_DROPS:
-                el = str(item.get("element", "")).lower()
+                el = str(enriched.get("element", "")).lower()
                 if "anemo" in el or "hydro" in el:
                     e_key = "nectar"
                 elif "geo" in el or "cryo" in el:
@@ -369,9 +369,9 @@ class StaticDataManager:
 
         elif game_id == "hsr":
             # 1. Cálice de Rastros por Caminho
-            c_key = item.get("calyx_key")
+            c_key = enriched.get("calyx_key")
             if not c_key:
-                p_lower = str(item.get("path", "")).lower()
+                p_lower = str(enriched.get("path", "")).lower()
                 for k, v in HSR_CALYX_MATERIALS.items():
                     if v["path"].lower() == p_lower:
                         c_key = k
@@ -388,13 +388,13 @@ class StaticDataManager:
             enriched["talent_tier4_icon"] = calyx["t4_icon"]
 
             # 2. Sombra Estagnada (Chefe de Ascensão)
-            stagnant_key = item.get("stagnant_key")
+            stagnant_key = enriched.get("stagnant_key")
             if not stagnant_key:
                 stagnant_key = "primitive_lightning"
             stag = HSR_STAGNANT_SHADOW.get(
                 stagnant_key,
                 {
-                    "name": item.get("stagnant_shadow_mat", "Material de Sombra Estagnada"),
+                    "name": enriched.get("stagnant_shadow_mat", "Material de Sombra Estagnada"),
                     "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110401.png",
                 },
             )
@@ -402,13 +402,13 @@ class StaticDataManager:
             enriched["boss_mat_icon"] = stag["icon"]
 
             # 3. Eco da Guerra (Chefe Semanal)
-            echo_key = item.get("echo_key")
+            echo_key = enriched.get("echo_key")
             if not echo_key:
                 echo_key = "dream_monster"
             echo = HSR_ECHO_OF_WAR.get(
                 echo_key,
                 {
-                    "name": item.get("echo_of_war_mat", "Material de Eco da Guerra"),
+                    "name": enriched.get("echo_of_war_mat", "Material de Eco da Guerra"),
                     "icon": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/item/110505.png",
                 },
             )
@@ -416,7 +416,7 @@ class StaticDataManager:
             enriched["weekly_boss_mat_icon"] = echo["icon"]
 
             # 4. Inimigos Comuns
-            e_key = item.get("enemy_key") or "dreamjolt"
+            e_key = enriched.get("enemy_key") or "dreamjolt"
             mob = HSR_MOB_DROPS.get(e_key, HSR_MOB_DROPS["silvermane"])
             enriched["enemy_tier1_name"] = mob["t1"]
             enriched["enemy_tier1_icon"] = mob["t1_icon"]
@@ -431,7 +431,7 @@ class StaticDataManager:
 
         elif game_id == "zzz":
             # 1. Chips de Habilidade por Elemento
-            el = str(item.get("element", "physical")).lower()
+            el = str(enriched.get("element", "physical")).lower()
             chip_key = "physical"
             for k in ZZZ_SKILL_CHIPS.keys():
                 if k in el:
@@ -446,11 +446,11 @@ class StaticDataManager:
             enriched["talent_tier4_icon"] = chip["t4_icon"]
 
             # 2. Desafio de Especialista (Habilidade Essencial / Boss)
-            exp_key = item.get("expert_key") or "section6"
+            exp_key = enriched.get("expert_key") or "section6"
             exp_data = ZZZ_EXPERT_CHALLENGE.get(
                 exp_key,
                 {
-                    "name": item.get("core_skill_mat", "Emblema de Especialista"),
+                    "name": enriched.get("core_skill_mat", "Emblema de Especialista"),
                     "icon": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113009.png",
                 },
             )
@@ -458,7 +458,7 @@ class StaticDataManager:
             enriched["boss_mat_icon"] = exp_data["icon"]
 
             # 3. Selos de Especialidade
-            spec = str(item.get("specialty", "attack")).lower()
+            spec = str(enriched.get("specialty", "attack")).lower()
             seal_key = "attack"
             for k in ZZZ_PROMOTION_SEALS.keys():
                 if k in spec:
@@ -469,11 +469,11 @@ class StaticDataManager:
             enriched["local_specialty_icon"] = seal["t4_icon"]
 
             # 4. Caça Notória (Chefe Semanal)
-            wk_key = item.get("weekly_key") or "silent_death"
+            wk_key = enriched.get("weekly_key") or "silent_death"
             wk_data = ZZZ_NOTORIOUS_HUNT.get(
                 wk_key,
                 {
-                    "name": item.get("weekly_boss_mat", "Material de Caça Notória"),
+                    "name": enriched.get("weekly_boss_mat", "Material de Caça Notória"),
                     "icon": "https://act-webstatic.hoyoverse.com/game_record/genshin/equip/UI_ItemIcon_113028.png",
                 },
             )
@@ -481,7 +481,7 @@ class StaticDataManager:
             enriched["weekly_boss_mat_icon"] = wk_data["icon"]
 
             # 5. Inimigos Comuns
-            e_key = item.get("enemy_key") or "ethereal"
+            e_key = enriched.get("enemy_key") or "ethereal"
             mob = ZZZ_MOB_DROPS.get(e_key, ZZZ_MOB_DROPS["ethereal"])
             enriched["enemy_tier1_name"] = mob["t1"]
             enriched["enemy_tier1_icon"] = mob["t1_icon"]

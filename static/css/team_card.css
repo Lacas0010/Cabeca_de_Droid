@@ -1036,3 +1036,18 @@
     color: var(--text-muted);
 }
 
+@media (max-width: 768px) {
+    .team-builder-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+        margin-top: 4px !important;
+        box-sizing: border-box !important;
+    }
+
+    .team-chars-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 6px !important;
+    }
+}
+
