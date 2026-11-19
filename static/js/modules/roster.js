@@ -697,6 +697,18 @@ if (typeof window !== 'undefined') {
 
 // Deduplica requisições simultâneas de roster (startup + alternância rápida de abas)
 const _rosterInflight = {};
+const _rosterFilterActions = {};
+const _dirtyRosterLang = {};
+window._flushDirtyRosterLang = function(gameId) {
+    if (_dirtyRosterLang[gameId] && typeof _rosterRenderers[gameId] === "function") {
+        _dirtyRosterLang[gameId] = false;
+        if (gameId === "hsr") {
+            const allOpt = document.querySelector('#planar-filter-hsr option[value="all"]');
+            if (allOpt) allOpt.textContent = window.isEn ? "All Planar Ornaments" : "Todos os Ornamentos Planares";
+        }
+        _rosterRenderers[gameId]();
+    }
+};
 function loadRoster(gameId) {
     if (_rosterInflight[gameId]) return _rosterInflight[gameId];
     _rosterInflight[gameId] = _loadRosterImpl(gameId).finally(() => {
@@ -1323,276 +1335,66 @@ async function _loadRosterImpl(gameId) {
         };
         
         _rosterRenderers[gameId] = renderCards;
-        
-        // Configura ouvintes de clique nos botões de filtro de elementos
-        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters):not(.weapon-filters):not(.path-filters):not(.specialty-filters)`);
-        if (filterContainer) {
-            const filterBtns = filterContainer.querySelectorAll(".filter-btn");
-            filterBtns.forEach(btn => {
-                // Remove listeners anteriores
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-            });
-            
-            // Adiciona novos listeners aos botões clonados
-            const freshBtns = filterContainer.querySelectorAll(".filter-btn");
-            freshBtns.forEach(btn => {
-                btn.addEventListener("click", () => {
-                    freshBtns.forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    activeElementFilter = btn.getAttribute("data-filter");
-                    renderCards();
-                });
-            });
-        }
-        
-        // Configura ouvintes de clique nos botões de filtro de raridade
-        const rarityContainer = document.querySelector(`.rarity-filters[data-game="${gameId}"]`);
-        if (rarityContainer) {
-            const rarityBtns = rarityContainer.querySelectorAll(".filter-btn");
-            rarityBtns.forEach(btn => {
-                // Remove listeners anteriores
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-            });
-            
-            // Adiciona novos listeners aos botões clonados
-            const freshRarityBtns = rarityContainer.querySelectorAll(".filter-btn");
-            freshRarityBtns.forEach(btn => {
-                btn.addEventListener("click", () => {
-                    freshRarityBtns.forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    activeRarityFilter = btn.getAttribute("data-rarity");
-                    renderCards();
-                });
-            });
-        }
-        
-        // Configura ouvintes de clique nos botões de filtro de caminho (HSR)
-        const pathContainer = document.querySelector(`.path-filters[data-game="${gameId}"]`);
-        if (pathContainer) {
-            const pathBtns = pathContainer.querySelectorAll(".filter-btn");
-            pathBtns.forEach(btn => {
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-            });
-            const freshPathBtns = pathContainer.querySelectorAll(".filter-btn");
-            freshPathBtns.forEach(btn => {
-                btn.addEventListener("click", () => {
-                    freshPathBtns.forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    activePathFilter = btn.getAttribute("data-path") || "all";
-                    renderCards();
-                });
-            });
-        }
 
-        // Configura ouvintes de clique nos botões de filtro de arma (Genshin)
-        const weaponContainer = document.querySelector(`.weapon-filters[data-game="${gameId}"]`);
-        if (weaponContainer) {
-            const weaponBtns = weaponContainer.querySelectorAll(".filter-btn");
-            weaponBtns.forEach(btn => {
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-            });
-            const freshWeaponBtns = weaponContainer.querySelectorAll(".filter-btn");
-            freshWeaponBtns.forEach(btn => {
-                btn.addEventListener("click", () => {
-                    freshWeaponBtns.forEach(b => b.classList.remove("active"));
-                    btn.classList.add("active");
-                    activeWeaponFilter = btn.getAttribute("data-weapon") || "all";
-                    renderCards();
-                });
-            });
-        }
-
-        // Configura ouvintes de clique nos botões de filtro de especialidade (ZZZ)
-        const specialtyContainer = document.querySelector(`.specialty-filters[data-game="${gameId}"]`);
         const syncSpecialtyUI = (val) => {
-            if (specialtyContainer) {
-                specialtyContainer.querySelectorAll(".filter-btn").forEach(b => {
-                    if ((b.getAttribute("data-specialty") || "all") === val) b.classList.add("active");
-                    else b.classList.remove("active");
+            const specContainer = document.querySelector(`.specialty-filters[data-game="${gameId}"]`);
+            if (specContainer) {
+                specContainer.querySelectorAll(".filter-btn").forEach(b => {
+                    b.classList.toggle("active", (b.getAttribute("data-specialty") || "all") === val);
                 });
             }
             const specAuditGroup = document.querySelector(`#audit-panel-${gameId} .filter-pills[data-filter-type="specialty"]`);
             if (specAuditGroup) {
                 specAuditGroup.querySelectorAll(".audit-pill").forEach(p => {
-                    if ((p.getAttribute("data-val") || "all") === val) p.classList.add("active");
-                    else p.classList.remove("active");
+                    p.classList.toggle("active", (p.getAttribute("data-val") || "all") === val);
                 });
             }
         };
-        if (specialtyContainer) {
-            const specialtyBtns = specialtyContainer.querySelectorAll(".filter-btn");
-            specialtyBtns.forEach(btn => {
-                const newBtn = btn.cloneNode(true);
-                btn.parentNode.replaceChild(newBtn, btn);
-            });
-            const freshSpecialtyBtns = specialtyContainer.querySelectorAll(".filter-btn");
-            freshSpecialtyBtns.forEach(btn => {
-                btn.addEventListener("click", () => {
-                    activeSpecialtyFilter = btn.getAttribute("data-specialty") || "all";
-                    syncSpecialtyUI(activeSpecialtyFilter);
-                    renderCards();
-                });
-            });
-        }
-        
-        // Evento de busca em tempo real com debounce de ~300ms, AbortController e guarda de min 2 caracteres
-        const newSearchInput = searchInput;
-        
-        const debouncedRosterSearch = window.createDebouncedSearch((e, signal) => {
-            if (signal?.aborted) return;
-            const rawVal = e?.target?.value ?? (typeof e === "string" ? e : "");
-            const trimmed = rawVal.toLowerCase().trim();
-            searchQuery = trimmed.length >= 2 ? trimmed : "";
-            renderCards();
-        }, { delay: 300, minLength: 2, immediateOnEmpty: true });
 
-        newSearchInput._onRosterSearchInput = (e) => {
-            const rawVal = (e?.detail?.value ?? newSearchInput.value ?? "").trim();
-            // Se o usuário apagou para < 2 caracteres mas não zero, reseta para lista cheia imediatamente
-            if (rawVal.length > 0 && rawVal.length < 2) {
-                debouncedRosterSearch.cancel();
-                if (searchQuery !== "") {
-                    searchQuery = "";
-                    renderCards();
-                }
-                return;
-            }
-            debouncedRosterSearch(e);
-        };
-        if (!newSearchInput.dataset.searchBound) {
-            newSearchInput.dataset.searchBound = "true";
-            newSearchInput.addEventListener("input", (e) => {
-                if (typeof newSearchInput._onRosterSearchInput === "function") {
-                    newSearchInput._onRosterSearchInput(e);
-                }
-            });
-        }
-
-        // Configura seletor de ordenação inteligente
+        const filterContainer = document.querySelector(`.element-filters[data-game="${gameId}"]:not(.rarity-filters):not(.weapon-filters):not(.path-filters):not(.specialty-filters)`);
+        const rarityContainer = document.querySelector(`.rarity-filters[data-game="${gameId}"]`);
+        const pathContainer = document.querySelector(`.path-filters[data-game="${gameId}"]`);
+        const weaponContainer = document.querySelector(`.weapon-filters[data-game="${gameId}"]`);
+        const specialtyContainer = document.querySelector(`.specialty-filters[data-game="${gameId}"]`);
         const sortSelect = document.getElementById(`roster-sort-${gameId}`);
-        if (sortSelect) {
-            const newSelect = sortSelect.cloneNode(true);
-            sortSelect.parentNode.replaceChild(newSelect, sortSelect);
-            const freshSelect = document.getElementById(`roster-sort-${gameId}`);
-            freshSelect.value = activeSort;
-            freshSelect.addEventListener("change", (e) => {
-                activeSort = e.target.value;
-                renderCards();
-            });
-        }
-
-        // Configura botão de alternar painel de auditoria
         const toggleAuditBtn = document.querySelector(`.btn-toggle-audit[data-game="${gameId}"]`);
         const auditPanel = document.getElementById(`audit-panel-${gameId}`);
-        if (toggleAuditBtn && auditPanel) {
-            const newToggle = toggleAuditBtn.cloneNode(true);
-            toggleAuditBtn.parentNode.replaceChild(newToggle, toggleAuditBtn);
-            const freshToggle = document.querySelector(`.btn-toggle-audit[data-game="${gameId}"]`);
-            freshToggle.addEventListener("click", () => {
-                const isVisible = auditPanel.style.display !== "none";
-                auditPanel.style.display = isVisible ? "none" : "flex";
-                if (!isVisible) freshToggle.classList.add("active");
-                else freshToggle.classList.remove("active");
-            });
-        }
-
-        // Configura pílulas e seletores do painel de auditoria
-        if (auditPanel) {
-            const pills = auditPanel.querySelectorAll(".audit-pill");
-            pills.forEach(pill => {
-                const newPill = pill.cloneNode(true);
-                pill.parentNode.replaceChild(newPill, pill);
-            });
-            const freshPills = auditPanel.querySelectorAll(".audit-pill");
-            freshPills.forEach(pill => {
-                pill.addEventListener("click", () => {
-                    const group = pill.closest(".filter-pills");
-                    if (!group) return;
-                    const filterType = group.getAttribute("data-filter-type");
-                    const val = pill.getAttribute("data-val") || "all";
-                    
-                    group.querySelectorAll(".audit-pill").forEach(p => p.classList.remove("active"));
-                    pill.classList.add("active");
-
-                    if (filterType === "set") activeSetFilter = val;
-                    else if (filterType === "slot") activeSlotFilter = val;
-                    else if (filterType === "grade") activeGradeFilter = val;
-                    else if (filterType === "weapon-status") activeWeaponStatusFilter = val;
-                    else if (filterType === "region") activeRegionFilter = val;
-                    else if (filterType === "mechanic") activeMechanicFilter = val;
-                    else if (filterType === "scale") activeScaleFilter = val;
-                    else if (filterType === "main-stat") activeMainStatFilter = val;
-                    else if (filterType === "speed") activeSpeedFilter = val;
-                    else if (filterType === "specialty") {
-                        activeSpecialtyFilter = val;
-                        syncSpecialtyUI(val);
-                    }
-                    else if (filterType === "faction") activeFactionFilter = val;
-                    else if (filterType === "archetype") activeArchetypeFilter = val;
-                    else if (filterType === "discs-main") activeDiscsMainFilter = val;
-
-                    renderCards();
-                });
-            });
-
-            const auditSelects = auditPanel.querySelectorAll(".audit-select");
-            auditSelects.forEach(sel => {
-                const newSel = sel.cloneNode(true);
-                sel.parentNode.replaceChild(newSel, sel);
-            });
-            const freshSelects = auditPanel.querySelectorAll(".audit-select");
-            freshSelects.forEach(sel => {
-                sel.addEventListener("change", (e) => {
-                    const fType = sel.getAttribute("data-filter-type");
-                    if (fType === "planar") activePlanarFilter = sel.value;
-                    renderCards();
-                });
-            });
-        }
+        const clearBtn = document.querySelector(`.btn-clear-filters[data-game="${gameId}"]`);
 
         // Função para limpar todos os filtros ativos e resetar o estado
         const resetAllFilters = () => {
             searchQuery = "";
-            if (newSearchInput) newSearchInput.value = "";
+            if (searchInput) searchInput.value = "";
             if (debouncedRosterSearch && debouncedRosterSearch.cancel) debouncedRosterSearch.cancel();
 
             activeSort = "default";
-            const sortSel = document.getElementById(`roster-sort-${gameId}`);
-            if (sortSel) sortSel.value = "default";
+            if (sortSelect) sortSelect.value = "default";
 
             activeElementFilter = "all";
             if (filterContainer) {
                 filterContainer.querySelectorAll(".filter-btn").forEach(b => {
-                    if (b.getAttribute("data-filter") === "all") b.classList.add("active");
-                    else b.classList.remove("active");
+                    b.classList.toggle("active", b.getAttribute("data-filter") === "all");
                 });
             }
 
             activeRarityFilter = "all";
             if (rarityContainer) {
                 rarityContainer.querySelectorAll(".filter-btn").forEach(b => {
-                    if (b.getAttribute("data-rarity") === "all") b.classList.add("active");
-                    else b.classList.remove("active");
+                    b.classList.toggle("active", b.getAttribute("data-rarity") === "all");
                 });
             }
 
             activePathFilter = "all";
             if (pathContainer) {
                 pathContainer.querySelectorAll(".filter-btn").forEach(b => {
-                    if (b.getAttribute("data-path") === "all") b.classList.add("active");
-                    else b.classList.remove("active");
+                    b.classList.toggle("active", b.getAttribute("data-path") === "all");
                 });
             }
 
             activeWeaponFilter = "all";
             if (weaponContainer) {
                 weaponContainer.querySelectorAll(".filter-btn").forEach(b => {
-                    if (b.getAttribute("data-weapon") === "all") b.classList.add("active");
-                    else b.classList.remove("active");
+                    b.classList.toggle("active", b.getAttribute("data-weapon") === "all");
                 });
             }
 
@@ -1609,15 +1411,13 @@ async function _loadRosterImpl(gameId) {
             activeMainStatFilter = "all";
             activeSpeedFilter = "all";
             activePlanarFilter = "all";
-            activeSpecialtyFilter = "all";
             activeFactionFilter = "all";
             activeArchetypeFilter = "all";
             activeDiscsMainFilter = "all";
 
             if (auditPanel) {
                 auditPanel.querySelectorAll(".audit-pill").forEach(p => {
-                    if (p.getAttribute("data-val") === "all") p.classList.add("active");
-                    else p.classList.remove("active");
+                    p.classList.toggle("active", p.getAttribute("data-val") === "all");
                 });
                 auditPanel.querySelectorAll(".audit-select").forEach(s => s.value = "all");
             }
@@ -1627,14 +1427,134 @@ async function _loadRosterImpl(gameId) {
 
         _rosterResetCallbacks[gameId] = resetAllFilters;
 
-        // Configura botão de limpar filtros na barra de busca
-        const clearBtn = document.querySelector(`.btn-clear-filters[data-game="${gameId}"]`);
-        if (clearBtn) {
-            const newClear = clearBtn.cloneNode(true);
-            clearBtn.parentNode.replaceChild(newClear, clearBtn);
-            const freshClear = document.querySelector(`.btn-clear-filters[data-game="${gameId}"]`);
-            freshClear.addEventListener("click", () => {
-                resetAllFilters();
+        const debouncedRosterSearch = window.createDebouncedSearch((e, signal) => {
+            if (signal?.aborted) return;
+            const rawVal = e?.target?.value ?? (typeof e === "string" ? e : "");
+            const trimmed = rawVal.toLowerCase().trim();
+            searchQuery = trimmed.length >= 2 ? trimmed : "";
+            renderCards();
+        }, { delay: 300, minLength: 2, immediateOnEmpty: true });
+
+        if (searchInput) {
+            searchInput._onRosterSearchInput = (e) => {
+                const rawVal = (e?.detail?.value ?? searchInput.value ?? "").trim();
+                // Se o usuário apagou para < 2 caracteres mas não zero, reseta para lista cheia imediatamente
+                if (rawVal.length > 0 && rawVal.length < 2) {
+                    debouncedRosterSearch.cancel();
+                    if (searchQuery !== "") {
+                        searchQuery = "";
+                        renderCards();
+                    }
+                    return;
+                }
+                debouncedRosterSearch(e);
+            };
+            if (!searchInput.dataset.searchBound) {
+                searchInput.dataset.searchBound = "true";
+                searchInput.addEventListener("input", (e) => {
+                    if (typeof searchInput._onRosterSearchInput === "function") {
+                        searchInput._onRosterSearchInput(e);
+                    }
+                });
+            }
+        }
+
+        // Atualiza ações mutáveis para este gameId (evita cloneNode em <sakuga-button> e <select>)
+        _rosterFilterActions[gameId] = {
+            setElement: (val) => { activeElementFilter = val; renderCards(); },
+            setRarity: (val) => { activeRarityFilter = val; renderCards(); },
+            setPath: (val) => { activePathFilter = val || "all"; renderCards(); },
+            setWeapon: (val) => { activeWeaponFilter = val || "all"; renderCards(); },
+            setSpecialty: (val) => { activeSpecialtyFilter = val || "all"; syncSpecialtyUI(activeSpecialtyFilter); renderCards(); },
+            setSort: (val) => { activeSort = val; renderCards(); },
+            setAuditFilter: (filterType, val) => {
+                if (filterType === "set") activeSetFilter = val;
+                else if (filterType === "slot") activeSlotFilter = val;
+                else if (filterType === "grade") activeGradeFilter = val;
+                else if (filterType === "weapon-status") activeWeaponStatusFilter = val;
+                else if (filterType === "region") activeRegionFilter = val;
+                else if (filterType === "mechanic") activeMechanicFilter = val;
+                else if (filterType === "scale") activeScaleFilter = val;
+                else if (filterType === "main-stat") activeMainStatFilter = val;
+                else if (filterType === "speed") activeSpeedFilter = val;
+                else if (filterType === "specialty") {
+                    activeSpecialtyFilter = val;
+                    syncSpecialtyUI(val);
+                }
+                else if (filterType === "faction") activeFactionFilter = val;
+                else if (filterType === "archetype") activeArchetypeFilter = val;
+                else if (filterType === "discs-main") activeDiscsMainFilter = val;
+                renderCards();
+            },
+            setAuditSelect: (fType, val) => {
+                if (fType === "planar") activePlanarFilter = val;
+                renderCards();
+            },
+            reset: resetAllFilters
+        };
+
+        // Vincula listeners uma única vez por container via dataset.bound + delegação de eventos
+        const bindFilterGroup = (container, attrName, actionKey) => {
+            if (!container || container.dataset.bound) return;
+            container.dataset.bound = "true";
+            container.addEventListener("click", (e) => {
+                const btn = e.target.closest(".filter-btn");
+                if (!btn || !container.contains(btn)) return;
+                container.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+                btn.classList.add("active");
+                _rosterFilterActions[gameId]?.[actionKey]?.(btn.getAttribute(attrName));
+            });
+        };
+
+        bindFilterGroup(filterContainer, "data-filter", "setElement");
+        bindFilterGroup(rarityContainer, "data-rarity", "setRarity");
+        bindFilterGroup(pathContainer, "data-path", "setPath");
+        bindFilterGroup(weaponContainer, "data-weapon", "setWeapon");
+        bindFilterGroup(specialtyContainer, "data-specialty", "setSpecialty");
+
+        if (sortSelect) {
+            sortSelect.value = activeSort;
+            if (!sortSelect.dataset.bound) {
+                sortSelect.dataset.bound = "true";
+                sortSelect.addEventListener("change", (e) => {
+                    _rosterFilterActions[gameId]?.setSort?.(e.target.value);
+                });
+            }
+        }
+
+        if (toggleAuditBtn && auditPanel && !toggleAuditBtn.dataset.bound) {
+            toggleAuditBtn.dataset.bound = "true";
+            toggleAuditBtn.addEventListener("click", () => {
+                const isVisible = auditPanel.style.display !== "none";
+                auditPanel.style.display = isVisible ? "none" : "flex";
+                toggleAuditBtn.classList.toggle("active", !isVisible);
+            });
+        }
+
+        if (auditPanel && !auditPanel.dataset.bound) {
+            auditPanel.dataset.bound = "true";
+            auditPanel.addEventListener("click", (e) => {
+                const pill = e.target.closest(".audit-pill");
+                if (!pill || !auditPanel.contains(pill)) return;
+                const group = pill.closest(".filter-pills");
+                if (!group) return;
+                const filterType = group.getAttribute("data-filter-type");
+                const val = pill.getAttribute("data-val") || "all";
+                group.querySelectorAll(".audit-pill").forEach(p => p.classList.remove("active"));
+                pill.classList.add("active");
+                _rosterFilterActions[gameId]?.setAuditFilter?.(filterType, val);
+            });
+            auditPanel.addEventListener("change", (e) => {
+                const sel = e.target.closest(".audit-select");
+                if (!sel || !auditPanel.contains(sel)) return;
+                _rosterFilterActions[gameId]?.setAuditSelect?.(sel.getAttribute("data-filter-type"), sel.value);
+            });
+        }
+
+        if (clearBtn && !clearBtn.dataset.bound) {
+            clearBtn.dataset.bound = "true";
+            clearBtn.addEventListener("click", () => {
+                _rosterFilterActions[gameId]?.reset?.();
             });
         }
         
@@ -1810,7 +1730,17 @@ if (typeof document !== "undefined") {
     }
 }
 
+let _inspectController = null;
+let _inspectReqId = 0;
+
 async function inspectCharacter(gameId, char) {
+    if (_inspectController) {
+        _inspectController.abort();
+    }
+    _inspectController = new AbortController();
+    const reqId = ++_inspectReqId;
+    const { signal } = _inspectController;
+
     const inspector = document.getElementById("build-inspector");
     const inspectorOverlay = document.getElementById("inspector-overlay");
     if (inspector) inspector.classList.add("open");
@@ -1975,8 +1905,9 @@ async function inspectCharacter(gameId, char) {
     }
     
     try {
-        const res = await fetch(`/api/build/${gameId}/${encodeURIComponent(char.name)}`);
+        const res = await fetch(`/api/build/${gameId}/${encodeURIComponent(char.name)}`, { signal });
         const build = await res.json();
+        if (reqId !== _inspectReqId || signal.aborted) return;
         
         // 0. Renderiza Constelações / Eidolons / Mindscapes
         const ranksCardEl = document.getElementById("ins-ranks-card");
@@ -2348,109 +2279,107 @@ async function inspectCharacter(gameId, char) {
             window.currentInspectorChar.stats = build.stats;
         }
         
-        // NOVO: Renderiza Comparação de Metas Gerais (Benchmarks)
+        // NOVO: Renderiza Comparação de Metas Gerais (Benchmarks) & Breakpoints em paralelo
         const benchmarksCard = document.getElementById("ins-benchmarks-card");
         const benchmarksList = document.getElementById("ins-benchmarks-list");
-        
-        if (benchmarksCard && benchmarksList) {
-            benchmarksCard.style.display = "none";
-            benchmarksList.innerHTML = "";
-            
-            if (statsKeys.length > 0) {
-                try {
-                    const evalRes = await fetch(`/api/evaluate-stats/${gameId}/${encodeURIComponent(char.name)}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(build.stats)
-                    });
-                    if (evalRes.ok) {
-                        const evalData = await evalRes.json();
-                        if (evalData && evalData.length > 0) {
-                            benchmarksCard.style.display = "block";
-                            benchmarksList.innerHTML = evalData.map(item => {
-                                const isGood = item.status === "GOOD";
-                                const color = isGood ? "#10b981" : "#fca5a5";
-                                const icon = isGood ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
-                                return `
-                                    <div style="display: flex; align-items: flex-start; gap: 6px; color: ${color}; font-size: 11px; margin-bottom: 4px;">
-                                        <span style="font-size: 11px; margin-top: 1px;">${icon}</span>
-                                        <div>
-                                            <strong style="color: var(--text-primary); font-size: 11px;">${item.stat}:</strong> ${item.message}
-                                        </div>
-                                    </div>
-                                `;
-                            }).join("");
-                        }
-                    }
-                } catch (err) {
-                    console.error("Erro ao avaliar metas gerais:", err);
-                }
-            }
-        }
-
-        // NOVO: Renderiza Breakpoints de Ação & Speed Tuning (MoC / Ciclos)
         const bpCard = document.getElementById("ins-breakpoints-card");
         const bpList = document.getElementById("ins-breakpoints-list");
         const bpBadge = document.getElementById("ins-breakpoints-summary-badge");
 
+        if (benchmarksCard && benchmarksList) {
+            benchmarksCard.style.display = "none";
+            benchmarksList.innerHTML = "";
+        }
         if (bpCard && bpList) {
             bpCard.style.display = "none";
             bpList.innerHTML = "";
-            if (statsKeys.length > 0) {
-                try {
-                    const bpRes = await fetch("/api/stats/breakpoints", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                            game_id: gameId,
-                            char_name: char.name,
-                            stats: build.stats
-                        })
-                    });
-                    if (bpRes.ok) {
-                        const bpData = await bpRes.json();
-                        if (bpData && bpData.breakpoints && bpData.breakpoints.length > 0) {
-                            bpCard.style.display = "block";
-                            if (bpBadge) {
-                                bpBadge.textContent = bpData.cycles_summary || `${bpData.breakpoints.length} Metas de Combate`;
-                            }
-                            bpList.innerHTML = bpData.breakpoints.map(b => {
-                                const statusColor = b.is_reached ? "#10b981" : "#f59e0b";
-                                const statusIcon = b.is_reached ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-clock"></i>';
-                                const barWidth = b.tier_progress !== undefined && b.tier_progress !== null ? Math.min(100, Math.max(0, b.tier_progress)) : 100;
-                                const barColor = b.is_reached ? "linear-gradient(90deg, #10b981, #34d399)" : "linear-gradient(90deg, #38bdf8, #818cf8)";
-                                
-                                const tuningHtml = b.speed_tuning_tip ? `
-                                    <div style="font-size: 11px; color: #cbd5e1; background: rgba(0,0,0,0.3); border-left: 2px solid #38bdf8; padding: 5px 8px; border-radius: 4px; margin-top: 6px; line-height: 1.4;">
-                                        <i class="fa-solid fa-lightbulb" style="color: #fbbf24; margin-right: 4px;"></i><strong>${isEn ? "Tactical Sync:" : "Sincronia Tática:"}</strong> ${b.speed_tuning_tip}
-                                    </div>
-                                ` : "";
+        }
 
-                                return `
-                                    <div style="padding: 10px 12px; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-                                            <span style="font-weight: 600; color: #ffffff; font-size: 12px;">${b.stat}</span>
-                                            <span style="font-size: 12px; font-weight: 700; color: #38bdf8;">${b.current}</span>
-                                        </div>
-                                        <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: ${statusColor}; margin-bottom: 6px;">
-                                            <span>${statusIcon}</span>
-                                            <span>${b.status}</span>
-                                        </div>
-                                        <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
-                                            <div style="width: ${barWidth}%; height: 100%; background: ${barColor}; border-radius: 4px; transition: width 0.3s ease;"></div>
-                                        </div>
-                                        <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between;">
-                                            <span><i class="fa-solid fa-bullseye" style="margin-right: 4px; color: #eab308;"></i>${b.next_goal}</span>
-                                        </div>
-                                        ${tuningHtml}
-                                    </div>
-                                `;
-                            }).join("");
-                        }
-                    }
-                } catch (bpErr) {
-                    console.error("Erro ao carregar breakpoints:", bpErr);
+        if (statsKeys.length > 0 && ((benchmarksCard && benchmarksList) || (bpCard && bpList))) {
+            const evalPromise = (benchmarksCard && benchmarksList)
+                ? fetch(`/api/evaluate-stats/${gameId}/${encodeURIComponent(char.name)}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(build.stats),
+                    signal
+                }).then(r => (r.ok ? r.json() : null))
+                : Promise.resolve(null);
+
+            const bpPromise = (bpCard && bpList)
+                ? fetch("/api/stats/breakpoints", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        game_id: gameId,
+                        char_name: char.name,
+                        stats: build.stats
+                    }),
+                    signal
+                }).then(r => (r.ok ? r.json() : null))
+                : Promise.resolve(null);
+
+            const [evalSettled, bpSettled] = await Promise.allSettled([evalPromise, bpPromise]);
+            if (reqId !== _inspectReqId || signal.aborted) return;
+
+            if (evalSettled.status === "fulfilled" && evalSettled.value && evalSettled.value.length > 0 && benchmarksCard && benchmarksList) {
+                benchmarksCard.style.display = "block";
+                benchmarksList.innerHTML = evalSettled.value.map(item => {
+                    const isGood = item.status === "GOOD";
+                    const color = isGood ? "#10b981" : "#fca5a5";
+                    const icon = isGood ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+                    return `
+                        <div style="display: flex; align-items: flex-start; gap: 6px; color: ${color}; font-size: 11px; margin-bottom: 4px;">
+                            <span style="font-size: 11px; margin-top: 1px;">${icon}</span>
+                            <div>
+                                <strong style="color: var(--text-primary); font-size: 11px;">${item.stat}:</strong> ${item.message}
+                            </div>
+                        </div>
+                    `;
+                }).join("");
+            } else if (evalSettled.status === "rejected" && evalSettled.reason?.name !== "AbortError") {
+                console.error("Erro ao avaliar metas gerais:", evalSettled.reason);
+            }
+
+            if (bpSettled.status === "fulfilled" && bpSettled.value?.breakpoints?.length > 0 && bpCard && bpList) {
+                const bpData = bpSettled.value;
+                bpCard.style.display = "block";
+                if (bpBadge) {
+                    bpBadge.textContent = bpData.cycles_summary || `${bpData.breakpoints.length} Metas de Combate`;
                 }
+                bpList.innerHTML = bpData.breakpoints.map(b => {
+                    const statusColor = b.is_reached ? "#10b981" : "#f59e0b";
+                    const statusIcon = b.is_reached ? '<i class="fa-solid fa-circle-check"></i>' : '<i class="fa-solid fa-clock"></i>';
+                    const barWidth = b.tier_progress !== undefined && b.tier_progress !== null ? Math.min(100, Math.max(0, b.tier_progress)) : 100;
+                    const barColor = b.is_reached ? "linear-gradient(90deg, #10b981, #34d399)" : "linear-gradient(90deg, #38bdf8, #818cf8)";
+                    
+                    const tuningHtml = b.speed_tuning_tip ? `
+                        <div style="font-size: 11px; color: #cbd5e1; background: rgba(0,0,0,0.3); border-left: 2px solid #38bdf8; padding: 5px 8px; border-radius: 4px; margin-top: 6px; line-height: 1.4;">
+                            <i class="fa-solid fa-lightbulb" style="color: #fbbf24; margin-right: 4px;"></i><strong>${isEn ? "Tactical Sync:" : "Sincronia Tática:"}</strong> ${b.speed_tuning_tip}
+                        </div>
+                    ` : "";
+
+                    return `
+                        <div style="padding: 10px 12px; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                                <span style="font-weight: 600; color: #ffffff; font-size: 12px;">${b.stat}</span>
+                                <span style="font-size: 12px; font-weight: 700; color: #38bdf8;">${b.current}</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: ${statusColor}; margin-bottom: 6px;">
+                                <span>${statusIcon}</span>
+                                <span>${b.status}</span>
+                            </div>
+                            <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.08); border-radius: 4px; overflow: hidden; margin-bottom: 6px;">
+                                <div style="width: ${barWidth}%; height: 100%; background: ${barColor}; border-radius: 4px; transition: width 0.3s ease;"></div>
+                            </div>
+                            <div style="font-size: 11px; color: #94a3b8; display: flex; justify-content: space-between;">
+                                <span><i class="fa-solid fa-bullseye" style="margin-right: 4px; color: #eab308;"></i>${b.next_goal}</span>
+                            </div>
+                            ${tuningHtml}
+                        </div>
+                    `;
+                }).join("");
+            } else if (bpSettled.status === "rejected" && bpSettled.reason?.name !== "AbortError") {
+                console.error("Erro ao carregar breakpoints:", bpSettled.reason);
             }
         }
         
@@ -2493,22 +2422,6 @@ async function inspectCharacter(gameId, char) {
         
         // As peças do roster extraído via HoYoLAB local (contêm URLs originais dos ícones de cada peça!)
         const localRelics = char.relics || char.artifacts || char.discs || [];
-        
-function getSlotIcon(slotName) {
-    if (!slotName) return '<i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i>';
-    const s = String(slotName).toLowerCase();
-    if (s.includes("flor") || s.includes("bracer") || s.includes("head") || s.includes("cabeça") || s.includes("1"))
-        return '<i class="fa-solid fa-clover" style="color: #10b981;"></i>';
-    if (s.includes("pluma") || s.includes("necklace") || s.includes("mão") || s.includes("hands") || s.includes("2"))
-        return '<i class="fa-solid fa-feather-pointed" style="color: #3b82f6;"></i>';
-    if (s.includes("areia") || s.includes("shoes") || s.includes("corpo") || s.includes("body") || s.includes("3"))
-        return '<i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i>';
-    if (s.includes("cálice") || s.includes("calice") || s.includes("ring") || s.includes("esfera") || s.includes("feet") || s.includes("pés") || s.includes("4") || s.includes("5"))
-        return '<i class="fa-solid fa-wine-glass" style="color: #ec4899;"></i>';
-    if (s.includes("tiara") || s.includes("dress") || s.includes("corda") || s.includes("rope") || s.includes("6"))
-        return '<i class="fa-solid fa-crown" style="color: #a855f7;"></i>';
-    return '<i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i>';
-}
 
         if (build.pieces && build.pieces.length > 0) {
             build.pieces.forEach(piece => {
@@ -2521,7 +2434,7 @@ function getSlotIcon(slotName) {
                     (p.name && piece.name && p.name.toLowerCase().includes(piece.name.toLowerCase()))
                 );
                 
-                const slotIconHtml = getSlotIcon(piece.slot);
+                const slotIconHtml = window.getSlotIcon ? window.getSlotIcon(piece.slot) : "";
                 const safePieceFn = getSafeFileName(piece.name);
                 const cachedPiecePath = `/assets/relics/${gameId}/${safePieceFn}`;
                 
@@ -2608,6 +2521,7 @@ function getSlotIcon(slotName) {
         }
         
     } catch (err) {
+        if (err?.name === "AbortError" || reqId !== _inspectReqId) return;
         console.error("Erro ao inspecionar build:", err);
         document.getElementById("ins-relic-sets").innerHTML = "Erro ao carregar.";
         document.getElementById("ins-stats-grid").innerHTML = "Erro ao carregar.";
@@ -2615,42 +2529,36 @@ function getSlotIcon(slotName) {
     }
 }
 
-function closeInspector() {
-    const inspector = document.getElementById("build-inspector");
-    const inspectorOverlay = document.getElementById("inspector-overlay");
-    if (inspector) {
-        inspector.classList.remove("open");
-        inspector.style.display = "";
-    }
-    if (inspectorOverlay) {
-        inspectorOverlay.classList.remove("active");
-        inspectorOverlay.style.display = "";
-    }
-}
-
+const _closeIns = () => window.closeInspector?.();
 const btnCloseInspector = document.getElementById("btn-close-inspector");
-if (btnCloseInspector) btnCloseInspector.addEventListener("click", closeInspector);
+if (btnCloseInspector) btnCloseInspector.addEventListener("click", _closeIns);
 const inspectorOverlay = document.getElementById("inspector-overlay");
-if (inspectorOverlay) inspectorOverlay.addEventListener("click", closeInspector);
+if (inspectorOverlay) inspectorOverlay.addEventListener("click", _closeIns);
 
 // Fechar modal ao pressionar a tecla Escape
 window.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
         const inspector = document.getElementById("build-inspector");
         if (inspector && inspector.classList.contains("open")) {
-            closeInspector();
+            _closeIns();
         }
     }
 });
 
-
-
-
 window.addEventListener("app:languageChanged", () => {
     ["zzz", "genshin", "hsr"].forEach(g => {
-        const gal = document.getElementById(`gallery-${g}`);
-        if (gal && globalRoster && globalRoster[g] && globalRoster[g].length > 0) {
-            loadRoster(g);
+        if (!globalRoster || !globalRoster[g] || globalRoster[g].length === 0) return;
+        const tabEl = document.getElementById(`tab-${g}`);
+        if (tabEl && tabEl.classList.contains("active")) {
+            if (g === "hsr") {
+                const allOpt = document.querySelector('#planar-filter-hsr option[value="all"]');
+                if (allOpt) allOpt.textContent = window.isEn ? "All Planar Ornaments" : "Todos os Ornamentos Planares";
+            }
+            if (typeof _rosterRenderers[g] === "function") {
+                _rosterRenderers[g]();
+            }
+        } else {
+            _dirtyRosterLang[g] = true;
         }
     });
 });
@@ -2658,9 +2566,7 @@ window.addEventListener("app:languageChanged", () => {
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof btnCloseInspector !== 'undefined') window.btnCloseInspector = btnCloseInspector;
 if (typeof cleanHoyoverseText !== 'undefined') window.cleanHoyoverseText = cleanHoyoverseText;
-if (typeof closeInspector !== 'undefined') window.closeInspector = closeInspector;
 if (typeof escapeHtml !== 'undefined') window.escapeHtml = escapeHtml;
-if (typeof getSlotIcon !== 'undefined') window.getSlotIcon = getSlotIcon;
 if (typeof hoyoTooltipInitialized !== 'undefined') window.hoyoTooltipInitialized = hoyoTooltipInitialized;
 if (typeof inspectCharacter !== 'undefined') window.inspectCharacter = inspectCharacter;
 if (typeof inspectorOverlay !== 'undefined') window.inspectorOverlay = inspectorOverlay;

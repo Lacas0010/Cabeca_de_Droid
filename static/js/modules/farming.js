@@ -47,11 +47,6 @@ function formatFarmingNote(noteStr) {
     // LOGICA DOS 8 NOVOS MÓDULOS AVANÇADOS
     // ==========================================
 
-    // Solicitar permissão para Notificações Web
-    if ("Notification" in window && Notification.permission !== "granted" && Notification.permission !== "denied") {
-        Notification.requestPermission();
-    }
-
     // 1. SIMULADOR DE GACHA
     const btnRunGacha = document.getElementById("btn-run-gacha-sim");
     if (btnRunGacha) {
@@ -791,7 +786,7 @@ function formatFarmingNote(noteStr) {
             const gColor = gradeColors[c.grade] || "#94a3b8";
 
             html += `
-                <div class="farm-char-card ${isSelected ? 'selected' : ''} ${isFiveStar ? 'five-star' : 'four-star'}" onclick="window.toggleFarmModalCharCard('${c.name.replace(/'/g, "\\'")}')">
+                <div class="farm-char-card ${isSelected ? 'selected' : ''} ${isFiveStar ? 'five-star' : 'four-star'}" data-char-name="${c.name.replace(/"/g, "&quot;")}" onclick="window.toggleFarmModalCharCard('${c.name.replace(/'/g, "\\'")}')">
                     <div class="card-check-badge">
                         <i class="fa-solid fa-check"></i>
                     </div>
@@ -813,12 +808,30 @@ function formatFarmingNote(noteStr) {
     };
 
     window.toggleFarmModalCharCard = (charName) => {
+        let isSelected;
         if (window.farmModalSelectedSet.has(charName)) {
             window.farmModalSelectedSet.delete(charName);
+            isSelected = false;
         } else {
             window.farmModalSelectedSet.add(charName);
+            isSelected = true;
         }
-        window.renderFarmModalGrid();
+
+        const grid = document.getElementById("farm-modal-char-grid");
+        if (grid) {
+            const cardEl = Array.from(grid.querySelectorAll(".farm-char-card"))
+                .find(el => el.dataset.charName === charName);
+            if (cardEl) {
+                cardEl.classList.toggle("selected", isSelected);
+            }
+        }
+
+        const countEl = document.getElementById("farm-modal-selection-count");
+        if (countEl) {
+            const gameId = window.currentFarmModalGame || "genshin";
+            const rosterList = window.farmRosterCache[gameId] || [];
+            countEl.innerText = `${window.farmModalSelectedSet.size} / ${rosterList.length} ${window.isEn ? "selected" : "selecionados"}`;
+        }
     };
 
     window.selectAllFarmModalChars = () => {
@@ -1309,7 +1322,8 @@ function formatFarmingNote(noteStr) {
     }, 600);
 
     window.addEventListener("app:languageChanged", () => {
-        if (document.getElementById("farm-order-tasks-list") && typeof window.loadDailyFarmOrder === "function") {
+        const tabHome = document.getElementById("tab-home");
+        if (tabHome?.classList.contains("active") && document.getElementById("farm-order-tasks-list") && typeof window.loadDailyFarmOrder === "function") {
             window.loadDailyFarmOrder(window.currentFarmOrderGame || "genshin");
         }
     });
@@ -1688,11 +1702,6 @@ function formatFarmingNote(noteStr) {
                 window.loadAccountGapsAnalysis(gameId);
             }
         });
-    }
-
-    // Initialize upgraded Gacha Simulator handlers
-    if (window.initGachaSimulator) {
-        window.initGachaSimulator();
     }
 
     // Event listener para o botão de apagar pastas e banco de dados (Zona de Perigo)
@@ -2782,8 +2791,14 @@ window.loadMorningBriefing = async function() {
 };
 
 window.addEventListener("app:languageChanged", () => {
-    if (typeof window.loadMorningBriefing === "function") {
-        window.loadMorningBriefing();
+    const tabHome = document.getElementById("tab-home");
+    if (tabHome?.classList.contains("active")) {
+        if (typeof window.loadMorningBriefing === "function") {
+            window.loadMorningBriefing();
+        }
+    } else {
+        window._dirtyLangTabs = window._dirtyLangTabs || {};
+        window._dirtyLangTabs.homeBriefing = true;
     }
 });
 
@@ -2963,27 +2978,34 @@ if (typeof buildRelicSlotPairs !== 'undefined') window.buildRelicSlotPairs = bui
 if (typeof parseSubstats !== 'undefined') window.parseSubstats = parseSubstats;
 
 window.addEventListener("app:languageChanged", () => {
-    // Farm
+    // Farm (só recarrega se a aba #tab-farm estiver ativa; senão atualiza ao abrir a aba)
+    const tabFarm = document.getElementById("tab-farm");
     const farmGame = document.getElementById("farm-game-tabs")?.value || document.querySelector(".tab-farm-game-btn.active")?.dataset?.game;
-    if (farmGame && typeof window.loadFarmData === "function") {
+    if (tabFarm?.classList.contains("active") && farmGame && typeof window.loadFarmData === "function") {
         window.loadFarmData(farmGame, "tab-farm-content-body");
     }
 
-    // Trash & Craft
+    // Trash & Craft (só recarrega se a aba #tab-trash estiver ativa)
+    const tabTrash = document.getElementById("tab-trash");
     const trashGame = document.getElementById("trash-game-tabs")?.value || document.querySelector(".tab-trash-game-btn.active")?.dataset?.game || window.currentTrashGame || "hsr";
-    if (window.currentTrashSubView === "craft" && typeof window.loadCraftRecommendations === "function") {
-        window.loadCraftRecommendations(trashGame);
-    } else if (typeof window.loadTrashRelics === "function") {
-        window.loadTrashRelics(trashGame, "tab-trash-relics-body");
+    if (tabTrash?.classList.contains("active")) {
+        if (window.currentTrashSubView === "craft" && typeof window.loadCraftRecommendations === "function") {
+            window.loadCraftRecommendations(trashGame);
+        } else if (typeof window.loadTrashRelics === "function") {
+            window.loadTrashRelics(trashGame, "tab-trash-relics-body");
+        }
     }
 
-    // Audit
-    const auditGame = document.getElementById("audit-game-tabs")?.value || window.currentAuditGameId || "hsr";
-    if (typeof window.loadAuditReport === "function") {
-        window.loadAuditReport(auditGame, "tab-audit-report-body");
-    }
-    const gapsGame = window.currentGapsGame || "hsr";
-    if (typeof window.loadAccountGapsAnalysis === "function") {
-        window.loadAccountGapsAnalysis(gapsGame);
+    // Audit (só recarrega se a aba #tab-audit estiver ativa)
+    const tabAudit = document.getElementById("tab-audit");
+    if (tabAudit?.classList.contains("active")) {
+        const auditGame = document.getElementById("audit-game-tabs")?.value || window.currentAuditGameId || "hsr";
+        if (typeof window.loadAuditReport === "function") {
+            window.loadAuditReport(auditGame, "tab-audit-report-body");
+        }
+        const gapsGame = window.currentGapsGame || "hsr";
+        if (typeof window.loadAccountGapsAnalysis === "function") {
+            window.loadAccountGapsAnalysis(gapsGame);
+        }
     }
 });

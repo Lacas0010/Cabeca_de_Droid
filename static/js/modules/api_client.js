@@ -71,7 +71,7 @@ const ELEMENT_PT_MAP = {
 
 // Helper global para formatar o nome de exibição de elementos (ex: ELEMENT_300 -> Lumiflux)
 function formatElementDisplayName(rawElem) {
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
+    const isEn = Boolean(window.isEn || (window.getLanguage && window.getLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_lang') === 'en'));
     if (!rawElem) return isEn ? "Physical" : "Físico";
     const str = String(rawElem).trim();
     const upper = str.toUpperCase();
@@ -191,7 +191,7 @@ const CHARACTER_NAME_MAP_EN = {
 
 function formatCharacterName(rawName) {
     if (!rawName) return "";
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
+    const isEn = Boolean(window.isEn || (window.getLanguage && window.getLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_lang') === 'en'));
     const str = String(rawName).trim();
     if (!isEn) return str;
 
@@ -259,7 +259,7 @@ const PATH_MAP_PT = {
 
 function formatPathName(rawPath, gameId) {
     if (!rawPath) return "";
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
+    const isEn = Boolean(window.isEn || (window.getLanguage && window.getLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_lang') === 'en'));
     const str = String(rawPath).trim();
     const lower = str.toLowerCase();
     if (isEn) {
@@ -467,7 +467,7 @@ function isStatRecommendedForChar(statKey, char) {
 
 function sanitizeStatName(statText) {
     if (!statText) return "";
-    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_language') === 'en'));
+    const isEn = Boolean(window.isEn || (window.getLanguage && window.getLanguage() === 'en') || window.currentLang === 'en' || (typeof localStorage !== 'undefined' && localStorage.getItem('app_lang') === 'en'));
     let s = String(statText).trim();
     if (isEn) {
         const lower = s.toLowerCase();
@@ -540,6 +540,18 @@ const SLOT_ICONS = {
 };
 
 function getSlotIcon(slotName) {
+    if (!slotName) return '<i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i>';
+    const s = String(slotName).toLowerCase();
+    if (s.includes("flor") || s.includes("bracer") || s.includes("head") || s.includes("cabeça") || s.includes("1"))
+        return '<i class="fa-solid fa-clover" style="color: #10b981;"></i>';
+    if (s.includes("pluma") || s.includes("necklace") || s.includes("mão") || s.includes("hands") || s.includes("2"))
+        return '<i class="fa-solid fa-feather-pointed" style="color: #3b82f6;"></i>';
+    if (s.includes("areia") || s.includes("shoes") || s.includes("corpo") || s.includes("body") || s.includes("3"))
+        return '<i class="fa-solid fa-hourglass-half" style="color: #f59e0b;"></i>';
+    if (s.includes("cálice") || s.includes("calice") || s.includes("ring") || s.includes("esfera") || s.includes("feet") || s.includes("pés") || s.includes("4") || s.includes("5"))
+        return '<i class="fa-solid fa-wine-glass" style="color: #ec4899;"></i>';
+    if (s.includes("tiara") || s.includes("dress") || s.includes("corda") || s.includes("rope") || s.includes("6"))
+        return '<i class="fa-solid fa-crown" style="color: #a855f7;"></i>';
     const key = getNormalizedSlot(slotName);
     const iconClass = SLOT_ICONS[key] || "fa-solid fa-shield-halved";
     return `<i class="${iconClass}"></i>`;

@@ -37,6 +37,9 @@ function setupInspectorTabs() {
     });
 }
 
+let _compareController = null;
+let _compareReqId = 0;
+
 async function loadBuildComparison() {
     const rowsContainer = document.getElementById("ins-comparison-rows");
     const scoreCard = document.getElementById("ins-meta-score-card");
@@ -47,6 +50,13 @@ async function loadBuildComparison() {
     const gameTag = document.getElementById("ins-compare-game-tag");
     
     if (!rowsContainer || !activeInspectChar) return;
+
+    if (_compareController) {
+        _compareController.abort();
+    }
+    _compareController = new AbortController();
+    const reqId = ++_compareReqId;
+    const { signal } = _compareController;
 
     const t = (k, fb) => (window.t ? window.t(k) : fb);
     
@@ -75,8 +85,9 @@ async function loadBuildComparison() {
     if (scoreCard) scoreCard.style.display = "none";
     
     try {
-        const res = await fetch(`/api/compare/${activeInspectGame}/${encodeURIComponent(activeInspectChar.name)}`);
+        const res = await fetch(`/api/compare/${activeInspectGame}/${encodeURIComponent(activeInspectChar.name)}`, { signal });
         const data = await res.json();
+        if (reqId !== _compareReqId || signal.aborted) return;
         
         const build = data.player_build || {};
         const target = data.meta_target || {};
@@ -810,6 +821,7 @@ async function loadBuildComparison() {
         }
         
     } catch(err) {
+        if (err?.name === "AbortError" || reqId !== _compareReqId) return;
         console.error("Erro ao carregar comparação de builds:", err);
         const safeCharName = (activeInspectChar?.name || "").replace(/'/g, "\\'");
         rowsContainer.innerHTML = `
@@ -1873,8 +1885,9 @@ window.loadPromoCodes = async (gameId = "hsr") => {
             btn.addEventListener("click", async () => {
                 const code = btn.getAttribute("data-code");
                 const game = btn.getAttribute("data-game");
+                const origBtnHtml = btn.innerHTML;
                 btn.disabled = true;
-                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Resgatando...`;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> ${window.isEn ? "Redeeming..." : "Resgatando..."}`;
                 try {
                     const r = await fetch("/api/codes/redeem", {
                         method: "POST",
@@ -1891,10 +1904,10 @@ window.loadPromoCodes = async (gameId = "hsr") => {
                         setTimeout(() => window.loadPromoCodes(game), 1500);
                     }
                 } catch (e) {
-                    showToast("Erro ao resgatar código.");
+                    showToast(window.isEn ? "Error redeeming code." : "Erro ao resgatar código.");
                 } finally {
                     btn.disabled = false;
-                    btn.innerHTML = `<i class="fa-solid fa-gift"></i> Resgatar Este`;
+                    btn.innerHTML = origBtnHtml;
                 }
             });
         });

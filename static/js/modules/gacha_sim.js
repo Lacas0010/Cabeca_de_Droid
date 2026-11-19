@@ -340,6 +340,11 @@ window.initGachaSimulator = async function() {
     if (typeof window.initGachaNavigation === "function") {
         window.initGachaNavigation();
     }
+    if (window._gachaSimulatorInitialized) {
+        return;
+    }
+    window._gachaSimulatorInitialized = true;
+
     const gamePills = document.querySelectorAll("#gacha-game-pills .gacha-game-pill");
     const gameSelectHidden = document.getElementById("tab-gacha-game-select");
     const simTypePills = document.querySelectorAll("#gacha-sim-type-pills .sim-type-btn");
@@ -349,7 +354,8 @@ window.initGachaSimulator = async function() {
     const pullsInput = document.getElementById("tab-gacha-pulls");
     const runBtn = document.getElementById("tab-btn-run-gacha-sim");
 
-    if (pullsInput) {
+    if (pullsInput && !pullsInput.dataset.bound) {
+        pullsInput.dataset.bound = "true";
         pullsInput.addEventListener("input", window.updateGachaGemConversion);
     }
 
@@ -381,6 +387,8 @@ window.initGachaSimulator = async function() {
 
     // Toggle de Jogos (Genshin, HSR, ZZZ)
     gamePills.forEach(pill => {
+        if (pill.dataset.bound) return;
+        pill.dataset.bound = "true";
         pill.addEventListener("click", async () => {
             gamePills.forEach(p => p.classList.remove("active"));
             pill.classList.add("active");
@@ -396,6 +404,8 @@ window.initGachaSimulator = async function() {
 
     // Toggle de Categoria de Banner (Personagens vs Armas/Cones/Motores-W)
     simTypePills.forEach(pill => {
+        if (pill.dataset.bound) return;
+        pill.dataset.bound = "true";
         pill.addEventListener("click", async () => {
             simTypePills.forEach(p => p.classList.remove("active"));
             pill.classList.add("active");
@@ -408,14 +418,16 @@ window.initGachaSimulator = async function() {
         });
     });
 
-    if (charSelect) {
+    if (charSelect && !charSelect.dataset.bound) {
+        charSelect.dataset.bound = "true";
         charSelect.addEventListener("change", () => {
             const charName = charSelect.value;
             window.updateGachaCharPreview(charName);
         });
     }
 
-    if (currentRankSelect) {
+    if (currentRankSelect && !currentRankSelect.dataset.bound) {
+        currentRankSelect.dataset.bound = "true";
         currentRankSelect.addEventListener("change", () => {
             window.updateTargetRankOptions();
         });
@@ -425,16 +437,12 @@ window.initGachaSimulator = async function() {
         runBtn.onclick = window.runGachaSimulation;
     }
 
-    const wishBtn = document.getElementById("tab-btn-open-wish-anim");
-    if (wishBtn) {
-        wishBtn.onclick = (e) => {
-            if (e) e.preventDefault();
-            window.startWishAnimation(1);
-        };
-    }
-
-    window.updateGachaLabels("genshin", "character");
-    await window.loadGachaCharacters("genshin", "character");
+    const initGame = gameSelectHidden?.value || window.gachaState?.gameId || "genshin";
+    const initType = bannerTypeHidden?.value || window.gachaState?.bannerType || "character";
+    window.gachaState.gameId = initGame;
+    window.gachaState.bannerType = initType;
+    window.updateGachaLabels(initGame, initType);
+    await window.loadGachaCharacters(initGame, initType);
     window.updateGachaGemConversion();
 };
 
@@ -523,23 +531,34 @@ window.updateTargetRankOptions = function() {
     }
 };
 
+let _gachaCharController = null;
+let _gachaCharReqId = 0;
+
 window.loadGachaCharacters = async function(gameId, requestedBannerType = null) {
     const charSelect = document.getElementById("tab-gacha-char-select");
     const lblTargetItem = document.getElementById("lbl-gacha-target-item");
     if (!charSelect) return;
 
+    if (_gachaCharController) {
+        _gachaCharController.abort();
+    }
+    _gachaCharController = new AbortController();
+    const reqId = ++_gachaCharReqId;
+    const { signal } = _gachaCharController;
+
     const bannerType = requestedBannerType || document.getElementById("tab-gacha-banner-type")?.value || "character";
     if (lblTargetItem) {
-
-    lblTargetItem.innerText = bannerType === "weapon" ? (isEn ? "Target Weapon / Light Cone / W-Engine:" : "Arma / Cone de Luz / Motor-W Alvo:") : (isEn ? "Target Character:" : "Personagem Alvo:");
+        lblTargetItem.innerText = bannerType === "weapon" ? (isEn ? "Target Weapon / Light Cone / W-Engine:" : "Arma / Cone de Luz / Motor-W Alvo:") : (isEn ? "Target Character:" : "Personagem Alvo:");
     }
     charSelect.innerHTML = `<option value="">${isEn ? `Loading simulator data and current banner (${bannerType === 'weapon' ? 'Weapons' : 'Characters'})...` : `Carregando dados do simulador e banner atual (${bannerType === 'weapon' ? 'Armas' : 'Personagens'})...`}</option>`;
 
     try {
         const [charsRes, defaultsRes] = await Promise.allSettled([
-            fetch(`/api/gacha/characters/${gameId}`).then(r => r.json()),
-            fetch(`/api/gacha/defaults/${gameId}?banner_type=${bannerType}`).then(r => r.json())
+            fetch(`/api/gacha/characters/${gameId}`, { signal }).then(r => r.json()),
+            fetch(`/api/gacha/defaults/${gameId}?banner_type=${bannerType}`, { signal }).then(r => r.json())
         ]);
+
+        if (reqId !== _gachaCharReqId || signal.aborted) return;
 
         const charsData = charsRes.status === "fulfilled" ? charsRes.value : {};
         const defaultsData = defaultsRes.status === "fulfilled" ? defaultsRes.value : {};
@@ -685,6 +704,7 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
         }
 
     } catch (e) {
+        if (e?.name === "AbortError" || reqId !== _gachaCharReqId) return;
         console.error("Erro ao carregar lista de itens gacha:", e);
         charSelect.innerHTML = `<option value="">Erro ao carregar itens</option>`;
     }
@@ -1132,11 +1152,15 @@ window.initGachaNavigation = function() {
         }
 
         if (viewTarget === "forecast") {
+            window.stopGoalsLiveCountdown?.();
             window.initGachaForecast();
         } else if (viewTarget === "goals") {
             window.loadGachaGoals("all");
         } else if (viewTarget === "tracker") {
+            window.stopGoalsLiveCountdown?.();
             window.loadGachaTracker(window.currentTrackerGame || "hsr");
+        } else {
+            window.stopGoalsLiveCountdown?.();
         }
     };
 
@@ -1833,12 +1857,31 @@ window.tickGachaGoalsCountdown = function() {
     });
 };
 
-window.startGoalsLiveCountdown = function() {
+window.isGoalsViewVisible = function() {
+    if (typeof document === "undefined" || document.hidden) return false;
+    const tabGacha = document.getElementById("tab-gacha");
+    const goalsView = document.getElementById("gacha-view-goals");
+    return Boolean(tabGacha?.classList.contains("active") && goalsView?.classList.contains("active"));
+};
+
+window.stopGoalsLiveCountdown = function() {
     if (window.goalsCountdownTimerId) {
         clearInterval(window.goalsCountdownTimerId);
+        window.goalsCountdownTimerId = null;
     }
+};
+
+window.startGoalsLiveCountdown = function() {
+    window.stopGoalsLiveCountdown();
+    if (!window.isGoalsViewVisible()) return;
     window.tickGachaGoalsCountdown();
-    window.goalsCountdownTimerId = setInterval(window.tickGachaGoalsCountdown, 1000);
+    window.goalsCountdownTimerId = setInterval(() => {
+        if (!window.isGoalsViewVisible()) {
+            window.stopGoalsLiveCountdown();
+            return;
+        }
+        window.tickGachaGoalsCountdown();
+    }, 1000);
 };
 
 window.loadGachaGoals = async function(gameFilter = "all") {
@@ -3059,9 +3102,20 @@ window.copyRoastToClipboard = function() {
         const btn = document.getElementById("btn-copy-roast");
         if (btn) {
             if (typeof btn.done === "function") btn.done();
-            const orig = btn.innerHTML;
-            btn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> Copiado!`;
-            setTimeout(() => { btn.innerHTML = orig; }, 2000);
+            if (!btn.dataset.origHtml) {
+                btn.dataset.origHtml = btn.innerHTML;
+            }
+            if (btn._copyTimeoutId) {
+                clearTimeout(btn._copyTimeoutId);
+            }
+            btn.innerHTML = `<i class="fa-solid fa-check" style="color: #4ade80;"></i> ${window.isEn ? "Copied!" : "Copiado!"}`;
+            btn._copyTimeoutId = setTimeout(() => {
+                if (btn.dataset.origHtml !== undefined) {
+                    btn.innerHTML = btn.dataset.origHtml;
+                    delete btn.dataset.origHtml;
+                }
+                btn._copyTimeoutId = null;
+            }, 2000);
         }
         if (typeof showToast === "function") {
             showToast(window.isEn ? "Roast copied to clipboard!" : "Roast copiado!", "success");
@@ -3098,12 +3152,25 @@ window.addEventListener("app:languageChanged", () => {
     if (typeof window.updateForecastRankLabels === "function") {
         window.updateForecastRankLabels(fcGame, fcType);
     }
-    if (typeof window.loadGachaGoals === "function") {
-        window.loadGachaGoals();
+    const tabGacha = document.getElementById("tab-gacha");
+    const goalsView = document.getElementById("gacha-view-goals");
+    if (tabGacha?.classList.contains("active") && goalsView?.classList.contains("active")) {
+        if (typeof window.loadGachaGoals === "function") {
+            window.loadGachaGoals();
+        }
+    } else {
+        window._dirtyLangTabs = window._dirtyLangTabs || {};
+        window._dirtyLangTabs.gachaGoals = true;
     }
+    const tabLuck = document.getElementById("tab-luck");
     const luckGame = document.getElementById("luck-game-tabs")?.value || document.querySelector(".tab-luck-game-btn.active")?.dataset?.game || "genshin";
-    if (typeof window.loadLuckDashboard === "function") {
-        window.loadLuckDashboard(luckGame);
+    if (tabLuck?.classList.contains("active")) {
+        if (typeof window.loadLuckDashboard === "function") {
+            window.loadLuckDashboard(luckGame);
+        }
+    } else {
+        window._dirtyLangTabs = window._dirtyLangTabs || {};
+        window._dirtyLangTabs.luck = true;
     }
     if (typeof window.updateGachaGemConversion === "function") {
         window.updateGachaGemConversion();
@@ -3112,3 +3179,14 @@ window.addEventListener("app:languageChanged", () => {
         window.renderActiveBannerCard(window.lastDefaultsData, window.gachaState?.activeBannerIndex || 0);
     }
 });
+
+if (typeof document !== "undefined" && !window._goalsVisibilityBound) {
+    window._goalsVisibilityBound = true;
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+            window.stopGoalsLiveCountdown?.();
+        } else if (window.isGoalsViewVisible?.() && document.querySelector(".gacha-goal-live-card")) {
+            window.startGoalsLiveCountdown?.();
+        }
+    });
+}
