@@ -31,6 +31,27 @@ _RE_ENTRY_ID = re.compile(r"/entry/(\d+)")
 _RE_ZZZ_SKIN = re.compile(r"(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png")
 
 
+def _persist_character_relics(database_mod: Any, uid: str, character_name: str, relics: list) -> None:
+    """Persiste as relíquias de um personagem em lote via save_relics_batch (com fallback legado)."""
+    batch_fn = getattr(database_mod, "save_relics_batch", None)
+    if callable(batch_fn):
+        batch_fn(uid, character_name, relics or [], clear_existing=True)
+        return
+    database_mod.clear_character_relics(uid, character_name)
+    for r in relics or []:
+        database_mod.save_relic(
+            uid=uid,
+            character_name=character_name,
+            name=r["name"],
+            slot=r["slot"],
+            main_stat=r["main"],
+            sub_stats=r["sub"],
+            icon=r["icon"],
+            rarity=r.get("rarity", 5),
+            set_name=r.get("set_name", ""),
+        )
+
+
 def patch_genshin_enums():
     """
     Registra dinamicamente novos valores de enum no genshin.py para ZZZ/HSR/Genshin
@@ -1284,19 +1305,7 @@ class HSRExtractor(BaseExtractor):
                     sets_json=json.dumps(c.get("sets", [])),
                     ex_ranks_json=json.dumps(c.get("ex_ranks", []), ensure_ascii=False),
                 )
-                database.clear_character_relics(uid, c["name"])
-                for r in c["relics"]:
-                    database.save_relic(
-                        uid=uid,
-                        character_name=c["name"],
-                        name=r["name"],
-                        slot=r["slot"],
-                        main_stat=r["main"],
-                        sub_stats=r["sub"],
-                        icon=r["icon"],
-                        rarity=r.get("rarity", 5),
-                        set_name=r.get("set_name", ""),
-                    )
+                _persist_character_relics(database, uid, c["name"], c["relics"])
             print("[INFO] Roster HSR salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
             print(f"Aviso ao salvar HSR no SQLite: {sqlite_err}")
@@ -1899,19 +1908,7 @@ class GenshinExtractor(BaseExtractor):
                     weapon_rarity=c["weapon"].get("rarity") if c["weapon"] else None,
                     sets_json=json.dumps(c.get("sets", [])),
                 )
-                database.clear_character_relics(uid, c["name"])
-                for r in c["relics"]:
-                    database.save_relic(
-                        uid=uid,
-                        character_name=c["name"],
-                        name=r["name"],
-                        slot=r["slot"],
-                        main_stat=r["main"],
-                        sub_stats=r["sub"],
-                        icon=r["icon"],
-                        rarity=r.get("rarity", 5),
-                        set_name=r.get("set_name", ""),
-                    )
+                _persist_character_relics(database, uid, c["name"], c["relics"])
             print("[INFO] Roster Genshin salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
             print(f"Aviso ao salvar Genshin no SQLite: {sqlite_err}")
@@ -2333,19 +2330,7 @@ class ZZZExtractor(BaseExtractor):
                     sets_json=json.dumps(c.get("sets", [])),
                     ex_ranks_json=json.dumps(c.get("ex_ranks", []), ensure_ascii=False),
                 )
-                database.clear_character_relics(uid, c["name"])
-                for r in c["relics"]:
-                    database.save_relic(
-                        uid=uid,
-                        character_name=c["name"],
-                        name=r["name"],
-                        slot=r["slot"],
-                        main_stat=r["main"],
-                        sub_stats=r["sub"],
-                        icon=r["icon"],
-                        rarity=r.get("rarity", 5),
-                        set_name=r.get("set_name", ""),
-                    )
+                _persist_character_relics(database, uid, c["name"], c["relics"])
             print("[INFO] Roster ZZZ salvo com sucesso no banco de dados SQLite.")
         except Exception as sqlite_err:
             print(f"Aviso ao salvar ZZZ no SQLite: {sqlite_err}")

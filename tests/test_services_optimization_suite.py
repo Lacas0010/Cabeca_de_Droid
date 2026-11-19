@@ -358,6 +358,22 @@ class TestServicesOptimizationSuite(unittest.TestCase):
             meta_comparator.parse_meta_target("hsr", "Acheron")
             self.assertEqual(mock_res.call_count, 1)
 
+    def test_extractor_persists_relics_via_save_relics_batch(self):
+        """Valida que _persist_character_relics utiliza database.save_relics_batch em lote."""
+        import database
+
+        relics = [
+            {"name": "Peça 1", "slot": "head", "main": "HP", "sub": "CR: 5%", "icon": ""},
+            {"name": "Peça 2", "slot": "hands", "main": "ATK", "sub": "CD: 10%", "icon": ""},
+        ]
+        with (
+            patch.object(database, "save_relics_batch", create=True, return_value=2) as mock_batch,
+            patch.object(database, "save_relic") as mock_single,
+        ):
+            extractor._persist_character_relics(database, "7001", "Acheron", relics)
+        mock_batch.assert_called_once_with("7001", "Acheron", relics, clear_existing=True)
+        mock_single.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()
