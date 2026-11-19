@@ -374,6 +374,135 @@ class TestServicesOptimizationSuite(unittest.TestCase):
         mock_batch.assert_called_once_with("7001", "Acheron", relics, clear_existing=True)
         mock_single.assert_not_called()
 
+    def test_master_ids_authoritative_resolution_all_games(self):
+        """Valida que IDs oficiais (Natlan/Fontaine, HSR e ZZZ) não sofrem deslocamento por mapeamentos legados."""
+        g_master = build_calculator.fetch_master_id_list("genshin")
+        self.assertEqual(g_master.get("xilonen"), "10000103")
+        self.assertEqual(g_master.get("chasca"), "10000104")
+        self.assertEqual(g_master.get("mualani"), "10000102")
+        self.assertEqual(g_master.get("kinich"), "10000101")
+        self.assertEqual(g_master.get("mavuika"), "10000106")
+        self.assertEqual(g_master.get("citlali"), "10000107")
+        self.assertEqual(g_master.get("arlecchino"), "10000096")
+        self.assertEqual(g_master.get("clorinde"), "10000098")
+        self.assertEqual(g_master.get("wanderer"), "10000075")
+        self.assertEqual(g_master.get("faruzan"), "10000076")
+        self.assertEqual(g_master.get("yaoyao"), "10000077")
+
+        h_master = build_calculator.fetch_master_id_list("hsr")
+        self.assertEqual(h_master.get("firefly"), "1310")
+        self.assertEqual(h_master.get("argenti"), "1302")
+        self.assertEqual(h_master.get("anaxa"), "1405")
+        self.assertEqual(h_master.get("tribbie"), "1403")
+        self.assertEqual(h_master.get("fugue"), "1225")
+
+        z_master = build_calculator.fetch_master_id_list("zzz")
+        self.assertEqual(z_master.get("miyabi"), "1091")
+        self.assertEqual(z_master.get("astra_yao"), "1311")
+        self.assertEqual(z_master.get("evelyn"), "1321")
+        self.assertEqual(z_master.get("ellen"), "1191")
+        self.assertEqual(z_master.get("billy"), "1081")
+
+    def test_dmg_percent_maps_to_elemental_dmg_not_crit_dmg(self):
+        """Valida que DMG% genérico (ex.: Cálice da Chasca/Varka) mapeia para elemental_dmg e nunca crit_dmg."""
+        self.assertEqual(build_calculator.normalize_stat_name("DMG%"), "elemental_dmg")
+        self.assertEqual(build_calculator.normalize_stat_name("CRIT DMG%"), "crit_dmg")
+        self.assertTrue(build_calculator.is_stat_equivalent("elemental_dmg", "anemo_dmg"))
+        self.assertTrue(build_calculator.is_stat_equivalent("pyro_dmg", "elemental_dmg"))
+        self.assertFalse(build_calculator.is_stat_equivalent("elemental_dmg", "crit_dmg"))
+
+    def test_generate_genshin_meta_xilonen_chasca_xianyun_and_empty_stub(self):
+        """Valida extração de Xilonen, Chasca (DMG% -> elemental_dmg), inferência de Xianyun e filtro de stubs vazios."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            orig_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                os.makedirs("genshin/guias", exist_ok=True)
+                with open("genshin/guias/xilonen.md", "w", encoding="utf-8") as f:
+                    f.write(
+                        "# Guia de Build - Xilonen\n"
+                        "### Atributos Principais (Main Stats)\n"
+                        "- **Ampulheta (Sands):** Recarga de Energia / DEF% (Anything)\n"
+                        "- **Cálice (Goblet):** DEF% (Anything)\n"
+                        "- **Tiara (Circlet):** Bônus de Cura / DEF% / Taxa Crítica (Anything)\n"
+                        "### Subatributos Prioritários (Sub-stats)\n"
+                        "ER = DEF%\n"
+                    )
+                with open("genshin/guias/chasca.md", "w", encoding="utf-8") as f:
+                    f.write(
+                        "# Guia de Build - Chasca\n"
+                        "### Atributos Principais (Main Stats)\n"
+                        "- **Ampulheta (Sands):** ATK%\n"
+                        "- **Cálice (Goblet):** ATK% >= DMG% > Maestria Elemental\n"
+                        "- **Tiara (Circlet):** Dano Crítico > Taxa Crítica\n"
+                        "### Subatributos Prioritários (Sub-stats)\n"
+                        "Taxa Crítica = Dano Crítico > ATK% > EM\n"
+                    )
+                with open("genshin/guias/xianyun.md", "w", encoding="utf-8") as f:
+                    f.write(
+                        "# Guia de Build - Xianyun\n"
+                        "### Atributos Principais (Main Stats)\n"
+                        "- **Ampulheta (Sands):** ATK% / Recarga de Energia\n"
+                        "- **Cálice (Goblet):** ATK% / Bônus de Dano Anemo\n"
+                        "- **Tiara (Circlet):** ATK% / Taxa Crítica\n"
+                    )
+                with open("genshin/guias/stub_vazio.md", "w", encoding="utf-8") as f:
+                    f.write("# Guia de Build - Stub Vazio\nNenhuma arma listada.\n")
+
+                build_calculator.META_DATA_CACHE.clear()
+                build_calculator.generate_meta_json_from_markdown("genshin")
+                with open("genshin/meta_data_genshin.json", "r", encoding="utf-8") as mf:
+                    meta = json.load(mf)
+
+                self.assertIn("10000103", meta)
+                self.assertEqual(meta["10000103"]["main_stats"]["sands"], ["er", "def_pct"])
+                self.assertEqual(meta["10000103"]["main_stats"]["goblet"], ["def_pct"])
+                self.assertEqual(meta["10000103"]["substats_priority"], ["er", "def_pct"])
+
+                self.assertIn("10000104", meta)
+                self.assertEqual(meta["10000104"]["main_stats"]["goblet"], ["atk_pct", "elemental_dmg", "em"])
+                self.assertNotIn("crit_dmg", meta["10000104"]["main_stats"]["goblet"])
+
+                self.assertIn("10000093", meta)
+                self.assertEqual(meta["10000093"]["substats_priority"], ["atk_pct", "er", "crit_rate"])
+                self.assertNotIn("stub_vazio", meta)
+            finally:
+                os.chdir(orig_cwd)
+                build_calculator.META_DATA_CACHE.clear()
+
+    def test_prydwen_genshin_scraper_dedups_and_keeps_primary_build(self):
+        """Valida que PrydwenGenshinScraper remove duplicatas entre abas e mantém os stats da build principal."""
+        html = """
+        <html><body>
+          <div class="weapon-rank-table">
+            <div class="build-rank-row"><a class="loadout-item"><strong>Peak Patrol Song</strong></a><span class="build-gear-dupes">R1</span></div>
+          </div>
+          <div class="weapon-rank-table">
+            <div class="build-rank-row"><a class="loadout-item"><strong>Peak Patrol Song</strong></a><span class="build-gear-dupes">R1</span></div>
+          </div>
+          <div class="artifact-rank-table">
+            <div class="build-rank-row"><a class="loadout-item"><strong>Scroll of the Hero of Cinder City</strong></a></div>
+          </div>
+          <div class="artifact-rank-table">
+            <div class="build-rank-row"><a class="loadout-item"><strong>Scroll of the Hero of Cinder City</strong></a></div>
+          </div>
+          <div class="main-stat-row"><div class="main-stat-slot">Sands</div><strong>Energy Recharge / DEF%</strong></div>
+          <div class="main-stat-row"><div class="main-stat-slot">Sands</div><strong>ATK%</strong></div>
+          <div class="stat-priority-strip" aria-label="ER = DEF%"></div>
+          <div class="stat-priority-strip" aria-label="CRIT Rate > ATK%"></div>
+        </body></html>
+        """
+        mock_resp = MagicMock()
+        mock_resp.text = html
+        mock_resp.raise_for_status = MagicMock()
+        with patch("scrapers.scraper_genshin.requests.get", return_value=mock_resp):
+            data = PrydwenGenshinScraper().scrape_character_guide("Xilonen", "https://example.test/xilonen")
+        self.assertEqual(len(data["weapons"]), 1)
+        self.assertEqual(len(data["artifacts"]), 1)
+        self.assertEqual(len(data["stats_main"]), 1)
+        self.assertEqual(data["stats_main"][0]["value"], "Energy Recharge / DEF%")
+        self.assertEqual(data["stats_sub"], "ER = DEF%")
+
 
 if __name__ == "__main__":
     unittest.main()

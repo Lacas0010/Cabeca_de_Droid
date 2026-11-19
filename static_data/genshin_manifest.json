@@ -1119,7 +1119,9 @@
       "boss_icon": "https://enka.network/ui/UI_ItemIcon_113017.png",
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_100028.png",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113014.png",
-      "enemy_key": "nectar"
+      "enemy_key": "nectar",
+      "hoyolab_id": "10000046",
+      "enka_id": "10000046"
     },
     "kaedehara_kazuha": {
       "id": "kaedehara_kazuha",
@@ -1184,7 +1186,9 @@
       "boss_icon": "https://enka.network/ui/UI_ItemIcon_113023.png",
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101201.png",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113020.png",
-      "enemy_key": "treasure_hoarder"
+      "enemy_key": "treasure_hoarder",
+      "hoyolab_id": "10000047",
+      "enka_id": "10000047"
     },
     "keqing": {
       "id": "keqing",
@@ -1776,7 +1780,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_100029.png",
       "weekly_boss_mat": "Coração das Cinzas",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113025.png",
-      "enemy_key": "mask"
+      "enemy_key": "mask",
+      "hoyolab_id": "10000064",
+      "enka_id": "10000064"
     },
     "yunjin": {
       "id": "yunjin",
@@ -1929,7 +1935,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101202.png",
       "weekly_boss_mat": "Cinzas do Coração",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113024.png",
-      "enemy_key": "slime"
+      "enemy_key": "slime",
+      "hoyolab_id": "10000057",
+      "enka_id": "10000057"
     },
     "kamisato_ayaka": {
       "id": "kamisato_ayaka",
@@ -1993,7 +2001,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101202.png",
       "weekly_boss_mat": "Ramo de Jade de Sangue",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113019.png",
-      "enemy_key": "handguard"
+      "enemy_key": "handguard",
+      "hoyolab_id": "10000002",
+      "enka_id": "10000002"
     },
     "kamisato_ayato": {
       "id": "kamisato_ayato",
@@ -2057,7 +2067,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101202.png",
       "weekly_boss_mat": "Lágrimas da Deusa Calamidosa",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113032.png",
-      "enemy_key": "handguard"
+      "enemy_key": "handguard",
+      "hoyolab_id": "10000066",
+      "enka_id": "10000066"
     },
     "chiori": {
       "id": "chiori",
@@ -2253,7 +2265,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101203.png",
       "weekly_boss_mat": "Coração das Cinzas",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113025.png",
-      "enemy_key": "mask"
+      "enemy_key": "mask",
+      "hoyolab_id": "10000056",
+      "enka_id": "10000056"
     },
     "kuki_shinobu": {
       "id": "kuki_shinobu",
@@ -2317,7 +2331,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101204.png",
       "weekly_boss_mat": "Lágrimas da Deusa Calamidosa",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113032.png",
-      "enemy_key": "specter"
+      "enemy_key": "specter",
+      "hoyolab_id": "10000065",
+      "enka_id": "10000065"
     },
     "raiden_shogun": {
       "id": "raiden_shogun",
@@ -2338,7 +2354,9 @@
       "boss_icon": "https://enka.network/ui/UI_ItemIcon_113028.png",
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101207.png",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113026.png",
-      "enemy_key": "handguard"
+      "enemy_key": "handguard",
+      "hoyolab_id": "10000052",
+      "enka_id": "10000052"
     },
     "sangonomiya_kokomi": {
       "id": "sangonomiya_kokomi",
@@ -2402,7 +2420,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101208.png",
       "weekly_boss_mat": "Borboleta das Chamas Infernais",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113024.png",
-      "enemy_key": "specter"
+      "enemy_key": "specter",
+      "hoyolab_id": "10000054",
+      "enka_id": "10000054"
     },
     "sayu": {
       "id": "sayu",
@@ -2510,7 +2530,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101206.png",
       "weekly_boss_mat": "Signo de Mudra",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113033.png",
-      "enemy_key": "treasure_hoarder"
+      "enemy_key": "treasure_hoarder",
+      "hoyolab_id": "10000059",
+      "enka_id": "10000059"
     },
     "thoma": {
       "id": "thoma",
@@ -3234,7 +3256,9 @@
       "specialty_icon": "https://enka.network/ui/UI_ItemIcon_101214.png",
       "weekly_boss_mat": "Fios de Marionete",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113041.png",
-      "enemy_key": "handguard"
+      "enemy_key": "handguard",
+      "hoyolab_id": "10000075",
+      "enka_id": "10000075"
     },
     "andarilho": {
       "id": "andarilho",
@@ -4312,8 +4336,8 @@
       "weekly_boss_mat": "Material de Chefe Semanal",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113021.png",
       "enemy_key": "slime",
-      "hoyolab_id": "10000007-708",
-      "enka_id": "10000007-708",
+      "hoyolab_id": "10000007",
+      "enka_id": "10000007",
       "side_icon": "UI_AvatarIcon_Side_PlayerGirl",
       "talent_tier2_name": "Ensinamentos de Poemas (2★)",
       "talent_tier2_icon": "https://enka.network/ui/UI_ItemIcon_104307.png",
@@ -4708,8 +4732,8 @@
       "weekly_boss_mat": "Material de Chefe Semanal",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113021.png",
       "enemy_key": "slime",
-      "hoyolab_id": "10000903",
-      "enka_id": "10000903",
+      "hoyolab_id": "10000116",
+      "enka_id": "10000116",
       "side_icon": "UI_AvatarIcon_Side_Ineffa",
       "talent_tier2_name": "Ensinamentos da Luz Celeste (2★)",
       "talent_tier2_icon": "https://enka.network/ui/UI_ItemIcon_104326.png",
@@ -5104,8 +5128,8 @@
       "weekly_boss_mat": "Material de Chefe Semanal",
       "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113021.png",
       "enemy_key": "slime",
-      "hoyolab_id": "10000904",
-      "enka_id": "10000904",
+      "hoyolab_id": "10000125",
+      "enka_id": "10000125",
       "side_icon": "UI_AvatarIcon_Side_Columbina",
       "talent_tier2_name": "Ensinamentos da Disputa (2★)",
       "talent_tier2_icon": "https://enka.network/ui/UI_ItemIcon_104347.png",

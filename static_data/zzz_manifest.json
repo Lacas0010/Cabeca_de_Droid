@@ -9,7 +9,8 @@
       "expert_key": "section6",
       "weekly_key": "butcher_ferocity",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/miyabi"
+      "url": "https://www.prydwen.gg/zenless/characters/miyabi",
+      "hoyolab_id": "1091"
     },
     "harumasa": {
       "id": "harumasa",
@@ -20,7 +21,8 @@
       "expert_key": "section6",
       "weekly_key": "butcher_ferocity",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/harumasa"
+      "url": "https://www.prydwen.gg/zenless/characters/harumasa",
+      "hoyolab_id": "1201"
     },
     "astra": {
       "id": "astra",
@@ -30,7 +32,8 @@
       "specialty": "Support",
       "expert_key": "new_eridu",
       "weekly_key": "puppet_core",
-      "enemy_key": "ethereal"
+      "enemy_key": "ethereal",
+      "hoyolab_id": "1311"
     },
     "ellen": {
       "id": "ellen",
@@ -41,7 +44,8 @@
       "expert_key": "victoria",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/ellen"
+      "url": "https://www.prydwen.gg/zenless/characters/ellen",
+      "hoyolab_id": "1191"
     },
     "zhu_yuan": {
       "id": "zhu_yuan",
@@ -52,7 +56,8 @@
       "expert_key": "public_security",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/zhu-yuan"
+      "url": "https://www.prydwen.gg/zenless/characters/zhu-yuan",
+      "hoyolab_id": "1241"
     },
     "jane": {
       "id": "jane",
@@ -62,7 +67,8 @@
       "specialty": "Anomaly",
       "expert_key": "public_security",
       "weekly_key": "corrupted_heart",
-      "enemy_key": "rebel"
+      "enemy_key": "rebel",
+      "hoyolab_id": "1261"
     },
     "caesar": {
       "id": "caesar",
@@ -73,7 +79,8 @@
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/caesar"
+      "url": "https://www.prydwen.gg/zenless/characters/caesar",
+      "hoyolab_id": "1071"
     },
     "burnice": {
       "id": "burnice",
@@ -84,7 +91,8 @@
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/burnice"
+      "url": "https://www.prydwen.gg/zenless/characters/burnice",
+      "hoyolab_id": "1171"
     },
     "qingyi": {
       "id": "qingyi",
@@ -95,7 +103,8 @@
       "expert_key": "public_security",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/qingyi"
+      "url": "https://www.prydwen.gg/zenless/characters/qingyi",
+      "hoyolab_id": "1251"
     },
     "yanagi": {
       "id": "yanagi",
@@ -106,7 +115,8 @@
       "expert_key": "section6",
       "weekly_key": "butcher_ferocity",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/yanagi"
+      "url": "https://www.prydwen.gg/zenless/characters/yanagi",
+      "hoyolab_id": "1221"
     },
     "lighter": {
       "id": "lighter",
@@ -117,7 +127,8 @@
       "expert_key": "calydon",
       "weekly_key": "pompey_bite",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/lighter"
+      "url": "https://www.prydwen.gg/zenless/characters/lighter",
+      "hoyolab_id": "1161"
     },
     "lycaon": {
       "id": "lycaon",
@@ -128,7 +139,8 @@
       "expert_key": "victoria",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/lycaon"
+      "url": "https://www.prydwen.gg/zenless/characters/lycaon",
+      "hoyolab_id": "1141"
     },
     "rina": {
       "id": "rina",
@@ -139,7 +151,8 @@
       "expert_key": "victoria",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/rina"
+      "url": "https://www.prydwen.gg/zenless/characters/rina",
+      "hoyolab_id": "1211"
     },
     "soldier_11": {
       "id": "soldier_11",
@@ -150,7 +163,8 @@
       "expert_key": "defense_force",
       "weekly_key": "silent_death",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/soldier-11"
+      "url": "https://www.prydwen.gg/zenless/characters/soldier-11",
+      "hoyolab_id": "1041"
     },
     "koleda": {
       "id": "koleda",
@@ -161,7 +175,8 @@
       "expert_key": "belobog",
       "weekly_key": "silent_death",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/koleda"
+      "url": "https://www.prydwen.gg/zenless/characters/koleda",
+      "hoyolab_id": "1101"
     },
     "grace": {
       "id": "grace",
@@ -172,7 +187,8 @@
       "expert_key": "belobog",
       "weekly_key": "silent_death",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/grace-howard"
+      "url": "https://www.prydwen.gg/zenless/characters/grace-howard",
+      "hoyolab_id": "1181"
     },
     "nekomata": {
       "id": "nekomata",
@@ -183,7 +199,8 @@
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/nekomata"
+      "url": "https://www.prydwen.gg/zenless/characters/nekomata",
+      "hoyolab_id": "1021"
     },
     "nicole": {
       "id": "nicole",
@@ -194,7 +211,8 @@
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/nicole-demara"
+      "url": "https://www.prydwen.gg/zenless/characters/nicole-demara",
+      "hoyolab_id": "1031"
     },
     "anby": {
       "id": "anby",
@@ -205,7 +223,8 @@
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/anby-demara"
+      "url": "https://www.prydwen.gg/zenless/characters/anby-demara",
+      "hoyolab_id": "1011"
     },
     "billy": {
       "id": "billy",
@@ -216,7 +235,8 @@
       "expert_key": "cunning_hares",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/billy-kid"
+      "url": "https://www.prydwen.gg/zenless/characters/billy-kid",
+      "hoyolab_id": "1081"
     },
     "corin": {
       "id": "corin",
@@ -227,7 +247,8 @@
       "expert_key": "victoria",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/corin"
+      "url": "https://www.prydwen.gg/zenless/characters/corin",
+      "hoyolab_id": "1061"
     },
     "seth": {
       "id": "seth",
@@ -238,7 +259,8 @@
       "expert_key": "public_security",
       "weekly_key": "corrupted_heart",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/seth"
+      "url": "https://www.prydwen.gg/zenless/characters/seth",
+      "hoyolab_id": "1271"
     },
     "piper": {
       "id": "piper",
@@ -249,7 +271,8 @@
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/piper"
+      "url": "https://www.prydwen.gg/zenless/characters/piper",
+      "hoyolab_id": "1281"
     },
     "lucy": {
       "id": "lucy",
@@ -260,7 +283,8 @@
       "expert_key": "calydon",
       "weekly_key": "corrupted_heart",
       "enemy_key": "rebel",
-      "url": "https://www.prydwen.gg/zenless/characters/lucy"
+      "url": "https://www.prydwen.gg/zenless/characters/lucy",
+      "hoyolab_id": "1151"
     },
     "soukaku": {
       "id": "soukaku",
@@ -271,7 +295,8 @@
       "expert_key": "section6",
       "weekly_key": "silent_death",
       "enemy_key": "ethereal",
-      "url": "https://www.prydwen.gg/zenless/characters/soukaku"
+      "url": "https://www.prydwen.gg/zenless/characters/soukaku",
+      "hoyolab_id": "1131"
     },
     "alice": {
       "id": "alice",
@@ -283,7 +308,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/alice"
+      "url": "https://www.prydwen.gg/zenless/characters/alice",
+      "hoyolab_id": "1401"
     },
     "anby_soldier_0": {
       "id": "anby_soldier_0",
@@ -295,7 +321,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/anby-demara-soldier-0"
+      "url": "https://www.prydwen.gg/zenless/characters/anby-demara-soldier-0",
+      "hoyolab_id": "1011"
     },
     "anton": {
       "id": "anton",
@@ -307,7 +334,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/anton"
+      "url": "https://www.prydwen.gg/zenless/characters/anton",
+      "hoyolab_id": "1111"
     },
     "aria": {
       "id": "aria",
@@ -319,7 +347,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/aria"
+      "url": "https://www.prydwen.gg/zenless/characters/aria",
+      "hoyolab_id": "1501"
     },
     "astra_yao": {
       "id": "astra_yao",
@@ -331,7 +360,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/astra-yao"
+      "url": "https://www.prydwen.gg/zenless/characters/astra-yao",
+      "hoyolab_id": "1311"
     },
     "banyue": {
       "id": "banyue",
@@ -343,7 +373,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/banyue"
+      "url": "https://www.prydwen.gg/zenless/characters/banyue",
+      "hoyolab_id": "1471"
     },
     "ben": {
       "id": "ben",
@@ -355,7 +386,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/ben"
+      "url": "https://www.prydwen.gg/zenless/characters/ben",
+      "hoyolab_id": "1121"
     },
     "billy_-_starlight": {
       "id": "billy_-_starlight",
@@ -367,7 +399,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/billy-starlight"
+      "url": "https://www.prydwen.gg/zenless/characters/billy-starlight",
+      "hoyolab_id": "1531"
     },
     "cissia": {
       "id": "cissia",
@@ -379,7 +412,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/cissia"
+      "url": "https://www.prydwen.gg/zenless/characters/cissia",
+      "hoyolab_id": "1521"
     },
     "claret": {
       "id": "claret",
@@ -391,7 +425,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/claret"
+      "url": "https://www.prydwen.gg/zenless/characters/claret",
+      "hoyolab_id": "1611"
     },
     "dialyn": {
       "id": "dialyn",
@@ -403,7 +438,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/dialyn"
+      "url": "https://www.prydwen.gg/zenless/characters/dialyn",
+      "hoyolab_id": "1481"
     },
     "evelyn": {
       "id": "evelyn",
@@ -415,7 +451,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/evelyn"
+      "url": "https://www.prydwen.gg/zenless/characters/evelyn",
+      "hoyolab_id": "1321"
     },
     "hugo": {
       "id": "hugo",
@@ -427,7 +464,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/hugo"
+      "url": "https://www.prydwen.gg/zenless/characters/hugo",
+      "hoyolab_id": "1291"
     },
     "jane_doe": {
       "id": "jane_doe",
@@ -439,7 +477,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/jane-doe"
+      "url": "https://www.prydwen.gg/zenless/characters/jane-doe",
+      "hoyolab_id": "1261"
     },
     "ju_fufu": {
       "id": "ju_fufu",
@@ -451,7 +490,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/ju-fufu"
+      "url": "https://www.prydwen.gg/zenless/characters/ju-fufu",
+      "hoyolab_id": "1391"
     },
     "lucia": {
       "id": "lucia",
@@ -463,7 +503,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/lucia"
+      "url": "https://www.prydwen.gg/zenless/characters/lucia",
+      "hoyolab_id": "1451"
     },
     "manato": {
       "id": "manato",
@@ -475,7 +516,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/manato"
+      "url": "https://www.prydwen.gg/zenless/characters/manato",
+      "hoyolab_id": "1441"
     },
     "nangong_yu": {
       "id": "nangong_yu",
@@ -487,7 +529,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/nangong-yu"
+      "url": "https://www.prydwen.gg/zenless/characters/nangong-yu",
+      "hoyolab_id": "1511"
     },
     "norma": {
       "id": "norma",
@@ -499,7 +542,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/norma"
+      "url": "https://www.prydwen.gg/zenless/characters/norma",
+      "hoyolab_id": "1571"
     },
     "orphie_&_magus": {
       "id": "orphie_&_magus",
@@ -511,7 +555,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/orphie-and-magus"
+      "url": "https://www.prydwen.gg/zenless/characters/orphie-and-magus",
+      "hoyolab_id": "1301"
     },
     "pan_yinhu": {
       "id": "pan_yinhu",
@@ -523,7 +568,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/pan-yinhu"
+      "url": "https://www.prydwen.gg/zenless/characters/pan-yinhu",
+      "hoyolab_id": "1421"
     },
     "phoenix3.x": {
       "id": "phoenix3.x",
@@ -547,7 +593,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/promeia"
+      "url": "https://www.prydwen.gg/zenless/characters/promeia",
+      "hoyolab_id": "1541"
     },
     "pulchra": {
       "id": "pulchra",
@@ -559,7 +606,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/pulchra"
+      "url": "https://www.prydwen.gg/zenless/characters/pulchra",
+      "hoyolab_id": "1351"
     },
     "pyrois": {
       "id": "pyrois",
@@ -571,7 +619,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/pyrois"
+      "url": "https://www.prydwen.gg/zenless/characters/pyrois",
+      "hoyolab_id": "1551"
     },
     "remielle": {
       "id": "remielle",
@@ -583,7 +632,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/remielle"
+      "url": "https://www.prydwen.gg/zenless/characters/remielle",
+      "hoyolab_id": "1581"
     },
     "roxynew": {
       "id": "roxynew",
@@ -607,7 +657,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/seed"
+      "url": "https://www.prydwen.gg/zenless/characters/seed",
+      "hoyolab_id": "1461"
     },
     "severian3.x": {
       "id": "severian3.x",
@@ -631,7 +682,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/sigrid"
+      "url": "https://www.prydwen.gg/zenless/characters/sigrid",
+      "hoyolab_id": "1591"
     },
     "sunbringer3.x": {
       "id": "sunbringer3.x",
@@ -655,7 +707,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/sunna"
+      "url": "https://www.prydwen.gg/zenless/characters/sunna",
+      "hoyolab_id": "1491"
     },
     "the_storyteller3.x": {
       "id": "the_storyteller3.x",
@@ -679,7 +732,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/trigger"
+      "url": "https://www.prydwen.gg/zenless/characters/trigger",
+      "hoyolab_id": "1361"
     },
     "velina": {
       "id": "velina",
@@ -691,7 +745,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/velina"
+      "url": "https://www.prydwen.gg/zenless/characters/velina",
+      "hoyolab_id": "1561"
     },
     "vivian": {
       "id": "vivian",
@@ -703,7 +758,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/vivian"
+      "url": "https://www.prydwen.gg/zenless/characters/vivian",
+      "hoyolab_id": "1331"
     },
     "ye_shunguang": {
       "id": "ye_shunguang",
@@ -715,7 +771,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/ye-shunguang"
+      "url": "https://www.prydwen.gg/zenless/characters/ye-shunguang",
+      "hoyolab_id": "1431"
     },
     "yidhari": {
       "id": "yidhari",
@@ -727,7 +784,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/yidhari"
+      "url": "https://www.prydwen.gg/zenless/characters/yidhari",
+      "hoyolab_id": "1051"
     },
     "yixuan": {
       "id": "yixuan",
@@ -739,7 +797,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/yixuan"
+      "url": "https://www.prydwen.gg/zenless/characters/yixuan",
+      "hoyolab_id": "1371"
     },
     "yuzuha": {
       "id": "yuzuha",
@@ -751,7 +810,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/ukinami-yuzuha"
+      "url": "https://www.prydwen.gg/zenless/characters/ukinami-yuzuha",
+      "hoyolab_id": "1411"
     },
     "zhao": {
       "id": "zhao",
@@ -763,7 +823,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/zhao"
+      "url": "https://www.prydwen.gg/zenless/characters/zhao",
+      "hoyolab_id": "1341"
     },
     "kafkahsr": {
       "id": "kafkahsr",
@@ -823,7 +884,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/phoenix"
+      "url": "https://www.prydwen.gg/zenless/characters/phoenix",
+      "hoyolab_id": "1641"
     },
     "phoenixnew": {
       "id": "phoenixnew",
@@ -847,7 +909,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/roxy"
+      "url": "https://www.prydwen.gg/zenless/characters/roxy",
+      "hoyolab_id": "1621"
     },
     "sunbringer3.4": {
       "id": "sunbringer3.4",
@@ -871,7 +934,8 @@
       "core_skill_mat": "Emblema de Especialista",
       "weekly_boss_mat": "Material de Notorious Hunt",
       "schedule_type": "Daily",
-      "url": "https://www.prydwen.gg/zenless/characters/severian"
+      "url": "https://www.prydwen.gg/zenless/characters/severian",
+      "hoyolab_id": "1631"
     },
     "severiannew": {
       "id": "severiannew",

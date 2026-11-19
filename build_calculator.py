@@ -573,15 +573,109 @@ def normalize_char_name(name: str) -> str:
 
 def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     """
-    Simula/obtém a fonte mestre de IDs de personagens vinculando nomes em inglês aos IDs oficiais (chaves primárias).
-    Retorna um dicionário no formato {nome_em_ingles_lowercase: id_oficial}.
+    Obtém a fonte mestre de IDs de personagens vinculando nomes/slugs aos IDs oficiais (chaves primárias).
+    Prioriza fontes dinâmicas autoritativas (roster HoYoLAB, genshin.py, manifestos sincronizados)
+    antes de mapeamentos estáticos ou fallbacks.
     """
     game_id = game_id.lower().strip()
-    master_map = {}
+    master_map: Dict[str, str] = {}
 
-    # 1. Fonte de verdade primária dinâmica: static_data/hoyolab_mappings.json
+    aliases_pt_to_en = {
+        "cisne negro": "black swan",
+        "vaga-lume": "firefly",
+        "faísca": "sparkle",
+        "loba prateada": "silver wolf",
+        "7 de março": "march 7th",
+        "topaz e numby": "topaz & numby",
+        "topaz e dinheirinho": "topaz & numby",
+        "dr. ratio": "dr. ratio",
+        "loba prateada nv. 999": "silver wolf lv. 999",
+        "noite eterna": "march 7th evernight",
+        "desbravador(a)": "trailblazer",
+        "a herta": "the herta",
+        "fugue": "tingyun fugue",
+    }
+
+    def _is_valid_official_id(cid_val: str) -> bool:
+        c_s = str(cid_val or "").strip()
+        if not c_s or not c_s.isdigit() or c_s == "9999":
+            return False
+        if game_id == "genshin" and int(c_s) >= 10000900:
+            return False
+        return True
+
+    def _register_dynamic_char(raw_char_name: str, raw_cid: str):
+        c_n = str(raw_char_name or "").strip()
+        c_i = str(raw_cid or "").strip()
+        if not c_n or not _is_valid_official_id(c_i) or "nickname" in c_n.lower():
+            return
+        c_n_lower = c_n.lower()
+        norm_c = normalize_char_name(c_n)
+        master_map.setdefault(c_n_lower, c_i)
+        master_map.setdefault(norm_c, c_i)
+
+        for key_cand in (c_n_lower, norm_c):
+            if key_cand in aliases_pt_to_en:
+                en_alias = aliases_pt_to_en[key_cand]
+                master_map.setdefault(en_alias.lower(), c_i)
+                master_map.setdefault(normalize_char_name(en_alias), c_i)
+
+    # 1. Fonte de verdade #1: Roster real extraído da HoYoLAB (JSON + SQLite)
+    roster_file = f"{game_id}/roster_data_{game_id}.json"
+    if os.path.exists(roster_file):
+        try:
+            with open(roster_file, "r", encoding="utf-8") as f:
+                for char in json.load(f):
+                    _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
+        except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
+            logger.warning("[CALC] Falha ao carregar %s: %s", roster_file, exc)
+
+    try:
+        import database
+
+        for char in database.get_roster_data(game_id) or []:
+            _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
+    except (ImportError, sqlite3.Error, TypeError, AttributeError) as exc:
+        logger.debug("[CALC] Roster SQLite indisponível em get_master_ids(%s): %s", game_id, exc)
+
+    # 2. Fonte de verdade #2 (Genshin): Tabela oficial CHARACTER_NAMES do genshin.py
+    if game_id == "genshin":
+        try:
+            from genshin.models.genshin.constants import CHARACTER_NAMES
+
+            for lang in ["en-us", "pt-pt"]:
+                if lang in CHARACTER_NAMES:
+                    for cid, db_char in CHARACTER_NAMES[lang].items():
+                        c_str = str(cid).strip()
+                        n_lower = db_char.name.lower().strip()
+                        if _is_valid_official_id(c_str) and n_lower:
+                            master_map.setdefault(n_lower, c_str)
+                            master_map.setdefault(normalize_char_name(n_lower), c_str)
+        except (ImportError, KeyError, TypeError, AttributeError) as exc:
+            logger.debug("[CALC] Falha ao ler mapa genshin.py para %s: %s", game_id, exc)
+
+    # 3. Fonte de verdade #3: Manifestos estáticos sincronizados dinamicamente (Enka / StarRailRes / Prydwen)
+    manifest_file = _resolve_static_file(f"{game_id}_manifest.json")
+    if os.path.exists(manifest_file):
+        try:
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                m_data = json.load(f)
+                m_chars = m_data.get("characters", m_data) if isinstance(m_data, dict) else {}
+                if isinstance(m_chars, dict):
+                    for m_key, m_entry in m_chars.items():
+                        if not isinstance(m_entry, dict):
+                            continue
+                        hid = str(m_entry.get("hoyolab_id") or m_entry.get("enka_id") or "").strip()
+                        if not _is_valid_official_id(hid):
+                            continue
+                        _register_dynamic_char(m_entry.get("name", ""), hid)
+                        _register_dynamic_char(str(m_key).replace("_", " "), hid)
+        except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
+            logger.warning("[CALC] Falha ao ler manifesto %s: %s", manifest_file, exc)
+
+    # 4. Fonte complementar: static_data/hoyolab_mappings.json (reconciliado automaticamente no sync)
     hoyolab_file = _resolve_static_file("hoyolab_mappings.json")
-    slug_to_hid = {}
+    slug_to_hid: Dict[str, str] = {}
     if os.path.exists(hoyolab_file):
         try:
             with open(hoyolab_file, "r", encoding="utf-8") as f:
@@ -589,20 +683,20 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
                 for hid, slug in hmap.items():
                     cid_str = str(hid).strip()
                     slug_str = str(slug).strip()
-                    if not cid_str or not slug_str:
+                    if not _is_valid_official_id(cid_str) or not slug_str:
                         continue
                     slug_lower = slug_str.lower()
                     slug_space = slug_lower.replace("_", " ")
                     norm_slug = normalize_char_name(slug_str)
-                    slug_to_hid[slug_lower] = cid_str
-                    slug_to_hid[norm_slug] = cid_str
+                    slug_to_hid.setdefault(slug_lower, cid_str)
+                    slug_to_hid.setdefault(norm_slug, cid_str)
                     master_map.setdefault(slug_lower, cid_str)
                     master_map.setdefault(slug_space, cid_str)
                     master_map.setdefault(norm_slug, cid_str)
         except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
             logger.warning("[CALC] Falha ao ler hoyolab_mappings.json (%s): %s", game_id, exc)
 
-    # 2. Fallback de IDs e aliases conhecidos (não sobrescreve hoyolab_mappings.json)
+    # 5. Fallback de IDs e aliases conhecidos (não sobrescreve fontes dinâmicas)
     known_master = {
         "hsr": {
             "acheron": "1308",
@@ -615,10 +709,11 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "march 7th": "1001",
             "march 7th the hunt": "1224",
             "march 7th • the hunt": "1224",
-            "march 7th evernight": "1225",
-            "march 7th • evernight": "1225",
+            "march 7th evernight": "1413",
+            "march 7th • evernight": "1413",
             "aglaea": "1402",
-            "anaxa": "1403",
+            "tribbie": "1403",
+            "anaxa": "1405",
             "archer": "1015",
             "argenti": "1302",
             "arlan": "1008",
@@ -626,7 +721,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "aventurine": "1304",
             "bailu": "1211",
             "bronya": "1101",
-            "boothill": "1316",
+            "boothill": "1315",
             "clara": "1107",
             "dan heng": "1002",
             "dr. ratio": "1305",
@@ -669,6 +764,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "a dahlia": "1321",
             "a dália": "1321",
             "tingyun": "1202",
+            "tingyun fugue": "1225",
+            "fugue": "1225",
             "topaz & numby": "1112",
             "trailblazer": "8009",
             "desbravador": "8009",
@@ -686,7 +783,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "neuvillette": "10000087",
             "charlotte": "10000088",
             "furina": "10000089",
-            "arlecchino": "10000095",
+            "arlecchino": "10000096",
             "raiden": "10000052",
             "zhongli": "10000030",
             "nahida": "10000073",
@@ -704,7 +801,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "yun jin": "10000064",
             "mizuki": "10000109",
             "yumemizuki mizuki": "10000109",
-            "lan yan": "10000107",
+            "lan yan": "10000108",
             "viajante": "10000005",
             "traveler": "10000005",
             "manequina": "10000118",
@@ -725,12 +822,15 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "soukaku": "1131",
             "lycaon": "1141",
             "lucy": "1151",
+            "lighter": "1161",
             "burnice": "1171",
             "grace": "1181",
             "ellen": "1191",
             "harumasa": "1201",
             "rina": "1211",
+            "yanagi": "1221",
             "zhu yuan": "1241",
+            "qingyi": "1251",
             "jane": "1261",
             "jane doe": "1261",
             "seth": "1271",
@@ -761,109 +861,12 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
         },
     }
 
-    # Preenche primeiro com a tabela oficial de conhecidos (para evitar colisões/sobrescritas incorretas)
     if game_id in known_master:
         for name, cid in known_master[game_id].items():
-            name_lower = name.lower()
-            if name_lower not in master_map:
-                master_map[name_lower] = cid
-            norm_name = normalize_char_name(name)
-            if norm_name not in master_map:
-                master_map[norm_name] = cid
+            master_map.setdefault(name.lower(), cid)
+            master_map.setdefault(normalize_char_name(name), cid)
 
-    if game_id == "genshin":
-        try:
-            from genshin.models.genshin.constants import CHARACTER_NAMES
-
-            for lang in ["en-us", "pt-pt"]:
-                if lang in CHARACTER_NAMES:
-                    for cid, db_char in CHARACTER_NAMES[lang].items():
-                        c_str = str(cid)
-                        n_lower = db_char.name.lower().strip()
-                        master_map.setdefault(n_lower, c_str)
-                        master_map.setdefault(normalize_char_name(n_lower), c_str)
-        except (ImportError, KeyError, TypeError, AttributeError) as exc:
-            logger.debug("[CALC] Falha ao ler mapa genshin.py para %s: %s", game_id, exc)
-
-    aliases_pt_to_en = {
-        "cisne negro": "black swan",
-        "vaga-lume": "firefly",
-        "faísca": "sparkle",
-        "loba prateada": "silver wolf",
-        "7 de março": "march 7th",
-        "topaz e numby": "topaz & numby",
-        "topaz e dinheirinho": "topaz & numby",
-        "dr. ratio": "dr. ratio",
-        "loba prateada nv. 999": "silver wolf lv. 999",
-        "noite eterna": "march 7th evernight",
-        "desbravador(a)": "trailblazer",
-        "a herta": "the herta",
-        "fugue": "tingyun fugue",
-    }
-
-    # 2. Carrega roster local (JSON + SQLite) e manifestos estáticos dinamicamente (Zero Hardcoding)
-    def _register_dynamic_char(raw_char_name: str, raw_cid: str):
-        c_n = str(raw_char_name or "").strip()
-        c_i = str(raw_cid or "").strip()
-        if not c_n or not c_i or "nickname" in c_n.lower():
-            return
-        c_n_lower = c_n.lower()
-        norm_c = normalize_char_name(c_n)
-        if c_n_lower not in master_map:
-            master_map[c_n_lower] = c_i
-        if norm_c not in master_map:
-            master_map[norm_c] = c_i
-
-        if c_n_lower in aliases_pt_to_en:
-            en_alias = aliases_pt_to_en[c_n_lower]
-            en_lower = en_alias.lower()
-            norm_en = normalize_char_name(en_alias)
-            master_map.setdefault(en_lower, c_i)
-            master_map.setdefault(norm_en, c_i)
-
-        if norm_c in aliases_pt_to_en:
-            en_alias = aliases_pt_to_en[norm_c]
-            en_lower = en_alias.lower()
-            norm_en = normalize_char_name(en_alias)
-            master_map.setdefault(en_lower, c_i)
-            master_map.setdefault(norm_en, c_i)
-
-    roster_file = f"{game_id}/roster_data_{game_id}.json"
-    if os.path.exists(roster_file):
-        try:
-            with open(roster_file, "r", encoding="utf-8") as f:
-                for char in json.load(f):
-                    _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
-        except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
-            logger.warning("[CALC] Falha ao carregar %s: %s", roster_file, exc)
-
-    try:
-        import database
-
-        for char in database.get_roster_data(game_id) or []:
-            _register_dynamic_char(char.get("name", ""), char.get("id") or char.get("character_id"))
-    except (ImportError, sqlite3.Error, TypeError, AttributeError) as exc:
-        logger.debug("[CALC] Roster SQLite indisponível em get_master_ids(%s): %s", game_id, exc)
-
-    manifest_file = _resolve_static_file(f"{game_id}_manifest.json")
-    if os.path.exists(manifest_file):
-        try:
-            with open(manifest_file, "r", encoding="utf-8") as f:
-                m_data = json.load(f)
-                m_chars = m_data.get("characters", m_data) if isinstance(m_data, dict) else {}
-                if isinstance(m_chars, dict):
-                    for m_key, m_entry in m_chars.items():
-                        if not isinstance(m_entry, dict):
-                            continue
-                        hid = str(m_entry.get("hoyolab_id") or "").strip()
-                        if not hid or hid == "9999":
-                            continue
-                        _register_dynamic_char(m_entry.get("name", ""), hid)
-                        _register_dynamic_char(str(m_key).replace("_", " "), hid)
-        except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
-            logger.warning("[CALC] Falha ao ler manifesto %s: %s", manifest_file, exc)
-
-    # 3. Vincula aliases multilíngues e mapeamentos HoYoLAB estáticos se o destino já tiver ID
+    # 6. Vincula aliases multilíngues se o destino já tiver ID (sem colapsar variantes distintas)
     try:
         aliases_file = _resolve_static_file("character_aliases.json")
         for sl, hid in slug_to_hid.items():
@@ -872,13 +875,16 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             with open(aliases_file, "r", encoding="utf-8") as f:
                 amap = json.load(f).get(game_id, {})
                 for a_k, a_v in amap.items():
+                    k_clean = str(a_k).lower().strip()
+                    if "starlight" in k_clean and "starlight" not in str(a_v).lower():
+                        continue
                     target_id = (
                         master_map.get(normalize_char_name(a_v))
                         or master_map.get(str(a_v).lower().strip())
                         or slug_to_hid.get(normalize_char_name(a_v))
                     )
                     if target_id:
-                        master_map.setdefault(str(a_k).lower().strip(), target_id)
+                        master_map.setdefault(k_clean, target_id)
                         master_map.setdefault(normalize_char_name(a_k), target_id)
     except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
         logger.warning("[CALC] Falha ao vincular aliases para %s: %s", game_id, exc)
@@ -1045,9 +1051,18 @@ STAT_NAME_MAP = {
     "dano crit": "crit_dmg",
     "crit dmg": "crit_dmg",
     "crit_dmg": "crit_dmg",
-    "dmg": "crit_dmg",
-    "dano": "crit_dmg",
-    "damage": "crit_dmg",
+    # Dano Elemental genérico (ex.: Goblet "DMG%" em guias como Chasca/Varka)
+    "dmg": "elemental_dmg",
+    "dmg bonus": "elemental_dmg",
+    "elemental dmg": "elemental_dmg",
+    "elemental dmg bonus": "elemental_dmg",
+    "bonus de dano": "elemental_dmg",
+    "bônus de dano": "elemental_dmg",
+    "bonus de dano elemental": "elemental_dmg",
+    "bônus de dano elemental": "elemental_dmg",
+    "dano elemental": "elemental_dmg",
+    "bonus de dano electric": "electric_dmg",
+    "bônus de dano electric": "electric_dmg",
     "dano crit%": "crit_dmg",
     "dano de crit": "crit_dmg",
     "dano de crit%": "crit_dmg",
@@ -1454,6 +1469,10 @@ def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
 def is_stat_equivalent(stat1: str, stat2: str) -> bool:
     """Verifica equivalência entre variantes de nomes de atributos."""
     if stat1 == stat2:
+        return True
+    if (stat1 == "elemental_dmg" and stat2.endswith("_dmg") and stat2 != "crit_dmg") or (
+        stat2 == "elemental_dmg" and stat1.endswith("_dmg") and stat1 != "crit_dmg"
+    ):
         return True
     eq_groups = [
         {"cryo_dmg", "ice_dmg"},
@@ -2155,18 +2174,62 @@ def generate_meta_json_from_markdown(game_id: str):
     meta_db = {}
     master_ids = fetch_master_id_list(game_id)
 
+    flex_main_tokens = {"anything", "any", "qualquer", "qualquer um", "qualquer atributo", "flexible", "flex"}
+
+    def _clean_main_slot_stats(raw_tokens: List[str]) -> List[str]:
+        stats: List[str] = []
+        has_flex = False
+        for t in raw_tokens:
+            t_clean = RE_PARENTHESES.sub("", t).replace("*", "").strip()
+            if not t_clean:
+                continue
+            norm = normalize_stat_name(t_clean)
+            if not norm:
+                continue
+            if norm in flex_main_tokens:
+                has_flex = True
+                continue
+            if norm not in stats:
+                stats.append(norm)
+        if not stats and has_flex:
+            return ["any"]
+        return stats
+
+    def _infer_genshin_substats(main_stats: Dict[str, List[str]]) -> List[str]:
+        """Infere prioridade de substatus a partir dos Main Stats quando o guia não traz strip curado."""
+        sands = main_stats.get("sands") or []
+        goblet = main_stats.get("goblet") or []
+        circlet = main_stats.get("circlet") or []
+        inferred: List[str] = []
+
+        def _add(st: str):
+            if st in VALID_SUBSTATS and st not in inferred:
+                inferred.append(st)
+
+        primary_circlet = circlet[0] if circlet else ""
+        is_crit_build = primary_circlet in ("crit_rate", "crit_dmg")
+        if is_crit_build:
+            _add("crit_rate")
+            _add("crit_dmg")
+
+        # Atributos de escalonamento vindos de Sands, Goblet e Circlet (em ordem de relevância)
+        for slot_list in (sands, goblet, circlet):
+            for st in slot_list:
+                if st in ("atk_pct", "hp_pct", "def_pct", "em", "er"):
+                    _add(st)
+
+        # Para suportes que usam Tiara de Taxa Crítica como opção secundária (ex.: Favonius)
+        if not is_crit_build and ("crit_rate" in circlet or "crit_dmg" in circlet):
+            _add("crit_rate")
+
+        return inferred[:5]
+
     def parse_hsr(content):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
         matches = RE_HSR_MAIN_SLOTS.findall(content)
         for slot, val in matches:
             tokens = RE_SLOT_SPLIT.split(val)
-            stats = []
-            for t in tokens:
-                t_clean = RE_PARENTHESES.sub("", t).strip()
-                if t_clean:
-                    norm = normalize_stat_name(t_clean)
-                    if norm and norm not in stats:
-                        stats.append(norm)
+            stats = _clean_main_slot_stats(tokens)
             norm_s = normalize_slot_name(slot, "hsr")
             meta["main_stats"][norm_s] = stats
 
@@ -2234,13 +2297,7 @@ def generate_meta_json_from_markdown(game_id: str):
         matches = RE_ZZZ_MAIN_SLOTS.findall(content)
         for slot, val in matches:
             tokens = RE_SLOT_SPLIT.split(val)
-            stats = []
-            for t in tokens:
-                t_clean = RE_PARENTHESES.sub("", t).strip()
-                if t_clean:
-                    norm = normalize_stat_name(t_clean)
-                    if norm and norm not in stats:
-                        stats.append(norm)
+            stats = _clean_main_slot_stats(tokens)
             meta["main_stats"][f"slot_{slot}"] = stats
 
         sub_match = RE_SUB_HEADER.search(content) or RE_SUB_INLINE.search(content)
@@ -2277,14 +2334,7 @@ def generate_meta_json_from_markdown(game_id: str):
                         slot_key = slot_label.replace(" ", "_")
 
                     tokens = RE_GENSHIN_SLOT_SPLIT.split(val)
-                    stats = []
-                    for t in tokens:
-                        t_clean = RE_PARENTHESES.sub("", t).replace("*", "").strip()
-                        if t_clean:
-                            norm = normalize_stat_name(t_clean)
-                            if norm and norm not in stats:
-                                stats.append(norm)
-                    meta["main_stats"][slot_key] = stats
+                    meta["main_stats"][slot_key] = _clean_main_slot_stats(tokens)
 
         sub_match = RE_GENSHIN_SUB_HEADER.search(content) or RE_GENSHIN_SUB_INLINE.search(content)
 
@@ -2292,6 +2342,9 @@ def generate_meta_json_from_markdown(game_id: str):
             sub_line = sub_match.group(1).strip()
             raw_tokens = [tok.strip() for tok in RE_GENSHIN_SUB_TOKEN_SPLIT.split(sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "genshin")
+
+        if not meta["substats_priority"] and meta["main_stats"]:
+            meta["substats_priority"] = _infer_genshin_substats(meta["main_stats"])
         return meta
 
     if game_id == "hsr":
@@ -2385,6 +2438,13 @@ def generate_meta_json_from_markdown(game_id: str):
                             continue
 
                         char_meta = parse_fn(content)
+                        has_stats_payload = bool(
+                            char_meta.get("main_stats")
+                            or char_meta.get("substats_priority")
+                            or char_meta.get("general_benchmarks")
+                        )
+                        if not has_stats_payload:
+                            continue
                         canonical_disp = id_to_canonical_name.get(char_id)
                         char_meta["name"] = canonical_disp if canonical_disp else display_name
                         meta_db[char_id] = char_meta

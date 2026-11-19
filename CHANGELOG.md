@@ -6,6 +6,15 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.7.3] / Release Standalone [v1.3.3] - 2026-11-19
+
+### 🐛 Corrigido
+- **Reconciliação dinâmica de IDs oficiais (`static_data_manager.py`, `build_calculator.py`):** `fetch_master_id_list()` agora prioriza fontes autoritativas (roster HoYoLAB, `genshin.py` `CHARACTER_NAMES` e manifestos sincronizados) antes de mapeamentos legados; `_sync_zzz()` passa a consumir `EnkaNetwork/API-docs` (`zzz/avatars.json` + `locs.json`) e `_sync_hoyolab_mappings()` reconcilia `static_data/hoyolab_mappings.json` automaticamente durante `sync_upstream_data()`, eliminando ~47 trocas de IDs nos 3 jogos (incluindo *Xilonen*, *Chasca*, *Mavuika*, *Citlali*, *Mualani*, *Kinich*, *Arlecchino*, *Firefly*, *Anaxa*, *Evernight*, *Miyabi*, *Astra Yao*, *Evelyn*, *Ellen* e *Billy*).
+- **Extração de Main Stats e Substatus (`build_calculator.py`):** removido mapeamento indevido de `"dmg"` para `"crit_dmg"` (agora `"elemental_dmg"`, equivalente a qualquer bônus elemental no cálculo de RV), limpeza do token `"anything"` quando há stats concretos, filtro de stubs vazios/cross-game e inferência dinâmica de `substats_priority` a partir dos `main_stats` para guias do Genshin baseados apenas em estatísticas de uso do Enka (ex.: *Xianyun*, *Clorinde*, *Chiori*).
+- **Scraper do Genshin (`scrapers/scraper_genshin.py`):** deduplicação de armas, artefatos e `main_stats` entre abas de builds, preservando a primeira `stat-priority-strip` (build principal) (`285 testes aprovados`).
+
+---
+
 ## [5.7.2] / Release Standalone [v1.3.2] - 2026-11-19
 
 ### 🐛 Corrigido

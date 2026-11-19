@@ -855,6 +855,12 @@ class StaticDataManager:
 
             sync_results[g] = res
 
+        try:
+            mappings_count = self._sync_hoyolab_mappings(target_games)
+            sync_results["hoyolab_mappings"] = mappings_count
+        except Exception:
+            pass
+
         return sync_results
 
     def _sync_hsr(self) -> Dict[str, Any]:
@@ -1090,6 +1096,42 @@ class StaticDataManager:
                 char_entry = self._enrich_character_profile("genshin", char_entry)
                 current_chars[safe_id] = char_entry
 
+        # Reconcilia IDs oficiais via genshin.py CHARACTER_NAMES e roster local (corrige IDs sintéticos/novos personagens)
+        try:
+            from genshin.models.genshin.constants import CHARACTER_NAMES
+
+            en_names = CHARACTER_NAMES.get("en-us", {})
+            pt_names = CHARACTER_NAMES.get("pt-pt", {})
+            name_to_official_id = {}
+            for cid_num, db_ch in en_names.items():
+                cid_s = str(cid_num).strip()
+                if not cid_s.isdigit():
+                    continue
+                n_en = str(getattr(db_ch, "name", "") or "").strip()
+                if n_en:
+                    name_to_official_id[n_en.lower()] = cid_s
+                    name_to_official_id[re.sub(r"[^a-z0-9]", "", n_en.lower())] = cid_s
+                db_pt = pt_names.get(cid_num)
+                if db_pt and getattr(db_pt, "name", None):
+                    n_pt = str(db_pt.name).strip()
+                    name_to_official_id[n_pt.lower()] = cid_s
+                    name_to_official_id[re.sub(r"[^a-z0-9]", "", n_pt.lower())] = cid_s
+
+            for c_key, c_val in current_chars.items():
+                if not isinstance(c_val, dict):
+                    continue
+                c_nm = str(c_val.get("name") or c_key).strip()
+                official_id = (
+                    name_to_official_id.get(c_nm.lower())
+                    or name_to_official_id.get(re.sub(r"[^a-z0-9]", "", c_nm.lower()))
+                    or name_to_official_id.get(re.sub(r"[^a-z0-9]", "", c_key.lower()))
+                )
+                if official_id:
+                    c_val["hoyolab_id"] = official_id
+                    c_val["enka_id"] = official_id
+        except Exception:
+            pass
+
         payload = {"characters": current_chars, "domains": current_domains}
         self._cache["genshin"] = payload
 
@@ -1153,6 +1195,64 @@ class StaticDataManager:
         except Exception:
             pass
 
+        # Reconcilia hoyolab_id oficiais de ZZZ via EnkaNetwork (avatars.json + locs.json) e roster local
+        try:
+            enka_av_endpoints = [
+                "https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/zzz/avatars.json",
+                "https://cdn.jsdelivr.net/gh/EnkaNetwork/API-docs@master/store/zzz/avatars.json",
+            ]
+            enka_loc_endpoints = [
+                "https://raw.githubusercontent.com/EnkaNetwork/API-docs/master/store/zzz/locs.json",
+                "https://cdn.jsdelivr.net/gh/EnkaNetwork/API-docs@master/store/zzz/locs.json",
+            ]
+            zzz_av, _ = fetch_json_with_retry(enka_av_endpoints)
+            zzz_loc, _ = fetch_json_with_retry(enka_loc_endpoints)
+            zzz_id_by_norm = {}
+            if isinstance(zzz_av, dict) and isinstance(zzz_loc, dict):
+                en_loc = zzz_loc.get("en", {})
+                if isinstance(en_loc, dict):
+                    for aid, ainfo in zzz_av.items():
+                        aid_s = str(aid).strip()
+                        if not aid_s.isdigit() or not isinstance(ainfo, dict):
+                            continue
+                        loc_name = en_loc.get(ainfo.get("Name", ""), "")
+                        if loc_name:
+                            norm_loc = re.sub(r"[^a-z0-9]", "", loc_name.lower())
+                            zzz_id_by_norm[norm_loc] = aid_s
+                            if " " in loc_name:
+                                zzz_id_by_norm.setdefault(re.sub(r"[^a-z0-9]", "", loc_name.split()[0].lower()), aid_s)
+                    if zzz_id_by_norm and not source_used:
+                        source_used = "EnkaNetwork ZZZ Avatars"
+
+            try:
+                import database
+
+                for rc in database.get_roster_data("zzz") or []:
+                    r_id = str(rc.get("id") or rc.get("character_id") or "").strip()
+                    r_name = str(rc.get("name") or "").strip()
+                    if r_id.isdigit() and r_name:
+                        zzz_id_by_norm[re.sub(r"[^a-z0-9]", "", r_name.lower())] = r_id
+            except Exception:
+                pass
+
+            for c_key, c_val in current_chars.items():
+                if not isinstance(c_val, dict):
+                    continue
+                k_norm = re.sub(r"[^a-z0-9]", "", str(c_key).lower())
+                n_norm = re.sub(r"[^a-z0-9]", "", str(c_val.get("name") or "").lower())
+                first_tok = re.sub(r"[^a-z0-9]", "", str(c_val.get("name") or "").split(" ")[0].lower())
+                last_tok = re.sub(r"[^a-z0-9]", "", str(c_val.get("name") or "").split(" ")[-1].lower())
+                matched_id = (
+                    zzz_id_by_norm.get(k_norm)
+                    or zzz_id_by_norm.get(n_norm)
+                    or (zzz_id_by_norm.get(last_tok) if len(last_tok) >= 4 else None)
+                    or (zzz_id_by_norm.get(first_tok) if len(first_tok) >= 4 else None)
+                )
+                if matched_id:
+                    c_val["hoyolab_id"] = matched_id
+        except Exception:
+            pass
+
         payload = {"characters": current_chars}
         self._cache["zzz"] = payload
 
@@ -1168,6 +1268,91 @@ class StaticDataManager:
             "character_count": len(current_chars),
             "updated_at": datetime.now().isoformat(),
         }
+
+    def _sync_hoyolab_mappings(self, target_games: Optional[List[str]] = None) -> Dict[str, int]:
+        """Reconcilia e salva static_data/hoyolab_mappings.json dinamicamente a partir dos manifestos, genshin.py e rosters."""
+        games = target_games or ["hsr", "genshin", "zzz"]
+        target_dir = os.path.dirname(self._get_file_path("hsr"))
+        mappings_path = os.path.join(target_dir, "hoyolab_mappings.json")
+        existing = {"hsr": {}, "genshin": {}, "zzz": {}}
+        if os.path.exists(mappings_path):
+            try:
+                with open(mappings_path, "r", encoding="utf-8") as mf:
+                    loaded = json.load(mf)
+                    if isinstance(loaded, dict):
+                        for k in ("hsr", "genshin", "zzz"):
+                            if isinstance(loaded.get(k), dict):
+                                existing[k] = dict(loaded[k])
+            except Exception:
+                pass
+
+        def _slugify(name: str) -> str:
+            s = re.sub(r"[^a-z0-9]+", "_", name.lower().strip()).strip("_")
+            return s
+
+        counts = {}
+        for g in games:
+            rebuilt: Dict[str, str] = {}
+
+            # 1. Manifestos estáticos (StarRailRes / Enka / Prydwen)
+            m_chars = self._cache.get(g, {}).get("characters", {})
+            for mk, mv in m_chars.items():
+                if not isinstance(mv, dict):
+                    continue
+                hid = str(mv.get("hoyolab_id") or mv.get("enka_id") or "").strip()
+                if not hid.isdigit() or hid == "9999" or (g == "genshin" and int(hid) >= 10000900):
+                    continue
+                slug = _slugify(str(mk or mv.get("name") or ""))
+                if slug:
+                    rebuilt[hid] = slug
+
+            # 2. Para Genshin, sobrepõe nomes oficiais em inglês do genshin.py (100% canônico)
+            if g == "genshin":
+                try:
+                    from genshin.models.genshin.constants import CHARACTER_NAMES
+
+                    for cid_num, db_ch in CHARACTER_NAMES.get("en-us", {}).items():
+                        cid_s = str(cid_num).strip()
+                        n_en = str(getattr(db_ch, "name", "") or "").strip()
+                        if cid_s.isdigit() and n_en and "traveler" not in n_en.lower():
+                            rebuilt[cid_s] = _slugify(n_en)
+                except Exception:
+                    pass
+
+            # 3. Roster real do jogador (SQLite / JSON) garante cobertura de personagens novos
+            try:
+                import database
+
+                for rc in database.get_roster_data(g) or []:
+                    r_id = str(rc.get("id") or rc.get("character_id") or "").strip()
+                    r_name = str(rc.get("name") or "").strip()
+                    if r_id.isdigit() and r_name and r_id not in rebuilt:
+                        slug = _slugify(r_name)
+                        if slug:
+                            rebuilt[r_id] = slug
+            except Exception:
+                pass
+
+            if rebuilt:
+                existing[g] = dict(sorted(rebuilt.items(), key=lambda kv: int(kv[0]) if kv[0].isdigit() else 999999999))
+                counts[g] = len(existing[g])
+            else:
+                counts[g] = len(existing.get(g, {}))
+
+        try:
+            os.makedirs(target_dir, exist_ok=True)
+            with open(mappings_path, "w", encoding="utf-8") as mf:
+                json.dump(existing, mf, ensure_ascii=False, indent=4)
+            try:
+                import meta_comparator
+
+                meta_comparator._CACHE.pop("hoyolab_mappings.json", None)
+            except Exception:
+                pass
+        except Exception:
+            pass
+
+        return counts
 
     def get_character_by_hoyolab_id(self, game_id: str, hoyolab_id: str) -> Optional[Dict[str, Any]]:
         """Localiza personagem diretamente pelo ID numérico oficial da HoYoverse/HoYoLAB."""

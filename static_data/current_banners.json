@@ -54,7 +54,7 @@
         "banner_type": "weapon"
       }
     ],
-    "last_updated": "2026-11-12T15:11:52.456205"
+    "last_updated": "2026-11-19T14:15:54.296272"
   },
   "hsr": {
     "game_id": "hsr",
@@ -157,7 +157,7 @@
         ],
         "is_primary": true,
         "banner_type": "weapon",
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/upon-the-first-echo-of-aha.webp?v=1793553628069"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/upon-the-first-echo-of-aha.webp?v=1794757485426"
       },
       {
         "character_name": "Dazzled By A Flowery World",
@@ -261,7 +261,7 @@
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1778524336072"
       }
     ],
-    "last_updated": "2026-11-12T14:38:59.734947"
+    "last_updated": "2026-11-19T14:15:31.432549"
   },
   "zzz": {
     "game_id": "zzz",
@@ -300,6 +300,6 @@
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/chief-sidekick_image.webp?v=1781636481144"
       }
     ],
-    "last_updated": "2026-11-12T09:10:10.280533"
+    "last_updated": "2026-11-19T14:14:52.662388"
   }
 }

@@ -163,7 +163,8 @@ class PrydwenGenshinScraper:
             "teams": [],
         }
 
-        # 1. ARMAS (Curadas via weapon-rank-table)
+        # 1. ARMAS (Curadas via weapon-rank-table, priorizando a build principal sem duplicatas)
+        seen_weapons = set()
         for w_table in soup.find_all("div", class_="weapon-rank-table"):
             for row in w_table.find_all("div", class_="build-rank-row"):
                 a_tag = row.find("a", class_="loadout-item")
@@ -172,7 +173,9 @@ class PrydwenGenshinScraper:
                 r_val = f" ({dupes.get_text().strip()})" if dupes else ""
                 note = row.find("span", class_="weapon-note")
                 note_txt = f" - {note.get_text().strip()}" if note else ""
-                if w_name:
+                w_key = f"{w_name.lower()}{r_val.lower()}"
+                if w_name and w_key not in seen_weapons:
+                    seen_weapons.add(w_key)
                     data["weapons"].append(f"**{w_name}{r_val}**{note_txt}")
 
         # 1b. Fallback de Armas via Estatísticas de Uso (usage-list-card)
@@ -188,14 +191,17 @@ class PrydwenGenshinScraper:
                         if w_name:
                             data["weapons"].append(f"**{w_name}**{pct_txt}")
 
-        # 2. ARTEFATOS (Curados via artifact-rank-table)
+        # 2. ARTEFATOS (Curados via artifact-rank-table, sem duplicatas entre abas)
+        seen_artifacts = set()
         for a_table in soup.find_all("div", class_="artifact-rank-table"):
             for row in a_table.find_all("div", class_="build-rank-row"):
                 a_tag = row.find("a", class_="loadout-item")
                 a_name = a_tag.find("strong").get_text().strip() if a_tag and a_tag.find("strong") else ""
                 note = row.find("span", class_="artifact-note")
                 note_txt = f" - {note.get_text().strip()}" if note else ""
-                if a_name:
+                a_key = a_name.lower()
+                if a_name and a_key not in seen_artifacts:
+                    seen_artifacts.add(a_key)
                     data["artifacts"].append(f"**{a_name}**{note_txt}")
 
         # 2b. Fallback de Artefatos via Estatísticas de Uso (usage-list-card)
@@ -213,13 +219,16 @@ class PrydwenGenshinScraper:
                             seen_art.add(a_name)
                             data["artifacts"].append(f"**{a_name}**{pct_txt}")
 
-        # 3. STATS PRINCIPAIS (Curados via main-stat-row)
+        # 3. STATS PRINCIPAIS (Curados via main-stat-row, preservando a primeira build principal por slot)
+        seen_main_slots = set()
         for row in soup.find_all("div", class_="main-stat-row"):
             slot_span = row.find("div", class_="main-stat-slot")
             slot = slot_span.get_text().strip() if slot_span else ""
             strong = row.find("strong")
             val = strong.get_text().strip() if strong else ""
-            if slot and val:
+            slot_key = slot.lower()
+            if slot and val and slot_key not in seen_main_slots:
+                seen_main_slots.add(slot_key)
                 data["stats_main"].append({"slot": slot, "value": val})
 
         # 3b. Fallback de Stats Principais via Estatísticas de Uso (main-stat-card)
@@ -241,11 +250,12 @@ class PrydwenGenshinScraper:
                 if slot_name and top_stats:
                     data["stats_main"].append({"slot": slot_name, "value": " / ".join(top_stats[:2])})
 
-        # 4. SUBSTATS PRIORITY (via stat-priority-strip)
+        # 4. SUBSTATS PRIORITY (via stat-priority-strip — prioriza a primeira build principal)
         for strip in soup.find_all("div", class_="stat-priority-strip"):
             sub_val = strip.get("aria-label") or strip.get_text(separator=" ").strip()
             if sub_val:
                 data["stats_sub"] = sub_val.strip()
+                break
 
         # 4b. PRIORIDADE DE TALENTOS (via talent-priority-strip)
         for t_strip in soup.find_all("div", class_=lambda c: c and "talent-priority-strip" in c):
