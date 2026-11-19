@@ -402,6 +402,20 @@ class TestCoreOptimizationSuite(unittest.TestCase):
         tok3 = static_cache.get_asset_version_token(str(static_dir), "js/app.js")
         self.assertEqual(tok1, tok3)
 
+    def test_static_data_sync_invalidates_roster_cache(self) -> None:
+        mock_results = {"hsr": {"character_count": 10, "status": "success", "source": "seed"}}
+        with (
+            patch("routers.static_data.static_data_manager.sync_upstream_data", return_value=mock_results) as mock_sync,
+            patch("routers.static_data.database.save_static_data_manifests") as mock_save,
+            patch("routers.static_data.invalidate_roster_cache") as mock_inv,
+            patch("scrapers.scraper_prydwen.PrydwenScraper.get_current_banners", return_value={}),
+        ):
+            res = self.client.post("/api/static-data/sync", json={"game_id": "hsr"})
+            self.assertEqual(res.status_code, 200)
+            mock_sync.assert_called_once_with("hsr")
+            mock_save.assert_called_once_with(mock_results)
+            mock_inv.assert_called_once_with("hsr")
+
 
 if __name__ == "__main__":
     unittest.main()

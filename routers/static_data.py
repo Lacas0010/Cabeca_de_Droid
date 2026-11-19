@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 import database
 from core.config import validate_game_id
+from services.roster_service import invalidate_roster_cache
 from static_data_manager import static_data_manager
 from schemas.sync import StaticDataSyncRequest
 from build_calculator import evaluate_general_stats
@@ -22,6 +23,7 @@ async def get_static_data_status():
 def _sync_static_data_and_banners_sync(target_game: Optional[str]):
     results = static_data_manager.sync_upstream_data(target_game)
     database.save_static_data_manifests(results)
+    invalidate_roster_cache(target_game)
     try:
         from scrapers.scraper_prydwen import PrydwenScraper
 
