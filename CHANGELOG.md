@@ -6,6 +6,20 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.7.1] / Release Standalone [v1.3.1] - 2026-11-19
+
+### 🐛 Corrigido & Segurança
+- **Cofre local & LAN (`security_vault.py`, `routers/config.py`, `core/security.py`, `routers/system.py`):** configurações sensíveis agora criptografadas em `config.enc` (com migração de `config.json`), máscara automática de webhooks fora do loopback, autenticação de sessão LAN em rotas mutáveis/sensíveis, restrição de `/api/reset-data` para `POST`/`DELETE` (limpando todas as 15 tabelas e órfãos) e proteção contra SSRF/race no `/api/proxy_image`.
+- **Auto-Updater (`updater.py`):** validação de ZipSlip usando `is_relative_to()` e preferência pelo executável esperado.
+- **Calculadoras & Serviços (`build_calculator.py`, `calculators/`, `services/`):** corrigidos os IDs trocados de *Neuvillette*, *Charlotte* e *Furina*, alinhadas chaves de ascensão e `find_trash_relics`, corrigido hard pity 90 no ZZZ (`1.0`), breakpoints em `160.1–200.0`, `simulate_relic_swap`, match de nomes compostos (*Ruan Mei*, *Kaedehara Kazuha*, *Jane Doe*), isolamento por `active_uid` no endgame e invalidação completa de caches.
+- **Frontend (`static/js/modules/`):** removido `cloneNode(true)` em `<sakuga-button>` (preservando Shadow DOM/VFX), eliminados listeners duplicados no simulador de gacha, adicionados `AbortController`/tokens contra race conditions, padronizada a chave `app_lang` e pausado o timer de contagem regressiva quando oculto.
+
+### ⚡ Otimizado
+- **SQLite & Backend (`database.py`, `server.py`, `core/static_cache.py`, `extractor.py`, `scrapers/`):** removida execução dupla de `init_db()` e `PRAGMA WAL` por query, adicionados índices compostos, cache em memória para configurações de segurança e mtimes estáticos, gravação em lote via `save_relics_batch()`, regexes pré-compiladas e offload via `asyncio.to_thread`.
+- **Frontend (`static/index.html`, `static/style.css`, `static/css/gacha.css`, `static/js/`):** chamadas paralelas no inspetor (`Promise.allSettled`), re-renderização de cache na troca de idioma sem refetches ocultos, throttling `requestAnimationFrame` no chat SSE e remoção de código/CSS mortos (`279 testes aprovados`).
+
+---
+
 ## [5.7.0] / Release Standalone [v1.3.0] - 2026-11-18
 
 ### ✨ Adicionado
