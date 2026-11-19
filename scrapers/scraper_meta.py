@@ -4,6 +4,55 @@ import json
 from curl_cffi import requests
 from bs4 import BeautifulSoup
 
+_META_REPLACEMENTS = {
+    "Memory of Chaos": "Memory of Chaos (MoC)",
+    "Pure Fiction": "Pure Fiction (PF)",
+    "Apocalyptic Shadow": "Apocalyptic Shadow (AS)",
+    "Anomaly Arbitration": "Anomaly Arbitration (AA)",
+    "Apex characters": "Personagens Apex (T0 / T0.5)",
+    "Meta characters": "Personagens Meta (T1 / T1.5 / T2)",
+    "Off-Meta characters": "Personagens Off-Meta (T3 / T4)",
+    "The Forgotten Ones": "Os Esquecidos (T5)",
+    "Amplifiers": "Amplificadores (Suportes)",
+    "Amplifier": "Amplificador (Suporte)",
+    "Sustains": "Sustains (Defensores/Curas)",
+    "Sustain": "Sustain (Defensor/Cura)",
+    "DPS": "DPS (Dano Principal)",
+    "Specialist": "Especialista",
+    "Support Damage": "Dano de Suporte",
+    "tier list": "Tier List",
+    "tier lists": "Tier Lists",
+    "patch": "patch",
+    "debuff": "debuff",
+    "debuffs": "debuffs",
+    "buff": "buff",
+    "buffs": "buffs",
+    "Ultimate": "Suprema (Ultimate)",
+    "Skill": "Perícia (Skill)",
+    "Energy": "Energia",
+    "speed": "velocidade",
+    "Break": "Break (Quebra)",
+    "Elation": "Elation (Júbilo)",
+    "Remembrance": "Remembrance (Recordação)",
+    "Nihility": "Inexistência (Nihility)",
+    "Harmony": "Harmonia (Harmony)",
+    "Preservation": "Preservação (Preservation)",
+    "Abundance": "Abundância (Abundance)",
+    "Destruction": "Destruição (Destruction)",
+    "Hunt": "Caça (Hunt)",
+    "Erudition": "Erudição (Erudition)",
+}
+_META_LOWER_MAP = {k.lower(): v for k, v in _META_REPLACEMENTS.items()}
+_META_TRANSLATE_RE = re.compile(
+    "|".join(re.escape(k) for k in sorted(_META_REPLACEMENTS.keys(), key=len, reverse=True)),
+    re.IGNORECASE,
+)
+
+
+def _meta_replacer(match):
+    matched_str = match.group(0)
+    return _META_LOWER_MAP.get(matched_str.lower(), matched_str)
+
 
 class PrydwenMetaScraper:
     def __init__(self):
@@ -21,56 +70,9 @@ class PrydwenMetaScraper:
         Traduz termos comuns de meta e jogo de inglês para português de forma segura
         em uma única passagem (evitando loops ou substituições duplas).
         """
-        replacements = {
-            "Memory of Chaos": "Memory of Chaos (MoC)",
-            "Pure Fiction": "Pure Fiction (PF)",
-            "Apocalyptic Shadow": "Apocalyptic Shadow (AS)",
-            "Anomaly Arbitration": "Anomaly Arbitration (AA)",
-            "Apex characters": "Personagens Apex (T0 / T0.5)",
-            "Meta characters": "Personagens Meta (T1 / T1.5 / T2)",
-            "Off-Meta characters": "Personagens Off-Meta (T3 / T4)",
-            "The Forgotten Ones": "Os Esquecidos (T5)",
-            "Amplifiers": "Amplificadores (Suportes)",
-            "Amplifier": "Amplificador (Suporte)",
-            "Sustains": "Sustains (Defensores/Curas)",
-            "Sustain": "Sustain (Defensor/Cura)",
-            "DPS": "DPS (Dano Principal)",
-            "Specialist": "Especialista",
-            "Support Damage": "Dano de Suporte",
-            "tier list": "Tier List",
-            "tier lists": "Tier Lists",
-            "patch": "patch",
-            "debuff": "debuff",
-            "debuffs": "debuffs",
-            "buff": "buff",
-            "buffs": "buffs",
-            "Ultimate": "Suprema (Ultimate)",
-            "Skill": "Perícia (Skill)",
-            "Energy": "Energia",
-            "speed": "velocidade",
-            "Break": "Break (Quebra)",
-            "Elation": "Elation (Júbilo)",
-            "Remembrance": "Remembrance (Recordação)",
-            "Nihility": "Inexistência (Nihility)",
-            "Harmony": "Harmonia (Harmony)",
-            "Preservation": "Preservação (Preservation)",
-            "Abundance": "Abundância (Abundance)",
-            "Destruction": "Destruição (Destruction)",
-            "Hunt": "Caça (Hunt)",
-            "Erudition": "Erudição (Erudition)",
-        }
-
-        sorted_keys = sorted(replacements.keys(), key=len, reverse=True)
-        pattern = re.compile("|".join(re.escape(k) for k in sorted_keys), re.IGNORECASE)
-
-        def replacer(match):
-            matched_str = match.group(0)
-            for k in sorted_keys:
-                if k.lower() == matched_str.lower():
-                    return replacements[k]
-            return matched_str
-
-        return pattern.sub(replacer, text)
+        if not text:
+            return text
+        return _META_TRANSLATE_RE.sub(_meta_replacer, text)
 
     def scrape_tier_list(self) -> dict:
         """

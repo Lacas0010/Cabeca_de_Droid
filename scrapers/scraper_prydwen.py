@@ -5,6 +5,80 @@ from datetime import datetime
 from curl_cffi import requests
 from bs4 import BeautifulSoup
 
+_HSR_REPLACEMENTS = {
+    "Acheron’s signature Light Cone": "o Cone de Luz assinatura de Acheron",
+    "Acheron's signature Light Cone": "o Cone de Luz assinatura de Acheron",
+    "signature Light Cone": "Cone de Luz assinatura",
+    "Light Cone": "Cone de Luz",
+    "Light Cones": "Cones de Luz",
+    "Relic Sets": "Conjuntos de Relíquias",
+    "Relic Set": "Conjunto de Relíquias",
+    "Planar Ornaments": "Ornamentos Planares",
+    "Planar Ornament": "Ornamento Planar",
+    "main source of DMG": "principal fonte de dano",
+    "Ultimate DMG": "dano da Suprema",
+    "Ultimate": "Suprema (Ultimate)",
+    "Skill": "Perícia (Skill)",
+    "Basic ATK": "Ataque Básico",
+    "Basic": "Ataque Básico",
+    "Technique": "Técnica",
+    "Talent": "Talento",
+    "debuffs": "debuffs",
+    "debuff": "debuff",
+    "Nihility characters": "personagens de Inexistência (Nihility)",
+    "Nihility character": "personagem de Inexistência (Nihility)",
+    "Nihility teammate": "companheiro de Inexistência (Nihility)",
+    "Nihility teammates": "companheiros de Inexistência (Nihility)",
+    "Nihility": "Inexistência (Nihility)",
+    "Harmony characters": "personagens de Harmonia (Harmony)",
+    "Harmony character": "personagem de Harmonia (Harmony)",
+    "Harmony": "Harmonia (Harmony)",
+    "Preservation unit": "personagem de Preservação (Preservation)",
+    "Preservation Trailblazer": "Desbravador da Preservação",
+    "Preservation": "Preservação (Preservation)",
+    "Abundance": "Abundância (Abundance)",
+    "Sustains": "Sustains",
+    "Sustain": "Sustain",
+    "Vulnerability": "Vulnerabilidade",
+    "DMG Boost": "Aumento de Dano",
+    "DMG bonus": "Bônus de Dano",
+    "DMG": "Dano",
+    "CRIT Rate": "Taxa Crítica",
+    "CRIT DMG": "Dano Crítico",
+    "CRIT": "Crítico",
+    "Speed": "Velocidade",
+    "SPD": "Velocidade",
+    "Energy": "Energia",
+    "Toughness": "Tenacidade",
+    "Weakness Types": "Tipos de Fraqueza",
+    "Weakness": "Fraqueza",
+    "debuffing": "aplicadores de debuff",
+    "He is Acheron’s premier amplifier": "Ele é o amplificador principal da Acheron",
+    "premier amplifier": "amplificador principal",
+    "amplifier": "amplificador",
+    "points generator": "gerador de pontos",
+    "Trend of the Universal Market": "Trend of the Universal Market (Tendência do Mercado Universal)",
+    "Taunt": "Provocação (Taunt)",
+    "E2": "E2 (Eidolon 2)",
+    "E1": "E1 (Eidolon 1)",
+    "E6": "E6 (Eidolon 6)",
+    "Eidolon": "Eidolon",
+    "Eidolons": "Eidolons",
+    "Major trace": "Rastro Principal",
+    "Trace": "Rastro",
+    "Traces": "Rastros",
+}
+_HSR_LOWER_MAP = {k.lower(): v for k, v in _HSR_REPLACEMENTS.items()}
+_HSR_TRANSLATE_RE = re.compile(
+    "|".join(re.escape(k) for k in sorted(_HSR_REPLACEMENTS.keys(), key=len, reverse=True)),
+    re.IGNORECASE,
+)
+
+
+def _hsr_replacer(match):
+    matched_str = match.group(0)
+    return _HSR_LOWER_MAP.get(matched_str.lower(), matched_str)
+
 
 def extract_prydwen_card_name(link, slug: str = "") -> str:
     """
@@ -106,81 +180,9 @@ class PrydwenScraper:
         Traduz termos comuns do jogo de inglês para português de forma segura
         em uma única passagem (evitando substituições duplas).
         """
-        replacements = {
-            "Acheron’s signature Light Cone": "o Cone de Luz assinatura de Acheron",
-            "Acheron's signature Light Cone": "o Cone de Luz assinatura de Acheron",
-            "signature Light Cone": "Cone de Luz assinatura",
-            "Light Cone": "Cone de Luz",
-            "Light Cones": "Cones de Luz",
-            "Relic Sets": "Conjuntos de Relíquias",
-            "Relic Set": "Conjunto de Relíquias",
-            "Planar Ornaments": "Ornamentos Planares",
-            "Planar Ornament": "Ornamento Planar",
-            "main source of DMG": "principal fonte de dano",
-            "Ultimate DMG": "dano da Suprema",
-            "Ultimate": "Suprema (Ultimate)",
-            "Skill": "Perícia (Skill)",
-            "Basic ATK": "Ataque Básico",
-            "Basic": "Ataque Básico",
-            "Technique": "Técnica",
-            "Talent": "Talento",
-            "debuffs": "debuffs",
-            "debuff": "debuff",
-            "Nihility characters": "personagens de Inexistência (Nihility)",
-            "Nihility character": "personagem de Inexistência (Nihility)",
-            "Nihility teammate": "companheiro de Inexistência (Nihility)",
-            "Nihility teammates": "companheiros de Inexistência (Nihility)",
-            "Nihility": "Inexistência (Nihility)",
-            "Harmony characters": "personagens de Harmonia (Harmony)",
-            "Harmony character": "personagem de Harmonia (Harmony)",
-            "Harmony": "Harmonia (Harmony)",
-            "Preservation unit": "personagem de Preservação (Preservation)",
-            "Preservation Trailblazer": "Desbravador da Preservação",
-            "Preservation": "Preservação (Preservation)",
-            "Abundance": "Abundância (Abundance)",
-            "Sustains": "Sustains",
-            "Sustain": "Sustain",
-            "Vulnerability": "Vulnerabilidade",
-            "DMG Boost": "Aumento de Dano",
-            "DMG bonus": "Bônus de Dano",
-            "DMG": "Dano",
-            "CRIT Rate": "Taxa Crítica",
-            "CRIT DMG": "Dano Crítico",
-            "CRIT": "Crítico",
-            "Speed": "Velocidade",
-            "SPD": "Velocidade",
-            "Energy": "Energia",
-            "Toughness": "Tenacidade",
-            "Weakness Types": "Tipos de Fraqueza",
-            "Weakness": "Fraqueza",
-            "debuffing": "aplicadores de debuff",
-            "He is Acheron’s premier amplifier": "Ele é o amplificador principal da Acheron",
-            "premier amplifier": "amplificador principal",
-            "amplifier": "amplificador",
-            "points generator": "gerador de pontos",
-            "Trend of the Universal Market": "Trend of the Universal Market (Tendência do Mercado Universal)",
-            "Taunt": "Provocação (Taunt)",
-            "E2": "E2 (Eidolon 2)",
-            "E1": "E1 (Eidolon 1)",
-            "E6": "E6 (Eidolon 6)",
-            "Eidolon": "Eidolon",
-            "Eidolons": "Eidolons",
-            "Major trace": "Rastro Principal",
-            "Trace": "Rastro",
-            "Traces": "Rastros",
-        }
-
-        sorted_keys = sorted(replacements.keys(), key=len, reverse=True)
-        pattern = re.compile("|".join(re.escape(k) for k in sorted_keys), re.IGNORECASE)
-
-        def replacer(match):
-            matched_str = match.group(0)
-            for k in sorted_keys:
-                if k.lower() == matched_str.lower():
-                    return replacements[k]
-            return matched_str
-
-        return pattern.sub(replacer, text)
+        if not text:
+            return text
+        return _HSR_TRANSLATE_RE.sub(_hsr_replacer, text)
 
     def extract_synergies(self, character_name: str, review_paragraphs: list) -> list:
         """

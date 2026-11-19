@@ -3,6 +3,9 @@
 import re
 
 
+RE_DECIMAL = re.compile(r"([0-9]+(?:\.[0-9]+)?)")
+
+
 def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dict:
     """
     Avalia se os status atuais de um personagem atingiram os limiares (breakpoints) vitais de combate,
@@ -18,7 +21,7 @@ def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dic
                 val = stats[k]
                 if isinstance(val, (int, float)):
                     return float(val)
-                m = re.search(r"([0-9]+(?:\.[0-9]+)?)", str(val))
+                m = RE_DECIMAL.search(str(val))
                 if m:
                     return float(m.group(1))
         return default
@@ -49,15 +52,13 @@ def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dic
             is_reached = speed >= 134.0
             tier_prog = 0.0
 
-            for val, title, desc in spd_tiers:
+            for idx, (val, title, desc) in enumerate(spd_tiers):
                 if speed >= val:
                     reached_tier_desc = f"{title}: {desc}"
                 elif next_goal_desc == "Breakpoint Máximo atingido!":
                     diff = val - speed
                     next_goal_desc = f"Faltam {diff:.1f} de VEL para atingir {title} ({desc})"
-                    prev_val = (
-                        100.0 if val == 120.0 else (120.0 if val == 134.0 else (134.0 if val == 142.9 else 142.9))
-                    )
+                    prev_val = spd_tiers[idx - 1][0] if idx > 0 else 100.0
                     tier_prog = min(100.0, max(0.0, round(((speed - prev_val) / (val - prev_val)) * 100.0, 1)))
 
             # Dica de Speed Tuning personalizada

@@ -62,9 +62,9 @@ def simulate_gacha_probabilities(
     if target_rank is not None:
         tgt_r = max(0, min(target_rank, max_rank_limit))
     elif target_copies > 0:
-        tgt_r = max(0, min(target_copies - 1, max_rank_limit))
+        tgt_r = max(0, min(curr_r + target_copies, max_rank_limit))
     else:
-        tgt_r = 0
+        tgt_r = max(0, curr_r)
 
     # Total de cópias já possuídas vs total necessário para a meta
     owned_pulls = 0 if curr_r < 0 else (curr_r + 1)
@@ -124,6 +124,27 @@ def simulate_gacha_probabilities(
         promo_chance = 0.50  # 50/50
         fate_point_cap = 0
 
+    if num_simulations <= 0:
+        return {
+            "success_rate": 0.0,
+            "target_copies": needed_new_copies,
+            "needed_new_copies": needed_new_copies,
+            "current_rank": curr_r,
+            "target_rank": tgt_r,
+            "current_rank_str": curr_rank_label,
+            "target_rank_str": target_rank_label,
+            "term": term,
+            "banner_type": "weapon" if is_weapon else "character",
+            "pulls_available": pulls_available,
+            "current_pity": current_pity,
+            "is_guaranteed": is_guaranteed,
+            "avg_pulls_spent": None,
+            "distribution": {},
+            "num_simulations": 0,
+            "game_id": game_id,
+        }
+
+    hard_pity = 80 if is_weapon else 90
     successful_runs = 0
     total_pulls_spent_list = []
     copies_obtained_distribution = {i: 0 for i in range(needed_new_copies + 1)}
@@ -141,12 +162,13 @@ def simulate_gacha_probabilities(
             pulls_spent += 1
             pity += 1
 
-            # Cálculo de probabilidade do tiro atual com soft pity
-            if pity < soft_pity_start:
+            # Cálculo de probabilidade do tiro atual com soft pity e hard pity absoluto
+            if pity >= hard_pity:
+                chance = 1.0
+            elif pity < soft_pity_start:
                 chance = base_rate
             else:
-                chance = base_rate + (pity - soft_pity_start + 1) * soft_pity_increment
-            chance = min(1.0, chance)
+                chance = min(1.0, base_rate + (pity - soft_pity_start + 1) * soft_pity_increment)
 
             if random.random() < chance:
                 # Tirou um 5★ / Rank S

@@ -7,11 +7,39 @@ from typing import Dict, Any, Optional, Tuple
 
 import database
 import endgame_extractor
+from core.config import get_data_path
 from services.roster_service import get_roster
 from services.media_service import get_raw_url
+from services.team_matcher_service import ENDGAME_MODE_EN_MAP
 
-_ENDGAME_CACHE: Dict[Tuple[str, str], Tuple[float, Dict[str, Any]]] = {}
+_ENDGAME_CACHE: Dict[Tuple[str, str, str], Tuple[float, Dict[str, Any]]] = {}
 CACHE_TTL = 60.0
+
+_STAGE_TRANSLATION_RULES = [
+    (re.compile(r"Piso\s*(\d+)", re.IGNORECASE), r"Floor \1"),
+    (re.compile(r"Câmara\s*(\d+)", re.IGNORECASE), r"Chamber \1"),
+    (re.compile(r"Desafio Arcano\s*(\d+)", re.IGNORECASE), r"Arcane Challenge \1"),
+    (re.compile(r"Temporada Atual", re.IGNORECASE), "Current Season"),
+    (re.compile(r"Temporada\s*(\d+)", re.IGNORECASE), r"Season \1"),
+    (re.compile(r"Cruzando o Além", re.IGNORECASE), "Crossing the Beyond"),
+    (re.compile(r"Modo Estelar", re.IGNORECASE), "Star Mode"),
+    (re.compile(r"Palavras Imaginadas", re.IGNORECASE), "Imagined Words"),
+    (re.compile(r"Dominação do Esquecimento", re.IGNORECASE), "Dominance of Oblivion"),
+    (re.compile(r"Fronteira Crítica", re.IGNORECASE), "Critical Node"),
+    (re.compile(r"Fronteira Estável", re.IGNORECASE), "Stable Node"),
+    (re.compile(r"Nó Crítico", re.IGNORECASE), "Critical Node"),
+    (re.compile(r"Zona Disputada", re.IGNORECASE), "Disputed Node"),
+    (re.compile(r"Ato\s*(\d+)", re.IGNORECASE), r"Act \1"),
+]
+
+_TEAM_TRANSLATION_RULES = [
+    (re.compile(r"Lado\s*(\d+)", re.IGNORECASE), r"Side \1"),
+    (re.compile(r"Primeira Metade", re.IGNORECASE), "First Half"),
+    (re.compile(r"Segunda Metade", re.IGNORECASE), "Second Half"),
+    (re.compile(r"Ato\s*(\d+)", re.IGNORECASE), r"Act \1"),
+    (re.compile(r"Elenco Principal\s*/\s*Destaques", re.IGNORECASE), "Main Cast / Highlights"),
+    (re.compile(r"Agentes da Rotação", re.IGNORECASE), "Rotation Agents"),
+]
 
 
 def invalidate_endgame_cache(game_id: Optional[str] = None) -> None:
@@ -32,8 +60,9 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
     if game_id not in ["hsr", "genshin", "zzz"]:
         raise ValueError("Jogo inválido. Escolha 'hsr', 'genshin' ou 'zzz'.")
 
-    # Verifica cache em memória
-    cache_key = (game_id, lang)
+    # Verifica cache em memória (incluindo active_uid para evitar dados obsoletos ao trocar de conta)
+    active_uid = str(database.get_active_uid(game_id) or "")
+    cache_key = (game_id, lang, active_uid)
     now = time.time()
     if cache_key in _ENDGAME_CACHE:
         cached_time, cached_val = _ENDGAME_CACHE[cache_key]
@@ -56,7 +85,8 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
 
     # 2. Se não encontrou no SQLite, tenta carregar do JSON salvo
     if not modes:
-        json_path = f"{game_id}/endgame_data_{game_id}.json"
+        rel_json = f"{game_id}/endgame_data_{game_id}.json"
+        json_path = rel_json if os.path.exists(rel_json) else get_data_path(rel_json)
         if os.path.exists(json_path):
             try:
                 with open(json_path, "r", encoding="utf-8") as ejf:
@@ -66,7 +96,8 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
 
     # 3. Fallback retrocompatível: lê do Markdown de roster
     if not modes:
-        md_path = f"{game_id}/roster_{game_id}.md"
+        rel_md = f"{game_id}/roster_{game_id}.md"
+        md_path = rel_md if os.path.exists(rel_md) else get_data_path(rel_md)
         if os.path.exists(md_path):
             try:
                 with open(md_path, "r", encoding="utf-8") as mf:
@@ -155,38 +186,14 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
                             char["icon"] = f"/api/proxy_image?url={urllib.parse.quote(raw_c_icon, safe='')}"
 
     if lang == "en" and modes:
-        en_mode_map = {
-            "Caos da Memória (MoC)": "Memory of Chaos (MoC)",
-            "Caos da Memória": "Memory of Chaos",
-            "Ficção Pura": "Pure Fiction",
-            "Sombra Apocalíptica": "Apocalyptic Shadow",
-            "Abismo Espiral": "Spiral Abyss",
-            "Teatro Imaginário": "Imaginarium Theater",
-            "Defesa Shiyu (Shiyu Defense)": "Shiyu Defense",
-            "Defesa Shiyu": "Shiyu Defense",
-            "Investida Fatal": "Deadly Assault",
-            "Cavidade Zero": "Hollow Zero",
-        }
         for mode in modes:
             m_name = mode.get("name", "")
-            if m_name in en_mode_map:
-                mode["name"] = en_mode_map[m_name]
+            if m_name in ENDGAME_MODE_EN_MAP:
+                mode["name"] = ENDGAME_MODE_EN_MAP[m_name]
             stg = mode.get("stage", "")
             if stg:
-                stg = re.sub(r"Piso\s*(\d+)", r"Floor \1", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Câmara\s*(\d+)", r"Chamber \1", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Desafio Arcano\s*(\d+)", r"Arcane Challenge \1", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Temporada Atual", "Current Season", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Temporada\s*(\d+)", r"Season \1", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Cruzando o Além", "Crossing the Beyond", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Modo Estelar", "Star Mode", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Palavras Imaginadas", "Imagined Words", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Dominação do Esquecimento", "Dominance of Oblivion", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Fronteira Crítica", "Critical Node", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Fronteira Estável", "Stable Node", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Nó Crítico", "Critical Node", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Zona Disputada", "Disputed Node", stg, flags=re.IGNORECASE)
-                stg = re.sub(r"Ato\s*(\d+)", r"Act \1", stg, flags=re.IGNORECASE)
+                for pat, repl in _STAGE_TRANSLATION_RULES:
+                    stg = pat.sub(repl, stg)
                 mode["stage"] = stg
             ml = mode.get("metric_label", "")
             if ml:
@@ -198,14 +205,8 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
             for team in mode.get("teams", []):
                 t_name = team.get("name", "")
                 if t_name:
-                    t_name = re.sub(r"Lado\s*(\d+)", r"Side \1", t_name, flags=re.IGNORECASE)
-                    t_name = re.sub(r"Primeira Metade", "First Half", t_name, flags=re.IGNORECASE)
-                    t_name = re.sub(r"Segunda Metade", "Second Half", t_name, flags=re.IGNORECASE)
-                    t_name = re.sub(r"Ato\s*(\d+)", r"Act \1", t_name, flags=re.IGNORECASE)
-                    t_name = re.sub(
-                        r"Elenco Principal\s*/\s*Destaques", "Main Cast / Highlights", t_name, flags=re.IGNORECASE
-                    )
-                    t_name = re.sub(r"Agentes da Rotação", "Rotation Agents", t_name, flags=re.IGNORECASE)
+                    for pat, repl in _TEAM_TRANSLATION_RULES:
+                        t_name = pat.sub(repl, t_name)
                     team["name"] = t_name
                 for m in team.get("monsters", []):
                     if m.get("name") == "Inimigo":

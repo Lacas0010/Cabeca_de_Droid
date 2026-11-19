@@ -18,7 +18,7 @@ from datetime import datetime
 
 import database
 from build_calculator import normalize_char_name
-from core.config import get_resource_path
+from core.config import get_data_path, get_resource_path
 from schemas.team_matcher import (
     TeamMemberSubstitute,
     TeamMemberMatch,
@@ -30,12 +30,31 @@ _ARCHETYPES_CACHE: Optional[Dict[str, Any]] = None
 _MANIFESTS_CACHE: Dict[str, Dict[str, Any]] = {}
 
 
+def _resolve_static_file(filename: str) -> str:
+    """Resolve arquivo em static_data priorizando get_data_path antes de get_resource_path."""
+    rel = os.path.join("static_data", filename)
+    data_p = get_data_path(rel)
+    if os.path.exists(data_p):
+        return data_p
+    return get_resource_path(rel)
+
+
+def invalidate_team_matcher_cache(game_id: Optional[str] = None) -> None:
+    """Invalida o cache em memória de manifestos e arquétipos do team matcher."""
+    global _ARCHETYPES_CACHE
+    if game_id:
+        _MANIFESTS_CACHE.pop(game_id.lower().strip(), None)
+    else:
+        _MANIFESTS_CACHE.clear()
+        _ARCHETYPES_CACHE = None
+
+
 def _get_manifest(game_id: str) -> Dict[str, Any]:
     """Carrega o manifesto de entidades de static_data com cache em memória."""
     global _MANIFESTS_CACHE
     g_clean = game_id.lower().strip()
     if g_clean not in _MANIFESTS_CACHE:
-        manifest_path = get_resource_path(os.path.join("static_data", f"{g_clean}_manifest.json"))
+        manifest_path = _resolve_static_file(f"{g_clean}_manifest.json")
         if os.path.exists(manifest_path):
             try:
                 with open(manifest_path, "r", encoding="utf-8") as f:
@@ -52,7 +71,10 @@ def load_team_archetypes(game_id: str, force_reload: bool = False) -> List[Dict[
     """Carrega o catálogo de composições de endgame de static_data/team_archetypes.json."""
     global _ARCHETYPES_CACHE
     g_clean = game_id.lower().strip()
-    archetypes_file = get_resource_path(os.path.join("static_data", "team_archetypes.json"))
+    archetypes_file = _resolve_static_file("team_archetypes.json")
+
+    if force_reload:
+        _MANIFESTS_CACHE.pop(g_clean, None)
 
     if _ARCHETYPES_CACHE is None or force_reload:
         if os.path.exists(archetypes_file):

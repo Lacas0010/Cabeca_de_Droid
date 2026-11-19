@@ -6,6 +6,71 @@ from bs4 import BeautifulSoup
 
 from scrapers.scraper_prydwen import extract_prydwen_card_name
 
+_GENSHIN_REPLACEMENTS = {
+    "Energy Recharge": "Recarga de Energia",
+    "CRIT Rate": "Taxa Crítica",
+    "CRIT DMG": "Dano Crítico",
+    "Elemental Mastery": "Maestria Elemental",
+    "Hydro DMG Bonus": "Bônus de Dano Hydro",
+    "Pyro DMG Bonus": "Bônus de Dano Pyro",
+    "Electro DMG Bonus": "Bônus de Dano Electro",
+    "Anemo DMG Bonus": "Bônus de Dano Anemo",
+    "Cryo DMG Bonus": "Bônus de Dano Cryo",
+    "Geo DMG Bonus": "Bônus de Dano Geo",
+    "Dendro DMG Bonus": "Bônus de Dano Dendro",
+    "Physical DMG Bonus": "Bônus de Dano Físico",
+    "Hydro DMG": "Bônus de Dano Hydro",
+    "Pyro DMG": "Bônus de Dano Pyro",
+    "Electro DMG": "Bônus de Dano Electro",
+    "Anemo DMG": "Bônus de Dano Anemo",
+    "Cryo DMG": "Bônus de Dano Cryo",
+    "Geo DMG": "Bônus de Dano Geo",
+    "Dendro DMG": "Bônus de Dano Dendro",
+    "Physical DMG": "Bônus de Dano Físico",
+    "ATK%": "ATK%",
+    "HP%": "HP%",
+    "DEF%": "DEF%",
+    "Healing Bonus": "Bônus de Cura",
+    "Healing%": "Bônus de Cura",
+    "Healing": "Bônus de Cura",
+    "Sands": "Ampulheta (Sands)",
+    "Goblet": "Cálice (Goblet)",
+    "Circlet": "Tiara (Circlet)",
+    "Normal Attack": "Ataque Básico",
+    "Elemental Skill": "Habilidade Elemental",
+    "Elemental Burst": "Suprema (Elemental Burst)",
+    "Passive Talents": "Talentos Passivos",
+    "Constellations": "Constelações",
+    "Constellation": "Constelação",
+    "Artifact Sets": "Conjuntos de Artefatos",
+    "Artifact Set": "Conjunto de Artefatos",
+    "Weapons": "Armas",
+    "Weapon": "Arma",
+    "Main Stats": "Atributos Principais",
+    "Substats": "Substatus",
+    "Substat Priority": "Prioridade de Substatus",
+    "Vaporize": "Vaporização",
+    "Melt": "Fusão",
+    "Overload": "Sobrecarga",
+    "Electro-Charged": "Eletrocultivo",
+    "Superconduct": "Superconduta",
+    "Hyperbloom": "Hiperflorescimento",
+    "Burgeon": "Germinação",
+    "Bloom": "Florescimento",
+    "Swirl": "Redemoinho",
+    "Crystallize": "Cristalização",
+}
+_GENSHIN_LOWER_MAP = {k.lower(): v for k, v in _GENSHIN_REPLACEMENTS.items()}
+_GENSHIN_TRANSLATE_RE = re.compile(
+    "|".join(re.escape(k) for k in sorted(_GENSHIN_REPLACEMENTS.keys(), key=len, reverse=True)),
+    re.IGNORECASE,
+)
+
+
+def _genshin_replacer(match):
+    matched_str = match.group(0)
+    return _GENSHIN_LOWER_MAP.get(matched_str.lower(), matched_str)
+
 
 class PrydwenGenshinScraper:
     def __init__(self):
@@ -66,72 +131,9 @@ class PrydwenGenshinScraper:
         """
         Traduz termos comuns de Genshin Impact de inglês para português.
         """
-        replacements = {
-            "Energy Recharge": "Recarga de Energia",
-            "CRIT Rate": "Taxa Crítica",
-            "CRIT DMG": "Dano Crítico",
-            "Elemental Mastery": "Maestria Elemental",
-            "Hydro DMG Bonus": "Bônus de Dano Hydro",
-            "Pyro DMG Bonus": "Bônus de Dano Pyro",
-            "Electro DMG Bonus": "Bônus de Dano Electro",
-            "Anemo DMG Bonus": "Bônus de Dano Anemo",
-            "Cryo DMG Bonus": "Bônus de Dano Cryo",
-            "Geo DMG Bonus": "Bônus de Dano Geo",
-            "Dendro DMG Bonus": "Bônus de Dano Dendro",
-            "Physical DMG Bonus": "Bônus de Dano Físico",
-            "Hydro DMG": "Bônus de Dano Hydro",
-            "Pyro DMG": "Bônus de Dano Pyro",
-            "Electro DMG": "Bônus de Dano Electro",
-            "Anemo DMG": "Bônus de Dano Anemo",
-            "Cryo DMG": "Bônus de Dano Cryo",
-            "Geo DMG": "Bônus de Dano Geo",
-            "Dendro DMG": "Bônus de Dano Dendro",
-            "Physical DMG": "Bônus de Dano Físico",
-            "ATK%": "ATK%",
-            "HP%": "HP%",
-            "DEF%": "DEF%",
-            "Healing Bonus": "Bônus de Cura",
-            "Healing%": "Bônus de Cura",
-            "Healing": "Bônus de Cura",
-            "Sands": "Ampulheta (Sands)",
-            "Goblet": "Cálice (Goblet)",
-            "Circlet": "Tiara (Circlet)",
-            "Normal Attack": "Ataque Básico",
-            "Elemental Skill": "Habilidade Elemental",
-            "Elemental Burst": "Suprema (Elemental Burst)",
-            "Passive Talents": "Talentos Passivos",
-            "Constellations": "Constelações",
-            "Constellation": "Constelação",
-            "Artifact Sets": "Conjuntos de Artefatos",
-            "Artifact Set": "Conjunto de Artefatos",
-            "Weapons": "Armas",
-            "Weapon": "Arma",
-            "Main Stats": "Atributos Principais",
-            "Substats": "Substatus",
-            "Substat Priority": "Prioridade de Substatus",
-            "Vaporize": "Vaporização",
-            "Melt": "Fusão",
-            "Overload": "Sobrecarga",
-            "Electro-Charged": "Eletrocultivo",
-            "Superconduct": "Superconduta",
-            "Hyperbloom": "Hiperflorescimento",
-            "Burgeon": "Germinação",
-            "Bloom": "Florescimento",
-            "Swirl": "Redemoinho",
-            "Crystallize": "Cristalização",
-        }
-
-        sorted_keys = sorted(replacements.keys(), key=len, reverse=True)
-        pattern = re.compile("|".join(re.escape(k) for k in sorted_keys), re.IGNORECASE)
-
-        def replacer(match):
-            matched_str = match.group(0)
-            for k in sorted_keys:
-                if k.lower() == matched_str.lower():
-                    return replacements[k]
-            return matched_str
-
-        return pattern.sub(replacer, text)
+        if not text:
+            return text
+        return _GENSHIN_TRANSLATE_RE.sub(_genshin_replacer, text)
 
     def scrape_character_guide(self, character_name: str, url: str) -> dict:
         """

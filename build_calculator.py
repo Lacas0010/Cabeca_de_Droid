@@ -11,7 +11,7 @@ from curl_cffi import requests
 from bs4 import BeautifulSoup
 from typing import Dict, List, Tuple, Optional, Any
 
-from core.config import get_resource_path
+from core.config import get_data_path, get_resource_path
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,67 @@ logger = logging.getLogger(__name__)
 # Expressões regulares pré-compiladas para alta performance
 RE_MULTIPLE_SPACES = re.compile(r"\s+")
 RE_PARENTHESES = re.compile(r"\([^)]*\)")
-RE_CLEAN_CHARS = re.compile(r"[#*\-]+")
-RE_EQUAL_SPLIT = re.compile(r"\s*=\s*")
+RE_CLEAN_CHARS = re.compile(r"[#*\-\[\]]+")
+RE_SUB_SPLIT = re.compile(r"\s*=\s*|\s+\bor\b\s+", re.IGNORECASE)
+RE_SUB_TRAILING_NOTE = re.compile(
+    r"\s*\b(?:until|untill|to|up to|or more|or higher|in combat|pre[- ]combat|desired goal)\b.*$",
+    re.IGNORECASE,
+)
+RE_NUM_FLOAT = re.compile(r"([\d\.]+)")
+RE_SUB_NUM = re.compile(r"([0-9]+(?:\.[0-9]+)?)")
+RE_HSR_MAIN_SLOTS = re.compile(
+    r"-\s*(?:\*\*)?(Body|Corpo|Feet|Pés|Pes|Bota|Planar Sphere|Esfera Planar|Esfera|Link Rope|Corda de Ligação|Corda)(?:\*\*)?[:\- ]\s*(.*)",
+    re.IGNORECASE,
+)
+RE_SLOT_SPLIT = re.compile(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*", re.IGNORECASE)
+RE_GENSHIN_SLOT_SPLIT = re.compile(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=|&)\s*", re.IGNORECASE)
+RE_SUB_HEADER = re.compile(
+    r"#{2,4}\s*(?:subatributos prioritários|substatus prioritários|sub-stats|substats)[^\n]*\n\s*([^\n#]+)",
+    re.IGNORECASE,
+)
+RE_SUB_INLINE = re.compile(
+    r"(?:subatributos prioritários|substatus prioritários|sub-stats|substats)[:\n]\s*([^\n#]+)",
+    re.IGNORECASE,
+)
+RE_SUB_TOKEN_SPLIT = re.compile(r"[>,\/;]")
+RE_GENSHIN_SUB_TOKEN_SPLIT = re.compile(r"[>,\/;=]")
+RE_ENDGAME_SEC = re.compile(
+    r"#{2,4}\s*(?:Atributos Finais[^\n]*|Recommended Endgame Stats[^\n]*)\n(.*?)(?=\n#{1,4}\s|\Z)",
+    re.DOTALL | re.IGNORECASE,
+)
+RE_STATS_REC_SEC = re.compile(
+    r"#{2,4}\s*Atributos Recomendados[^\n]*\n(.*?)(?=\n##\s|\Z)",
+    re.DOTALL | re.IGNORECASE,
+)
+RE_SPEED_GOAL = re.compile(
+    r"(\d+)\s*speed\s*goal|speed\s*goal\s*of\s*(\d+)|breakpoint\s*of\s*(\d+)\s*spd|(\d+)\s*spd",
+    re.IGNORECASE,
+)
+RE_CRIT_GOAL = re.compile(r"crit\s*rate\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*crit\s*rate", re.IGNORECASE)
+RE_BE_GOAL = re.compile(r"break\s*effect\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*break\s*effect", re.IGNORECASE)
+RE_HAS_DIGIT = re.compile(r"\d")
+RE_BENCH_PLUS = re.compile(r"(\d+(?:\.\d+)?)\s*(%?)\s*\+")
+RE_BENCH_PAREN = re.compile(r"(\d+(?:\.\d+)?)\s*(%?)\s*(\([^)]{1,35}\))")
+RE_ZZZ_MAIN_SLOTS = re.compile(r"(?:Disk|Slot|Disco)\s*(4|5|6)[:\- ]\s*(.*)", re.IGNORECASE)
+RE_GENSHIN_MAIN_SEC = re.compile(r"#{2,4}\s*Atributos Principais[^\n]*\n(.*?)(?:#{2,4}|##|$)", re.DOTALL | re.IGNORECASE)
+RE_GENSHIN_MAIN_LINE_BOLD = re.compile(r"-\s*\*\*([^\*]+)\*\*:?\s*(.*)")
+RE_GENSHIN_MAIN_LINE_PLAIN = re.compile(r"-\s*([^\*:]+):\s*(.*)")
+RE_GENSHIN_SUB_HEADER = re.compile(r"#{2,4}\s*Subatributos Prioritários[^\n]*\n\s*([^\n#]+)", re.IGNORECASE)
+RE_GENSHIN_SUB_INLINE = re.compile(r"(?:subatributos|substatus|sub-stats|substats)[^\n]*[:\n]\s*([^\n#]+)", re.IGNORECASE)
+RE_PROMO_CODE_CLEAN = re.compile(r"(Quick|Redeem|\[\d+\])", re.IGNORECASE)
+RE_PROMO_CODE_TOKEN = re.compile(r"[A-Za-z0-9]{5,30}")
+RE_WIKI_REF = re.compile(r"\[\d+\]")
+RE_PROMO_VALID_UNTIL = re.compile(r"valid until:\s*([^V\n\r]+)", re.IGNORECASE)
+RE_PROMO_DATE = re.compile(r"([A-Za-z]+\s+\d+,\s+\d{4}).*")
+
+
+def _resolve_static_file(filename: str) -> str:
+    """Resolve arquivo em static_data priorizando get_data_path antes de get_resource_path."""
+    rel = os.path.join("static_data", filename)
+    data_p = get_data_path(rel)
+    if os.path.exists(data_p):
+        return data_p
+    return get_resource_path(rel)
 
 
 def remove_accents(input_str: str) -> str:
@@ -481,16 +540,6 @@ CHAR_DISPLAY_NAMES_PT = {
 }
 
 
-def get_char_display_name(norm_name: str, fallback: str = "") -> str:
-    """Retorna o nome em português limpo e traduzido para exibição na interface."""
-    norm = normalize_char_name(norm_name)
-    if norm in CHAR_DISPLAY_NAMES_PT:
-        return CHAR_DISPLAY_NAMES_PT[norm]
-    if fallback:
-        return fallback
-    return norm.replace("_", " ").title()
-
-
 def normalize_char_name(name: str) -> str:
     """
     Normaliza o nome do personagem resolvendo tradução Português <-> Inglês,
@@ -530,7 +579,30 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     game_id = game_id.lower().strip()
     master_map = {}
 
-    # 1. Tabela Mestre Oficial de IDs (Fonte de verdade primária)
+    # 1. Fonte de verdade primária dinâmica: static_data/hoyolab_mappings.json
+    hoyolab_file = _resolve_static_file("hoyolab_mappings.json")
+    slug_to_hid = {}
+    if os.path.exists(hoyolab_file):
+        try:
+            with open(hoyolab_file, "r", encoding="utf-8") as f:
+                hmap = json.load(f).get(game_id, {})
+                for hid, slug in hmap.items():
+                    cid_str = str(hid).strip()
+                    slug_str = str(slug).strip()
+                    if not cid_str or not slug_str:
+                        continue
+                    slug_lower = slug_str.lower()
+                    slug_space = slug_lower.replace("_", " ")
+                    norm_slug = normalize_char_name(slug_str)
+                    slug_to_hid[slug_lower] = cid_str
+                    slug_to_hid[norm_slug] = cid_str
+                    master_map.setdefault(slug_lower, cid_str)
+                    master_map.setdefault(slug_space, cid_str)
+                    master_map.setdefault(norm_slug, cid_str)
+        except (OSError, json.JSONDecodeError, TypeError, AttributeError) as exc:
+            logger.warning("[CALC] Falha ao ler hoyolab_mappings.json (%s): %s", game_id, exc)
+
+    # 2. Fallback de IDs e aliases conhecidos (não sobrescreve hoyolab_mappings.json)
     known_master = {
         "hsr": {
             "acheron": "1308",
@@ -611,9 +683,10 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "ayaka": "10000002",
             "bennett": "10000032",
             "kazuha": "10000047",
-            "neuvillette": "10000089",
-            "arlecchino": "10000096",
-            "furina": "10000088",
+            "neuvillette": "10000087",
+            "charlotte": "10000088",
+            "furina": "10000089",
+            "arlecchino": "10000095",
             "raiden": "10000052",
             "zhongli": "10000030",
             "nahida": "10000073",
@@ -631,7 +704,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
             "yun jin": "10000064",
             "mizuki": "10000109",
             "yumemizuki mizuki": "10000109",
-            "lan yan": "10000108",
+            "lan yan": "10000107",
             "viajante": "10000005",
             "traveler": "10000005",
             "manequina": "10000118",
@@ -707,8 +780,8 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
                     for cid, db_char in CHARACTER_NAMES[lang].items():
                         c_str = str(cid)
                         n_lower = db_char.name.lower().strip()
-                        master_map[n_lower] = c_str
-                        master_map[normalize_char_name(n_lower)] = c_str
+                        master_map.setdefault(n_lower, c_str)
+                        master_map.setdefault(normalize_char_name(n_lower), c_str)
         except (ImportError, KeyError, TypeError, AttributeError) as exc:
             logger.debug("[CALC] Falha ao ler mapa genshin.py para %s: %s", game_id, exc)
 
@@ -772,7 +845,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
     except (ImportError, sqlite3.Error, TypeError, AttributeError) as exc:
         logger.debug("[CALC] Roster SQLite indisponível em get_master_ids(%s): %s", game_id, exc)
 
-    manifest_file = get_resource_path(os.path.join("static_data", f"{game_id}_manifest.json"))
+    manifest_file = _resolve_static_file(f"{game_id}_manifest.json")
     if os.path.exists(manifest_file):
         try:
             with open(manifest_file, "r", encoding="utf-8") as f:
@@ -792,15 +865,7 @@ def fetch_master_id_list(game_id: str) -> Dict[str, str]:
 
     # 3. Vincula aliases multilíngues e mapeamentos HoYoLAB estáticos se o destino já tiver ID
     try:
-        aliases_file = get_resource_path(os.path.join("static_data", "character_aliases.json"))
-        hoyolab_file = get_resource_path(os.path.join("static_data", "hoyolab_mappings.json"))
-        slug_to_hid = {}
-        if os.path.exists(hoyolab_file):
-            with open(hoyolab_file, "r", encoding="utf-8") as f:
-                hmap = json.load(f).get(game_id, {})
-                for hid, slug in hmap.items():
-                    slug_to_hid[str(slug).lower().strip()] = str(hid)
-                    slug_to_hid[normalize_char_name(slug)] = str(hid)
+        aliases_file = _resolve_static_file("character_aliases.json")
         for sl, hid in slug_to_hid.items():
             master_map.setdefault(sl, hid)
         if os.path.exists(aliases_file):
@@ -1361,18 +1426,18 @@ def normalize_stat_name(raw_name: str, has_percent: bool = False) -> str:
         has_percent = True
         s = s.replace("%", "")
 
-    s = re.sub(r"\([^)]*\)", "", s)
+    s = RE_PARENTHESES.sub("", s)
     if ":" in s:
         s = s.split(":")[0]
     s = s.strip()
 
     clean = remove_accents(s.lower())
-    clean = re.sub(r"\s+", " ", clean).strip()
+    clean = RE_MULTIPLE_SPACES.sub(" ", clean).strip()
 
     mapped = STAT_NAME_MAP.get(clean)
     if not mapped:
         clean_no_dots = clean.replace(".", "").strip()
-        clean_no_dots = re.sub(r"\s+", " ", clean_no_dots)
+        clean_no_dots = RE_MULTIPLE_SPACES.sub(" ", clean_no_dots)
         mapped = STAT_NAME_MAP.get(clean_no_dots, clean)
 
     if has_percent:
@@ -1415,22 +1480,17 @@ def sanitize_substats(raw_tokens: list, game_id: str) -> list:
     seen = set()
 
     for raw in raw_tokens:
-        token = re.sub(r"\([^)]*\)", "", raw)
-        token = re.sub(r"[#*\-\[\]]+", "", token)
+        token = RE_PARENTHESES.sub("", raw)
+        token = RE_CLEAN_CHARS.sub("", token)
         token = token.strip()
 
         if not token:
             continue
 
-        sub_tokens = re.split(r"\s*=\s*|\s+\bor\b\s+", token, flags=re.IGNORECASE)
+        sub_tokens = RE_SUB_SPLIT.split(token)
 
         for st in sub_tokens:
-            st = re.sub(
-                r"\s*\b(?:until|untill|to|up to|or more|or higher|in combat|pre[- ]combat|desired goal)\b.*$",
-                "",
-                st.strip(),
-                flags=re.IGNORECASE,
-            ).strip()
+            st = RE_SUB_TRAILING_NOTE.sub("", st.strip()).strip()
             if not st:
                 continue
 
@@ -1515,7 +1575,7 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
 def clean_value(val_str: str) -> Tuple[float, bool]:
     """Extrai o valor numérico de uma string de status e indica se é percentual."""
     has_pct = "%" in val_str
-    match = re.search(r"([\d\.]+)", val_str)
+    match = RE_NUM_FLOAT.search(val_str)
     val = float(match.group(1)) if match else 0.0
     return val, has_pct
 
@@ -2097,16 +2157,12 @@ def generate_meta_json_from_markdown(game_id: str):
 
     def parse_hsr(content):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
-        matches = re.findall(
-            r"-\s*(?:\*\*)?(Body|Corpo|Feet|Pés|Pes|Bota|Planar Sphere|Esfera Planar|Esfera|Link Rope|Corda de Ligação|Corda)(?:\*\*)?[:\- ]\s*(.*)",
-            content,
-            re.I,
-        )
+        matches = RE_HSR_MAIN_SLOTS.findall(content)
         for slot, val in matches:
-            tokens = re.split(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*", val, flags=re.IGNORECASE)
+            tokens = RE_SLOT_SPLIT.split(val)
             stats = []
             for t in tokens:
-                t_clean = re.sub(r"\([^)]*\)", "", t).strip()
+                t_clean = RE_PARENTHESES.sub("", t).strip()
                 if t_clean:
                     norm = normalize_stat_name(t_clean)
                     if norm and norm not in stats:
@@ -2114,17 +2170,7 @@ def generate_meta_json_from_markdown(game_id: str):
             norm_s = normalize_slot_name(slot, "hsr")
             meta["main_stats"][norm_s] = stats
 
-        sub_match = re.search(
-            r"#{2,4}\s*(?:subatributos prioritários|substatus prioritários|sub-stats|substats)[^\n]*\n\s*([^\n#]+)",
-            content,
-            re.I,
-        )
-        if not sub_match:
-            sub_match = re.search(
-                r"(?:subatributos prioritários|substatus prioritários|sub-stats|substats)[:\n]\s*([^\n#]+)",
-                content,
-                re.I,
-            )
+        sub_match = RE_SUB_HEADER.search(content) or RE_SUB_INLINE.search(content)
         if sub_match:
             sub_line = sub_match.group(1).strip()
             if not sub_line:
@@ -2134,15 +2180,11 @@ def generate_meta_json_from_markdown(game_id: str):
                     if l_stripped and not l_stripped.startswith("#"):
                         sub_line = l_stripped
                         break
-            raw_tokens = [tok.strip() for tok in re.split(r"[>,\/;]", sub_line) if tok.strip()]
+            raw_tokens = [tok.strip() for tok in RE_SUB_TOKEN_SPLIT.split(sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "hsr")
 
         benchmarks = {}
-        endgame_sec = re.search(
-            r"#{2,4}\s*(?:Atributos Finais[^\n]*|Recommended Endgame Stats[^\n]*)\n(.*?)(?=\n#{1,4}\s|\Z)",
-            content,
-            re.S | re.I,
-        )
+        endgame_sec = RE_ENDGAME_SEC.search(content)
         if endgame_sec:
             for line in endgame_sec.group(1).splitlines():
                 l_str = line.strip()
@@ -2153,13 +2195,13 @@ def generate_meta_json_from_markdown(game_id: str):
                 s_raw = s_raw.replace("**", "").replace("`", "").strip()
                 if not s_label or not s_raw or s_label.lower().startswith(("note", "nota", "justificativa", "other ")):
                     continue
-                if not re.search(r"\d", s_raw):
+                if not RE_HAS_DIGIT.search(s_raw):
                     continue
                 norm_k = normalize_stat_name(s_label)
                 if not norm_k:
                     continue
-                m_plus = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(%?)\s*\+", s_raw)
-                m_paren = re.fullmatch(r"(\d+(?:\.\d+)?)\s*(%?)\s*(\([^)]{1,35}\))", s_raw)
+                m_plus = RE_BENCH_PLUS.fullmatch(s_raw)
+                m_paren = RE_BENCH_PAREN.fullmatch(s_raw)
                 if m_plus:
                     formatted_val = f">= {m_plus.group(1)}{m_plus.group(2)}"
                 elif m_paren:
@@ -2169,30 +2211,18 @@ def generate_meta_json_from_markdown(game_id: str):
                 benchmarks[norm_k] = formatted_val
         else:
             # Fallback legado apenas dentro da seção de Atributos Recomendados (nunca sobre texto corrido de review/kit)
-            stats_sec_m = re.search(
-                r"#{2,4}\s*Atributos Recomendados[^\n]*\n(.*?)(?=\n##\s|\Z)",
-                content,
-                re.S | re.I,
-            )
+            stats_sec_m = RE_STATS_REC_SEC.search(content)
             scoped_txt = stats_sec_m.group(1) if stats_sec_m else ""
             if scoped_txt:
-                speed_goal = re.search(
-                    r"(\d+)\s*speed\s*goal|speed\s*goal\s*of\s*(\d+)|breakpoint\s*of\s*(\d+)\s*spd|(\d+)\s*spd",
-                    scoped_txt,
-                    re.I,
-                )
+                speed_goal = RE_SPEED_GOAL.search(scoped_txt)
                 if speed_goal:
                     val = next(v for v in speed_goal.groups() if v)
                     benchmarks["spd"] = f">= {val}"
-                crit_goal = re.search(
-                    r"crit\s*rate\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*crit\s*rate", scoped_txt, re.I
-                )
+                crit_goal = RE_CRIT_GOAL.search(scoped_txt)
                 if crit_goal:
                     val = next(v for v in crit_goal.groups() if v)
                     benchmarks["crit_rate"] = f">= {val}%"
-                be_goal = re.search(
-                    r"break\s*effect\s*(?:goal|threshold)\s*of\s*(\d+)%|(\d+)%\s*break\s*effect", scoped_txt, re.I
-                )
+                be_goal = RE_BE_GOAL.search(scoped_txt)
                 if be_goal:
                     val = next(v for v in be_goal.groups() if v)
                     benchmarks["break_effect"] = f">= {val}%"
@@ -2201,44 +2231,34 @@ def generate_meta_json_from_markdown(game_id: str):
 
     def parse_zzz(content):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
-        matches = re.findall(r"(?:Disk|Slot|Disco)\s*(4|5|6)[:\- ]\s*(.*)", content, re.I)
+        matches = RE_ZZZ_MAIN_SLOTS.findall(content)
         for slot, val in matches:
-            tokens = re.split(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=)\s*", val, flags=re.IGNORECASE)
+            tokens = RE_SLOT_SPLIT.split(val)
             stats = []
             for t in tokens:
-                t_clean = re.sub(r"\([^)]*\)", "", t).strip()
+                t_clean = RE_PARENTHESES.sub("", t).strip()
                 if t_clean:
                     norm = normalize_stat_name(t_clean)
                     if norm and norm not in stats:
                         stats.append(norm)
             meta["main_stats"][f"slot_{slot}"] = stats
 
-        sub_match = re.search(
-            r"#{2,4}\s*(?:subatributos prioritários|substatus prioritários|sub-stats|substats)[^\n]*\n\s*([^\n#]+)",
-            content,
-            re.I,
-        )
-        if not sub_match:
-            sub_match = re.search(
-                r"(?:subatributos prioritários|substatus prioritários|sub-stats|substats)[:\n]\s*([^\n#]+)",
-                content,
-                re.I,
-            )
+        sub_match = RE_SUB_HEADER.search(content) or RE_SUB_INLINE.search(content)
         if sub_match:
             sub_line = sub_match.group(1).strip()
-            raw_tokens = [tok.strip() for tok in re.split(r"[>,\/;]", sub_line) if tok.strip()]
+            raw_tokens = [tok.strip() for tok in RE_SUB_TOKEN_SPLIT.split(sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "zzz")
         return meta
 
     def parse_genshin(content):
         meta = {"main_stats": {}, "substats_priority": [], "general_benchmarks": {}}
 
-        main_sec_match = re.search(r"#{2,4}\s*Atributos Principais[^\n]*\n(.*?)(?:#{2,4}|##|$)", content, re.S | re.I)
+        main_sec_match = RE_GENSHIN_MAIN_SEC.search(content)
         if main_sec_match:
             main_sec = main_sec_match.group(1)
             lines = main_sec.split("\n")
             for line in lines:
-                m = re.search(r"-\s*\*\*([^\*]+)\*\*:?\s*(.*)", line) or re.search(r"-\s*([^\*:]+):\s*(.*)", line)
+                m = RE_GENSHIN_MAIN_LINE_BOLD.search(line) or RE_GENSHIN_MAIN_LINE_PLAIN.search(line)
                 if m:
                     slot_label = m.group(1).lower().strip()
                     val = m.group(2)
@@ -2256,25 +2276,21 @@ def generate_meta_json_from_markdown(game_id: str):
                     else:
                         slot_key = slot_label.replace(" ", "_")
 
-                    tokens = re.split(r"\s*(?:/|\||\bor\b|,|>=|>|<=|<|=|&)\s*", val, flags=re.IGNORECASE)
+                    tokens = RE_GENSHIN_SLOT_SPLIT.split(val)
                     stats = []
                     for t in tokens:
-                        t_clean = re.sub(r"\([^)]*\)", "", t).replace("*", "").strip()
+                        t_clean = RE_PARENTHESES.sub("", t).replace("*", "").strip()
                         if t_clean:
                             norm = normalize_stat_name(t_clean)
                             if norm and norm not in stats:
                                 stats.append(norm)
                     meta["main_stats"][slot_key] = stats
 
-        sub_match = re.search(r"#{2,4}\s*Subatributos Prioritários[^\n]*\n\s*([^\n#]+)", content, re.I)
-        if not sub_match:
-            sub_match = re.search(
-                r"(?:subatributos|substatus|sub-stats|substats)[^\n]*[:\n]\s*([^\n#]+)", content, re.I
-            )
+        sub_match = RE_GENSHIN_SUB_HEADER.search(content) or RE_GENSHIN_SUB_INLINE.search(content)
 
         if sub_match:
             sub_line = sub_match.group(1).strip()
-            raw_tokens = [tok.strip() for tok in re.split(r"[>,\/;=]", sub_line) if tok.strip()]
+            raw_tokens = [tok.strip() for tok in RE_GENSHIN_SUB_TOKEN_SPLIT.split(sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "genshin")
         return meta
 
@@ -2426,7 +2442,13 @@ ASCENSION_TABLES = {
 }
 
 
-def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[str] = None):
+def calculate_ascension(
+    game_id,
+    current_lvl,
+    target_lvl,
+    char_name: Optional[str] = None,
+    char_profile: Optional[Dict[str, Any]] = None,
+):
     """
     Calcula a diferença de recursos necessários entre o nível atual e o nível alvo,
     enriquecendo opcionalmente com materiais reais do personagem via static_data_manager.
@@ -2472,38 +2494,38 @@ def calculate_ascension(game_id, current_lvl, target_lvl, char_name: Optional[st
     open_today = True
 
     # Enriquecimento via static_data_manager se nome do personagem for fornecido
-    if char_name:
+    if char_profile is None and char_name:
         try:
             from static_data_manager import static_data_manager
 
             char_profile = static_data_manager.get_character_profile(game_id, char_name)
-            if char_profile:
-                if char_profile.get("boss_mat"):
-                    boss_item_name = char_profile["boss_mat"]
-                elif char_profile.get("stagnant_shadow_mat"):
-                    boss_item_name = char_profile["stagnant_shadow_mat"]
-                elif char_profile.get("core_skill_mat"):
-                    boss_item_name = char_profile["core_skill_mat"]
-
-                local_specialty = char_profile.get("local_specialty")
-                talent_material = (
-                    char_profile.get("talent_book") or char_profile.get("calyx_mat") or char_profile.get("chip_type")
-                )
-                weekly_boss_mat = char_profile.get("weekly_boss_mat")
-                domain_days = char_profile.get("domain_days")
-                open_today = char_profile.get("open_today", True)
         except (ImportError, KeyError, TypeError, AttributeError) as exc:
             logger.debug("[CALC] Perfil estático indisponível para %s (%s): %s", char_name, game_id, exc)
 
+    if char_profile:
+        if char_profile.get("boss_mat"):
+            boss_item_name = char_profile["boss_mat"]
+        elif char_profile.get("stagnant_shadow_mat"):
+            boss_item_name = char_profile["stagnant_shadow_mat"]
+        elif char_profile.get("core_skill_mat"):
+            boss_item_name = char_profile["core_skill_mat"]
+
+        local_specialty = char_profile.get("local_specialty")
+        talent_material = (
+            char_profile.get("talent_book") or char_profile.get("calyx_mat") or char_profile.get("chip_type")
+        )
+        weekly_boss_mat = char_profile.get("weekly_boss_mat")
+        domain_days = char_profile.get("domain_days")
+        open_today = char_profile.get("open_today", True)
+
     daily_energy = 180 if game_id == "genshin" else 240
-    boss_cost_per_run = 40 if game_id in ["genshin", "zzz"] else 30
     energy_factor = 16 if game_id == "genshin" else (6 if game_id == "hsr" else 8)
     total_energy_needed = int(boss_diff * energy_factor)
     estimated_days = round(total_energy_needed / daily_energy, 1) if daily_energy > 0 else 0.0
 
     return {
         "xp_needed": xp_diff,
-        "xp_books_purple": xp_books if xp_books > 0 else 1,
+        "xp_books_purple": 0 if xp_diff <= 0 else (xp_books if xp_books > 0 else 1),
         "currency_needed": currency_diff,
         "currency_name": currency_name,
         "boss_items_needed": boss_diff,
@@ -2678,19 +2700,24 @@ FARM_CALENDAR = {
 GAME_MAX_LEVELS = {"genshin": 90, "hsr": 80, "zzz": 60}
 
 
-def is_genshin_farmable_today(char_name: str, day_of_week: int) -> bool:
+def is_genshin_farmable_today(
+    char_name: str, day_of_week: int, farmable_chars: Optional[List[str]] = None
+) -> bool:
     if day_of_week == 6:  # Domingo tudo aberto
         return True
-    try:
-        from static_data_manager import static_data_manager
+    if farmable_chars is None:
+        try:
+            from static_data_manager import static_data_manager
 
-        sched = static_data_manager.get_daily_farm_schedule("genshin", day_of_week)
-        farmable_chars = [c.lower() for c in sched.get("farmable_characters", [])]
-        c_clean = char_name.lower().strip()
-        if any(c_clean == fc or fc in c_clean or c_clean in fc for fc in farmable_chars):
-            return True
-    except (ImportError, KeyError, TypeError, AttributeError) as exc:
-        logger.debug("[CALC] Agenda diária dinâmica indisponível para %s: %s", char_name, exc)
+            sched = static_data_manager.get_daily_farm_schedule("genshin", day_of_week)
+            farmable_chars = [c.lower() for c in sched.get("farmable_characters", [])]
+        except (ImportError, KeyError, TypeError, AttributeError) as exc:
+            logger.debug("[CALC] Agenda diária dinâmica indisponível para %s: %s", char_name, exc)
+            farmable_chars = []
+
+    c_clean = char_name.lower().strip()
+    if any(c_clean == fc or fc in c_clean or c_clean in fc for fc in farmable_chars):
+        return True
 
     mon_thu = {
         "amber",
@@ -2922,6 +2949,17 @@ def get_daily_farm_recommendations(
     recommendations = []
     all_roster_names = []
 
+    farmable_chars_today: Optional[List[str]] = None
+    if game_id == "genshin" and day_of_week != 6:
+        try:
+            from static_data_manager import static_data_manager
+
+            sched = static_data_manager.get_daily_farm_schedule("genshin", day_of_week)
+            farmable_chars_today = [c.lower() for c in sched.get("farmable_characters", [])]
+        except (ImportError, KeyError, TypeError, AttributeError) as exc:
+            logger.debug("[CALC] Agenda diária dinâmica indisponível: %s", exc)
+            farmable_chars_today = []
+
     if roster:
         all_roster_names = [char.get("name") for char in roster if char.get("name")]
 
@@ -2934,7 +2972,11 @@ def get_daily_farm_recommendations(
             name = char.get("name", "Desconhecido")
             char_id = str(char.get("id", ""))
             grade = char.get("overall_grade", char.get("build_grade", "N/A"))
-            rv = char.get("overall_score", char.get("build_score", 0.0))
+            raw_rv = char.get("overall_score", char.get("build_score", 0.0))
+            try:
+                rv = float(raw_rv) if raw_rv is not None else 0.0
+            except (ValueError, TypeError):
+                rv = 0.0
             level = char.get("level", 1)
             element = char.get("element", "")
             icon = char.get("icon", "")
@@ -2983,7 +3025,7 @@ def get_daily_farm_recommendations(
 
             talent_domain_open = True
             if game_id == "genshin":
-                talent_domain_open = is_genshin_farmable_today(name, day_of_week)
+                talent_domain_open = is_genshin_farmable_today(name, day_of_week, farmable_chars=farmable_chars_today)
 
             w_lvl = weapon.get("level", 1) if isinstance(weapon, dict) and weapon else max_weapon_lvl
             w_name = weapon.get("name", "Arma Equipada") if isinstance(weapon, dict) and weapon else "Arma Equipada"
@@ -3019,11 +3061,12 @@ def get_daily_farm_recommendations(
                 if has_pending_talents:
                     reason_parts.append(f"{terms['talent_category']} A Evoluir")
                 if grade in ["B", "C", "D", "A"]:
-                    reason_parts.append(f"Build nota {grade} (RV: {rv:.1f}%)")
+                    reason_parts.append(f"Build nota {grade} (RV: {(rv or 0.0):.1f}%)")
 
                 reason = " | ".join(reason_parts)
 
                 # Resolução do perfil detalhado do personagem e materiais de farm
+                char_profile = None
                 try:
                     from static_data_manager import static_data_manager
 
@@ -3037,7 +3080,13 @@ def get_daily_farm_recommendations(
 
                 # 1. Ascensão de Personagem
                 if level < max_level:
-                    asc_calc = calculate_ascension(game_id, level, max_level, char_name=name)
+                    asc_calc = calculate_ascension(
+                        game_id,
+                        level,
+                        max_level,
+                        char_name=name,
+                        char_profile=char_profile if char_profile is not None else {},
+                    )
                     if asc_calc:
                         asc_calc["currency_name"] = terms["currency_name"]
                         asc_calc["xp_book_name"] = terms["xp_book_name"]
@@ -3287,9 +3336,9 @@ def get_daily_farm_recommendations(
         in_dict = rec.get("items_needed", {})
         asc = in_dict.get("ascension")
         if asc and isinstance(asc, dict):
-            summary_totals["currency"] += asc.get("mora_needed", 0)
-            summary_totals["xp_books"] += asc.get("purple_books", 0)
-            summary_totals["boss_mats"] += asc.get("boss_mats_needed", 0)
+            summary_totals["currency"] += asc.get("currency_needed", asc.get("mora_needed", 0)) or 0
+            summary_totals["xp_books"] += asc.get("xp_books_purple", asc.get("purple_books", 0)) or 0
+            summary_totals["boss_mats"] += asc.get("boss_items_needed", asc.get("boss_mats_needed", 0)) or 0
 
         for td in in_dict.get("talent_upgrade_details", []):
             summary_totals["currency"] += td.get("currency_needed", 0)
@@ -3343,7 +3392,7 @@ def get_daily_farm_recommendations(
     }
 
 
-def extract_relic_substats_data(raw_substats: list) -> dict:
+def extract_relic_substats_data(raw_substats: Any) -> dict:
     """
     Analisa os substatus de uma relíquia, normalizando nomes e extraindo valores numéricos de Crítico e Velocidade.
     Retorna dicionário contendo métricas calculadas de Crit Value (CV = 2*CR + CD).
@@ -3354,8 +3403,20 @@ def extract_relic_substats_data(raw_substats: list) -> dict:
     crit_dmg_val = None
     speed_val = None
 
-    for s in raw_substats:
-        sub_str = s.get("name", "") if isinstance(s, dict) else str(s)
+    if isinstance(raw_substats, str):
+        items = [part.strip() for part in raw_substats.split(",") if part.strip()]
+    elif isinstance(raw_substats, list):
+        items = raw_substats
+    else:
+        items = []
+
+    for s in items:
+        if isinstance(s, dict):
+            s_name = str(s.get("name", "")).strip()
+            s_val = s.get("val")
+            sub_str = f"{s_name}: {s_val}" if (s_val is not None and ":" not in s_name) else s_name
+        else:
+            sub_str = str(s)
         sub_str = sub_str.strip()
         if not sub_str:
             continue
@@ -3363,7 +3424,7 @@ def extract_relic_substats_data(raw_substats: list) -> dict:
         norm_name = normalize_stat_name(sub_str)
         normalized_subs.append(norm_name)
 
-        val_match = re.search(r"([0-9]+(?:\.[0-9]+)?)", sub_str)
+        val_match = RE_SUB_NUM.search(sub_str)
         num_val = float(val_match.group(1)) if val_match else None
 
         if norm_name == "crit_rate" and num_val is not None:
@@ -3418,7 +3479,7 @@ def find_trash_relics(game_id: str, relics: list, meta_data: dict) -> dict:
                 if isinstance(m_list, list):
                     for m in m_list:
                         all_useful_mains.add(normalize_stat_name(m))
-            subs = guide.get("substats", [])
+            subs = guide.get("substats_priority") or guide.get("substats", [])
             if isinstance(subs, list):
                 for s in subs:
                     all_useful_subs.add(normalize_stat_name(s))
@@ -3463,7 +3524,8 @@ def find_trash_relics(game_id: str, relics: list, meta_data: dict) -> dict:
         character_name = relic.get("character_name")
         icon = relic.get("icon")
 
-        sub_info = extract_relic_substats_data(relic.get("substats", []))
+        raw_subs = relic.get("sub") or relic.get("substats") or relic.get("sub_stats", [])
+        sub_info = extract_relic_substats_data(raw_subs)
         normalized_subs = sub_info["normalized_subs"]
         formatted_subs = sub_info["formatted_subs"]
         cv = sub_info["cv"]
@@ -3626,8 +3688,8 @@ def fetch_live_promo_codes(game_id: str) -> List[Dict[str, Any]]:
                     raw_rewards_col = cols[2] if len(cols) >= 3 else cols[1]
                     raw_duration_col = cols[3] if len(cols) >= 4 else ""
 
-                    raw_code_clean = re.sub(r"(Quick|Redeem|\[\d+\])", "", raw_code_col, flags=re.IGNORECASE).strip()
-                    code_match = re.search(r"[A-Za-z0-9]{5,30}", raw_code_clean)
+                    raw_code_clean = RE_PROMO_CODE_CLEAN.sub("", raw_code_col).strip()
+                    code_match = RE_PROMO_CODE_TOKEN.search(raw_code_clean)
                     if not code_match:
                         continue
 
@@ -3639,15 +3701,15 @@ def fetch_live_promo_codes(game_id: str) -> List[Dict[str, Any]]:
                     if "expired:" in raw_duration_col.lower():
                         continue
 
-                    rewards = re.sub(r"\[\d+\]", "", raw_rewards_col).replace("×", "x").replace("Ã—", "x").strip()
+                    rewards = RE_WIKI_REF.sub("", raw_rewards_col).replace("×", "x").replace("Ã—", "x").strip()
                     rewards = " ".join(rewards.split())
 
                     status = "Ativo (Ao vivo)"
                     if "valid until:" in raw_duration_col.lower():
-                        valid_match = re.search(r"valid until:\s*([^V\n\r]+)", raw_duration_col, re.IGNORECASE)
+                        valid_match = RE_PROMO_VALID_UNTIL.search(raw_duration_col)
                         if valid_match:
                             val_str = valid_match.group(1).strip()
-                            val_str = re.sub(r"([A-Za-z]+\s+\d+,\s+\d{4}).*", r"\1", val_str)
+                            val_str = RE_PROMO_DATE.sub(r"\1", val_str)
                             status = f"Ativo até {val_str}"
                     elif "indefinite" in raw_duration_col.lower():
                         status = "Ativo Permanente"
@@ -3829,7 +3891,14 @@ def generate_daily_farm_order(
 
     from static_data_manager import static_data_manager
 
-    static_schedule = static_data_manager.get_daily_farm_schedule(g, weekday=weekday)
+    profile_cache: Dict[str, Optional[Dict[str, Any]]] = {}
+
+    def _get_cached_profile(char_name_key: Optional[str]) -> Optional[Dict[str, Any]]:
+        if not char_name_key:
+            return None
+        if char_name_key not in profile_cache:
+            profile_cache[char_name_key] = static_data_manager.get_character_profile(g, char_name_key)
+        return profile_cache[char_name_key]
 
     # Construção da lista de tarefas priorizadas
     tasks = []
@@ -3848,9 +3917,13 @@ def generate_daily_farm_order(
         if not talents_list:
             continue
 
-        # Verifica dados estáticos de materiais de talento
-        profile = static_data_manager.get_character_profile(g, c_name)
-        talent_mat_name = profile.get("talent_book", "") if profile else ""
+        # Verifica dados estáticos de materiais de talento (Genshin, HSR e ZZZ)
+        profile = _get_cached_profile(c_name)
+        talent_mat_name = (
+            (profile.get("talent_book") or profile.get("calyx_mat") or profile.get("chip_type") or "")
+            if profile
+            else ""
+        )
         if not talent_mat_name and cal_info.get("talents"):
             talent_mat_name = cal_info["talents"][0]
 
@@ -3941,8 +4014,12 @@ def generate_daily_farm_order(
         if c_lvl >= c_max:
             continue
 
-        profile = static_data_manager.get_character_profile(g, c_name)
-        boss_name = profile.get("boss_mat", "") if profile else "Chefe do Mundo"
+        profile = _get_cached_profile(c_name)
+        boss_name = (
+            (profile.get("boss_mat") or profile.get("stagnant_shadow_mat") or profile.get("core_skill_mat") or "")
+            if profile
+            else ""
+        ) or "Chefe do Mundo"
 
         sig = f"boss_{c_name}_{boss_name}"
         if sig in seen_task_signatures:

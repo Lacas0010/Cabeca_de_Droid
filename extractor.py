@@ -7,6 +7,28 @@ import asyncio
 import unicodedata
 import genshin
 import endgame_extractor
+from endgame_extractor import sanitize_genshin_url  # noqa: F401 (re-export canônico)
+
+_RE_GENDER_TAG = re.compile(r"\{([fFmM])\s*#\s*([^}]*)\}")
+_RE_GENDER_BLOCK = re.compile(r"(\{[fFmM]\s*#\s*[^}]*\}\s*)+")
+_RE_MULTI_SPACE = re.compile(r"\s+")
+_RE_DMG_BONUS_PT = re.compile(r"Bônus de Dano (?:de )?([A-Za-zÀ-ÿ]+)", re.IGNORECASE)
+_RE_BR_TAG = re.compile(r"<br\s*/?>", re.IGNORECASE)
+_RE_MF_GENDER = re.compile(r"\{M#([^}]*)\}\{F#([^}]*)\}", re.IGNORECASE)
+_RE_F_GENDER = re.compile(r"\{F#([^}]*)\}", re.IGNORECASE)
+_RE_M_GENDER = re.compile(r"\{M#([^}]*)\}", re.IGNORECASE)
+_RE_LINK_OPEN = re.compile(r"\{LINK#[^}]*\}", re.IGNORECASE)
+_RE_LINK_CLOSE = re.compile(r"\{/LINK\}", re.IGNORECASE)
+_RE_BRACE_TAG = re.compile(r"\{[A-Z0-9_#]+(?::[^}]*)?\}")
+_RE_COLOR_OPEN = re.compile(r"<color=[^>]*>", re.IGNORECASE)
+_RE_COLOR_CLOSE = re.compile(r"</color>", re.IGNORECASE)
+_RE_ICON_MAP = re.compile(r"<IconMap:[^>]+>", re.IGNORECASE)
+_RE_TERM_TAG = re.compile(r"</?Term(?:\s+[^>]*)?>", re.IGNORECASE)
+_RE_HTML_TAG = re.compile(r"</?[a-zA-Z0-9:_-]+(?:\s+[^>]*)?>")
+_RE_HSPACE = re.compile(r"[ \t]+")
+_RE_MULTI_NL = re.compile(r"\n\s*\n\s*\n+")
+_RE_ENTRY_ID = re.compile(r"/entry/(\d+)")
+_RE_ZZZ_SKIN = re.compile(r"(?:role_square_avatar|role_vertical_painting)_(\d+)_(\d{7,})\.png")
 
 
 def patch_genshin_enums():
@@ -89,17 +111,66 @@ def get_genshin_costume_info(costume_id):
     return None
 
 
-def sanitize_genshin_url(url_str: str) -> str:
-    """Sanitiza URLs de ícones e splash art do Genshin eliminando .png.png e ide_ de URLs do Enka/Yatta."""
-    if not url_str:
-        return ""
-    clean = str(url_str).strip()
-    while clean.endswith(".png.png"):
-        clean = clean[:-4]
-    clean = re.sub(r"/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_", r"/\1", clean)
-    if "gi.yatta.moe/assets/UI/" in clean:
-        clean = clean.replace("https://gi.yatta.moe/assets/UI/", "https://enka.network/ui/")
-    return clean
+_ZZZ_PRYDWEN_SPECIAL_CASES = {
+    "soldier 0 anby": "soldier-0-anby",
+    "soldier 0 - anby": "soldier-0-anby",
+    "anby demara": "anby-demara",
+    "anby": "anby-demara",
+    "anton ivanov": "anton",
+    "astra yao": "astra-yao",
+    "ben bigger": "ben",
+    "billy kid": "billy-kid",
+    "billy": "billy-kid",
+    "grace howard": "grace-howard",
+    "grace": "grace-howard",
+    "hoshimi miyabi": "miyabi",
+    "asaba harumasa": "harumasa",
+    "jane doe": "jane-doe",
+    "jane": "jane-doe",
+    "koleda belobog": "koleda",
+    "nicole demara": "nicole-demara",
+    "nicole": "nicole-demara",
+    "orphie & magus": "orphie-and-magus",
+    "orphie and magus": "orphie-and-magus",
+    "orfeu & magus": "orphie-and-magus",
+    "orfeu e magus": "orphie-and-magus",
+    "piper wheel": "piper",
+    "seth lowell": "seth",
+    "soldier 11": "soldier-11",
+    "n. 11": "soldier-11",
+    "n.º 11": "soldier-11",
+    "n.o 11": "soldier-11",
+    "von lycaon": "lycaon",
+    "zhu yuan": "zhu-yuan",
+    # Mapeamento PT-BR de ZZZ
+    "císsia": "cissia",
+    "cissia": "cissia",
+    "caesar": "caesar",
+    "caesar king": "caesar",
+    "luciana": "lucy",
+    "luciana de montefio": "lucy",
+    "lucy": "lucy",
+    "vovó": "lucy",
+    "vovo": "lucy",
+    "soukaku": "soukaku",
+    "burnice": "burnice",
+    "burnice white": "burnice",
+    "lighter": "lighter",
+    "yanagi": "yanagi",
+    "tsukishiro yanagi": "yanagi",
+    "miyabi": "miyabi",
+    "harumasa": "harumasa",
+    "evelyn": "evelyn",
+    "evelyn chevalier": "evelyn",
+    "pulchra": "pulchra",
+    "koleda": "koleda",
+    "remielle": "remielle",
+    "remielle new": "remielle",
+}
+_ZZZ_PRYDWEN_SORTED_PATTERNS = [
+    (re.compile(rf"(?<!\w){re.escape(k)}(?!\w)"), v)
+    for k, v in sorted(_ZZZ_PRYDWEN_SPECIAL_CASES.items(), key=lambda kv: len(kv[0]), reverse=True)
+]
 
 
 def get_zzz_prydwen_slug(agent_name: str) -> str:
@@ -109,64 +180,10 @@ def get_zzz_prydwen_slug(agent_name: str) -> str:
     nfkd = unicodedata.normalize("NFKD", agent_name)
     no_accents = "".join([c for c in nfkd if not unicodedata.combining(c)])
     clean = no_accents.lower().strip()
-    special_cases = {
-        "anby demara": "anby-demara",
-        "anby": "anby-demara",
-        "anton ivanov": "anton",
-        "astra yao": "astra-yao",
-        "ben bigger": "ben",
-        "billy kid": "billy-kid",
-        "billy": "billy-kid",
-        "grace howard": "grace-howard",
-        "grace": "grace-howard",
-        "hoshimi miyabi": "miyabi",
-        "asaba harumasa": "harumasa",
-        "jane doe": "jane-doe",
-        "jane": "jane-doe",
-        "koleda belobog": "koleda",
-        "nicole demara": "nicole-demara",
-        "nicole": "nicole-demara",
-        "orphie & magus": "orphie-and-magus",
-        "orphie and magus": "orphie-and-magus",
-        "orfeu & magus": "orphie-and-magus",
-        "orfeu e magus": "orphie-and-magus",
-        "piper wheel": "piper",
-        "seth lowell": "seth",
-        "soldier 11": "soldier-11",
-        "n. 11": "soldier-11",
-        "n.º 11": "soldier-11",
-        "n.o 11": "soldier-11",
-        "von lycaon": "lycaon",
-        "zhu yuan": "zhu-yuan",
-        # Mapeamento PT-BR de ZZZ
-        "císsia": "cissia",
-        "cissia": "cissia",
-        "caesar": "caesar",
-        "caesar king": "caesar",
-        "luciana": "lucy",
-        "luciana de montefio": "lucy",
-        "lucy": "lucy",
-        "vovó": "lucy",
-        "vovo": "lucy",
-        "soukaku": "soukaku",
-        "burnice": "burnice",
-        "burnice white": "burnice",
-        "lighter": "lighter",
-        "yanagi": "yanagi",
-        "tsukishiro yanagi": "yanagi",
-        "miyabi": "miyabi",
-        "harumasa": "harumasa",
-        "evelyn": "evelyn",
-        "evelyn chevalier": "evelyn",
-        "pulchra": "pulchra",
-        "koleda": "koleda",
-        "remielle": "remielle",
-        "remielle new": "remielle",
-    }
-    if clean in special_cases:
-        return special_cases[clean]
-    for k, v in special_cases.items():
-        if clean == k or k in clean:
+    if clean in _ZZZ_PRYDWEN_SPECIAL_CASES:
+        return _ZZZ_PRYDWEN_SPECIAL_CASES[clean]
+    for pat, v in _ZZZ_PRYDWEN_SORTED_PATTERNS:
+        if pat.search(clean):
             return v
     return clean.replace("&", "").replace(" ", "-").replace("_", "-")
 
@@ -241,7 +258,7 @@ def clean_relic_name(text: str) -> str:
 
     def replace_gender_block(match):
         block = match.group(0)
-        tags = re.findall(r"\{([fFmM])\s*#\s*([^}]*)\}", block)
+        tags = _RE_GENDER_TAG.findall(block)
         if not tags:
             return ""
         for gender, content in tags:
@@ -249,9 +266,9 @@ def clean_relic_name(text: str) -> str:
                 return content.strip()
         return tags[0][1].strip()
 
-    cleaned = re.sub(r"(\{[fFmM]\s*#\s*[^}]*\}\s*)+", replace_gender_block, text)
+    cleaned = _RE_GENDER_BLOCK.sub(replace_gender_block, text)
 
-    return re.sub(r"\s+", " ", cleaned).strip()
+    return _RE_MULTI_SPACE.sub(" ", cleaned).strip()
 
 
 # Mapeamento oficial de sanitização e abreviação compacta de nomes de atributos (Stats / Substats)
@@ -353,7 +370,7 @@ def sanitize_stat_name(stat_text: str) -> str:
     for k, v in STAT_SHORT_NAMES.items():
         if k in s:
             s = s.replace(k, v)
-    s = re.sub(r"Bônus de Dano (?:de )?([A-Za-zÀ-ÿ]+)", r"Dano \1", s, flags=re.IGNORECASE)
+    s = _RE_DMG_BONUS_PT.sub(r"Dano \1", s)
     return s
 
 
@@ -364,18 +381,18 @@ def clean_hoyoverse_desc(text: str) -> str:
     s = str(text)
     s = s.replace("\r", "").replace("\\r", "")
     s = s.replace("\\n", "\n")
-    s = re.sub(r"<br\s*/?>", "\n", s, flags=re.I)
-    s = re.sub(r"\{M#([^}]*)\}\{F#([^}]*)\}", r"\1", s, flags=re.I)
-    s = re.sub(r"\{F#([^}]*)\}", r"\1", s, flags=re.I)
-    s = re.sub(r"\{M#([^}]*)\}", r"\1", s, flags=re.I)
-    s = re.sub(r"\{LINK#[^}]*\}", "", s, flags=re.I)
-    s = re.sub(r"\{/LINK\}", "", s, flags=re.I)
-    s = re.sub(r"\{[A-Z0-9_#]+(?::[^}]*)?\}", "", s)
-    s = re.sub(r"<color=[^>]*>", "", s, flags=re.I)
-    s = re.sub(r"</color>", "", s, flags=re.I)
-    s = re.sub(r"<IconMap:[^>]+>", "", s, flags=re.I)
-    s = re.sub(r"</?Term(?:\s+[^>]*)?>", "", s, flags=re.I)
-    s = re.sub(r"</?[a-zA-Z0-9:_-]+(?:\s+[^>]*)?>", "", s)
+    s = _RE_BR_TAG.sub("\n", s)
+    s = _RE_MF_GENDER.sub(r"\1", s)
+    s = _RE_F_GENDER.sub(r"\1", s)
+    s = _RE_M_GENDER.sub(r"\1", s)
+    s = _RE_LINK_OPEN.sub("", s)
+    s = _RE_LINK_CLOSE.sub("", s)
+    s = _RE_BRACE_TAG.sub("", s)
+    s = _RE_COLOR_OPEN.sub("", s)
+    s = _RE_COLOR_CLOSE.sub("", s)
+    s = _RE_ICON_MAP.sub("", s)
+    s = _RE_TERM_TAG.sub("", s)
+    s = _RE_HTML_TAG.sub("", s)
     s = (
         s.replace("&nbsp;", " ")
         .replace("&quot;", '"')
@@ -385,8 +402,8 @@ def clean_hoyoverse_desc(text: str) -> str:
         .replace("&#39;", "'")
         .replace("&apos;", "'")
     )
-    s = re.sub(r"[ \t]+", " ", s)
-    s = re.sub(r"\n\s*\n\s*\n+", "\n\n", s)
+    s = _RE_HSPACE.sub(" ", s)
+    s = _RE_MULTI_NL.sub("\n\n", s)
     return s.strip()
 
 
@@ -913,19 +930,21 @@ class HSRExtractor(BaseExtractor):
             else:
                 equip_text = "Nenhum cone de luz equipado"
 
-            # 2. Relíquias e Ornamentos
+            # 2. Relíquias e Ornamentos (reutiliza payload em lote se já contiver peças)
             relics_list = []
-            try:
-                detail = await self.client.get_starrail_character_details(char.id)
-                if hasattr(detail, "relics") and detail.relics:
-                    relics_list.extend(detail.relics)
-                if hasattr(detail, "ornaments") and detail.ornaments:
-                    relics_list.extend(detail.ornaments)
-            except Exception:
-                if hasattr(char, "relics") and char.relics:
-                    relics_list.extend(char.relics)
-                if hasattr(char, "ornaments") and char.ornaments:
-                    relics_list.extend(char.ornaments)
+            if hasattr(char, "relics") and char.relics:
+                relics_list.extend(char.relics)
+            if hasattr(char, "ornaments") and char.ornaments:
+                relics_list.extend(char.ornaments)
+            if not relics_list:
+                try:
+                    detail = await self.client.get_starrail_character_details(char.id)
+                    if hasattr(detail, "relics") and detail.relics:
+                        relics_list.extend(detail.relics)
+                    if hasattr(detail, "ornaments") and detail.ornaments:
+                        relics_list.extend(detail.ornaments)
+                except Exception:
+                    pass
 
             set_counts = {}
             for r in relics_list:
@@ -2213,13 +2232,15 @@ class ZZZExtractor(BaseExtractor):
                     splash_url = prydwen_splash if prydwen_splash else hoyolab_splash
                 rarity_num = 5 if str(agent.rarity).upper() in ["S", "5"] else 4
 
-                # Extrai Status Finais (Final Stats) do Agente ZZZ
+                # Extrai Status Finais (Final Stats) diretamente do objeto em lote; consulta fallback apenas se ausente
                 zzz_stats = {}
                 try:
-                    full_agents = await self.client.get_zzz_agent_info([agent.id], uid=zzz_acc.uid)
-                    if not isinstance(full_agents, list):
-                        full_agents = [full_agents]
-                    full_agent = full_agents[0] if full_agents else None
+                    full_agent = agent if getattr(agent, "properties", None) else None
+                    if full_agent is None:
+                        full_agents = await self.client.get_zzz_agent_info([agent.id], uid=zzz_acc.uid)
+                        if not isinstance(full_agents, list):
+                            full_agents = [full_agents]
+                        full_agent = full_agents[0] if full_agents else None
                     if full_agent:
                         for prop in getattr(full_agent, "properties", []) or []:
                             p_name = getattr(prop, "name", None)

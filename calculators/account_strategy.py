@@ -1,18 +1,154 @@
 """Diagnóstico estratégico de lacunas da conta e recomendador de síntese de equipamentos."""
 
+import json
+import os
 import re
 import unicodedata
+from typing import Any, Dict, List
+
+from core.paths import get_data_path, get_resource_path
+
+_RE_NON_ALNUM = re.compile(r"[^a-z0-9]")
+_RE_NUM_VAL = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
+_ELEMENTS_JSON_CACHE: Dict[str, Dict[str, str]] | None = None
+
+_ELEMENT_META = {
+    "genshin": [
+        ("Pyro", "fa-fire", "#ef4444", {"pyro", "fogo", "fire"}),
+        ("Hydro", "fa-droplet", "#0284c7", {"hydro", "agua"}),
+        ("Dendro", "fa-leaf", "#10b981", {"dendro", "planta"}),
+        ("Electro", "fa-bolt", "#a855f7", {"electro", "eletrico", "raio", "lightning", "electric"}),
+        ("Anemo", "fa-wind", "#14b8a6", {"anemo", "vento", "wind"}),
+        ("Cryo", "fa-snowflake", "#38bdf8", {"cryo", "gelo", "ice"}),
+        ("Geo", "fa-mountain", "#f59e0b", {"geo", "terra"}),
+    ],
+    "hsr": [
+        ("Físico", "fa-hand-fist", "#e2e8f0", {"physical", "fisico"}),
+        ("Fogo", "fa-fire", "#ef4444", {"fire", "fogo", "pyro"}),
+        ("Gelo", "fa-snowflake", "#38bdf8", {"ice", "gelo", "cryo"}),
+        ("Raio", "fa-bolt", "#a855f7", {"lightning", "raio", "electro", "electric", "eletrico"}),
+        ("Vento", "fa-wind", "#10b981", {"wind", "vento", "anemo"}),
+        ("Quântico", "fa-atom", "#6366f1", {"quantum", "quantico"}),
+        ("Imaginário", "fa-sun", "#f59e0b", {"imaginary", "imaginario"}),
+    ],
+    "zzz": [
+        ("Físico", "fa-hand-fist", "#e2e8f0", {"physical", "fisico"}),
+        ("Fogo", "fa-fire", "#ef4444", {"fire", "fogo", "pyro"}),
+        ("Gelo", "fa-snowflake", "#38bdf8", {"ice", "gelo", "cryo", "frost"}),
+        ("Elétrico", "fa-bolt", "#a855f7", {"electric", "eletrico", "lightning", "raio", "electro"}),
+        ("Éter", "fa-circle-radiation", "#10b981", {"ether", "eter"}),
+    ],
+}
+
+
+def _safe_int(val: Any, default: int = 0) -> int:
+    """Converte um valor qualquer em int com fallback seguro."""
+    if val is None or isinstance(val, bool):
+        return default
+    if isinstance(val, (int, float)):
+        return int(val)
+    m = _RE_NUM_VAL.search(str(val))
+    if m:
+        try:
+            return int(float(m.group(0)))
+        except (ValueError, TypeError):
+            return default
+    return default
+
+
+def _safe_float(val: Any, default: float = 0.0) -> float:
+    """Converte um valor qualquer em float com fallback seguro."""
+    if val is None or isinstance(val, bool):
+        return default
+    if isinstance(val, (int, float)):
+        return float(val)
+    m = _RE_NUM_VAL.search(str(val).replace(",", "."))
+    if m:
+        try:
+            return float(m.group(0))
+        except (ValueError, TypeError):
+            return default
+    return default
 
 
 def _norm_str(text: str) -> str:
     """Normaliza strings removendo acentos, pontuação e espaços em excesso."""
-    import unicodedata, re
-
     if not text:
         return ""
     text = unicodedata.normalize("NFKD", str(text)).encode("ASCII", "ignore").decode("utf-8").lower()
-    text = re.sub(r"[^a-z0-9]", "", text)
-    return text
+    return _RE_NON_ALNUM.sub("", text)
+
+
+def _get_static_elements_map(game_id: str) -> Dict[str, str]:
+    """Carrega mapa dinâmico de elemento por personagem de static_data/ (character_elements + manifest)."""
+    global _ELEMENTS_JSON_CACHE
+    if _ELEMENTS_JSON_CACHE is None:
+        loaded: Dict[str, Dict[str, str]] = {}
+        rel = os.path.join("static_data", "character_elements.json")
+        for p in (get_data_path(rel), get_resource_path(rel)):
+            if os.path.exists(p):
+                try:
+                    with open(p, "r", encoding="utf-8") as f:
+                        loaded = json.load(f)
+                    break
+                except Exception:
+                    pass
+        _ELEMENTS_JSON_CACHE = loaded
+
+    elem_map: Dict[str, str] = {}
+    for k, v in (_ELEMENTS_JSON_CACHE.get(game_id) or {}).items():
+        nk = _norm_str(k)
+        if nk and v:
+            elem_map[nk] = str(v)
+
+    try:
+        from static_data_manager import static_data_manager
+
+        manifest_chars = static_data_manager._cache.get(game_id, {}).get("characters", {})
+        for ck, cv in manifest_chars.items():
+            if isinstance(cv, dict) and cv.get("element"):
+                elem_val = str(cv["element"])
+                for raw_key in (ck, cv.get("name", "")):
+                    nk = _norm_str(raw_key)
+                    if nk and nk not in elem_map:
+                        elem_map[nk] = elem_val
+    except Exception:
+        pass
+    return elem_map
+
+
+def _compute_elemental_coverage(
+    game_id: str, owned_chars_map: Dict[str, Dict[str, Any]]
+) -> List[Dict[str, Any]]:
+    """Calcula a cobertura elemental dinamicamente a partir do roster e dos manifestos de static_data/."""
+    static_elems = _get_static_elements_map(game_id)
+    meta_list = _ELEMENT_META.get(game_id, [])
+    coverage: List[Dict[str, Any]] = []
+
+    for elem_name, elem_icon, elem_color, aliases in meta_list:
+        matched_names: List[str] = []
+        built_count = 0
+        for norm_k, info in owned_chars_map.items():
+            raw_el = info.get("element") or static_elems.get(norm_k, "")
+            el_clean = unicodedata.normalize("NFKD", str(raw_el)).encode("ASCII", "ignore").decode("utf-8").lower().strip()
+            if el_clean in aliases or _norm_str(raw_el) in aliases:
+                if info["name"] not in matched_names:
+                    matched_names.append(info["name"])
+                    if info["is_built"]:
+                        built_count += 1
+        status = "Forte" if built_count >= 2 else ("Moderado" if len(matched_names) >= 1 else "Faltando")
+        coverage.append(
+            {
+                "element": elem_name,
+                "icon": elem_icon,
+                "color": elem_color,
+                "count": len(matched_names),
+                "built_count": built_count,
+                "characters": matched_names,
+                "status": status,
+            }
+        )
+    return coverage
 
 
 def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) -> dict:
@@ -21,6 +157,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
     identificando carências de arquétipos (Sustentação, Buffers de Ação, DPSs, Sub-DPS),
     cobertura elemental, prontidão para os modos de Endgame e recomendações ranqueadas de gacha.
     """
+    _ = endgame_data
     g = game_id.lower().strip()
     game_names = {"genshin": "Genshin Impact", "hsr": "Honkai: Star Rail", "zzz": "Zenless Zone Zero"}
 
@@ -29,9 +166,9 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
     for item in roster or []:
         if isinstance(item, dict):
             c_name = item.get("name") or ""
-            c_lvl = int(item.get("level") or 1)
-            c_rarity = int(item.get("rarity") or 4)
-            c_rank = int(item.get("rank") or item.get("constellation") or item.get("eidolon") or 0)
+            c_lvl = _safe_int(item.get("level"), 1)
+            c_rarity = _safe_int(item.get("rarity"), 4)
+            c_rank = _safe_int(item.get("rank") or item.get("constellation") or item.get("eidolon"), 0)
             c_elem = item.get("element") or ""
         elif isinstance(item, str):
             c_name = item
@@ -116,9 +253,6 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
 
         offfield_hydro = ["xingqiu", "yelan", "furina", "kokomi", "sigewinne"]
         owned_offfield_hydro = count_in_group(offfield_hydro)
-
-        offfield_subdps = ["xiangling", "fischl", "yae miko", "nahida", "emilie", "chiori", "albedo", "raiden shogun"]
-        owned_offfield_subdps = count_in_group(offfield_subdps)
 
         main_dps_list = [
             "neuvillette",
@@ -219,114 +353,8 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             }
         )
 
-        # Cobertura Elemental
-        elements_cfg = [
-            (
-                "Pyro",
-                "fa-fire",
-                "#ef4444",
-                [
-                    "arlecchino",
-                    "hu tao",
-                    "bennett",
-                    "xiangling",
-                    "diluc",
-                    "gaming",
-                    "lyney",
-                    "yoimiya",
-                    "thoma",
-                    "chevreuse",
-                    "yanfei",
-                    "dehya",
-                ],
-            ),
-            (
-                "Hydro",
-                "fa-droplet",
-                "#0284c7",
-                [
-                    "neuvillette",
-                    "furina",
-                    "yelan",
-                    "xingqiu",
-                    "kokomi",
-                    "mualani",
-                    "ayato",
-                    "tartaglia",
-                    "mona",
-                    "sigewinne",
-                    "barbara",
-                    "candace",
-                ],
-            ),
-            (
-                "Dendro",
-                "fa-leaf",
-                "#10b981",
-                [
-                    "nahida",
-                    "alhaitham",
-                    "baizhu",
-                    "kinich",
-                    "emilie",
-                    "tighnari",
-                    "yaoyao",
-                    "kirara",
-                    "collei",
-                    "kaveh",
-                ],
-            ),
-            (
-                "Electro",
-                "fa-bolt",
-                "#a855f7",
-                [
-                    "raiden shogun",
-                    "clorinde",
-                    "yae miko",
-                    "fischl",
-                    "kuki shinobu",
-                    "cyno",
-                    "beidou",
-                    "keqing",
-                    "sethos",
-                    "kujou sara",
-                ],
-            ),
-            (
-                "Anemo",
-                "fa-wind",
-                "#14b8a6",
-                ["kazuha", "xianyun", "sucrose", "xiao", "wanderer", "jean", "faruzan", "lynette", "heizou", "sayu"],
-            ),
-            (
-                "Cryo",
-                "fa-snowflake",
-                "#38bdf8",
-                ["ayaka", "ganyu", "wriothesley", "shenhe", "charlotte", "diona", "layla", "rosaria", "mika", "qiqi"],
-            ),
-            (
-                "Geo",
-                "fa-mountain",
-                "#f59e0b",
-                ["zhongli", "navia", "xilonen", "chiori", "itto", "albedo", "noelle", "kachina", "gorou", "yun jin"],
-            ),
-        ]
-        for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
-            elem_chars = count_in_group(char_pool)
-            elem_built = count_in_group(char_pool, min_built=True)
-            status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
-            elemental_coverage.append(
-                {
-                    "element": elem_name,
-                    "icon": elem_icon,
-                    "color": elem_color,
-                    "count": len(elem_chars),
-                    "built_count": len(elem_built),
-                    "characters": elem_chars,
-                    "status": status,
-                }
-            )
+        # Cobertura Elemental (dinâmica via roster + static_data/)
+        elemental_coverage.extend(_compute_elemental_coverage("genshin", owned_chars_map))
 
         # Lacunas Críticas
         if len(owned_sustain_t0) == 0:
@@ -481,9 +509,6 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         pf_erudition = ["herta", "himeko", "jade", "argenti", "acheron"]
         owned_pf = count_in_group(pf_erudition)
 
-        dot_archetype = ["kafka", "black swan", "jiaoqiu", "guinaifen", "sampo", "luka"]
-        owned_dot = count_in_group(dot_archetype)
-
         crit_hypercarries = [
             "acheron",
             "feixiao",
@@ -578,66 +603,8 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             }
         )
 
-        # Cobertura Elemental
-        elements_cfg = [
-            (
-                "Físico",
-                "fa-hand-fist",
-                "#e2e8f0",
-                ["boothill", "feixiao", "robin", "yunli", "argenti", "clara", "luka", "sushang", "natasha"],
-            ),
-            (
-                "Fogo",
-                "fa-fire",
-                "#ef4444",
-                ["firefly", "topaz", "jiaoqiu", "gallagher", "lingsha", "himeko", "guinaifen", "asta", "hook"],
-            ),
-            (
-                "Gelo",
-                "fa-snowflake",
-                "#38bdf8",
-                ["jingliu", "ruan mei", "herta", "gepard", "pela", "march 7th", "yanqing", "misha"],
-            ),
-            (
-                "Raio",
-                "fa-bolt",
-                "#a855f7",
-                ["acheron", "kafka", "jing yuan", "tingyun", "bailu", "moze", "serval", "arlan"],
-            ),
-            (
-                "Vento",
-                "fa-wind",
-                "#10b981",
-                ["black swan", "feixiao", "huohuo", "blade", "bronya", "dan heng", "sampo"],
-            ),
-            (
-                "Quântico",
-                "fa-atom",
-                "#6366f1",
-                ["sparkle", "jade", "fu xuan", "seele", "silver wolf", "xueyi", "lynx", "qingque"],
-            ),
-            (
-                "Imaginário",
-                "fa-sun",
-                "#f59e0b",
-                ["aventurine", "sunday", "dan heng il", "dr. ratio", "luocha", "trailblazer", "yukong", "welt"],
-            ),
-        ]
-        for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
-            elem_chars = count_in_group(char_pool)
-            elem_built = count_in_group(char_pool, min_built=True)
-            status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
-            elemental_coverage.append(
-                {
-                    "element": elem_name,
-                    "icon": elem_icon,
-                    "color": elem_color,
-                    "count": len(elem_chars),
-                    "built_count": len(elem_built),
-                    "characters": elem_chars,
-                    "status": status,
-                }
-            )
+        # Cobertura Elemental (dinâmica via roster + static_data/)
+        elemental_coverage.extend(_compute_elemental_coverage("hsr", owned_chars_map))
 
         # Lacunas Críticas
         if len(owned_harmony_t0) < 2:
@@ -672,7 +639,8 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 }
             )
 
-        has_herta_himeko = "Herta" in owned_pf or "Himeko" in owned_pf or "Jade" in owned_pf
+        owned_pf_lower = {x.lower() for x in owned_pf}
+        has_herta_himeko = any(k in owned_pf_lower for k in ("herta", "himeko", "jade"))
         if not has_herta_himeko:
             overall_score -= 15
             critical_gaps.append(
@@ -829,34 +797,8 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             }
         )
 
-        # Cobertura de Atributos ZZZ
-        elements_cfg = [
-            (
-                "Físico",
-                "fa-hand-fist",
-                "#e2e8f0",
-                ["jane doe", "caesar", "nekomata", "piper", "corin", "billy", "seth"],
-            ),
-            ("Fogo", "fa-fire", "#ef4444", ["burnice", "soldier 11", "koleda", "lucy", "lighter"]),
-            ("Gelo", "fa-snowflake", "#38bdf8", ["ellen", "lycaon", "soukaku", "miyabi"]),
-            ("Elétrico", "fa-bolt", "#a855f7", ["qingyi", "yanagi", "rina", "grace", "anby", "anton", "harumasa"]),
-            ("Éter", "fa-circle-radiation", "#10b981", ["zhu yuan", "nicole", "astra yao"]),
-        ]
-        for elem_name, elem_icon, elem_color, char_pool in elements_cfg:
-            elem_chars = count_in_group(char_pool)
-            elem_built = count_in_group(char_pool, min_built=True)
-            status = "Forte" if len(elem_built) >= 2 else ("Moderado" if len(elem_chars) >= 1 else "Faltando")
-            elemental_coverage.append(
-                {
-                    "element": elem_name,
-                    "icon": elem_icon,
-                    "color": elem_color,
-                    "count": len(elem_chars),
-                    "built_count": len(elem_built),
-                    "characters": elem_chars,
-                    "status": status,
-                }
-            )
+        # Cobertura de Atributos ZZZ (dinâmica via roster + static_data/)
+        elemental_coverage.extend(_compute_elemental_coverage("zzz", owned_chars_map))
 
         # Lacunas Críticas
         if len(owned_stunners_s) == 0:
@@ -1020,9 +962,9 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
     for item in roster or []:
         if isinstance(item, dict):
             c_name = item.get("name") or ""
-            c_lvl = int(item.get("level") or 1)
-            c_rarity = int(item.get("rarity") or 4)
-            c_score = float(item.get("overall_score") or item.get("score") or 0.0)
+            c_lvl = _safe_int(item.get("level"), 1)
+            c_rarity = _safe_int(item.get("rarity"), 4)
+            c_score = _safe_float(item.get("overall_score") or item.get("score"), 0.0)
             c_grade = str(item.get("overall_grade") or item.get("grade") or "B")
             c_icon = item.get("icon")
             relics = item.get("relics") or []
@@ -1041,6 +983,27 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
 
     # Prioriza quem tem score baixo ou nota B/C/D mas é personagem forte
     top_candidates.sort(key=lambda x: (x["rarity"], -x["score"]), reverse=True)
+
+    def _find_craft_cfg(cand_name: str, game_key: str, meta_craft_map: dict, default_cfg: dict) -> dict:
+        """Resolve o alvo de crafting normalizando espaços/pontuação e consultando slug canônico."""
+        c_norm = _norm_str(cand_name)
+        canon_norm = ""
+        try:
+            from meta_comparator import resolve_character_canonical_slug
+
+            canon_norm = _norm_str(resolve_character_canonical_slug(game_key, cand_name))
+        except Exception:
+            pass
+
+        for mk, cfg_val in meta_craft_map.items():
+            mk_norm = _norm_str(mk)
+            if (
+                mk_norm in c_norm
+                or c_norm in mk_norm
+                or (canon_norm and (mk_norm in canon_norm or canon_norm in mk_norm))
+            ):
+                return cfg_val
+        return default_cfg
 
     recommendations = []
     rank_counter = 1
@@ -1094,28 +1057,17 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                 "gain": "+20% Dano Coordenado do Supremo",
             },
         }
+        default_genshin_cfg = {
+            "set": "Set Bis Recomendado",
+            "slot": "Cálice Elemental (Slot 4) ou Tiara Crítica (Slot 5)",
+            "main": "Bônus Elemental ou Taxa/Dano Crítico",
+            "substats": ["Taxa Crítica", "Dano Crítico", "ATK%/HP%", "Recarga"],
+            "gain": "+15% a +25% Dano Total do Personagem",
+        }
 
         for cand in top_candidates:
-            c_norm = _norm_str(cand["name"])
-            matched_key = None
-            for mk in meta_craft_genshin:
-                if mk in c_norm or c_norm in mk:
-                    matched_key = mk
-                    break
+            cfg = _find_craft_cfg(cand["name"], "genshin", meta_craft_genshin, default_genshin_cfg)
 
-            cfg = (
-                meta_craft_genshin.get(matched_key)
-                if matched_key
-                else {
-                    "set": "Set Bis Recomendado",
-                    "slot": "Cálice Elemental (Slot 4) ou Tiara Crítica (Slot 5)",
-                    "main": "Bônus Elemental ou Taxa/Dano Crítico",
-                    "substats": ["Taxa Crítica", "Dano Crítico", "ATK%/HP%", "Recarga"],
-                    "gain": "+15% a +25% Dano Total do Personagem",
-                }
-            )
-
-            # Encontra se alguma peça equipada tem nota baixa
             lowest_piece = "Nenhuma relíquia equipada"
             if cand["relics"]:
                 lowest_piece = f"Peça atual subótima (Build: {cand['grade']})"
@@ -1192,26 +1144,16 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                 "gain": "Escudo perpétuo de 100% e ativação do buff de 48% Crítico",
             },
         }
+        default_hsr_cfg = {
+            "set": "Set de Ornamentos Planares Meta",
+            "slot": "Corda de Recuperação de Energia (Slot 6) ou Pés de SPD (Slot 4)",
+            "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade (SPD)",
+            "substats": ["Velocidade", "Taxa Crítica", "Dano Crítico", "HP%/ATK%"],
+            "gain": "+20% Eficiência de Ciclos no Caos da Memória (MoC)",
+        }
 
         for cand in top_candidates:
-            c_norm = _norm_str(cand["name"])
-            matched_key = None
-            for mk in meta_craft_hsr:
-                if mk in c_norm or c_norm in mk:
-                    matched_key = mk
-                    break
-
-            cfg = (
-                meta_craft_hsr.get(matched_key)
-                if matched_key
-                else {
-                    "set": "Set de Ornamentos Planares Meta",
-                    "slot": "Corda de Recuperação de Energia (Slot 6) ou Pés de SPD (Slot 4)",
-                    "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade (SPD)",
-                    "substats": ["Velocidade", "Taxa Crítica", "Dano Crítico", "HP%/ATK%"],
-                    "gain": "+20% Eficiência de Ciclos no Caos da Memória (MoC)",
-                }
-            )
+            cfg = _find_craft_cfg(cand["name"], "hsr", meta_craft_hsr, default_hsr_cfg)
 
             lowest_piece = "Peça atual subótima"
             if cand["relics"]:
@@ -1268,26 +1210,16 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
                 "gain": "Concede +1.000 de ATK instantâneo para todo o time com escudo",
             },
         }
+        default_zzz_cfg = {
+            "set": "Discos de Música Recomendados",
+            "slot": "Disco 6 (Impacto ou Regeneração de Energia)",
+            "main": "Impacto % ou Regeneração de Energia",
+            "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
+            "gain": "+20% Velocidade de Stun ou Dano de Burst",
+        }
 
         for cand in top_candidates:
-            c_norm = _norm_str(cand["name"])
-            matched_key = None
-            for mk in meta_craft_zzz:
-                if mk in c_norm or c_norm in mk:
-                    matched_key = mk
-                    break
-
-            cfg = (
-                meta_craft_zzz.get(matched_key)
-                if matched_key
-                else {
-                    "set": "Discos de Música Recomendados",
-                    "slot": "Disco 6 (Impacto ou Regeneração de Energia)",
-                    "main": "Impacto % ou Regeneração de Energia",
-                    "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
-                    "gain": "+20% Velocidade de Stun ou Dano de Burst",
-                }
-            )
+            cfg = _find_craft_cfg(cand["name"], "zzz", meta_craft_zzz, default_zzz_cfg)
 
             lowest_piece = f"Build Atual: Nota {cand['grade']}"
 
