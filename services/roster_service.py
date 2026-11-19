@@ -769,6 +769,8 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
     # 2. Se não carregou do SQLite, tenta do JSON
     if not data:
         json_path = f"{game_id}/roster_data_{game_id}.json"
+        if not os.path.exists(json_path):
+            json_path = get_data_path(json_path)
         if os.path.exists(json_path):
             try:
                 with open(json_path, "r", encoding="utf-8") as jf:
@@ -1228,6 +1230,121 @@ def get_character_build_detail(game_id: str, char_name: str) -> str:
     return ""
 
 
+def _load_roster_json_records(game_id: str) -> List[Dict[str, Any]]:
+    """Carrega registros do arquivo roster_data_{game_id}.json (CWD ou diretório de dados)."""
+    rel_path = f"{game_id}/roster_data_{game_id}.json"
+    json_path = rel_path if os.path.exists(rel_path) else get_data_path(rel_path)
+    if not os.path.exists(json_path):
+        return []
+    try:
+        with open(json_path, "r", encoding="utf-8", errors="ignore") as jf:
+            loaded = json.load(jf)
+        return loaded if isinstance(loaded, list) else []
+    except Exception:
+        return []
+
+
+def _match_character_in_roster(
+    roster: List[Dict[str, Any]], char_name: str, game_id: str
+) -> Optional[Dict[str, Any]]:
+    """Encontra um personagem no roster por nome exato/normalizado, sinônimo de ID ou substring mais próxima."""
+    if not roster:
+        return None
+    c_norm = normalize_char_name(char_name)
+    c_lower = char_name.lower().strip()
+    syn_id = _COMMON_SYNONYMS.get(game_id, {}).get(c_lower) or _COMMON_SYNONYMS.get(game_id, {}).get(c_norm)
+
+    for c in roster:
+        cand_name = c.get("name", "")
+        if cand_name.lower().strip() == c_lower or normalize_char_name(cand_name) == c_norm:
+            return c
+
+    if syn_id:
+        for c in roster:
+            cand_name = c.get("name", "")
+            cand_id = str(c.get("id") or c.get("character_id") or "")
+            if cand_id == str(syn_id) or normalize_char_name(cand_name) == str(syn_id):
+                return c
+
+    if len(c_norm) >= 3:
+        best_match = None
+        best_delta = float("inf")
+        for c in roster:
+            cand_name = c.get("name", "")
+            cand_norm = normalize_char_name(cand_name)
+            cand_lower = cand_name.lower().strip()
+            if c_norm in cand_norm or cand_norm in c_norm or c_lower in cand_lower or cand_lower in c_lower:
+                delta = abs(len(cand_lower) - len(c_lower))
+                if delta < best_delta:
+                    best_delta = delta
+                    best_match = c
+        return best_match
+
+    return None
+
+
+def _format_build_pieces(
+    game_id: str, c_id_val: str, raw_relics: List[Dict[str, Any]]
+) -> Tuple[List[Dict[str, Any]], List[float]]:
+    """Normaliza slots e pontua as peças equipadas de um personagem."""
+    pieces: List[Dict[str, Any]] = []
+    scores: List[float] = []
+    for r in raw_relics or []:
+        slot = r.get("slot", "")
+        slot_clean = slot
+        slot_lower = slot.lower()
+        if game_id == "genshin":
+            if slot in ["1", "flor", "flower"]:
+                slot_clean = "Flor"
+            elif slot in ["2", "pena", "plume"]:
+                slot_clean = "Pena"
+            elif slot in ["3", "areia", "sands"]:
+                slot_clean = "Areia"
+            elif slot in ["4", "copo", "calice", "goblet"]:
+                slot_clean = "Copo"
+            elif slot in ["5", "tiara", "coroa", "circlet"]:
+                slot_clean = "Tiara"
+        elif game_id == "hsr":
+            if "cabeça" in slot_lower or slot == "1":
+                slot_clean = "Cabeça"
+            elif "mãos" in slot_lower or slot == "2":
+                slot_clean = "Mãos"
+            elif "corpo" in slot_lower or slot == "3":
+                slot_clean = "Corpo"
+            elif "pés" in slot_lower or "bota" in slot_lower or slot == "4":
+                slot_clean = "Bota"
+            elif "esfera" in slot_lower or slot == "5":
+                slot_clean = "Esfera"
+            elif "corda" in slot_lower or slot == "6":
+                slot_clean = "Corda"
+        elif game_id == "zzz":
+            slot_clean = slot.replace("Disk", "Disco").replace("disk", "Disco").replace("slot_", "Disco ")
+
+        main_val = r.get("main") or r.get("main_stat") or ""
+        sub_val = r.get("sub") if r.get("sub") is not None else r.get("sub_stats", "")
+        p_grade, p_score = score_relic(
+            game_id=game_id,
+            char_id=c_id_val,
+            slot=str(slot),
+            main_stat=main_val,
+            substats_str=sub_val or "",
+        )
+        scores.append(p_score)
+        pieces.append(
+            {
+                "slot": slot_clean,
+                "name": clean_relic_name(r.get("name", "")) if r.get("name") else "",
+                "main": main_val,
+                "sub": sub_val or "",
+                "icon": r.get("icon", ""),
+                "rarity": r.get("rarity", 5),
+                "grade": p_grade,
+                "score": p_score,
+            }
+        )
+    return pieces, scores
+
+
 def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
     """Extrai com precisão máxima os dados da build atual do jogador consultando primariamente o SQLite."""
     data: Dict[str, Any] = {
@@ -1239,47 +1356,18 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
         "pieces": [],
     }
 
-    # 1. Tenta buscar no banco SQLite (fonte mais rica e estruturada)
+    # 1. Busca no SQLite; se vazio/ausente, usa o snapshot JSON local completo antes do fallback parcial em Markdown
     char_db = None
+    json_roster: Optional[List[Dict[str, Any]]] = None
     try:
         roster = database.get_roster_data(game_id)
-        c_norm = normalize_char_name(char_name)
-        c_lower = char_name.lower().strip()
-        syn_id = _COMMON_SYNONYMS.get(game_id, {}).get(c_lower) or _COMMON_SYNONYMS.get(game_id, {}).get(c_norm)
-
-        # Passo 1: Correspondência exata (nome bruto ou normalizado) em todo o roster
-        for c in roster:
-            cand_name = c.get("name", "")
-            cand_norm = normalize_char_name(cand_name)
-            cand_lower = cand_name.lower().strip()
-            if cand_lower == c_lower or cand_norm == c_norm:
-                char_db = c
-                break
-
-        # Passo 2: Correspondência exata por ID de sinônimo / manifesto (apenas se o passo 1 falhar)
-        if not char_db and syn_id:
-            for c in roster:
-                cand_name = c.get("name", "")
-                cand_norm = normalize_char_name(cand_name)
-                cand_id = str(c.get("id") or c.get("character_id") or "")
-                if cand_id == str(syn_id) or cand_norm == str(syn_id):
-                    char_db = c
-                    break
-
-        # Passo 3: Fallback parcial por substring escolhendo a correspondência mais próxima em tamanho
-        if not char_db and len(c_norm) >= 3:
-            best_delta = float("inf")
-            for c in roster:
-                cand_name = c.get("name", "")
-                cand_norm = normalize_char_name(cand_name)
-                cand_lower = cand_name.lower().strip()
-                if c_norm in cand_norm or cand_norm in c_norm or c_lower in cand_lower or cand_lower in c_lower:
-                    delta = abs(len(cand_lower) - len(c_lower))
-                    if delta < best_delta:
-                        best_delta = delta
-                        char_db = c
+        char_db = _match_character_in_roster(roster, char_name, game_id)
     except Exception as e:
         print(f"[WARN] Erro ao consultar SQLite para {char_name}: {e}")
+
+    if not char_db:
+        json_roster = _load_roster_json_records(game_id)
+        char_db = _match_character_in_roster(json_roster, char_name, game_id)
 
     if char_db:
         # Arma
@@ -1293,66 +1381,19 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
             data["weapon"] = w
             data["weapon_clean"] = re.sub(r"\s*\([^)]*\)", "", w).strip()
 
+        if isinstance(char_db.get("sets"), list) and char_db["sets"]:
+            data["sets"] = list(char_db["sets"])
+
         # Combat Stats
         if char_db.get("stats"):
             data["stats"] = dict(char_db["stats"])
 
         # Peças de Relíquias / Artefatos / Discos
-        relic_scores_bd = []
         c_id_val = str(char_db.get("id") or char_db.get("character_id") or char_name)
         max_slots_bd = 5 if game_id == "genshin" else 6
-
-        for r in char_db.get("relics", []):
-            slot = r.get("slot", "")
-            slot_clean = slot
-            if game_id == "genshin":
-                if slot in ["1", "flor", "flower"]:
-                    slot_clean = "Flor"
-                elif slot in ["2", "pena", "plume"]:
-                    slot_clean = "Pena"
-                elif slot in ["3", "areia", "sands"]:
-                    slot_clean = "Areia"
-                elif slot in ["4", "copo", "calice", "goblet"]:
-                    slot_clean = "Copo"
-                elif slot in ["5", "tiara", "coroa", "circlet"]:
-                    slot_clean = "Tiara"
-            elif game_id == "hsr":
-                if "cabeça" in slot.lower() or slot == "1":
-                    slot_clean = "Cabeça"
-                elif "mãos" in slot.lower() or slot == "2":
-                    slot_clean = "Mãos"
-                elif "corpo" in slot.lower() or slot == "3":
-                    slot_clean = "Corpo"
-                elif "pés" in slot.lower() or "bota" in slot.lower() or slot == "4":
-                    slot_clean = "Bota"
-                elif "esfera" in slot.lower() or slot == "5":
-                    slot_clean = "Esfera"
-                elif "corda" in slot.lower() or slot == "6":
-                    slot_clean = "Corda"
-            elif game_id == "zzz":
-                slot_clean = slot.replace("Disk", "Disco").replace("disk", "Disco").replace("slot_", "Disco ")
-
-            p_grade, p_score = score_relic(
-                game_id=game_id,
-                char_id=c_id_val,
-                slot=str(r.get("slot", "")),
-                main_stat=r.get("main") or r.get("main_stat") or "",
-                substats_str=r.get("sub", ""),
-            )
-            relic_scores_bd.append(p_score)
-
-            data["pieces"].append(
-                {
-                    "slot": slot_clean,
-                    "name": r.get("name", ""),
-                    "main": r.get("main", ""),
-                    "sub": r.get("sub", ""),
-                    "icon": r.get("icon", ""),
-                    "rarity": r.get("rarity", 5),
-                    "grade": p_grade,
-                    "score": p_score,
-                }
-            )
+        raw_relics = char_db.get("relics") or char_db.get("artifacts") or char_db.get("discs") or []
+        formatted_pieces, relic_scores_bd = _format_build_pieces(game_id, c_id_val, raw_relics)
+        data["pieces"].extend(formatted_pieces)
 
         if relic_scores_bd:
             avg_score_bd = round(sum(relic_scores_bd) / max_slots_bd, 1)
@@ -1522,30 +1563,32 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
     except Exception as e:
         print(f"[WARN] Erro ao extrair conjuntos do markdown para {char_name}: {e}")
 
-    # 3. Fallback de stats, skills e ranks do roster_data_{game_id}.json se ainda estiver vazio
+    # 3. Fallback de stats, skills, ranks e peças do roster_data_{game_id}.json se ainda estiver vazio
     if (
         not data["stats"]
+        or not data["pieces"]
         or not data.get("skills")
         or not data.get("ranks")
         or (game_id == "hsr" and not data.get("ex_ranks"))
     ):
         try:
-            json_path = f"{game_id}/roster_data_{game_id}.json"
-            if os.path.exists(json_path):
-                with open(json_path, "r", encoding="utf-8", errors="ignore") as jf:
-                    roster_data = json.load(jf)
-                char_lower = char_name.lower().strip()
-                for c in roster_data:
-                    if c.get("name", "").lower().strip() == char_lower:
-                        if not data["stats"] and c.get("stats"):
-                            data["stats"] = c["stats"]
-                        if not data.get("skills") and c.get("skills"):
-                            data["skills"] = c["skills"]
-                        if not data.get("ranks") and (c.get("ranks") or c.get("constellations")):
-                            data["ranks"] = c.get("ranks") or c.get("constellations")
-                        if not data.get("ex_ranks") and c.get("ex_ranks"):
-                            data["ex_ranks"] = enrich_ex_ranks(c["ex_ranks"])
-                        break
+            roster_data = json_roster if json_roster is not None else _load_roster_json_records(game_id)
+            c = _match_character_in_roster(roster_data, char_name, game_id)
+            if c:
+                if not data["stats"] and c.get("stats"):
+                    data["stats"] = c["stats"]
+                if not data["pieces"]:
+                    fallback_relics = c.get("relics") or c.get("artifacts") or c.get("discs") or []
+                    if fallback_relics:
+                        c_fb_id = str(c.get("id") or c.get("character_id") or data.get("id") or char_name)
+                        fb_pieces, _ = _format_build_pieces(game_id, c_fb_id, fallback_relics)
+                        data["pieces"] = fb_pieces
+                if not data.get("skills") and c.get("skills"):
+                    data["skills"] = c["skills"]
+                if not data.get("ranks") and (c.get("ranks") or c.get("constellations")):
+                    data["ranks"] = c.get("ranks") or c.get("constellations")
+                if not data.get("ex_ranks") and c.get("ex_ranks"):
+                    data["ex_ranks"] = enrich_ex_ranks(c["ex_ranks"])
         except Exception:
             pass
     data.setdefault("ex_ranks", [])

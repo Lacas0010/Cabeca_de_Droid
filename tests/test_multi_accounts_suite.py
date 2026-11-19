@@ -228,6 +228,30 @@ class TestMultiAccountsSuite(unittest.TestCase):
         self.assertEqual(len(data_final["accounts"]), 1)
         self.assertEqual(data_final["accounts"][0]["uid"], "7001")
 
+    def test_fallback_active_uid_prefers_populated_higher_level_account(self):
+        """Quando active_accounts está vazio, prioriza conta com personagens sincronizados sobre alt Nv.1 mais recente."""
+        database.save_game_account("600156277", "hsr", "Lacas", level=70, active_days=1200)
+        database.save_character(
+            uid="600156277",
+            game_id="hsr",
+            name="Acheron",
+            level=80,
+            rarity=5,
+            rank_str="E0",
+            element="Lightning",
+            icon="/icons/acheron.png",
+            weapon_name="Ao Longo da Margem Transitória",
+            weapon_level=80,
+            weapon_rank=1,
+            weapon_icon="/icons/cone.png",
+            raw_md="",
+        )
+        # Conta alt Nv.1 atualizada por último (ex.: durante check-in/notas diárias) sem personagens sincronizados
+        database.save_game_account("701710621", "hsr", "A Nameless", level=1, active_days=0)
+
+        self.assertEqual(database.get_active_uid("hsr"), "600156277")
+        self.assertEqual(database.get_active_accounts_map().get("hsr"), "600156277")
+
 
 if __name__ == "__main__":
     unittest.main()

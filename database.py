@@ -1682,6 +1682,25 @@ def set_active_account(game_id: str, uid: str) -> bool:
     return True
 
 
+def _resolve_fallback_active_uid(cursor: sqlite3.Cursor, game_clean: str) -> Optional[str]:
+    """Resolve o UID padrão priorizando contas com personagens sincronizados, maior nível e atualização recente."""
+    cursor.execute(
+        """
+        SELECT ga.uid
+        FROM game_accounts ga
+        WHERE ga.game_id = ?
+        ORDER BY
+            (SELECT COUNT(*) FROM characters c WHERE c.game_id = ga.game_id AND c.uid = ga.uid) DESC,
+            ga.level DESC,
+            ga.updated_at DESC
+        LIMIT 1
+        """,
+        (game_clean,),
+    )
+    fb = cursor.fetchone()
+    return str(fb["uid"]) if fb and fb["uid"] else None
+
+
 def get_active_uid(game_id: str) -> Optional[str]:
     """Retorna o UID da conta ativa para um jogo ou o mais recente."""
     game_clean = (game_id or "").lower().strip()
@@ -1691,12 +1710,7 @@ def get_active_uid(game_id: str) -> Optional[str]:
         row = cursor.fetchone()
         if row and row["active_uid"]:
             return str(row["active_uid"])
-        cursor.execute(
-            "SELECT uid FROM game_accounts WHERE game_id = ? ORDER BY updated_at DESC, level DESC LIMIT 1",
-            (game_clean,),
-        )
-        fb = cursor.fetchone()
-        return str(fb["uid"]) if fb and fb["uid"] else None
+        return _resolve_fallback_active_uid(cursor, game_clean)
 
 
 def get_active_accounts_map() -> Dict[str, str]:
@@ -1709,12 +1723,9 @@ def get_active_accounts_map() -> Dict[str, str]:
             res[row["game_id"]] = str(row["active_uid"])
         for g in ["hsr", "genshin", "zzz"]:
             if g not in res:
-                cursor.execute(
-                    "SELECT uid FROM game_accounts WHERE game_id = ? ORDER BY updated_at DESC, level DESC LIMIT 1", (g,)
-                )
-                fb = cursor.fetchone()
-                if fb and fb["uid"]:
-                    res[g] = str(fb["uid"])
+                fb_uid = _resolve_fallback_active_uid(cursor, g)
+                if fb_uid:
+                    res[g] = fb_uid
     return res
 
 

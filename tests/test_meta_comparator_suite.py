@@ -213,6 +213,43 @@ class TestMetaComparatorSuite(unittest.TestCase):
         self.assertEqual(meta_skirk["sets"][0], "Galerias da Sombra da Onda")
         self.assertNotIn("Recarga de Energia", meta_skirk["endgame_stats"])
 
+    def test_15_parse_character_build_data_json_fallback_preserves_pieces(self):
+        """Se o SQLite estiver vazio para o UID ativo, parse_character_build_data preserva peças e substatus do JSON."""
+        from unittest.mock import patch
+
+        mock_json_roster = [
+            {
+                "id": "1308",
+                "name": "Acheron",
+                "element": "Lightning",
+                "rank_str": "E0",
+                "weapon": {"name": "Ao Longo da Margem Transitória", "level": 80, "rank": 1},
+                "sets": ["4p Mergulhador Pioneiro de Águas Mortas"],
+                "stats": {"Taxa CRIT": "65.0%", "Dano CRIT": "210.0%"},
+                "relics": [
+                    {
+                        "slot": "Cabeça",
+                        "name": "Casca à Prova de Fogo",
+                        "main": "PV (705)",
+                        "sub": "Taxa CRIT: 9.7%, Dano CRIT: 18.1%",
+                        "rarity": 5,
+                    }
+                ],
+            }
+        ]
+        with (
+            patch("services.roster_service.database.get_roster_data", return_value=[]),
+            patch("services.roster_service._load_roster_json_records", return_value=mock_json_roster),
+            patch("services.roster_service.get_character_build_detail", return_value=""),
+        ):
+            build_data = parse_character_build_data("hsr", "Acheron")
+
+        self.assertEqual(len(build_data["pieces"]), 1)
+        self.assertEqual(build_data["pieces"][0]["slot"], "Cabeça")
+        self.assertIn("Taxa CRIT: 9.7%", build_data["pieces"][0]["sub"])
+        self.assertEqual(build_data["equipped_pieces"], 1)
+        self.assertEqual(build_data["weapon_clean"], "Ao Longo da Margem Transitória")
+
 
 if __name__ == "__main__":
     unittest.main()

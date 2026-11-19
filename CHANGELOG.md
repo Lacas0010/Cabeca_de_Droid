@@ -6,6 +6,15 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.7.2] / Release Standalone [v1.3.2] - 2026-11-19
+
+### 🐛 Corrigido
+- **Seleção de UID ativo padrão no SQLite (`database.py`):** quando `active_accounts` ainda não possui escolha explícita, `get_active_uid()` e `get_active_accounts_map()` agora priorizam contas com personagens sincronizados no banco e maior nível antes de considerar `updated_at`, evitando que contas secundárias Nv. 1 atualizadas pelo check-in escondam o roster principal do HSR.
+- **Fallback completo de peças no Build Inspector (`services/roster_service.py`):** extraídos `_load_roster_json_records()`, `_match_character_in_roster()` e `_format_build_pieces()` para que `parse_character_build_data()` também recupere e pontue `pieces` (relíquias/artefatos/discos), arma e `sets` a partir de `roster_data_{game_id}.json` quando o SQLite estiver vazio para o UID ativo.
+- **Exibição de peças e estado vazio no inspetor (`static/js/modules/roster.js`, `static/js/app.js`, `static/index.html`):** usa `localRelics` do roster como fallback se `build.pieces` vier vazio, preserva o banner geral quando não há equipamentos e substitui o aviso enganoso de indisponibilidade por `"Nenhuma peça equipada neste personagem."` / `"No pieces equipped on this character."` (`281 testes aprovados`).
+
+---
+
 ## [5.7.1] / Release Standalone [v1.3.1] - 2026-11-19
 
 ### 🐛 Corrigido & Segurança

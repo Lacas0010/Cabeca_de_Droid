@@ -2423,8 +2423,10 @@ async function inspectCharacter(gameId, char) {
         // As peças do roster extraído via HoYoLAB local (contêm URLs originais dos ícones de cada peça!)
         const localRelics = char.relics || char.artifacts || char.discs || [];
 
-        if (build.pieces && build.pieces.length > 0) {
-            build.pieces.forEach(piece => {
+        const effectivePieces = (build.pieces && build.pieces.length > 0) ? build.pieces : localRelics;
+
+        if (effectivePieces && effectivePieces.length > 0) {
+            effectivePieces.forEach(piece => {
                 const row = document.createElement("div");
                 row.className = "relic-piece-row";
                 
@@ -2517,7 +2519,10 @@ async function inspectCharacter(gameId, char) {
                 piecesList.appendChild(row);
             });
         } else {
-            piecesList.innerHTML = `<span class="text-muted">${isEn ? "Substats and piece breakdown unavailable for this Roster level." : "Substatus e peças detalhadas indisponíveis para este nível de Roster."}</span>`;
+            const emptyPiecesEl = document.createElement("span");
+            emptyPiecesEl.className = "text-muted";
+            emptyPiecesEl.textContent = isEn ? "No pieces equipped on this character." : "Nenhuma peça equipada neste personagem.";
+            piecesList.appendChild(emptyPiecesEl);
         }
         
     } catch (err) {
