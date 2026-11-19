@@ -1,8 +1,10 @@
 import asyncio
-from fastapi import APIRouter, BackgroundTasks
+import threading
+from fastapi import APIRouter, BackgroundTasks, Request
 
 import security_vault
 from core.config import get_cookies, get_config, parse_cookie_string
+from core.security import is_loopback_request
 from schemas.config import ConfigSaveRequest, NotificationTestRequest
 from notifications import notifier
 from auth import capturar_cookies_hoyolab
@@ -10,8 +12,12 @@ from auth import capturar_cookies_hoyolab
 router = APIRouter(tags=["Config & Notifications"])
 
 
+def _is_masked_secret(value: str) -> bool:
+    return "***" in value or value.startswith("***")
+
+
 @router.get("/api/config")
-async def get_configuration():
+async def get_configuration(request: Request):
     """Retorna as configurações sanitizadas e o resumo criptografado dos cookies."""
     cookies_dict = get_cookies()
     config_dict = get_config()
@@ -20,6 +26,12 @@ async def get_configuration():
 
     raw_tg_token = config_dict.get("telegram_bot_token", "")
     masked_tg_token = security_vault.mask_secret_string(raw_tg_token, 4, 3) if raw_tg_token else ""
+
+    raw_discord_url = config_dict.get("discord_webhook_url", "")
+    if raw_discord_url and not is_loopback_request(request):
+        discord_url_out = security_vault.mask_secret_string(raw_discord_url, 12, 4)
+    else:
+        discord_url_out = raw_discord_url
 
     return {
         "cookies_raw": "",
@@ -32,7 +44,8 @@ async def get_configuration():
         "auto_sync_guides": config_dict.get("auto_sync_guides", True),
         "last_auto_sync_date": config_dict.get("last_auto_sync_date", ""),
         "notifications_enabled": config_dict.get("notifications_enabled", False),
-        "discord_webhook_url": config_dict.get("discord_webhook_url", ""),
+        "discord_webhook_url": discord_url_out,
+        "discord_webhook_url_configured": bool(raw_discord_url),
         "telegram_bot_token": masked_tg_token,
         "telegram_bot_token_configured": bool(raw_tg_token),
         "telegram_chat_id": config_dict.get("telegram_chat_id", ""),
@@ -74,11 +87,16 @@ async def save_configuration(req: ConfigSaveRequest):
         config["notifications_enabled"] = req.notifications_enabled
         changed = True
     if req.discord_webhook_url is not None:
-        config["discord_webhook_url"] = req.discord_webhook_url.strip()
-        changed = True
+        discord_val = req.discord_webhook_url.strip()
+        if discord_val and not _is_masked_secret(discord_val):
+            config["discord_webhook_url"] = discord_val
+            changed = True
+        elif not discord_val:
+            config["discord_webhook_url"] = ""
+            changed = True
     if req.telegram_bot_token is not None:
         tg_val = req.telegram_bot_token.strip()
-        if tg_val and not tg_val.startswith("***") and "***" not in tg_val:
+        if tg_val and not _is_masked_secret(tg_val):
             config["telegram_bot_token"] = tg_val
             changed = True
         elif not tg_val:
@@ -138,58 +156,74 @@ async def save_configuration(req: ConfigSaveRequest):
 @router.post("/api/notifications/test")
 async def test_notifications_endpoint(req: NotificationTestRequest):
     """Dispara notificações de teste em tempo real para validar o canal Discord, Telegram e Windows Toast."""
-    config = get_config()
+    config = await asyncio.to_thread(get_config)
     discord_url = (
         req.discord_webhook_url
-        if req.discord_webhook_url is not None and not req.discord_webhook_url.startswith("***")
+        if req.discord_webhook_url is not None and not _is_masked_secret(req.discord_webhook_url)
         else config.get("discord_webhook_url", "")
     )
     tg_token = (
         req.telegram_bot_token
-        if req.telegram_bot_token is not None and not req.telegram_bot_token.startswith("***")
+        if req.telegram_bot_token is not None and not _is_masked_secret(req.telegram_bot_token)
         else config.get("telegram_bot_token", "")
     )
     tg_chat = req.telegram_chat_id if req.telegram_chat_id is not None else config.get("telegram_chat_id", "")
     test_win = req.test_windows if req.test_windows is not None else True
 
-    res = notifier.test_channels(discord_url=discord_url, tg_token=tg_token, tg_chat=tg_chat, test_windows=test_win)
+    res = await asyncio.to_thread(
+        notifier.test_channels,
+        discord_url=discord_url,
+        tg_token=tg_token,
+        tg_chat=tg_chat,
+        test_windows=test_win,
+    )
     return {"status": "success", "results": res}
 
 
+_AUTO_LOGIN_LOCK = threading.Lock()
 _AUTO_LOGIN_STATE = {"status": "idle", "error": ""}
 
 
 @router.get("/api/login/auto/status")
 def get_auto_login_status():
     """Retorna o estado atual da captura automática de cookies sem expor tokens."""
-    return _AUTO_LOGIN_STATE
+    with _AUTO_LOGIN_LOCK:
+        return dict(_AUTO_LOGIN_STATE)
 
 
 @router.post("/api/login/auto")
 async def auto_login_hoyolab(background_tasks: BackgroundTasks):
     """Dispara a janela do navegador via Playwright para capturar os cookies e salvá-los no cofre criptografado."""
-    _AUTO_LOGIN_STATE["status"] = "running"
-    _AUTO_LOGIN_STATE["error"] = ""
+    with _AUTO_LOGIN_LOCK:
+        if _AUTO_LOGIN_STATE["status"] == "running":
+            return {"status": "running", "message": "Login automático já está em andamento."}
+        _AUTO_LOGIN_STATE["status"] = "running"
+        _AUTO_LOGIN_STATE["error"] = ""
 
     def _run_login():
         print("[INFO] Abrindo navegador para login no HoYoLAB...")
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            cookies_captured = loop.run_until_complete(capturar_cookies_hoyolab())
-            loop.close()
+            try:
+                cookies_captured = loop.run_until_complete(capturar_cookies_hoyolab())
+            finally:
+                loop.close()
 
             if cookies_captured:
                 security_vault.save_secure_cookies(cookies_captured)
-                _AUTO_LOGIN_STATE["status"] = "success"
-                _AUTO_LOGIN_STATE["error"] = ""
+                with _AUTO_LOGIN_LOCK:
+                    _AUTO_LOGIN_STATE["status"] = "success"
+                    _AUTO_LOGIN_STATE["error"] = ""
                 print("[SUCCESS] Cookies salvos no cofre DPAPI.")
             else:
-                _AUTO_LOGIN_STATE["status"] = "error"
-                _AUTO_LOGIN_STATE["error"] = "Nenhum cookie capturado."
+                with _AUTO_LOGIN_LOCK:
+                    _AUTO_LOGIN_STATE["status"] = "error"
+                    _AUTO_LOGIN_STATE["error"] = "Nenhum cookie capturado."
         except Exception as e:
-            _AUTO_LOGIN_STATE["status"] = "error"
-            _AUTO_LOGIN_STATE["error"] = str(e)
+            with _AUTO_LOGIN_LOCK:
+                _AUTO_LOGIN_STATE["status"] = "error"
+                _AUTO_LOGIN_STATE["error"] = str(e)
             print(f"[ERROR] Falha no login automático: {e}")
 
     background_tasks.add_task(_run_login)

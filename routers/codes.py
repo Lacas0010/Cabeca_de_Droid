@@ -1,3 +1,4 @@
+import asyncio
 import traceback
 from fastapi import APIRouter, HTTPException
 
@@ -13,7 +14,7 @@ router = APIRouter(tags=["Promo Codes"])
 async def get_promo_codes_endpoint(game_id: str):
     """Retorna os códigos promocionais ativos para o jogo selecionado."""
     try:
-        codes = build_calculator.fetch_active_promo_codes(game_id=game_id)
+        codes = await asyncio.to_thread(build_calculator.fetch_active_promo_codes, game_id=game_id)
         return {"game_id": game_id, "codes": codes}
     except Exception as e:
         traceback.print_exc()
@@ -26,7 +27,9 @@ async def get_promo_codes_history_endpoint(game_id: str, limit: int = 50, offset
     try:
         limit = max(1, min(limit, 100))
         offset = max(0, offset)
-        history = database.get_code_redemption_history(game_id=game_id, limit=limit, offset=offset)
+        history = await asyncio.to_thread(
+            database.get_code_redemption_history, game_id=game_id, limit=limit, offset=offset
+        )
         return {"game_id": game_id, "history": history, "limit": limit, "offset": offset}
     except Exception as e:
         traceback.print_exc()

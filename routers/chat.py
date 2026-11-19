@@ -1,3 +1,4 @@
+import asyncio
 import json
 import traceback
 from fastapi import APIRouter, HTTPException
@@ -13,7 +14,8 @@ router = APIRouter(tags=["Chat & Combat Team Synergy"])
 async def get_chat_history_endpoint(game_id: str, limit: int = 50):
     """Retorna o histórico persistido de mensagens de chat para o jogo selecionado ou global."""
     try:
-        messages = database.get_chat_history(game_id, limit=limit)
+        safe_limit = max(1, min(limit, 200))
+        messages = await asyncio.to_thread(database.get_chat_history, game_id, limit=safe_limit)
         return {"game_id": game_id, "messages": messages}
     except Exception as e:
         traceback.print_exc()
@@ -24,7 +26,7 @@ async def get_chat_history_endpoint(game_id: str, limit: int = 50):
 async def clear_chat_history_endpoint(game_id: str):
     """Limpa o histórico persistido de mensagens de chat para o jogo selecionado ou global."""
     try:
-        deleted = database.clear_chat_history(game_id)
+        deleted = await asyncio.to_thread(database.clear_chat_history, game_id)
         return {"status": "success", "game_id": game_id, "deleted_count": deleted}
     except Exception as e:
         traceback.print_exc()
@@ -35,7 +37,7 @@ async def clear_chat_history_endpoint(game_id: str):
 async def chat_interaction(req: ChatRequest):
     """Endpoint do Chat com persistência no SQLite (Módulo de IA temporariamente desativado)."""
     try:
-        database.save_chat_message(req.game_id, "user", req.message)
+        await asyncio.to_thread(database.save_chat_message, req.game_id, "user", req.message)
     except Exception:
         pass
 
@@ -43,7 +45,7 @@ async def chat_interaction(req: ChatRequest):
         msg = "O módulo de IA conversacional está temporariamente desativado nesta versão."
         yield "data: " + json.dumps({"token": msg}, ensure_ascii=False) + "\n\n"
         try:
-            database.save_chat_message(req.game_id, "assistant", msg)
+            await asyncio.to_thread(database.save_chat_message, req.game_id, "assistant", msg)
         except Exception:
             pass
 

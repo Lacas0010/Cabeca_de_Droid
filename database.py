@@ -1,8 +1,11 @@
+import contextlib
+import hashlib
 import os
 import sqlite3
 import json
 import logging
 import re
+import threading
 from datetime import datetime, timedelta
 import math
 from typing import Dict, List, Optional, Any, Tuple
@@ -13,6 +16,21 @@ logger = logging.getLogger(__name__)
 
 BASE_DIR = get_data_dir()
 DATABASE_NAME = os.path.join(BASE_DIR, "hoyo_app.db")
+CURRENT_DB_VERSION = 1
+
+_INIT_LOCK = threading.RLock()
+_INIT_STATE = threading.local()
+_DB_SCHEMA_READY_PATHS: set[str] = set()
+
+_SECURITY_CACHE_LOCK = threading.Lock()
+_SECURITY_SETTINGS_CACHE: Optional[Tuple[str, Dict[str, Any]]] = None
+
+
+def invalidate_security_settings_cache() -> None:
+    """Invalida o cache em memória das configurações de segurança."""
+    global _SECURITY_SETTINGS_CACHE
+    with _SECURITY_CACHE_LOCK:
+        _SECURITY_SETTINGS_CACHE = None
 
 
 def _safe_json_loads(raw_value: Any, default: Any, field_name: str = "json") -> Any:
@@ -26,23 +44,42 @@ def _safe_json_loads(raw_value: Any, default: Any, field_name: str = "json") -> 
         return default() if callable(default) else default
 
 
-def get_connection() -> sqlite3.Connection:
-    """Retorna uma conexão configurada com o banco de dados SQLite."""
+def _open_raw_connection() -> sqlite3.Connection:
+    db_dir = os.path.dirname(os.path.abspath(DATABASE_NAME))
+    if db_dir:
+        os.makedirs(db_dir, exist_ok=True)
     conn = sqlite3.connect(DATABASE_NAME, timeout=30.0)
     conn.row_factory = sqlite3.Row
-    try:
-        conn.execute("PRAGMA journal_mode=WAL;")
-        conn.execute("PRAGMA synchronous=NORMAL;")
-    except sqlite3.Error as exc:
-        logger.debug("[DB] PRAGMA WAL indisponível: %s", exc)
     return conn
+
+
+def _ensure_db_initialized() -> None:
+    if getattr(_INIT_STATE, "in_init", False):
+        return
+    db_key = os.path.abspath(DATABASE_NAME)
+    if db_key in _DB_SCHEMA_READY_PATHS and os.path.exists(db_key):
+        return
+    with _INIT_LOCK:
+        if db_key in _DB_SCHEMA_READY_PATHS and os.path.exists(db_key):
+            return
+        init_db()
+
+
+@contextlib.contextmanager
+def get_connection(ensure_init: bool = True):
+    """Retorna um context manager de conexão SQLite com commit/rollback automático e fechamento explícito."""
+    if ensure_init:
+        _ensure_db_initialized()
+    conn = _open_raw_connection()
+    with contextlib.closing(conn):
+        with conn:
+            yield conn
 
 
 def parse_stats_from_raw_md(raw_md: str) -> Dict[str, str]:
     """Extrai o dicionário de status finais a partir do texto markdown do personagem."""
     if not raw_md:
         return {}
-    import re
 
     match = re.search(
         r"\*\*(?:Status Finais|Status|Atributos Finais):\*\*\s*(.*?)(?=\n\n|\n  |\Z)", raw_md, re.DOTALL | re.I
@@ -95,11 +132,45 @@ def parse_sets_from_raw_md(raw_md: str) -> List[str]:
 
 
 _WEAPON_RARITIES_CACHE: Optional[Dict[str, Dict[str, List[str]]]] = None
+_WEAPON_RARITIES_INDEX: Optional[Dict[str, Dict[str, Any]]] = None
+_WEAPON_RARITIES_INDEX_SOURCE_ID: Optional[int] = None
+_NON_WORD_RE = re.compile(r"[^\w\s]")
+
+
+def _build_weapon_rarities_index(raw_cache: Dict[str, Dict[str, List[str]]]) -> Dict[str, Dict[str, Any]]:
+    index: Dict[str, Dict[str, Any]] = {}
+    for g_key, game_dict in (raw_cache or {}).items():
+        if not isinstance(game_dict, dict):
+            continue
+        exact_map: Dict[str, int] = {}
+        stripped_map: Dict[str, int] = {}
+        substrings: List[Tuple[str, int]] = []
+        for rarity_str, names in game_dict.items():
+            try:
+                r_int = int(rarity_str)
+            except (ValueError, TypeError):
+                continue
+            for n in names or ():
+                n_clean = str(n).lower().strip()
+                if not n_clean:
+                    continue
+                exact_map.setdefault(n_clean, r_int)
+                n_stripped = _NON_WORD_RE.sub("", n_clean)
+                if n_stripped:
+                    stripped_map.setdefault(n_stripped, r_int)
+                if len(n_clean) >= 4:
+                    substrings.append((n_clean, r_int))
+        index[g_key.lower().strip()] = {
+            "exact": exact_map,
+            "stripped": stripped_map,
+            "substrings": substrings,
+        }
+    return index
 
 
 def get_weapon_rarity(game_id: str, weapon_name: str) -> int:
     """Retorna a raridade oficial (1-5 estrelas) da arma/cone/W-Engine a partir do manifesto em static_data."""
-    global _WEAPON_RARITIES_CACHE
+    global _WEAPON_RARITIES_CACHE, _WEAPON_RARITIES_INDEX, _WEAPON_RARITIES_INDEX_SOURCE_ID
     if not weapon_name:
         return 4
     if _WEAPON_RARITIES_CACHE is None:
@@ -114,45 +185,44 @@ def get_weapon_rarity(game_id: str, weapon_name: str) -> int:
             logger.warning("[DB] Falha ao carregar weapon_rarities.json: %s", exc)
             _WEAPON_RARITIES_CACHE = {}
 
+    if _WEAPON_RARITIES_INDEX is None or _WEAPON_RARITIES_INDEX_SOURCE_ID != id(_WEAPON_RARITIES_CACHE):
+        _WEAPON_RARITIES_INDEX = _build_weapon_rarities_index(_WEAPON_RARITIES_CACHE)
+        _WEAPON_RARITIES_INDEX_SOURCE_ID = id(_WEAPON_RARITIES_CACHE)
+
     g_clean = (game_id or "").lower().strip()
-    game_dict = _WEAPON_RARITIES_CACHE.get(g_clean, {}) if _WEAPON_RARITIES_CACHE else {}
+    game_idx = _WEAPON_RARITIES_INDEX.get(g_clean)
+    if not game_idx:
+        return 4
+
     name_clean = weapon_name.lower().strip()
-    name_stripped = re.sub(r"[^\w\s]", "", name_clean)
+    hit = game_idx["exact"].get(name_clean)
+    if hit is not None:
+        return hit
 
-    # 1. Correspondência exata em todas as categorias (5, 4, 3, 1)
-    for rarity_str, names in game_dict.items():
-        try:
-            r_int = int(rarity_str)
-        except ValueError:
-            continue
-        for n in names:
-            n_clean = n.lower().strip()
-            if name_clean == n_clean or name_stripped == re.sub(r"[^\w\s]", "", n_clean):
-                return r_int
+    name_stripped = _NON_WORD_RE.sub("", name_clean)
+    hit = game_idx["stripped"].get(name_stripped)
+    if hit is not None:
+        return hit
 
-    # 2. Correspondência por substring onde o nome canônico está contido no nome da arma
-    for rarity_str, names in game_dict.items():
-        try:
-            r_int = int(rarity_str)
-        except ValueError:
-            continue
-        for n in names:
-            n_clean = n.lower().strip()
-            if len(n_clean) >= 4 and n_clean in name_clean:
-                return r_int
+    for n_clean, r_int in game_idx["substrings"]:
+        if n_clean in name_clean:
+            return r_int
 
     return 4
 
 
 def backfill_roster_rarities_and_sets() -> None:
     """Preenche retroativamente raridade de armas, conjuntos e peças no banco de dados SQLite."""
-    global _WEAPON_RARITIES_CACHE
+    global _WEAPON_RARITIES_CACHE, _WEAPON_RARITIES_INDEX, _WEAPON_RARITIES_INDEX_SOURCE_ID
     _WEAPON_RARITIES_CACHE = None
+    _WEAPON_RARITIES_INDEX = None
+    _WEAPON_RARITIES_INDEX_SOURCE_ID = None
     try:
         with get_connection() as conn:
             cur = conn.cursor()
             cur.execute("SELECT uid, game_id, name, weapon_name, weapon_rarity, raw_md, sets_json FROM characters")
             chars = cur.fetchall()
+            updates = []
             for c in chars:
                 w_rarity = c["weapon_rarity"]
                 w_name = c["weapon_name"]
@@ -173,10 +243,13 @@ def backfill_roster_rarities_and_sets() -> None:
                         changed = True
 
                 if changed:
-                    cur.execute(
-                        "UPDATE characters SET weapon_rarity = ?, sets_json = ? WHERE uid = ? AND name = ?",
-                        (new_w_rarity, new_sets_json, c["uid"], c["name"]),
-                    )
+                    updates.append((new_w_rarity, new_sets_json, c["uid"], c["name"]))
+
+            if updates:
+                cur.executemany(
+                    "UPDATE characters SET weapon_rarity = ?, sets_json = ? WHERE uid = ? AND name = ?",
+                    updates,
+                )
 
             cur.execute("UPDATE character_relics SET rarity = 5 WHERE rarity IS NULL OR rarity <= 0")
     except Exception as err:
@@ -187,7 +260,6 @@ def parse_skills_from_raw_md(raw_md: str) -> List[Dict[str, Any]]:
     """Extrai a lista de habilidades/rastros a partir do texto markdown do personagem como fallback."""
     if not raw_md:
         return []
-    import re
 
     match = re.search(
         r"\*\*(?:Rastros / Habilidades|Talentos / Habilidades|Habilidades / Talentos|Habilidades|Talentos):\*\*\s*(.*?)(?=\n|\Z)",
@@ -236,6 +308,7 @@ def backfill_snapshot_stats() -> None:
 
             cur.execute("SELECT id, snapshot_json FROM account_snapshots")
             snaps = cur.fetchall()
+            updates = []
             for s in snaps:
                 snap_id = s["id"]
                 s_json_str = s["snapshot_json"]
@@ -260,324 +333,336 @@ def backfill_snapshot_stats() -> None:
                                 changed = True
 
                 if changed:
-                    cur.execute(
-                        "UPDATE account_snapshots SET snapshot_json = ? WHERE id = ?",
-                        (json.dumps(s_json, ensure_ascii=False), snap_id),
-                    )
+                    updates.append((json.dumps(s_json, ensure_ascii=False), snap_id))
+
+            if updates:
+                cur.executemany(
+                    "UPDATE account_snapshots SET snapshot_json = ? WHERE id = ?",
+                    updates,
+                )
     except Exception as err:
         print(f"[AVISO] Falha na migração automática de stats em snapshots: {err}")
 
 
+def _ensure_table_columns(cursor: sqlite3.Cursor, table_name: str, columns: List[Tuple[str, str]]) -> None:
+    cursor.execute(f"PRAGMA table_info({table_name})")
+    existing = {row[1] for row in cursor.fetchall()}
+    for col_name, col_type in columns:
+        if col_name not in existing:
+            cursor.execute(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}")
+
+
 def init_db() -> None:
-    """Inicializa as tabelas e índices do banco de dados SQLite se não existirem."""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-
-        # 1. Tabela de Contas
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS game_accounts (
-            uid TEXT PRIMARY KEY,
-            game_id TEXT NOT NULL,
-            nickname TEXT,
-            level INTEGER,
-            active_days INTEGER,
-            updated_at TEXT
-        )
-        """)
-
-        # 1.1 Tabela de Contas Ativas (Multi-UID Switcher)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS active_accounts (
-            game_id TEXT PRIMARY KEY,
-            active_uid TEXT NOT NULL,
-            updated_at TEXT
-        )
-        """)
-
-        # 2. Tabela de Personagens
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS characters (
-            uid TEXT,
-            game_id TEXT NOT NULL,
-            name TEXT NOT NULL,
-            level INTEGER,
-            rarity INTEGER,
-            rank_str TEXT,
-            element TEXT,
-            icon TEXT,
-            gacha_art TEXT,
-            weapon_name TEXT,
-            weapon_level INTEGER,
-            weapon_rank INTEGER,
-            weapon_icon TEXT,
-            raw_md TEXT,
-            char_id TEXT,
-            PRIMARY KEY (uid, name)
-        )
-        """)
-
-        # Migrações seguras de colunas caso venham de versões antigas
+    """Inicializa as tabelas e índices do banco de dados SQLite de forma idempotente via PRAGMA user_version."""
+    db_key = os.path.abspath(DATABASE_NAME)
+    with _INIT_LOCK:
+        prev_in_init = getattr(_INIT_STATE, "in_init", False)
+        _INIT_STATE.in_init = True
         try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN gacha_art TEXT")
-        except sqlite3.OperationalError:
-            pass
+            migrated = False
+            with get_connection(ensure_init=False) as conn:
+                cursor = conn.cursor()
+                try:
+                    cursor.execute("PRAGMA journal_mode=WAL;")
+                    cursor.execute("PRAGMA synchronous=NORMAL;")
+                except sqlite3.Error as exc:
+                    logger.debug("[DB] PRAGMA WAL indisponível: %s", exc)
 
-        try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN char_id TEXT")
-        except sqlite3.OperationalError:
-            pass
+                row = cursor.execute("PRAGMA user_version").fetchone()
+                current_version = int(row[0]) if row else 0
 
-        try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN skills_json TEXT")
-        except sqlite3.OperationalError:
-            pass
+                if current_version < CURRENT_DB_VERSION:
+                    migrated = True
+                    # 1. Tabela de Contas
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS game_accounts (
+                        uid TEXT PRIMARY KEY,
+                        game_id TEXT NOT NULL,
+                        nickname TEXT,
+                        level INTEGER,
+                        active_days INTEGER,
+                        updated_at TEXT
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN stats_json TEXT")
-        except sqlite3.OperationalError:
-            pass
+                    # 1.1 Tabela de Contas Ativas (Multi-UID Switcher)
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS active_accounts (
+                        game_id TEXT PRIMARY KEY,
+                        active_uid TEXT NOT NULL,
+                        updated_at TEXT
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN ranks_json TEXT")
-        except sqlite3.OperationalError:
-            pass
+                    # 2. Tabela de Personagens
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS characters (
+                        uid TEXT,
+                        game_id TEXT NOT NULL,
+                        name TEXT NOT NULL,
+                        level INTEGER,
+                        rarity INTEGER,
+                        rank_str TEXT,
+                        element TEXT,
+                        icon TEXT,
+                        gacha_art TEXT,
+                        weapon_name TEXT,
+                        weapon_level INTEGER,
+                        weapon_rank INTEGER,
+                        weapon_icon TEXT,
+                        raw_md TEXT,
+                        char_id TEXT,
+                        PRIMARY KEY (uid, name)
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN weapon_rarity INTEGER")
-        except sqlite3.OperationalError:
-            pass
+                    _ensure_table_columns(
+                        cursor,
+                        "characters",
+                        [
+                            ("gacha_art", "TEXT"),
+                            ("char_id", "TEXT"),
+                            ("skills_json", "TEXT"),
+                            ("stats_json", "TEXT"),
+                            ("ranks_json", "TEXT"),
+                            ("weapon_rarity", "INTEGER"),
+                            ("sets_json", "TEXT"),
+                            ("ex_ranks_json", "TEXT"),
+                        ],
+                    )
 
-        try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN sets_json TEXT")
-        except sqlite3.OperationalError:
-            pass
+                    # 3. Tabela de Relíquias / Artefatos / Discos
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS character_relics (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uid TEXT,
+                        character_name TEXT,
+                        name TEXT,
+                        slot TEXT,
+                        main_stat TEXT,
+                        sub_stats TEXT,
+                        icon TEXT,
+                        rarity INTEGER DEFAULT 5,
+                        set_name TEXT,
+                        FOREIGN KEY(uid, character_name) REFERENCES characters(uid, name) ON DELETE CASCADE
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE characters ADD COLUMN ex_ranks_json TEXT")
-        except sqlite3.OperationalError:
-            pass
+                    _ensure_table_columns(
+                        cursor,
+                        "character_relics",
+                        [
+                            ("rarity", "INTEGER DEFAULT 5"),
+                            ("set_name", "TEXT"),
+                        ],
+                    )
 
-        # 3. Tabela de Relíquias / Artefatos / Discos
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS character_relics (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT,
-            character_name TEXT,
-            name TEXT,
-            slot TEXT,
-            main_stat TEXT,
-            sub_stats TEXT,
-            icon TEXT,
-            rarity INTEGER DEFAULT 5,
-            set_name TEXT,
-            FOREIGN KEY(uid, character_name) REFERENCES characters(uid, name) ON DELETE CASCADE
-        )
-        """)
+                    # 4. Tabela de Cache de Notas Diárias (Resina / Energia)
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS daily_notes_cache (
+                        uid TEXT,
+                        game_id TEXT NOT NULL,
+                        nickname TEXT,
+                        current_energy INTEGER,
+                        max_energy INTEGER,
+                        recovery_time TEXT,
+                        extra_info TEXT,
+                        updated_at TEXT,
+                        PRIMARY KEY (uid, game_id)
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE character_relics ADD COLUMN rarity INTEGER DEFAULT 5")
-        except sqlite3.OperationalError:
-            pass
+                    # 5. Tabela de Logs do Auto-Check-in Diário
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS daily_checkin_logs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        date TEXT NOT NULL,
+                        game_id TEXT NOT NULL,
+                        uid TEXT,
+                        status TEXT,
+                        message TEXT,
+                        timestamp TEXT
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE character_relics ADD COLUMN set_name TEXT")
-        except sqlite3.OperationalError:
-            pass
+                    # 6. Tabela de Snapshots da Conta para Timeline de Evolução
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS account_snapshots (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uid TEXT NOT NULL,
+                        game_id TEXT NOT NULL,
+                        character_count INTEGER,
+                        five_star_count INTEGER,
+                        average_build_score REAL,
+                        snapshot_json TEXT,
+                        created_at TEXT NOT NULL
+                    )
+                    """)
 
-        # 4. Tabela de Cache de Notas Diárias (Resina / Energia)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS daily_notes_cache (
-            uid TEXT,
-            game_id TEXT NOT NULL,
-            nickname TEXT,
-            current_energy INTEGER,
-            max_energy INTEGER,
-            recovery_time TEXT,
-            extra_info TEXT,
-            updated_at TEXT,
-            PRIMARY KEY (uid, game_id)
-        )
-        """)
+                    # 7. Tabela de Registros de Endgame
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS endgame_records (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        uid TEXT NOT NULL,
+                        game_id TEXT NOT NULL,
+                        modes_json TEXT,
+                        raw_md TEXT,
+                        updated_at TEXT NOT NULL,
+                        UNIQUE(uid, game_id)
+                    )
+                    """)
 
-        # 5. Tabela de Logs do Auto-Check-in Diário
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS daily_checkin_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            game_id TEXT NOT NULL,
-            uid TEXT,
-            status TEXT,
-            message TEXT,
-            timestamp TEXT
-        )
-        """)
+                    # 8. Tabela de Configurações de Segurança e PIN Local
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS security_settings (
+                        id INTEGER PRIMARY KEY,
+                        pin_enabled INTEGER DEFAULT 0,
+                        pin_hash TEXT,
+                        pin_salt TEXT,
+                        allow_lan_access INTEGER DEFAULT 0,
+                        updated_at TEXT
+                    )
+                    """)
 
-        # 6. Tabela de Snapshots da Conta para Timeline de Evolução
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS account_snapshots (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT NOT NULL,
-            game_id TEXT NOT NULL,
-            character_count INTEGER,
-            five_star_count INTEGER,
-            average_build_score REAL,
-            snapshot_json TEXT,
-            created_at TEXT NOT NULL
-        )
-        """)
+                    # 9. Tabela de Histórico de Resgate de Códigos Promocionais
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS promo_code_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        game_id TEXT NOT NULL,
+                        uid TEXT NOT NULL,
+                        code TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        message TEXT,
+                        redeemed_at TEXT NOT NULL,
+                        UNIQUE(game_id, uid, code)
+                    )
+                    """)
 
-        # 7. Tabela de Registros de Endgame
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS endgame_records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            uid TEXT NOT NULL,
-            game_id TEXT NOT NULL,
-            modes_json TEXT,
-            raw_md TEXT,
-            updated_at TEXT NOT NULL,
-            UNIQUE(uid, game_id)
-        )
-        """)
+                    # 10. Tabela de Manifestos de Dados Estáticos e Datamines
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS static_data_manifests (
+                        game_id TEXT PRIMARY KEY,
+                        version TEXT,
+                        item_count INTEGER,
+                        last_synced TEXT NOT NULL,
+                        status TEXT NOT NULL,
+                        source TEXT
+                    )
+                    """)
 
-        # 8. Tabela de Configurações de Segurança e PIN Local
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS security_settings (
-            id INTEGER PRIMARY KEY,
-            pin_enabled INTEGER DEFAULT 0,
-            pin_hash TEXT,
-            pin_salt TEXT,
-            allow_lan_access INTEGER DEFAULT 0,
-            updated_at TEXT
-        )
-        """)
+                    # 11. Tabela de Tarefas Concluídas da Ordem de Serviço de Farm Diário
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS daily_farm_tasks_completed (
+                        date TEXT NOT NULL,
+                        game_id TEXT NOT NULL,
+                        task_id TEXT NOT NULL,
+                        completed_at TEXT NOT NULL,
+                        PRIMARY KEY (date, game_id, task_id)
+                    )
+                    """)
 
-        # 9. Tabela de Histórico de Resgate de Códigos Promocionais
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS promo_code_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id TEXT NOT NULL,
-            uid TEXT NOT NULL,
-            code TEXT NOT NULL,
-            status TEXT NOT NULL,
-            message TEXT,
-            redeemed_at TEXT NOT NULL,
-            UNIQUE(game_id, uid, code)
-        )
-        """)
+                    # 12. Tabela de Metas de Banners & Gacha Forecast
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS gacha_forecast_goals (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        game_id TEXT NOT NULL,
+                        character_name TEXT NOT NULL,
+                        target_rank_str TEXT NOT NULL,
+                        current_pulls INTEGER NOT NULL,
+                        current_pity INTEGER NOT NULL,
+                        is_guaranteed INTEGER NOT NULL,
+                        target_days INTEGER NOT NULL,
+                        has_daily_pass INTEGER NOT NULL,
+                        success_rate REAL NOT NULL,
+                        projected_pulls INTEGER NOT NULL,
+                        notes TEXT,
+                        created_at TEXT NOT NULL,
+                        target_date TEXT
+                    )
+                    """)
 
-        # 10. Tabela de Manifestos de Dados Estáticos e Datamines
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS static_data_manifests (
-            game_id TEXT PRIMARY KEY,
-            version TEXT,
-            item_count INTEGER,
-            last_synced TEXT NOT NULL,
-            status TEXT NOT NULL,
-            source TEXT
-        )
-        """)
+                    _ensure_table_columns(
+                        cursor,
+                        "gacha_forecast_goals",
+                        [
+                            ("target_date", "TEXT"),
+                            ("banner_phase", "INTEGER DEFAULT 1"),
+                        ],
+                    )
 
-        # 11. Tabela de Tarefas Concluídas da Ordem de Serviço de Farm Diário
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS daily_farm_tasks_completed (
-            date TEXT NOT NULL,
-            game_id TEXT NOT NULL,
-            task_id TEXT NOT NULL,
-            completed_at TEXT NOT NULL,
-            PRIMARY KEY (date, game_id, task_id)
-        )
-        """)
+                    # Garante linha única de configuração de segurança
+                    cursor.execute(
+                        "INSERT OR IGNORE INTO security_settings (id, pin_enabled, allow_lan_access, updated_at) VALUES (1, 0, 0, ?)",
+                        (datetime.now().isoformat(),),
+                    )
 
-        # 12. Tabela de Metas de Banners & Gacha Forecast
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS gacha_forecast_goals (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id TEXT NOT NULL,
-            character_name TEXT NOT NULL,
-            target_rank_str TEXT NOT NULL,
-            current_pulls INTEGER NOT NULL,
-            current_pity INTEGER NOT NULL,
-            is_guaranteed INTEGER NOT NULL,
-            target_days INTEGER NOT NULL,
-            has_daily_pass INTEGER NOT NULL,
-            success_rate REAL NOT NULL,
-            projected_pulls INTEGER NOT NULL,
-            notes TEXT,
-            created_at TEXT NOT NULL,
-            target_date TEXT
-        )
-        """)
+                    # 13. Tabela de Histórico de Conversas do Chat IA RAG
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS chat_history (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        game_id TEXT NOT NULL,
+                        role TEXT NOT NULL,
+                        content TEXT NOT NULL,
+                        created_at TEXT NOT NULL
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE gacha_forecast_goals ADD COLUMN target_date TEXT")
-        except sqlite3.OperationalError:
-            pass
+                    # 14. Tabela de Histórico Real de Tiros / Puxadas (Warp / Wish / Signal Tracker Oficial)
+                    cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS gacha_pulls_history (
+                        id TEXT PRIMARY KEY,
+                        uid TEXT NOT NULL,
+                        game_id TEXT NOT NULL,
+                        gacha_type TEXT NOT NULL,
+                        banner_category TEXT NOT NULL,
+                        item_id TEXT,
+                        item_name TEXT NOT NULL,
+                        item_type TEXT,
+                        rarity INTEGER NOT NULL,
+                        time TEXT NOT NULL,
+                        pity_count INTEGER,
+                        created_at TEXT NOT NULL
+                    )
+                    """)
 
-        try:
-            cursor.execute("ALTER TABLE gacha_forecast_goals ADD COLUMN banner_phase INTEGER DEFAULT 1")
-        except sqlite3.OperationalError:
-            pass
+                    # Criação de índices para acelerar consultas frequentes
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_characters_game_uid ON characters(game_id, uid)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_relics_uid_char ON character_relics(uid, character_name)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_checkin_date ON daily_checkin_logs(date)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_uid ON account_snapshots(game_id, uid)")
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_snapshots_uid_created ON account_snapshots(game_id, uid, created_at DESC, id DESC)"
+                    )
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_endgame_game_uid ON endgame_records(game_id, uid)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_promo_history_lookup ON promo_code_history(game_id, uid, code)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_static_data_game ON static_data_manifests(game_id)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_farm_tasks_lookup ON daily_farm_tasks_completed(date, game_id)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_gacha_goals_game ON gacha_forecast_goals(game_id)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_history_game ON chat_history(game_id)")
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_gacha_pulls_lookup ON gacha_pulls_history(uid, game_id, banner_category, time)"
+                    )
+                    cursor.execute(
+                        "CREATE INDEX IF NOT EXISTS idx_gacha_pulls_game_uid_time ON gacha_pulls_history(game_id, uid, time DESC, id DESC)"
+                    )
 
-        # Atualiza automaticamente o horário oficial de metas já salvas na inicialização
-        try:
-            update_all_saved_goals_schedule()
-        except (sqlite3.Error, ValueError, TypeError) as exc:
-            logger.warning("[DB] Falha ao atualizar cronograma das metas de gacha no boot: %s", exc)
+            _DB_SCHEMA_READY_PATHS.add(db_key)
 
-        # Garante linha única de configuração de segurança
-        cursor.execute(
-            "INSERT OR IGNORE INTO security_settings (id, pin_enabled, allow_lan_access, updated_at) VALUES (1, 0, 0, ?)",
-            (datetime.now().isoformat(),),
-        )
+            if migrated:
+                invalidate_security_settings_cache()
+                try:
+                    update_all_saved_goals_schedule()
+                except (sqlite3.Error, ValueError, TypeError) as exc:
+                    logger.warning("[DB] Falha ao atualizar cronograma das metas de gacha no boot: %s", exc)
+                fix_skills_json_max_levels()
+                backfill_snapshot_stats()
+                backfill_roster_rarities_and_sets()
 
-        # Criação de índices para acelerar consultas frequentes do Roster e de Relíquias
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_characters_game_uid ON characters(game_id, uid)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_relics_uid_char ON character_relics(uid, character_name)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_checkin_date ON daily_checkin_logs(date)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_uid ON account_snapshots(game_id, uid)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_endgame_game_uid ON endgame_records(game_id, uid)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_promo_history_lookup ON promo_code_history(game_id, uid, code)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_static_data_game ON static_data_manifests(game_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_farm_tasks_lookup ON daily_farm_tasks_completed(date, game_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_gacha_goals_game ON gacha_forecast_goals(game_id)")
-
-        # 13. Tabela de Histórico de Conversas do Chat IA RAG
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS chat_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            game_id TEXT NOT NULL,
-            role TEXT NOT NULL,
-            content TEXT NOT NULL,
-            created_at TEXT NOT NULL
-        )
-        """)
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_chat_history_game ON chat_history(game_id)")
-
-        # 14. Tabela de Histórico Real de Tiros / Puxadas (Warp / Wish / Signal Tracker Oficial)
-        cursor.execute("""
-        CREATE TABLE IF NOT EXISTS gacha_pulls_history (
-            id TEXT PRIMARY KEY,
-            uid TEXT NOT NULL,
-            game_id TEXT NOT NULL,
-            gacha_type TEXT NOT NULL,
-            banner_category TEXT NOT NULL,
-            item_id TEXT,
-            item_name TEXT NOT NULL,
-            item_type TEXT,
-            rarity INTEGER NOT NULL,
-            time TEXT NOT NULL,
-            pity_count INTEGER,
-            created_at TEXT NOT NULL
-        )
-        """)
-        cursor.execute(
-            "CREATE INDEX IF NOT EXISTS idx_gacha_pulls_lookup ON gacha_pulls_history(uid, game_id, banner_category, time)"
-        )
-
-    print("[INFO] Banco de dados SQLite inicializado com sucesso.")
-    fix_skills_json_max_levels()
-    backfill_snapshot_stats()
-    backfill_roster_rarities_and_sets()
+                with get_connection(ensure_init=False) as conn:
+                    conn.execute(f"PRAGMA user_version = {CURRENT_DB_VERSION}")
+                print("[INFO] Banco de dados SQLite inicializado com sucesso.")
+        finally:
+            _INIT_STATE.in_init = prev_in_init
 
 
 def fix_skills_json_max_levels():
@@ -589,14 +674,19 @@ def fix_skills_json_max_levels():
                 "SELECT uid, name, game_id, skills_json FROM characters WHERE skills_json IS NOT NULL AND skills_json != ''"
             )
             rows = cursor.fetchall()
+            updates = []
             for r in rows:
                 s_json = r["skills_json"]
                 if not s_json:
                     continue
-                skills = json.loads(s_json)
+                skills = _safe_json_loads(s_json, None, "characters.skills_json")
+                if not isinstance(skills, list):
+                    continue
                 changed = False
                 g_clean = (r["game_id"] or "hsr").lower().strip()
                 for idx, sk in enumerate(skills):
+                    if not isinstance(sk, dict):
+                        continue
                     if g_clean == "hsr":
                         target_max = 6 if idx == 0 else (10 if idx < 4 else 1)
                     elif g_clean == "genshin":
@@ -609,10 +699,13 @@ def fix_skills_json_max_levels():
                         changed = True
 
                 if changed:
-                    cursor.execute(
-                        "UPDATE characters SET skills_json = ? WHERE uid = ? AND name = ? AND game_id = ?",
-                        (json.dumps(skills, ensure_ascii=False), r["uid"], r["name"], r["game_id"]),
-                    )
+                    updates.append((json.dumps(skills, ensure_ascii=False), r["uid"], r["name"], r["game_id"]))
+
+            if updates:
+                cursor.executemany(
+                    "UPDATE characters SET skills_json = ? WHERE uid = ? AND name = ? AND game_id = ?",
+                    updates,
+                )
     except Exception as e:
         print(f"[Aviso] Erro ao atualizar max_level das habilidades: {e}")
 
@@ -814,14 +907,15 @@ def save_account_snapshot(
 
 def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[str, Any]:
     """Compara minuciosamente dois snapshots quaisquer pelo ID para exibir diffs de personagens, atributos, armas e relíquias."""
+    game_clean = (game_id or "").lower().strip()
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
             SELECT id, uid, game_id, character_count, five_star_count, average_build_score, snapshot_json, created_at
-            FROM account_snapshots WHERE id IN (?, ?)
+            FROM account_snapshots WHERE id IN (?, ?) AND game_id = ?
             """,
-            (snap_id_a, snap_id_b),
+            (snap_id_a, snap_id_b, game_clean),
         )
         rows = {r["id"]: dict(r) for r in cursor.fetchall()}
 
@@ -837,8 +931,12 @@ def compare_two_snapshots(game_id: str, snap_id_a: int, snap_id_b: int) -> Dict[
         ):
             snap_a, snap_b = snap_b, snap_a
 
-        details_a = json.loads(snap_a.get("snapshot_json") or "{}") if snap_a.get("snapshot_json") else {}
-        details_b = json.loads(snap_b.get("snapshot_json") or "{}") if snap_b.get("snapshot_json") else {}
+        details_a = _safe_json_loads(snap_a.get("snapshot_json"), dict, "account_snapshots.snapshot_json")
+        if not isinstance(details_a, dict):
+            details_a = {}
+        details_b = _safe_json_loads(snap_b.get("snapshot_json"), dict, "account_snapshots.snapshot_json")
+        if not isinstance(details_b, dict):
+            details_b = {}
 
         chars_a = details_a.get("all_characters") or details_a.get("top_built_characters") or []
         chars_b = details_b.get("all_characters") or details_b.get("top_built_characters") or []
@@ -1255,10 +1353,61 @@ def save_relic(
         )
 
 
+def save_relics_batch(
+    uid: str,
+    character_name: str,
+    relics: List[Dict[str, Any]],
+    clear_existing: bool = False,
+) -> int:
+    """Salva um lote de relíquias/artefatos/discos em uma única transação via executemany."""
+    if not relics and not clear_existing:
+        return 0
+    rows = []
+    for r in relics or []:
+        raw_name = r.get("name", "")
+        clean_name = clean_relic_name(raw_name) if raw_name else raw_name
+        raw_set = r.get("set_name")
+        clean_set = clean_relic_name(raw_set) if raw_set else None
+        rarity = r.get("rarity")
+        try:
+            piece_rarity = int(rarity) if (rarity is not None and int(rarity) > 0) else 5
+        except (ValueError, TypeError):
+            piece_rarity = 5
+        rows.append(
+            (
+                uid,
+                character_name,
+                clean_name,
+                r.get("slot", ""),
+                r.get("main_stat", r.get("main", "")),
+                r.get("sub_stats", r.get("sub", "")),
+                r.get("icon", ""),
+                piece_rarity,
+                clean_set,
+            )
+        )
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        if clear_existing:
+            cursor.execute(
+                "DELETE FROM character_relics WHERE uid = ? AND character_name = ?",
+                (uid, character_name),
+            )
+        if rows:
+            cursor.executemany(
+                """
+                INSERT INTO character_relics (uid, character_name, name, slot, main_stat, sub_stats, icon, rarity, set_name)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                rows,
+            )
+    return len(rows)
+
+
 def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, Any]]:
     """Obtém o roster completo de personagens e suas relíquias vinculadas para um jogo e UID ativo."""
     game_clean = (game_id or "").lower().strip()
-    target_uid = uid or get_active_uid(game_clean)
+    target_uid = str(uid).strip() if uid else get_active_uid(game_clean)
     with get_connection() as conn:
         cursor = conn.cursor()
         rows = []
@@ -1275,8 +1424,7 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                 (game_clean, target_uid),
             )
             rows = cursor.fetchall()
-
-        if not rows:
+        elif uid is None:
             cursor.execute(
                 f"""
             SELECT {char_cols} FROM characters WHERE game_id = ? ORDER BY rarity DESC, level DESC
@@ -1479,7 +1627,7 @@ def get_cached_daily_notes() -> Dict[str, Dict[str, Any]]:
                     "current_energy": r["current_energy"],
                     "max_energy": r["max_energy"],
                     "recovery_time": r["recovery_time"],
-                    "extra_info": json.loads(r["extra_info"]) if r["extra_info"] else {},
+                    "extra_info": _safe_json_loads(r["extra_info"], dict, "daily_notes_cache.extra_info"),
                     "updated_at": r["updated_at"],
                     "account_level": level,
                 }
@@ -1571,7 +1719,7 @@ def get_active_accounts_map() -> Dict[str, str]:
 
 
 def delete_account_profile(uid: str) -> int:
-    """Exclui com segurança um perfil de conta e todos os dados associados (personagens, relíquias, notas)."""
+    """Exclui com segurança um perfil de conta e todos os dados associados (personagens, relíquias, notas, snapshots, check-ins, códigos)."""
     uid_clean = str(uid).strip()
     total_deleted = 0
     with get_connection() as conn:
@@ -1587,6 +1735,12 @@ def delete_account_profile(uid: str) -> int:
         cursor.execute("DELETE FROM active_accounts WHERE active_uid = ?", (uid_clean,))
         total_deleted += cursor.rowcount
         cursor.execute("DELETE FROM gacha_pulls_history WHERE uid = ?", (uid_clean,))
+        total_deleted += cursor.rowcount
+        cursor.execute("DELETE FROM account_snapshots WHERE uid = ?", (uid_clean,))
+        total_deleted += cursor.rowcount
+        cursor.execute("DELETE FROM daily_checkin_logs WHERE uid = ?", (uid_clean,))
+        total_deleted += cursor.rowcount
+        cursor.execute("DELETE FROM promo_code_history WHERE uid = ?", (uid_clean,))
         total_deleted += cursor.rowcount
         cursor.execute("DELETE FROM game_accounts WHERE uid = ?", (uid_clean,))
         total_deleted += cursor.rowcount
@@ -1710,16 +1864,33 @@ def get_all_saved_accounts() -> List[Dict[str, Any]]:
 
 
 def reset_database() -> None:
-    """Remove todas as tabelas e recria a estrutura limpa do banco de dados SQLite."""
-    with get_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS character_relics")
-        cursor.execute("DROP TABLE IF EXISTS characters")
-        cursor.execute("DROP TABLE IF EXISTS game_accounts")
-        cursor.execute("DROP TABLE IF EXISTS daily_notes_cache")
-        cursor.execute("DROP TABLE IF EXISTS daily_checkin_logs")
-        cursor.execute("DROP TABLE IF EXISTS endgame_records")
-    init_db()
+    """Remove todas as 15 tabelas e recria a estrutura limpa do banco de dados SQLite."""
+    db_key = os.path.abspath(DATABASE_NAME)
+    with _INIT_LOCK:
+        with get_connection(ensure_init=False) as conn:
+            cursor = conn.cursor()
+            for table_name in (
+                "character_relics",
+                "characters",
+                "active_accounts",
+                "game_accounts",
+                "daily_notes_cache",
+                "daily_checkin_logs",
+                "account_snapshots",
+                "endgame_records",
+                "security_settings",
+                "promo_code_history",
+                "static_data_manifests",
+                "daily_farm_tasks_completed",
+                "gacha_forecast_goals",
+                "chat_history",
+                "gacha_pulls_history",
+            ):
+                cursor.execute(f"DROP TABLE IF EXISTS {table_name}")
+            cursor.execute("PRAGMA user_version = 0")
+        _DB_SCHEMA_READY_PATHS.discard(db_key)
+        invalidate_security_settings_cache()
+        init_db()
 
 
 def save_endgame_data(uid: str, game_id: str, modes_data: List[Dict[str, Any]], raw_md: str = "") -> None:
@@ -1781,7 +1952,13 @@ def get_endgame_data(game_id: str, uid: Optional[str] = None) -> Optional[Dict[s
 
 
 def get_security_settings() -> Dict[str, Any]:
-    """Retorna as configurações atuais de segurança e autenticação."""
+    """Retorna as configurações atuais de segurança e autenticação (com cache em memória invalidado em escrita)."""
+    global _SECURITY_SETTINGS_CACHE
+    db_key = os.path.abspath(DATABASE_NAME)
+    with _SECURITY_CACHE_LOCK:
+        if _SECURITY_SETTINGS_CACHE is not None and _SECURITY_SETTINGS_CACHE[0] == db_key:
+            return dict(_SECURITY_SETTINGS_CACHE[1])
+
     with get_connection() as conn:
         cursor = conn.cursor()
         cursor.execute(
@@ -1789,13 +1966,18 @@ def get_security_settings() -> Dict[str, Any]:
         )
         row = cursor.fetchone()
         if row:
-            return {
+            result = {
                 "pin_enabled": bool(row["pin_enabled"]),
                 "has_pin": bool(row["pin_hash"]),
                 "allow_lan_access": bool(row["allow_lan_access"]),
                 "updated_at": row["updated_at"],
             }
-    return {"pin_enabled": False, "has_pin": False, "allow_lan_access": False, "updated_at": ""}
+        else:
+            result = {"pin_enabled": False, "has_pin": False, "allow_lan_access": False, "updated_at": ""}
+
+    with _SECURITY_CACHE_LOCK:
+        _SECURITY_SETTINGS_CACHE = (db_key, dict(result))
+    return result
 
 
 def set_security_pin(pin: str) -> bool:
@@ -1819,6 +2001,7 @@ def set_security_pin(pin: str) -> bool:
         """,
             (pin_hash, pin_salt, now),
         )
+    invalidate_security_settings_cache()
     return True
 
 
@@ -1852,6 +2035,7 @@ def disable_security_pin(current_pin: Optional[str] = None) -> bool:
         """,
             (now,),
         )
+    invalidate_security_settings_cache()
     return True
 
 
@@ -1868,6 +2052,7 @@ def set_lan_access(enabled: bool) -> None:
         """,
             (1 if enabled else 0, now),
         )
+    invalidate_security_settings_cache()
 
 
 def is_lan_access_allowed() -> bool:
@@ -1879,11 +2064,7 @@ def is_lan_access_allowed() -> bool:
     ):
         return True
     try:
-        with get_connection() as conn:
-            cursor = conn.cursor()
-            cursor.execute("SELECT allow_lan_access FROM security_settings WHERE id = 1")
-            row = cursor.fetchone()
-            return bool(row["allow_lan_access"]) if row else False
+        return bool(get_security_settings().get("allow_lan_access", False))
     except sqlite3.Error as exc:
         logger.debug("[DB] Falha ao consultar allow_lan_access: %s", exc)
         return False
@@ -1976,6 +2157,38 @@ def save_static_data_manifest(game_id: str, version: str, item_count: int, statu
             source = excluded.source
         """,
             (game_id.lower().strip(), version, item_count, now, status, source),
+        )
+
+
+def save_static_data_manifests(results: Dict[str, Dict[str, Any]], version: str = "1.0") -> None:
+    """Persiste em lote o resultado de sincronização de manifestos para múltiplos jogos."""
+    if not results:
+        return
+    now = datetime.now().isoformat()
+    rows = [
+        (
+            gid.lower().strip(),
+            version,
+            info.get("character_count", 0),
+            now,
+            info.get("status", "success"),
+            info.get("source", "seed"),
+        )
+        for gid, info in results.items()
+    ]
+    with get_connection() as conn:
+        conn.cursor().executemany(
+            """
+            INSERT INTO static_data_manifests (game_id, version, item_count, last_synced, status, source)
+            VALUES (?, ?, ?, ?, ?, ?)
+            ON CONFLICT(game_id) DO UPDATE SET
+                version = excluded.version,
+                item_count = excluded.item_count,
+                last_synced = excluded.last_synced,
+                status = excluded.status,
+                source = excluded.source
+            """,
+            rows,
         )
 
 
@@ -2254,7 +2467,7 @@ def update_all_saved_goals_schedule() -> int:
             "SELECT id, game_id, target_days, created_at, target_date, banner_phase, notes FROM gacha_forecast_goals"
         )
         rows = cursor.fetchall()
-        updated_count = 0
+        updates = []
         now_dt = datetime.now()
 
         for r in rows:
@@ -2282,14 +2495,15 @@ def update_all_saved_goals_schedule() -> int:
 
             tgt_dt = tgt_dt.replace(hour=sched_hour, minute=sched_min, second=0, microsecond=0)
             target_iso = tgt_dt.isoformat()
+            updates.append((target_iso, phase, g_id))
 
-            cursor.execute(
+        if updates:
+            cursor.executemany(
                 "UPDATE gacha_forecast_goals SET target_date = ?, banner_phase = ? WHERE id = ?",
-                (target_iso, phase, g_id),
+                updates,
             )
-            updated_count += 1
 
-        return updated_count
+        return len(updates)
 
 
 def delete_gacha_goal(goal_id: int) -> bool:
@@ -2323,6 +2537,7 @@ def save_chat_message(game_id: str, role: str, content: str) -> int:
 def get_chat_history(game_id: str = "all", limit: int = 50) -> List[Dict[str, Any]]:
     """Recupera o histórico recente de mensagens do chat ordenado cronologicamente."""
     clean_game = (game_id or "all").lower().strip()
+    safe_limit = max(1, min(int(limit or 50), 200))
     with get_connection() as conn:
         cursor = conn.cursor()
         if clean_game not in ["", "all", "todos", "global"]:
@@ -2331,22 +2546,22 @@ def get_chat_history(game_id: str = "all", limit: int = 50) -> List[Dict[str, An
             SELECT id, game_id, role, content, created_at
             FROM chat_history
             WHERE game_id = ?
-            ORDER BY id ASC
+            ORDER BY id DESC
             LIMIT ?
             """,
-                (clean_game, limit),
+                (clean_game, safe_limit),
             )
         else:
             cursor.execute(
                 """
             SELECT id, game_id, role, content, created_at
             FROM chat_history
-            ORDER BY id ASC
+            ORDER BY id DESC
             LIMIT ?
             """,
-                (limit,),
+                (safe_limit,),
             )
-        rows = cursor.fetchall()
+        rows = list(reversed(cursor.fetchall()))
         return [dict(r) for r in rows]
 
 
@@ -2383,6 +2598,7 @@ def save_gacha_pulls(game_id: str, uid: str, pulls: List[Dict[str, Any]]) -> Tup
 
     with get_connection() as conn:
         cursor = conn.cursor()
+        occ_counts: Dict[Tuple[str, str, str], int] = {}
         for p in pulls:
             item_name = str(p.get("name") or p.get("item_name") or "Item Desconhecido").strip()
             time_val = str(p.get("time") or p.get("datetime") or now_str).strip()
@@ -2401,10 +2617,10 @@ def save_gacha_pulls(game_id: str, uid: str, pulls: List[Dict[str, Any]]) -> Tup
 
             pull_id = str(p.get("id") or "").strip()
             if not pull_id:
-                # Gera id determinístico
-                import hashlib
-
-                raw_hash = f"{clean_uid}_{clean_game}_{gacha_type}_{time_val}_{item_name}"
+                occ_key = (gacha_type, time_val, item_name)
+                occ_idx = occ_counts.get(occ_key, 0)
+                occ_counts[occ_key] = occ_idx + 1
+                raw_hash = f"{clean_uid}_{clean_game}_{gacha_type}_{time_val}_{item_name}_{occ_idx}"
                 pull_id = hashlib.sha1(raw_hash.encode("utf-8")).hexdigest()
 
             try:
@@ -2546,7 +2762,3 @@ def get_gacha_pulls_filtered(
         rows = [dict(r) for r in cursor.fetchall()]
 
         return rows, total_count
-
-
-# Inicializa o banco após todas as funções auxiliares estarem definidas
-init_db()

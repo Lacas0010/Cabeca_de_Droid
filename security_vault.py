@@ -6,6 +6,7 @@ import ctypes
 import hashlib
 import hmac
 import secrets
+import tempfile
 from typing import Dict, Any, Optional, Tuple
 from core.paths import get_data_dir
 
@@ -189,8 +190,30 @@ def get_vault_security_info() -> Dict[str, Any]:
         "engine": "Windows DPAPI (Hardware-Tied User Key)" if IS_WINDOWS else "Machine-Derived AES/HMAC",
         "has_encrypted_cookies": os.path.exists(COOKIES_ENC_FILE),
         "cookies_legacy_exists": os.path.exists(COOKIES_LEGACY_FILE),
+        "has_encrypted_config": os.path.exists(CONFIG_ENC_FILE),
+        "config_legacy_exists": os.path.exists(CONFIG_LEGACY_FILE),
         "status": "PROTECTED",
     }
+
+
+def _atomic_write_bytes(target_path: str, payload: bytes) -> None:
+    """Escreve bytes em arquivo temporário no mesmo diretório e substitui atomicamente."""
+    abs_target = os.path.abspath(target_path)
+    target_dir = os.path.dirname(abs_target) or "."
+    os.makedirs(target_dir, exist_ok=True)
+    tmp_path = None
+    try:
+        with tempfile.NamedTemporaryFile(dir=target_dir, prefix=".vault_", suffix=".tmp", delete=False) as tf:
+            tmp_path = tf.name
+            tf.write(payload)
+        os.replace(tmp_path, abs_target)
+    except Exception:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+        raise
 
 
 # ==========================================
@@ -257,43 +280,76 @@ def load_secure_cookies(filepath: Optional[str] = None, legacy_file: Optional[st
 # ==========================================
 # 5. GESTÃO DE CONFIGURAÇÕES CRIPTOGRAFADAS
 # ==========================================
-def save_secure_config(config: Dict[str, Any]) -> None:
-    """Salva as configurações gerais."""
-    with open(CONFIG_LEGACY_FILE, "w", encoding="utf-8") as f:
-        json.dump(config, f, indent=4, ensure_ascii=False)
+_DEFAULT_CONFIG: Dict[str, Any] = {
+    "auto_sync_enabled": True,
+    "auto_sync_time": "04:00",
+    "auto_sync_roster": True,
+    "auto_sync_guides": True,
+    "last_auto_sync_date": "",
+    "allow_lan_access": False,
+    "notifications_enabled": False,
+    "discord_webhook_url": "",
+    "telegram_bot_token": "",
+    "telegram_chat_id": "",
+    "notify_on_checkin": True,
+    "notify_on_energy_cap": True,
+    "energy_cap_threshold_pct": 90,
+    "notify_on_endgame": True,
+    "notify_on_codes": True,
+    "quiet_hours_enabled": False,
+    "quiet_hours_start": "23:00",
+    "quiet_hours_end": "07:00",
+    "notify_windows_toast": True,
+}
 
 
-def load_secure_config() -> Dict[str, Any]:
-    """Carrega as configurações gerais."""
-    defaults = {
-        "auto_sync_enabled": True,
-        "auto_sync_time": "04:00",
-        "auto_sync_roster": True,
-        "auto_sync_guides": True,
-        "last_auto_sync_date": "",
-        "allow_lan_access": False,
-        "notifications_enabled": False,
-        "discord_webhook_url": "",
-        "telegram_bot_token": "",
-        "telegram_chat_id": "",
-        "notify_on_checkin": True,
-        "notify_on_energy_cap": True,
-        "energy_cap_threshold_pct": 90,
-        "notify_on_endgame": True,
-        "notify_on_codes": True,
-        "quiet_hours_enabled": False,
-        "quiet_hours_start": "23:00",
-        "quiet_hours_end": "07:00",
-        "notify_windows_toast": True,
-    }
-    if os.path.exists(CONFIG_LEGACY_FILE):
+def save_secure_config(config: Dict[str, Any], filepath: Optional[str] = None) -> None:
+    """Salva as configurações gerais criptografadas em config.enc e remove o config.json legado."""
+    target = filepath or CONFIG_ENC_FILE
+    json_str = json.dumps(config, indent=4, ensure_ascii=False)
+    enc_data = encrypt_payload(json_str)
+    _atomic_write_bytes(target, enc_data)
+
+    if not filepath and os.path.exists(CONFIG_LEGACY_FILE):
         try:
-            with open(CONFIG_LEGACY_FILE, "r", encoding="utf-8") as f:
-                data = json.load(f)
+            os.remove(CONFIG_LEGACY_FILE)
+        except OSError:
+            pass
+
+
+def load_secure_config(filepath: Optional[str] = None, legacy_file: Optional[str] = None) -> Dict[str, Any]:
+    """Carrega as configurações gerais de config.enc ou migra automaticamente de config.json legado."""
+    defaults = dict(_DEFAULT_CONFIG)
+    target = filepath or CONFIG_ENC_FILE
+    legacy = legacy_file or CONFIG_LEGACY_FILE
+
+    if os.path.exists(target):
+        try:
+            with open(target, "rb") as f:
+                enc_data = f.read()
+            decrypted = decrypt_payload(enc_data)
+            data = json.loads(decrypted)
+            if isinstance(data, dict):
                 defaults.update(data)
                 return defaults
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[SECURITY_VAULT] Aviso ao decifrar {target}: {e}")
+
+    if os.path.exists(legacy):
+        try:
+            with open(legacy, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                defaults.update(data)
+                try:
+                    save_secure_config(defaults, filepath=target)
+                    os.remove(legacy)
+                except Exception as mig_err:
+                    print(f"[SECURITY_VAULT] Aviso ao migrar {legacy} para {target}: {mig_err}")
+                return defaults
+        except Exception as e:
+            print(f"[SECURITY_VAULT] Erro ao ler {legacy}: {e}")
+
     return defaults
 
 

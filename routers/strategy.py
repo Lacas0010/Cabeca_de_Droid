@@ -1,14 +1,22 @@
+import asyncio
 import traceback
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 
 import database
 import build_calculator
+from core.config import validate_game_id
 from services.roster_service import get_roster, get_account_audit
 from services.roast_service import generate_account_roast_stream
 from schemas.gacha import StrategyAskAIRequest
 
 router = APIRouter(tags=["Strategy & Account Audit"])
+
+
+def _analyze_account_gaps_sync(game_id: str):
+    roster_data = database.get_roster_data(game_id)
+    endgame_data = database.get_endgame_data(game_id)
+    return build_calculator.analyze_account_gaps(game_id, roster_data, endgame_data)
 
 
 @router.get("/api/strategy/account-gaps/{game_id}")
@@ -21,15 +29,9 @@ async def get_account_gaps_endpoint(game_id: str):
     - Recomendações ranqueadas de gacha para próximos banners
     - Prontidão para o Endgame (Abismo / Caos da Memória / Shiyu Defense)
     """
-    game_id = game_id.lower().strip()
-    if game_id not in ["genshin", "hsr", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido. Use 'genshin', 'hsr' ou 'zzz'.")
-
+    clean_game = validate_game_id(game_id, detail="Jogo inválido. Use 'genshin', 'hsr' ou 'zzz'.")
     try:
-        roster_data = database.get_roster_data(game_id)
-        endgame_data = database.get_endgame_data(game_id)
-        result = build_calculator.analyze_account_gaps(game_id, roster_data, endgame_data)
-        return result
+        return await asyncio.to_thread(_analyze_account_gaps_sync, clean_game)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -37,15 +39,9 @@ async def get_account_gaps_endpoint(game_id: str):
 @router.post("/api/strategy/ask-ai-gaps")
 async def ask_ai_account_gaps(req: StrategyAskAIRequest):
     """Retorna a análise de lacunas da conta."""
-    game_id = req.game_id.lower().strip()
-    if game_id not in ["genshin", "hsr", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido.")
-
+    clean_game = validate_game_id(req.game_id)
     try:
-        roster_data = database.get_roster_data(game_id)
-        endgame_data = database.get_endgame_data(game_id)
-        gap_analysis = build_calculator.analyze_account_gaps(game_id, roster_data, endgame_data)
-
+        gap_analysis = await asyncio.to_thread(_analyze_account_gaps_sync, clean_game)
         return {
             "analysis": gap_analysis,
             "ai_response": gap_analysis.get("rag_summary_markdown", "Análise de lacunas concluída."),
@@ -58,17 +54,13 @@ async def ask_ai_account_gaps(req: StrategyAskAIRequest):
 @router.get("/api/luck-index/{game_id}")
 async def get_luck_index(game_id: str):
     """Retorna a análise consolidada do Índice de Sorte da Conta (Luck Score & Substat Efficiency)."""
-    game_id = game_id.lower().strip()
-    if game_id not in ["genshin", "hsr", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido.")
-
+    clean_game = validate_game_id(game_id)
     try:
-        roster_data = await get_roster(game_id)
+        roster_data = await get_roster(clean_game)
         if not isinstance(roster_data, list):
             roster_data = []
 
-        res = build_calculator.analyze_account_luck(game_id, roster_data)
-        return res
+        return await asyncio.to_thread(build_calculator.analyze_account_luck, clean_game, roster_data)
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))

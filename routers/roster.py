@@ -1,7 +1,9 @@
+import asyncio
 from typing import Optional
 from fastapi import APIRouter, HTTPException
 
 import database
+from core.config import validate_game_id
 from build_calculator import normalize_char_name
 from services.roster_service import (
     get_roster,
@@ -16,27 +18,33 @@ from schemas.accounts import AccountsListResponse, SwitchAccountRequest
 router = APIRouter(tags=["Roster & Characters"])
 
 
+def _list_accounts_sync():
+    accounts = database.get_all_saved_accounts()
+    active_map = database.get_active_accounts_map()
+    return {"accounts": accounts, "active_accounts": active_map}
+
+
 @router.get("/api/accounts", response_model=AccountsListResponse)
 async def list_accounts_endpoint():
     """Retorna todas as contas cadastradas com nickname, level, quantidade de personagens e status ativo."""
     try:
-        accounts = database.get_all_saved_accounts()
-        active_map = database.get_active_accounts_map()
-        return {"accounts": accounts, "active_accounts": active_map}
+        return await asyncio.to_thread(_list_accounts_sync)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _switch_account_sync(game_clean: str, uid: str):
+    database.set_active_account(game_clean, uid)
+    invalidate_roster_cache(game_clean)
+    invalidate_endgame_cache(game_clean)
 
 
 @router.post("/api/accounts/switch")
 async def switch_account_endpoint(req: SwitchAccountRequest):
     """Alterna a conta ativa para um determinado jogo (Multi-UID)."""
-    game_clean = (req.game_id or "").lower().strip()
-    if game_clean not in ["hsr", "genshin", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido.")
+    game_clean = validate_game_id(req.game_id or "")
     try:
-        database.set_active_account(game_clean, req.uid)
-        invalidate_roster_cache(game_clean)
-        invalidate_endgame_cache(game_clean)
+        await asyncio.to_thread(_switch_account_sync, game_clean, req.uid)
         return {
             "status": "success",
             "success": True,
@@ -48,13 +56,18 @@ async def switch_account_endpoint(req: SwitchAccountRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def _delete_account_sync(uid: str) -> int:
+    deleted = database.delete_account_profile(uid)
+    invalidate_roster_cache()
+    invalidate_endgame_cache()
+    return deleted
+
+
 @router.delete("/api/accounts/{uid}")
 async def delete_account_endpoint(uid: str):
     """Exclui com segurança os dados de um UID específico (personagens, relíquias, notas)."""
     try:
-        deleted = database.delete_account_profile(uid)
-        invalidate_roster_cache()
-        invalidate_endgame_cache()
+        deleted = await asyncio.to_thread(_delete_account_sync, uid)
         return {
             "status": "success",
             "success": True,
@@ -80,16 +93,10 @@ async def get_roster_endpoint(game_id: str, uid: Optional[str] = None):
 @router.get("/api/overview")
 async def get_overview_endpoint():
     """Resumo das contas dos 3 jogos (SQLite + cache local)."""
-    return get_overview()
+    return await asyncio.to_thread(get_overview)
 
 
-@router.get("/api/account/{game_id}")
-async def get_account_endpoint(game_id: str, uid: Optional[str] = None):
-    """Retorna os dados da conta ativa do jogador ou de um UID específico."""
-    game_id = game_id.lower().strip()
-    if game_id not in ["hsr", "genshin", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido.")
-
+def _get_account_sync(game_id: str, uid: Optional[str]):
     acc = database.get_game_account(game_id, uid=uid)
     if acc:
         return {
@@ -101,7 +108,6 @@ async def get_account_endpoint(game_id: str, uid: Optional[str] = None):
             "updated_at": acc.get("updated_at", ""),
         }
 
-    # Fallback para overview se não houver registro específico no SQLite
     ov = get_overview().get(game_id, {})
     return {
         "game_id": game_id,
@@ -113,22 +119,21 @@ async def get_account_endpoint(game_id: str, uid: Optional[str] = None):
     }
 
 
+@router.get("/api/account/{game_id}")
+async def get_account_endpoint(game_id: str, uid: Optional[str] = None):
+    """Retorna os dados da conta ativa do jogador ou de um UID específico."""
+    clean_game = validate_game_id(game_id)
+    return await asyncio.to_thread(_get_account_sync, clean_game, uid)
+
+
 @router.get("/api/build/{game_id}/{char_name}")
 async def get_build_detail_endpoint(game_id: str, char_name: str):
     """Retorna os dados detalhados da build de um personagem, parseando o MD consolidado ou SQLite."""
-    game_id = game_id.lower().strip()
-    if game_id not in ["hsr", "genshin", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido.")
-    return parse_character_build_data(game_id, char_name)
+    clean_game = validate_game_id(game_id)
+    return await asyncio.to_thread(parse_character_build_data, clean_game, char_name)
 
 
-@router.get("/api/compare/{game_id}/{char_name}")
-async def compare_build_endpoint(game_id: str, char_name: str):
-    """Retorna os dados da build do jogador comparados aos dados ideais do metagame."""
-    game_id = game_id.lower().strip()
-    if game_id not in ["hsr", "genshin", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido.")
-
+def _compare_build_sync(game_id: str, char_name: str):
     element = ""
     try:
         roster = database.get_roster_data(game_id)
@@ -157,14 +162,18 @@ async def compare_build_endpoint(game_id: str, char_name: str):
     }
 
 
+@router.get("/api/compare/{game_id}/{char_name}")
+async def compare_build_endpoint(game_id: str, char_name: str):
+    """Retorna os dados da build do jogador comparados aos dados ideais do metagame."""
+    clean_game = validate_game_id(game_id)
+    return await asyncio.to_thread(_compare_build_sync, clean_game, char_name)
+
+
 @router.get("/api/optimize/{game_id}/{char_name}")
 async def optimize_character_build(game_id: str, char_name: str):
     """Sugestões de melhoria de build comparando o personagem com o guia recomendado."""
-    game_id = game_id.lower().strip()
-    if game_id not in ["hsr", "genshin", "zzz"]:
-        raise HTTPException(status_code=400, detail="Jogo inválido.")
-
-    build_data = parse_character_build_data(game_id, char_name)
+    clean_game = validate_game_id(game_id)
+    build_data = await asyncio.to_thread(parse_character_build_data, clean_game, char_name)
     if not build_data.get("raw") and not build_data.get("sets") and not build_data.get("pieces"):
         return {
             "suggestions": [

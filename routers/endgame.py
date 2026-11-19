@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from services.endgame_service import get_endgame
@@ -31,7 +32,14 @@ async def get_endgame_team_match_endpoint(
     Calcula percentual de compatibilidade e recomenda substitutos funcionais disponíveis no próprio roster.
     """
     try:
-        return match_endgame_teams(game_id=game_id, uid=uid, mode=mode, min_match=min_match or 0.0, lang=lang)
+        return await asyncio.to_thread(
+            match_endgame_teams,
+            game_id=game_id,
+            uid=uid,
+            mode=mode,
+            min_match=min_match or 0.0,
+            lang=lang,
+        )
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve))
     except Exception as e:

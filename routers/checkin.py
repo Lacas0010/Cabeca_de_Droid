@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import APIRouter, HTTPException
 
 import database
@@ -25,7 +26,7 @@ async def run_manual_checkin():
 async def get_checkin_today():
     """Retorna os logs de check-in efetuados hoje."""
     try:
-        return database.get_today_checkin_logs()
+        return await asyncio.to_thread(database.get_today_checkin_logs)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -34,9 +35,8 @@ async def get_checkin_today():
 async def get_today_morning_briefing(lang: str = "pt"):
     """Retorna o resumo diário dos 3 jogos."""
     try:
-        config = get_config()
-        briefing = notifier.generate_morning_briefing(config, lang=lang or "pt")
-        return briefing
+        config = await asyncio.to_thread(get_config)
+        return await asyncio.to_thread(notifier.generate_morning_briefing, config, lang=lang or "pt")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -45,8 +45,7 @@ async def get_today_morning_briefing(lang: str = "pt"):
 async def send_morning_briefing_now():
     """Envia manualmente o Morning Briefing para os webhooks ativos (Discord / Telegram)."""
     try:
-        config = get_config()
-        result = notifier.send_morning_briefing(config)
-        return result
+        config = await asyncio.to_thread(get_config)
+        return await asyncio.to_thread(notifier.send_morning_briefing, config)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -1,3 +1,4 @@
+import threading
 import time
 from typing import Dict, Optional
 from fastapi import Request
@@ -7,29 +8,75 @@ import database
 
 # Gestão de Sessões Ativas para PIN e Autenticação
 active_sessions: Dict[str, float] = {}
+_SESSIONS_LOCK = threading.Lock()
+_LOOPBACK_HOSTS = frozenset({"127.0.0.1", "::1", "::ffff:127.0.0.1", "localhost", "testclient"})
+_LAN_PROTECTED_EXACT_PATHS = frozenset(
+    {
+        "/api/config",
+        "/api/reset-data",
+        "/api/security/clear_credentials",
+        "/api/security/pin/set",
+        "/api/security/pin/disable",
+        "/api/security/lan/toggle",
+        "/api/auth/manual_cookies",
+        "/api/notifications/test",
+        "/api/updater/start",
+        "/api/login/auto",
+    }
+)
+
+
+def is_loopback_ip(client_ip: Optional[str]) -> bool:
+    """Retorna True se o endereço IP pertencer ao loopback local ou TestClient."""
+    return (client_ip or "").strip().lower() in _LOOPBACK_HOSTS
+
+
+def is_loopback_request(request: Request) -> bool:
+    """Retorna True se a requisição FastAPI veio do loopback local."""
+    client_ip = request.client.host if request.client else "127.0.0.1"
+    return is_loopback_ip(client_ip)
+
+
+def _requires_lan_session(path: str, method: str) -> bool:
+    if path in _LAN_PROTECTED_EXACT_PATHS:
+        return True
+    if method.upper() == "DELETE" and path.startswith("/api/accounts/"):
+        return True
+    return False
 
 
 def create_session() -> str:
     """Cria e registra um token efêmero de sessão para desbloqueio local."""
     token = security_vault.generate_session_token()
-    active_sessions[token] = time.time() + 86400  # 24 horas de validade
+    now = time.time()
+    with _SESSIONS_LOCK:
+        if len(active_sessions) > 64:
+            expired = [k for k, exp in active_sessions.items() if now > exp]
+            for k in expired:
+                del active_sessions[k]
+        active_sessions[token] = now + 86400  # 24 horas de validade
     return token
 
 
 def is_valid_session(token: Optional[str]) -> bool:
     """Verifica a validade do token de sessão ativo."""
-    if not token or token not in active_sessions:
+    if not token:
         return False
-    if time.time() > active_sessions[token]:
-        del active_sessions[token]
-        return False
-    return True
+    now = time.time()
+    with _SESSIONS_LOCK:
+        exp = active_sessions.get(token)
+        if exp is None:
+            return False
+        if now > exp:
+            del active_sessions[token]
+            return False
+        return True
 
 
 async def security_guard_middleware(request: Request, call_next):
     """Middleware de controle de acesso de rede (LAN), isolamento de rotas e bloqueio por PIN."""
     client_ip = request.client.host if request.client else "127.0.0.1"
-    is_loopback = client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+    is_loopback = is_loopback_ip(client_ip)
     path = request.url.path
 
     # 1. Proteção de Rede LAN: rejeita conexões externas se LAN estiver desativada
@@ -41,8 +88,8 @@ async def security_guard_middleware(request: Request, call_next):
             },
         )
 
-    # 2. Proteção de Endpoints Críticos para clientes na LAN
-    if not is_loopback and path in ("/api/config", "/api/reset-data", "/api/security/clear_credentials"):
+    # 2. Proteção de Endpoints Críticos/Mutadores para clientes na LAN
+    if not is_loopback and _requires_lan_session(path, request.method):
         token = request.cookies.get("hoyo_session") or request.headers.get("X-Session-Token")
         if not is_valid_session(token):
             return JSONResponse(

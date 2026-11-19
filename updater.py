@@ -171,17 +171,28 @@ def safe_extract_zip(zip_path: Path, extract_dir: Path) -> Path:
     with zipfile.ZipFile(zip_path, "r") as zf:
         for member in zf.infolist():
             member_path = (target_root / member.filename).resolve()
-            if not str(member_path).startswith(str(target_root)):
+            if not member_path.is_relative_to(target_root):
                 raise ValueError(f"Entrada ZIP inválida detectada (ZipSlip): {member.filename}")
         zf.extractall(target_root)
 
     return target_root
 
 
-def resolve_extracted_payload_dir(extract_root: Path) -> Path:
-    """Resolve a pasta que contém Cabeca_de_Droid.exe após extração."""
-    for exe_candidate in extract_root.rglob("*.exe"):
-        return exe_candidate.parent
+EXPECTED_EXE_NAME = "Cabeca_de_Droid.exe"
+
+
+def resolve_extracted_payload_dir(extract_root: Path, expected_exe_name: str = EXPECTED_EXE_NAME) -> Path:
+    """Resolve a pasta que contém o executável esperado (Cabeca_de_Droid.exe) após extração."""
+    exe_candidates = list(extract_root.rglob("*.exe"))
+    target_lower = (expected_exe_name or EXPECTED_EXE_NAME).lower()
+    for candidate in exe_candidates:
+        if candidate.name.lower() == target_lower:
+            return candidate.parent
+    for candidate in exe_candidates:
+        if candidate.name.lower() == EXPECTED_EXE_NAME.lower():
+            return candidate.parent
+    if exe_candidates:
+        return exe_candidates[0].parent
     return extract_root
 
 
@@ -362,12 +373,23 @@ def _run_frozen_update_worker(download_url: str, target_version: str) -> None:
             message="Extraindo arquivos da nova versão...",
         )
         safe_extract_zip(zip_path, extract_dir)
-        payload_dir = resolve_extracted_payload_dir(extract_dir)
-
         exe_path = Path(sys.executable).resolve()
         app_dir = exe_path.parent
+        payload_dir = resolve_extracted_payload_dir(extract_dir, expected_exe_name=exe_path.name)
+
         exes_in_payload = list(payload_dir.glob("*.exe"))
-        new_exe_name = exes_in_payload[0].name if exes_in_payload else exe_path.name
+        preferred_exe = next(
+            (p for p in exes_in_payload if p.name.lower() == exe_path.name.lower()),
+            None,
+        ) or next(
+            (p for p in exes_in_payload if p.name.lower() == EXPECTED_EXE_NAME.lower()),
+            None,
+        )
+        new_exe_name = (
+            preferred_exe.name
+            if preferred_exe is not None
+            else (exes_in_payload[0].name if exes_in_payload else exe_path.name)
+        )
         target_exe_path = app_dir / new_exe_name
 
         bat_fd, bat_raw = tempfile.mkstemp(prefix="cabeca_apply_", suffix=".bat")

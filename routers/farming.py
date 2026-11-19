@@ -1,4 +1,4 @@
-import os
+import asyncio
 import sys
 import datetime
 import traceback
@@ -22,7 +22,9 @@ router = APIRouter(tags=["Farming & Materials"])
 @router.post("/api/materials/calculate")
 async def calculate_materials(req: MaterialsCalculateRequest):
     """Calcula o total estimado de materiais necessários para elevar um personagem."""
-    res = build_calculator.calculate_ascension(req.game_id, req.current_level, req.target_level, req.char_name)
+    res = await asyncio.to_thread(
+        build_calculator.calculate_ascension, req.game_id, req.current_level, req.target_level, req.char_name
+    )
     if not res:
         raise HTTPException(status_code=400, detail="Erro ao realizar o cálculo de ascensão.")
     return res
@@ -34,13 +36,23 @@ async def get_farming_today(game_id: str, selected_chars: Optional[str] = None, 
     try:
         roster_data = await get_roster(game_id)
         selected_list = [s.strip() for s in selected_chars.split(",") if s.strip()] if selected_chars else None
-        res = build_calculator.get_daily_farm_recommendations(
-            game_id=game_id, roster=roster_data, selected_chars=selected_list, lang=lang or "pt"
+        return await asyncio.to_thread(
+            build_calculator.get_daily_farm_recommendations,
+            game_id=game_id,
+            roster=roster_data,
+            selected_chars=selected_list,
+            lang=lang or "pt",
         )
-        return res
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
+
+def _generate_daily_farm_order_sync(game_id: str, roster_data, selected_list, lang: str):
+    meta_data = build_calculator.get_meta_data(game_id)
+    return build_calculator.generate_daily_farm_order(
+        game_id=game_id, roster=roster_data, meta_data=meta_data, selected_chars=selected_list, lang=lang
+    )
 
 
 @router.get("/api/farm/order-of-day/{game_id}")
@@ -48,12 +60,10 @@ async def get_daily_farm_order_endpoint(game_id: str, selected_chars: Optional[s
     """Retorna a Ordem de Serviço Diária com alocação inteligente de resina/energia."""
     try:
         roster_data = await get_roster(game_id)
-        meta_data = build_calculator.get_meta_data(game_id)
         selected_list = [s.strip() for s in selected_chars.split(",") if s.strip()] if selected_chars else None
-        order = build_calculator.generate_daily_farm_order(
-            game_id=game_id, roster=roster_data, meta_data=meta_data, selected_chars=selected_list, lang=lang or "pt"
+        return await asyncio.to_thread(
+            _generate_daily_farm_order_sync, game_id, roster_data, selected_list, lang or "pt"
         )
-        return order
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
@@ -64,8 +74,12 @@ async def toggle_farm_order_step(req: FarmOrderToggleRequest):
     """Marca ou desmarca uma tarefa da Ordem de Serviço como concluída no banco de dados SQLite."""
     try:
         today_str = datetime.datetime.now().strftime("%Y-%m-%d")
-        new_state = database.set_farm_task_completed(
-            date_str=today_str, game_id=req.game_id, task_id=req.task_id, completed=req.completed
+        new_state = await asyncio.to_thread(
+            database.set_farm_task_completed,
+            date_str=today_str,
+            game_id=req.game_id,
+            task_id=req.task_id,
+            completed=req.completed,
         )
         return {"status": "success", "game_id": req.game_id, "task_id": req.task_id, "completed": new_state}
     except Exception as e:
@@ -78,10 +92,11 @@ async def send_farm_order_notification(req: FarmOrderSendNotificationRequest):
     """Envia a Ordem de Serviço Diária diretamente para os canais Discord e Telegram configurados."""
     try:
         roster_data = await get_roster(req.game_id)
-        meta_data = build_calculator.get_meta_data(req.game_id)
-        order = build_calculator.generate_daily_farm_order(game_id=req.game_id, roster=roster_data, meta_data=meta_data)
+        order = await asyncio.to_thread(_generate_daily_farm_order_sync, req.game_id, roster_data, None, "pt")
         server_mod = sys.modules.get("server")
-        cfg = server_mod.get_config() if (server_mod and hasattr(server_mod, "get_config")) else get_config()
+        cfg = await asyncio.to_thread(
+            server_mod.get_config if (server_mod and hasattr(server_mod, "get_config")) else get_config
+        )
         notif = server_mod.notifier if (server_mod and hasattr(server_mod, "notifier")) else notifier
 
         fields = []
@@ -103,7 +118,8 @@ async def send_farm_order_notification(req: FarmOrderSendNotificationRequest):
             f"🎯 **Progresso:** {order.get('completed_count')}/{order.get('total_tasks')} tarefas concluídas ({order.get('completion_percentage')}%)"
         )
 
-        res = notif.send_notification(
+        res = await asyncio.to_thread(
+            notif.send_notification,
             title=f"📋 Ordem de Serviço de Farm Diário • {order.get('game_name')}",
             message=header_desc,
             config=cfg,

@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 import database
 import security_vault
 from core.config import get_cookies, get_config, parse_cookie_string
-from core.security import is_valid_session, create_session
+from core.security import is_valid_session, create_session, is_loopback_ip
 from schemas.auth_security import (
     ManualCookieRequest,
     PinSetRequest,
@@ -21,7 +21,7 @@ router = APIRouter(tags=["Security & Auth"])
 async def get_security_status_endpoint(request: Request):
     """Status do cofre local, PIN e acesso LAN."""
     client_ip = request.client.host if request.client else "127.0.0.1"
-    is_loopback = client_ip in ("127.0.0.1", "::1", "localhost", "testclient")
+    is_loopback = is_loopback_ip(client_ip)
     token = request.cookies.get("hoyo_session") or request.headers.get("X-Session-Token")
     is_auth = is_valid_session(token)
 

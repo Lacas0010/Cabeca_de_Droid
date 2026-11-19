@@ -1,5 +1,5 @@
-import os
 from typing import Dict, Any
+from fastapi import HTTPException
 import security_vault
 from core.paths import (
     APP_NAME,
@@ -12,6 +12,16 @@ from core.paths import (
     seed_bundled_resources,
     load_local_env,
 )
+
+VALID_GAME_IDS = ("hsr", "genshin", "zzz")
+
+
+def validate_game_id(game_id: str, detail: str = "Jogo inválido.") -> str:
+    """Normaliza e valida o identificador do jogo ('hsr', 'genshin' ou 'zzz')."""
+    clean = (game_id or "").lower().strip()
+    if clean not in VALID_GAME_IDS:
+        raise HTTPException(status_code=400, detail=detail)
+    return clean
 
 
 def get_cookies() -> Dict[str, Any]:

@@ -1,7 +1,7 @@
+import asyncio
 import os
 import threading
 import time
-from typing import Dict, Any
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -139,14 +139,7 @@ def startup_static_data_sync_scheduler():
         time.sleep(5)
         try:
             results = static_data_manager.sync_upstream_data()
-            for gid, info in results.items():
-                database.save_static_data_manifest(
-                    game_id=gid,
-                    version="1.0",
-                    item_count=info.get("character_count", 0),
-                    status=info.get("status", "success"),
-                    source=info.get("source", "seed"),
-                )
+            database.save_static_data_manifests(results)
             print("[STATIC-DATA] Dados locais carregados.")
         except Exception as s_err:
             print(f"[STATIC-DATA] Erro ao inicializar: {s_err}")
@@ -155,14 +148,7 @@ def startup_static_data_sync_scheduler():
             time.sleep(86400)
             try:
                 results = static_data_manager.sync_upstream_data()
-                for gid, info in results.items():
-                    database.save_static_data_manifest(
-                        game_id=gid,
-                        version="1.0",
-                        item_count=info.get("character_count", 0),
-                        status=info.get("status", "success"),
-                        source=info.get("source", "seed"),
-                    )
+                database.save_static_data_manifests(results)
             except Exception as loop_err:
                 print(f"[STATIC-DATA] Erro no loop diário de sincronização estática: {loop_err}")
 
@@ -185,6 +171,9 @@ async def request_latency_tracker_middleware(request: Request, call_next):
 
 
 app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.middleware("http")(add_no_cache_header)
+app.middleware("http")(security_guard_middleware)
+app.middleware("http")(request_latency_tracker_middleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -192,10 +181,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-app.middleware("http")(add_no_cache_header)
-app.middleware("http")(security_guard_middleware)
-app.middleware("http")(request_latency_tracker_middleware)
 
 for router in all_routers:
     app.include_router(router)
@@ -219,19 +204,27 @@ def _read_static_text(rel_path: str) -> str:
         return f.read()
 
 
+def _render_index_html() -> str:
+    return inject_index_cache_busters(_read_static_text("index.html"), static_dir)
+
+
+def _render_app_js() -> str:
+    return inject_app_js_cache_busters(_read_static_text("js/app.js"), static_dir)
+
+
 @app.get("/", include_in_schema=False)
 @app.get("/index.html", include_in_schema=False)
 async def serve_index_with_cache_busters():
-    html = _read_static_text("index.html")
-    return HTMLResponse(content=inject_index_cache_busters(html, static_dir))
+    html = await asyncio.to_thread(_render_index_html)
+    return HTMLResponse(content=html)
 
 
 @app.get("/js/app.js", include_in_schema=False)
 @app.get("/static/js/app.js", include_in_schema=False)
 async def serve_app_js_with_cache_busters():
-    js_src = _read_static_text("js/app.js")
+    js_src = await asyncio.to_thread(_render_app_js)
     return Response(
-        content=inject_app_js_cache_busters(js_src, static_dir),
+        content=js_src,
         media_type="application/javascript",
     )
 
