@@ -8,7 +8,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![UI: Sakuga VFX](https://img.shields.io/badge/UI-Sakuga%20VFX%20(Offline)-ff477e.svg)](static/vendor/sakuga-vfx/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 285 Passed](https://img.shields.io/badge/tests-285%20passed-success.svg?logo=python&logoColor=white)](tests/)
+[![Tests: 287 Passed](https://img.shields.io/badge/tests-287%20passed-success.svg?logo=python&logoColor=white)](tests/)
 [![Security: Local Vault](https://img.shields.io/badge/Security-Local%20Vault-green.svg)](SECURITY.md)
 
 **Cabeça de Droid** is a local app for analyzing builds, tracking gacha, and organizing daily farming across **Honkai: Star Rail**, **Genshin Impact**, and **Zenless Zone Zero**. It combines automatic guide and tier list collection, gear Roll Value (RV) calculation, a gacha simulator (10,000 runs), an offline **Sakuga VFX** web UI, and a Windows standalone executable with GitHub Releases auto-updating.

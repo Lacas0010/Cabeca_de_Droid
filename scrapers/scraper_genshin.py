@@ -109,6 +109,23 @@ class PrydwenGenshinScraper:
         characters = []
         seen_slugs = set()
 
+        weapon_icon_map = {
+            "sword": "Sword",
+            "bow": "Bow",
+            "claymore": "Claymore",
+            "polearm": "Polearm",
+            "catalyst": "Catalyst",
+        }
+        elem_icon_map = {
+            "pyro": "Pyro",
+            "hydro": "Hydro",
+            "electro": "Electro",
+            "cryo": "Cryo",
+            "anemo": "Anemo",
+            "geo": "Geo",
+            "dendro": "Dendro",
+        }
+
         for link in soup.find_all("a"):
             href = link.get("href", "").strip()
             if "/genshin-impact/characters/" in href:
@@ -122,8 +139,38 @@ class PrydwenGenshinScraper:
                     seen_slugs.add(rel)
                     name = extract_prydwen_card_name(link, rel)
 
+                    weapon = None
+                    element = None
+                    rarity = None
+                    classes = link.get("class") or []
+                    for cls in classes:
+                        c_low = str(cls).lower()
+                        if c_low == "rarity-5":
+                            rarity = 5
+                        elif c_low == "rarity-4":
+                            rarity = 4
+                        elif c_low.startswith("element-"):
+                            el_key = c_low.split("element-", 1)[1]
+                            element = elem_icon_map.get(el_key, element)
+
+                    for img in link.find_all("img"):
+                        src = str(img.get("src") or "").lower()
+                        m_w = re.search(r"weapon_([a-z]+)", src)
+                        if m_w and m_w.group(1) in weapon_icon_map:
+                            weapon = weapon_icon_map[m_w.group(1)]
+                        m_e = re.search(r"element_([a-z]+)", src)
+                        if m_e and m_e.group(1) in elem_icon_map:
+                            element = elem_icon_map[m_e.group(1)]
+
                     full_url = self.domain + href if href.startswith("/") else href
-                    characters.append({"name": name, "url": full_url})
+                    entry = {"name": name, "url": full_url}
+                    if weapon:
+                        entry["weapon"] = weapon
+                    if element:
+                        entry["element"] = element
+                    if rarity:
+                        entry["rarity"] = rarity
+                    characters.append(entry)
 
         return sorted(characters, key=lambda x: x["name"])
 

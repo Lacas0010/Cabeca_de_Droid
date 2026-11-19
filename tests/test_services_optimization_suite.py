@@ -503,6 +503,88 @@ class TestServicesOptimizationSuite(unittest.TestCase):
         self.assertEqual(data["stats_main"][0]["value"], "Energy Recharge / DEF%")
         self.assertEqual(data["stats_sub"], "ER = DEF%")
 
+    def test_get_meta_data_auto_repairs_stale_corrupted_json_and_preserves_flex_any(self):
+        """Valida auto-reparo de meta_data desatualizado/corrompido, preservação de 'any' flex e 'er' inferido."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            orig_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                os.makedirs("genshin/guias", exist_ok=True)
+                with open("genshin/guias/xilonen.md", "w", encoding="utf-8") as f:
+                    f.write(
+                        "# Guia de Build - Xilonen\n"
+                        "### Atributos Principais (Main Stats)\n"
+                        "- **Ampulheta (Sands):** Recarga de Energia / DEF% (Anything)\n"
+                        "- **Cálice (Goblet):** DEF% (Anything)\n"
+                        "- **Tiara (Circlet):** Bônus de Cura / DEF% / Taxa Crítica (Anything)\n"
+                        "### Subatributos Prioritários (Sub-stats)\n"
+                        "ER = DEF%\n"
+                    )
+                with open("genshin/guias/mona.md", "w", encoding="utf-8") as f:
+                    f.write(
+                        "# Guia de Build - Mona\n"
+                        "### Atributos Principais (Main Stats)\n"
+                        "- **Ampulheta (Sands):** Recarga de Energia\n"
+                        "- **Cálice (Goblet):** Anything\n"
+                        "- **Tiara (Circlet):** Taxa Crítica / Anything\n"
+                        "### Subatributos Prioritários (Sub-stats)\n"
+                        "ER\n"
+                    )
+                with open("genshin/guias/kamisato_ayaka.md", "w", encoding="utf-8") as f:
+                    f.write(
+                        "# Guia de Build - Kamisato Ayaka\n"
+                        "### Atributos Principais (Main Stats)\n"
+                        "- **Ampulheta (Sands):** ATK%\n"
+                        "- **Cálice (Goblet):** Bônus de Dano Cryo / ATK%\n"
+                        "- **Tiara (Circlet):** Dano Crítico / Taxa Crítica\n"
+                    )
+
+                # Simula meta_data_genshin.json corrompido (Xilonen com dados da Chasca / crit_dmg no goblet)
+                corrupted = {
+                    "10000103": {
+                        "name": "Xilonen",
+                        "main_stats": {"sands": ["atk_pct"], "goblet": ["atk_pct", "crit_dmg"], "circlet": ["crit_dmg"]},
+                        "substats_priority": ["crit_rate", "crit_dmg"],
+                        "general_benchmarks": {},
+                    }
+                }
+                with open("genshin/meta_data_genshin.json", "w", encoding="utf-8") as mf:
+                    json.dump(corrupted, mf)
+
+                build_calculator.META_DATA_CACHE.clear()
+                repaired = build_calculator.get_meta_data("genshin")
+
+                self.assertEqual(repaired["10000103"]["main_stats"]["goblet"], ["def_pct"])
+                self.assertEqual(repaired["10000103"]["substats_priority"], ["er", "def_pct"])
+                self.assertEqual(repaired["10000041"]["main_stats"]["circlet"], ["crit_rate", "any"])
+                self.assertEqual(repaired["10000002"]["substats_priority"], ["crit_rate", "crit_dmg", "atk_pct", "er"])
+            finally:
+                os.chdir(orig_cwd)
+                build_calculator.META_DATA_CACHE.clear()
+
+    def test_prydwen_genshin_get_character_list_extracts_weapon_element_rarity(self):
+        """Valida extração dinâmica de weapon, element e rarity nos cards do Prydwen Genshin (ex.: Odette -> Sword)."""
+        html = """
+        <html><body>
+          <a class="pw-card avatar-card rarity-5 element-cryo" href="/genshin-impact/characters/odette">
+            <img alt="Odette" src="https://cdn.prydwen.gg/images/genshin-impact/characters/odette_card.webp" />
+            <img alt="" src="https://cdn.prydwen.gg/images/genshin-impact/icons/element_cryo.webp" />
+            <img alt="" src="https://cdn.prydwen.gg/images/genshin-impact/icons/weapon_sword.webp" />
+            <span>Odette</span>
+          </a>
+        </body></html>
+        """
+        mock_resp = MagicMock()
+        mock_resp.text = html
+        mock_resp.raise_for_status = MagicMock()
+        with patch("scrapers.scraper_genshin.requests.get", return_value=mock_resp):
+            chars = PrydwenGenshinScraper().get_character_list()
+        self.assertEqual(len(chars), 1)
+        self.assertEqual(chars[0]["name"], "Odette")
+        self.assertEqual(chars[0]["weapon"], "Sword")
+        self.assertEqual(chars[0]["element"], "Cryo")
+        self.assertEqual(chars[0]["rarity"], 5)
+
 
 if __name__ == "__main__":
     unittest.main()

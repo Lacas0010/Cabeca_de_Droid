@@ -21,8 +21,18 @@ async def get_static_data_status():
 
 
 def _sync_static_data_and_banners_sync(target_game: Optional[str]):
+    import os
+    from build_calculator import generate_meta_json_from_markdown
+
     results = static_data_manager.sync_upstream_data(target_game)
     database.save_static_data_manifests(results)
+    games_to_rebuild = [target_game.lower().strip()] if target_game else ["hsr", "genshin", "zzz"]
+    for g in games_to_rebuild:
+        if os.path.exists(f"{g}/guias"):
+            try:
+                generate_meta_json_from_markdown(g)
+            except Exception as meta_err:
+                print(f"[WARN] Erro ao regenerar meta_data_{g}.json após sync estático: {meta_err}")
     invalidate_roster_cache(target_game)
     try:
         from scrapers.scraper_prydwen import PrydwenScraper

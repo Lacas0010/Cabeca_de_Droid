@@ -54,7 +54,7 @@
         "banner_type": "weapon"
       }
     ],
-    "last_updated": "2026-11-19T14:15:54.296272"
+    "last_updated": "2026-11-19T16:02:53.130813"
   },
   "hsr": {
     "game_id": "hsr",
@@ -261,7 +261,7 @@
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1778524336072"
       }
     ],
-    "last_updated": "2026-11-19T14:15:31.432549"
+    "last_updated": "2026-11-19T16:02:28.621033"
   },
   "zzz": {
     "game_id": "zzz",
@@ -300,6 +300,6 @@
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/chief-sidekick_image.webp?v=1781636481144"
       }
     ],
-    "last_updated": "2026-11-19T14:14:52.662388"
+    "last_updated": "2026-11-19T16:02:10.104093"
   }
 }

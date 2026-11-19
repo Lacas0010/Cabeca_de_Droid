@@ -1096,26 +1096,86 @@ class StaticDataManager:
                 char_entry = self._enrich_character_profile("genshin", char_entry)
                 current_chars[safe_id] = char_entry
 
+        # Complementa personagens recentes presentes no catálogo Prydwen Genshin (ex.: Odette, Alyosha, Nicole, Prune)
+        try:
+            from scrapers.scraper_genshin import PrydwenGenshinScraper
+
+            prydwen_chars = PrydwenGenshinScraper().get_character_list()
+            if prydwen_chars:
+                for pc in prydwen_chars:
+                    p_name = str(pc.get("name") or "").strip()
+                    if not p_name:
+                        continue
+                    safe_id = p_name.lower().replace(" ", "_").replace("•", "").replace("'", "")
+                    p_weap = pc.get("weapon")
+                    p_elem = pc.get("element")
+                    p_rar = pc.get("rarity")
+                    if safe_id not in current_chars:
+                        char_entry = {
+                            "id": safe_id,
+                            "name": p_name,
+                            "rarity": p_rar if p_rar in (4, 5) else 5,
+                            "element": p_elem or "Anemo",
+                            "weapon": p_weap or "Sword",
+                            "talent_book": "Livro de Talento",
+                            "talent_key": "",
+                            "domain_days": [0, 3, 6],
+                            "boss_mat": "Material de Chefe",
+                            "boss_icon": "https://enka.network/ui/UI_ItemIcon_113001.png",
+                            "local_specialty": "Especialidade Local",
+                            "specialty_icon": "https://enka.network/ui/UI_ItemIcon_100021.png",
+                            "weekly_boss_mat": "Material de Chefe Semanal",
+                            "weekly_icon": "https://enka.network/ui/UI_ItemIcon_113021.png",
+                            "enemy_key": "slime",
+                            "url": pc.get("url", ""),
+                        }
+                        current_chars[safe_id] = self._enrich_character_profile("genshin", char_entry)
+                    else:
+                        existing_c = current_chars[safe_id]
+                        if p_weap and not existing_c.get("weapon"):
+                            existing_c["weapon"] = p_weap
+                        if p_elem and not existing_c.get("element"):
+                            existing_c["element"] = p_elem
+                        if p_rar in (4, 5) and not existing_c.get("rarity"):
+                            existing_c["rarity"] = p_rar
+        except Exception:
+            pass
+
         # Reconcilia IDs oficiais via genshin.py CHARACTER_NAMES e roster local (corrige IDs sintéticos/novos personagens)
         try:
-            from genshin.models.genshin.constants import CHARACTER_NAMES
-
-            en_names = CHARACTER_NAMES.get("en-us", {})
-            pt_names = CHARACTER_NAMES.get("pt-pt", {})
             name_to_official_id = {}
-            for cid_num, db_ch in en_names.items():
-                cid_s = str(cid_num).strip()
-                if not cid_s.isdigit():
-                    continue
-                n_en = str(getattr(db_ch, "name", "") or "").strip()
-                if n_en:
-                    name_to_official_id[n_en.lower()] = cid_s
-                    name_to_official_id[re.sub(r"[^a-z0-9]", "", n_en.lower())] = cid_s
-                db_pt = pt_names.get(cid_num)
-                if db_pt and getattr(db_pt, "name", None):
-                    n_pt = str(db_pt.name).strip()
-                    name_to_official_id[n_pt.lower()] = cid_s
-                    name_to_official_id[re.sub(r"[^a-z0-9]", "", n_pt.lower())] = cid_s
+            try:
+                from genshin.models.genshin.constants import CHARACTER_NAMES
+
+                en_names = CHARACTER_NAMES.get("en-us", {})
+                pt_names = CHARACTER_NAMES.get("pt-pt", {})
+                for cid_num, db_ch in en_names.items():
+                    cid_s = str(cid_num).strip()
+                    if not cid_s.isdigit():
+                        continue
+                    n_en = str(getattr(db_ch, "name", "") or "").strip()
+                    if n_en:
+                        name_to_official_id[n_en.lower()] = cid_s
+                        name_to_official_id[re.sub(r"[^a-z0-9]", "", n_en.lower())] = cid_s
+                    db_pt = pt_names.get(cid_num)
+                    if db_pt and getattr(db_pt, "name", None):
+                        n_pt = str(db_pt.name).strip()
+                        name_to_official_id[n_pt.lower()] = cid_s
+                        name_to_official_id[re.sub(r"[^a-z0-9]", "", n_pt.lower())] = cid_s
+            except Exception:
+                pass
+
+            try:
+                import database
+
+                for rc in database.get_roster_data("genshin") or []:
+                    r_id = str(rc.get("id") or rc.get("character_id") or "").strip()
+                    r_name = str(rc.get("name") or "").strip()
+                    if r_id.isdigit() and r_name:
+                        name_to_official_id.setdefault(r_name.lower(), r_id)
+                        name_to_official_id.setdefault(re.sub(r"[^a-z0-9]", "", r_name.lower()), r_id)
+            except Exception:
+                pass
 
             for c_key, c_val in current_chars.items():
                 if not isinstance(c_val, dict):

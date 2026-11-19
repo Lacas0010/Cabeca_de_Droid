@@ -1032,7 +1032,7 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                     )
                     if w_name:
                         w_lower = str(w_name).lower()
-                        if any(k in w_lower for k in ["arco", "bow", "cordas", "asa gelada"]):
+                        if any(k in w_lower for k in ["arco", "bow", "cordas"]):
                             char["weapon_type"] = "Bow"
                         elif any(
                             k in w_lower

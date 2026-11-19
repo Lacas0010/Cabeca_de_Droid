@@ -915,12 +915,28 @@ def get_meta_data(game_id: str) -> dict:
             with open(path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            # Auto-repara se o arquivo JSON contiver artefatos de markdown ('**') ou entradas órfãs de benchmark
-            needs_regen = any(
+            # Auto-repara se o arquivo JSON estiver desatualizado em relação ao hoyolab_mappings.json
+            # ou contiver artefatos de markdown, stubs vazios ou entradas corrompidas (ex.: crit_dmg em goblet)
+            mappings_file = _resolve_static_file("hoyolab_mappings.json")
+            stale_vs_mappings = False
+            try:
+                if os.path.exists(mappings_file) and os.path.getmtime(mappings_file) > os.path.getmtime(path):
+                    stale_vs_mappings = True
+            except OSError:
+                pass
+
+            needs_regen = stale_vs_mappings or any(
                 isinstance(v, dict)
                 and (
                     any("**" in str(s) for ms in v.get("main_stats", {}).values() for s in ms)
-                    or (not v.get("main_stats") and bool(v.get("substats_priority")))
+                    or not v.get("main_stats")
+                    or (
+                        game_id == "genshin"
+                        and (
+                            "crit_dmg" in (v.get("main_stats", {}).get("goblet") or [])
+                            or (bool(v.get("main_stats")) and not v.get("substats_priority"))
+                        )
+                    )
                 )
                 for v in data.values()
             )
@@ -2191,8 +2207,8 @@ def generate_meta_json_from_markdown(game_id: str):
                 continue
             if norm not in stats:
                 stats.append(norm)
-        if not stats and has_flex:
-            return ["any"]
+        if has_flex:
+            stats.append("any")
         return stats
 
     def _infer_genshin_substats(main_stats: Dict[str, List[str]]) -> List[str]:
@@ -2217,6 +2233,9 @@ def generate_meta_json_from_markdown(game_id: str):
             for st in slot_list:
                 if st in ("atk_pct", "hp_pct", "def_pct", "em", "er"):
                     _add(st)
+
+        # Recarga de Energia é substatus relevante na maioria dos personagens sem guia curado do Prydwen
+        _add("er")
 
         # Para suportes que usam Tiara de Taxa Crítica como opção secundária (ex.: Favonius)
         if not is_crit_build and ("crit_rate" in circlet or "crit_dmg" in circlet):

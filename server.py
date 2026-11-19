@@ -138,8 +138,17 @@ def startup_static_data_sync_scheduler():
     def static_sync_loop():
         time.sleep(5)
         try:
+            from build_calculator import generate_meta_json_from_markdown
+
             results = static_data_manager.sync_upstream_data()
             database.save_static_data_manifests(results)
+            for g in ("hsr", "genshin", "zzz"):
+                if os.path.exists(f"{g}/guias"):
+                    try:
+                        generate_meta_json_from_markdown(g)
+                    except Exception:
+                        pass
+            invalidate_roster_cache()
             print("[STATIC-DATA] Dados locais carregados.")
         except Exception as s_err:
             print(f"[STATIC-DATA] Erro ao inicializar: {s_err}")
@@ -147,8 +156,17 @@ def startup_static_data_sync_scheduler():
         while True:
             time.sleep(86400)
             try:
+                from build_calculator import generate_meta_json_from_markdown
+
                 results = static_data_manager.sync_upstream_data()
                 database.save_static_data_manifests(results)
+                for g in ("hsr", "genshin", "zzz"):
+                    if os.path.exists(f"{g}/guias"):
+                        try:
+                            generate_meta_json_from_markdown(g)
+                        except Exception:
+                            pass
+                invalidate_roster_cache()
             except Exception as loop_err:
                 print(f"[STATIC-DATA] Erro no loop diário de sincronização estática: {loop_err}")
 

@@ -6,6 +6,15 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.7.4] / Release Standalone [v1.3.4] - 2026-11-19
+
+### 🐛 Corrigido
+- **Auto-reparo de `meta_data_{game}.json` no `.exe` e sync estático (`build_calculator.py`, `routers/static_data.py`, `server.py`):** `get_meta_data()` agora detecta automaticamente quando `meta_data_{game}.json` está mais antigo que `hoyolab_mappings.json` ou contém entradas corrompidas (`crit_dmg` em Cálice, stubs vazios ou Genshin sem `substats_priority`) e regenera o cache na hora; o sync estático (no startup e em `/api/static-data/sync`) também regenera `meta_data_{game}.json` e invalida o cache do roster.
+- **Avaliação de slots flex e substatus inferidos (`build_calculator.py`):** `_clean_main_slot_stats()` preserva `"any"` quando `Anything` é opção explícita (`/`), mantendo pontuação máxima de Main Stat em slots flex (ex.: *Mona*, *Bennett*, *Citlali*, *Faruzan*), e `_infer_genshin_substats()` passa a incluir Recarga de Energia (`er`) nos guias baseados apenas em estatísticas de uso do Enka (ex.: *Ayaka*, *Kazuha*, *Kokomi*).
+- **Tipo de arma dinâmico para personagens recentes do Genshin (`scrapers/scraper_genshin.py`, `static_data_manager.py`, `services/roster_service.py`):** `PrydwenGenshinScraper.get_character_list()` extrai `weapon`, `element` e `rarity` dos cards do Prydwen, `_sync_genshin()` mescla esse catálogo no `genshin_manifest.json` (147 personagens) e foi removida a heurística incorreta de `"asa gelada"` como Arco, corrigindo *Odette* para **Espada (`Sword`)** (`287 testes aprovados`).
+
+---
+
 ## [5.7.3] / Release Standalone [v1.3.3] - 2026-11-19
 
 ### 🐛 Corrigido
