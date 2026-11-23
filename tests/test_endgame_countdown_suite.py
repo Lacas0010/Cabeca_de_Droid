@@ -181,26 +181,130 @@ class TestEndgameCountdownSuite(unittest.TestCase):
             self.assertTrue(item["reset_at"].endswith("Z"))
 
     def test_frontend_endgame_countdown_wiring_and_responsive_css(self):
-        """Valida helpers de countdown, pausa em document.hidden e responsividade mobile no CSS."""
+        """Valida helpers de countdown, ícones oficiais, pausa em document.hidden e responsividade mobile no CSS."""
         root = Path(__file__).resolve().parent.parent
         endgame_js = (root / "static" / "js" / "modules" / "endgame.js").read_text(encoding="utf-8")
         endgame_css = (root / "static" / "css" / "endgame_strategy.css").read_text(encoding="utf-8")
 
         for token in [
             "function formatEndgameCountdown",
+            "function renderEndgameModeIcon",
             "function renderEndgameResetStrip",
             "function renderModeResetChip",
             "function tickEndgameCountdowns",
             "if (document.hidden) return;",
             'document.addEventListener("visibilitychange"',
             "data-reset-at=",
+            "endgame-mode-icon-img",
         ]:
             self.assertIn(token, endgame_js)
 
         self.assertIn(".endgame-reset-strip", endgame_css)
         self.assertIn(".endgame-reset-card", endgame_css)
         self.assertIn(".endgame-metric-chip.reset-countdown", endgame_css)
+        self.assertIn(".endgame-mode-icon-wrap", endgame_css)
+        self.assertIn(".endgame-mode-icon-img", endgame_css)
         self.assertIn("@media (max-width: 768px)", endgame_css)
+
+    def test_endgame_icons_scraper_discovers_hsr_genshin_zzz_from_apis(self):
+        """Valida descoberta dinâmica de todos os 7 ícones oficiais via APIs mockadas (StarRailRes, HoYoWiki, HoYoLAB)."""
+        from scrapers import endgame_icons_scraper as scraper
+
+        class _FakeResp:
+            def __init__(self, payload, status_code=200):
+                self._payload = payload
+                self.status_code = status_code
+
+            def json(self):
+                return self._payload
+
+        class _FakeSession:
+            def get(self, url, params=None, headers=None, timeout=10):
+                if "StarRailRes" in url:
+                    return _FakeResp(
+                        [
+                            {"name": "AbyssIcon01.png", "download_url": "https://cdn.example/hsr_moc.png"},
+                            {"name": "ChallengeStory.png", "download_url": "https://cdn.example/hsr_pf.png"},
+                            {"name": "ChallengeBoss.png", "download_url": "https://cdn.example/hsr_as.png"},
+                        ]
+                    )
+                if "hoyowiki" in url:
+                    kw = (params or {}).get("keyword", "")
+                    slug = kw.lower().replace(" ", "_")
+                    return _FakeResp({"data": {"list": [{"name": kw, "icon_url": f"https://cdn.example/{slug}.png"}]}})
+                return _FakeResp({}, status_code=404)
+
+        fake_zzz_client = MagicMock()
+        fake_zzz_client.request_hoyolab = AsyncMock(
+            return_value={
+                "game_data_show": {
+                    "all_medal_list": [
+                        {
+                            "medal_type": "MedalTypeChangeHadal",
+                            "medal_name": "Shiyu Defense: Adaption",
+                            "medal_icon": "https://cdn.example/zzz_shiyu.png",
+                        },
+                        {
+                            "medal_type": "MedalTypeInit",
+                            "medal_name": "Deadly Assault: Line Breaker",
+                            "medal_icon": "https://cdn.example/zzz_da.png",
+                        },
+                    ]
+                }
+            }
+        )
+
+        zzz_icons = asyncio.run(scraper.fetch_zzz_endgame_icons_async(client=fake_zzz_client, uid="1000135767"))
+        self.assertEqual(zzz_icons["shiyu_defense"], "https://cdn.example/zzz_shiyu.png")
+        self.assertEqual(zzz_icons["deadly_assault"], "https://cdn.example/zzz_da.png")
+
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch.object(scraper, "_endgame_icons_json_path", return_value=os.path.join(tmpdir, "endgame_icons.json")),
+            patch.object(scraper, "load_saved_endgame_icons", return_value={}),
+            patch.object(scraper, "fetch_zzz_endgame_icons", return_value=zzz_icons),
+        ):
+            merged = scraper.sync_endgame_icons(session=_FakeSession())
+            self.assertEqual(merged["hsr"]["moc"], "https://cdn.example/hsr_moc.png")
+            self.assertEqual(merged["hsr"]["pure_fiction"], "https://cdn.example/hsr_pf.png")
+            self.assertEqual(merged["hsr"]["apocalyptic_shadow"], "https://cdn.example/hsr_as.png")
+            self.assertEqual(merged["genshin"]["spiral_abyss"], "https://cdn.example/spiral_abyss.png")
+            self.assertEqual(merged["genshin"]["imaginarium_theater"], "https://cdn.example/imaginarium_theater.png")
+            self.assertEqual(merged["zzz"]["shiyu_defense"], "https://cdn.example/zzz_shiyu.png")
+            self.assertEqual(merged["zzz"]["deadly_assault"], "https://cdn.example/zzz_da.png")
+            self.assertTrue(os.path.isfile(os.path.join(tmpdir, "endgame_icons.json")))
+
+    def test_assets_endgame_route_serves_cached_and_on_demand_png(self):
+        """Valida rota GET /assets/endgame/{filename} com download sob demanda mockado e cache local."""
+        png_bytes = b"\x89PNG\r\n\x1a\n" + (b"\x00" * 32)
+        fake_resp = MagicMock(status_code=200, content=png_bytes)
+
+        with (
+            tempfile.TemporaryDirectory() as tmpdir,
+            patch("services.media_service.get_data_path", side_effect=lambda rel: os.path.join(tmpdir, rel)),
+            patch("services.media_service.get_resource_path", side_effect=lambda rel: os.path.join(tmpdir, "res", rel)),
+            patch(
+                "services.media_service.load_endgame_icons_map",
+                return_value={"hsr": {"moc": "https://cdn.example/hsr_moc.png"}},
+            ),
+            patch("curl_cffi.requests.get", return_value=fake_resp) as mock_get,
+        ):
+            r1 = self.client.get("/assets/endgame/hsr_moc.png")
+            self.assertEqual(r1.status_code, 200)
+            self.assertEqual(r1.headers.get("content-type"), "image/png")
+            self.assertEqual(r1.content, png_bytes)
+            self.assertEqual(mock_get.call_count, 1)
+
+            # Segunda chamada deve servir diretamente do cache em disco sem nova requisição HTTP
+            r2 = self.client.get("/assets/endgame/hsr_moc.png")
+            self.assertEqual(r2.status_code, 200)
+            self.assertEqual(mock_get.call_count, 1)
+
+            # Arquivo inexistente ou inválido retorna 404/400 limpo
+            r_miss = self.client.get("/assets/endgame/hsr_unknown.png")
+            self.assertEqual(r_miss.status_code, 404)
+            r_bad = self.client.get("/assets/endgame/invalid.txt")
+            self.assertEqual(r_bad.status_code, 400)
 
 
 if __name__ == "__main__":

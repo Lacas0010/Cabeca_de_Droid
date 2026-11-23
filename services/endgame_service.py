@@ -11,7 +11,7 @@ import database
 import endgame_extractor
 from core.config import get_cookies, get_data_path
 from services.roster_service import get_roster
-from services.media_service import get_raw_url
+from services.media_service import get_raw_url, get_endgame_icon_url
 from services.team_matcher_service import ENDGAME_MODE_EN_MAP
 
 _ENDGAME_CACHE: Dict[Tuple[str, str, str], Tuple[float, Dict[str, Any]]] = {}
@@ -269,13 +269,14 @@ async def _resolve_reset_schedules(
                 "id": mid,
                 "name": c_meta["name_en"] if lang == "en" else c_meta["name_pt"],
                 "badge": c_meta["badge"],
+                "icon": get_endgame_icon_url(game_id, mid) or None,
                 "begin_at": begin_at,
                 "reset_at": reset_at,
                 "source": source,
             }
         )
 
-    # 4. Aplica reset_at/begin_at nos modos retornados para exibição nos cards individuais
+    # 4. Aplica reset_at/begin_at e ícone oficial nos modos retornados para exibição nos cards individuais
     sched_lookup = {item["id"]: item for item in reset_schedules}
     for m in modes:
         mid = m.get("id")
@@ -284,6 +285,8 @@ async def _resolve_reset_schedules(
             if sched_lookup[mid].get("begin_at") and not m.get("begin_at"):
                 m["begin_at"] = sched_lookup[mid]["begin_at"]
             m["reset_source"] = sched_lookup[mid]["source"]
+            if sched_lookup[mid].get("icon"):
+                m["icon"] = sched_lookup[mid]["icon"]
 
     return reset_schedules
 

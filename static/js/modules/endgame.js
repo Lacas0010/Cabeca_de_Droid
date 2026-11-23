@@ -113,6 +113,20 @@ function getEndgameModeIcon(modeId) {
     return "fa-award";
 }
 
+function renderEndgameModeIcon(modeId, iconUrl, sizeClass = "md", altLabel = "") {
+    const fallbackFa = getEndgameModeIcon(modeId);
+    const safeAlt = String(altLabel || modeId || "").replace(/"/g, "&quot;");
+    if (iconUrl && typeof iconUrl === "string") {
+        return `
+            <span class="endgame-mode-icon-wrap icon-${sizeClass}" data-mode-id="${modeId || ""}">
+                <img class="endgame-mode-icon-img" src="${iconUrl}" alt="${safeAlt}" loading="lazy" decoding="async" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" />
+                <i class="fa-solid ${fallbackFa} endgame-mode-icon-fallback" style="display:none;"></i>
+            </span>
+        `;
+    }
+    return `<span class="endgame-mode-icon-wrap icon-${sizeClass} is-fallback" data-mode-id="${modeId || ""}"><i class="fa-solid ${fallbackFa} endgame-mode-icon-fallback"></i></span>`;
+}
+
 function formatEndgameCountdown(resetAtIso, isEn) {
     if (!resetAtIso) {
         return { text: isEn ? "Unavailable" : "Indisponível", state: "unknown" };
@@ -180,7 +194,8 @@ function renderEndgameResetStrip(resetSchedules, gameId) {
     if (!Array.isArray(resetSchedules) || resetSchedules.length === 0) return "";
     const isEn = Boolean(window.isEn);
     const cardsHtml = resetSchedules.map((sched) => {
-        const icon = getEndgameModeIcon(sched.id);
+        const displayName = formatEndgameModeName(sched.name);
+        const iconHtml = renderEndgameModeIcon(sched.id, sched.icon, "strip", displayName);
         const cd = formatEndgameCountdown(sched.reset_at, isEn);
         const tooltip = formatResetDateTooltip(sched.reset_at, isEn);
         const estTag = sched.source === "estimated"
@@ -190,7 +205,8 @@ function renderEndgameResetStrip(resetSchedules, gameId) {
             <div class="endgame-reset-card countdown-${cd.state}" data-mode-id="${sched.id}" title="${tooltip}">
                 <div class="endgame-reset-card-head">
                     <span class="endgame-reset-mode-name">
-                        <i class="fa-solid ${icon}"></i> ${formatEndgameModeName(sched.name)}
+                        ${iconHtml}
+                        <span class="endgame-reset-mode-label">${displayName}</span>
                     </span>
                     ${sched.badge ? `<span class="endgame-reset-badge">${sched.badge}</span>` : ""}
                 </div>
@@ -534,7 +550,8 @@ function renderEndgame(gameId, data) {
     `;
 
     data.modes.forEach((mode, idx) => {
-        const icon = getEndgameModeIcon(mode.id);
+        const displayName = formatEndgameModeName(mode.name);
+        const iconHtml = renderEndgameModeIcon(mode.id, mode.icon, "sm", displayName);
         let starPill = "";
         if (mode.stars !== null && mode.stars !== undefined && mode.stars !== "?") {
             starPill = `<span class="tab-star-pill">⭐ ${mode.stars}${mode.max_stars ? `/${mode.max_stars}` : ''}</span>`;
@@ -543,8 +560,8 @@ function renderEndgame(gameId, data) {
         const isActive = (currentView === "single" && idx === currentIdx) ? "active" : "";
         pillsHtml += `
             <sakuga-button variant="secondary" class="endgame-mode-tab-btn sk-xs ${isActive}" data-mode-idx="${idx}" data-game="${gameId}">
-                <i class="fa-solid ${icon}"></i>
-                <span>${formatEndgameModeName(mode.name)}</span>
+                ${iconHtml}
+                <span>${displayName}</span>
                 ${starPill}
             </sakuga-button>
         `;
@@ -558,7 +575,8 @@ function renderEndgame(gameId, data) {
         // VISÃO GERAL: TODOS OS MODOS EM LISTA (UM EMBAIXO DO OUTRO)
         let overviewCardsHtml = `<div class="endgame-overview-matrix">`;
         data.modes.forEach((mode, mIdx) => {
-            const icon = getEndgameModeIcon(mode.id);
+            const displayName = formatEndgameModeName(mode.name);
+            const iconHtml = renderEndgameModeIcon(mode.id, mode.icon, "md", displayName);
             let modeMetrics = "";
             if (mode.stars !== null && mode.stars !== undefined && mode.stars !== "?") {
                 modeMetrics += `<span class="endgame-metric-chip gold-stars"><i class="fa-solid fa-star"></i> ${mode.stars}${mode.max_stars ? `/${mode.max_stars}` : ''}</span>`;
@@ -588,8 +606,8 @@ function renderEndgame(gameId, data) {
                 <div class="endgame-overview-mode-card">
                     <div class="endgame-overview-card-header">
                         <div class="endgame-overview-title">
-                            <i class="fa-solid ${icon}"></i>
-                            <span>${formatEndgameModeName(mode.name)}</span>
+                            ${iconHtml}
+                            <span>${displayName}</span>
                             ${mode.badge ? `<span style="font-size: 10px; padding: 2px 6px; border-radius: 5px; background: rgba(255,255,255,0.08); font-weight: 700;">${mode.badge}</span>` : ""}
                             ${mode.stage ? `<span class="endgame-mode-stage-desc">${formatEndgameStage(mode.stage)}</span>` : ""}
                         </div>
@@ -640,14 +658,15 @@ function renderEndgame(gameId, data) {
             teamsHtml += `</div>`;
         }
 
-        const activeIcon = getEndgameModeIcon(activeMode.id);
+        const activeDisplayName = formatEndgameModeName(activeMode.name);
+        const activeIconHtml = renderEndgameModeIcon(activeMode.id, activeMode.icon, "lg", activeDisplayName);
         contentHtml = `
             <div class="endgame-active-mode-pane">
                 <div class="endgame-mode-meta-header">
                     <div class="endgame-mode-title-area">
                         <div class="endgame-mode-main-title">
-                            <i class="fa-solid ${activeIcon}"></i>
-                            <span>${formatEndgameModeName(activeMode.name)}</span>
+                            ${activeIconHtml}
+                            <span>${activeDisplayName}</span>
                             ${activeMode.badge ? `<span style="font-size: 10px; padding: 2px 6px; border-radius: 5px; background: rgba(255,255,255,0.08); font-weight: 700;">${activeMode.badge}</span>` : ""}
                         </div>
                         ${activeMode.stage ? `<span class="endgame-mode-stage-desc">${formatEndgameStage(activeMode.stage)}</span>` : ""}

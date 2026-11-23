@@ -1,0 +1,15 @@
+{
+  "hsr": {
+    "moc": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/sign/AbyssIcon01.png",
+    "pure_fiction": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/sign/ChallengeStory.png",
+    "apocalyptic_shadow": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/sign/ChallengeBoss.png"
+  },
+  "genshin": {
+    "spiral_abyss": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/07/04/41133912/1cfa0e3105a031053ab0b83c47888981_9054931798989265179.png",
+    "imaginarium_theater": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/07/04/41133912/ddcd00db3613c8c39ed4d902cc43cc2e_7623522857361033099.png"
+  },
+  "zzz": {
+    "shiyu_defense": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u2a7le/4225a63224c94d02d3fcc9d5ffdb6dde.png",
+    "deadly_assault": "https://act-webstatic.hoyoverse.com/darkmatter/nap/prod_gf_cn/item_icon_u2a7le/a701294b4f184dddc5c68752278bad15.png"
+  }
+}

@@ -861,6 +861,14 @@ class StaticDataManager:
         except Exception:
             pass
 
+        try:
+            from scrapers.endgame_icons_scraper import sync_endgame_icons
+
+            endgame_icons = sync_endgame_icons(target_games)
+            sync_results["endgame_icons"] = {g: len(v) for g, v in endgame_icons.items()}
+        except Exception:
+            pass
+
         return sync_results
 
     def _sync_hsr(self) -> Dict[str, Any]:

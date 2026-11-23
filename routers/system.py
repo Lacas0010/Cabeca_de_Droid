@@ -20,7 +20,7 @@ from core.config import get_data_path
 from core.security import is_loopback_request
 from schemas.system import BrowserClientSignal
 from services.browser_lifecycle_service import browser_lifecycle_manager
-from services.media_service import get_element_icon_asset
+from services.media_service import get_element_icon_asset, get_endgame_icon_asset
 
 router = APIRouter(tags=["System & Utilities"])
 
@@ -418,3 +418,19 @@ async def serve_element_icon_with_offline_fallback(filename: str):
         raise HTTPException(status_code=400, detail="Invalid filename")
     headers = {"Cache-Control": "no-store"} if media_type == "image/svg+xml" else {}
     return Response(content=content, media_type=media_type, headers=headers)
+
+
+@router.get("/assets/endgame/{filename}")
+async def serve_endgame_mode_icon(filename: str):
+    """Serve o ícone oficial do modo endgame em cache local (com download sob demanda)."""
+    try:
+        content, media_type = await asyncio.to_thread(get_endgame_icon_asset, filename)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Endgame icon not available")
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Cache-Control": "public, max-age=86400"},
+    )

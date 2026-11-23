@@ -466,8 +466,87 @@
     color: var(--text-primary, #f8fafc);
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    min-width: 0;
+}
+
+.endgame-reset-mode-label {
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Ícones Oficiais dos Modos Endgame (StarRailRes, HoYoWiki, HoYoLAB) */
+.endgame-mode-icon-wrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 7px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.14));
+    padding: 3px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+    overflow: hidden;
+}
+
+.endgame-mode-icon-wrap.icon-sm {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    padding: 2px;
+}
+
+.endgame-mode-icon-wrap.icon-strip {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.endgame-mode-icon-wrap.icon-md {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.endgame-mode-icon-wrap.icon-lg {
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    padding: 3px;
+}
+
+.endgame-mode-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.55));
+}
+
+.endgame-mode-icon-fallback {
+    font-size: 12px;
+    line-height: 1;
+    align-items: center;
+    justify-content: center;
+}
+
+.hsr-theme .endgame-mode-icon-wrap {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(30, 27, 75, 0.82));
+    border-color: rgba(192, 132, 252, 0.42);
+}
+
+.genshin-theme .endgame-mode-icon-wrap {
+    background: linear-gradient(135deg, rgba(6, 182, 212, 0.22), rgba(15, 23, 42, 0.85));
+    border-color: rgba(56, 189, 248, 0.4);
+}
+
+.zzz-theme .endgame-mode-icon-wrap {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(24, 24, 27, 0.88));
+    border-color: rgba(251, 191, 36, 0.42);
+}
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -1299,6 +1378,17 @@
 
     .endgame-reset-card {
         padding: 8px 10px;
+    }
+
+    .endgame-mode-icon-wrap.icon-strip,
+    .endgame-mode-icon-wrap.icon-md {
+        width: 24px;
+        height: 24px;
+    }
+
+    .endgame-mode-icon-wrap.icon-lg {
+        width: 28px;
+        height: 28px;
     }
 
     .team-matcher-grid {

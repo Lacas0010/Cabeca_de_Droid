@@ -273,3 +273,116 @@ def download_hsr_eidolon_shards(char_names=None) -> None:
                         os.replace(tmp, dest)
                 except Exception:
                     pass
+
+
+def load_endgame_icons_map() -> Dict[str, Dict[str, str]]:
+    """Carrega o manifesto consolidado static_data/endgame_icons.json gerado dinamicamente pelas APIs."""
+    for json_path in (
+        get_data_path(os.path.join("static_data", "endgame_icons.json")),
+        get_resource_path(os.path.join("static_data", "endgame_icons.json")),
+    ):
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+            except Exception as e:
+                print(f"[WARN] Erro ao carregar static_data/endgame_icons.json: {e}")
+    return {}
+
+
+def get_endgame_icon_url(game_id: str, mode_id: str) -> str:
+    """Retorna a URL local servida pelo backend (/assets/endgame/<game>_<mode>.png) se o ícone existir."""
+    g = str(game_id or "").lower().strip()
+    m = str(mode_id or "").lower().strip()
+    if not g or not m:
+        return ""
+    filename = f"{g}_{m}.png"
+    for local_path in (
+        get_data_path(os.path.join("assets", "endgame", filename)),
+        get_resource_path(os.path.join("assets", "endgame", filename)),
+    ):
+        if _is_valid_cached_image_file(local_path):
+            return f"/assets/endgame/{filename}"
+    icons_map = load_endgame_icons_map()
+    if str(icons_map.get(g, {}).get(m) or "").startswith("http"):
+        return f"/assets/endgame/{filename}"
+    return ""
+
+
+def get_endgame_icon_asset(filename: str) -> tuple[bytes, str]:
+    """Retorna ícone oficial de modo endgame em cache local (com download sob demanda via manifesto da API)."""
+    safe_name = os.path.basename(str(filename or "")).strip().lower()
+    if not safe_name or not safe_name.endswith(".png") or "_" not in safe_name:
+        raise ValueError("Invalid endgame icon filename")
+
+    for local_path in (
+        get_data_path(os.path.join("assets", "endgame", safe_name)),
+        get_resource_path(os.path.join("assets", "endgame", safe_name)),
+    ):
+        if os.path.isfile(local_path):
+            with open(local_path, "rb") as f:
+                data = f.read()
+            detected_mime = _detect_valid_image_mime(data)
+            if detected_mime:
+                return data, detected_mime
+
+    stem = safe_name[:-4]
+    game_id, mode_id = stem.split("_", 1)
+    icons_map = load_endgame_icons_map()
+    remote_url = str(icons_map.get(game_id, {}).get(mode_id) or "").strip()
+    if not remote_url.startswith("http"):
+        raise FileNotFoundError(f"Endgame icon not found for {safe_name}")
+
+    from curl_cffi import requests
+
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        )
+    }
+    res = requests.get(remote_url, headers=headers, impersonate="chrome", timeout=10)
+    dest_path = get_data_path(os.path.join("assets", "endgame", safe_name))
+    if res.status_code == 200 and _save_element_png(res.content, dest_path):
+        with open(dest_path, "rb") as f:
+            saved = f.read()
+        return saved, (_detect_valid_image_mime(saved) or "image/png")
+    raise FileNotFoundError(f"Unable to fetch endgame icon {safe_name}: HTTP {res.status_code}")
+
+
+def download_endgame_icons(force_invalid: bool = True) -> None:
+    """Garante o cache local em PNG dos ícones oficiais de endgame listados em static_data/endgame_icons.json."""
+    icons_map = load_endgame_icons_map()
+    if not icons_map:
+        return
+    try:
+        from curl_cffi import requests
+    except ImportError:
+        return
+
+    target_dir = get_data_path(os.path.join("assets", "endgame"))
+    os.makedirs(target_dir, exist_ok=True)
+    session = requests.Session(impersonate="chrome")
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        )
+    }
+    for game, modes in icons_map.items():
+        if not isinstance(modes, dict):
+            continue
+        for mode_id, url in modes.items():
+            if not url or not str(url).startswith("http"):
+                continue
+            path = os.path.join(target_dir, f"{game}_{mode_id}.png")
+            already_ok = _is_valid_cached_image_file(path) if force_invalid else os.path.exists(path)
+            if not already_ok:
+                try:
+                    res = session.get(url, headers=headers, timeout=15)
+                    if res.status_code == 200 and _save_element_png(res.content, path):
+                        print(f"[INFO] Ícone de endgame em cache local: {game}_{mode_id}.png")
+                except Exception as e:
+                    print(f"[WARN] Falha ao baixar ícone de endgame {game}_{mode_id}: {e}")

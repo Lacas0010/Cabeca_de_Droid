@@ -7,10 +7,12 @@ from scrapers.scraper_prydwen import PrydwenScraper
 from scrapers.scraper_zzz import PrydwenZZZScraper
 from scrapers.scraper_genshin import PrydwenGenshinScraper
 from scrapers.scraper_meta import PrydwenMetaScraper
+from scrapers.endgame_icons_scraper import sync_endgame_icons
 
 __all__ = [
     "PrydwenScraper",
     "PrydwenZZZScraper",
     "PrydwenGenshinScraper",
     "PrydwenMetaScraper",
+    "sync_endgame_icons",
 ]

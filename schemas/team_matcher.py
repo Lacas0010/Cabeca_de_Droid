@@ -74,6 +74,7 @@ class EndgameResetScheduleItem(BaseModel):
     id: str = Field(..., description="Identificador do modo (moc, pure_fiction, spiral_abyss, shiyu_defense, etc.)")
     name: str = Field(..., description="Nome localizado do modo")
     badge: str = Field("", description="Sigla curta do modo")
+    icon: Optional[str] = Field(None, description="URL local do ícone oficial do modo endgame")
     begin_at: Optional[str] = Field(None, description="Início da temporada atual em ISO-8601 UTC")
     reset_at: Optional[str] = Field(None, description="Data/hora exata do próximo reset em ISO-8601 UTC")
     source: str = Field("hoyolab", description="Origem do horário ('hoyolab' ou 'estimated')")

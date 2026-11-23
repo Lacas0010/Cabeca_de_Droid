@@ -175,9 +175,10 @@ class TestFrontendOptimizationSuite(unittest.TestCase):
         self.assertIn("overflow-y: auto", modal_content_m.group(1))
         self.assertIn("css/help_security.css?v=2.0", html)
         self.assertIn("css/gacha.css?v=2.0", html)
+        self.assertIn("css/endgame_strategy.css?v=2.1", html)
         self.assertIn("css/team_card.css?v=2.0", html)
         self.assertIn("style.css?v=32.0", html)
-        self.assertIn("js/app.js?v=42.0", html)
+        self.assertIn("js/app.js?v=43.0", html)
 
         gacha_css = _read(CSS_DIR / "gacha.css")
         self.assertEqual(gacha_css.count("@keyframes wishCardPop"), 1)
@@ -196,7 +197,7 @@ class TestFrontendOptimizationSuite(unittest.TestCase):
             "api_client.js?v=29.0",
             "navigation.js?v=26.0",
             "sync_manager.js?v=26.0",
-            "endgame.js?v=27.0",
+            "endgame.js?v=28.0",
             "roster.js?v=32.0",
             "card_exporter.js?v=2.0",
             "build_comparator.js?v=28.0",
