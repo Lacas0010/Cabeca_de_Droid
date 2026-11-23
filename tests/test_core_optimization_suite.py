@@ -244,9 +244,12 @@ class TestCoreOptimizationSuite(unittest.TestCase):
 
     def test_proxy_session_is_thread_local(self) -> None:
         sessions = []
+        barrier = threading.Barrier(2)
 
         def _worker():
-            sessions.append(id(system_router._get_proxy_session()))
+            sess = system_router._get_proxy_session()
+            sessions.append(sess)
+            barrier.wait(timeout=5)
 
         t1 = threading.Thread(target=_worker)
         t2 = threading.Thread(target=_worker)
@@ -255,7 +258,7 @@ class TestCoreOptimizationSuite(unittest.TestCase):
         t1.join()
         t2.join()
         self.assertEqual(len(sessions), 2)
-        self.assertNotEqual(sessions[0], sessions[1])
+        self.assertIsNot(sessions[0], sessions[1])
 
     # 5. Database Optimizations, Schema Version, Batch & Cleanup
     def test_database_does_not_init_on_import_sets_wal_indexes_and_closes_connections(self) -> None:

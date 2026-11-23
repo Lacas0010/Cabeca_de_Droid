@@ -1,7 +1,167 @@
 import asyncio
 import re
+from datetime import datetime, timedelta, timezone
 import genshin
 from typing import Optional, Dict, List, Any, Tuple
+
+
+def get_server_timezone(game_id: str, uid: Any) -> timezone:
+    """Retorna o fuso horário do servidor HoYoverse com base no prefixo do UID."""
+    g = (game_id or "").lower().strip()
+    uid_str = str(uid or "").strip()
+    if g == "zzz":
+        if uid_str.startswith("10"):
+            return timezone(timedelta(hours=-5))  # America
+        if uid_str.startswith("15"):
+            return timezone(timedelta(hours=1))   # Europe
+        return timezone(timedelta(hours=8))       # Asia / TW / HK / MO
+    # Genshin & HSR
+    if uid_str.startswith("6"):
+        return timezone(timedelta(hours=-5))      # America
+    if uid_str.startswith("7"):
+        return timezone(timedelta(hours=1))       # Europe
+    return timezone(timedelta(hours=8))           # Asia / SAR / CN
+
+
+def to_utc_iso(time_obj: Any, game_id: str, uid: Any) -> Optional[str]:
+    """Converte datetime, PartialTime ou timestamp Unix da HoYoLAB para ISO-8601 UTC (...Z)."""
+    if time_obj is None:
+        return None
+    try:
+        if isinstance(time_obj, (int, float)):
+            if time_obj <= 0:
+                return None
+            dt = datetime.fromtimestamp(float(time_obj), tz=timezone.utc)
+            return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        if isinstance(time_obj, str):
+            raw = time_obj.strip()
+            if not raw:
+                return None
+            if raw.isdigit():
+                dt = datetime.fromtimestamp(float(raw), tz=timezone.utc)
+                return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+            dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=get_server_timezone(game_id, uid))
+            return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        if isinstance(time_obj, datetime):
+            dt = time_obj
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=get_server_timezone(game_id, uid))
+            return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        dt_attr = getattr(time_obj, "datetime", None)
+        if isinstance(dt_attr, datetime):
+            dt = dt_attr
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=get_server_timezone(game_id, uid))
+            return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+        year = getattr(time_obj, "year", None)
+        month = getattr(time_obj, "month", None)
+        day = getattr(time_obj, "day", None)
+        if year and month and day:
+            hour = int(getattr(time_obj, "hour", 0) or 0)
+            minute = int(getattr(time_obj, "minute", 0) or 0)
+            second = int(getattr(time_obj, "second", 0) or 0)
+            dt = datetime(int(year), int(month), int(day), hour, minute, second, tzinfo=get_server_timezone(game_id, uid))
+            return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    except Exception:
+        return None
+    return None
+
+
+def _extract_hsr_season_times(payload: Any, uid: Any) -> Tuple[Optional[str], Optional[str]]:
+    """Extrai (begin_at, reset_at) em UTC ISO da temporada ativa de um modo endgame de HSR."""
+    seasons = getattr(payload, "seasons", None) or []
+    s0 = seasons[0] if seasons else None
+    raw_begin = getattr(s0, "begin_time", None) if s0 else None
+    raw_end = getattr(s0, "end_time", None) if s0 else None
+    if raw_begin is None:
+        raw_begin = getattr(payload, "begin_time", None)
+    if raw_end is None:
+        raw_end = getattr(payload, "end_time", None)
+    return to_utc_iso(raw_begin, "hsr", uid), to_utc_iso(raw_end, "hsr", uid)
+
+
+def _extract_theater_schedule_times(it_payload: Any, uid: Any) -> Tuple[Optional[str], Optional[str]]:
+    """Extrai (begin_at, reset_at) da temporada ATUAL do Teatro Imaginário (datas[0].schedule)."""
+    datas = getattr(it_payload, "datas", None) or []
+    if not datas:
+        return None, None
+    sched = getattr(datas[0], "schedule", None)
+    if not sched:
+        return None, None
+    # Prefere epoch Unix (int) pois é UTC exato, evitando offset fixo +08:00 do end_datetime
+    raw_start = getattr(sched, "start_time", None)
+    raw_end = getattr(sched, "end_time", None)
+    if raw_start is None:
+        raw_start = getattr(sched, "start_datetime", None)
+    if raw_end is None:
+        raw_end = getattr(sched, "end_datetime", None)
+    return to_utc_iso(raw_start, "genshin", uid), to_utc_iso(raw_end, "genshin", uid)
+
+
+async def extract_endgame_schedules(client: genshin.Client, game_id: str, uid: int) -> Dict[str, Dict[str, Optional[str]]]:
+    """Busca apenas os horários oficiais de início/reset da temporada ativa de cada modo endgame na HoYoLAB."""
+    g = (game_id or "").lower().strip()
+    schedules: Dict[str, Dict[str, Optional[str]]] = {}
+
+    if g == "hsr":
+        fetchers = [
+            ("moc", getattr(client, "get_starrail_challenge", None)),
+            ("pure_fiction", getattr(client, "get_starrail_pure_fiction", None)),
+            ("apocalyptic_shadow", getattr(client, "get_starrail_apc_shadow", None)),
+        ]
+        for mode_id, fn in fetchers:
+            if not callable(fn):
+                continue
+            try:
+                res = await fn(uid)
+                begin_iso, end_iso = _extract_hsr_season_times(res, uid)
+                if end_iso:
+                    schedules[mode_id] = {"begin_at": begin_iso, "reset_at": end_iso}
+            except Exception:
+                pass
+    elif g == "genshin":
+        try:
+            abyss = await client.get_genshin_spiral_abyss(uid)
+            begin_iso = to_utc_iso(getattr(abyss, "start_time", None), "genshin", uid)
+            end_iso = to_utc_iso(getattr(abyss, "end_time", None), "genshin", uid)
+            if end_iso:
+                schedules["spiral_abyss"] = {"begin_at": begin_iso, "reset_at": end_iso}
+        except Exception:
+            pass
+        try:
+            it = await client.get_imaginarium_theater(uid)
+            begin_iso, end_iso = _extract_theater_schedule_times(it, uid)
+            if end_iso:
+                schedules["imaginarium_theater"] = {"begin_at": begin_iso, "reset_at": end_iso}
+        except Exception:
+            pass
+    elif g == "zzz":
+        try:
+            shiyu = await client.get_shiyu_defense(uid)
+            begin_iso = to_utc_iso(getattr(shiyu, "begin_time", None), "zzz", uid)
+            end_iso = to_utc_iso(getattr(shiyu, "end_time", None), "zzz", uid)
+            if end_iso:
+                schedules["shiyu_defense"] = {"begin_at": begin_iso, "reset_at": end_iso}
+        except Exception:
+            pass
+        da_fn = getattr(client, "get_deadly_assault", None)
+        if callable(da_fn):
+            try:
+                da = await da_fn(uid)
+                begin_iso = to_utc_iso(getattr(da, "start_time", None), "zzz", uid)
+                end_iso = to_utc_iso(getattr(da, "end_time", None), "zzz", uid)
+                if end_iso:
+                    schedules["deadly_assault"] = {"begin_at": begin_iso, "reset_at": end_iso}
+            except Exception:
+                pass
+
+    return schedules
 
 
 def format_team_node(node_name: str, characters: list, monsters: list = None, char_map: Dict[str, str] = None) -> str:
@@ -124,6 +284,7 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
     # 1. Caos da Memória (MoC)
     try:
         moc = await client.get_starrail_challenge(uid)
+        moc_begin, moc_reset = _extract_hsr_season_times(moc, uid)
         if moc.floors:
             floor = moc.floors[0]
             has_node_3 = hasattr(floor, "node_3") and floor.node_3 is not None
@@ -173,6 +334,8 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
                     "max_stars": max_stars,
                     "metric_label": "Rodadas Utilizadas",
                     "metric_value": str(floor.round_num),
+                    "begin_at": moc_begin,
+                    "reset_at": moc_reset,
                     "teams": teams,
                 }
             )
@@ -182,6 +345,7 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
     # 2. Ficção Pura (Pure Fiction)
     try:
         pf = await client.get_starrail_pure_fiction(uid)
+        pf_begin, pf_reset = _extract_hsr_season_times(pf, uid)
         if pf.floors:
             floor = pf.floors[0]
             has_node_3 = hasattr(floor, "node_3") and floor.node_3 is not None
@@ -231,6 +395,8 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
                     "max_stars": max_stars,
                     "metric_label": "Pontuação",
                     "metric_value": f"{floor.score:,}".replace(",", "."),
+                    "begin_at": pf_begin,
+                    "reset_at": pf_reset,
                     "teams": teams,
                 }
             )
@@ -240,6 +406,7 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
     # 3. Sombra Apocalíptica (Apocalyptic Shadow)
     try:
         apc = await client.get_starrail_apc_shadow(uid)
+        apc_begin, apc_reset = _extract_hsr_season_times(apc, uid)
         if apc.floors:
             floor = apc.floors[0]
             has_node_3 = hasattr(floor, "node_3") and floor.node_3 is not None
@@ -289,6 +456,8 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
                     "max_stars": max_stars,
                     "metric_label": "Pontuação",
                     "metric_value": f"{floor.score:,}".replace(",", "."),
+                    "begin_at": apc_begin,
+                    "reset_at": apc_reset,
                     "teams": teams,
                 }
             )
@@ -329,6 +498,8 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
     # 1. Abismo Espiral
     try:
         abyss = await client.get_genshin_spiral_abyss(uid)
+        abyss_begin = to_utc_iso(getattr(abyss, "start_time", None), "genshin", uid)
+        abyss_reset = to_utc_iso(getattr(abyss, "end_time", None), "genshin", uid)
         if not abyss.floors:
             try:
                 abyss = await client.get_genshin_spiral_abyss(uid, previous=True)
@@ -371,6 +542,8 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
                     "max_stars": floor.max_stars,
                     "metric_label": "Estrelas do Piso",
                     "metric_value": f"{floor.stars}/{floor.max_stars} ⭐",
+                    "begin_at": abyss_begin,
+                    "reset_at": abyss_reset,
                     "teams": teams,
                 }
             )
@@ -380,6 +553,7 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
     # 2. Teatro Imaginário
     try:
         it = await client.get_imaginarium_theater(uid)
+        it_begin, it_reset = _extract_theater_schedule_times(it, uid)
         target_data = None
         is_current = True
 
@@ -451,6 +625,8 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
                     "max_stars": max_acts,
                     "metric_label": "Atos Concluídos",
                     "metric_value": f"{best_act}/{max_acts} Atos ({medals}★)",
+                    "begin_at": it_begin,
+                    "reset_at": it_reset,
                     "teams": teams,
                 }
             )
@@ -476,6 +652,8 @@ async def extrair_endgame_zzz_data(client: genshin.Client, uid: int) -> Tuple[st
     # 1. Defesa Shiyu (Critical Node / etc)
     try:
         shiyu = await client.get_shiyu_defense(uid)
+        shiyu_begin = to_utc_iso(getattr(shiyu, "begin_time", None), "zzz", uid)
+        shiyu_reset = to_utc_iso(getattr(shiyu, "end_time", None), "zzz", uid)
         floors = getattr(shiyu, "floors", [])
         if not floors and hasattr(shiyu, "datas"):
             floors = getattr(shiyu, "datas", [])
@@ -534,11 +712,68 @@ async def extrair_endgame_zzz_data(client: genshin.Client, uid: int) -> Tuple[st
                     "max_stars": None,
                     "metric_label": "Classificação",
                     "metric_value": rating if rating and rating != "None" else "Concluído",
+                    "begin_at": shiyu_begin,
+                    "reset_at": shiyu_reset,
                     "teams": teams,
                 }
             )
     except Exception as e:
         print(f"[Aviso] Erro ao extrair Defesa Shiyu ZZZ: {e}")
+
+    # 2. Assalto Mortal (Deadly Assault)
+    da_fn = getattr(client, "get_deadly_assault", None)
+    if callable(da_fn):
+        try:
+            da = await da_fn(uid)
+            da_begin = to_utc_iso(getattr(da, "start_time", None), "zzz", uid)
+            da_reset = to_utc_iso(getattr(da, "end_time", None), "zzz", uid)
+            challenges = getattr(da, "challenges", None) or []
+            if challenges:
+                total_stars = int(getattr(da, "total_star", 0) or 0)
+                max_stars = max(9, len(challenges) * 3)
+                total_score = int(getattr(da, "total_score", 0) or 0)
+                text += f" **Assalto Mortal**\n"
+                text += f"  • Estrelas: {total_stars}/{max_stars} | Pontuação: {total_score}\n"
+                teams = []
+                for idx_c, ch in enumerate(challenges, 1):
+                    boss_list = getattr(ch, "boss", None) or []
+                    boss_name = getattr(boss_list[0], "name", f"Chefe {idx_c}") if boss_list else f"Chefe {idx_c}"
+                    ch_agents = getattr(ch, "agents", None) or []
+                    n_chars = [_build_char_node_data(a) for a in ch_agents]
+                    bangboo = getattr(ch, "bangboo", None)
+                    if bangboo:
+                        n_chars.append(
+                            {
+                                "id": str(getattr(bangboo, "id", "")),
+                                "name": f"{getattr(bangboo, 'name', 'Bangboo')} (Bangboo)",
+                                "level": getattr(bangboo, "level", 60),
+                                "icon": getattr(bangboo, "icon", ""),
+                                "element": "bangboo",
+                                "rarity": getattr(bangboo, "rarity", 4),
+                                "rank_str": "",
+                            }
+                        )
+                    ch_score = int(getattr(ch, "score", 0) or 0)
+                    ch_stars = int(getattr(ch, "star", 0) or 0)
+                    node_title = f"{boss_name} ({ch_stars}★ • {ch_score:,})".replace(",", ".")
+                    teams.append({"name": node_title, "characters": n_chars, "monsters": []})
+                modes.append(
+                    {
+                        "id": "deadly_assault",
+                        "name": "Assalto Mortal",
+                        "badge": "DA",
+                        "stage": f"{len(challenges)} Chefes",
+                        "stars": total_stars,
+                        "max_stars": max_stars,
+                        "metric_label": "Pontuação",
+                        "metric_value": f"{total_score:,}".replace(",", "."),
+                        "begin_at": da_begin,
+                        "reset_at": da_reset,
+                        "teams": teams,
+                    }
+                )
+        except Exception as e:
+            print(f"[Aviso] Erro ao extrair Assalto Mortal ZZZ: {e}")
 
     return (text if modes else "", modes)
 

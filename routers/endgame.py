@@ -3,12 +3,12 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from services.endgame_service import get_endgame
 from services.team_matcher_service import match_endgame_teams
-from schemas.team_matcher import EndgameTeamMatchResponse
+from schemas.team_matcher import EndgameResponse, EndgameTeamMatchResponse
 
 router = APIRouter(tags=["Endgame"])
 
 
-@router.get("/api/endgame/{game_id}")
+@router.get("/api/endgame/{game_id}", response_model=EndgameResponse)
 async def get_endgame_endpoint(game_id: str, lang: str = Query("pt", description="Language ('pt' or 'en')")):
     """Retorna os dados estruturados de Endgame (MoC, Ficção Pura, Sombra, Abismo, Teatro, Shiyu) de um jogo."""
     try:

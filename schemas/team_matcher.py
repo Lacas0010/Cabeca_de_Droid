@@ -66,3 +66,28 @@ class EndgameTeamMatchResponse(BaseModel):
     available_modes: List[str] = Field(
         default_factory=list, description="Lista de modos de endgame disponíveis para filtro"
     )
+
+
+class EndgameResetScheduleItem(BaseModel):
+    """Horário de reset da temporada ativa de um modo endgame."""
+
+    id: str = Field(..., description="Identificador do modo (moc, pure_fiction, spiral_abyss, shiyu_defense, etc.)")
+    name: str = Field(..., description="Nome localizado do modo")
+    badge: str = Field("", description="Sigla curta do modo")
+    begin_at: Optional[str] = Field(None, description="Início da temporada atual em ISO-8601 UTC")
+    reset_at: Optional[str] = Field(None, description="Data/hora exata do próximo reset em ISO-8601 UTC")
+    source: str = Field("hoyolab", description="Origem do horário ('hoyolab' ou 'estimated')")
+
+
+class EndgameResponse(BaseModel):
+    """Resposta estruturada do endpoint /api/endgame/{game_id}."""
+
+    status: str = Field("success", description="Status da resposta")
+    game_id: str = Field(..., description="Jogo consultado (hsr, genshin, zzz)")
+    has_data: bool = Field(False, description="Indica se há registros de times/andares sincronizados")
+    updated_at: str = Field("", description="Timestamp da última atualização no banco")
+    uid: str = Field("", description="UID da conta consultada")
+    modes: List[dict] = Field(default_factory=list, description="Modos de endgame com times e pontuações")
+    reset_schedules: List[EndgameResetScheduleItem] = Field(
+        default_factory=list, description="Cronograma de reset de todos os modos endgame do jogo"
+    )

@@ -79,6 +79,7 @@ meus_personagens_*.md
 meta_e_tierlists_*.md
 meta_endgame_report.md
 moc_payload_dump.txt
+static_data/endgame_schedules.json
 
 # Asset Cache (Downloaded dynamically at runtime)
 assets/cache/

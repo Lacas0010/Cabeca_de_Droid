@@ -19,6 +19,7 @@ const ENDGAME_MODE_EN_MAP = {
     "Teatro Imaginário": "Imaginarium Theater",
     "Defesa Shiyu (Shiyu Defense)": "Shiyu Defense",
     "Defesa Shiyu": "Shiyu Defense",
+    "Assalto Mortal": "Deadly Assault",
     "Investida Fatal": "Deadly Assault",
     "Cavidade Zero": "Hollow Zero"
 };
@@ -108,7 +109,142 @@ function getEndgameModeIcon(modeId) {
     if (modeId === "spiral_abyss") return "fa-dungeon";
     if (modeId === "imaginarium_theater") return "fa-masks-theater";
     if (modeId === "shiyu_defense") return "fa-shield-halved";
+    if (modeId === "deadly_assault") return "fa-fire-flame-curved";
     return "fa-award";
+}
+
+function formatEndgameCountdown(resetAtIso, isEn) {
+    if (!resetAtIso) {
+        return { text: isEn ? "Unavailable" : "Indisponível", state: "unknown" };
+    }
+    const targetMs = Date.parse(resetAtIso);
+    if (Number.isNaN(targetMs)) {
+        return { text: isEn ? "Unavailable" : "Indisponível", state: "unknown" };
+    }
+    const diffMs = targetMs - Date.now();
+    if (diffMs <= 0) {
+        return { text: isEn ? "Reset!" : "Resetado!", state: "expired" };
+    }
+    const totalSec = Math.floor(diffMs / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+
+    if (days >= 1) {
+        return {
+            text: `${days}d ${pad(hours)}h ${pad(mins)}m`,
+            state: days < 3 ? "soon" : "normal",
+        };
+    }
+    return {
+        text: `${pad(hours)}h ${pad(mins)}m ${pad(secs)}s`,
+        state: "urgent",
+    };
+}
+
+function formatResetDateTooltip(resetAtIso, isEn) {
+    if (!resetAtIso) return "";
+    const dt = new Date(resetAtIso);
+    if (Number.isNaN(dt.getTime())) return "";
+    try {
+        const formatted = new Intl.DateTimeFormat(isEn ? "en-US" : "pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        }).format(dt);
+        return isEn ? `Resets on ${formatted}` : `Reseta em ${formatted}`;
+    } catch (_) {
+        return resetAtIso;
+    }
+}
+
+function renderModeResetChip(resetAtIso, isEn) {
+    if (!resetAtIso) return "";
+    const cd = formatEndgameCountdown(resetAtIso, isEn);
+    const tooltip = formatResetDateTooltip(resetAtIso, isEn);
+    const prefix = isEn ? "Resets in" : "Reseta em";
+    return `
+        <span class="endgame-metric-chip reset-countdown countdown-${cd.state}" title="${tooltip}">
+            <i class="fa-regular fa-clock"></i>
+            <span class="endgame-reset-prefix">${prefix}</span>
+            <strong class="endgame-countdown-value" data-reset-at="${resetAtIso}">${cd.text}</strong>
+        </span>
+    `;
+}
+
+function renderEndgameResetStrip(resetSchedules, gameId) {
+    if (!Array.isArray(resetSchedules) || resetSchedules.length === 0) return "";
+    const isEn = Boolean(window.isEn);
+    const cardsHtml = resetSchedules.map((sched) => {
+        const icon = getEndgameModeIcon(sched.id);
+        const cd = formatEndgameCountdown(sched.reset_at, isEn);
+        const tooltip = formatResetDateTooltip(sched.reset_at, isEn);
+        const estTag = sched.source === "estimated"
+            ? `<span class="endgame-reset-source-tag" title="${isEn ? 'Estimated from server schedule' : 'Estimado pelo ciclo do servidor'}">~</span>`
+            : "";
+        return `
+            <div class="endgame-reset-card countdown-${cd.state}" data-mode-id="${sched.id}" title="${tooltip}">
+                <div class="endgame-reset-card-head">
+                    <span class="endgame-reset-mode-name">
+                        <i class="fa-solid ${icon}"></i> ${formatEndgameModeName(sched.name)}
+                    </span>
+                    ${sched.badge ? `<span class="endgame-reset-badge">${sched.badge}</span>` : ""}
+                </div>
+                <div class="endgame-reset-card-time">
+                    <span class="endgame-reset-label">${isEn ? "Resets in" : "Reseta em"}</span>
+                    <span class="endgame-countdown-value" ${sched.reset_at ? `data-reset-at="${sched.reset_at}"` : ""}>${estTag}${cd.text}</span>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    return `
+        <div class="endgame-reset-strip" data-game="${gameId}">
+            ${cardsHtml}
+        </div>
+    `;
+}
+
+let _endgameCountdownTimer = null;
+let _endgameCountdownVisBound = false;
+
+function tickEndgameCountdowns() {
+    if (document.hidden) return;
+    const nodes = document.querySelectorAll(".endgame-countdown-value[data-reset-at]");
+    if (!nodes.length) return;
+    const isEn = Boolean(window.isEn);
+    nodes.forEach((el) => {
+        const iso = el.getAttribute("data-reset-at");
+        if (!iso) return;
+        const cd = formatEndgameCountdown(iso, isEn);
+        const prefixTag = el.querySelector(".endgame-reset-source-tag");
+        if (prefixTag) {
+            el.innerHTML = `${prefixTag.outerHTML}${cd.text}`;
+        } else {
+            el.textContent = cd.text;
+        }
+        const host = el.closest(".endgame-reset-card, .endgame-metric-chip.reset-countdown");
+        if (host) {
+            host.classList.remove("countdown-normal", "countdown-soon", "countdown-urgent", "countdown-expired", "countdown-unknown");
+            host.classList.add(`countdown-${cd.state}`);
+        }
+    });
+}
+
+function ensureEndgameCountdownTicker() {
+    if (!_endgameCountdownTimer) {
+        _endgameCountdownTimer = setInterval(tickEndgameCountdowns, 1000);
+    }
+    if (!_endgameCountdownVisBound) {
+        _endgameCountdownVisBound = true;
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) tickEndgameCountdowns();
+        });
+    }
 }
 
 function normalizeEndgameChar(char, gameId) {
@@ -295,20 +431,25 @@ function renderEndgame(gameId, data) {
     const badgeEl = document.getElementById(`endgame-badge-${gameId}`);
     if (!container) return;
 
-        if (!data || !data.has_data || !data.modes || data.modes.length === 0) {
+    if (!data || !data.has_data || !data.modes || data.modes.length === 0) {
         const isEn = Boolean(window.isEn);
+        if (data && Array.isArray(data.reset_schedules)) {
+            cachedEndgameData[gameId] = data;
+        }
         if (badgeEl) badgeEl.innerText = isEn ? "No Data" : "Sem Dados";
         const gameNames = { hsr: "Honkai: Star Rail", genshin: "Genshin Impact", zzz: "Zenless Zone Zero" };
         const modeExamples = isEn ? {
             hsr: "Memory of Chaos (MoC), Pure Fiction or Apocalyptic Shadow",
             genshin: "Spiral Abyss or Imaginarium Theater",
-            zzz: "Shiyu Defense"
+            zzz: "Shiyu Defense or Deadly Assault"
         } : {
             hsr: "Caos da Memória (MoC), Ficção Pura ou Sombra Apocalíptica",
             genshin: "Abismo Espiral ou Teatro Imaginário",
-            zzz: "Defesa Shiyu"
+            zzz: "Defesa Shiyu ou Assalto Mortal"
         };
+        const emptyResetStripHtml = renderEndgameResetStrip(data?.reset_schedules || [], gameId);
         container.innerHTML = `
+            ${emptyResetStripHtml}
             <div class="endgame-empty-state">
                 <i class="fa-solid fa-hourglass-half"></i>
                 <p>${isEn ? `No recent Endgame records collected for ${gameNames[gameId] || gameId.toUpperCase()}.` : `Nenhum registro de Endgame recente coletado para ${gameNames[gameId] || gameId.toUpperCase()}.`}</p>
@@ -317,12 +458,13 @@ function renderEndgame(gameId, data) {
                     <sakuga-button class="endgame-empty-action-btn sk-sm" onclick="document.querySelector('.sync-game-btn[data-game=\\'${gameId}\\']')?.click()">
                         <i class="fa-solid fa-rotate"></i> ${isEn ? `Sync ${gameId.toUpperCase()} Now` : `Sincronizar ${gameId.toUpperCase()} Agora`}
                     </sakuga-button>
-                    <sakuga-button class="endgame-empty-action-btn sk-sm sk-accent-cyan" onclick="activeEndgameView['${gameId}'] = 'team_matcher'; renderEndgame('${gameId}', { has_data: true, modes: [] });">
+                    <sakuga-button class="endgame-empty-action-btn sk-sm sk-accent-cyan" onclick="activeEndgameView['${gameId}'] = 'team_matcher'; renderEndgame('${gameId}', { has_data: true, modes: [], reset_schedules: cachedEndgameData['${gameId}']?.reset_schedules || [] });">
                         <i class="fa-solid fa-people-group"></i> ${isEn ? "View Recommended Teams (Team Matcher)" : "Ver Times Recomendados (Team Matcher)"}
                     </sakuga-button>
                 </div>
             </div>
         `;
+        if (emptyResetStripHtml) ensureEndgameCountdownTicker();
         return;
     }
 
@@ -428,6 +570,9 @@ function renderEndgame(gameId, data) {
                 const chipIcon = isScore ? "fa-bolt" : (isRounds ? "fa-clock-rotate-left" : "fa-award");
                 modeMetrics += `<span class="endgame-metric-chip ${chipClass}"><i class="fa-solid ${chipIcon}"></i> ${mode.metric_value} ${!isScore && !isRounds ? "" : (isRounds ? (isEn ? "Cycles" : "Rodadas") : (isEn ? "Points" : "Pontos"))}</span>`;
             }
+            if (mode.reset_at) {
+                modeMetrics += renderModeResetChip(mode.reset_at, isEn);
+            }
 
             let teamsListHtml = "";
             if (mode.teams && mode.teams.length > 0) {
@@ -481,6 +626,9 @@ function renderEndgame(gameId, data) {
                 </span>
             `;
         }
+        if (activeMode.reset_at) {
+            metricsHtml += renderModeResetChip(activeMode.reset_at, isEn);
+        }
 
         let teamsHtml = "";
         if (activeMode.teams && activeMode.teams.length > 0) {
@@ -513,12 +661,15 @@ function renderEndgame(gameId, data) {
         `;
     }
 
+    const resetStripHtml = renderEndgameResetStrip(data.reset_schedules || [], gameId);
+
     if (currentView === "team_matcher") {
-        container.innerHTML = masterHeaderHtml + `<div id="team-matcher-container-${gameId}"><div class="endgame-loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> ${isEn ? "Loading team compatibility..." : "Carregando compatibilidade de equipes..."}</div></div>`;
+        container.innerHTML = masterHeaderHtml + resetStripHtml + `<div id="team-matcher-container-${gameId}"><div class="endgame-loading-spinner"><i class="fa-solid fa-spinner fa-spin"></i> ${isEn ? "Loading team compatibility..." : "Carregando compatibilidade de equipes..."}</div></div>`;
         renderTeamMatcher(gameId);
     } else {
-        container.innerHTML = masterHeaderHtml + pillsHtml + contentHtml;
+        container.innerHTML = masterHeaderHtml + resetStripHtml + pillsHtml + contentHtml;
     }
+    ensureEndgameCountdownTicker();
 
     // Configura botões de alternância de visão (Modo Focado vs Visão Geral vs Team Matcher)
     container.querySelectorAll(".endgame-view-toggle-btn").forEach(tBtn => {
