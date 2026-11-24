@@ -6,6 +6,16 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [Não lançado]
+
+### 🐛 Corrigido
+- **Fallback web no Auto-Updater contra `403/429 rate limit` (`updater.py`, `tests/test_updater_suite.py`):** quando `api.github.com` atingir o limite público de 60 req/h por IP, `check_for_updates()` recorre automaticamente ao redirect web de `https://github.com/Lacas0010/Cabeca_de_Droid/releases/latest` para resolver a tag e o asset `.zip` sem erro (`329 testes aprovados`).
+
+### 📝 Documentação
+- Atualização completa de `README.md`, `README.en.md`, `CONTRIBUTING.md`, `SECURITY.md` e `.gitignore` refletindo todas as entregas da `v1.4.0`/`v1.4.1` (329 testes, Radar de Resets, Daily Notes completo, Chefes/Buffs no Endgame, `Ctrl+K` e convenção correta dos horários de virada de banners).
+
+---
+
 ## [5.8.1] / Release Standalone [v1.4.1] - 2026-11-24
 
 ### 🐛 Corrigido

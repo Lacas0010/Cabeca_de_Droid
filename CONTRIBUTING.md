@@ -72,9 +72,9 @@ hoyo-projetos/
    - Mantenha modais abaixo de `canvas.sakuga-fx` (`z-index < 2147483000`) e não quebre o scroll interno de modais nem do `#build-inspector`.
    - Ao editar CSS ou JS em `static/`, atualize o `?v=` correspondente em `static/index.html` e `static/js/app.js`.
    - Mantenha estilos responsivos para celular (`<= 768px`) usando as variáveis `:root`.
-3. **Horários de virada de banner:**
-   - **1ª fase (os 3 jogos):** `23:30`
-   - **2ª fase:** Genshin `20:00`, HSR `14:00`, ZZZ `14:00`
+3. **Horários de virada de banner (`database.get_banner_schedule_time`):**
+   - **Término da 1ª fase / chegada da 2ª fase (`phase=2`):** Genshin `20:00`, HSR `14:00`, ZZZ `14:00`
+   - **Término da 2ª fase ou Patch Inteiro / chegada de nova atualização (`phase=1`):** `23:30` nos 3 jogos
 4. **Releases:** Só crie tag/release (`v*.*.*`) quando solicitado. No dia a dia, acumule as mudanças normalmente na `main`.
 
 ---

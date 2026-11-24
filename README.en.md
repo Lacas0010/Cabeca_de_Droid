@@ -8,7 +8,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![UI: Sakuga VFX](https://img.shields.io/badge/UI-Sakuga%20VFX%20(Offline)-ff477e.svg)](static/vendor/sakuga-vfx/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests: 287 Passed](https://img.shields.io/badge/tests-287%20passed-success.svg?logo=python&logoColor=white)](tests/)
+[![Tests: 329 Passed](https://img.shields.io/badge/tests-329%20passed-success.svg?logo=python&logoColor=white)](tests/)
 [![Security: Local Vault](https://img.shields.io/badge/Security-Local%20Vault-green.svg)](SECURITY.md)
 
 **Cabeça de Droid** is a local app for analyzing builds, tracking gacha, and organizing daily farming across **Honkai: Star Rail**, **Genshin Impact**, and **Zenless Zone Zero**. It combines automatic guide and tier list collection, gear Roll Value (RV) calculation, a gacha simulator (10,000 runs), an offline **Sakuga VFX** web UI, and a Windows standalone executable with GitHub Releases auto-updating.
@@ -39,16 +39,18 @@ If you just want to run the app on Windows without setting up a dev environment:
 
 ## 1. Features
 
-- **Automatic guide and banner collection:** Pulls character guides, tier lists, and recommended builds from Prydwen, Enka Network, and HoYoLAB (using `curl_cffi` to get past 403 CDN blocks), plus active banners (*Epitome Invocation*, *Brilliant Fixation*, *Dissonant Sonata*) saved to `static_data/current_banners.json`. Works offline from local JSON caches whenever needed.
+- **Automatic guide, banner & official icon collection:** Pulls character guides, tier lists, and recommended builds from Prydwen, Enka Network, and HoYoLAB (using `curl_cffi` to get past 403 CDN blocks), official icons for Paths, Weapons, Specialties, Endgame Modes, and Resources (Resin, Trailblaze Power, Battery, currencies & summon tickets) from official APIs (**StarRailRes**, **HoYoWiki**, **Prydwen**), plus active banners with per-banner phase (`Phase 1`, `Phase 2`, `Full Patch`) and live countdowns saved to `static_data/*.json`. Works offline from local JSON caches whenever needed.
+- **Energy Monitor & Full Daily Notes on Home:** Displays progress rings with official icons, **exact cap clock time** in your local timezone (`Full today/tomorrow at HH:MM`), and compact per-game status pills: Commissions, timed Expeditions, Weekly Bosses, Parametric Transformer & Teapot (Genshin); Reserve Power, Daily Training, SU/DU, Echo of War & Expeditions (HSR); Engagement, Scratch Card, Coffee, Video Store & Hollow Zero (ZZZ).
+- **Unified Reset Radar & Active Banner Turnovers on Home:** Urgency-sorted strip covering all **7 endgame modes**, live **Daily (04:00)** and **Weekly (Mon 04:00)** server reset timers, amber alerts for pending modes near reset (`<= 72h`), an **Active Banner Turnovers** strip with `< 48h` alerts, and one-click navigation straight to the mode or prefilled Gacha Simulator.
 - **Roll Value (RV) calculation:** Scores HSR Relics and Planar Ornaments, Genshin Artifacts (Flower, Plume, Sands, Goblet, Circlet), and ZZZ Drive Discs (Slots 1–6) against recommended main stats and substat priorities.
 - **Gacha simulator, forecast & pull tracker:** Runs 10,000 simulations for characters (C0–C6 / E0–E6 / M0–M6) and weapons/light cones/W-Engines (R1–R5) using real Soft Pity curves (pull 74 for characters, 63 for Genshin weapons, 65 for HSR Light Cones), 50/50 guarantees, Epitomized Path, and Fate Points. Tracks banner countdown goals and imports/exports Warp, Wish, and Signal logs in UIGF and SRGF formats.
 - **Daily farming & 3-game summary:** Maps open daily domains for Talent books, weapon materials, and Traces, prioritizes Resin / Trailblaze Power / Battery spending, and builds a daily summary across all 3 games with optional Discord and Telegram delivery.
 - **Trash finder & crafting advisor:** Highlights unused pieces with bad substat spreads and suggests where to spend *Self-Modeling Resin* (HSR), *Sanctifying Elixir* (Genshin), and Drive Disc *Tuning* (ZZZ).
 - **Luck index & 2x HD cards:** Tracks overall roll quality, picks your **God Roll** and **Cursed Roll**, and exports single or 3/4-slot team cards as `2400 × 1350 px` PNGs.
-- **Endgame & team matcher:** Tracks clears in *Memory of Chaos (MoC)*, *Pure Fiction (PF)*, *Apocalyptic Shadow (AS)*, *Spiral Abyss*, *Imaginarium Theater*, *Shiyu Defense*, and *Deadly Assault*, supports HSR alternate paths / extra Eidolons, and recommends teams with viable substitutes from your roster.
+- **Tactical endgame & team matcher:** Tracks clears in *Memory of Chaos (MoC)*, *Pure Fiction (PF)*, *Apocalyptic Shadow (AS)*, *Spiral Abyss*, *Imaginarium Theater*, *Shiyu Defense*, and *Deadly Assault*, with live reset countdowns, **Boss, Stage Buff & Brilliant Blessing** mini-icons and tooltips on team cards, HSR alternate paths / extra Eidolons support, and team recommendations with viable substitutes from your roster.
 - **Snapshots, promo codes & auto-login:** Saves account progression snapshots, checks and redeems promo codes every 3 hours, and captures HoYoLAB cookies via Playwright (falling back to installed Chrome or Edge if needed).
-- **Local cookie protection:** Encrypts `ltuid_v2`, `ltoken_v2`, and `cookie_token_v2` using Windows DPAPI or AES-256-GCM on Linux, masks tokens in HTTP responses and logs (`mask_token`), binds to `127.0.0.1` by default, and supports an optional PBKDF2 PIN lock.
-- **Offline PT-BR / EN-US UI:** Ships 11 local **Sakuga VFX** Web Components (`static/vendor/sakuga-vfx/`), local WOFF2 fonts, grid/list roster views, audit filters, and instant language switching.
+- **Local cookie protection:** Encrypts `ltuid_v2`, `ltoken_v2`, `cookie_token_v2`, and sensitive settings (`cookies.enc` / `config.enc`) using Windows DPAPI or AES-256-GCM on Linux, masks tokens in HTTP responses and logs (`mask_token`), binds to `127.0.0.1` by default, and supports an optional PBKDF2 PIN lock.
+- **Offline PT-BR / EN-US UI + Global Quick Search (`Ctrl+K`):** Ships 11 local **Sakuga VFX** Web Components (`static/vendor/sakuga-vfx/`), local WOFF2 fonts, **Global Quick Search (`Ctrl+K` / `Cmd+K`)** with keyboard navigation (`↑↓`, `Enter`, `Esc`) to jump straight to any character's Build Inspector, tab, or endgame mode, grid/list roster views, audit filters, and instant language switching.
 
 ---
 
@@ -273,7 +275,8 @@ docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droi
 | `GET` | `/api/build/{game_id}/{char_name}` | Gear breakdown, weapons/cones/W-Engines, and Traces/Talents. |
 | `GET` | `/api/compare/{game_id}/{char_name}` | Build comparison against community recommendations. |
 | `POST` | `/api/sync/{game_id}` / `/api/sync/all` | Runs background roster and local data sync. |
-| `GET` | `/api/endgame/{game_id}` | MoC, PF, AS, Spiral Abyss, Theater, Shiyu Defense, and Deadly Assault clears. |
+| `GET` | `/api/endgame/reset-radar` | Unified Reset Radar (7 endgame modes sorted by urgency, Daily/Weekly server resets & Active Banner turnovers). |
+| `GET` | `/api/endgame/{game_id}` | MoC, PF, AS, Spiral Abyss, Theater, Shiyu Defense & Deadly Assault clears, boss/buff metadata, and reset schedules. |
 | `GET` | `/api/endgame/team-match/{game_id}` | Team suggestions and viable substitutes based on your roster. |
 | `GET` | `/api/strategy/account-gaps/{game_id}` | Missing elements and combat roles on the account. |
 | `GET` / `POST` | `/api/gacha/current-banners` & `/sync` | Fetches or refreshes active banners from Prydwen. |
@@ -286,7 +289,8 @@ docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droi
 | `GET` | `/api/trash/{game_id}` | Inventory gear candidates for salvage. |
 | `GET` | `/api/relics/craft-recommendations/{game_id}` | Suggestions for Self-Modeling Resin, Sanctifying Elixir, and Drive Disc tuning. |
 | `GET` | `/api/luck/{game_id}` | Account luck score, God Roll, and Cursed Roll. |
-| `GET` | `/api/notes` | Resin, Trailblaze Power, Battery, and expedition timers. |
+| `GET` | `/api/notes` | Full Daily Notes (stamina, exact cap clock time, commissions, expeditions, teapot, SU/DU, video store, etc.). |
+| `GET` | `/assets/{icons,resources,endgame}/{file}` | Auto-cached local official icons (Paths, Weapons, Specialties, Resources, and Endgame Modes). |
 | `POST` | `/api/checkin/run` | Runs HoYoLAB daily check-in. |
 | `GET` | `/api/briefing/today` | Daily summary across all 3 games. |
 | `GET` / `POST` | `/api/history/{game_id}` & `/snapshot` | Paginated snapshot timeline and manual snapshot creation. |

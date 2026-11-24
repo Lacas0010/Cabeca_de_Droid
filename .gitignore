@@ -96,6 +96,7 @@ assets/logo.ico
 static/assets/
 
 # Logs, Compressed Archives, Auto-Updater Temp & Scratch Scripts
+.bundle_version
 *.log
 *.tmp
 *.zip

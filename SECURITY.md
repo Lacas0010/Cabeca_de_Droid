@@ -6,10 +6,11 @@ O **Cabeça de Droid** roda localmente e guarda cookies, banco e configurações
 
 ## 1. Dados sensíveis usados pelo app
 
-1. **Cookies do HoYoLAB (`cookies.enc`):**
+1. **Cookies do HoYoLAB (`cookies.enc`) e Configurações Sensíveis (`config.enc`):**
    - `ltuid_v2` / `account_id_v2`: ID público da conta no HoYoLAB.
    - `ltoken_v2`: token de sessão usado para ler elenco, notas diárias (Resina, Poder de Desbravamento, Bateria) e fazer check-in.
    - `cookie_token_v2`: token usado para resgate de códigos promocionais e dados web.
+   - `config.enc`: URLs de webhooks (Discord/Telegram), chaves opcionais e preferências sensíveis (migradas automaticamente de `config.json` legado).
    - **Senhas e `stoken`:** nunca são pedidos nem gravados.
 
 2. **Chaves privadas (`*.key` / `*.pem`):**
@@ -24,14 +25,14 @@ O **Cabeça de Droid** roda localmente e guarda cookies, banco e configurações
 
 | Proteção | Como funciona | Onde está |
 | :--- | :--- | :--- |
-| **Cofre criptografado** | Criptografa cookies com DPAPI no Windows (`CryptProtectData`) e AES-256 no Linux. | [`core/security.py`](core/security.py), [`security_vault.py`](security_vault.py) |
+| **Cofre criptografado** | Criptografa cookies (`cookies.enc`) e configurações sensíveis (`config.enc`) com DPAPI no Windows (`CryptProtectData`) e AES-256 no Linux. | [`core/security.py`](core/security.py), [`security_vault.py`](security_vault.py) |
 | **Mascaramento na API e UI** | O servidor nunca devolve cookies brutos para o frontend; envia só um trecho mascarado (`ltuid_v2=282***47`). | [`routers/config.py`](routers/config.py) |
 | **Filtro nos logs** | Regex limpa tokens de sessão e cabeçalhos `Bearer` antes de imprimir no console ou SSE. | [`core/security.py`](core/security.py) |
 | **Loopback por padrão** | O servidor sobe preso em `127.0.0.1`. Acesso na rede local (`0.0.0.0`) só liga se você ativar. | [`core/config.py`](core/config.py), [`main.py`](main.py) |
 | **PIN opcional** | Trava local com hash `PBKDF2-HMAC-SHA256` (120 mil iterações e salt único) e bloqueio HTTP 423. | [`routers/security.py`](routers/security.py) |
 | **Limpeza rápida** | `POST /api/security/clear_credentials` apaga todas as credenciais salvas. | [`routers/security.py`](routers/security.py) |
 | **Cabeçalhos HTTP** | Bloqueia cache em rotas privadas (`Cache-Control: no-cache, no-store`) e envia `X-Content-Type-Options: nosniff`. | [`core/security.py`](core/security.py) |
-| **Checks do Auto-Updater** | Só baixa releases de domínios oficiais do GitHub (`github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`, `codeload.github.com`) e bloqueia ZipSlip antes de extrair. | [`updater.py`](updater.py) |
+| **Checks do Auto-Updater** | Só consulta/baixa releases de domínios oficiais do GitHub (`api.github.com`, `github.com`, `objects.githubusercontent.com`, `release-assets.githubusercontent.com`, `codeload.github.com`), possui fallback web oficial para rate limit 403/429, bloqueia ZipSlip antes de extrair e preserva `.db`, `.enc` e `.env`. | [`updater.py`](updater.py) |
 
 ---
 

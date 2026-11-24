@@ -8,7 +8,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![UI: Sakuga VFX](https://img.shields.io/badge/UI-Sakuga%20VFX%20(Offline)-ff477e.svg)](static/vendor/sakuga-vfx/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Testes: 287 Aprovados](https://img.shields.io/badge/testes-287%20aprovados-success.svg?logo=python&logoColor=white)](tests/)
+[![Testes: 329 Aprovados](https://img.shields.io/badge/testes-329%20aprovados-success.svg?logo=python&logoColor=white)](tests/)
 [![Segurança: Cofre Local](https://img.shields.io/badge/Seguran%C3%A7a-Cofre%20Local-green.svg)](SECURITY.md)
 
 O **Cabeça de Droid** é um app local feito para analisar builds, acompanhar gacha e organizar o farm diário de **Honkai: Star Rail**, **Genshin Impact** e **Zenless Zone Zero**. Ele junta coleta automática de guias e tier lists, cálculo de Roll Value (RV) das peças, simulador de gacha (10 mil simulações), interface web **Sakuga VFX** 100% offline e executável para Windows com atualização automática via GitHub Releases.
@@ -39,16 +39,18 @@ Se você só quer usar o app no Windows sem configurar ambiente de desenvolvimen
 
 ## 1. O que o app faz
 
-- **Coleta automática de guias e banners:** Busca guias, tier lists e builds recomendadas no Prydwen, Enka Network e HoYoLAB (usando `curl_cffi` para evitar bloqueios 403), além dos banners ativos (*Invocação do Epítome*, *Fixação Brilhante*, *Sonata Dissonante*) salvos em `static_data/current_banners.json`. Se você ficar sem internet, usa o cache local em JSON.
+- **Coleta automática de guias, banners e ícones oficiais:** Busca guias, tier lists e builds recomendadas no Prydwen, Enka Network e HoYoLAB (usando `curl_cffi` para evitar bloqueios 403), ícones oficiais de Caminhos, Armas, Especialidades, Modos Endgame e Recursos (Resina, Poder de Desbravamento, Bateria, moedas e passes) via APIs oficiais (**StarRailRes**, **HoYoWiki**, **Prydwen**), além dos banners ativos com fase individual (`1ª Fase`, `2ª Fase`, `Patch Inteiro`) e timer ao vivo salvos em `static_data/*.json`. Se você ficar sem internet, usa o cache local em JSON.
+- **Monitor de Energia & Daily Notes completo na Home:** Exibe anéis de progresso com ícones oficiais, **horário exato de lotação** no fuso local (`Lota hoje/amanhã às HH:MM`) e pílulas compactas por jogo: Comissões, Expedições com timer, Chefes Semanais, Transformador Paramétrico e Bule (Genshin); Poder de Reserva, Treino Diário, SU/DU, Eco da Guerra e Expedições (HSR); Engajamento, Raspadinha, Café, Locadora e Cavidade Zero (ZZZ).
+- **Radar Unificado de Resets & Virada de Banners na Home:** Strip ordenado por urgência com todos os **7 modos de endgame**, timers ao vivo de reset **Diário (04:00)** e **Semanal (Segunda 04:00)**, destaque âmbar para pendências próximas do reset (`<= 72h`), subseção de **Virada de Banners Ativos** com alerta `< 48h` e clique direto para o desafio ou para o Simulador de Gacha pré-preenchido.
 - **Cálculo de Roll Value (RV):** Avalia Relíquias e Ornamentos Planos (HSR), Artefatos — Flor, Pluma, Areia, Cálice e Tiara (Genshin) e Discos de Drive 1–6 (ZZZ) comparando substatus e atributo principal com as builds da comunidade.
 - **Simulador de gacha, forecast e histórico:** Roda 10 mil simulações para personagens (C0–C6 / E0–E6 / M0–M6) e armas/cones/motores (R1–R5) seguindo as regras reais de Soft Pity (tiro 74 em personagens; 63 em armas do Genshin; 65 em Cones de Luz do HSR), 50/50, Caminho Divino e Pontos de Destino. Também salva metas com contagem regressiva e importa/exporta históricos de Saltos, Orações e Sinais em UIGF e SRGF.
 - **Farm diário e resumo dos 3 jogos:** Mapeia domínios abertos no dia para livros de Talentos, ascensão de armas e Rastros, monta a prioridade de gasto de Resina, Poder de Desbravamento e Bateria, e gera um resumo diário dos 3 jogos com envio opcional para Discord e Telegram.
 - **Filtro de descarte e síntese:** Lista peças paradas no inventário que não servem nas builds do elenco e sugere onde gastar *Resina Automodeladora* (HSR), *Elixir Santificador* (Genshin) e *Sintetizador* (ZZZ).
 - **Índice de sorte e cards HD:** Mostra a eficiência geral das suas rolagens, destaca seu **God Roll** e **Cursed Roll**, e exporta cards individuais ou de time em PNG `2400 × 1350 px`.
-- **Endgame e sugestões de time:** Acompanha resultados no *Caos da Memória (MoC)*, *Ficção Pura (PF)*, *Sombra Apocalíptica (AS)*, *Espiral do Abismo*, *Teatro Imaginário*, *Defesa Shiyu* e *Assalto Mortal*, com suporte a variantes/Eidolons extras no HSR e sugestão de times com substitutos.
+- **Endgame tático e sugestões de time:** Acompanha resultados no *Caos da Memória (MoC)*, *Ficção Pura (PF)*, *Sombra Apocalíptica (AS)*, *Espiral do Abismo*, *Teatro Imaginário*, *Defesa Shiyu* e *Assalto Mortal*, com timers de reset ao vivo, mini-ícones e tooltips de **Chefes, Buffs e Bênçãos Brilhantes** nos cards de equipe, suporte a variantes/Eidolons extras no HSR e sugestão de times com substitutos.
 - **Snapshots, códigos e login automático:** Salva histórico da evolução da conta, checa e resgata códigos promocionais a cada 3h e captura cookies do HoYoLAB via Playwright (com fallback para Chrome/Edge instalados).
-- **Proteção local dos cookies:** Criptografa `ltuid_v2`, `ltoken_v2` e `cookie_token_v2` com Windows DPAPI ou AES-256-GCM no Linux, mascara tokens em logs/respostas (`mask_token`), roda só em `127.0.0.1` por padrão e permite trancar com PIN (PBKDF2).
-- **Interface offline PT-BR / EN-US:** Roda com 11 Web Components **Sakuga VFX** locais (`static/vendor/sakuga-vfx/`), fontes WOFF2 locais, busca rápida, visão em grade ou lista e troca de idioma em tempo real.
+- **Proteção local dos cookies:** Criptografa `ltuid_v2`, `ltoken_v2`, `cookie_token_v2` e configurações sensíveis (`cookies.enc` / `config.enc`) com Windows DPAPI ou AES-256-GCM no Linux, mascara tokens em logs/respostas (`mask_token`), roda só em `127.0.0.1` por padrão e permite trancar com PIN (PBKDF2).
+- **Interface offline PT-BR / EN-US + Busca Rápida (`Ctrl+K`):** Roda com 11 Web Components **Sakuga VFX** locais (`static/vendor/sakuga-vfx/`), fontes WOFF2 locais, **Busca Rápida Global (`Ctrl+K` / `Cmd+K`)** com navegação por teclado (`↑↓`, `Enter`, `Esc`) para abrir qualquer personagem no Build Inspector, aba ou modo endgame, visão em grade ou lista e troca de idioma em tempo real.
 
 ---
 
@@ -273,7 +275,8 @@ docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droi
 | `GET` | `/api/build/{game_id}/{char_name}` | Peças, armas/cones/motores e rastros/talentos do personagem. |
 | `GET` | `/api/compare/{game_id}/{char_name}` | Comparação da build com o guia recomendado. |
 | `POST` | `/api/sync/{game_id}` / `/api/sync/all` | Sincroniza elenco e dados locais em segundo plano. |
-| `GET` | `/api/endgame/{game_id}` | Progresso no MoC, PF, AS, Abismo, Teatro, Defesa Shiyu e Assalto Mortal. |
+| `GET` | `/api/endgame/reset-radar` | Radar Unificado de Resets (7 modos endgame por urgência, Diário/Semanal e Virada de Banners Ativos). |
+| `GET` | `/api/endgame/{game_id}` | Progresso, chefes/buffs e cronograma no MoC, PF, AS, Abismo, Teatro, Defesa Shiyu e Assalto Mortal. |
 | `GET` | `/api/endgame/team-match/{game_id}` | Sugestões de times e substitutos com o elenco da conta. |
 | `GET` | `/api/strategy/account-gaps/{game_id}` | Pontos fracos de elementos e funções na conta. |
 | `GET` / `POST` | `/api/gacha/current-banners` & `/sync` | Consulta ou atualiza os banners ativos do Prydwen. |
@@ -286,7 +289,8 @@ docker run -d -p 8000:8000 -v $(pwd)/hoyo_app.db:/app/hoyo_app.db cabeca-de-droi
 | `GET` | `/api/trash/{game_id}` | Peças candidatas a descarte. |
 | `GET` | `/api/relics/craft-recommendations/{game_id}` | Recomendações para Resina Automodeladora, Elixir e Sintetizador. |
 | `GET` | `/api/luck/{game_id}` | Índice de sorte, God Roll e Cursed Roll da conta. |
-| `GET` | `/api/notes` | Contadores de Resina, Poder de Desbravamento, Bateria e expedições. |
+| `GET` | `/api/notes` | Daily Notes completo (energia, horário exato de lotação, comissões, expedições, bule, SU/DU, locadora, etc.). |
+| `GET` | `/assets/{icons,resources,endgame}/{file}` | Cache local automático de ícones oficiais (Caminhos, Armas, Especialidades, Recursos e Modos Endgame). |
 | `POST` | `/api/checkin/run` | Roda o check-in diário do HoYoLAB. |
 | `GET` | `/api/briefing/today` | Resumo diário dos 3 jogos. |
 | `GET` / `POST` | `/api/history/{game_id}` & `/snapshot` | Timeline paginada e criação manual de snapshot. |
