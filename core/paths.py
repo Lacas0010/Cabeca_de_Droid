@@ -61,11 +61,51 @@ def get_resource_path(relative_path: str) -> str:
     return os.path.join(get_bundle_root(), relative_path)
 
 
+def _should_upgrade_seeded_file(sub: str, rel_file: str, src_file: str, dst_file: str, version_changed: bool) -> bool:
+    """Decide se um arquivo já existente em get_data_dir() deve ser atualizado pelo bundle mais recente."""
+    if not os.path.exists(dst_file):
+        return True
+
+    norm_rel = rel_file.replace("\\", "/").lower()
+    # Ao trocar de versão do .exe, atualiza ícones estáticos empacotados (ex.: HSR HD, Resina corrigida)
+    if version_changed and sub == "assets":
+        if norm_rel.startswith(("icons/", "resources/", "endgame/", "elements/")):
+            return True
+
+    # Para current_banners.json, atualiza se o cache local estiver em schema legado (sem duration_type/end_date)
+    # ou mais antigo que o bundle da nova release
+    if sub == "static_data" and norm_rel == "current_banners.json":
+        try:
+            import json
+
+            with open(dst_file, "r", encoding="utf-8") as df:
+                dst_data = json.load(df)
+            with open(src_file, "r", encoding="utf-8") as sf:
+                src_data = json.load(sf)
+            if isinstance(dst_data, dict) and isinstance(src_data, dict):
+                # Detecta schema legado sem duration_type / end_date
+                for g_val in dst_data.values():
+                    if not isinstance(g_val, dict):
+                        continue
+                    for b in g_val.get("banners") or []:
+                        if isinstance(b, dict) and b.get("duration_type") is None:
+                            return True
+                # Ou bundle mais recente via last_updated
+                src_ts = max((str(v.get("last_updated") or "") for v in src_data.values() if isinstance(v, dict)), default="")
+                dst_ts = max((str(v.get("last_updated") or "") for v in dst_data.values() if isinstance(v, dict)), default="")
+                if src_ts and (not dst_ts or src_ts > dst_ts):
+                    return True
+        except Exception:
+            return True
+
+    return False
+
+
 def seed_bundled_resources(subdirs: List[str] | None = None) -> None:
     """
     Quando executado via executável congelado, copia arquivos iniciais de manifestos/assets
-    do bundle (_MEIPASS) para get_data_dir() caso ainda não existam lá, garantindo que leituras
-    e escritas subsequentes preservem as atualizações locais do usuário.
+    do bundle (_MEIPASS) para get_data_dir() caso ainda não existam lá, e atualiza assets visuais
+    versionados ou caches de banners em schema legado quando o aplicativo é atualizado.
     """
     if not is_frozen():
         return
@@ -73,6 +113,24 @@ def seed_bundled_resources(subdirs: List[str] | None = None) -> None:
     bundle_root = get_bundle_root()
     data_root = get_data_dir()
     target_subdirs = subdirs or ["static_data", "assets"]
+
+    current_ver = ""
+    try:
+        import version as _app_version
+
+        current_ver = str(getattr(_app_version, "__version__", "") or "").strip()
+    except Exception:
+        current_ver = ""
+
+    marker_path = os.path.join(data_root, ".bundle_version")
+    prev_ver = ""
+    if os.path.isfile(marker_path):
+        try:
+            with open(marker_path, "r", encoding="utf-8") as mf:
+                prev_ver = mf.read().strip()
+        except OSError:
+            prev_ver = ""
+    version_changed = bool(current_ver and current_ver != prev_ver)
 
     for sub in target_subdirs:
         src_base = os.path.join(bundle_root, sub)
@@ -86,11 +144,19 @@ def seed_bundled_resources(subdirs: List[str] | None = None) -> None:
             for fname in files:
                 src_file = os.path.join(root, fname)
                 dst_file = os.path.join(dst_dir, fname)
-                if not os.path.exists(dst_file):
+                rel_file = fname if rel_dir == "." else os.path.join(rel_dir, fname)
+                if _should_upgrade_seeded_file(sub, rel_file, src_file, dst_file, version_changed):
                     try:
                         shutil.copy2(src_file, dst_file)
                     except OSError:
                         pass
+
+    if current_ver and version_changed and subdirs is None:
+        try:
+            with open(marker_path, "w", encoding="utf-8") as mf:
+                mf.write(current_ver)
+        except OSError:
+            pass
 
 
 def load_local_env() -> None:

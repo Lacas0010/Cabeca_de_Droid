@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Set, Optional, Tuple
 
 import database
-from core.config import get_data_path, get_resource_path
+from core.config import get_bundle_root, get_data_path, get_resource_path
 from services.roster_service import get_roster
 from static_data_manager import static_data_manager
 
@@ -236,13 +236,36 @@ async def get_gacha_characters(game_id: str) -> Dict[str, Any]:
     return {"game_id": game_id, "characters": chars_list}
 
 
+def _banners_need_schema_upgrade(data: Dict[str, Any], game_id: Optional[str] = None) -> bool:
+    """Detecta se current_banners.json está em schema legado (sem duration_type/end_date da v1.4+)."""
+    if not isinstance(data, dict) or not data:
+        return True
+    keys = [game_id.lower().strip()] if game_id else [k for k in ("genshin", "hsr", "zzz") if k in data]
+    if not keys:
+        return True
+    for k in keys:
+        g_entry = data.get(k)
+        if not isinstance(g_entry, dict):
+            return True
+        banners = g_entry.get("banners") or []
+        if not banners:
+            return True
+        for b in banners:
+            if not isinstance(b, dict):
+                continue
+            if b.get("duration_type") is None:
+                return True
+    return False
+
+
 def get_current_banners(game_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Retorna os banners atuais extraídos do manifesto static_data/current_banners.json.
-    Se o arquivo não existir, executa o scraper para obter e consolidar os dados em tempo real.
+    Detecta automaticamente caches legados (sem fase/data individual) migrando do bundle ou
+    re-executando o scraper em tempo real.
     """
     filepath = _resolve_static_file("current_banners.json")
-    data = {}
+    data: Dict[str, Any] = {}
     if os.path.exists(filepath):
         try:
             with open(filepath, "r", encoding="utf-8") as f:
@@ -250,11 +273,33 @@ def get_current_banners(game_id: Optional[str] = None) -> Dict[str, Any]:
         except Exception as e:
             print(f"[WARN] Erro ao ler current_banners.json: {e}")
 
-    if not data or (game_id and game_id.lower().strip() not in data):
+    # Se o cache local estiver em schema legado (ex.: upgrade de .exe v1.3.4 -> v1.4+),
+    # tenta primeiro migrar do bundle empacotado antes de recorrer à rede
+    if _banners_need_schema_upgrade(data, game_id):
+        bundled_path = os.path.join(get_bundle_root(), "static_data", "current_banners.json")
+        if os.path.exists(bundled_path) and os.path.abspath(bundled_path) != os.path.abspath(filepath):
+            try:
+                with open(bundled_path, "r", encoding="utf-8") as bf:
+                    bundled_data = json.load(bf)
+                if not _banners_need_schema_upgrade(bundled_data, game_id):
+                    data = bundled_data
+                    try:
+                        data_p = get_data_path(os.path.join("static_data", "current_banners.json"))
+                        os.makedirs(os.path.dirname(data_p) or ".", exist_ok=True)
+                        with open(data_p, "w", encoding="utf-8") as wf:
+                            json.dump(bundled_data, wf, ensure_ascii=False, indent=2)
+                    except OSError:
+                        pass
+            except Exception:
+                pass
+
+    if not data or (game_id and game_id.lower().strip() not in data) or _banners_need_schema_upgrade(data, game_id):
         try:
             from scrapers.scraper_prydwen import PrydwenScraper
 
-            data = PrydwenScraper().get_current_banners(game_id)
+            fresh = PrydwenScraper().get_current_banners(game_id)
+            if isinstance(fresh, dict) and fresh:
+                data = fresh
         except Exception as e:
             print(f"[WARN] Falha ao extrair banners em tempo real: {e}")
 
@@ -379,6 +424,22 @@ def get_gacha_simulator_defaults(
         end_date = b.get("end_date")
         duration_type = str(b.get("duration_type") or "").strip().lower()
         phase_val = b.get("phase")
+
+        # Fallback resiliente: se o registro vier de um cache legado sem start_date/end_date,
+        # extrai diretamente de date_range ou patch_info usando o parser oficial do Prydwen
+        if (not end_date or not duration_type) and (date_range or patch_info):
+            try:
+                from scrapers.scraper_prydwen import PrydwenScraper
+
+                inferred = PrydwenScraper._extract_banner_schedule_meta(patch_label or patch_info, date_range or patch_info)
+                start_date = start_date or inferred.get("start_date")
+                end_date = end_date or inferred.get("end_date")
+                if not duration_type and inferred.get("duration_type"):
+                    duration_type = str(inferred["duration_type"]).lower()
+                if phase_val is None and inferred.get("phase") is not None:
+                    phase_val = inferred["phase"]
+            except Exception:
+                pass
 
         if not duration_type:
             txt_probe = f"{patch_label} {patch_info}".lower()

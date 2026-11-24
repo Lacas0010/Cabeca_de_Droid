@@ -294,6 +294,63 @@ class TestResetRadarSuite(unittest.TestCase):
             "https://cdn.prydwen.gg/images/zenless-zone-zero/characters/severian_card.webp",
         )
 
+    def test_legacy_banner_cache_triggers_schema_upgrade_from_bundle(self):
+        import json, os, tempfile
+        from services import gacha_service
+
+        legacy_payload = {
+            "genshin": {
+                "game_id": "genshin",
+                "patch_info": "Patch 7.2 Phase 1 Nov 4, 2026 – Nov 24, 2026",
+                "banners": [{"character_name": "Mitya", "is_primary": True}],
+                "last_updated": "2026-11-18T10:00:00",
+            }
+        }
+        bundled_payload = {
+            "genshin": {
+                "game_id": "genshin",
+                "patch_info": "Patch 7.2 Phase 1 Nov 4, 2026 – Nov 24, 2026",
+                "banners": [
+                    {
+                        "character_name": "Mitya",
+                        "is_primary": True,
+                        "start_date": "2026-11-04",
+                        "end_date": "2026-11-24",
+                        "phase": 1,
+                        "duration_type": "phase_1",
+                    }
+                ],
+                "last_updated": "2026-11-24T10:00:00",
+            }
+        }
+        self.assertTrue(gacha_service._banners_need_schema_upgrade(legacy_payload, "genshin"))
+        self.assertFalse(gacha_service._banners_need_schema_upgrade(bundled_payload, "genshin"))
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            data_dir = os.path.join(tmpdir, "appdata")
+            bundle_dir = os.path.join(tmpdir, "bundle")
+            os.makedirs(os.path.join(data_dir, "static_data"), exist_ok=True)
+            os.makedirs(os.path.join(bundle_dir, "static_data"), exist_ok=True)
+            data_file = os.path.join(data_dir, "static_data", "current_banners.json")
+            bundle_file = os.path.join(bundle_dir, "static_data", "current_banners.json")
+            with open(data_file, "w", encoding="utf-8") as f:
+                json.dump(legacy_payload, f)
+            with open(bundle_file, "w", encoding="utf-8") as f:
+                json.dump(bundled_payload, f)
+
+            with (
+                patch("services.gacha_service._resolve_static_file", return_value=data_file),
+                patch("services.gacha_service.get_bundle_root", return_value=bundle_dir),
+                patch("services.gacha_service.get_data_path", return_value=data_file),
+            ):
+                resolved = gacha_service.get_current_banners("genshin")
+
+            self.assertEqual(resolved["banners"][0]["duration_type"], "phase_1")
+            self.assertEqual(resolved["banners"][0]["end_date"], "2026-11-24")
+            with open(data_file, "r", encoding="utf-8") as f:
+                migrated = json.load(f)
+            self.assertEqual(migrated["genshin"]["banners"][0]["duration_type"], "phase_1")
+
     def test_frontend_home_reset_radar_markup_js_and_css(self):
         html = (ROOT_DIR / "static" / "index.html").read_text(encoding="utf-8")
         self.assertIn('id="home-reset-radar-card"', html)

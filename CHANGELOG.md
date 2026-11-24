@@ -6,6 +6,14 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.8.1] / Release Standalone [v1.4.1] - 2026-11-24
+
+### 🐛 Corrigido
+- **Migração automática de `current_banners.json` e ícones versionados no `.exe` (`core/paths.py`, `services/gacha_service.py`):** `seed_bundled_resources()` agora detecta troca de versão via `.bundle_version` e atualiza automaticamente `static_data/current_banners.json` (quando em schema legado da `v1.3.4` ou mais antigo que o bundle) e os ícones oficiais em `assets/{icons,resources,endgame,elements}/`, preservando integralmente `.db`, `.enc` e `.env`; `get_current_banners()` também identifica caches legados sem `duration_type`/`end_date`, migra do bundle ou re-executa o scraper, e `_compute_banner_timing()` aplica fallback de parse de datas.
+- **Empacotamento offline completo no CI (`.github/workflows/release.yml`):** prefetch automático dos 4 conjuntos de ícones oficiais (`element`, `role`, `resource` e `endgame`) antes do build PyInstaller (`328 testes aprovados`).
+
+---
+
 ## [5.8.0] / Release Standalone [v1.4.0] - 2026-11-24
 
 ### ✨ Adicionado
