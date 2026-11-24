@@ -869,6 +869,22 @@ class StaticDataManager:
         except Exception:
             pass
 
+        try:
+            from scrapers.role_icons_scraper import sync_role_icons
+
+            role_icons = sync_role_icons(target_games)
+            sync_results["role_icons"] = {g: len(v) for g, v in role_icons.items()}
+        except Exception:
+            pass
+
+        try:
+            from scrapers.resource_icons_scraper import sync_resource_icons
+
+            resource_icons = sync_resource_icons(target_games)
+            sync_results["resource_icons"] = {g: len(v) for g, v in resource_icons.items()}
+        except Exception:
+            pass
+
         return sync_results
 
     def _sync_hsr(self) -> Dict[str, Any]:

@@ -131,78 +131,466 @@ function startPollingStatus(gameId) {
 
 
 // ==========================================================================
-// FUNÇÕES DO MONITOR DE ENERGIA (RESINA / PODER / BATERIA)
+// FUNÇÕES DO MONITOR DE ENERGIA (RESINA / PODER / BATERIA) & DAILY NOTES
 // ==========================================================================
+let _lastDailyNotesPayload = null;
+
+function _escapeDnHtml(str) {
+    return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function _parseNotesSeconds(notes) {
+    if (!notes) return 0;
+    const direct = Number(notes.recovery_seconds ?? notes.extra_info?.recovery_seconds);
+    if (!Number.isNaN(direct) && direct >= 0 && (notes.recovery_seconds !== undefined || notes.extra_info?.recovery_seconds !== undefined)) {
+        return Math.floor(direct);
+    }
+    const fullAt = notes.full_at || notes.extra_info?.full_at;
+    if (fullAt) {
+        const ms = Date.parse(fullAt);
+        if (!Number.isNaN(ms)) return Math.max(0, Math.floor((ms - Date.now()) / 1000));
+    }
+    const raw = String(notes.recovery_time || "").trim();
+    if (!raw || raw === "0" || raw === "0:00:00") return 0;
+    if (/^\d+$/.test(raw)) return parseInt(raw, 10);
+    const tdMatch = raw.match(/^(?:(\d+)\s+days?,\s*)?(\d+):(\d+):(\d+)/i);
+    if (tdMatch) {
+        return (parseInt(tdMatch[1] || "0", 10) * 86400)
+            + (parseInt(tdMatch[2] || "0", 10) * 3600)
+            + (parseInt(tdMatch[3] || "0", 10) * 60)
+            + parseInt(tdMatch[4] || "0", 10);
+    }
+    return 0;
+}
+
+function _formatCompactDuration(totalSeconds) {
+    const sec = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+    if (sec <= 0) return "0m";
+    const days = Math.floor(sec / 86400);
+    const hours = Math.floor((sec % 86400) / 3600);
+    const mins = Math.floor((sec % 3600) / 60);
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${String(mins).padStart(2, "0")}m`;
+    return `${Math.max(1, mins)}m`;
+}
+
+function formatEnergyFullAt(fullAtIso, fallbackSeconds, isEn) {
+    let targetDate = null;
+    if (fullAtIso) {
+        const ms = Date.parse(fullAtIso);
+        if (!Number.isNaN(ms) && ms > Date.now()) {
+            targetDate = new Date(ms);
+        }
+    }
+    if (!targetDate && fallbackSeconds > 0) {
+        targetDate = new Date(Date.now() + fallbackSeconds * 1000);
+    }
+    if (!targetDate) return "";
+
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const targetDayStart = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate()).getTime();
+    const dayDiff = Math.round((targetDayStart - todayStart) / 86400000);
+
+    const timePart = new Intl.DateTimeFormat(isEn ? "en-US" : "pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    }).format(targetDate);
+
+    if (dayDiff === 0) {
+        return isEn ? `Full today at ${timePart}` : `Lota hoje às ${timePart}`;
+    }
+    if (dayDiff === 1) {
+        return isEn ? `Full tomorrow at ${timePart}` : `Lota amanhã às ${timePart}`;
+    }
+    const datePart = new Intl.DateTimeFormat(isEn ? "en-US" : "pt-BR", {
+        day: "2-digit",
+        month: "2-digit",
+    }).format(targetDate);
+    return isEn ? `Full ${datePart} at ${timePart}` : `Lota ${datePart} às ${timePart}`;
+}
+
+function _formatKNumber(num) {
+    const n = Number(num) || 0;
+    if (n >= 1000) {
+        const k = n / 1000;
+        return Number.isInteger(k) ? `${k}k` : `${k.toFixed(1)}k`;
+    }
+    return String(n);
+}
+
+function _buildDnPill({ icon, label, value, tone = "neutral", tooltip = "" }) {
+    const safeTip = _escapeDnHtml(tooltip || `${label}: ${value}`);
+    return `
+        <span class="dn-pill dn-${tone}" title="${safeTip}">
+            <i class="fa-solid ${icon} dn-pill-icon" aria-hidden="true"></i>
+            <span class="dn-pill-label">${_escapeDnHtml(label)}</span>
+            <strong class="dn-pill-val">${_escapeDnHtml(value)}</strong>
+        </span>
+    `;
+}
+
+function _buildExpeditionPill(expeditions, maxExp, isEn) {
+    const list = Array.isArray(expeditions) ? expeditions : [];
+    const total = list.length;
+    const cap = Number(maxExp) || (total > 0 ? total : 4);
+    if (total === 0) {
+        return _buildDnPill({
+            icon: "fa-compass",
+            label: isEn ? "Exped." : "Exped.",
+            value: `0/${cap}`,
+            tone: "alert",
+            tooltip: isEn
+                ? `No active expeditions (0/${cap}). Dispatch characters in-game!`
+                : `Nenhuma expedição ativa (0/${cap}). Envie personagens no jogo!`,
+        });
+    }
+
+    let finishedCount = 0;
+    let maxRemSec = 0;
+    let nextRemSec = Infinity;
+    const tipLines = [];
+
+    list.forEach((exp, idx) => {
+        const statusStr = String(exp.status || "").toLowerCase();
+        let remSec = Number(exp.remaining_seconds);
+        if (Number.isNaN(remSec)) {
+            if (exp.finish_at) {
+                const ms = Date.parse(exp.finish_at);
+                remSec = !Number.isNaN(ms) ? Math.max(0, Math.floor((ms - Date.now()) / 1000)) : 0;
+            } else {
+                remSec = 0;
+            }
+        }
+        const isDone = statusStr.includes("finish") || remSec <= 0;
+        if (isDone) {
+            finishedCount += 1;
+            tipLines.push(`${exp.name || `#${idx + 1}`}: ${isEn ? "Ready to claim!" : "Pronta para coletar!"}`);
+        } else {
+            if (remSec > maxRemSec) maxRemSec = remSec;
+            if (remSec < nextRemSec) nextRemSec = remSec;
+            const endClock = formatEnergyFullAt(exp.finish_at, remSec, isEn);
+            tipLines.push(`${exp.name || `#${idx + 1}`}: ${_formatCompactDuration(remSec)}${endClock ? ` (${endClock})` : ""}`);
+        }
+    });
+
+    if (finishedCount === total) {
+        return _buildDnPill({
+            icon: "fa-compass",
+            label: isEn ? "Exped." : "Exped.",
+            value: isEn ? `${total}/${cap} Ready` : `${total}/${cap} Prontas`,
+            tone: "alert",
+            tooltip: `${isEn ? "All expeditions finished!" : "Todas as expedições concluídas!"}\n${tipLines.join("\n")}`,
+        });
+    }
+
+    if (finishedCount > 0) {
+        return _buildDnPill({
+            icon: "fa-compass",
+            label: isEn ? "Exped." : "Exped.",
+            value: `${finishedCount}/${total} · ${_formatCompactDuration(maxRemSec)}`,
+            tone: "alert",
+            tooltip: `${isEn ? `${finishedCount} ready to claim` : `${finishedCount} pronta(s) para coletar`}\n${tipLines.join("\n")}`,
+        });
+    }
+
+    const soonestSec = Number.isFinite(nextRemSec) ? nextRemSec : maxRemSec;
+    return _buildDnPill({
+        icon: "fa-compass",
+        label: isEn ? "Exped." : "Exped.",
+        value: `${total}/${cap} · ${_formatCompactDuration(soonestSec)}`,
+        tone: "info",
+        tooltip: tipLines.join("\n"),
+    });
+}
+
+function renderDailyNotesPills(gameId, notes) {
+    const slot = document.getElementById(`daily-notes-slot-${gameId}`);
+    if (!slot) return;
+    if (!notes || !notes.extra_info || typeof notes.extra_info !== "object") {
+        slot.innerHTML = "";
+        return;
+    }
+
+    const isEn = Boolean(window.isEn);
+    const ex = notes.extra_info;
+    const pills = [];
+
+    if (gameId === "genshin") {
+        // 1. Comissões Diárias
+        const comp = Number(ex.completed_commissions ?? 0);
+        const maxComp = Number(ex.max_commissions ?? 4);
+        const claimed = Boolean(ex.claimed_commission_reward);
+        const commTone = claimed ? "done" : (comp >= maxComp ? "alert" : "neutral");
+        const commVal = claimed ? `${comp}/${maxComp} ✓` : (comp >= maxComp ? (isEn ? "Claim!" : "Resgatar!") : `${comp}/${maxComp}`);
+        pills.push(_buildDnPill({
+            icon: "fa-scroll",
+            label: isEn ? "Commissions" : "Comissões",
+            value: commVal,
+            tone: commTone,
+            tooltip: isEn
+                ? `Daily Commissions: ${comp}/${maxComp} • Katheryne bonus: ${claimed ? "Claimed" : "Pending"}`
+                : `Comissões Diárias: ${comp}/${maxComp} • Bônus Katheryne: ${claimed ? "Resgatado" : "Pendente"}`,
+        }));
+
+        // 2. Expedições com timer
+        pills.push(_buildExpeditionPill(ex.expeditions, ex.max_expeditions ?? 5, isEn));
+
+        // 3. Chefes Semanais
+        if (ex.max_resin_discounts !== undefined || ex.remaining_resin_discounts !== undefined) {
+            const maxBoss = Number(ex.max_resin_discounts ?? 3);
+            const remBoss = Number(ex.remaining_resin_discounts ?? 0);
+            const usedBoss = Math.max(0, maxBoss - remBoss);
+            pills.push(_buildDnPill({
+                icon: "fa-dragon",
+                label: isEn ? "Weekly Boss" : "Chefes Sem.",
+                value: remBoss === 0 ? `${usedBoss}/${maxBoss} ✓` : `${usedBoss}/${maxBoss}`,
+                tone: remBoss === 0 ? "done" : "neutral",
+                tooltip: isEn
+                    ? `Weekly Boss Resin Discounts: ${usedBoss}/${maxBoss} used (${remBoss} remaining)`
+                    : `Chefes Semanais (desconto de Resina): ${usedBoss}/${maxBoss} feitos (restam ${remBoss})`,
+            }));
+        }
+
+        // 4. Transformador Paramétrico
+        if (ex.transformer_available) {
+            const tSec = Number(ex.transformer_seconds ?? 0);
+            const tReady = tSec <= 0;
+            const tReadyClock = !tReady ? formatEnergyFullAt(ex.transformer_ready_at, tSec, isEn) : "";
+            pills.push(_buildDnPill({
+                icon: "fa-atom",
+                label: isEn ? "Transformer" : "Transformador",
+                value: tReady ? (isEn ? "Ready!" : "Pronto!") : _formatCompactDuration(tSec),
+                tone: tReady ? "alert" : "done",
+                tooltip: tReady
+                    ? (isEn ? "Parametric Transformer is ready to use!" : "Transformador Paramétrico pronto para uso!")
+                    : (isEn ? `Parametric Transformer cooldown: ${_formatCompactDuration(tSec)} (${tReadyClock})` : `Recarga do Transformador: ${_formatCompactDuration(tSec)} (${tReadyClock})`),
+            }));
+        }
+
+        // 5. Bule de Relachá
+        const curRealm = Number(ex.current_realm_currency ?? 0);
+        const maxRealm = Number(ex.max_realm_currency ?? 2400);
+        const realmPct = maxRealm > 0 ? curRealm / maxRealm : 0;
+        const realmFullClock = ex.realm_currency_recovery_seconds > 0
+            ? formatEnergyFullAt(ex.realm_currency_full_at, ex.realm_currency_recovery_seconds, isEn)
+            : "";
+        pills.push(_buildDnPill({
+            icon: "fa-mug-hot",
+            label: isEn ? "Teapot" : "Bule",
+            value: `${curRealm}/${maxRealm}`,
+            tone: realmPct >= 0.9 ? "alert" : "info",
+            tooltip: realmPct >= 1
+                ? (isEn ? `Serenitea Pot currency is FULL (${curRealm}/${maxRealm})!` : `Moedas do Bule LOTADAS (${curRealm}/${maxRealm})!`)
+                : `${isEn ? "Serenitea Pot" : "Bule de Relachá"}: ${curRealm}/${maxRealm}${realmFullClock ? ` • ${realmFullClock}` : ""}`,
+        }));
+
+    } else if (gameId === "hsr") {
+        // 1. Poder de Reserva
+        const resCur = Number(ex.current_reserve_stamina ?? 0);
+        const resMax = Number(ex.max_reserve_stamina ?? 2400);
+        const resFull = Boolean(ex.is_reserve_stamina_full) || resCur >= resMax;
+        pills.push(_buildDnPill({
+            icon: "fa-battery-half",
+            label: isEn ? "Reserve" : "Reserva",
+            value: `${resCur}/${resMax}`,
+            tone: resFull ? "alert" : (resCur > 0 ? "info" : "neutral"),
+            tooltip: isEn
+                ? `Reserved Trailblaze Power: ${resCur}/${resMax}`
+                : `Poder de Desbravamento de Reserva: ${resCur}/${resMax}`,
+        }));
+
+        // 2. Treino Diário
+        const trCur = Number(ex.current_train_score ?? 0);
+        const trMax = Number(ex.max_train_score ?? 500);
+        const trDone = trCur >= trMax && trMax > 0;
+        pills.push(_buildDnPill({
+            icon: "fa-list-check",
+            label: isEn ? "Daily Train" : "Treino Diário",
+            value: trDone ? `${trCur}/${trMax} ✓` : `${trCur}/${trMax}`,
+            tone: trDone ? "done" : "neutral",
+            tooltip: isEn
+                ? `Daily Training: ${trCur}/${trMax}`
+                : `Treino Diário: ${trCur}/${trMax}`,
+        }));
+
+        // 3. Universo Simulado / Divergente (SU/DU)
+        const suCur = Number(ex.current_rogue_score ?? 0);
+        const suMax = Number(ex.max_rogue_score ?? 14000);
+        const suDone = suCur >= suMax && suMax > 0;
+        pills.push(_buildDnPill({
+            icon: "fa-meteor",
+            label: "SU/DU",
+            value: suDone ? `${_formatKNumber(suCur)}/${_formatKNumber(suMax)} ✓` : `${_formatKNumber(suCur)}/${_formatKNumber(suMax)}`,
+            tone: suDone ? "done" : "neutral",
+            tooltip: isEn
+                ? `Simulated / Divergent Universe Weekly Points: ${suCur.toLocaleString("en-US")}/${suMax.toLocaleString("en-US")}`
+                : `Pontos Semanais SU / DU: ${suCur.toLocaleString("pt-BR")}/${suMax.toLocaleString("pt-BR")}`,
+        }));
+
+        // 4. Eco da Guerra (Chefes Semanais)
+        if (ex.max_weekly_discounts !== undefined || ex.remaining_weekly_discounts !== undefined) {
+            const maxEco = Number(ex.max_weekly_discounts ?? 3);
+            const remEco = Number(ex.remaining_weekly_discounts ?? 0);
+            const usedEco = Math.max(0, maxEco - remEco);
+            pills.push(_buildDnPill({
+                icon: "fa-skull-crossbones",
+                label: isEn ? "Echo of War" : "Eco Guerra",
+                value: remEco === 0 ? `${usedEco}/${maxEco} ✓` : `${usedEco}/${maxEco}`,
+                tone: remEco === 0 ? "done" : "neutral",
+                tooltip: isEn
+                    ? `Echo of War Weekly Clears: ${usedEco}/${maxEco} (${remEco} left)`
+                    : `Eco da Guerra (Chefes Semanais): ${usedEco}/${maxEco} feitos (restam ${remEco})`,
+            }));
+        }
+
+        // 5. Expedições com timer
+        pills.push(_buildExpeditionPill(ex.expeditions, ex.total_expedition_num ?? 4, isEn));
+
+    } else if (gameId === "zzz") {
+        // 1. Engajamento Diário
+        const engCur = Number(ex.engagement ?? 0);
+        const engMax = Number(ex.max_engagement ?? 400);
+        const engDone = engCur >= engMax && engMax > 0;
+        pills.push(_buildDnPill({
+            icon: "fa-bolt",
+            label: isEn ? "Engagement" : "Engajamento",
+            value: engDone ? `${engCur}/${engMax} ✓` : `${engCur}/${engMax}`,
+            tone: engDone ? "done" : "neutral",
+            tooltip: isEn
+                ? `Daily Engagement: ${engCur}/${engMax}`
+                : `Engajamento Diário: ${engCur}/${engMax}`,
+        }));
+
+        // 2. Raspadinha
+        const scratchDone = Boolean(ex.scratch_card_completed);
+        pills.push(_buildDnPill({
+            icon: "fa-ticket",
+            label: isEn ? "Scratch Card" : "Raspadinha",
+            value: scratchDone ? (isEn ? "Done ✓" : "Feita ✓") : (isEn ? "Pending" : "Pendente"),
+            tone: scratchDone ? "done" : "alert",
+            tooltip: scratchDone
+                ? (isEn ? "Daily Scratch Card already claimed today." : "Raspadinha do Quiosque já resgatada hoje.")
+                : (isEn ? "Daily Scratch Card still available at Howl's Newsstand!" : "Raspadinha diária disponível no Quiosque do Uivo!"),
+        }));
+
+        // 3. Café (Coff Cafe)
+        const coffeeState = String(ex.coffee_state || "unknown").toLowerCase();
+        let coffeeVal = isEn ? "Check in-game" : "Ver no jogo";
+        let coffeeTone = "neutral";
+        let coffeeTip = isEn
+            ? "Coff Cafe daily bonus (+60 Battery) — check in-game (not exposed by current HoYoLAB API)."
+            : "Café diário (+60 Bateria) — conferir no jogo (status não retornado pela API atual da HoYoLAB).";
+        if (coffeeState === "claimed" || coffeeState === "overcap") {
+            coffeeVal = coffeeState === "overcap" ? "+60 ✓" : (isEn ? "Claimed ✓" : "Tomado ✓");
+            coffeeTone = "done";
+            coffeeTip = isEn ? "Daily Coff Cafe bonus active/claimed." : "Café diário já tomado / bateria extra ativa.";
+        } else if (coffeeState === "available") {
+            coffeeVal = isEn ? "Available" : "Disponível";
+            coffeeTone = "alert";
+            coffeeTip = isEn ? "Daily Coff Cafe (+60 Battery) is available!" : "Café diário (+60 Bateria) disponível!";
+        }
+        pills.push(_buildDnPill({
+            icon: "fa-mug-saucer",
+            label: isEn ? "Coffee" : "Café",
+            value: coffeeVal,
+            tone: coffeeTone,
+            tooltip: coffeeTip,
+        }));
+
+        // 4. Locadora (Random Play)
+        const storeRaw = String(ex.video_store_state || "");
+        const storeUp = storeRaw.toUpperCase();
+        let storeVal = isEn ? "Unknown" : "N/A";
+        let storeTone = "neutral";
+        let storeTip = isEn ? `Video Store state: ${storeRaw}` : `Status da Locadora: ${storeRaw}`;
+        if (storeUp.includes("DONE") || storeUp.includes("REVENUE_AVAILABLE")) {
+            storeVal = isEn ? "Collect!" : "Coletar!";
+            storeTone = "alert";
+            storeTip = isEn ? "Video Store revenue ready to collect!" : "Receita da Locadora pronta para coletar!";
+        } else if (storeUp.includes("DOING") || storeUp.includes("CURRENTLY_OPEN") || (storeUp.includes("OPEN") && !storeUp.includes("WAITING"))) {
+            storeVal = isEn ? "Open ✓" : "Aberta ✓";
+            storeTone = "done";
+            storeTip = isEn ? "Video Store currently open and earning." : "Locadora aberta e gerando receita.";
+        } else if (storeUp.includes("SALESTATENO") || storeUp.includes("WAITING_TO_OPEN") || storeUp.includes("CLOSED")) {
+            storeVal = isEn ? "Closed" : "Fechada";
+            storeTone = "alert";
+            storeTip = isEn ? "Video Store is closed — open it in-game!" : "Locadora fechada — abra a loja no jogo!";
+        }
+        pills.push(_buildDnPill({
+            icon: "fa-film",
+            label: isEn ? "Video Store" : "Locadora",
+            value: storeVal,
+            tone: storeTone,
+            tooltip: storeTip,
+        }));
+
+        // 5. Cavidade Zero Semanal (se disponível)
+        if (ex.hollow_zero_bounty_max && Number(ex.hollow_zero_bounty_max) > 0) {
+            const hzCur = Number(ex.hollow_zero_bounty_current ?? 0);
+            const hzMax = Number(ex.hollow_zero_bounty_max);
+            const hzDone = hzCur >= hzMax;
+            pills.push(_buildDnPill({
+                icon: "fa-radiation",
+                label: isEn ? "Hollow Zero" : "Cavidade 0",
+                value: hzDone ? `${_formatKNumber(hzCur)}/${_formatKNumber(hzMax)} ✓` : `${_formatKNumber(hzCur)}/${_formatKNumber(hzMax)}`,
+                tone: hzDone ? "done" : "neutral",
+                tooltip: isEn
+                    ? `Hollow Zero Bounty Commissions: ${hzCur}/${hzMax}`
+                    : `Recompensas Semanais da Cavidade Zero: ${hzCur}/${hzMax}`,
+            }));
+        }
+    }
+
+    slot.innerHTML = pills.join("");
+}
+
+function renderAllEnergyMonitorData(data) {
+    if (!data || typeof data !== "object") return;
+    const isEn = Boolean(window.isEn);
+    const txtFull = window.t ? window.t("energy_fully_charged", "Totalmente carregada") : "Totalmente carregada";
+    const txtRecov = window.t ? window.t("energy_recovery", "Recuperação: ") : "Recuperação: ";
+    const txtNoData = window.t ? window.t("energy_no_data", "Sem dados sincronizados") : "Sem dados sincronizados";
+
+    const defaultsMax = { genshin: 200, hsr: 300, zzz: 240 };
+
+    ["genshin", "hsr", "zzz"].forEach(gid => {
+        const notes = data[gid];
+        if (!notes) {
+            updateEnergyCircle(gid, 0, defaultsMax[gid], txtNoData, "");
+            renderDailyNotesPills(gid, null);
+            return;
+        }
+        const cur = Number(notes.current_energy ?? 0);
+        const max = Number(notes.max_energy ?? defaultsMax[gid]) || defaultsMax[gid];
+        const recSec = _parseNotesSeconds(notes);
+        const fullAtIso = notes.full_at || notes.extra_info?.full_at || null;
+
+        let mainText = txtFull;
+        let capClockText = "";
+        if (recSec > 0 && cur < max) {
+            mainText = `${txtRecov}${_formatCompactDuration(recSec)}`;
+            capClockText = formatEnergyFullAt(fullAtIso, recSec, isEn);
+        }
+        updateEnergyCircle(gid, cur, max, mainText, capClockText);
+        renderDailyNotesPills(gid, notes);
+    });
+}
+
 async function setupEnergyMonitor() {
     const fetchNotes = async () => {
         try {
             const res = await fetch("/api/notes");
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
-            const txtFull = window.t ? window.t("energy_fully_charged", "Totalmente carregada") : "Totalmente carregada";
-            const txtRecov = window.t ? window.t("energy_recovery", "Recuperação: ") : "Recuperação: ";
-            const txtNoData = window.t ? window.t("energy_no_data", "Sem dados sincronizados") : "Sem dados sincronizados";
-            
-            // Genshin
-            if (data.genshin) {
-                const notes = data.genshin;
-                let timeStr = txtFull;
-                if (notes.recovery_time && notes.recovery_time !== "0:00:00" && notes.recovery_time !== "0") {
-                    // Formata a string de tempo (ex: "1 day, 2:30:15" -> "1d 2h 30m" ou "2h 30m")
-                    let displayTime = notes.recovery_time;
-                    try {
-                        const parts = notes.recovery_time.split(":");
-                        if (parts.length >= 2) {
-                            displayTime = `${parts[0]}h ${parts[1]}m`;
-                        }
-                    } catch(e) {}
-                    timeStr = `${txtRecov}${displayTime}`;
-                }
-                updateEnergyCircle("genshin", notes.current_energy, notes.max_energy, timeStr);
-            } else {
-                updateEnergyCircle("genshin", 0, 200, txtNoData);
-            }
-            
-            // HSR
-            if (data.hsr) {
-                const notes = data.hsr;
-                let timeStr = txtFull;
-                if (notes.recovery_time && notes.recovery_time !== "0" && notes.recovery_time !== "0:00:00") {
-                    let displayTime = notes.recovery_time;
-                    try {
-                        const sec = parseInt(notes.recovery_time);
-                        if (!isNaN(sec) && sec > 0) {
-                            const hrs = Math.floor(sec / 3600);
-                            const mins = Math.floor((sec % 3600) / 60);
-                            displayTime = `${hrs}h ${mins}m`;
-                        }
-                    } catch(e) {}
-                    timeStr = `${txtRecov}${displayTime}`;
-                }
-                updateEnergyCircle("hsr", notes.current_energy, notes.max_energy, timeStr);
-            } else {
-                updateEnergyCircle("hsr", 0, 240, txtNoData);
-            }
-            
-            // ZZZ
-            if (data.zzz) {
-                const notes = data.zzz;
-                let timeStr = txtFull;
-                if (notes.recovery_time && notes.recovery_time !== "0" && notes.recovery_time !== "0:00:00") {
-                    let displayTime = notes.recovery_time;
-                    try {
-                        const sec = parseInt(notes.recovery_time);
-                        if (!isNaN(sec) && sec > 0) {
-                            const hrs = Math.floor(sec / 3600);
-                            const mins = Math.floor((sec % 3600) / 60);
-                            displayTime = `${hrs}h ${mins}m`;
-                        }
-                    } catch(e) {}
-                    timeStr = `${txtRecov}${displayTime}`;
-                }
-                updateEnergyCircle("zzz", notes.current_energy, notes.max_energy, timeStr);
-            } else {
-                updateEnergyCircle("zzz", 0, 240, txtNoData);
-            }
+            _lastDailyNotesPayload = data;
+            renderAllEnergyMonitorData(data);
         } catch (err) {
             console.error("Erro ao carregar notas diárias:", err);
         }
@@ -211,21 +599,29 @@ async function setupEnergyMonitor() {
     fetchNotes();
     setInterval(fetchNotes, 60000); // Atualiza a cada 1 minuto
     window.addEventListener("app:languageChanged", () => {
-        fetchNotes();
+        if (_lastDailyNotesPayload) {
+            renderAllEnergyMonitorData(_lastDailyNotesPayload);
+        } else {
+            fetchNotes();
+        }
         if (typeof window.refreshCheckinLogs === "function") {
             window.refreshCheckinLogs();
         }
     });
 }
 
-function updateEnergyCircle(gameId, current, max, remainText) {
+function updateEnergyCircle(gameId, current, max, remainText, fullAtText = "") {
     const ring = document.getElementById(`ring-${gameId}`);
     const valEl = document.getElementById(`lbl-${gameId}-val`);
     const timeEl = document.getElementById(`lbl-${gameId}-time`);
     if (!ring || !valEl || !timeEl) return;
     
     valEl.innerText = `${current}/${max}`;
-    timeEl.innerText = remainText;
+    if (fullAtText) {
+        timeEl.innerHTML = `<span class="energy-time-main">${_escapeDnHtml(remainText)}</span><span class="energy-full-at"><i class="fa-regular fa-clock" aria-hidden="true"></i> ${_escapeDnHtml(fullAtText)}</span>`;
+    } else {
+        timeEl.textContent = remainText;
+    }
     
     const pct = Math.min(Math.max(current / max, 0), 1);
     const offset = 213.6 - (pct * 213.6);

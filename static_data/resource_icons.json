@@ -1,0 +1,18 @@
+{
+  "genshin": {
+    "energy": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025/07/03/237301566/4328202cd795d7c4a7d5cd54e331c43b_1224981524026882289.png",
+    "currency": "https://upload-static.hoyoverse.com/hoyolab-wiki/2023/01/19/194600931/8902272b2dbb45cce8fbd6f596c6904b_3502391192719350131.png",
+    "ticket": "https://bbs.hoyolab.com/hoyowiki/picture/object/Intertwined Fate_icon.png"
+  },
+  "hsr": {
+    "energy": "https://upload-static.hoyoverse.com/hoyowiki/2023/02/21/cf473d0c355b9f6d4cc5930681217e82_3238642280712712661.png",
+    "reserve": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2024/01/12/167256510/c1a1a7ad271af28e969a4b46d8cdd16c_4779666026305602445.png",
+    "currency": "https://upload-static.hoyoverse.com/hoyowiki/2023/02/21/d3381f7f9e06d05a48ee6f6ab5b995b5_5873359330457121544.png",
+    "ticket": "https://upload-static.hoyoverse.com/hoyowiki/2023/02/21/65027c2d7c6045aea24324efd4a5b1ae_7582468639515319993.png"
+  },
+  "zzz": {
+    "energy": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025/02/08/167256510/d863d49f931ca0dbac3b0ec563657368_2411518699554855175.png",
+    "currency": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025/02/08/167256510/b796be09d9ccafa4967bbbffec346ab9_2814343997829937835.png",
+    "ticket": "https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025/02/08/167256510/9f1927aeff265157d384a0069d2d7f9a_1161839068731387156.png"
+  }
+}

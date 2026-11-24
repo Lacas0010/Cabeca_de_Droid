@@ -14,10 +14,10 @@
 <script defer="" src="/static/vendor/html2canvas/html2canvas.min.js"></script>
 <!-- CSS Modularizado por Domínio + Core/Sakuga -->
 <link href="css/help_security.css?v=2.0" rel="stylesheet"/>
-<link href="css/gacha.css?v=2.0" rel="stylesheet"/>
-<link href="css/endgame_strategy.css?v=2.1" rel="stylesheet"/>
+<link href="css/gacha.css?v=2.3" rel="stylesheet"/>
+<link href="css/endgame_strategy.css?v=2.5" rel="stylesheet"/>
 <link href="css/team_card.css?v=2.0" rel="stylesheet"/>
-<link href="style.css?v=32.0" rel="stylesheet"/>
+<link href="style.css?v=37.0" rel="stylesheet"/>
 <link href="/assets/logo.svg" rel="icon" type="image/svg+xml"/>
 </head>
 <body>
@@ -56,6 +56,14 @@
 <span style="color: rgba(255,255,255,0.2); font-size: 10px;">|</span>
 <sakuga-button aria-label="English" class="lang-btn sk-xs" data-lang="en" title="English" variant="secondary">EN</sakuga-button>
 </div>
+</div>
+<!-- GATILHO BUSCA RÁPIDA GLOBAL (Ctrl+K) -->
+<div class="sidebar-quick-search-wrap">
+<sakuga-button aria-label="Abrir Busca Rápida Global (Ctrl+K)" class="sidebar-quick-search-btn sk-block sk-xs" id="btn-open-quick-search" title="Busca Rápida Global (Ctrl+K)" variant="secondary">
+<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+<span class="quick-search-trigger-text" data-i18n="quick_search_trigger">Busca rápida...</span>
+<kbd class="quick-search-kbd">Ctrl K</kbd>
+</sakuga-button>
 </div>
 <nav class="nav-menu">
 <sakuga-button class="nav-btn active sk-nav-btn" data-tab="home" variant="secondary">
@@ -125,7 +133,7 @@
 <span class="status-text" data-i18n="status_checking" id="api-status-text">Buscando status...</span>
 </div>
 <div class="sidebar-version-row">
-<span class="version-badge" id="app-version-badge">v1.3.4</span>
+<span class="version-badge" id="app-version-badge">v1.4.0</span>
 <sakuga-button class="sk-xs" id="btn-check-updates" title="Verificar atualizações no GitHub" variant="secondary">
 <i class="fa-solid fa-cloud-arrow-down"></i>
 <span>Atualizar</span>
@@ -144,7 +152,10 @@
 <img alt="Logo" class="mobile-logo" decoding="sync" fetchpriority="high" height="28" loading="eager" src="/assets/logo.webp" width="28"/>
 <span class="mobile-brand-title" data-i18n="app_name">Cabeça de Droid</span>
 </div>
-<div class="mobile-lang-wrapper" style="margin-left: auto;">
+<div class="mobile-lang-wrapper" style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+<sakuga-button aria-label="Busca Rápida" class="mobile-quick-search-btn sk-xs sk-accent-cyan" id="btn-open-quick-search-mobile" title="Busca Rápida" variant="secondary">
+<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+</sakuga-button>
 <sakuga-button aria-label="Alterar Idioma / Switch Language" class="lang-btn-mobile sk-xs sk-accent-cyan" id="mobile-lang-toggle" style="display: flex" title="Alterar Idioma / Switch Language" variant="secondary">
 <i class="fa-solid fa-globe"></i> <span id="mobile-lang-label">PT</span>
 </sakuga-button>
@@ -275,39 +286,115 @@
 <h3><i class="fa-solid fa-battery-three-quarters"></i> <span data-i18n="energy_monitor_title">Monitor de Energia em Tempo Real</span></h3>
 <p class="section-desc" data-i18n="energy_monitor_desc">Poder, Resina e Bateria sincronizados da sua conta HoYoLAB</p>
 <div class="energy-grid">
-<div class="energy-box genshin-theme">
+<div class="energy-box genshin-theme" data-game="genshin">
+<div class="energy-box-header">
+<span class="energy-resource-icon-wrap" title="Resina Original / Original Resin">
+<img alt="Resina Original" class="energy-resource-icon" decoding="async" height="22" loading="lazy" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" src="/assets/resources/genshin_energy.png?v=2" width="22"/>
+<i class="fa-solid fa-droplet energy-resource-fallback" style="display:none;"></i>
+</span>
+<span class="energy-label" data-i18n="energy_resin_genshin">Resina (Genshin)</span>
+</div>
 <div class="energy-circle-container">
 <svg class="progress-ring" height="80" width="80">
 <circle class="progress-ring__background" cx="40" cy="40" fill="transparent" r="34" stroke="rgba(255,255,255,0.05)" stroke-width="6"></circle>
 <circle class="progress-ring__circle" cx="40" cy="40" fill="transparent" id="ring-genshin" r="34" stroke="var(--color-genshin)" stroke-dasharray="213.6" stroke-dashoffset="213.6" stroke-width="6"></circle>
 </svg>
 <div class="energy-value" id="lbl-genshin-val">0/200</div>
+<span class="energy-ring-emblem" aria-hidden="true">
+<img alt="" decoding="async" height="16" loading="lazy" onerror="this.parentElement.style.display='none';" src="/assets/resources/genshin_energy.png?v=2" width="16"/>
+</span>
 </div>
-<span class="energy-label" data-i18n="energy_resin_genshin">Resina (Genshin)</span>
 <span class="energy-time" data-i18n="energy_waiting" id="lbl-genshin-time">Aguardando...</span>
+<div class="energy-daily-notes-slot" data-game="genshin" id="daily-notes-slot-genshin"></div>
 </div>
-<div class="energy-box hsr-theme">
+<div class="energy-box hsr-theme" data-game="hsr">
+<div class="energy-box-header">
+<span class="energy-resource-icon-wrap" title="Poder de Desbravamento / Trailblaze Power">
+<img alt="Poder de Desbravamento" class="energy-resource-icon" decoding="async" height="22" loading="lazy" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" src="/assets/resources/hsr_energy.png?v=1" width="22"/>
+<i class="fa-solid fa-bolt energy-resource-fallback" style="display:none;"></i>
+</span>
+<span class="energy-label" data-i18n="energy_power_hsr">Poder de Desbravamento</span>
+</div>
 <div class="energy-circle-container">
 <svg class="progress-ring" height="80" width="80">
 <circle class="progress-ring__background" cx="40" cy="40" fill="transparent" r="34" stroke="rgba(255,255,255,0.05)" stroke-width="6"></circle>
 <circle class="progress-ring__circle" cx="40" cy="40" fill="transparent" id="ring-hsr" r="34" stroke="var(--color-hsr)" stroke-dasharray="213.6" stroke-dashoffset="213.6" stroke-width="6"></circle>
 </svg>
 <div class="energy-value" id="lbl-hsr-val">0/240</div>
+<span class="energy-ring-emblem" aria-hidden="true">
+<img alt="" decoding="async" height="16" loading="lazy" onerror="this.parentElement.style.display='none';" src="/assets/resources/hsr_energy.png?v=1" width="16"/>
+</span>
 </div>
-<span class="energy-label" data-i18n="energy_power_hsr">Poder de Desbravamento</span>
 <span class="energy-time" data-i18n="energy_waiting" id="lbl-hsr-time">Aguardando...</span>
+<div class="energy-daily-notes-slot" data-game="hsr" id="daily-notes-slot-hsr"></div>
 </div>
-<div class="energy-box zzz-theme">
+<div class="energy-box zzz-theme" data-game="zzz">
+<div class="energy-box-header">
+<span class="energy-resource-icon-wrap" title="Bateria / Battery Charge">
+<img alt="Bateria ZZZ" class="energy-resource-icon" decoding="async" height="22" loading="lazy" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" src="/assets/resources/zzz_energy.png?v=1" width="22"/>
+<i class="fa-solid fa-battery-full energy-resource-fallback" style="display:none;"></i>
+</span>
+<span class="energy-label" data-i18n="energy_battery_zzz">Bateria (ZZZ)</span>
+</div>
 <div class="energy-circle-container">
 <svg class="progress-ring" height="80" width="80">
 <circle class="progress-ring__background" cx="40" cy="40" fill="transparent" r="34" stroke="rgba(255,255,255,0.05)" stroke-width="6"></circle>
 <circle class="progress-ring__circle" cx="40" cy="40" fill="transparent" id="ring-zzz" r="34" stroke="var(--color-zzz)" stroke-dasharray="213.6" stroke-dashoffset="213.6" stroke-width="6"></circle>
 </svg>
 <div class="energy-value" id="lbl-zzz-val">0/240</div>
+<span class="energy-ring-emblem" aria-hidden="true">
+<img alt="" decoding="async" height="16" loading="lazy" onerror="this.parentElement.style.display='none';" src="/assets/resources/zzz_energy.png?v=1" width="16"/>
+</span>
 </div>
-<span class="energy-label" data-i18n="energy_battery_zzz">Bateria (ZZZ)</span>
 <span class="energy-time" data-i18n="energy_waiting" id="lbl-zzz-time">Aguardando...</span>
+<div class="energy-daily-notes-slot" data-game="zzz" id="daily-notes-slot-zzz"></div>
 </div>
+</div>
+</div>
+<!-- RADAR UNIFICADO DE RESETS (7 MODOS ENDGAME + DIÁRIO/SEMANAL) -->
+<div class="overview-card home-reset-radar-card" id="home-reset-radar-card">
+<div class="reset-radar-header">
+<div class="reset-radar-title-group">
+<div class="reset-radar-title-row">
+<span class="reset-radar-emblem" aria-hidden="true"><i class="fa-solid fa-stopwatch"></i></span>
+<h3 data-i18n="reset_radar_title">Radar Unificado de Resets</h3>
+<div class="reset-radar-summary-pills" id="home-reset-radar-summary"></div>
+</div>
+<p class="section-desc reset-radar-desc" data-i18n="reset_radar_desc">Os 7 modos de endgame ordenados por urgência — clique para ir direto ao desafio.</p>
+</div>
+<div class="reset-radar-controls">
+<div class="reset-radar-cycle-pills" id="home-reset-radar-cycles">
+<span class="reset-cycle-pill is-daily" id="radar-daily-cycle-pill">
+<i class="fa-regular fa-sun"></i>
+<span class="reset-cycle-label" data-i18n="reset_radar_daily">Diário (04:00)</span>
+<strong class="endgame-countdown-value" id="radar-daily-countdown">--:--</strong>
+</span>
+<span class="reset-cycle-pill is-weekly" id="radar-weekly-cycle-pill">
+<i class="fa-regular fa-calendar-check"></i>
+<span class="reset-cycle-label" data-i18n="reset_radar_weekly">Semanal (Seg 04:00)</span>
+<strong class="endgame-countdown-value" id="radar-weekly-countdown">--:--</strong>
+</span>
+</div>
+<sakuga-button aria-label="Atualizar Radar de Resets" class="sk-xs" data-i18n-title="briefing_btn_reload" id="btn-reload-reset-radar" onclick="window.loadHomeResetRadar && window.loadHomeResetRadar(true)" title="Recarregar" variant="secondary">
+<i class="fa-solid fa-rotate"></i>
+</sakuga-button>
+</div>
+</div>
+<div class="reset-radar-strip" id="home-reset-radar-strip">
+<div class="reset-radar-loading">
+<i class="fa-solid fa-spinner fa-spin"></i>
+<span data-i18n="reset_radar_loading">Sincronizando cronograma dos 7 modos de endgame...</span>
+</div>
+</div>
+<div class="banner-reset-section" id="home-banner-reset-section" style="display: none;">
+<div class="banner-reset-section-head">
+<span class="banner-reset-section-title">
+<i class="fa-solid fa-star"></i>
+<span data-i18n="reset_radar_banners_title">Virada de Banners Ativos</span>
+</span>
+<span class="banner-reset-section-hint" data-i18n="reset_radar_banners_hint">Clique em um banner para abrir no Simulador de Gacha</span>
+</div>
+<div class="banner-reset-strip" id="home-banner-reset-strip"></div>
 </div>
 </div>
 <!-- ORDEM DE SERVIÇO DO DIA (ROTEIRO OTIMIZADO DE ENERGIA) -->
@@ -476,13 +563,13 @@
 </div>
 <div class="element-filters specialty-filters" data-game="zzz" style="margin-bottom: 8px;">
 <sakuga-button class="filter-btn active sk-xs" data-i18n="filter_specialty_all" data-specialty="all" variant="secondary">Todas as Especialidades</sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-specialty="attack" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/zzz_attack.png" width="16"/> <span data-i18n="spec_attack">Ataque</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-specialty="stun" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/zzz_stun.png" width="16"/> <span data-i18n="spec_stun">Atordoamento</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-specialty="anomaly" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/zzz_anomaly.png" width="16"/> <span data-i18n="spec_anomaly">Anomalia</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-specialty="support" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/zzz_support.png" width="16"/> <span data-i18n="spec_support">Suporte</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-specialty="defense" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/zzz_defense.png" width="16"/> <span data-i18n="spec_defense">Defesa</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-specialty="rupture" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/zzz_rupture.png" width="16"/> <span data-i18n="spec_rupture">Ruptura</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-specialty="armorer" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/zzz_armorer.png" width="16"/> <span data-i18n="spec_armorer">Armeiro</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="attack" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_attack.png?v=2" width="16"/> <span data-i18n="spec_attack">Ataque</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="stun" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_stun.png?v=2" width="16"/> <span data-i18n="spec_stun">Atordoamento</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="anomaly" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_anomaly.png?v=2" width="16"/> <span data-i18n="spec_anomaly">Anomalia</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="support" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_support.png?v=2" width="16"/> <span data-i18n="spec_support">Suporte</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="defense" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_defense.png?v=2" width="16"/> <span data-i18n="spec_defense">Defesa</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="rupture" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_rupture.png?v=2" width="16"/> <span data-i18n="spec_rupture">Ruptura</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-specialty="armorer" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_armorer.png?v=2" width="16"/> <span data-i18n="spec_armorer">Armeiro</span></sakuga-button>
 </div>
 <div class="element-filters rarity-filters" data-game="zzz" style="margin-bottom: 12px;">
 <sakuga-button class="filter-btn active sk-xs" data-i18n="filter_rarity_all" data-rarity="all" variant="secondary">Todas as Raridades</sakuga-button>
@@ -533,13 +620,13 @@
 <span class="audit-label"><i class="fa-solid fa-crosshairs"></i> <span data-i18n="audit_specialty">Especialidade:</span></span>
 <div class="filter-pills" data-filter-type="specialty" data-game="zzz">
 <sakuga-button class="audit-pill active sk-xs" data-i18n="audit_all" data-val="all" variant="secondary">Todas</sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="attack" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="14" loading="lazy" src="/assets/icons/zzz_attack.png" width="14"/> <span data-i18n="spec_attack">Ataque</span></sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="stun" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="14" loading="lazy" src="/assets/icons/zzz_stun.png" width="14"/> <span data-i18n="spec_stun">Atordoamento</span></sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="anomaly" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="14" loading="lazy" src="/assets/icons/zzz_anomaly.png" width="14"/> <span data-i18n="spec_anomaly">Anomalia</span></sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="support" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="14" loading="lazy" src="/assets/icons/zzz_support.png" width="14"/> <span data-i18n="spec_support">Suporte</span></sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="defense" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="14" loading="lazy" src="/assets/icons/zzz_defense.png" width="14"/> <span data-i18n="spec_defense">Defesa</span></sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="rupture" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="14" loading="lazy" src="/assets/icons/zzz_rupture.png" width="14"/> <span data-i18n="spec_rupture">Ruptura</span></sakuga-button>
-<sakuga-button class="audit-pill sk-xs" data-val="armorer" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="14" loading="lazy" src="/assets/icons/zzz_armorer.png" width="14"/> <span data-i18n="spec_armorer">Armeiro</span></sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-val="attack" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_attack.png?v=2" width="14"/> <span data-i18n="spec_attack">Ataque</span></sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-val="stun" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_stun.png?v=2" width="14"/> <span data-i18n="spec_stun">Atordoamento</span></sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-val="anomaly" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_anomaly.png?v=2" width="14"/> <span data-i18n="spec_anomaly">Anomalia</span></sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-val="support" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_support.png?v=2" width="14"/> <span data-i18n="spec_support">Suporte</span></sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-val="defense" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_defense.png?v=2" width="14"/> <span data-i18n="spec_defense">Defesa</span></sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-val="rupture" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_rupture.png?v=2" width="14"/> <span data-i18n="spec_rupture">Ruptura</span></sakuga-button>
+<sakuga-button class="audit-pill sk-xs" data-val="armorer" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/zzz_armorer.png?v=2" width="14"/> <span data-i18n="spec_armorer">Armeiro</span></sakuga-button>
 </div>
 <span class="audit-label audit-label-sep"><i class="fa-solid fa-building-shield"></i> <span data-i18n="audit_faction">Facção:</span></span>
 <div class="filter-pills" data-filter-type="faction" data-game="zzz">
@@ -756,11 +843,11 @@
 </div>
 <div class="element-filters weapon-filters" data-game="genshin" style="margin-bottom: 8px;">
 <sakuga-button class="filter-btn active sk-xs" data-i18n="filter_weapon_all" data-weapon="all" variant="secondary">Todas as Armas</sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-weapon="sword" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/genshin_sword.png" width="16"/> <span data-i18n="weapon_sword">Espada</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-weapon="claymore" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/genshin_claymore.png" width="16"/> <span data-i18n="weapon_claymore">Espadão</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-weapon="polearm" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/genshin_polearm.png" width="16"/> <span data-i18n="weapon_polearm">Lança</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-weapon="bow" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/genshin_bow.png" width="16"/> <span data-i18n="weapon_bow">Arco</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-weapon="catalyst" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/genshin_catalyst.png" width="16"/> <span data-i18n="weapon_catalyst">Catalisador</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-weapon="sword" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/genshin_sword.png?v=2" width="16"/> <span data-i18n="weapon_sword">Espada</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-weapon="claymore" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/genshin_claymore.png?v=2" width="16"/> <span data-i18n="weapon_claymore">Espadão</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-weapon="polearm" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/genshin_polearm.png?v=2" width="16"/> <span data-i18n="weapon_polearm">Lança</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-weapon="bow" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/genshin_bow.png?v=2" width="16"/> <span data-i18n="weapon_bow">Arco</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-weapon="catalyst" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/genshin_catalyst.png?v=2" width="16"/> <span data-i18n="weapon_catalyst">Catalisador</span></sakuga-button>
 </div>
 <div class="element-filters rarity-filters" data-game="genshin" style="margin-bottom: 12px;">
 <sakuga-button class="filter-btn active sk-xs" data-i18n="filter_rarity_all" data-rarity="all" variant="secondary">Todas as Raridades</sakuga-button>
@@ -1032,15 +1119,15 @@
 </div>
 <div class="element-filters path-filters" data-game="hsr" style="margin-bottom: 8px;">
 <sakuga-button class="filter-btn active sk-xs" data-i18n="filter_path_all" data-path="all" variant="secondary">Todos os Caminhos</sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="destruction" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_destruction.png" width="16"/> <span data-i18n="path_destruction">Destruição</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="hunt" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_hunt.png" width="16"/> <span data-i18n="path_hunt">A Caça</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="erudition" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_erudition.png" width="16"/> <span data-i18n="path_erudition">Erudição</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="harmony" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_harmony.png" width="16"/> <span data-i18n="path_harmony">Harmonia</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="nihility" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_nihility.png" width="16"/> <span data-i18n="path_nihility">Inexistência</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="preservation" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_preservation.png" width="16"/> <span data-i18n="path_preservation">Preservação</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="abundance" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_abundance.png" width="16"/> <span data-i18n="path_abundance">Abundância</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="remembrance" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_remembrance.png" width="16"/> <span data-i18n="path_remembrance">Recordação</span></sakuga-button>
-<sakuga-button class="filter-btn sk-xs" data-path="elation" variant="secondary"><img alt="" class="filter-elem-icon" decoding="async" height="16" loading="lazy" src="/assets/icons/hsr_elation.png" width="16"/> <span data-i18n="path_elation">Euforia</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="destruction" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_destruction.png?v=2" width="16"/> <span data-i18n="path_destruction">Destruição</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="hunt" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_hunt.png?v=2" width="16"/> <span data-i18n="path_hunt">A Caça</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="erudition" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_erudition.png?v=2" width="16"/> <span data-i18n="path_erudition">Erudição</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="harmony" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_harmony.png?v=2" width="16"/> <span data-i18n="path_harmony">Harmonia</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="nihility" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_nihility.png?v=2" width="16"/> <span data-i18n="path_nihility">Inexistência</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="preservation" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_preservation.png?v=2" width="16"/> <span data-i18n="path_preservation">Preservação</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="abundance" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_abundance.png?v=2" width="16"/> <span data-i18n="path_abundance">Abundância</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="remembrance" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_remembrance.png?v=2" width="16"/> <span data-i18n="path_remembrance">Recordação</span></sakuga-button>
+<sakuga-button class="filter-btn sk-xs" data-path="elation" variant="secondary"><img alt="" class="filter-elem-icon role-filter-icon" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/icons/hsr_elation.png?v=2" width="16"/> <span data-i18n="path_elation">Euforia</span></sakuga-button>
 </div>
 <div class="element-filters rarity-filters" data-game="hsr" style="margin-bottom: 12px;">
 <sakuga-button class="filter-btn active sk-xs" data-i18n="filter_rarity_all" data-rarity="all" variant="secondary">Todas as Raridades</sakuga-button>
@@ -1249,11 +1336,11 @@
 <!-- Banner Promocional Oficial In-Game em Destaque -->
 <div class="gacha-active-banner-wrapper" id="gacha-active-banner-container">
 <!-- Cabeçalho com Versão e Fase -->
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+<div class="gacha-banner-header-row">
 <label style="font-size: 13px; color: #f8fafc; font-weight: 700; display: flex; align-items: center; gap: 6px;">
 <i class="fa-solid fa-fire" style="color: #f59e0b;"></i> <span data-i18n="gacha_featured_banner_title">Banner Promocional In-Game</span>
 </label>
-<span data-i18n="loading_text" id="gacha-banner-patch-badge" style="font-size: 11px; padding: 3px 10px; border-radius: 20px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.4); font-weight: 700;">
+<span class="gacha-banner-patch-badge" data-i18n="loading_text" id="gacha-banner-patch-badge">
                                         Carregando...
                                     </span>
 </div>
@@ -1265,8 +1352,15 @@
 <div class="gacha-banner-ingame-frame" id="gacha-banner-frame">
 <img alt="Banner In-Game" class="gacha-banner-ingame-img" decoding="async" height="380" id="gacha-banner-art-img" loading="lazy" onerror="this.style.display='none';" src="" style="display: none;" width="780"/>
 <div class="gacha-banner-ingame-overlay"></div>
+<div class="gacha-banner-top-bar">
 <div class="gacha-banner-ingame-badge-top" id="gacha-banner-ingame-badge-top">
 <i class="fa-solid fa-sparkles"></i> <span data-i18n="gacha_event_banner_type" id="gacha-banner-type-badge">Evento Promocional</span>
+</div>
+<div class="gacha-banner-countdown-badge banner-cd-normal" id="gacha-banner-countdown-badge" style="display: none;">
+<i class="fa-regular fa-clock"></i>
+<span class="gacha-banner-countdown-prefix" id="gacha-banner-countdown-prefix">Vira em</span>
+<strong class="gacha-banner-cd-value" id="gacha-banner-countdown-val" data-banner-end-at="">--</strong>
+</div>
 </div>
 <div class="gacha-banner-ingame-caption">
 <div>
@@ -1334,8 +1428,8 @@
 </div>
 </div>
 <!-- Grid de Controles de Rank/Constelação/Eidolon/Mindscape -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-<div>
+<div class="gacha-form-grid-2">
+<div class="gacha-form-field">
 <label data-i18n="gacha_current_rank_label" id="lbl-gacha-current-rank" style="font-size: 12px; color: #94a3b8;">Constelação Atual:</label>
 <select class="search-input" id="tab-gacha-current-rank" style="width: 100%; margin-top: 4px;">
 <option data-i18n="gacha_hero_unowned" value="-1">Não possui (0 cópias)</option>
@@ -1348,7 +1442,7 @@
 <option data-i18n="gacha_rank_c6_max" value="6">C6 (Máximo)</option>
 </select>
 </div>
-<div>
+<div class="gacha-form-field">
 <label data-i18n="gacha_target_rank_label" id="lbl-gacha-target-rank" style="font-size: 12px; color: #94a3b8;">Meta Desejada:</label>
 <select class="search-input" id="tab-gacha-target-rank" style="width: 100%; margin-top: 4px;">
 <option data-i18n="gacha_rank_c0_guarantee" value="0">C0 (Garantir 1º Personagem)</option>
@@ -1362,15 +1456,15 @@
 </div>
 </div>
 <!-- Estado do Pity e 50/50 -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-<div>
-<div style="display:flex; justify-content:space-between; align-items:center;">
+<div class="gacha-form-grid-2">
+<div class="gacha-form-field">
+<div class="gacha-pity-label-row">
 <label data-i18n="gacha_pity_title" id="lbl-gacha-pity-title" style="font-size: 12px; color: #94a3b8;">Pity Atual (0-89):</label>
 <span data-i18n="gacha_pity_synced_badge" id="gacha-pity-source-badge" style="font-size: 10px; color: #38bdf8; font-weight: 600;">Sincronizado da Conta</span>
 </div>
 <sakuga-input class="sk-num-input" id="tab-gacha-pity" inputmode="numeric" label="Pity Atual" max="89" min="0" style="margin-top: 4px;" type="text" value="0"/>
 </div>
-<div>
+<div class="gacha-form-field">
 <label data-i18n="gacha_5050_title" id="lbl-gacha-guaranteed-title" style="font-size: 12px; color: #94a3b8;">Estado do 50/50:</label>
 <select class="search-input" id="tab-gacha-guaranteed" style="width: 100%; margin-top: 4px;">
 <option data-i18n="gacha_status_5050_active" value="false">50/50 Ativo (Normal)</option>
@@ -1380,27 +1474,27 @@
 </div>
 <!-- Invocações e Recursos Disponíveis -->
 <div style="margin-bottom: 20px;">
-<div style="display:flex; justify-content:space-between; align-items:center;">
-<label data-i18n="gacha_pulls_available" style="font-size: 12px; color: #94a3b8;">Invocações / Recursos Disponíveis:</label>
-<span data-i18n="gacha_gems_equiv_sample" id="gacha-gems-convert-lbl" style="font-size: 11px; color: #a78bfa;">(Equivale a 14.400 Gemas)</span>
+<div class="gacha-pulls-label-row">
+<label class="gacha-pulls-label-inline" for="tab-gacha-pulls"><span id="gacha-pulls-ticket-icon"><img alt="" class="resource-icon-img" decoding="async" height="16" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_ticket.png?v=2" width="16"/></span><span data-i18n="gacha_pulls_available">Invocações / Recursos Disponíveis:</span></label>
+<span class="gacha-currency-convert-chip" data-i18n="gacha_gems_equiv_sample" id="gacha-gems-convert-lbl"><img alt="" class="resource-icon-img" decoding="async" height="15" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_currency.png?v=2" width="15"/> <span>(Equivale a 14.400 Gemas)</span></span>
 </div>
 <sakuga-input class="sk-num-input" id="tab-gacha-pulls" inputmode="numeric" label="Tiros Disponiveis" min="1" style="margin-top: 4px;" type="text" value="90"/>
 <div class="gacha-quick-pulls">
-<sakuga-button class="gacha-quick-btn sk-xs" data-i18n="gacha_btn_plus_10" onclick="addGachaPulls(10)" variant="secondary">+10 Invocações</sakuga-button>
-<sakuga-button class="gacha-quick-btn sk-xs" data-i18n="gacha_btn_plus_50" onclick="addGachaPulls(50)" variant="secondary">+50 Invocações</sakuga-button>
-<sakuga-button class="gacha-quick-btn sk-xs" data-i18n="gacha_btn_plus_90" onclick="addGachaPulls(90)" variant="secondary">+90 Invocações</sakuga-button>
-<sakuga-button class="gacha-quick-btn sk-xs" data-i18n="gacha_btn_plus_180" onclick="addGachaPulls(180)" variant="secondary">+180 Invocações</sakuga-button>
+<sakuga-button class="gacha-quick-btn sk-xs" onclick="addGachaPulls(10)" variant="secondary"><img alt="" class="gacha-btn-ticket-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_ticket.png?v=2" width="14"/> <span data-i18n="gacha_btn_plus_10">+10 Invocações</span></sakuga-button>
+<sakuga-button class="gacha-quick-btn sk-xs" onclick="addGachaPulls(50)" variant="secondary"><img alt="" class="gacha-btn-ticket-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_ticket.png?v=2" width="14"/> <span data-i18n="gacha_btn_plus_50">+50 Invocações</span></sakuga-button>
+<sakuga-button class="gacha-quick-btn sk-xs" onclick="addGachaPulls(90)" variant="secondary"><img alt="" class="gacha-btn-ticket-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_ticket.png?v=2" width="14"/> <span data-i18n="gacha_btn_plus_90">+90 Invocações</span></sakuga-button>
+<sakuga-button class="gacha-quick-btn sk-xs" onclick="addGachaPulls(180)" variant="secondary"><img alt="" class="gacha-btn-ticket-icon" decoding="async" height="14" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_ticket.png?v=2" width="14"/> <span data-i18n="gacha_btn_plus_180">+180 Invocações</span></sakuga-button>
 </div>
 </div>
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-<sakuga-button class="sk-block sk-sm sk-accent-amber" id="tab-btn-run-gacha-sim">
+<div class="gacha-action-grid-3">
+<sakuga-button class="sk-block sk-sm sk-accent-amber gacha-action-primary" id="tab-btn-run-gacha-sim">
 <i class="fa-solid fa-dice"></i> <span data-i18n="gacha_btn_monte_carlo">Simular (10 mil)</span>
 </sakuga-button>
 <sakuga-button class="sk-block sk-sm sk-accent-cyan" id="tab-btn-open-wish-single" onclick="window.startWishAnimation(1)" variant="secondary">
-<i class="fa-solid fa-rotate-right"></i> <span data-i18n="gacha_btn_single_wish">1 Invocação</span>
+<img alt="" class="gacha-btn-ticket-icon" decoding="async" height="15" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_ticket.png?v=2" width="15"/> <span data-i18n="gacha_btn_single_wish">1 Invocação</span>
 </sakuga-button>
 <sakuga-button class="sk-block sk-sm sk-accent-pink" id="tab-btn-open-wish-multi" onclick="window.startWishAnimation(10)" variant="secondary">
-<i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="gacha_btn_multi_wish">10 Invocações</span>
+<img alt="" class="gacha-btn-ticket-icon" decoding="async" height="15" loading="lazy" onerror="this.style.display='none';" src="/assets/resources/genshin_ticket.png?v=2" width="15"/> <span data-i18n="gacha_btn_multi_wish">10 Invocações</span>
 </sakuga-button>
 </div>
 </div>
@@ -3645,6 +3739,28 @@
 </div>
 </div>
 </div>
+<!-- MODAL BUSCA RÁPIDA GLOBAL (Ctrl+K) -->
+<div aria-hidden="true" aria-labelledby="quick-search-input" aria-modal="true" class="quick-search-overlay" id="quick-search-overlay" role="dialog">
+<div class="quick-search-modal" role="document">
+<div class="quick-search-header">
+<i class="fa-solid fa-magnifying-glass quick-search-icon" aria-hidden="true"></i>
+<input autocomplete="off" class="quick-search-input" data-i18n-placeholder="quick_search_placeholder" id="quick-search-input" placeholder="Buscar personagem, aba ou modo endgame..." spellcheck="false" type="text"/>
+<sakuga-button aria-label="Limpar busca" class="quick-search-clear-btn sk-xs" id="quick-search-clear-btn" style="display: none;" variant="secondary">
+<i class="fa-solid fa-xmark" aria-hidden="true"></i>
+</sakuga-button>
+<kbd class="quick-search-esc-kbd">ESC</kbd>
+</div>
+<div class="quick-search-results" id="quick-search-results" role="listbox"></div>
+<div class="quick-search-footer">
+<div class="quick-search-hints">
+<span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="quick_search_hint_nav">Navegar</span></span>
+<span><kbd>Enter</kbd> <span data-i18n="quick_search_hint_open">Abrir</span></span>
+<span><kbd>Esc</kbd> <span data-i18n="quick_search_hint_close">Fechar</span></span>
+</div>
+<span class="quick-search-count" id="quick-search-count"></span>
+</div>
+</div>
+</div>
 <sakuga-toast duration="3.0" id="sakuga-global-toast" message="Pronto!"></sakuga-toast>
 <script src="/static/vendor/sakuga-vfx/button.js?v=2.0"></script>
 <script src="/static/vendor/sakuga-vfx/toggle.js"></script>
@@ -3658,6 +3774,6 @@
 <script src="/static/vendor/sakuga-vfx/toast.js"></script>
 <script src="/static/vendor/sakuga-vfx/tooltip.js"></script>
 <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-<script src="js/app.js?v=43.0" type="module"></script>
+<script src="js/app.js?v=54.0" type="module"></script>
 </body>
 </html>

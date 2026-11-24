@@ -20,7 +20,12 @@ from core.config import get_data_path
 from core.security import is_loopback_request
 from schemas.system import BrowserClientSignal
 from services.browser_lifecycle_service import browser_lifecycle_manager
-from services.media_service import get_element_icon_asset, get_endgame_icon_asset
+from services.media_service import (
+    get_element_icon_asset,
+    get_endgame_icon_asset,
+    get_resource_icon_asset,
+    get_role_icon_asset,
+)
 
 router = APIRouter(tags=["System & Utilities"])
 
@@ -434,3 +439,25 @@ async def serve_endgame_mode_icon(filename: str):
         media_type=media_type,
         headers={"Cache-Control": "public, max-age=86400"},
     )
+
+
+@router.get("/assets/icons/{filename}")
+async def serve_role_icon_with_offline_fallback(filename: str):
+    """Serve ícone oficial de Caminho (HSR), Arma (Genshin) ou Especialidade (ZZZ) com fallback SVG offline."""
+    try:
+        content, media_type = await asyncio.to_thread(get_role_icon_asset, filename)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    headers = {"Cache-Control": "no-store"} if media_type == "image/svg+xml" else {"Cache-Control": "public, max-age=86400"}
+    return Response(content=content, media_type=media_type, headers=headers)
+
+
+@router.get("/assets/resources/{filename}")
+async def serve_resource_icon_with_offline_fallback(filename: str):
+    """Serve ícone oficial de Energia (Resina/Poder/Bateria), Moeda ou Passe com fallback SVG offline."""
+    try:
+        content, media_type = await asyncio.to_thread(get_resource_icon_asset, filename)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    headers = {"Cache-Control": "no-store"} if media_type == "image/svg+xml" else {"Cache-Control": "public, max-age=86400"}
+    return Response(content=content, media_type=media_type, headers=headers)

@@ -6,6 +6,29 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.8.0] / Release Standalone [v1.4.0] - 2026-11-24
+
+### ✨ Adicionado
+- **Ícones oficiais de Endgame, Caminhos, Armas, Especialidades e Recursos (`scrapers/endgame_icons_scraper.py`, `scrapers/role_icons_scraper.py`, `scrapers/resource_icons_scraper.py`, `services/media_service.py`, `routers/system.py`):**
+  - Coleta dinâmica via APIs oficiais (**StarRailRes**, **HoYoWiki**, **Prydwen**) com cache offline em `static_data/*.json` e rotas locais `/assets/endgame/`, `/assets/icons/` e `/assets/resources/` + fallback `onerror` seguro.
+  - Aplicados nos filtros do Roster, cards/linhas de personagens, `#build-inspector`, painéis de Endgame, **Monitor de Energia** (Resina Original, Poder de Desbravamento e Bateria) e **Simulador de Gacha / Índice de Sorte** (moedas e passes oficiais).
+- **Ícones de Chefes e Buffs nos Cards de Endgame (`endgame_extractor.py`, `services/endgame_service.py`, `static/js/modules/endgame.js`, `static/css/endgame_strategy.css`):**
+  - Extração estruturada dos chefes oficiais da **Sombra Apocalíptica** (Lados 1, 2 e 3), buffs de fase da **Ficção Pura**, **Bênçãos Brilhantes** (com nível e descrição limpa de tags HoYoLAB) + Eventos do **Teatro Imaginário** e chefes/buffs do **Assalto Mortal (ZZZ)**, com backfill automático sob demanda para bancos legados e tooltips estilizados responsivos.
+- **Radar Unificado de Resets & Virada de Banners na Home (`routers/endgame.py`, `services/endgame_service.py`, `schemas/team_matcher.py`, `static/js/modules/endgame.js`, `static/js/modules/gacha_sim.js`):**
+  - Novo endpoint `GET /api/endgame/reset-radar` agregando os **7 modos de endgame** ordenados por urgência (destaque âmbar para pendências a `<= 72h` do reset), timers ao vivo de **Reset Diário (04:00)** e **Semanal (Segunda 04:00)** no fuso do servidor, e navegação direta para o modo clicado.
+  - Subseção **Virada de Banners Ativos** na Home agrupada por data/hora real de término (separando `1ª Fase`, `2ª Fase` e `Patch Inteiro`), alerta `< 48h` e clique preenchendo automaticamente jogo, aba e personagem alvo no Simulador de Gacha.
+- **Daily Notes Completo no Monitor de Energia (`services/checkin_service.py`, `static/js/modules/sync_manager.js`, `static/style.css`):**
+  - Cálculo e exibição do **horário exato de lotação** da energia no fuso local (`Lota hoje/amanhã às HH:MM`).
+  - Pílulas compactas por jogo: Comissões, Expedições com timer, Chefes Semanais, Transformador Paramétrico e Bule (Genshin); Poder de Reserva, Treino Diário, SU/DU, Eco da Guerra e Expedições (HSR); Engajamento, Raspadinha, Café, Locadora (`VideoStoreState.*`) e Cavidade Zero (ZZZ).
+- **Busca Rápida Global `Ctrl+K` (`static/js/modules/quick_search.js`, `static/index.html`, `static/style.css`):**
+  - Modal Vanilla JS leve acionável por `Ctrl+K` / `Cmd+K`, botão na Sidebar e lupa no cabeçalho Mobile, com busca sem acentos ranqueada e navegação completa por teclado (`↑`, `↓`, `Enter`, `Esc`) para pular direto para qualquer personagem no Build Inspector, modo endgame ou aba.
+
+### 🐛 Corrigido
+- **Cronograma e horários de virada de banners (`scrapers/scraper_prydwen.py`, `services/gacha_service.py`, `schemas/gacha.py`, `static/js/modules/gacha_sim.js`, `static/css/gacha.css`):** detecção individual por banner de `1ª Fase` (`20:00` Genshin / `14:00` HSR e ZZZ) vs `2ª Fase` / `Patch Inteiro` (`23:30` virada de atualização), timer ao vivo por banner e correção de overflow horizontal no Simulador de Gacha em telas mobile (`<= 768px`).
+- **Retratos de personagens e ícone da Resina Original (`services/gacha_service.py`, `services/gacha_tracker_service.py`, `scrapers/resource_icons_scraper.py`):** priorização de ícones oficiais de `static_data_manager` (StarRailRes/Enka), correção da CDN Prydwen HSR (`honkai-star-rail`), limpeza de slugs com `•`/`.` (`silver-wolf-lv-999`), sufixo `_card.webp` no ZZZ e filtro de entradas de tutorial no HoYoWiki para a Resina Original azul (`327 testes aprovados`).
+
+---
+
 ## [5.7.4] / Release Standalone [v1.3.4] - 2026-11-19
 
 ### 🐛 Corrigido

@@ -386,3 +386,292 @@ def download_endgame_icons(force_invalid: bool = True) -> None:
                         print(f"[INFO] Ícone de endgame em cache local: {game}_{mode_id}.png")
                 except Exception as e:
                     print(f"[WARN] Falha ao baixar ícone de endgame {game}_{mode_id}: {e}")
+
+
+ROLE_FILENAME_ALIASES = {
+    "the hunt": "hunt",
+    "a caça": "hunt",
+    "a caca": "hunt",
+    "caça": "hunt",
+    "caca": "hunt",
+    "destruição": "destruction",
+    "destruicao": "destruction",
+    "erudição": "erudition",
+    "erudicao": "erudition",
+    "harmonia": "harmony",
+    "inexistência": "nihility",
+    "inexistencia": "nihility",
+    "preservação": "preservation",
+    "preservacao": "preservation",
+    "abundância": "abundance",
+    "abundancia": "abundance",
+    "recordação": "remembrance",
+    "recordacao": "remembrance",
+    "memória": "remembrance",
+    "memoria": "remembrance",
+    "memory": "remembrance",
+    "júbilo": "elation",
+    "jubilo": "elation",
+    "euforia": "elation",
+    "espada": "sword",
+    "espadão": "claymore",
+    "espadao": "claymore",
+    "lança": "polearm",
+    "lanca": "polearm",
+    "arco": "bow",
+    "catalisador": "catalyst",
+    "ataque": "attack",
+    "atordoamento": "stun",
+    "atordoador": "stun",
+    "anomalia": "anomaly",
+    "suporte": "support",
+    "defesa": "defense",
+    "defence": "defense",
+    "ruptura": "rupture",
+    "armeiro": "armorer",
+}
+
+
+def _normalize_role_filename(safe_name: str) -> str:
+    """Normaliza aliases PT-BR/EN de caminhos, armas e especialidades para '<game>_<role>.png'."""
+    if "_" not in safe_name or "." not in safe_name:
+        return safe_name.lower()
+    stem, ext = safe_name.rsplit(".", 1)
+    game_part, role_part = stem.split("_", 1)
+    role_low = role_part.lower().strip().replace("-", " ")
+    canonical = ROLE_FILENAME_ALIASES.get(role_low, role_low.replace(" ", "_"))
+    return f"{game_part.lower()}_{canonical}.{ext.lower()}"
+
+
+def load_role_icons_map() -> Dict[str, Dict[str, str]]:
+    """Carrega o manifesto static_data/role_icons.json gerado dinamicamente pelas APIs."""
+    for json_path in (
+        get_data_path(os.path.join("static_data", "role_icons.json")),
+        get_resource_path(os.path.join("static_data", "role_icons.json")),
+    ):
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+            except Exception as e:
+                print(f"[WARN] Erro ao carregar static_data/role_icons.json: {e}")
+    return {}
+
+
+def get_role_icon_asset(filename: str) -> tuple[bytes, str]:
+    """
+    Retorna ícone oficial de Caminho (HSR), Arma (Genshin) ou Especialidade (ZZZ) em cache local,
+    com download sob demanda via static_data/role_icons.json e fallback SVG vetorial offline.
+    """
+    safe_name = os.path.basename(str(filename or "")).strip()
+    if not safe_name or not safe_name.lower().endswith((".png", ".webp", ".svg")) or "_" not in safe_name:
+        raise ValueError("Invalid role icon filename")
+
+    canonical_name = _normalize_role_filename(safe_name)
+    candidates = [canonical_name] if canonical_name == safe_name.lower() else [canonical_name, safe_name.lower()]
+
+    for cand in candidates:
+        for local_path in (
+            get_data_path(os.path.join("assets", "icons", cand)),
+            get_resource_path(os.path.join("assets", "icons", cand)),
+        ):
+            if os.path.isfile(local_path):
+                with open(local_path, "rb") as f:
+                    data = f.read()
+                detected_mime = _detect_valid_image_mime(data)
+                if detected_mime:
+                    return data, detected_mime
+
+    stem = canonical_name.rsplit(".", 1)[0]
+    game_id, role_key = stem.split("_", 1)
+    icons_map = load_role_icons_map()
+    remote_url = str(icons_map.get(game_id, {}).get(role_key) or "").strip()
+    if remote_url.startswith("http"):
+        try:
+            from curl_cffi import requests
+
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                )
+            }
+            res = requests.get(remote_url, headers=headers, impersonate="chrome", timeout=10)
+            dest_path = get_data_path(os.path.join("assets", "icons", canonical_name))
+            if res.status_code == 200 and _save_element_png(res.content, dest_path):
+                with open(dest_path, "rb") as f:
+                    saved = f.read()
+                return saved, (_detect_valid_image_mime(saved) or "image/png")
+        except Exception:
+            pass
+
+    theme_colors = {"hsr": "#a855f7", "genshin": "#38bdf8", "zzz": "#f59e0b"}
+    accent = theme_colors.get(game_id, "#94a3b8")
+    letter = next((ch.upper() for ch in role_key if ch.isalnum()), "R")
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+        f'<rect x="2" y="2" width="20" height="20" rx="6" fill="#0f172a" stroke="{accent}" stroke-width="1.8"/>'
+        f'<text x="12" y="15.5" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#f8fafc">{letter}</text>'
+        "</svg>"
+    )
+    return svg.encode("utf-8"), "image/svg+xml"
+
+
+def download_role_icons(force_refresh: bool = False) -> Dict[str, int]:
+    """Baixa e grava em PNG HD local todos os ícones consolidados em static_data/role_icons.json."""
+    icons_map = load_role_icons_map()
+    if not icons_map:
+        return {}
+    try:
+        from curl_cffi import requests
+    except ImportError:
+        return {}
+
+    target_dir = get_data_path(os.path.join("assets", "icons"))
+    os.makedirs(target_dir, exist_ok=True)
+    session = requests.Session(impersonate="chrome")
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        )
+    }
+    stats: Dict[str, int] = {}
+    for game, roles in icons_map.items():
+        if not isinstance(roles, dict):
+            continue
+        ok_count = 0
+        for role_key, url in roles.items():
+            if not url or not str(url).startswith("http"):
+                continue
+            path = os.path.join(target_dir, f"{game}_{role_key}.png")
+            already_ok = False if force_refresh else _is_valid_cached_image_file(path)
+            if already_ok:
+                ok_count += 1
+                continue
+            try:
+                res = session.get(url, headers=headers, timeout=15)
+                if res.status_code == 200 and _save_element_png(res.content, path):
+                    ok_count += 1
+                    print(f"[INFO] Ícone de papel em cache local: {game}_{role_key}.png")
+            except Exception as e:
+                print(f"[WARN] Falha ao baixar ícone {game}_{role_key}: {e}")
+        stats[game] = ok_count
+    return stats
+
+
+def load_resource_icons_map() -> Dict[str, Dict[str, str]]:
+    """Carrega o manifesto static_data/resource_icons.json gerado dinamicamente pelas APIs."""
+    for json_path in (
+        get_data_path(os.path.join("static_data", "resource_icons.json")),
+        get_resource_path(os.path.join("static_data", "resource_icons.json")),
+    ):
+        if os.path.exists(json_path):
+            try:
+                with open(json_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict):
+                    return data
+            except Exception as e:
+                print(f"[WARN] Erro ao carregar static_data/resource_icons.json: {e}")
+    return {}
+
+
+def get_resource_icon_asset(filename: str) -> tuple[bytes, str]:
+    """
+    Retorna ícone oficial de recurso (energia, reserva, moeda, passe) em cache local,
+    com download sob demanda via static_data/resource_icons.json e fallback SVG vetorial offline.
+    """
+    safe_name = os.path.basename(str(filename or "")).strip().lower()
+    if not safe_name or not safe_name.endswith(".png") or "_" not in safe_name:
+        raise ValueError("Invalid resource icon filename")
+
+    for local_path in (
+        get_data_path(os.path.join("assets", "resources", safe_name)),
+        get_resource_path(os.path.join("assets", "resources", safe_name)),
+    ):
+        if os.path.isfile(local_path):
+            with open(local_path, "rb") as f:
+                data = f.read()
+            detected_mime = _detect_valid_image_mime(data)
+            if detected_mime:
+                return data, detected_mime
+
+    stem = safe_name[:-4]
+    game_id, res_key = stem.split("_", 1)
+    icons_map = load_resource_icons_map()
+    remote_url = str(icons_map.get(game_id, {}).get(res_key) or "").strip()
+    if remote_url.startswith("http"):
+        try:
+            from curl_cffi import requests
+
+            headers = {
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+                )
+            }
+            res = requests.get(remote_url, headers=headers, impersonate="chrome", timeout=10)
+            dest_path = get_data_path(os.path.join("assets", "resources", safe_name))
+            if res.status_code == 200 and _save_element_png(res.content, dest_path):
+                with open(dest_path, "rb") as f:
+                    saved = f.read()
+                return saved, (_detect_valid_image_mime(saved) or "image/png")
+        except Exception:
+            pass
+
+    theme_colors = {"genshin": "#38bdf8", "hsr": "#a855f7", "zzz": "#f59e0b"}
+    accent = theme_colors.get(game_id, "#38bdf8")
+    letter = next((ch.upper() for ch in res_key if ch.isalnum()), "R")
+    svg = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">'
+        f'<circle cx="12" cy="12" r="10" fill="#0f172a" stroke="{accent}" stroke-width="1.8"/>'
+        f'<text x="12" y="15.5" text-anchor="middle" font-family="sans-serif" font-size="9.5" font-weight="700" fill="#f8fafc">{letter}</text>'
+        "</svg>"
+    )
+    return svg.encode("utf-8"), "image/svg+xml"
+
+
+def download_resource_icons(force_refresh: bool = False) -> Dict[str, int]:
+    """Baixa e grava em PNG local todos os ícones consolidados em static_data/resource_icons.json."""
+    icons_map = load_resource_icons_map()
+    if not icons_map:
+        return {}
+    try:
+        from curl_cffi import requests
+    except ImportError:
+        return {}
+
+    target_dir = get_data_path(os.path.join("assets", "resources"))
+    os.makedirs(target_dir, exist_ok=True)
+    session = requests.Session(impersonate="chrome")
+    headers = {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+        )
+    }
+    stats: Dict[str, int] = {}
+    for game, resources in icons_map.items():
+        if not isinstance(resources, dict):
+            continue
+        ok_count = 0
+        for res_key, url in resources.items():
+            if not url or not str(url).startswith("http"):
+                continue
+            path = os.path.join(target_dir, f"{game}_{res_key}.png")
+            already_ok = False if force_refresh else _is_valid_cached_image_file(path)
+            if already_ok:
+                ok_count += 1
+                continue
+            try:
+                res = session.get(url, headers=headers, timeout=15)
+                if res.status_code == 200 and _save_element_png(res.content, path):
+                    ok_count += 1
+                    print(f"[INFO] Ícone de recurso em cache local: {game}_{res_key}.png")
+            except Exception as e:
+                print(f"[WARN] Falha ao baixar ícone de recurso {game}_{res_key}: {e}")
+        stats[game] = ok_count
+    return stats

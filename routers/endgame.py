@@ -1,11 +1,20 @@
 import asyncio
 from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
-from services.endgame_service import get_endgame
+from services.endgame_service import get_endgame, get_unified_reset_radar
 from services.team_matcher_service import match_endgame_teams
-from schemas.team_matcher import EndgameResponse, EndgameTeamMatchResponse
+from schemas.team_matcher import EndgameResetRadarResponse, EndgameResponse, EndgameTeamMatchResponse
 
 router = APIRouter(tags=["Endgame"])
+
+
+@router.get("/api/endgame/reset-radar", response_model=EndgameResetRadarResponse)
+async def get_endgame_reset_radar_endpoint(lang: str = Query("pt", description="Language ('pt' or 'en')")):
+    """Retorna o Radar Unificado de Resets (7 modos de endgame ordenados por urgência + Diário/Semanal)."""
+    try:
+        return await get_unified_reset_radar(lang=lang)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/api/endgame/{game_id}", response_model=EndgameResponse)

@@ -2,6 +2,7 @@ import os
 import re
 import json
 import urllib.parse
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Set, Optional, Tuple
 
 import database
@@ -83,8 +84,8 @@ def make_prydwen_slug(game_id: str, name_str: str) -> str:
     if name_clean in PRYDWEN_SLUG_MAP:
         return PRYDWEN_SLUG_MAP[name_clean]
 
-    clean = re.sub(r"[\.\'\`•]", "", name_clean)
-    clean = re.sub(r"\s+", "-", clean)
+    clean = re.sub(r"[^a-z0-9\s-]", "", name_clean)
+    clean = re.sub(r"[\s-]+", "-", clean).strip("-")
     return clean
 
 
@@ -98,7 +99,7 @@ def make_fallback_urls(game_id: str, name_str: str) -> Tuple[str, str]:
         icon = f"/api/proxy_image?url={urllib.parse.quote('https://cdn.prydwen.gg/images/honkai-star-rail/characters/' + slug + '_icon.webp', safe='')}"
         gacha = f"/api/proxy_image?url={urllib.parse.quote('https://cdn.prydwen.gg/images/honkai-star-rail/characters/' + slug + '_card.webp', safe='')}"
     else:  # zzz
-        icon = f"/api/proxy_image?url={urllib.parse.quote('https://cdn.prydwen.gg/images/zenless-zone-zero/characters/' + slug + '_icon.webp', safe='')}"
+        icon = f"/api/proxy_image?url={urllib.parse.quote('https://cdn.prydwen.gg/images/zenless-zone-zero/characters/' + slug + '_card.webp', safe='')}"
         gacha = f"/api/proxy_image?url={urllib.parse.quote('https://cdn.prydwen.gg/images/zenless-zone-zero/characters/' + slug + '_full.webp', safe='')}"
     return icon, gacha
 
@@ -267,7 +268,25 @@ def resolve_character_icon(game_id: str, char_name: str, item_type: str = "chara
     """Resolve a URL segura (proxied) do ícone/foto de qualquer personagem ou item (arma/cone/motor)."""
     clean_g = game_id.lower().strip()
 
-    # 1. Tenta resolver via manifestos estáticos completos e banco de dados de gacha (personagens e armas)
+    # 1. Prioriza o perfil oficial já consolidado em static_data (StarRailRes / Enka / HoYoLAB)
+    if item_type == "character":
+        try:
+            prof = static_data_manager.get_character_profile(clean_g, char_name)
+            if prof and prof.get("icon"):
+                raw_icon = prof["icon"]
+                if raw_icon.startswith("http"):
+                    return f"/api/proxy_image?url={urllib.parse.quote(raw_icon, safe='')}"
+                elif clean_g == "hsr" and (raw_icon.startswith("icon/") or "character" in raw_icon):
+                    full_url = f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/{raw_icon}"
+                    return f"/api/proxy_image?url={urllib.parse.quote(full_url, safe='')}"
+                elif raw_icon.startswith("/"):
+                    return raw_icon
+                else:
+                    return f"/assets/{raw_icon}"
+        except Exception as e:
+            print(f"[WARN] Erro ao resolver ícone de {char_name}: {e}")
+
+    # 2. Consulta manifestos completos e banco de dados de gacha (inclui armas/cones/motores e fallback Prydwen)
     try:
         from services.gacha_tracker_service import get_gacha_item_icon
 
@@ -276,22 +295,6 @@ def resolve_character_icon(game_id: str, char_name: str, item_type: str = "chara
             return tracker_icon
     except Exception as e:
         print(f"[WARN] Erro ao resolver ícone via tracker para {char_name}: {e}")
-
-    try:
-        prof = static_data_manager.get_character_profile(clean_g, char_name)
-        if prof and prof.get("icon"):
-            raw_icon = prof["icon"]
-            if raw_icon.startswith("http"):
-                return f"/api/proxy_image?url={urllib.parse.quote(raw_icon, safe='')}"
-            elif clean_g == "hsr" and (raw_icon.startswith("icon/") or "character" in raw_icon):
-                full_url = f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/{raw_icon}"
-                return f"/api/proxy_image?url={urllib.parse.quote(full_url, safe='')}"
-            elif raw_icon.startswith("/"):
-                return raw_icon
-            else:
-                return f"/assets/{raw_icon}"
-    except Exception as e:
-        print(f"[WARN] Erro ao resolver ícone de {char_name}: {e}")
 
     fb_icon, _ = make_fallback_urls(clean_g, char_name)
     return fb_icon
@@ -368,6 +371,68 @@ def get_gacha_simulator_defaults(
     weapon_banners_list = banner_data.get("weapon_banners", [])
     patch_info = banner_data.get("patch_info", "")
 
+    def _compute_banner_timing(b: Dict[str, Any]) -> Dict[str, Any]:
+        """Resolve fase individual, tipo de duração, horário oficial e timestamp UTC de término do banner."""
+        patch_label = str(b.get("patch_label") or "").strip()
+        date_range = str(b.get("date_range") or "").strip()
+        start_date = b.get("start_date")
+        end_date = b.get("end_date")
+        duration_type = str(b.get("duration_type") or "").strip().lower()
+        phase_val = b.get("phase")
+
+        if not duration_type:
+            txt_probe = f"{patch_label} {patch_info}".lower()
+            if "collab" in txt_probe:
+                duration_type = "collab"
+                phase_val = None
+            elif "phase 2" in txt_probe or "fase 2" in txt_probe:
+                duration_type = "phase_2"
+                phase_val = 2
+            elif "phase 1" in txt_probe or "fase 1" in txt_probe:
+                duration_type = "phase_1"
+                phase_val = 1
+            else:
+                duration_type = "full_patch" if b.get("is_full_patch") else "phase_1"
+                phase_val = None if duration_type == "full_patch" else 1
+
+        if phase_val is not None:
+            try:
+                phase_val = int(phase_val)
+            except Exception:
+                phase_val = None
+
+        # Horário oficial de VIRADA (término) do banner no fuso BRT (UTC-3):
+        # - 1ª Fase termina na entrada da 2ª Fase (Genshin 20:00, HSR/ZZZ 14:00)
+        # - 2ª Fase e Patch Inteiro terminam na virada de atualização (23:30 para os 3 jogos)
+        # - Collab sem data de término fixa não possui horário de virada
+        b_time: Optional[str] = None
+        end_at_iso = None
+        if duration_type != "collab":
+            turnover_phase_ref = 2 if duration_type == "phase_1" else 1
+            turn_hour, turn_min = database.get_banner_schedule_time(clean_game, turnover_phase_ref)
+            b_time = f"{turn_hour:02d}:{turn_min:02d}"
+
+            if end_date and isinstance(end_date, str):
+                try:
+                    d_end = datetime.strptime(end_date.strip(), "%Y-%m-%d")
+                    brt_tz = timezone(timedelta(hours=-3))
+                    end_dt_brt = d_end.replace(hour=turn_hour, minute=turn_min, second=0, tzinfo=brt_tz)
+                    end_at_iso = end_dt_brt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+                except ValueError:
+                    end_at_iso = None
+
+        return {
+            "patch_label": patch_label or patch_info,
+            "date_range": date_range,
+            "start_date": start_date,
+            "end_date": end_date,
+            "end_at": end_at_iso,
+            "phase": phase_val,
+            "duration_type": duration_type,
+            "is_full_patch": (duration_type == "full_patch"),
+            "banner_time": b_time,
+        }
+
     def _format_banner_item(b: Dict[str, Any], is_weapon: bool = False) -> Dict[str, Any]:
         item_type = "weapon" if is_weapon else "character"
         raw_b_img = b.get("banner_image", "")
@@ -392,6 +457,7 @@ def get_gacha_simulator_defaults(
         b_4stars_info = [
             get_character_mini_info(clean_game, f4, default_rarity=4, item_type=item_type) for f4 in b_4stars
         ]
+        timing = _compute_banner_timing(b)
 
         return {
             "character_name": b_name,
@@ -402,14 +468,27 @@ def get_gacha_simulator_defaults(
             "featured_4stars_info": b_4stars_info,
             "is_primary": bool(b.get("is_primary", False)),
             "banner_type": item_type,
+            **timing,
         }
 
     formatted_char_banners = [_format_banner_item(b, is_weapon=False) for b in char_banners_list]
     formatted_weapon_banners = [_format_banner_item(b, is_weapon=True) for b in weapon_banners_list]
 
-    # Identifica a fase ativa e o horário oficial do banner
-    phase = 2 if ("phase 2" in patch_info.lower() or "fase 2" in patch_info.lower()) else 1
-    sched_hour, sched_min = database.get_banner_schedule_time(clean_game, phase)
+    # Identifica a fase ativa real priorizando os banners individuais (ex: HSR tem Aha full_patch + reruns Phase 1)
+    detected_phases = [
+        b["phase"]
+        for b in (formatted_char_banners + formatted_weapon_banners)
+        if b.get("phase") in (1, 2)
+    ]
+    if 2 in detected_phases:
+        phase = 2
+    elif 1 in detected_phases:
+        phase = 1
+    else:
+        phase = 2 if ("phase 2" in patch_info.lower() or "fase 2" in patch_info.lower()) else 1
+    # Horário de virada predominante da fase ativa (1ª Fase -> virada p/ 2ª Fase; 2ª Fase -> virada de att 23:30)
+    turnover_ref = 2 if phase == 1 else 1
+    sched_hour, sched_min = database.get_banner_schedule_time(clean_game, turnover_ref)
     banner_time = f"{sched_hour:02d}:{sched_min:02d}"
 
     target_list = formatted_weapon_banners if clean_banner_type == "weapon" else formatted_char_banners

@@ -323,6 +323,21 @@ window.addGachaPulls = function(amount) {
     window.updateGachaGemConversion();
 };
 
+window.syncGachaResourceIcons = function(gameId) {
+    const gid = (gameId || document.getElementById("tab-gacha-game-select")?.value || "genshin").toLowerCase();
+    const ticketUrl = typeof window.getResourceIconUrl === "function"
+        ? window.getResourceIconUrl(gid, "ticket")
+        : `/assets/resources/${gid}_ticket.png?v=1`;
+    const ticketWrap = document.getElementById("gacha-pulls-ticket-icon");
+    if (ticketWrap && typeof window.renderResourceIcon === "function") {
+        ticketWrap.innerHTML = window.renderResourceIcon(gid, "ticket", { size: 16 });
+    }
+    document.querySelectorAll("#gacha-view-sim .gacha-btn-ticket-icon").forEach(img => {
+        img.style.display = "";
+        img.src = ticketUrl;
+    });
+};
+
 window.updateGachaGemConversion = function() {
     const gameId = document.getElementById("tab-gacha-game-select")?.value || "genshin";
     const terms = (typeof window.getGachaTerms === "function") ? window.getGachaTerms(gameId) : (window.GACHA_TERMS[gameId] || window.GACHA_TERMS.genshin);
@@ -330,10 +345,15 @@ window.updateGachaGemConversion = function() {
     const gems = pulls * (terms.gemCostPerPull || 160);
     const convertLbl = document.getElementById("gacha-gems-convert-lbl");
     if (convertLbl) {
-        convertLbl.innerText = window.isEn
+        const iconHtml = typeof window.renderResourceIcon === "function"
+            ? window.renderResourceIcon(gameId, "currency", { size: 15, title: terms.currency })
+            : "";
+        const text = window.isEn
             ? `(Equivalent to ${gems.toLocaleString()} ${terms.currency})`
             : `(Equivale a ${gems.toLocaleString()} ${terms.currency})`;
+        convertLbl.innerHTML = `${iconHtml}<span>${text}</span>`;
     }
+    window.syncGachaResourceIcons(gameId);
 };
 
 window.initGachaSimulator = async function() {
@@ -533,6 +553,49 @@ window.updateTargetRankOptions = function() {
 
 let _gachaCharController = null;
 let _gachaCharReqId = 0;
+let _pendingBannerPrefill = null;
+
+window.prefillGachaBannerTarget = async function(gameId, characterName = "", bannerType = "character") {
+    const cleanGame = String(gameId || "genshin").toLowerCase().trim();
+    const cleanType = bannerType === "weapon" ? "weapon" : "character";
+    const cleanChar = String(characterName || "").trim();
+
+    _pendingBannerPrefill = cleanChar ? { gameId: cleanGame, bannerType: cleanType, characterName: cleanChar } : null;
+
+    // 1. Garante que a subview do Simulador (#gacha-view-sim) esteja ativa no sakuga-tabs
+    const gachaTabs = document.getElementById("gacha-subnav-tabs");
+    if (gachaTabs) {
+        const opts = Array.from(gachaTabs.querySelectorAll("option"));
+        const simIdx = opts.findIndex(o => o.value === "sim");
+        if (simIdx >= 0) {
+            gachaTabs.selected = simIdx;
+        }
+    }
+    const simView = document.getElementById("gacha-view-sim");
+    if (simView && !simView.classList.contains("active")) {
+        document.querySelectorAll("#tab-gacha .gacha-subview").forEach(v => v.classList.remove("active"));
+        simView.classList.add("active");
+    }
+
+    // 2. Atualiza estado e controles de jogo + categoria
+    const gameSelectHidden = document.getElementById("tab-gacha-game-select");
+    const bannerTypeHidden = document.getElementById("tab-gacha-banner-type");
+    if (gameSelectHidden) gameSelectHidden.value = cleanGame;
+    if (bannerTypeHidden) bannerTypeHidden.value = cleanType;
+
+    document.querySelectorAll("#gacha-game-pills .gacha-game-pill").forEach(p => {
+        p.classList.toggle("active", p.dataset.game === cleanGame);
+    });
+    document.querySelectorAll("#gacha-sim-type-pills .sim-type-btn").forEach(p => {
+        p.classList.toggle("active", (p.dataset.type || "character") === cleanType);
+    });
+
+    window.gachaState.gameId = cleanGame;
+    window.gachaState.bannerType = cleanType;
+    window.updateGachaLabels(cleanGame, cleanType);
+    await window.loadGachaCharacters(cleanGame, cleanType);
+    window.updateGachaGemConversion();
+};
 
 window.loadGachaCharacters = async function(gameId, requestedBannerType = null) {
     const charSelect = document.getElementById("tab-gacha-char-select");
@@ -586,8 +649,17 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
                 : (isEn ? `Synced (0 Pulls • ${bannerType === 'weapon' ? 'Weapon/Cone' : 'Character'})` : `Sincronizado (0 Tiros • ${bannerType === 'weapon' ? 'Arma/Cone' : 'Personagem'})`);
         }
 
-        // 2. Atualiza Card Visual do Banner Oficial Promocional In-Game
-        window.renderActiveBannerCard(defaultsData, 0, bannerType);
+        // 2. Atualiza Card Visual do Banner Oficial Promocional In-Game (respeitando alvo pré-selecionado da Home)
+        let targetBannerIdx = 0;
+        const prefillMatch = _pendingBannerPrefill && _pendingBannerPrefill.gameId === gameId && _pendingBannerPrefill.bannerType === bannerType
+            ? _pendingBannerPrefill.characterName
+            : "";
+        if (prefillMatch) {
+            const availList = bannerType === "weapon" ? (defaultsData.available_weapon_banners || []) : (defaultsData.available_banners || []);
+            const foundIdx = availList.findIndex(b => (b.character_name || "").toLowerCase() === prefillMatch.toLowerCase());
+            if (foundIdx >= 0) targetBannerIdx = foundIdx;
+        }
+        window.renderActiveBannerCard(defaultsData, targetBannerIdx, bannerType);
 
         // 3. Monta Opções do Select de Itens
         charSelect.innerHTML = "";
@@ -692,12 +764,16 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
             }
 
             let selectedDefault = "";
-            if (activeCharName && chars.some(c => c.name.toLowerCase() === activeCharName.toLowerCase())) {
+            if (prefillMatch && chars.some(c => c.name.toLowerCase() === prefillMatch.toLowerCase())) {
+                const found = chars.find(c => c.name.toLowerCase() === prefillMatch.toLowerCase());
+                selectedDefault = found ? found.name : prefillMatch;
+            } else if (activeCharName && chars.some(c => c.name.toLowerCase() === activeCharName.toLowerCase())) {
                 const found = chars.find(c => c.name.toLowerCase() === activeCharName.toLowerCase());
                 selectedDefault = found ? found.name : activeCharName;
             } else if (ownedChars.length > 0) {
                 selectedDefault = ownedChars[0].name;
             }
+            if (prefillMatch) _pendingBannerPrefill = null;
 
             charSelect.value = selectedDefault;
             window.updateGachaCharPreview(selectedDefault);
@@ -709,6 +785,153 @@ window.loadGachaCharacters = async function(gameId, requestedBannerType = null) 
         charSelect.innerHTML = `<option value="">Erro ao carregar itens</option>`;
     }
 };
+
+function formatShortBannerDate(isoDate, isEn) {
+    if (!isoDate || typeof isoDate !== "string") return "";
+    const m = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) return isoDate;
+    return isEn ? `${m[2]}/${m[3]}` : `${m[3]}/${m[2]}`;
+}
+
+function getBannerDurationBadgeText(banner, isEn) {
+    const dt = String(banner?.duration_type || "").toLowerCase();
+    if (dt === "full_patch" || banner?.is_full_patch) {
+        return isEn ? "Full Patch" : "Patch Inteiro";
+    }
+    if (dt === "collab") {
+        return "Collab";
+    }
+    if (dt === "phase_2" || Number(banner?.phase) === 2) {
+        return isEn ? "Phase 2" : "2ª Fase";
+    }
+    if (dt === "phase_1" || Number(banner?.phase) === 1) {
+        return isEn ? "Phase 1" : "1ª Fase";
+    }
+    return isEn ? "Active" : "Ativo";
+}
+
+function formatBannerScheduleBadge(banner, defaultsData) {
+    const isEn = Boolean(window.isEn);
+    const durationText = getBannerDurationBadgeText(banner, isEn);
+    const patchMatch = String(banner?.patch_label || defaultsData?.patch_info || "").match(/Patch\s+\d+(?:\.\d+)?/i);
+    const patchPrefix = patchMatch ? patchMatch[0] : "";
+
+    let dateText = "";
+    if (banner?.start_date && banner?.end_date) {
+        dateText = `${formatShortBannerDate(banner.start_date, isEn)} – ${formatShortBannerDate(banner.end_date, isEn)}`;
+    } else if (banner?.start_date && banner?.duration_type === "collab") {
+        dateText = isEn ? `Since ${banner.start_date}` : `Desde ${formatShortBannerDate(banner.start_date, false)}`;
+    } else if (banner?.date_range) {
+        dateText = banner.date_range;
+    }
+
+    const parts = [];
+    if (patchPrefix) parts.push(patchPrefix);
+    parts.push(durationText);
+    if (dateText) parts.push(dateText);
+
+    if (banner?.duration_type !== "collab") {
+        const isPhase1Turnover = banner?.duration_type === "phase_1" || (Number(banner?.phase) === 1 && !banner?.is_full_patch);
+        const fallbackTime = isPhase1Turnover
+            ? (defaultsData?.game_id === "genshin" ? "20:00" : "14:00")
+            : "23:30";
+        const schedTime = banner?.banner_time || fallbackTime;
+        const turnPrefix = isPhase1Turnover
+            ? (isEn ? "Ends" : "Virada")
+            : (isEn ? "Patch Ends" : "Virada Att");
+        parts.push(`${turnPrefix} ${schedTime}`);
+    }
+    return parts.join(" • ");
+}
+
+function formatBannerCountdown(endAtIso, isEn, compact = false) {
+    if (!endAtIso) {
+        return { text: isEn ? "Long-term" : "Sem fim fixo", state: "collab" };
+    }
+    const targetMs = Date.parse(endAtIso);
+    if (Number.isNaN(targetMs)) {
+        return { text: isEn ? "Unavailable" : "Indisponível", state: "collab" };
+    }
+    const diffMs = targetMs - Date.now();
+    if (diffMs <= 0) {
+        return { text: isEn ? "Ended" : "Encerrado", state: "expired" };
+    }
+    const totalSec = Math.floor(diffMs / 1000);
+    const days = Math.floor(totalSec / 86400);
+    const hours = Math.floor((totalSec % 86400) / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
+    const secs = totalSec % 60;
+    const pad = (n) => String(n).padStart(2, "0");
+
+    if (days >= 1) {
+        const state = days < 2 ? "soon" : "normal";
+        return {
+            text: compact ? `${days}d ${pad(hours)}h` : `${days}d ${pad(hours)}h ${pad(mins)}m`,
+            state,
+        };
+    }
+    return {
+        text: compact ? `${pad(hours)}h ${pad(mins)}m` : `${pad(hours)}h ${pad(mins)}m ${pad(secs)}s`,
+        state: "urgent",
+    };
+}
+
+function formatBannerEndTooltip(endAtIso, isPhase1Turnover, isEn) {
+    if (!endAtIso) {
+        return isEn ? "Special collaboration banner with no fixed end date" : "Banner especial de colaboração sem data fixa de término";
+    }
+    const dt = new Date(endAtIso);
+    if (Number.isNaN(dt.getTime())) return "";
+    try {
+        const formatted = new Intl.DateTimeFormat(isEn ? "en-US" : "pt-BR", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+        }).format(dt);
+        if (isEn) {
+            return isPhase1Turnover ? `Phase 1 ends on ${formatted}` : `Ends with patch maintenance on ${formatted}`;
+        }
+        return isPhase1Turnover ? `Virada da 1ª Fase em ${formatted}` : `Virada de atualização em ${formatted}`;
+    } catch (_) {
+        return endAtIso;
+    }
+}
+
+let _activeBannerCdTimer = null;
+let _activeBannerCdVisBound = false;
+
+function tickActiveBannerCountdowns() {
+    if (document.hidden) return;
+    const nodes = document.querySelectorAll(".gacha-banner-cd-value[data-banner-end-at]");
+    if (!nodes.length) return;
+    const isEn = Boolean(window.isEn);
+    nodes.forEach((el) => {
+        const iso = el.getAttribute("data-banner-end-at");
+        if (!iso) return;
+        const compact = el.getAttribute("data-compact") === "1";
+        const cd = formatBannerCountdown(iso, isEn, compact);
+        el.textContent = cd.text;
+        const host = el.closest(".gacha-banner-countdown-badge, .gacha-banner-tab-cd");
+        if (host) {
+            host.classList.remove("banner-cd-normal", "banner-cd-soon", "banner-cd-urgent", "banner-cd-expired", "banner-cd-collab");
+            host.classList.add(`banner-cd-${cd.state}`);
+        }
+    });
+}
+
+function ensureActiveBannerCountdownTicker() {
+    if (!_activeBannerCdTimer) {
+        _activeBannerCdTimer = setInterval(tickActiveBannerCountdowns, 1000);
+    }
+    if (!_activeBannerCdVisBound) {
+        _activeBannerCdVisBound = true;
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) tickActiveBannerCountdowns();
+        });
+    }
+}
 
 window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, bannerTypeOverride = null) {
     if (!defaultsData) return;
@@ -731,20 +954,54 @@ window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, banner
 
     if (!currentBanner) return;
 
-    // 1. Badge de Patch/Fase e Horário Oficial do Banner
+    // 1. Badge de Patch/Fase e Datas Individuais do Banner Selecionado
     window.lastDefaultsData = defaultsData;
+    const isEnNow = Boolean(window.isEn);
     const patchBadge = document.getElementById("gacha-banner-patch-badge");
     if (patchBadge) {
-        const schedTime = defaultsData.banner_time || (defaultsData.banner_phase === 2 ? (defaultsData.game_id === 'genshin' ? '20:00' : '14:00') : '23:30');
-        const defaultPatch = window.isEn ? "Active Phase" : "Fase Ativa";
-        const timeLabel = window.isEn ? "Official Time:" : "Horário Oficial:";
-        patchBadge.textContent = `${defaultsData.patch_info || defaultPatch} • ${timeLabel} ${schedTime}`;
+        patchBadge.textContent = formatBannerScheduleBadge(currentBanner, defaultsData);
+        patchBadge.classList.remove("phase-full", "phase-collab", "phase-2");
+        if (currentBanner.duration_type === "full_patch" || currentBanner.is_full_patch) {
+            patchBadge.classList.add("phase-full");
+        } else if (currentBanner.duration_type === "collab") {
+            patchBadge.classList.add("phase-collab");
+        } else if (currentBanner.duration_type === "phase_2" || Number(currentBanner.phase) === 2) {
+            patchBadge.classList.add("phase-2");
+        }
     }
 
-    // 2. Seletor de Banners da Fase (Tabs/Pills)
+    // 1b. Countdown Ao Vivo de Virada do Banner Selecionado
+    const cdBadge = document.getElementById("gacha-banner-countdown-badge");
+    const cdPrefix = document.getElementById("gacha-banner-countdown-prefix");
+    const cdVal = document.getElementById("gacha-banner-countdown-val");
+    if (cdBadge && cdVal) {
+        const isPhase1Turn = currentBanner.duration_type === "phase_1" || (Number(currentBanner.phase) === 1 && !currentBanner.is_full_patch);
+        const endIso = currentBanner.end_at || "";
+        const cd = formatBannerCountdown(endIso, isEnNow, false);
+        cdBadge.style.display = "inline-flex";
+        cdBadge.classList.remove("banner-cd-normal", "banner-cd-soon", "banner-cd-urgent", "banner-cd-expired", "banner-cd-collab");
+        cdBadge.classList.add(`banner-cd-${cd.state}`);
+        cdBadge.title = formatBannerEndTooltip(endIso, isPhase1Turn, isEnNow);
+        if (cdPrefix) {
+            if (!endIso) {
+                cdPrefix.textContent = isEnNow ? "Collab:" : "Collab:";
+            } else {
+                cdPrefix.textContent = isPhase1Turn
+                    ? (isEnNow ? "Phase ends in" : "Vira em")
+                    : (isEnNow ? "Patch ends in" : "Att vira em");
+            }
+        }
+        cdVal.setAttribute("data-banner-end-at", endIso);
+        cdVal.textContent = cd.text;
+        ensureActiveBannerCountdownTicker();
+    }
+
+    // 2. Seletor de Banners da Fase (Tabs/Pills com fase + mini-timer quando há durações diferentes)
     const switcherEl = document.getElementById("gacha-banner-switcher");
     if (switcherEl) {
         if (availableBanners.length > 1) {
+            const distinctDurations = new Set(availableBanners.map(b => `${b.duration_type || ""}:${b.end_date || ""}`));
+            const showDurationTag = distinctDurations.size > 1;
             switcherEl.style.display = "flex";
             switcherEl.innerHTML = "";
             availableBanners.forEach((b, idx) => {
@@ -752,8 +1009,17 @@ window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, banner
                 btn.type = "button";
                 btn.className = `gacha-banner-tab-btn ${idx === selectedIndex ? "active" : ""}`;
                 const iconClass = bannerType === "weapon" ? "fa-shield-halved" : "fa-star";
-                btn.title = b.banner_title ? `${b.character_name} (${b.banner_title})` : b.character_name;
-                btn.innerHTML = `<i class="fa-solid ${iconClass}"></i> ${b.character_name}`;
+                const durLabel = getBannerDurationBadgeText(b, isEnNow);
+                const durPill = showDurationTag
+                    ? `<span class="gacha-banner-phase-pill type-${b.duration_type || "phase_1"}">${durLabel}</span>`
+                    : "";
+                let tabCdHtml = "";
+                if (b.end_at) {
+                    const tabCd = formatBannerCountdown(b.end_at, isEnNow, true);
+                    tabCdHtml = `<span class="gacha-banner-tab-cd banner-cd-${tabCd.state}"><i class="fa-regular fa-clock"></i> <span class="gacha-banner-cd-value" data-compact="1" data-banner-end-at="${b.end_at}">${tabCd.text}</span></span>`;
+                }
+                btn.title = `${b.banner_title || b.character_name} — ${formatBannerScheduleBadge(b, defaultsData)}`;
+                btn.innerHTML = `<i class="fa-solid ${iconClass}"></i> <span>${b.character_name}</span>${durPill}${tabCdHtml}`;
                 btn.onclick = () => {
                     window.renderActiveBannerCard(defaultsData, idx, bannerType);
                     const charSelect = document.getElementById("tab-gacha-char-select");
@@ -764,6 +1030,7 @@ window.renderActiveBannerCard = function(defaultsData, selectedIndex = 0, banner
                 };
                 switcherEl.appendChild(btn);
             });
+            ensureActiveBannerCountdownTicker();
         } else {
             switcherEl.style.display = "none";
         }
@@ -1064,16 +1331,24 @@ window.runGachaSimulation = async function() {
 
         const avgLbl = document.getElementById("tab-gacha-avg-lbl");
         if (avgLbl) {
-            avgLbl.innerText = data.avg_pulls_spent 
-                ? (isEn ? `${data.avg_pulls_spent} pulls` : `${data.avg_pulls_spent} tiros`) 
-                : (isEn ? "Insufficient pulls" : "Tiros insuficientes");
+            if (data.avg_pulls_spent) {
+                const ticketIcon = typeof window.renderResourceIcon === "function"
+                    ? window.renderResourceIcon(gameId, "ticket", { size: 16 })
+                    : "";
+                avgLbl.innerHTML = `<span class="gacha-metric-with-icon">${ticketIcon}<span>${isEn ? `${data.avg_pulls_spent} pulls` : `${data.avg_pulls_spent} tiros`}</span></span>`;
+            } else {
+                avgLbl.innerText = isEn ? "Insufficient pulls" : "Tiros insuficientes";
+            }
         }
 
         const gemsSpentLbl = document.getElementById("tab-gacha-gems-spent-lbl");
         if (gemsSpentLbl) {
             if (data.avg_pulls_spent) {
                 const gemsAvg = Math.round(data.avg_pulls_spent * terms.gemCostPerPull);
-                gemsSpentLbl.innerText = `~${gemsAvg.toLocaleString()} ${terms.currency}`;
+                const currIcon = typeof window.renderResourceIcon === "function"
+                    ? window.renderResourceIcon(gameId, "currency", { size: 16, title: terms.currency })
+                    : "";
+                gemsSpentLbl.innerHTML = `<span class="gacha-metric-with-icon">${currIcon}<span>~${gemsAvg.toLocaleString()} ${terms.currency}</span></span>`;
             } else {
                 gemsSpentLbl.innerText = "N/A";
             }
@@ -2337,15 +2612,19 @@ window.renderLuckDashboard = function(data) {
 
     const god = data.god_roll;
     const cursed = data.cursed_roll;
+    const luckGameId = String(data.game_id || "genshin").toLowerCase();
+    const luckResourceIcons = typeof window.renderResourceIcon === "function"
+        ? `<span class="luck-resource-strip">${window.renderResourceIcon(luckGameId, "energy", { size: 18, title: isEn ? "Energy" : "Energia" })}${window.renderResourceIcon(luckGameId, "currency", { size: 18, title: isEn ? "Gacha Currency" : "Moeda" })}${window.renderResourceIcon(luckGameId, "ticket", { size: 18, title: isEn ? "Summon Pass" : "Passe" })}</span>`
+        : `<i class="fa-solid fa-clover" style="color: #10b981;"></i>`;
 
     let html = `
         <!-- HERO CARDS (3 COLUNAS) -->
         <div class="luck-hero-grid">
             <!-- CARD 1: SORTE GERAL DA CONTA -->
             <div class="luck-overview-card">
-                <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between;">
+                <div style="font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
                     <span>${isEn ? "Account Luck Score" : "Pontuação de Sorte da Conta"}</span>
-                    <i class="fa-solid fa-clover" style="color: #10b981;"></i>
+                    ${luckResourceIcons}
                 </div>
                 <div class="luck-gauge-box">
                     <div class="luck-gauge-value">${data.overall_account_luck}%</div>

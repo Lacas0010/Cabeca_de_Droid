@@ -691,36 +691,89 @@ function getPathOrWeaponIconUrl(gameId, rawVal) {
     const keyLow = String(rawVal).trim().toLowerCase();
     const enVal = (typeof PATH_MAP_EN !== "undefined" && PATH_MAP_EN[keyLow]) ? PATH_MAP_EN[keyLow].toLowerCase() : keyLow;
     const canonMap = {
-        "the hunt": "hunt", "hunt": "hunt",
-        "destruction": "destruction",
-        "erudition": "erudition",
-        "harmony": "harmony",
-        "nihility": "nihility",
-        "preservation": "preservation",
-        "abundance": "abundance",
-        "remembrance": "remembrance",
-        "elation": "elation",
-        "attack": "attack",
-        "stun": "stun",
-        "anomaly": "anomaly",
-        "support": "support",
-        "defense": "defense", "defence": "defense",
-        "rupture": "rupture",
-        "armorer": "armorer",
-        "sword": "sword",
-        "claymore": "claymore",
-        "polearm": "polearm",
-        "bow": "bow",
-        "catalyst": "catalyst"
+        "the hunt": "hunt", "hunt": "hunt", "a caça": "hunt", "a caca": "hunt", "caça": "hunt", "caca": "hunt",
+        "destruction": "destruction", "destruição": "destruction", "destruicao": "destruction",
+        "erudition": "erudition", "erudição": "erudition", "erudicao": "erudition",
+        "harmony": "harmony", "harmonia": "harmony",
+        "nihility": "nihility", "inexistência": "nihility", "inexistencia": "nihility",
+        "preservation": "preservation", "preservação": "preservation", "preservacao": "preservation",
+        "abundance": "abundance", "abundância": "abundance", "abundancia": "abundance",
+        "remembrance": "remembrance", "recordação": "remembrance", "recordacao": "remembrance", "memória": "remembrance", "memoria": "remembrance", "memory": "remembrance",
+        "elation": "elation", "júbilo": "elation", "jubilo": "elation", "euforia": "elation",
+        "attack": "attack", "ataque": "attack",
+        "stun": "stun", "atordoamento": "stun", "atordoador": "stun",
+        "anomaly": "anomaly", "anomalia": "anomaly",
+        "support": "support", "suporte": "support",
+        "defense": "defense", "defence": "defense", "defesa": "defense",
+        "rupture": "rupture", "ruptura": "rupture",
+        "armorer": "armorer", "armeiro": "armorer",
+        "sword": "sword", "espada": "sword",
+        "claymore": "claymore", "espadão": "claymore", "espadao": "claymore",
+        "polearm": "polearm", "lança": "polearm", "lanca": "polearm",
+        "bow": "bow", "arco": "bow",
+        "catalyst": "catalyst", "catalisador": "catalyst"
     };
     const canon = canonMap[enVal] || canonMap[keyLow] || "";
     if (!canon || !g) return "";
-    return `/assets/icons/${g}_${canon}.png?v=1`;
+    return `/assets/icons/${g}_${canon}.png?v=2`;
+}
+
+function getRoleFallbackFaIcon(gameId) {
+    const g = String(gameId || "").trim().toLowerCase();
+    if (g === "genshin") return "fa-khanda";
+    if (g === "zzz") return "fa-crosshairs";
+    return "fa-compass";
+}
+
+function renderRoleIconBadge(gameId, rawVal, label = "", opts = {}) {
+    const iconUrl = getPathOrWeaponIconUrl(gameId, rawVal);
+    const displayLabel = String(label || rawVal || "").trim();
+    if (!iconUrl && !displayLabel) return "";
+    const safeTitle = String(opts.title || displayLabel).replace(/"/g, "&quot;");
+    const safeLabel = displayLabel.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const sizePx = Number(opts.size || 14);
+    const showLabel = opts.showLabel !== false;
+    const extraClass = opts.className ? ` ${opts.className}` : "";
+    const fallbackFa = getRoleFallbackFaIcon(gameId);
+    const imgHtml = iconUrl
+        ? `<img src="${iconUrl}" class="role-icon-img" width="${sizePx}" height="${sizePx}" loading="lazy" decoding="async" alt="" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" /><i class="fa-solid ${fallbackFa} role-icon-fallback" style="display:none;"></i>`
+        : `<i class="fa-solid ${fallbackFa} role-icon-fallback"></i>`;
+    return `<span class="role-badge-chip${extraClass}" title="${safeTitle}"><span class="role-icon-frame">${imgHtml}</span>${showLabel && safeLabel ? `<span class="role-badge-text">${safeLabel}</span>` : ""}</span>`;
+}
+
+function getResourceIconUrl(gameId, kind) {
+    const g = String(gameId || "genshin").trim().toLowerCase();
+    const k = String(kind || "currency").trim().toLowerCase();
+    if (!["genshin", "hsr", "zzz"].includes(g)) return "";
+    if (!["energy", "reserve", "currency", "ticket"].includes(k)) return "";
+    return `/assets/resources/${g}_${k}.png?v=2`;
+}
+
+function getResourceFallbackFaIcon(kind) {
+    const k = String(kind || "").trim().toLowerCase();
+    if (k === "energy" || k === "reserve") return "fa-bolt";
+    if (k === "ticket") return "fa-ticket";
+    return "fa-gem";
+}
+
+function renderResourceIcon(gameId, kind, opts = {}) {
+    const url = getResourceIconUrl(gameId, kind);
+    const sizePx = Number(opts.size || 16);
+    const extraClass = opts.className ? ` ${opts.className}` : "";
+    const safeTitle = opts.title ? ` title="${String(opts.title).replace(/"/g, "&quot;")}"` : "";
+    const fallbackFa = getResourceFallbackFaIcon(kind);
+    if (!url) {
+        return `<span class="resource-icon-wrap${extraClass}"${safeTitle}><i class="fa-solid ${fallbackFa} resource-icon-fallback"></i></span>`;
+    }
+    return `<span class="resource-icon-wrap${extraClass}"${safeTitle}><img src="${url}" class="resource-icon-img" width="${sizePx}" height="${sizePx}" loading="lazy" decoding="async" alt="" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" /><i class="fa-solid ${fallbackFa} resource-icon-fallback" style="display:none;"></i></span>`;
 }
 
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof getElementIconUrl !== 'undefined') window.getElementIconUrl = getElementIconUrl;
 if (typeof getPathOrWeaponIconUrl !== 'undefined') window.getPathOrWeaponIconUrl = getPathOrWeaponIconUrl;
+if (typeof renderRoleIconBadge !== 'undefined') window.renderRoleIconBadge = renderRoleIconBadge;
+if (typeof getResourceIconUrl !== 'undefined') window.getResourceIconUrl = getResourceIconUrl;
+if (typeof renderResourceIcon !== 'undefined') window.renderResourceIcon = renderResourceIcon;
 if (typeof createDebouncedSearch !== 'undefined') window.createDebouncedSearch = createDebouncedSearch;
 if (typeof getAffinitiveEidolons !== 'undefined') window.getAffinitiveEidolons = getAffinitiveEidolons;
 if (typeof getUnlockedAffinitiveEidolon !== 'undefined') window.getUnlockedAffinitiveEidolon = getUnlockedAffinitiveEidolon;

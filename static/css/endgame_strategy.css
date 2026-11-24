@@ -547,9 +547,6 @@
     background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(24, 24, 27, 0.88));
     border-color: rgba(251, 191, 36, 0.42);
 }
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
 
 .endgame-reset-badge {
     font-size: 9.5px;
@@ -652,12 +649,16 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
+    position: relative;
+    overflow: visible;
     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.endgame-team-node:hover {
+.endgame-team-node:hover,
+.endgame-team-node:focus-within {
     border-color: rgba(255, 255, 255, 0.16);
     background: rgba(30, 41, 59, 0.6);
+    z-index: 10;
 }
 
 .endgame-team-node-header {
@@ -801,6 +802,278 @@
     line-height: 1.1;
 }
 
+/* Strip Tático de Chefes e Buffs/Bênçãos nos Cards de Endgame */
+.endgame-tactical-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.52);
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.08));
+}
+
+.endgame-boss-pill {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px 4px 5px;
+    border-radius: 7px;
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.14), rgba(15, 23, 42, 0.55));
+    border: 1px solid rgba(248, 113, 113, 0.28);
+    min-width: 0;
+    cursor: default;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.endgame-boss-pill:hover,
+.endgame-boss-pill:focus-visible {
+    border-color: rgba(248, 113, 113, 0.62);
+    background: linear-gradient(90deg, rgba(239, 68, 68, 0.22), rgba(15, 23, 42, 0.72));
+}
+
+.endgame-boss-icon-wrap {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(248, 113, 113, 0.42);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.endgame-boss-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.endgame-boss-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    line-height: 1.15;
+}
+
+.endgame-boss-label {
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #fca5a5;
+}
+
+.endgame-boss-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary, #f8fafc);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.endgame-buff-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
+}
+
+.endgame-buff-chip {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    padding: 3px 7px 3px 4px;
+    border-radius: 7px;
+    background: rgba(30, 41, 59, 0.72);
+    border: 1px solid rgba(168, 85, 247, 0.32);
+    color: var(--text-primary, #f1f5f9);
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: default;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.endgame-buff-chip:hover,
+.endgame-buff-chip:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(192, 132, 252, 0.65);
+    background: rgba(51, 65, 85, 0.85);
+    z-index: 25;
+}
+
+.endgame-buff-chip.kind-blessing {
+    border-color: rgba(56, 189, 248, 0.36);
+    background: rgba(6, 182, 212, 0.12);
+}
+
+.endgame-buff-chip.kind-blessing:hover,
+.endgame-buff-chip.kind-blessing:focus-visible {
+    border-color: rgba(56, 189, 248, 0.72);
+    background: rgba(6, 182, 212, 0.22);
+}
+
+.endgame-buff-chip.kind-card {
+    border-color: rgba(250, 204, 21, 0.3);
+    background: rgba(250, 204, 21, 0.08);
+}
+
+.endgame-buff-chip.kind-card:hover,
+.endgame-buff-chip.kind-card:focus-visible {
+    border-color: rgba(250, 204, 21, 0.62);
+    background: rgba(250, 204, 21, 0.16);
+}
+
+.endgame-buff-chip.is-overflow {
+    padding: 3px 8px;
+    border-style: dashed;
+    border-color: rgba(148, 163, 184, 0.4);
+    background: rgba(15, 23, 42, 0.6);
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.endgame-buff-icon-wrap {
+    width: 20px;
+    height: 20px;
+    border-radius: 5px;
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.endgame-buff-icon-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+}
+
+.endgame-tactical-icon-fallback {
+    font-size: 10.5px;
+    color: #cbd5e1;
+    align-items: center;
+    justify-content: center;
+}
+
+.endgame-buff-name {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.2;
+}
+
+.endgame-buff-lvl {
+    font-size: 9px;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(56, 189, 248, 0.2);
+    color: #7dd3fc;
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    flex-shrink: 0;
+}
+
+/* Tooltip estilizado dark-glass para Chefes e Buffs */
+.endgame-tactical-tooltip {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 8px);
+    width: max-content;
+    min-width: 190px;
+    max-width: 290px;
+    padding: 9px 11px;
+    border-radius: 9px;
+    background: rgba(9, 13, 24, 0.96);
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--text-primary, #f1f5f9);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+    pointer-events: none;
+    z-index: 60;
+    text-align: left;
+    white-space: normal;
+}
+
+.endgame-boss-pill:hover .endgame-tactical-tooltip,
+.endgame-boss-pill:focus-visible .endgame-tactical-tooltip,
+.endgame-buff-chip:hover .endgame-tactical-tooltip,
+.endgame-buff-chip:focus-visible .endgame-tactical-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+@media (min-width: 1024px) {
+    .endgame-teams-grid.teams-count-3 .endgame-team-node:nth-child(3n) .endgame-tactical-tooltip,
+    .endgame-teams-grid.teams-count-2 .endgame-team-node:nth-child(2n) .endgame-tactical-tooltip {
+        left: auto;
+        right: 0;
+    }
+}
+
+.endgame-tooltip-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.endgame-tooltip-kind {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.45px;
+    text-transform: uppercase;
+    color: #c084fc;
+}
+
+.endgame-tooltip-kind.is-boss {
+    color: #f87171;
+}
+
+.endgame-tooltip-kind.kind-blessing {
+    color: #38bdf8;
+}
+
+.endgame-tooltip-kind.kind-card {
+    color: #fbbf24;
+}
+
+.endgame-tooltip-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.25;
+}
+
+.endgame-tooltip-desc {
+    margin: 5px 0 0;
+    font-size: 10.5px;
+    font-weight: 400;
+    color: var(--text-secondary, #cbd5e1);
+    line-height: 1.42;
+}
+
 .endgame-enemies-row {
     display: flex;
     flex-wrap: wrap;
@@ -813,17 +1086,30 @@
 .endgame-enemy-chip {
     display: inline-flex;
     align-items: center;
-    gap: 3px;
+    gap: 4px;
     font-size: 9.5px;
     color: #fca5a5;
     background: rgba(239, 68, 68, 0.08);
     border: 1px solid rgba(239, 68, 68, 0.2);
-    padding: 1px 5px;
-    border-radius: 4px;
+    padding: 2px 6px;
+    border-radius: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
+}
+
+.endgame-enemy-icon {
+    width: 15px;
+    height: 15px;
+    border-radius: 3px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.endgame-enemy-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* VISÃO GERAL (TODOS OS MODOS EM LISTA VERTICAL) */
@@ -1371,7 +1657,650 @@
     border-left: 3px solid #38bdf8;
 }
 
+/* ==========================================================================
+   RADAR UNIFICADO DE RESETS NA HOME (7 MODOS ENDGAME + DIÁRIO / SEMANAL)
+   ========================================================================== */
+.home-reset-radar-card {
+    margin-bottom: 20px;
+    background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.68));
+    border: 1px solid var(--border-color, rgba(255, 255, 255, 0.1));
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.32);
+    position: relative;
+    overflow: hidden;
+}
+
+.home-reset-radar-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--color-genshin, #38bdf8), var(--color-hsr, #a855f7), var(--color-zzz, #f59e0b));
+    opacity: 0.85;
+}
+
+.reset-radar-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.reset-radar-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.reset-radar-title-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+.reset-radar-title-row h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary, #f8fafc);
+}
+
+.reset-radar-emblem {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(56, 189, 248, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: #38bdf8;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.reset-radar-desc {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted, #94a3b8);
+}
+
+.reset-radar-summary-pills {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.reset-radar-meta-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(15, 23, 42, 0.65);
+    color: var(--text-secondary, #cbd5e1);
+}
+
+.reset-radar-meta-pill.is-done {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(52, 211, 153, 0.35);
+}
+
+.reset-radar-meta-pill.is-pending {
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.12);
+    border-color: rgba(148, 163, 184, 0.3);
+}
+
+.reset-radar-meta-pill.is-amber {
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.16);
+    border-color: rgba(245, 158, 11, 0.48);
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.18);
+}
+
+.reset-radar-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reset-radar-cycle-pills {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.reset-cycle-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 11.5px;
+    color: var(--text-secondary, #cbd5e1);
+    white-space: nowrap;
+}
+
+.reset-cycle-pill.is-daily i {
+    color: #fbbf24;
+}
+
+.reset-cycle-pill.is-weekly i {
+    color: #a78bfa;
+}
+
+.reset-cycle-label {
+    color: var(--text-muted, #94a3b8);
+    font-weight: 600;
+}
+
+.reset-cycle-pill .endgame-countdown-value {
+    font-family: 'Outfit', monospace;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    color: var(--text-primary, #f8fafc);
+}
+
+.reset-radar-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 10px;
+}
+
+.reset-radar-loading,
+.reset-radar-empty,
+.reset-radar-error {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 18px 14px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.45);
+    border: 1px dashed rgba(255, 255, 255, 0.12);
+    color: var(--text-muted, #94a3b8);
+    font-size: 12.5px;
+}
+
+.reset-radar-error i {
+    color: #f87171;
+}
+
+.reset-radar-item {
+    appearance: none;
+    font-family: inherit;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.68);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: var(--text-primary, #f8fafc);
+    cursor: pointer;
+    position: relative;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    min-width: 0;
+}
+
+.reset-radar-item:hover,
+.reset-radar-item:focus-visible {
+    outline: none;
+    transform: translateY(-2px);
+    background: rgba(30, 41, 59, 0.85);
+    border-color: rgba(56, 189, 248, 0.45);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.reset-radar-item.game-hsr {
+    border-left: 3px solid var(--color-hsr, #a855f7);
+}
+
+.reset-radar-item.game-genshin {
+    border-left: 3px solid var(--color-genshin, #38bdf8);
+}
+
+.reset-radar-item.game-zzz {
+    border-left: 3px solid var(--color-zzz, #f59e0b);
+}
+
+.reset-radar-item.is-completed {
+    background: rgba(15, 23, 42, 0.56);
+    border-color: rgba(52, 211, 153, 0.24);
+}
+
+.reset-radar-item.is-urgent-pending {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.82));
+    border-color: rgba(245, 158, 11, 0.58);
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.2) inset, 0 6px 18px rgba(245, 158, 11, 0.14);
+}
+
+.reset-radar-item.is-urgent-pending:hover,
+.reset-radar-item.is-urgent-pending:focus-visible {
+    border-color: #fbbf24;
+    box-shadow: 0 8px 22px rgba(245, 158, 11, 0.25);
+}
+
+.reset-radar-item-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 0;
+}
+
+.reset-radar-item-id {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    flex: 1;
+}
+
+.reset-radar-item-titles {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 2px;
+}
+
+.reset-radar-mode-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--text-primary, #f8fafc);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reset-radar-game-tag {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    color: var(--text-muted, #94a3b8);
+}
+
+.reset-radar-game-tag.game-hsr {
+    color: #d8b4fe;
+}
+
+.reset-radar-game-tag.game-genshin {
+    color: #67e8f9;
+}
+
+.reset-radar-game-tag.game-zzz {
+    color: #fcd34d;
+}
+
+.reset-radar-jump-icon {
+    font-size: 11px;
+    color: var(--text-muted, #94a3b8);
+    opacity: 0.55;
+    flex-shrink: 0;
+    transition: transform 0.18s ease, opacity 0.18s ease, color 0.18s ease;
+}
+
+.reset-radar-item:hover .reset-radar-jump-icon,
+.reset-radar-item:focus-visible .reset-radar-jump-icon {
+    opacity: 1;
+    color: #38bdf8;
+    transform: translateX(3px);
+}
+
+.reset-radar-item-timer {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.reset-radar-timer-label {
+    font-size: 10.5px;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+}
+
+.reset-radar-item .endgame-countdown-value {
+    font-family: 'Outfit', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    font-weight: 800;
+    color: #38bdf8;
+}
+
+.reset-radar-item.countdown-soon .endgame-countdown-value,
+.reset-radar-item.is-urgent-pending .endgame-countdown-value {
+    color: #fbbf24;
+}
+
+.reset-radar-item.countdown-urgent .endgame-countdown-value {
+    color: #f87171;
+}
+
+.reset-radar-item.countdown-expired .endgame-countdown-value {
+    color: #34d399;
+}
+
+.reset-radar-item-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.reset-radar-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 6px;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.reset-radar-status.status-completed {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(52, 211, 153, 0.32);
+}
+
+.reset-radar-status.status-in-progress {
+    color: #7dd3fc;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.reset-radar-status.status-pending {
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.reset-radar-status.is-amber-alert {
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.24);
+    border: 1px solid rgba(251, 191, 36, 0.55);
+}
+
+/* Subseção de Virada de Banners Ativos dentro do Radar da Home */
+.banner-reset-section {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.banner-reset-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.banner-reset-section-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary, #f8fafc);
+}
+
+.banner-reset-section-title i {
+    color: #fbbf24;
+    font-size: 12px;
+}
+
+.banner-reset-section-hint {
+    font-size: 11px;
+    color: var(--text-muted, #94a3b8);
+}
+
+.banner-reset-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 10px;
+}
+
+.banner-reset-item {
+    appearance: none;
+    font-family: inherit;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    color: var(--text-primary, #f8fafc);
+    cursor: pointer;
+    min-width: 0;
+    transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.banner-reset-item:hover,
+.banner-reset-item:focus-visible {
+    outline: none;
+    transform: translateY(-2px);
+    background: rgba(30, 41, 59, 0.88);
+    border-color: rgba(251, 191, 36, 0.5);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.banner-reset-item.game-genshin {
+    border-left: 3px solid var(--color-genshin, #38bdf8);
+}
+
+.banner-reset-item.game-hsr {
+    border-left: 3px solid var(--color-hsr, #a855f7);
+}
+
+.banner-reset-item.game-zzz {
+    border-left: 3px solid var(--color-zzz, #f59e0b);
+}
+
+.banner-reset-item.is-ending-soon {
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.17), rgba(15, 23, 42, 0.84));
+    border-color: rgba(251, 191, 36, 0.58);
+    box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.18) inset, 0 6px 18px rgba(245, 158, 11, 0.14);
+}
+
+.banner-reset-top {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+}
+
+.banner-reset-avatars {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.banner-reset-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top center;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1.5px solid rgba(251, 191, 36, 0.55);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.banner-reset-avatar + .banner-reset-avatar {
+    margin-left: -9px;
+}
+
+.banner-reset-titles {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+    gap: 2px;
+}
+
+.banner-reset-names {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary, #f8fafc);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.banner-reset-sub {
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-muted, #94a3b8);
+}
+
+.banner-reset-sub.game-genshin {
+    color: #67e8f9;
+}
+
+.banner-reset-sub.game-hsr {
+    color: #d8b4fe;
+}
+
+.banner-reset-sub.game-zzz {
+    color: #fcd34d;
+}
+
+.banner-reset-jump {
+    font-size: 11px;
+    color: var(--text-muted, #94a3b8);
+    opacity: 0.6;
+    flex-shrink: 0;
+    transition: transform 0.18s ease, opacity 0.18s ease, color 0.18s ease;
+}
+
+.banner-reset-item:hover .banner-reset-jump,
+.banner-reset-item:focus-visible .banner-reset-jump {
+    opacity: 1;
+    color: #fbbf24;
+    transform: scale(1.1);
+}
+
+.banner-reset-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 5px 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.banner-reset-cd-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+}
+
+.banner-reset-cd-label {
+    font-size: 10.5px;
+    color: var(--text-muted, #94a3b8);
+    font-weight: 500;
+}
+
+.banner-reset-item .endgame-countdown-value {
+    font-family: 'Outfit', monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: #38bdf8;
+}
+
+.banner-reset-item.is-ending-soon .endgame-countdown-value,
+.banner-reset-item.countdown-soon .endgame-countdown-value {
+    color: #fbbf24;
+}
+
+.banner-reset-item.countdown-urgent .endgame-countdown-value {
+    color: #f87171;
+}
+
+.banner-reset-urgent-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 5px;
+    background: rgba(245, 158, 11, 0.24);
+    color: #fde68a;
+    border: 1px solid rgba(251, 191, 36, 0.55);
+    flex-shrink: 0;
+}
+
 @media (max-width: 768px) {
+    .home-reset-radar-card {
+        padding: 14px 12px;
+    }
+
+    .reset-radar-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .reset-radar-cycle-pills {
+        flex: 1;
+        gap: 6px;
+    }
+
+    .reset-cycle-pill {
+        font-size: 11px;
+        padding: 4px 8px;
+    }
+
+    .reset-radar-strip,
+    .banner-reset-strip {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
     .endgame-reset-strip {
         grid-template-columns: 1fr;
     }
@@ -1389,6 +2318,25 @@
     .endgame-mode-icon-wrap.icon-lg {
         width: 28px;
         height: 28px;
+    }
+
+    .endgame-tactical-strip {
+        padding: 5px 6px;
+        gap: 5px;
+    }
+
+    .endgame-boss-icon-wrap {
+        width: 24px;
+        height: 24px;
+    }
+
+    .endgame-buff-name {
+        max-width: 120px;
+    }
+
+    .endgame-tactical-tooltip {
+        max-width: min(260px, 82vw);
+        min-width: 165px;
     }
 
     .team-matcher-grid {

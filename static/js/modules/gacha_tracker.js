@@ -120,13 +120,36 @@ window.loadGachaTracker = async function(gameId) {
         const avgPityEl = document.getElementById("tracker-stat-avg-pity");
         const luckBadgeEl = document.getElementById("tracker-luck-badge");
 
-        if (totalPullsEl) totalPullsEl.textContent = Number(data.total_pulls_all_banners || 0).toLocaleString();
+        if (totalPullsEl) {
+            const totalNum = Number(data.total_pulls_all_banners || 0);
+            const totalGems = totalNum * 160;
+            const currNames = isEn
+                ? { genshin: "Primogems", hsr: "Stellar Jades", zzz: "Polychromes" }
+                : { genshin: "Gemas", hsr: "Jades", zzz: "Policromos" };
+            const currName = currNames[gid] || currNames.genshin;
+            const ticketIcon = typeof window.renderResourceIcon === "function"
+                ? window.renderResourceIcon(gid, "ticket", { size: 18 })
+                : "";
+            const currIcon = typeof window.renderResourceIcon === "function"
+                ? window.renderResourceIcon(gid, "currency", { size: 14, title: currName })
+                : "";
+            totalPullsEl.innerHTML = `
+                <span class="tracker-kpi-with-icon">${ticketIcon}<span>${totalNum.toLocaleString()}</span></span>
+                ${totalNum > 0 ? `<span class="tracker-kpi-currency-sub">${currIcon}<span>${totalGems.toLocaleString()} ${currName}</span></span>` : ""}
+            `;
+        }
         if (totalFivesEl) totalFivesEl.textContent = data.total_five_stars_all_banners || 0;
         if (avgPityEl) {
             const charB = data.character_banner || {};
             const avg = charB.avg_five_star_pity || 0;
-
-    avgPityEl.textContent = avg > 0 ? (isEn ? `${avg} pulls` : `${avg} tiros`) : "--";
+            if (avg > 0) {
+                const ticketIcon = typeof window.renderResourceIcon === "function"
+                    ? window.renderResourceIcon(gid, "ticket", { size: 16 })
+                    : "";
+                avgPityEl.innerHTML = `<span class="tracker-kpi-with-icon">${ticketIcon}<span>${isEn ? `${avg} pulls` : `${avg} tiros`}</span></span>`;
+            } else {
+                avgPityEl.textContent = "--";
+            }
         }
         if (luckBadgeEl) {
             luckBadgeEl.innerHTML = `<i class="fa-solid fa-clover" style="color: #34d399;"></i> ${data.overall_luck_rating || 'Sem dados'}`;

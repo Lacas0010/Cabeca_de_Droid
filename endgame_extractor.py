@@ -197,6 +197,349 @@ def format_team_node(node_name: str, characters: list, monsters: list = None, ch
 
 
 _RE_IDE_URL = re.compile(r"/(UI_AvatarIcon_|UI_Gacha_AvatarImg_|UI_Costume_)ide_")
+_RE_HOYO_TAGS = re.compile(r"</?(?:color(?:=[^>]*)?|i|b|u|size(?:=[^>]*)?)>", re.IGNORECASE)
+_RE_HOYO_LINKS = re.compile(r"\{/?LINK(?:#[^}]*)?\}", re.IGNORECASE)
+_RE_MULTI_SPACE = re.compile(r"[ \t]{2,}")
+
+
+def _clean_hoyolab_markup(text: Any) -> str:
+    """Remove marcações proprietárias da HoYoLAB (<color>, {LINK#...}) para exibição limpa em tooltips."""
+    if not text:
+        return ""
+    cleaned = str(text)
+    cleaned = cleaned.replace("\\n", "\n")
+    cleaned = _RE_HOYO_TAGS.sub("", cleaned)
+    cleaned = _RE_HOYO_LINKS.sub("", cleaned)
+    lines = [_RE_MULTI_SPACE.sub(" ", ln).strip() for ln in cleaned.splitlines()]
+    return "\n".join(ln for ln in lines if ln).strip()
+
+
+def _field_val(obj: Any, *keys: str, default: Any = None) -> Any:
+    """Lê o primeiro campo disponível em um objeto Pydantic/dataclass ou dict."""
+    if obj is None:
+        return default
+    is_dict = isinstance(obj, dict)
+    for key in keys:
+        val = obj.get(key) if is_dict else getattr(obj, key, None)
+        if val is not None and val != "":
+            return val
+    return default
+
+
+def _extract_boss_entry(boss_obj: Any) -> Optional[Dict[str, Any]]:
+    """Normaliza metadados de chefe (nome, ícone e nível opcional) a partir de objeto ou dict."""
+    if not boss_obj:
+        return None
+    name = _clean_hoyolab_markup(_field_val(boss_obj, "name", "name_mi18n", default=""))
+    icon = str(_field_val(boss_obj, "icon", "badge_icon", default="") or "").strip()
+    level = _field_val(boss_obj, "level", default=None)
+    if not name and not icon:
+        return None
+    entry: Dict[str, Any] = {
+        "name": name or "Chefe",
+        "icon": icon,
+    }
+    if level is not None and str(level).strip() != "":
+        entry["level"] = level
+    return entry
+
+
+def _extract_buff_entry(
+    buff_obj: Any,
+    kind: str = "buff",
+    level: Optional[int] = None,
+) -> Optional[Dict[str, Any]]:
+    """Normaliza metadados de buff/bênção/evento para exibição nos cards de endgame."""
+    if not buff_obj:
+        return None
+    name = _clean_hoyolab_markup(_field_val(buff_obj, "name", "name_mi18n", default=""))
+    icon = str(_field_val(buff_obj, "icon", default="") or "").strip()
+    desc = _clean_hoyolab_markup(_field_val(buff_obj, "description", "desc", "desc_mi18n", default=""))
+    simple_desc = _clean_hoyolab_markup(
+        _field_val(buff_obj, "simple_description", "simple_desc", "simple_desc_mi18m", default="")
+    )
+    eff_level = level if level is not None else _field_val(buff_obj, "level", default=None)
+
+    # Bênçãos Brilhantes (Teatro Imaginário) armazenam descrições detalhadas em level_effect[]
+    if not desc:
+        level_effects = _field_val(buff_obj, "level_effect", default=None)
+        if isinstance(level_effects, list) and level_effects:
+            effect_lines = []
+            for le in level_effects:
+                le_name = _clean_hoyolab_markup(_field_val(le, "name", default=""))
+                le_desc = _clean_hoyolab_markup(_field_val(le, "desc", "description", default=""))
+                if le_desc:
+                    effect_lines.append(f"{le_name}: {le_desc}" if le_name and le_name != name else le_desc)
+            if effect_lines:
+                desc = "\n".join(effect_lines)
+
+    if not name and not icon:
+        return None
+    entry: Dict[str, Any] = {
+        "name": name or "Buff",
+        "icon": icon,
+        "desc": desc or simple_desc,
+        "kind": kind,
+    }
+    if simple_desc and simple_desc != entry["desc"]:
+        entry["simple_desc"] = simple_desc
+    if eff_level is not None:
+        try:
+            lvl_int = int(eff_level)
+            if lvl_int > 0:
+                entry["level"] = lvl_int
+        except (TypeError, ValueError):
+            pass
+    return entry
+
+
+def _extract_apc_season_bosses(apc_payload: Any) -> Dict[int, Dict[str, Any]]:
+    """Mapeia os chefes da temporada ativa da Sombra Apocalíptica para os lados 1, 2 e 3."""
+    bosses_by_side: Dict[int, Dict[str, Any]] = {}
+    seasons = getattr(apc_payload, "seasons", None) or []
+    s0 = seasons[0] if seasons else None
+    if not s0:
+        return bosses_by_side
+    side_attrs = [
+        (1, ("upper_boss",)),
+        (2, ("lower_boss",)),
+        (3, ("starward_boss", "tierce_boss")),
+    ]
+    for side_idx, attrs in side_attrs:
+        for attr in attrs:
+            raw_boss = getattr(s0, attr, None)
+            if raw_boss is None and hasattr(s0, "model_extra") and isinstance(s0.model_extra, dict):
+                raw_boss = s0.model_extra.get(attr)
+            parsed = _extract_boss_entry(raw_boss)
+            if parsed:
+                bosses_by_side[side_idx] = parsed
+                break
+    return bosses_by_side
+
+
+def _extract_theater_act_tactical(
+    act: Any,
+    raw_act: Optional[dict] = None,
+) -> Tuple[Optional[Dict[str, Any]], List[Dict[str, Any]], List[Dict[str, Any]]]:
+    """Extrai chefe/inimigos e buffs (Bênçãos Brilhantes, Bônus Maravilhosos e Cartas) de um Ato do Teatro."""
+    boss: Optional[Dict[str, Any]] = None
+    monsters: List[Dict[str, Any]] = []
+    raw_enemies = None
+    if raw_act and isinstance(raw_act, dict):
+        raw_enemies = raw_act.get("enemies")
+    if not raw_enemies:
+        raw_enemies = getattr(act, "enemies", None)
+    if isinstance(raw_enemies, list) and raw_enemies:
+        for e in raw_enemies:
+            e_name = _clean_hoyolab_markup(_field_val(e, "name", default="Inimigo"))
+            e_icon = str(_field_val(e, "icon", default="") or "").strip()
+            e_lvl = _field_val(e, "level", default=None)
+            m_item: Dict[str, Any] = {"name": e_name or "Inimigo"}
+            if e_lvl is not None:
+                m_item["level"] = e_lvl
+            if e_icon:
+                m_item["icon"] = e_icon
+            monsters.append(m_item)
+        round_id = getattr(act, "round_id", None) or (raw_act.get("round_id") if isinstance(raw_act, dict) else None)
+        if len(monsters) == 1 and monsters[0].get("icon"):
+            boss = _extract_boss_entry(monsters[0])
+        elif round_id in (3, 6, 8, 10) and monsters and monsters[0].get("icon"):
+            boss = _extract_boss_entry(monsters[0])
+
+    buffs: List[Dict[str, Any]] = []
+    seen_keys = set()
+
+    def _add_buff(entry: Optional[Dict[str, Any]]) -> None:
+        if not entry:
+            return
+        dedup_key = (entry.get("name", "").lower(), entry.get("icon", ""), entry.get("kind", ""))
+        if dedup_key in seen_keys:
+            return
+        seen_keys.add(dedup_key)
+        buffs.append(entry)
+
+    # 1. Bênçãos Brilhantes (splendour_buff.buffs do payload bruto ou atributo direto)
+    splendour = None
+    if raw_act and isinstance(raw_act, dict):
+        splendour = raw_act.get("splendour_buff")
+    if not splendour:
+        splendour = getattr(act, "splendour_buff", None)
+    splendour_list = _field_val(splendour, "buffs", default=None) if splendour else None
+    if isinstance(splendour_list, list):
+        for sb in splendour_list:
+            _add_buff(_extract_buff_entry(sb, kind="blessing"))
+
+    # 2. Bônus Maravilhosos (wondroud_booms / buffs)
+    wondrous_list = getattr(act, "wondroud_booms", None) or (
+        raw_act.get("buffs") if isinstance(raw_act, dict) else None
+    )
+    if isinstance(wondrous_list, list):
+        for wb in wondrous_list:
+            _add_buff(_extract_buff_entry(wb, kind="buff"))
+
+    # 3. Eventos / Cartas Misteriosas (mystery_caches / choice_cards)
+    cards_list = getattr(act, "mystery_caches", None) or (
+        raw_act.get("choice_cards") if isinstance(raw_act, dict) else None
+    )
+    if isinstance(cards_list, list):
+        for cc in cards_list:
+            _add_buff(_extract_buff_entry(cc, kind="card"))
+
+    return boss, buffs, monsters
+
+
+async def _fetch_theater_raw_rounds_map(client: genshin.Client, uid: int, target_schedule_id: Any = None) -> Dict[int, dict]:
+    """Obtém mapa {round_id: raw_act_dict} do Teatro Imaginário para enriquecer Bênçãos Brilhantes e Chefes."""
+    try:
+        raw_payload = await client.get_imaginarium_theater(uid, raw=True)
+    except TypeError:
+        return {}
+    except Exception:
+        return {}
+
+    if not isinstance(raw_payload, dict):
+        return {}
+    data_list = raw_payload.get("data") or []
+    if not isinstance(data_list, list) or not data_list:
+        return {}
+
+    selected = None
+    if target_schedule_id is not None:
+        for item in data_list:
+            sched = item.get("schedule") if isinstance(item, dict) else None
+            if isinstance(sched, dict) and str(sched.get("schedule_id", "")) == str(target_schedule_id):
+                selected = item
+                break
+    if selected is None:
+        for item in data_list:
+            if isinstance(item, dict) and item.get("has_detail_data"):
+                selected = item
+                break
+    if selected is None:
+        selected = data_list[0] if isinstance(data_list[0], dict) else None
+    if not isinstance(selected, dict):
+        return {}
+
+    detail = selected.get("detail") or {}
+    rounds_data = detail.get("rounds_data") if isinstance(detail, dict) else None
+    if not isinstance(rounds_data, list):
+        return {}
+
+    out: Dict[int, dict] = {}
+    for rd in rounds_data:
+        if isinstance(rd, dict) and rd.get("round_id") is not None:
+            try:
+                out[int(rd["round_id"])] = rd
+            except (TypeError, ValueError):
+                pass
+    return out
+
+
+async def extract_endgame_tactical_meta(client: genshin.Client, game_id: str, uid: int) -> Dict[str, List[Dict[str, Any]]]:
+    """Busca metadados de chefes e buffs dos modos ativos na HoYoLAB para enriquecer cards já salvos."""
+    g = (game_id or "").lower().strip()
+    meta: Dict[str, List[Dict[str, Any]]] = {}
+
+    if g == "hsr":
+        try:
+            pf = await client.get_starrail_pure_fiction(uid)
+            if getattr(pf, "floors", None):
+                floor = pf.floors[0]
+                pf_teams = []
+                for n_idx, n_obj in enumerate([floor.node_1, floor.node_2, getattr(floor, "node_3", None)], 1):
+                    if not n_obj:
+                        continue
+                    buff_entry = _extract_buff_entry(getattr(n_obj, "buff", None), kind="buff")
+                    pf_teams.append(
+                        {
+                            "name": f"Lado {n_idx}",
+                            "boss": None,
+                            "buffs": [buff_entry] if buff_entry else [],
+                        }
+                    )
+                if pf_teams:
+                    meta["pure_fiction"] = pf_teams
+        except Exception:
+            pass
+
+        try:
+            apc = await client.get_starrail_apc_shadow(uid)
+            if getattr(apc, "floors", None):
+                floor = apc.floors[0]
+                boss_map = _extract_apc_season_bosses(apc)
+                apc_teams = []
+                for n_idx, n_obj in enumerate([floor.node_1, floor.node_2, getattr(floor, "node_3", None)], 1):
+                    if not n_obj:
+                        continue
+                    buff_entry = _extract_buff_entry(getattr(n_obj, "buff", None), kind="buff")
+                    apc_teams.append(
+                        {
+                            "name": f"Lado {n_idx}",
+                            "boss": boss_map.get(n_idx),
+                            "buffs": [buff_entry] if buff_entry else [],
+                        }
+                    )
+                if apc_teams:
+                    meta["apocalyptic_shadow"] = apc_teams
+        except Exception:
+            pass
+
+    elif g == "genshin":
+        try:
+            it = await client.get_imaginarium_theater(uid)
+            datas = getattr(it, "datas", None) or []
+            target_data = next((d for d in datas if getattr(d, "has_data", False)), datas[0] if datas else None)
+            if target_data and getattr(target_data, "acts", None):
+                sched_id = getattr(getattr(target_data, "schedule", None), "id", None)
+                raw_rounds = await _fetch_theater_raw_rounds_map(client, uid, sched_id)
+                it_teams = []
+                for act in target_data.acts:
+                    if not getattr(act, "characters", None):
+                        continue
+                    rid = getattr(act, "round_id", None)
+                    raw_act = raw_rounds.get(int(rid)) if rid is not None else None
+                    boss_entry, act_buffs, act_monsters = _extract_theater_act_tactical(act, raw_act)
+                    it_teams.append(
+                        {
+                            "round_id": rid,
+                            "name": f"Ato {rid}",
+                            "boss": boss_entry,
+                            "buffs": act_buffs,
+                            "monsters": act_monsters,
+                        }
+                    )
+                if it_teams:
+                    meta["imaginarium_theater"] = it_teams
+        except Exception:
+            pass
+
+    elif g == "zzz":
+        da_fn = getattr(client, "get_deadly_assault", None)
+        if callable(da_fn):
+            try:
+                da = await da_fn(uid)
+                challenges = getattr(da, "challenges", None) or []
+                da_teams = []
+                for idx_c, ch in enumerate(challenges, 1):
+                    boss_list = getattr(ch, "boss", None) or []
+                    boss_entry = _extract_boss_entry(boss_list[0]) if boss_list else None
+                    ch_buffs = [
+                        b for b in (_extract_buff_entry(raw_b, kind="buff") for raw_b in (getattr(ch, "buffs", None) or []))
+                        if b
+                    ]
+                    da_teams.append(
+                        {
+                            "name": boss_entry["name"] if boss_entry else f"Chefe {idx_c}",
+                            "boss": boss_entry,
+                            "buffs": ch_buffs,
+                        }
+                    )
+                if da_teams:
+                    meta["deadly_assault"] = da_teams
+            except Exception:
+                pass
+
+    return meta
 
 
 def sanitize_genshin_url(url_str: str) -> str:
@@ -318,10 +661,13 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
                 if not n_obj:
                     continue
                 n_chars = [_build_char_node_data(a, char_map) for a in getattr(n_obj, "avatars", [])]
-                n_monsters = [
-                    {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", "?")}
-                    for m in getattr(n_obj, "monsters", [])
-                ]
+                n_monsters = []
+                for m in getattr(n_obj, "monsters", []):
+                    m_item = {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", "?")}
+                    m_icon = str(getattr(m, "icon", "") or "").strip()
+                    if m_icon:
+                        m_item["icon"] = m_icon
+                    n_monsters.append(m_item)
                 teams.append({"name": f"Lado {n_idx}", "characters": n_chars, "monsters": n_monsters})
 
             modes.append(
@@ -379,11 +725,22 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
                 if not n_obj:
                     continue
                 n_chars = [_build_char_node_data(a, char_map) for a in getattr(n_obj, "avatars", [])]
-                n_monsters = [
-                    {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", "?")}
-                    for m in getattr(n_obj, "monsters", [])
-                ]
-                teams.append({"name": f"Lado {n_idx}", "characters": n_chars, "monsters": n_monsters})
+                n_monsters = []
+                for m in getattr(n_obj, "monsters", []):
+                    m_item = {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", "?")}
+                    m_icon = str(getattr(m, "icon", "") or "").strip()
+                    if m_icon:
+                        m_item["icon"] = m_icon
+                    n_monsters.append(m_item)
+                node_buff = _extract_buff_entry(getattr(n_obj, "buff", None), kind="buff")
+                teams.append(
+                    {
+                        "name": f"Lado {n_idx}",
+                        "characters": n_chars,
+                        "monsters": n_monsters,
+                        "buffs": [node_buff] if node_buff else [],
+                    }
+                )
 
             modes.append(
                 {
@@ -435,16 +792,29 @@ async def extrair_endgame_hsr_data(client: genshin.Client, uid: int) -> Tuple[st
                     + "\n"
                 )
 
+            apc_boss_map = _extract_apc_season_bosses(apc)
             teams = []
             for n_idx, n_obj in enumerate([floor.node_1, floor.node_2, getattr(floor, "node_3", None)], 1):
                 if not n_obj:
                     continue
                 n_chars = [_build_char_node_data(a, char_map) for a in getattr(n_obj, "avatars", [])]
-                n_monsters = [
-                    {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", "?")}
-                    for m in getattr(n_obj, "monsters", [])
-                ]
-                teams.append({"name": f"Lado {n_idx}", "characters": n_chars, "monsters": n_monsters})
+                n_monsters = []
+                for m in getattr(n_obj, "monsters", []):
+                    m_item = {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", "?")}
+                    m_icon = str(getattr(m, "icon", "") or "").strip()
+                    if m_icon:
+                        m_item["icon"] = m_icon
+                    n_monsters.append(m_item)
+                node_buff = _extract_buff_entry(getattr(n_obj, "buff", None), kind="buff")
+                team_entry: Dict[str, Any] = {
+                    "name": f"Lado {n_idx}",
+                    "characters": n_chars,
+                    "monsters": n_monsters,
+                    "buffs": [node_buff] if node_buff else [],
+                }
+                if apc_boss_map.get(n_idx):
+                    team_entry["boss"] = apc_boss_map[n_idx]
+                teams.append(team_entry)
 
             modes.append(
                 {
@@ -527,9 +897,13 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
                     text += format_team_node(node_name, getattr(b, "characters", []), monsters) + "\n"
 
                     n_chars = [_build_char_node_data(c, roster_map=roster_map) for c in getattr(b, "characters", [])]
-                    n_monsters = [
-                        {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", 100)} for m in monsters
-                    ]
+                    n_monsters = []
+                    for m in monsters:
+                        m_item = {"name": getattr(m, "name", "Inimigo"), "level": getattr(m, "level", 100)}
+                        m_icon = str(getattr(m, "icon", "") or "").strip()
+                        if m_icon:
+                            m_item["icon"] = m_icon
+                        n_monsters.append(m_item)
                     teams.append({"name": node_name, "characters": n_chars, "monsters": n_monsters})
 
             modes.append(
@@ -604,6 +978,7 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
 
             teams = []
             if hasattr(target_data, "acts") and target_data.acts:
+                raw_rounds_map = await _fetch_theater_raw_rounds_map(client, uid, season_id)
                 for act in target_data.acts:
                     act_chars = getattr(act, "characters", [])
                     if not act_chars:
@@ -611,9 +986,19 @@ async def extrair_endgame_genshin_data(client: genshin.Client, uid: int) -> Tupl
                     n_chars = [_build_char_node_data(c, roster_map=roster_map) for c in act_chars]
                     medal_mark = " (Medalha ⭐)" if getattr(act, "medal_obtained", False) else ""
                     node_title = f"Ato {act.round_id}{medal_mark}"
+                    raw_act = raw_rounds_map.get(int(act.round_id)) if getattr(act, "round_id", None) is not None else None
+                    act_boss, act_buffs, act_monsters = _extract_theater_act_tactical(act, raw_act)
 
                     text += format_team_node(node_title, act_chars, None) + "\n"
-                    teams.append({"name": node_title, "characters": n_chars, "monsters": []})
+                    team_entry: Dict[str, Any] = {
+                        "name": node_title,
+                        "characters": n_chars,
+                        "monsters": act_monsters,
+                        "buffs": act_buffs,
+                    }
+                    if act_boss:
+                        team_entry["boss"] = act_boss
+                    teams.append(team_entry)
 
             modes.append(
                 {
@@ -737,7 +1122,12 @@ async def extrair_endgame_zzz_data(client: genshin.Client, uid: int) -> Tuple[st
                 teams = []
                 for idx_c, ch in enumerate(challenges, 1):
                     boss_list = getattr(ch, "boss", None) or []
-                    boss_name = getattr(boss_list[0], "name", f"Chefe {idx_c}") if boss_list else f"Chefe {idx_c}"
+                    boss_entry = _extract_boss_entry(boss_list[0]) if boss_list else None
+                    boss_name = boss_entry["name"] if boss_entry else f"Chefe {idx_c}"
+                    ch_buffs = [
+                        b for b in (_extract_buff_entry(raw_b, kind="buff") for raw_b in (getattr(ch, "buffs", None) or []))
+                        if b
+                    ]
                     ch_agents = getattr(ch, "agents", None) or []
                     n_chars = [_build_char_node_data(a) for a in ch_agents]
                     bangboo = getattr(ch, "bangboo", None)
@@ -756,7 +1146,15 @@ async def extrair_endgame_zzz_data(client: genshin.Client, uid: int) -> Tuple[st
                     ch_score = int(getattr(ch, "score", 0) or 0)
                     ch_stars = int(getattr(ch, "star", 0) or 0)
                     node_title = f"{boss_name} ({ch_stars}★ • {ch_score:,})".replace(",", ".")
-                    teams.append({"name": node_title, "characters": n_chars, "monsters": []})
+                    da_team: Dict[str, Any] = {
+                        "name": node_title,
+                        "characters": n_chars,
+                        "monsters": [],
+                        "buffs": ch_buffs,
+                    }
+                    if boss_entry:
+                        da_team["boss"] = boss_entry
+                    teams.append(da_team)
                 modes.append(
                     {
                         "id": "deadly_assault",

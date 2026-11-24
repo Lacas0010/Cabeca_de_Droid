@@ -1,0 +1,29 @@
+{
+  "hsr": {
+    "destruction": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Destruction.png",
+    "hunt": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Hunt.png",
+    "erudition": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Erudition.png",
+    "harmony": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Harmony.png",
+    "nihility": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Nihility.png",
+    "preservation": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Preservation.png",
+    "abundance": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Abundance.png",
+    "remembrance": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Remembrance.png",
+    "elation": "https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/path/Elation.png"
+  },
+  "genshin": {
+    "sword": "https://cdn.prydwen.gg/images/genshin-impact/icons/weapon_sword.webp",
+    "claymore": "https://cdn.prydwen.gg/images/genshin-impact/icons/weapon_claymore.webp",
+    "polearm": "https://cdn.prydwen.gg/images/genshin-impact/icons/weapon_polearm.webp",
+    "bow": "https://cdn.prydwen.gg/images/genshin-impact/icons/weapon_bow.webp",
+    "catalyst": "https://cdn.prydwen.gg/images/genshin-impact/icons/weapon_catalyst.webp"
+  },
+  "zzz": {
+    "anomaly": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/style_anomaly.webp",
+    "attack": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/style_attack.webp",
+    "defense": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/style_defence.webp",
+    "stun": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/style_stun.webp",
+    "support": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/style_support.webp",
+    "rupture": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/style_rupture.webp",
+    "armorer": "https://cdn.prydwen.gg/images/zenless-zone-zero/icons/style_armorer.webp"
+  }
+}

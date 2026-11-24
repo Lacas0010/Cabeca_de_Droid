@@ -2,6 +2,7 @@ import os
 import re
 import json
 from datetime import datetime
+from typing import Optional
 from curl_cffi import requests
 from bs4 import BeautifulSoup
 
@@ -769,6 +770,122 @@ class PrydwenScraper:
 
         return filepath
 
+    @staticmethod
+    def _parse_prydwen_date(date_str: str) -> Optional[str]:
+        """Converte datas no formato 'Nov 4, 2026' ou 'Nov 4 2026' para ISO 'YYYY-MM-DD'."""
+        if not date_str:
+            return None
+        clean = re.sub(r"\s+", " ", str(date_str).strip()).replace(",", "")
+        for fmt in ("%b %d %Y", "%B %d %Y", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(clean, fmt).strftime("%Y-%m-%d")
+            except ValueError:
+                continue
+        return None
+
+    def _extract_banner_schedule_meta(self, card_soup, fallback_patch_info: str = "") -> dict:
+        """
+        Extrai individualmente de cada card de banner da Prydwen:
+        - patch_label (ex: 'Patch 4.7 Phase 1', 'Patch 4.7', 'Patch 3.3 Phase 2', 'Fate Collab')
+        - phase (1, 2 ou None quando dura a atualização inteira / collab)
+        - duration_type ('phase_1', 'phase_2', 'full_patch', 'collab')
+        - date_range, start_date (YYYY-MM-DD), end_date (YYYY-MM-DD ou None)
+        """
+        card_text = re.sub(r"\s+", " ", card_soup.get_text(" | ").strip()) if card_soup else ""
+        low_text = card_text.lower()
+
+        # 1. Extrai Patch/Fase diretamente do card (prioriza texto do card sobre fallback global)
+        patch_label = ""
+        m_patch = re.search(r"(Patch\s+\d+(?:\.\d+)?(?:\s+Phase\s+[12])?)", card_text, re.IGNORECASE)
+        if m_patch:
+            patch_label = re.sub(r"\s+", " ", m_patch.group(1)).strip()
+        elif "collab" in low_text:
+            m_collab = re.search(r"([A-Za-z0-9 ]*Collab)", card_text, re.IGNORECASE)
+            patch_label = m_collab.group(1).strip() if m_collab else "Collab"
+        elif fallback_patch_info:
+            m_fb = re.search(r"(Patch\s+\d+(?:\.\d+)?(?:\s+Phase\s+[12])?)", fallback_patch_info, re.IGNORECASE)
+            patch_label = m_fb.group(1).strip() if m_fb else fallback_patch_info.strip()
+
+        # 2. Extrai intervalo de datas do card ('Nov 11, 2026 – Dec 2, 2026' ou 'From Jul 24, 2026')
+        date_range = ""
+        start_date = None
+        end_date = None
+        m_range = re.search(
+            r"([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})\s*[–—\-]\s*([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})",
+            card_text,
+        )
+        if m_range:
+            date_range = f"{m_range.group(1).strip()} – {m_range.group(2).strip()}"
+            start_date = self._parse_prydwen_date(m_range.group(1))
+            end_date = self._parse_prydwen_date(m_range.group(2))
+        else:
+            m_from = re.search(r"(From\s+[A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})", card_text, re.IGNORECASE)
+            if m_from:
+                date_range = m_from.group(1).strip()
+                start_date = self._parse_prydwen_date(re.sub(r"^From\s+", "", date_range, flags=re.IGNORECASE))
+                end_date = None
+            elif fallback_patch_info:
+                m_fb_range = re.search(
+                    r"([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})\s*[–—\-]\s*([A-Za-z]{3,9}\s+\d{1,2},?\s+\d{4})",
+                    fallback_patch_info,
+                )
+                if m_fb_range:
+                    date_range = f"{m_fb_range.group(1).strip()} – {m_fb_range.group(2).strip()}"
+                    start_date = self._parse_prydwen_date(m_fb_range.group(1))
+                    end_date = self._parse_prydwen_date(m_fb_range.group(2))
+
+        # 3. Classifica fase e tipo de duração (1ª Fase, 2ª Fase, Atualização Inteira ou Collab)
+        phase: Optional[int] = None
+        duration_type = "phase_1"
+        is_collab = ("| collab |" in f" {low_text} ") or ("collaboration" in low_text) or (
+            start_date is not None and end_date is None and date_range.lower().startswith("from ")
+        )
+
+        m_phase_num = re.search(r"(?:phase|fase)\s*([12])", patch_label, re.IGNORECASE)
+        if not m_phase_num and not is_collab:
+            m_phase_num = re.search(r"in\s+phase\s*([12])\s+of\s+patch", low_text, re.IGNORECASE)
+
+        span_days = None
+        if start_date and end_date:
+            try:
+                d_start = datetime.strptime(start_date, "%Y-%m-%d")
+                d_end = datetime.strptime(end_date, "%Y-%m-%d")
+                span_days = (d_end - d_start).days
+            except ValueError:
+                span_days = None
+
+        if is_collab:
+            phase = None
+            duration_type = "collab"
+        elif m_phase_num:
+            phase = int(m_phase_num.group(1))
+            duration_type = f"phase_{phase}"
+        elif (
+            "entirety of patch" in low_text
+            or "full patch" in low_text
+            or (span_days is not None and span_days >= 30)
+        ):
+            phase = None
+            duration_type = "full_patch"
+        else:
+            m_fb_phase = re.search(r"(?:phase|fase)\s*([12])", fallback_patch_info or "", re.IGNORECASE)
+            if m_fb_phase:
+                phase = int(m_fb_phase.group(1))
+                duration_type = f"phase_{phase}"
+            else:
+                phase = 1
+                duration_type = "phase_1"
+
+        return {
+            "patch_label": patch_label,
+            "date_range": date_range,
+            "start_date": start_date,
+            "end_date": end_date,
+            "phase": phase,
+            "duration_type": duration_type,
+            "is_full_patch": (duration_type == "full_patch"),
+        }
+
     def get_current_banners(self, game_id: str = None) -> dict:
         """
         Extrai dinamicamente os banners atuais de personagens e armas/cones/motores do Prydwen.
@@ -901,11 +1018,13 @@ class PrydwenScraper:
                             else:
                                 banner_title = ""
 
+                            schedule_meta = self._extract_banner_schedule_meta(c, game_data.get("patch_info", ""))
                             banner_entry = {
                                 "character_name": main_char,
                                 "banner_image": img_src,
                                 "featured_4stars": featured_4s,
                                 "is_primary": (idx == 0),
+                                **schedule_meta,
                             }
                             if banner_title:
                                 banner_entry["banner_title"] = banner_title
@@ -983,6 +1102,7 @@ class PrydwenScraper:
                                     w_4s = featured_4s or (prev_wb.get("featured_4stars", []) if prev_wb else [])
                                     w_title = prev_wb.get("banner_title", raw_banner_name) if prev_wb else raw_banner_name
 
+                                    schedule_meta = self._extract_banner_schedule_meta(c, game_data.get("patch_info", ""))
                                     game_data["weapon_banners"].append(
                                         {
                                             "character_name": w_name,
@@ -991,6 +1111,7 @@ class PrydwenScraper:
                                             "featured_4stars": w_4s,
                                             "is_primary": (w_idx == 0),
                                             "banner_type": "weapon",
+                                            **schedule_meta,
                                         }
                                     )
                             else:
@@ -1024,6 +1145,7 @@ class PrydwenScraper:
                                     w_4s = featured_4s or (prev_wb.get("featured_4stars", []) if prev_wb else [])
                                     w_title = prev_wb.get("banner_title", wp_name) if prev_wb else wp_name
 
+                                    schedule_meta = self._extract_banner_schedule_meta(c, game_data.get("patch_info", ""))
                                     entry = {
                                         "character_name": wp_name,
                                         "banner_title": w_title,
@@ -1031,6 +1153,7 @@ class PrydwenScraper:
                                         "featured_4stars": w_4s,
                                         "is_primary": (idx == 0),
                                         "banner_type": "weapon",
+                                        **schedule_meta,
                                     }
                                     if remote_card_img:
                                         entry["remote_banner_image"] = remote_card_img

@@ -92,3 +92,65 @@ class EndgameResponse(BaseModel):
     reset_schedules: List[EndgameResetScheduleItem] = Field(
         default_factory=list, description="Cronograma de reset de todos os modos endgame do jogo"
     )
+
+
+class ServerCycleResetInfo(BaseModel):
+    """Horários de reset Diário (04:00) e Semanal (Segunda 04:00) no fuso do servidor."""
+
+    daily_reset_at: str = Field(..., description="Próximo reset diário às 04:00 (servidor) em ISO-8601 UTC")
+    weekly_reset_at: str = Field(..., description="Próximo reset semanal na segunda às 04:00 (servidor) em ISO-8601 UTC")
+    server_tz_label: str = Field("UTC-5", description="Rótulo do fuso do servidor utilizado no cálculo")
+
+
+class EndgameResetRadarItem(BaseModel):
+    """Card compacto de um modo endgame no Radar Unificado de Resets da Home."""
+
+    game_id: str = Field(..., description="Identificador do jogo ('hsr', 'genshin', 'zzz')")
+    game_label: str = Field(..., description="Sigla curta do jogo ('HSR', 'Genshin', 'ZZZ')")
+    id: str = Field(..., description="Identificador do modo endgame")
+    name: str = Field(..., description="Nome localizado do modo")
+    badge: str = Field("", description="Sigla curta do modo")
+    icon: Optional[str] = Field(None, description="URL local do ícone oficial do modo endgame")
+    begin_at: Optional[str] = Field(None, description="Início da temporada atual em ISO-8601 UTC")
+    reset_at: Optional[str] = Field(None, description="Próximo reset em ISO-8601 UTC")
+    source: str = Field("hoyolab", description="Origem do horário ('hoyolab' ou 'estimated')")
+    status: str = Field("pending", description="Estado de conclusão: 'completed', 'in_progress' ou 'pending'")
+    stars: Optional[int] = Field(None, description="Estrelas/medalhas conquistadas na temporada")
+    max_stars: Optional[int] = Field(None, description="Máximo de estrelas/medalhas do modo")
+    metric_value: Optional[str] = Field(None, description="Classificação ou métrica principal (ex: 'S', '12/12')")
+    has_record: bool = Field(False, description="Indica se há registro coletado para este modo")
+    seconds_remaining: Optional[int] = Field(None, description="Segundos restantes até o reset")
+    is_urgent_pending: bool = Field(False, description="True quando pendente/em progresso e próximo do reset (<= 72h)")
+
+
+class BannerResetRadarItem(BaseModel):
+    """Grupo de banners ativos com mesma data/hora de virada no Radar Unificado da Home."""
+
+    game_id: str = Field(..., description="Identificador do jogo ('genshin', 'hsr', 'zzz')")
+    game_label: str = Field(..., description="Sigla curta do jogo ('Genshin', 'HSR', 'ZZZ')")
+    title: str = Field(..., description="Nomes dos personagens 5★ deste grupo de banner")
+    primary_character: str = Field(..., description="Personagem 5★ principal para preenchimento no Simulador")
+    characters: List[dict] = Field(default_factory=list, description="Lista de personagens 5★ (name, icon)")
+    patch_label: str = Field("", description="Rótulo de patch e fase (ex: 'Patch 7.2 Phase 1')")
+    duration_type: str = Field("phase_1", description="Tipo de duração ('phase_1', 'phase_2', 'full_patch', 'collab')")
+    phase: Optional[int] = Field(None, description="Fase numérica (1 ou 2) quando aplicável")
+    banner_time: str = Field("23:30", description="Horário de virada configurado (HH:MM)")
+    end_date: Optional[str] = Field(None, description="Data de término (YYYY-MM-DD)")
+    end_at: Optional[str] = Field(None, description="Timestamp exato de virada em ISO-8601 UTC")
+    seconds_remaining: Optional[int] = Field(None, description="Segundos restantes até a virada do banner")
+    is_ending_soon: bool = Field(False, description="True quando faltam <= 48h para o término do banner")
+
+
+class EndgameResetRadarResponse(BaseModel):
+    """Resposta agregada do Radar Unificado de Resets (7 modos endgame + Banners Ativos + Diário/Semanal)."""
+
+    status: str = Field("success", description="Status da resposta")
+    generated_at: str = Field(..., description="Timestamp UTC de geração")
+    server_resets: ServerCycleResetInfo = Field(..., description="Timers de reset diário e semanal do servidor")
+    summary: dict = Field(default_factory=dict, description="Contadores resumidos de conclusão e pendências")
+    items: List[EndgameResetRadarItem] = Field(
+        default_factory=list, description="Os 7 modos endgame ordenados por urgência"
+    )
+    banners: List[BannerResetRadarItem] = Field(
+        default_factory=list, description="Banners ativos com data de virada ordenados por urgência"
+    )

@@ -6,15 +6,115 @@
 
 .gacha-dashboard-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 20px;
     margin-top: 20px;
 }
 
+.gacha-dashboard-grid > * {
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
 @media (max-width: 1024px) {
     .gacha-dashboard-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
+}
+
+.gacha-banner-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.gacha-banner-patch-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    font-weight: 700;
+    line-height: 1.3;
+    max-width: 100%;
+}
+
+.gacha-banner-patch-badge.phase-full {
+    background: rgba(168, 85, 247, 0.18);
+    color: #e9d5ff;
+    border-color: rgba(168, 85, 247, 0.45);
+}
+
+.gacha-banner-patch-badge.phase-2 {
+    background: rgba(56, 189, 248, 0.16);
+    color: #7dd3fc;
+    border-color: rgba(56, 189, 248, 0.42);
+}
+
+.gacha-banner-patch-badge.phase-collab {
+    background: rgba(244, 63, 94, 0.16);
+    color: #fda4af;
+    border-color: rgba(244, 63, 94, 0.4);
+}
+
+.gacha-banner-phase-pill {
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.18);
+    color: #fde68a;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    margin-left: 4px;
+    white-space: nowrap;
+}
+
+.gacha-banner-phase-pill.type-full_patch {
+    background: rgba(168, 85, 247, 0.22);
+    color: #e9d5ff;
+    border-color: rgba(168, 85, 247, 0.45);
+}
+
+.gacha-banner-phase-pill.type-phase_2 {
+    background: rgba(56, 189, 248, 0.18);
+    color: #7dd3fc;
+    border-color: rgba(56, 189, 248, 0.4);
+}
+
+.gacha-banner-phase-pill.type-collab {
+    background: rgba(244, 63, 94, 0.2);
+    color: #fda4af;
+    border-color: rgba(244, 63, 94, 0.42);
+}
+
+.gacha-form-grid-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.gacha-form-field {
+    min-width: 0;
+}
+
+.gacha-pity-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.gacha-action-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
 }
 
 /* Selector Pill de Jogo */
@@ -979,10 +1079,22 @@
     pointer-events: none;
 }
 
-.gacha-banner-ingame-badge-top {
+.gacha-banner-top-bar {
     position: absolute;
     top: 10px;
     left: 12px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.gacha-banner-ingame-badge-top {
+    position: static;
     background: rgba(15, 23, 42, 0.85);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(245, 158, 11, 0.5);
@@ -992,10 +1104,80 @@
     padding: 4px 10px;
     border-radius: 20px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 6px;
-    z-index: 2;
+    pointer-events: auto;
+}
+
+.gacha-banner-countdown-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(56, 189, 248, 0.48);
+    color: #e0f2fe;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+    font-variant-numeric: tabular-nums;
+    pointer-events: auto;
+}
+
+.gacha-banner-countdown-badge.banner-cd-soon {
+    border-color: rgba(245, 158, 11, 0.65);
+    color: #fde68a;
+    background: rgba(69, 26, 3, 0.9);
+}
+
+.gacha-banner-countdown-badge.banner-cd-urgent {
+    border-color: rgba(248, 113, 113, 0.75);
+    color: #fecaca;
+    background: rgba(69, 10, 10, 0.92);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+}
+
+.gacha-banner-countdown-badge.banner-cd-collab {
+    border-color: rgba(244, 63, 94, 0.5);
+    color: #fecdd3;
+    background: rgba(45, 12, 26, 0.88);
+}
+
+.gacha-banner-countdown-badge.banner-cd-expired {
+    border-color: rgba(148, 163, 184, 0.4);
+    color: #cbd5e1;
+}
+
+.gacha-banner-countdown-prefix {
+    opacity: 0.85;
+    font-weight: 600;
+}
+
+.gacha-banner-tab-cd {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #7dd3fc;
+    margin-left: 4px;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.gacha-banner-tab-cd.banner-cd-soon {
+    color: #fbbf24;
+}
+
+.gacha-banner-tab-cd.banner-cd-urgent {
+    color: #f87171;
+}
+
+.gacha-banner-tab-cd.banner-cd-expired {
+    color: #94a3b8;
 }
 
 .gacha-banner-ingame-caption {
@@ -1190,10 +1372,60 @@
         max-height: 260px;
     }
 
-    .gacha-banner-caption {
+    .gacha-banner-ingame-caption {
         flex-direction: column;
         align-items: flex-start;
+        gap: 8px;
+        bottom: 10px;
+        left: 10px;
+        right: 10px;
+    }
+
+    .gacha-banner-ingame-caption sakuga-button {
+        width: 100%;
+    }
+
+    .gacha-active-banner-wrapper {
+        padding: 12px;
+    }
+
+    .gacha-game-pill-container,
+    .gacha-type-pill-container {
+        flex-wrap: wrap;
         gap: 6px;
+    }
+
+    .gacha-game-pill,
+    .gacha-type-pill {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 0;
+        padding: 8px 10px;
+        font-size: 12px;
+    }
+
+    .gacha-char-hero-card {
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .gacha-form-grid-2 {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 10px;
+    }
+
+    .gacha-quick-pulls {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .gacha-action-grid-3 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .gacha-action-grid-3 .gacha-action-primary {
+        grid-column: 1 / -1;
     }
 }
 
@@ -1305,6 +1537,89 @@
         width: 60px !important;
         height: 75px !important;
     }
+
+    .gacha-pulls-label-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+/* Ícones Oficiais de Moedas e Passes no Simulador, Rastreador e Índice de Sorte */
+.gacha-pulls-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.gacha-pulls-label-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.gacha-currency-convert-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.28);
+    border-radius: 999px;
+    padding: 2px 9px;
+}
+
+.gacha-btn-ticket-icon {
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+    vertical-align: middle;
+    flex-shrink: 0;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.gacha-metric-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tracker-kpi-with-icon {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tracker-kpi-currency-sub {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #c4b5fd;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 999px;
+    padding: 2px 8px;
+    vertical-align: middle;
+}
+
+.luck-resource-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
 @media (max-width: 400px) {

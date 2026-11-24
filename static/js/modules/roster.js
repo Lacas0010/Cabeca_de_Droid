@@ -1162,30 +1162,30 @@ async function _loadRosterImpl(gameId) {
                 const affEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
                 const affTitleAttr = affEid ? String(affEid.name || "Affinitive Eidolon").replace(/"/g, "&quot;") : "";
 
+                let pathOrWeaponLabel = "";
+                let rawPathOrWeapon = "";
+                if (gameId === "hsr") {
+                    rawPathOrWeapon = char.path || getCharacterPath(char) || "";
+                    pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawPathOrWeapon, "hsr") : rawPathOrWeapon;
+                } else if (gameId === "genshin") {
+                    rawPathOrWeapon = char.weapon_type || getCharacterWeapon(char) || "";
+                    const wKey = String(rawPathOrWeapon || "").trim().toLowerCase();
+                    pathOrWeaponLabel = (wKey && typeof window.t === "function") ? window.t(`weapon_${wKey}`, rawPathOrWeapon) : rawPathOrWeapon;
+                } else if (gameId === "zzz") {
+                    rawPathOrWeapon = char.specialty || char.role || "";
+                    pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawPathOrWeapon, "zzz") : rawPathOrWeapon;
+                }
+
                 if (currentRosterViewMode === "list") {
                     card.className = `char-card char-list-row ${elemClass}${inTeamClass}`;
 
                     const rarityNum = Number(char.rarity);
                     const isFiveStar = rarityNum === 5 || char.rarity === "5" || String(char.rarity).toUpperCase() === "S";
                     const elemDisplayName = typeof formatElementDisplayName === "function" ? formatElementDisplayName(char.element) : (char.element || "");
-
-                    let pathOrWeaponLabel = "";
-                    let rawPathOrWeapon = "";
-                    if (gameId === "hsr") {
-                        rawPathOrWeapon = char.path || getCharacterPath(char) || "";
-                        pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawPathOrWeapon, "hsr") : rawPathOrWeapon;
-                    } else if (gameId === "genshin") {
-                        rawPathOrWeapon = char.weapon_type || getCharacterWeapon(char) || "";
-                        pathOrWeaponLabel = typeof window.t === "function" ? window.t(`weapon_${rawPathOrWeapon}`, rawPathOrWeapon) : rawPathOrWeapon;
-                    } else if (gameId === "zzz") {
-                        rawPathOrWeapon = char.specialty || char.role || "";
-                        pathOrWeaponLabel = typeof formatPathName === "function" ? formatPathName(rawPathOrWeapon, "zzz") : rawPathOrWeapon;
-                    }
-                    const pathOrWeaponIconUrl = (rawPathOrWeapon && typeof getPathOrWeaponIconUrl === "function")
-                        ? getPathOrWeaponIconUrl(gameId, rawPathOrWeapon)
-                        : "";
-                    const pathOrWeaponIconHtml = pathOrWeaponIconUrl
-                        ? `<img src="${pathOrWeaponIconUrl}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px; margin-right:3px;" onerror="this.style.display='none';" alt="">`
+                    const listRoleBadgeHtml = (rawPathOrWeapon || pathOrWeaponLabel)
+                        ? (typeof renderRoleIconBadge === "function"
+                            ? renderRoleIconBadge(gameId, rawPathOrWeapon, pathOrWeaponLabel, { size: 14, className: "char-role-pill", title: pathOrWeaponLabel })
+                            : `<span class="char-role-pill">${pathOrWeaponLabel}</span>`)
                         : "";
 
                     const rarityLabel = isFiveStar ? (gameId === 'zzz' ? 'Rank S' : '5★') : (gameId === 'zzz' ? 'Rank A' : '4★');
@@ -1224,7 +1224,7 @@ async function _loadRosterImpl(gameId) {
                                 </div>
                                 <div class="char-list-details-row">
                                     <span class="char-list-badge-lvl">${lvlLabel} ${char.level}</span>
-                                    ${pathOrWeaponLabel ? `<span style="display:inline-flex; align-items:center;">•&nbsp;${pathOrWeaponIconHtml}${pathOrWeaponLabel}</span>` : ''}
+                                    ${listRoleBadgeHtml}
                                 </div>
                             </div>
                         </div>
@@ -1303,6 +1303,11 @@ async function _loadRosterImpl(gameId) {
                         </div>
                     `;
                 } else {
+                    const gridRoleBadgeHtml = (rawPathOrWeapon || pathOrWeaponLabel)
+                        ? (typeof renderRoleIconBadge === "function"
+                            ? renderRoleIconBadge(gameId, rawPathOrWeapon, pathOrWeaponLabel, { size: 12, className: "char-role-chip", title: pathOrWeaponLabel })
+                            : `<span class="char-role-chip">${pathOrWeaponLabel}</span>`)
+                        : "";
                     card.className = `char-card ${elemClass}${inTeamClass}`;
                     card.innerHTML = `
                         <div class="char-avatar-container">
@@ -1318,7 +1323,10 @@ async function _loadRosterImpl(gameId) {
                                 <img src="${getElementIconUrl(gameId, char.element || elemKey)}" class="element-icon-inline" width="16" height="16" loading="lazy" decoding="async" onerror="this.style.display='none';" alt="">
                                 ${formattedName}
                             </div>
-                            <div class="char-lvl">${lvlLabel} ${char.level}</div>
+                            <div class="char-meta-row">
+                                <span class="char-lvl">${lvlLabel} ${char.level}</span>
+                                ${gridRoleBadgeHtml}
+                            </div>
                         </div>
                     `;
                 }
@@ -1774,15 +1782,33 @@ async function inspectCharacter(gameId, char) {
     
     const elemKey = (char.element || "").toLowerCase();
     const displayElem = formatElementDisplayName(char.element);
-    const elemHtml = `<img src="${getElementIconUrl(gameId, char.element || elemKey)}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px;" onerror="this.style.display='none';"> ${displayElem.toUpperCase()}`;
-    const pathVal = char.path || char.specialty || char.weapon_type || "";
-    const pathDisplay = pathVal && typeof formatPathName === 'function' ? formatPathName(pathVal, gameId) : "";
-    const pathIconUrl = (pathVal && typeof getPathOrWeaponIconUrl === 'function') ? getPathOrWeaponIconUrl(gameId, pathVal) : "";
-    const pathIconHtml = pathIconUrl ? `<img src="${pathIconUrl}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" style="width:14px; height:14px; margin-right:3px;" onerror="this.style.display='none';">` : "";
-    const pathHtml = pathDisplay ? ` • ${pathIconHtml}${pathDisplay.toUpperCase()}` : "";
+    const elemChipHtml = `<span class="ins-meta-chip ins-chip-elem" title="${displayElem}"><img src="${getElementIconUrl(gameId, char.element || elemKey)}" class="element-icon-inline" width="14" height="14" loading="lazy" decoding="async" onerror="this.style.display='none';" alt=""><span>${displayElem.toUpperCase()}</span></span>`;
+
+    let pathVal = "";
+    let pathDisplay = "";
+    if (gameId === "hsr") {
+        pathVal = char.path || getCharacterPath(char) || "";
+        pathDisplay = pathVal && typeof formatPathName === "function" ? formatPathName(pathVal, "hsr") : pathVal;
+    } else if (gameId === "genshin") {
+        pathVal = char.weapon_type || getCharacterWeapon(char) || "";
+        const wKey = String(pathVal || "").trim().toLowerCase();
+        pathDisplay = (wKey && typeof window.t === "function") ? window.t(`weapon_${wKey}`, pathVal) : pathVal;
+    } else {
+        pathVal = char.specialty || char.role || char.path || "";
+        pathDisplay = pathVal && typeof formatPathName === "function" ? formatPathName(pathVal, gameId) : pathVal;
+    }
+    const roleChipHtml = (pathVal || pathDisplay)
+        ? (typeof renderRoleIconBadge === "function"
+            ? renderRoleIconBadge(gameId, pathVal, String(pathDisplay || pathVal).toUpperCase(), { size: 14, className: "ins-meta-chip ins-chip-role", title: pathDisplay || pathVal })
+            : `<span class="ins-meta-chip ins-chip-role">${String(pathDisplay || pathVal).toUpperCase()}</span>`)
+        : "";
     const insAffEid = window.getUnlockedAffinitiveEidolon ? window.getUnlockedAffinitiveEidolon(char) : null;
-    const insAffHtml = insAffEid ? ` <span class="ins-affinitive-pill" title="Affinitive Eidolon: ${String(insAffEid.name || "").replace(/"/g, "&quot;")}">✦ Affinitive</span>` : "";
-    document.getElementById("ins-meta").innerHTML = `${char.rank_str || "C0"}${insAffHtml} • ${elemHtml}${pathHtml} • ${isEn ? "Level" : "Nível"} ${char.level}`;
+    const insAffHtml = insAffEid ? `<span class="ins-affinitive-pill" title="Affinitive Eidolon: ${String(insAffEid.name || "").replace(/"/g, "&quot;")}">✦ Affinitive</span>` : "";
+    const insMetaEl = document.getElementById("ins-meta");
+    if (insMetaEl) {
+        insMetaEl.classList.add("ins-meta-chips");
+        insMetaEl.innerHTML = `<span class="ins-meta-chip ins-chip-rank">${char.rank_str || "C0"}</span>${insAffHtml}${elemChipHtml}${roleChipHtml}<span class="ins-meta-chip ins-chip-level">${isEn ? "Lv." : "Nv."} ${char.level}</span>`;
+    }
     
     // Configura e limpa o card do Otimizador IA
     const btnOptimize = document.getElementById("btn-ai-optimize");

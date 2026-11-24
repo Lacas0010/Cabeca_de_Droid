@@ -424,7 +424,8 @@ class TestPrydwenEndgameAndNames(unittest.TestCase):
                 img = btn.find("img")
                 self.assertIsNotNone(img, f"Official icon missing in {game_id}/{val}")
                 expected_src = f"/assets/icons/{game_id}_{val}.png"
-                self.assertEqual(img.get("src"), expected_src)
+                actual_src = str(img.get("src") or "").split("?", 1)[0]
+                self.assertEqual(actual_src, expected_src)
                 disk_path = expected_src.lstrip("/")
                 self.assertTrue(os.path.exists(disk_path), f"Missing asset file: {disk_path}")
 

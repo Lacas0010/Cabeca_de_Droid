@@ -126,6 +126,17 @@ class BannerDetail(BaseModel):
     )
     is_primary: bool = Field(default=False, description="Se é o banner principal de estreia da fase")
     banner_type: Optional[str] = Field(default="character", description="Tipo de banner ('character' ou 'weapon')")
+    patch_label: Optional[str] = Field(default="", description="Patch e fase específicos deste banner")
+    date_range: Optional[str] = Field(default="", description="Intervalo textual de datas deste banner")
+    start_date: Optional[str] = Field(default=None, description="Data de início (YYYY-MM-DD)")
+    end_date: Optional[str] = Field(default=None, description="Data de encerramento (YYYY-MM-DD) ou None para collab")
+    end_at: Optional[str] = Field(default=None, description="Timestamp exato de encerramento em ISO-8601 UTC")
+    phase: Optional[int] = Field(default=None, description="Fase do banner (1, 2 ou None quando atualização inteira/collab)")
+    duration_type: Optional[str] = Field(
+        default="phase_1", description="Tipo de duração ('phase_1', 'phase_2', 'full_patch' ou 'collab')"
+    )
+    is_full_patch: bool = Field(default=False, description="True se o banner dura a atualização inteira")
+    banner_time: Optional[str] = Field(default=None, description="Horário oficial da fase deste banner")
 
 
 class GameBannersData(BaseModel):
@@ -139,6 +150,8 @@ class GameBannersData(BaseModel):
 class GachaSimulatorDefaultsResponse(BaseModel):
     game_id: str = Field(description="Identificador do jogo")
     banner_type: str = Field(default="character", description="Tipo de banner consultado ('character' ou 'weapon')")
+    banner_phase: int = Field(default=1, description="Fase ativa predominante (1 ou 2)")
+    banner_time: str = Field(default="23:30", description="Horário oficial da fase ativa")
     current_pity: int = Field(default=0, description="Pity atual do jogador no banner consultado")
     is_guaranteed: bool = Field(default=False, description="Status do garantido")
     character_pity: Optional[int] = Field(default=0, description="Pity do banner de personagens")

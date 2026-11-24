@@ -11,7 +11,14 @@
           "Charlotte",
           "Rosaria"
         ],
-        "is_primary": true
+        "is_primary": true,
+        "patch_label": "Patch 7.2 Phase 1",
+        "date_range": "Nov 4, 2026 – Nov 24, 2026",
+        "start_date": "2026-11-04",
+        "end_date": "2026-11-24",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false
       },
       {
         "character_name": "Furina",
@@ -21,7 +28,14 @@
           "Charlotte",
           "Rosaria"
         ],
-        "is_primary": false
+        "is_primary": false,
+        "patch_label": "Patch 7.2 Phase 1",
+        "date_range": "Nov 4, 2026 – Nov 24, 2026",
+        "start_date": "2026-11-04",
+        "end_date": "2026-11-24",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false
       }
     ],
     "weapon_banners": [
@@ -37,7 +51,14 @@
           "Rust"
         ],
         "is_primary": true,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "patch_label": "Patch 7.2 Phase 1",
+        "date_range": "Nov 4, 2026 – Nov 24, 2026",
+        "start_date": "2026-11-04",
+        "end_date": "2026-11-24",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false
       },
       {
         "character_name": "Splendor of Tranquil Waters",
@@ -51,10 +72,17 @@
           "Rust"
         ],
         "is_primary": false,
-        "banner_type": "weapon"
+        "banner_type": "weapon",
+        "patch_label": "Patch 7.2 Phase 1",
+        "date_range": "Nov 4, 2026 – Nov 24, 2026",
+        "start_date": "2026-11-04",
+        "end_date": "2026-11-24",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false
       }
     ],
-    "last_updated": "2026-11-19T16:02:53.130813"
+    "last_updated": "2026-11-24T09:43:25.856502"
   },
   "hsr": {
     "game_id": "hsr",
@@ -68,7 +96,14 @@
           "Lynx",
           "Yukong"
         ],
-        "is_primary": true
+        "is_primary": true,
+        "patch_label": "Patch 4.7",
+        "date_range": "Nov 11, 2026 – Dec 22, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-22",
+        "phase": null,
+        "duration_type": "full_patch",
+        "is_full_patch": true
       },
       {
         "character_name": "Sparxie",
@@ -78,7 +113,14 @@
           "Lynx",
           "Yukong"
         ],
-        "is_primary": false
+        "is_primary": false,
+        "patch_label": "Patch 4.7 Phase 1",
+        "date_range": "Nov 11, 2026 – Dec 2, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-02",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false
       },
       {
         "character_name": "Silver Wolf • Lv. 999",
@@ -88,7 +130,14 @@
           "Lynx",
           "Yukong"
         ],
-        "is_primary": false
+        "is_primary": false,
+        "patch_label": "Patch 4.7 Phase 1",
+        "date_range": "Nov 11, 2026 – Dec 2, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-02",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false
       },
       {
         "character_name": "Yao Guang",
@@ -98,7 +147,14 @@
           "Lynx",
           "Yukong"
         ],
-        "is_primary": false
+        "is_primary": false,
+        "patch_label": "Patch 4.7 Phase 1",
+        "date_range": "Nov 11, 2026 – Dec 2, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-02",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false
       },
       {
         "character_name": "Gilgamesh",
@@ -109,6 +165,13 @@
           "Yukong"
         ],
         "is_primary": false,
+        "patch_label": "Patch 4.4",
+        "date_range": "From Jul 24, 2026",
+        "start_date": "2026-07-24",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "banner_title": "Of the Beginning, Enuma Elish"
       },
       {
@@ -120,6 +183,13 @@
           "Yukong"
         ],
         "is_primary": false,
+        "patch_label": "Patch 4.4",
+        "date_range": "From Jul 24, 2026",
+        "start_date": "2026-07-24",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "banner_title": "The Gem Coursing in Red"
       },
       {
@@ -131,6 +201,13 @@
           "Yukong"
         ],
         "is_primary": false,
+        "patch_label": "collab",
+        "date_range": "From Jul 11, 2025",
+        "start_date": "2025-07-11",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "banner_title": "I Am the Bone of My Sword"
       },
       {
@@ -142,6 +219,13 @@
           "Yukong"
         ],
         "is_primary": false,
+        "patch_label": "collab",
+        "date_range": "From Jul 11, 2025",
+        "start_date": "2025-07-11",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "banner_title": "Excalibur Excelsior"
       }
     ],
@@ -157,6 +241,13 @@
         ],
         "is_primary": true,
         "banner_type": "weapon",
+        "patch_label": "Patch 4.7",
+        "date_range": "Nov 11, 2026 – Dec 22, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-22",
+        "phase": null,
+        "duration_type": "full_patch",
+        "is_full_patch": true,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/upon-the-first-echo-of-aha.webp?v=1794757485426"
       },
       {
@@ -171,6 +262,13 @@
         ],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "Patch 4.7 Phase 1",
+        "date_range": "Nov 11, 2026 – Dec 2, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-02",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/dazzled-by-a-flowery-world.webp?v=1778524336072"
       },
       {
@@ -185,6 +283,13 @@
         ],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "Patch 4.7 Phase 1",
+        "date_range": "Nov 11, 2026 – Dec 2, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-02",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/welcome-to-the-cosmic-city.webp?v=1778524336072"
       },
       {
@@ -198,6 +303,13 @@
         ],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "Patch 4.7 Phase 1",
+        "date_range": "Nov 11, 2026 – Dec 2, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-02",
+        "phase": 1,
+        "duration_type": "phase_1",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/when-she-decided-to-see.webp?v=1778524336072"
       },
       {
@@ -213,6 +325,13 @@
         ],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "Patch 4.4",
+        "date_range": "From Jul 24, 2026",
+        "start_date": "2026-07-24",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/flickering-stars.webp?v=1787563505145"
       },
       {
@@ -228,6 +347,13 @@
         ],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "Patch 4.4",
+        "date_range": "From Jul 24, 2026",
+        "start_date": "2026-07-24",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/i-am-as-you-behold.webp?v=1787563501701"
       },
       {
@@ -243,6 +369,13 @@
         ],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "collab",
+        "date_range": "From Jul 11, 2025",
+        "start_date": "2025-07-11",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/a-thankless-coronation.webp?v=1778524336072"
       },
       {
@@ -258,10 +391,17 @@
         ],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "collab",
+        "date_range": "From Jul 11, 2025",
+        "start_date": "2025-07-11",
+        "end_date": null,
+        "phase": null,
+        "duration_type": "collab",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1778524336072"
       }
     ],
-    "last_updated": "2026-11-19T16:02:28.621033"
+    "last_updated": "2026-11-24T09:43:26.239867"
   },
   "zzz": {
     "game_id": "zzz",
@@ -271,13 +411,27 @@
         "character_name": "Severian",
         "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/banners/1789201787070-9bdb7e64a0d96f6a3a948efb45887f14.webp",
         "featured_4stars": [],
-        "is_primary": true
+        "is_primary": true,
+        "patch_label": "Patch 3.3 Phase 2",
+        "date_range": "Nov 11, 2026 – Dec 1, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-01",
+        "phase": 2,
+        "duration_type": "phase_2",
+        "is_full_patch": false
       },
       {
         "character_name": "Norma",
         "banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/characters/norma_full.webp",
         "featured_4stars": [],
-        "is_primary": false
+        "is_primary": false,
+        "patch_label": "Patch 3.3 Phase 2",
+        "date_range": "Nov 11, 2026 – Dec 1, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-01",
+        "phase": 2,
+        "duration_type": "phase_2",
+        "is_full_patch": false
       }
     ],
     "weapon_banners": [
@@ -288,6 +442,13 @@
         "featured_4stars": [],
         "is_primary": true,
         "banner_type": "weapon",
+        "patch_label": "Patch 3.3 Phase 2",
+        "date_range": "Nov 11, 2026 – Dec 1, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-01",
+        "phase": 2,
+        "duration_type": "phase_2",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/incarcerating-grip_image.webp?v=1794317654340"
       },
       {
@@ -297,9 +458,16 @@
         "featured_4stars": [],
         "is_primary": false,
         "banner_type": "weapon",
+        "patch_label": "Patch 3.3 Phase 2",
+        "date_range": "Nov 11, 2026 – Dec 1, 2026",
+        "start_date": "2026-11-11",
+        "end_date": "2026-12-01",
+        "phase": 2,
+        "duration_type": "phase_2",
+        "is_full_patch": false,
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/chief-sidekick_image.webp?v=1781636481144"
       }
     ],
-    "last_updated": "2026-11-19T16:02:10.104093"
+    "last_updated": "2026-11-24T09:43:26.544837"
   }
 }

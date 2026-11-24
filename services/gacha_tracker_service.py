@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import time
 import urllib.parse
@@ -170,7 +171,8 @@ def get_gacha_item_icon(
         return db_icon
 
     # 3. Fallbacks inteligentes por jogo
-    slug = name_lower.replace(" ", "-").replace("'", "").replace("[", "").replace("]", "").replace(":", "")
+    slug = re.sub(r"[^a-z0-9\s-]", "", name_lower)
+    slug = re.sub(r"[\s-]+", "-", slug).strip("-")
     clean_pascal = "".join(part.capitalize() for part in name_clean.split())
 
     if clean_game == "genshin":
@@ -186,7 +188,7 @@ def get_gacha_item_icon(
         if item_type == "weapon":
             raw = f"https://raw.githubusercontent.com/Mar-7th/StarRailRes/master/icon/light_cone/{slug}.png"
         else:
-            raw = f"https://cdn.prydwen.gg/images/star-rail/characters/{slug}_icon.webp"
+            raw = f"https://cdn.prydwen.gg/images/honkai-star-rail/characters/{slug}_icon.webp"
         return f"/api/proxy_image?url={urllib.parse.quote(raw, safe='')}"
 
     elif clean_game == "zzz":
@@ -215,7 +217,7 @@ def get_gacha_item_icon(
         elif item_type == "weapon":
             raw = ""
         else:
-            raw = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{slug}_icon.webp"
+            raw = f"https://cdn.prydwen.gg/images/zenless-zone-zero/characters/{slug}_card.webp"
         if raw:
             return f"/api/proxy_image?url={urllib.parse.quote(raw, safe='')}"
         return ""

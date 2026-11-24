@@ -16,9 +16,11 @@ from services.team_matcher_service import ENDGAME_MODE_EN_MAP
 
 _ENDGAME_CACHE: Dict[Tuple[str, str, str], Tuple[float, Dict[str, Any]]] = {}
 _RESET_SCHEDULE_CACHE: Dict[Tuple[str, str], Tuple[float, Dict[str, Dict[str, Any]]]] = {}
+_TACTICAL_ENRICH_CACHE: Dict[Tuple[str, str], float] = {}
 CACHE_TTL = 60.0
 RESET_SCHEDULE_TTL = 6 * 3600.0
 RESET_SCHEDULE_RETRY_TTL = 600.0
+_TACTICAL_SUPPORTED_MODES = frozenset({"pure_fiction", "apocalyptic_shadow", "imaginarium_theater", "deadly_assault"})
 
 _ENDGAME_MODE_CATALOG: Dict[str, List[Dict[str, Any]]] = {
     "hsr": [
@@ -65,16 +67,125 @@ _TEAM_TRANSLATION_RULES = [
 
 def invalidate_endgame_cache(game_id: Optional[str] = None) -> None:
     """Invalida o cache em memória do endgame para forçar atualização imediata."""
-    global _ENDGAME_CACHE, _RESET_SCHEDULE_CACHE
+    global _ENDGAME_CACHE, _RESET_SCHEDULE_CACHE, _TACTICAL_ENRICH_CACHE
     if game_id:
         clean_g = game_id.lower().strip()
         for k in [k for k in _ENDGAME_CACHE if k[0] == clean_g]:
             _ENDGAME_CACHE.pop(k, None)
         for k in [k for k in _RESET_SCHEDULE_CACHE if k[0] == clean_g]:
             _RESET_SCHEDULE_CACHE.pop(k, None)
+        for k in [k for k in _TACTICAL_ENRICH_CACHE if k[0] == clean_g]:
+            _TACTICAL_ENRICH_CACHE.pop(k, None)
     else:
         _ENDGAME_CACHE.clear()
         _RESET_SCHEDULE_CACHE.clear()
+        _TACTICAL_ENRICH_CACHE.clear()
+
+
+def _proxy_tactical_icon(icon_url: Optional[str], width: int = 64) -> str:
+    """Formata URLs externas de ícones de chefes/buffs via proxy anti-CORS de forma idempotente."""
+    if not icon_url or not isinstance(icon_url, str):
+        return ""
+    raw_url = get_raw_url(icon_url).strip()
+    if raw_url.startswith("http://") or raw_url.startswith("https://"):
+        return f"/api/proxy_image?url={urllib.parse.quote(raw_url, safe='')}&w={width}&format=webp"
+    return icon_url.strip()
+
+
+def _needs_tactical_enrichment(modes: List[Dict[str, Any]]) -> bool:
+    """Detecta se algum modo com suporte a chefes/buffs foi salvo antes da extração tática."""
+    for mode in modes:
+        mid = mode.get("id")
+        if mid not in _TACTICAL_SUPPORTED_MODES:
+            continue
+        teams = mode.get("teams") or []
+        if not teams:
+            continue
+        has_any_tactical = any(bool(t.get("boss")) or bool(t.get("buffs")) for t in teams)
+        if not has_any_tactical:
+            return True
+    return False
+
+
+def _extract_act_number(team_name: str) -> Optional[int]:
+    m = re.search(r"(?:Ato|Act)\s*(\d+)", str(team_name or ""), re.IGNORECASE)
+    return int(m.group(1)) if m else None
+
+
+def _merge_tactical_meta(modes: List[Dict[str, Any]], tactical_meta: Dict[str, List[Dict[str, Any]]]) -> bool:
+    """Mescla chefes/buffs/ícones de inimigos nos modos já salvos sem sobrescrever equipes ou pontuações."""
+    changed = False
+    for mode in modes:
+        mid = mode.get("id")
+        if not mid or mid not in tactical_meta:
+            continue
+        src_teams = tactical_meta[mid]
+        dst_teams = mode.get("teams") or []
+        if not src_teams or not dst_teams:
+            continue
+
+        if mid == "imaginarium_theater":
+            by_round = {int(st["round_id"]): st for st in src_teams if st.get("round_id") is not None}
+            for idx, dt in enumerate(dst_teams):
+                rid = _extract_act_number(dt.get("name", ""))
+                st = by_round.get(rid) if rid is not None else (src_teams[idx] if idx < len(src_teams) else None)
+                if not st:
+                    continue
+                if st.get("boss") and not dt.get("boss"):
+                    dt["boss"] = st["boss"]
+                    changed = True
+                if st.get("buffs") and not dt.get("buffs"):
+                    dt["buffs"] = st["buffs"]
+                    changed = True
+                if st.get("monsters") and not dt.get("monsters"):
+                    dt["monsters"] = st["monsters"]
+                    changed = True
+        else:
+            for idx, dt in enumerate(dst_teams):
+                if idx >= len(src_teams):
+                    break
+                st = src_teams[idx]
+                if st.get("boss") and not dt.get("boss"):
+                    dt["boss"] = st["boss"]
+                    changed = True
+                if st.get("buffs") and not dt.get("buffs"):
+                    dt["buffs"] = st["buffs"]
+                    changed = True
+    return changed
+
+
+async def _enrich_endgame_tactical_meta(game_id: str, uid: str, modes: List[Dict[str, Any]]) -> None:
+    """Preenche chefes e buffs sob demanda para bancos legados e persiste o resultado no SQLite."""
+    if not modes or not uid or not uid.isdigit() or not _needs_tactical_enrichment(modes):
+        return
+    cache_key = (game_id, uid)
+    now_ts = time.time()
+    if now_ts < _TACTICAL_ENRICH_CACHE.get(cache_key, 0.0):
+        return
+
+    cookies = get_cookies()
+    if not cookies:
+        return
+
+    try:
+        import genshin
+
+        client = genshin.Client(cookies, lang="pt-pt")
+        live_meta = await asyncio.wait_for(
+            endgame_extractor.extract_endgame_tactical_meta(client, game_id, int(uid)),
+            timeout=6.0,
+        )
+        if live_meta and _merge_tactical_meta(modes, live_meta):
+            _TACTICAL_ENRICH_CACHE[cache_key] = now_ts + RESET_SCHEDULE_TTL
+            try:
+                database.save_endgame_data(game_id, uid, modes)
+            except Exception:
+                pass
+            return
+    except Exception:
+        pass
+
+    _TACTICAL_ENRICH_CACHE[cache_key] = now_ts + RESET_SCHEDULE_RETRY_TTL
 
 
 def _parse_utc_iso(iso_str: Optional[str]) -> Optional[datetime]:
@@ -348,6 +459,12 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
             except Exception as me:
                 print(f"[Aviso] Erro ao fazer parse de endgame do MD para {game_id}: {me}")
 
+    effective_uid = str(uid or active_uid or "").strip()
+
+    # 3.5. Backfill tático (chefes/buffs) para dados legados já salvos no SQLite antes da v1.4
+    if modes and effective_uid:
+        await _enrich_endgame_tactical_meta(game_id, effective_uid, modes)
+
     # 4. Enriquece todos os personagens dos times com ícones seguros (via proxy), raridade, elemento e rank
     if modes:
         roster_data = None
@@ -365,6 +482,17 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
 
         for mode in modes:
             for team in mode.get("teams", []):
+                # Proxy seguro para ícone de chefe, buffs/bênçãos e monstros
+                boss = team.get("boss")
+                if isinstance(boss, dict) and boss.get("icon"):
+                    boss["icon"] = _proxy_tactical_icon(boss["icon"], width=64)
+                for buff in team.get("buffs") or []:
+                    if isinstance(buff, dict) and buff.get("icon"):
+                        buff["icon"] = _proxy_tactical_icon(buff["icon"], width=64)
+                for mon in team.get("monsters") or []:
+                    if isinstance(mon, dict) and mon.get("icon"):
+                        mon["icon"] = _proxy_tactical_icon(mon["icon"], width=48)
+
                 for char in team.get("characters", []):
                     cname = char.get("name", "").strip()
                     cid = str(char.get("id", "")).strip()
@@ -451,7 +579,6 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
                     if m.get("name") == "Inimigo":
                         m["name"] = "Enemy"
 
-    effective_uid = str(uid or active_uid or "").strip()
     reset_schedules = await _resolve_reset_schedules(game_id, effective_uid, modes or [], lang)
 
     res = {
@@ -465,3 +592,307 @@ async def get_endgame(game_id: str, lang: str = "pt") -> Dict[str, Any]:
     }
     _ENDGAME_CACHE[cache_key] = (now, res)
     return res
+
+
+_GAME_SHORT_LABELS: Dict[str, str] = {
+    "hsr": "HSR",
+    "genshin": "Genshin",
+    "zzz": "ZZZ",
+}
+URGENT_PENDING_THRESHOLD_SECONDS = 72 * 3600
+BANNER_ENDING_SOON_THRESHOLD_SECONDS = 48 * 3600
+
+
+def _build_active_banner_resets(now_utc: datetime) -> List[Dict[str, Any]]:
+    """Agrupa e ordena os banners ativos de personagem dos 3 jogos pela data/hora real de virada."""
+    try:
+        from services import gacha_service
+    except Exception:
+        return []
+
+    grouped: Dict[Tuple[str, str, str], Dict[str, Any]] = {}
+    for gid in ("genshin", "hsr", "zzz"):
+        try:
+            defaults = gacha_service.get_gacha_simulator_defaults(gid, banner_type="character")
+        except Exception:
+            continue
+
+        for banner in defaults.get("available_banners") or []:
+            if not isinstance(banner, dict):
+                continue
+            end_at = banner.get("end_at")
+            duration_type = str(banner.get("duration_type") or "phase_1").lower()
+            if not end_at or duration_type == "collab":
+                continue
+
+            dt_end = _parse_utc_iso(end_at)
+            if dt_end is None:
+                continue
+            secs_rem = max(0, int((dt_end - now_utc).total_seconds()))
+
+            char_name = str(banner.get("character_name") or "").strip()
+            if not char_name:
+                continue
+            c_info = banner.get("character_info") if isinstance(banner.get("character_info"), dict) else {}
+            c_icon = str(c_info.get("icon") or banner.get("banner_image") or "").strip()
+
+            g_key = (gid, end_at, duration_type)
+            if g_key not in grouped:
+                grouped[g_key] = {
+                    "game_id": gid,
+                    "game_label": _GAME_SHORT_LABELS.get(gid, gid.upper()),
+                    "primary_character": char_name,
+                    "characters": [],
+                    "patch_label": str(banner.get("patch_label") or defaults.get("patch_info") or "").strip(),
+                    "duration_type": duration_type,
+                    "phase": banner.get("phase"),
+                    "banner_time": str(banner.get("banner_time") or defaults.get("banner_time") or "23:30"),
+                    "end_date": banner.get("end_date"),
+                    "end_at": end_at,
+                    "seconds_remaining": secs_rem,
+                    "is_ending_soon": secs_rem <= BANNER_ENDING_SOON_THRESHOLD_SECONDS,
+                }
+
+            bucket = grouped[g_key]
+            existing_names = {c["name"].lower() for c in bucket["characters"]}
+            if char_name.lower() not in existing_names:
+                bucket["characters"].append({"name": char_name, "icon": c_icon})
+                if banner.get("is_primary"):
+                    bucket["primary_character"] = char_name
+
+    banner_items: List[Dict[str, Any]] = []
+    for bucket in grouped.values():
+        chars = bucket["characters"]
+        # Mantém o personagem principal em 1º lugar na lista visual
+        prim_lower = bucket["primary_character"].lower()
+        chars.sort(key=lambda c: 0 if c["name"].lower() == prim_lower else 1)
+        bucket["title"] = " · ".join(c["name"] for c in chars[:3]) + (
+            f" +{len(chars) - 3}" if len(chars) > 3 else ""
+        )
+        banner_items.append(bucket)
+
+    banner_items.sort(
+        key=lambda b: (
+            b["seconds_remaining"] if b["seconds_remaining"] is not None else 10**12,
+            b["game_id"],
+            b["title"],
+        )
+    )
+    return banner_items
+
+
+def _detect_primary_server_timezone(lang: str = "pt") -> Tuple[timezone, str]:
+    """Infere o fuso do servidor HoYoverse a partir dos UIDs ativos (padrão América UTC-5)."""
+    chosen_game = "genshin"
+    chosen_uid = "600000000"
+    for g in ("genshin", "hsr", "zzz"):
+        uid_val = str(database.get_active_uid(g) or "").strip()
+        if uid_val and uid_val.isdigit():
+            chosen_game = g
+            chosen_uid = uid_val
+            break
+
+    srv_tz = endgame_extractor.get_server_timezone(chosen_game, chosen_uid)
+    offset = srv_tz.utcoffset(None)
+    hours = int(offset.total_seconds() // 3600) if offset is not None else -5
+    if hours == -5:
+        region = "America" if lang == "en" else "América"
+    elif hours == 1:
+        region = "Europe" if lang == "en" else "Europa"
+    else:
+        region = "Asia" if lang == "en" else "Ásia"
+    return srv_tz, f"UTC{hours:+d} ({region})"
+
+
+def compute_server_cycle_resets(
+    now_utc: Optional[datetime] = None,
+    lang: str = "pt",
+    server_tz: Optional[timezone] = None,
+    tz_label: Optional[str] = None,
+) -> Dict[str, str]:
+    """Calcula os próximos resets Diário (04:00) e Semanal (Segunda 04:00) no horário do servidor."""
+    ref_utc = now_utc.astimezone(timezone.utc) if now_utc else datetime.now(timezone.utc)
+    if server_tz is None:
+        srv_tz, auto_label = _detect_primary_server_timezone(lang=lang)
+        label = tz_label or auto_label
+    else:
+        srv_tz = server_tz
+        if tz_label:
+            label = tz_label
+        else:
+            offset = srv_tz.utcoffset(None)
+            hours = int(offset.total_seconds() // 3600) if offset is not None else -5
+            label = f"UTC{hours:+d}"
+
+    now_srv = ref_utc.astimezone(srv_tz)
+
+    # Reset Diário: 04:00 do servidor
+    daily_target = now_srv.replace(hour=4, minute=0, second=0, microsecond=0)
+    if daily_target <= now_srv:
+        daily_target += timedelta(days=1)
+
+    # Reset Semanal: Segunda-feira (weekday == 0) às 04:00 do servidor
+    days_until_monday = (7 - now_srv.weekday()) % 7
+    weekly_target = (now_srv + timedelta(days=days_until_monday)).replace(hour=4, minute=0, second=0, microsecond=0)
+    if weekly_target <= now_srv:
+        weekly_target += timedelta(days=7)
+
+    return {
+        "daily_reset_at": daily_target.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "weekly_reset_at": weekly_target.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "server_tz_label": label,
+    }
+
+
+def _evaluate_mode_completion(
+    mode_data: Optional[Dict[str, Any]],
+) -> Tuple[str, Optional[int], Optional[int], Optional[str], bool]:
+    """Avalia se um modo endgame está 'completed', 'in_progress' ou 'pending' com base nos registros salvos."""
+    if not isinstance(mode_data, dict):
+        return ("pending", None, None, None, False)
+
+    teams = mode_data.get("teams") or []
+    stars_raw = mode_data.get("stars")
+    max_stars_raw = mode_data.get("max_stars")
+    metric_val = str(mode_data.get("metric_value") or "").strip() or None
+
+    stars: Optional[int] = None
+    max_stars: Optional[int] = None
+    try:
+        if stars_raw is not None and str(stars_raw).strip() != "":
+            stars = int(stars_raw)
+    except (TypeError, ValueError):
+        stars = None
+    try:
+        if max_stars_raw is not None and str(max_stars_raw).strip() != "":
+            max_stars = int(max_stars_raw)
+    except (TypeError, ValueError):
+        max_stars = None
+
+    has_record = bool(teams) or (stars is not None and stars > 0) or bool(metric_val and metric_val not in ("None", "?"))
+
+    if stars is not None and max_stars is not None and max_stars > 0:
+        if stars >= max_stars:
+            return ("completed", stars, max_stars, metric_val, True)
+        if stars > 0 or bool(teams):
+            return ("in_progress", stars, max_stars, metric_val, True)
+        return ("pending", stars, max_stars, metric_val, has_record)
+
+    # Modos sem contagem numérica de estrelas (ex.: Defesa Shiyu com classificação S/A/B)
+    if metric_val:
+        mv_up = metric_val.upper().strip()
+        if mv_up in ("S", "S+", "CONCLUÍDO", "CONCLUIDO", "COMPLETED") or mv_up.startswith("RANK S"):
+            return ("completed", stars, max_stars, metric_val, True)
+        if has_record:
+            return ("in_progress", stars, max_stars, metric_val, True)
+
+    if teams:
+        return ("in_progress", stars, max_stars, metric_val, True)
+
+    return ("pending", stars, max_stars, metric_val, False)
+
+
+async def get_unified_reset_radar(lang: str = "pt") -> Dict[str, Any]:
+    """Agrega os 7 modos de endgame dos 3 jogos ordenados por urgência + resets Diário e Semanal."""
+    clean_lang = "en" if str(lang or "pt").lower().startswith("en") else "pt"
+    now_utc = datetime.now(timezone.utc)
+    server_resets = compute_server_cycle_resets(now_utc=now_utc, lang=clean_lang)
+
+    game_ids = ("hsr", "genshin", "zzz")
+    results = await asyncio.gather(
+        *(get_endgame(gid, lang=clean_lang) for gid in game_ids),
+        return_exceptions=True,
+    )
+
+    items: List[Dict[str, Any]] = []
+    for gid, payload in zip(game_ids, results):
+        catalog = _ENDGAME_MODE_CATALOG.get(gid, [])
+        modes_by_id: Dict[str, Dict[str, Any]] = {}
+        sched_by_id: Dict[str, Dict[str, Any]] = {}
+
+        if isinstance(payload, dict):
+            for m in payload.get("modes") or []:
+                if isinstance(m, dict) and m.get("id"):
+                    modes_by_id[m["id"]] = m
+            for sc in payload.get("reset_schedules") or []:
+                if isinstance(sc, dict) and sc.get("id"):
+                    sched_by_id[sc["id"]] = sc
+
+        for c_meta in catalog:
+            mid = c_meta["id"]
+            sched = sched_by_id.get(mid, {})
+            mode_data = modes_by_id.get(mid)
+
+            reset_at = sched.get("reset_at") or (mode_data.get("reset_at") if isinstance(mode_data, dict) else None)
+            begin_at = sched.get("begin_at") or (mode_data.get("begin_at") if isinstance(mode_data, dict) else None)
+            source = sched.get("source") or "estimated"
+            icon_url = sched.get("icon") or get_endgame_icon_url(gid, mid) or None
+            display_name = sched.get("name") or (c_meta["name_en"] if clean_lang == "en" else c_meta["name_pt"])
+
+            status, stars, max_stars, metric_value, has_record = _evaluate_mode_completion(mode_data)
+
+            dt_reset = _parse_utc_iso(reset_at)
+            seconds_remaining: Optional[int] = None
+            if dt_reset is not None:
+                seconds_remaining = max(0, int((dt_reset - now_utc).total_seconds()))
+
+            is_urgent_pending = (
+                status != "completed"
+                and seconds_remaining is not None
+                and seconds_remaining <= URGENT_PENDING_THRESHOLD_SECONDS
+            )
+
+            items.append(
+                {
+                    "game_id": gid,
+                    "game_label": _GAME_SHORT_LABELS.get(gid, gid.upper()),
+                    "id": mid,
+                    "name": display_name,
+                    "badge": c_meta["badge"],
+                    "icon": icon_url,
+                    "begin_at": begin_at,
+                    "reset_at": reset_at,
+                    "source": source,
+                    "status": status,
+                    "stars": stars,
+                    "max_stars": max_stars,
+                    "metric_value": metric_value,
+                    "has_record": has_record,
+                    "seconds_remaining": seconds_remaining,
+                    "is_urgent_pending": is_urgent_pending,
+                }
+            )
+
+    # Ordenação por urgência:
+    # 1º Pendências próximas do reset (<= 72h), 2º Menor tempo restante até o reset, 3º Pendente antes de concluído
+    items.sort(
+        key=lambda it: (
+            0 if it["is_urgent_pending"] else 1,
+            it["seconds_remaining"] if it["seconds_remaining"] is not None else 10**12,
+            0 if it["status"] != "completed" else 1,
+            it["game_id"],
+            it["id"],
+        )
+    )
+
+    completed_count = sum(1 for it in items if it["status"] == "completed")
+    urgent_pending_count = sum(1 for it in items if it["is_urgent_pending"])
+    pending_count = len(items) - completed_count
+    banner_items = _build_active_banner_resets(now_utc)
+    banners_ending_soon_count = sum(1 for b in banner_items if b.get("is_ending_soon"))
+
+    return {
+        "status": "success",
+        "generated_at": now_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "server_resets": server_resets,
+        "summary": {
+            "total_modes": len(items),
+            "completed_count": completed_count,
+            "pending_count": pending_count,
+            "urgent_pending_count": urgent_pending_count,
+            "banners_count": len(banner_items),
+            "banners_ending_soon_count": banners_ending_soon_count,
+        },
+        "items": items,
+        "banners": banner_items,
+    }

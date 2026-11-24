@@ -138,6 +138,10 @@ function setupTabSwitching() {
                         window._dirtyLangTabs.homeBriefing = false;
                         window.loadMorningBriefing();
                     }
+                    if (window._dirtyLangTabs?.homeRadar && typeof window.loadHomeResetRadar === "function") {
+                        window._dirtyLangTabs.homeRadar = false;
+                        window.loadHomeResetRadar(true);
+                    }
                 }
                 if (targetTab === 'config' && window.loadAccountsManagement) {
                     window.loadAccountsManagement();
@@ -208,6 +212,7 @@ function setupSubnavTabs() {
 
 
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
+if (typeof activateGameSubview !== 'undefined') window.activateGameSubview = activateGameSubview;
 if (typeof closeInspector !== 'undefined') window.closeInspector = closeInspector;
 if (typeof setupSidebarToggle !== 'undefined') window.setupSidebarToggle = setupSidebarToggle;
 if (typeof setupSubnavTabs !== 'undefined') window.setupSubnavTabs = setupSubnavTabs;

@@ -9,6 +9,9 @@
 const activeEndgameModeIdx = { hsr: 0, genshin: 0, zzz: 0 };
 const activeEndgameView = { hsr: "single", genshin: "single", zzz: "single" };
 const cachedEndgameData = { hsr: null, genshin: null, zzz: null };
+const _pendingEndgameModeId = { hsr: null, genshin: null, zzz: null };
+let _cachedResetRadar = null;
+let _resetRadarInflight = null;
 
 const ENDGAME_MODE_EN_MAP = {
     "Caos da Memória (MoC)": "Memory of Chaos (MoC)",
@@ -243,7 +246,7 @@ function tickEndgameCountdowns() {
         } else {
             el.textContent = cd.text;
         }
-        const host = el.closest(".endgame-reset-card, .endgame-metric-chip.reset-countdown");
+        const host = el.closest(".endgame-reset-card, .endgame-metric-chip.reset-countdown, .reset-radar-item, .reset-cycle-pill, .banner-reset-item");
         if (host) {
             host.classList.remove("countdown-normal", "countdown-soon", "countdown-urgent", "countdown-expired", "countdown-unknown");
             host.classList.add(`countdown-${cd.state}`);
@@ -319,6 +322,162 @@ function normalizeEndgameChar(char, gameId) {
     return char;
 }
 
+function _escapeEndgameHtml(str) {
+    return String(str == null ? "" : str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function _formatTacticalIconUrl(url, width = 64) {
+    if (!url || typeof url !== "string") return "";
+    const trimmed = url.trim();
+    if (!trimmed) return "";
+    if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+        return `/api/proxy_image?url=${encodeURIComponent(trimmed)}&w=${width}&format=webp`;
+    }
+    if (trimmed.includes("/api/proxy_image?") && !trimmed.includes("&w=")) {
+        return `${trimmed}&w=${width}&format=webp`;
+    }
+    return trimmed;
+}
+
+function _getBuffKindMeta(kind, isEn) {
+    if (kind === "blessing") {
+        return {
+            label: isEn ? "Brilliant Blessing" : "Bênção Brilhante",
+            fallbackIcon: "fa-sparkles",
+            cls: "kind-blessing",
+        };
+    }
+    if (kind === "card") {
+        return {
+            label: isEn ? "Mystery Event" : "Evento do Teatro",
+            fallbackIcon: "fa-layer-group",
+            cls: "kind-card",
+        };
+    }
+    return {
+        label: isEn ? "Stage Buff" : "Buff de Fase",
+        fallbackIcon: "fa-wand-magic-sparkles",
+        cls: "kind-buff",
+    };
+}
+
+function renderEndgameTacticalStrip(team, gameId) {
+    const isEn = Boolean(window.isEn);
+    const boss = team && team.boss && (team.boss.name || team.boss.icon) ? team.boss : null;
+    const rawBuffs = Array.isArray(team && team.buffs)
+        ? team.buffs.filter(b => b && (b.name || b.icon || b.desc))
+        : [];
+
+    if (!boss && rawBuffs.length === 0) return "";
+
+    let bossHtml = "";
+    if (boss) {
+        const bName = _escapeEndgameHtml(boss.name || (isEn ? "Boss" : "Chefe"));
+        const bLvl = boss.level ? ` (${isEn ? "Lv." : "Nv."}${_escapeEndgameHtml(boss.level)})` : "";
+        const bIconUrl = _formatTacticalIconUrl(boss.icon, 64);
+        const bossLabel = isEn ? "Boss" : "Chefe";
+        const nativeTitle = `${bossLabel}: ${bName}${bLvl}`;
+
+        bossHtml = `
+            <div class="endgame-boss-pill" tabindex="0" title="${nativeTitle}">
+                <span class="endgame-boss-icon-wrap">
+                    ${bIconUrl
+                        ? `<img class="endgame-boss-icon-img" src="${bIconUrl}" alt="${bName}" width="26" height="26" loading="lazy" decoding="async" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" /><i class="fa-solid fa-skull endgame-tactical-icon-fallback" style="display:none;"></i>`
+                        : `<i class="fa-solid fa-skull endgame-tactical-icon-fallback"></i>`
+                    }
+                </span>
+                <div class="endgame-boss-meta">
+                    <span class="endgame-boss-label">${bossLabel}</span>
+                    <span class="endgame-boss-name">${bName}${bLvl}</span>
+                </div>
+                <div class="endgame-tactical-tooltip" role="tooltip">
+                    <div class="endgame-tooltip-head">
+                        <span class="endgame-tooltip-kind is-boss">${bossLabel}</span>
+                        <strong class="endgame-tooltip-title">${bName}${bLvl}</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    let buffsHtml = "";
+    if (rawBuffs.length > 0) {
+        const MAX_VISIBLE_BUFFS = 5;
+        const visibleBuffs = rawBuffs.slice(0, MAX_VISIBLE_BUFFS);
+        const hiddenBuffs = rawBuffs.slice(MAX_VISIBLE_BUFFS);
+
+        const chipsHtml = visibleBuffs.map(buff => {
+            const meta = _getBuffKindMeta(buff.kind, isEn);
+            const name = _escapeEndgameHtml(buff.name || meta.label);
+            const desc = _escapeEndgameHtml(buff.desc || buff.simple_desc || "");
+            const lvlNum = Number(buff.level || 0);
+            const lvlTag = lvlNum > 0
+                ? `<span class="endgame-buff-lvl">${isEn ? "Lv." : "Nv."}${lvlNum}</span>`
+                : "";
+            const iconUrl = _formatTacticalIconUrl(buff.icon, 64);
+            const nativeTooltip = desc
+                ? `${buff.name || meta.label}${lvlNum > 0 ? ` (${isEn ? "Lv." : "Nv."}${lvlNum})` : ""} — ${buff.desc || buff.simple_desc}`
+                : `${buff.name || meta.label}${lvlNum > 0 ? ` (${isEn ? "Lv." : "Nv."}${lvlNum})` : ""}`;
+
+            return `
+                <div class="endgame-buff-chip ${meta.cls}" tabindex="0" title="${_escapeEndgameHtml(nativeTooltip)}">
+                    <span class="endgame-buff-icon-wrap">
+                        ${iconUrl
+                            ? `<img class="endgame-buff-icon-img" src="${iconUrl}" alt="${name}" width="20" height="20" loading="lazy" decoding="async" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';" /><i class="fa-solid ${meta.fallbackIcon} endgame-tactical-icon-fallback" style="display:none;"></i>`
+                            : `<i class="fa-solid ${meta.fallbackIcon} endgame-tactical-icon-fallback"></i>`
+                        }
+                    </span>
+                    <span class="endgame-buff-name">${name}</span>
+                    ${lvlTag}
+                    <div class="endgame-tactical-tooltip" role="tooltip">
+                        <div class="endgame-tooltip-head">
+                            <span class="endgame-tooltip-kind ${meta.cls}">${meta.label}${lvlNum > 0 ? ` • ${isEn ? "Lv." : "Nv."}${lvlNum}` : ""}</span>
+                            <strong class="endgame-tooltip-title">${name}</strong>
+                        </div>
+                        ${desc ? `<p class="endgame-tooltip-desc">${desc.replace(/\n/g, "<br>")}</p>` : ""}
+                    </div>
+                </div>
+            `;
+        }).join("");
+
+        let overflowChipHtml = "";
+        if (hiddenBuffs.length > 0) {
+            const overflowLines = hiddenBuffs
+                .map(b => {
+                    const bLvl = Number(b.level || 0) > 0 ? ` (${isEn ? "Lv." : "Nv."}${b.level})` : "";
+                    return `• ${b.name || "Buff"}${bLvl}`;
+                })
+                .join("\n");
+            const moreLabel = isEn ? `+${hiddenBuffs.length} more` : `+${hiddenBuffs.length} mais`;
+            overflowChipHtml = `
+                <div class="endgame-buff-chip is-overflow" tabindex="0" title="${_escapeEndgameHtml(overflowLines)}">
+                    <span class="endgame-buff-name">${moreLabel}</span>
+                    <div class="endgame-tactical-tooltip" role="tooltip">
+                        <div class="endgame-tooltip-head">
+                            <span class="endgame-tooltip-kind kind-card">${isEn ? "Additional Effects" : "Efeitos Adicionais"}</span>
+                        </div>
+                        <p class="endgame-tooltip-desc">${_escapeEndgameHtml(overflowLines).replace(/\n/g, "<br>")}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        buffsHtml = `<div class="endgame-buff-row">${chipsHtml}${overflowChipHtml}</div>`;
+    }
+
+    return `
+        <div class="endgame-tactical-strip" data-game="${gameId}">
+            ${bossHtml}
+            ${buffsHtml}
+        </div>
+    `;
+}
+
 function renderEndgameTeamCard(team, gameId) {
     let charsHtml = "";
     if (team.characters && team.characters.length > 0) {
@@ -353,13 +512,22 @@ function renderEndgameTeamCard(team, gameId) {
         charsHtml += `</div>`;
     }
 
+    const tacticalHtml = renderEndgameTacticalStrip(team, gameId);
+
     let monstersHtml = "";
-    if (team.monsters && team.monsters.length > 0) {
+    const filteredMonsters = Array.isArray(team.monsters)
+        ? team.monsters.filter(m => !(team.boss && m && m.name && team.boss.name && m.name === team.boss.name))
+        : [];
+    if (filteredMonsters.length > 0) {
         monstersHtml = `<div class="endgame-enemies-row">`;
-        team.monsters.forEach(m => {
-            const mName = m.name || (Boolean(window.isEn) ? "Enemy" : "Inimigo");
-            const mLvl = m.level ? ` (${Boolean(window.isEn) ? 'Lv.' : 'Nv.'}${m.level})` : "";
-            monstersHtml += `<span class="endgame-enemy-chip" title="${mName}${mLvl}"><i class="fa-solid fa-skull"></i> ${mName}${mLvl}</span>`;
+        filteredMonsters.forEach(m => {
+            const mName = _escapeEndgameHtml(m.name || (Boolean(window.isEn) ? "Enemy" : "Inimigo"));
+            const mLvl = m.level ? ` (${Boolean(window.isEn) ? 'Lv.' : 'Nv.'}${_escapeEndgameHtml(m.level)})` : "";
+            const mIconUrl = _formatTacticalIconUrl(m.icon, 48);
+            const iconPart = mIconUrl
+                ? `<img class="endgame-enemy-icon" src="${mIconUrl}" alt="" width="15" height="15" loading="lazy" decoding="async" onerror="this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='inline-block';" /><i class="fa-solid fa-skull" style="display:none;"></i>`
+                : `<i class="fa-solid fa-skull"></i>`;
+            monstersHtml += `<span class="endgame-enemy-chip" title="${mName}${mLvl}">${iconPart} <span class="endgame-enemy-label">${mName}${mLvl}</span></span>`;
         });
         monstersHtml += `</div>`;
     }
@@ -373,6 +541,7 @@ function renderEndgameTeamCard(team, gameId) {
                 </div>
                 <span style="font-size: 10.5px; color: #94a3b8; font-weight: 500;">${(team.characters || []).length} ${Boolean(window.isEn) ? "Deployed" : "Mobilizados"}</span>
             </div>
+            ${tacticalHtml}
             ${charsHtml}
             ${monstersHtml}
         </div>
@@ -485,6 +654,16 @@ function renderEndgame(gameId, data) {
     }
 
     cachedEndgameData[gameId] = data;
+
+    // Aplica seleção pendente disparada pelo Radar Unificado de Resets (ou Ctrl+K futuro)
+    if (_pendingEndgameModeId[gameId] && Array.isArray(data.modes) && data.modes.length > 0) {
+        const targetIdx = data.modes.findIndex(m => m && m.id === _pendingEndgameModeId[gameId]);
+        if (targetIdx >= 0) {
+            activeEndgameView[gameId] = "single";
+            activeEndgameModeIdx[gameId] = targetIdx;
+        }
+        _pendingEndgameModeId[gameId] = null;
+    }
 
     // Métricas Totais
     const totalStars = data.modes ? data.modes.reduce((acc, m) => acc + (typeof m.stars === 'number' ? m.stars : 0), 0) : 0;
@@ -961,6 +1140,378 @@ function setupTeamMatcherEvents(gameId, container) {
     }
 }
 
+// ==========================================================================
+// RADAR UNIFICADO DE RESETS NA HOME (7 MODOS + DIÁRIO 04:00 / SEMANAL SEG 04:00)
+// ==========================================================================
+function loadHomeResetRadar(forceRefresh = false) {
+    if (_resetRadarInflight && !forceRefresh) return _resetRadarInflight;
+    const strip = document.getElementById("home-reset-radar-strip");
+    if (!strip) return Promise.resolve();
+
+    const isEn = Boolean(window.isEn);
+    if (!strip.querySelector(".reset-radar-item") || forceRefresh) {
+        strip.innerHTML = `
+            <div class="reset-radar-loading">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <span>${isEn ? "Syncing schedule for all 7 endgame modes..." : "Sincronizando cronograma dos 7 modos de endgame..."}</span>
+            </div>
+        `;
+    }
+
+    _resetRadarInflight = fetch(`/api/endgame/reset-radar?lang=${isEn ? "en" : "pt"}`)
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.json();
+        })
+        .then(data => {
+            _cachedResetRadar = data;
+            renderHomeResetRadar(data);
+        })
+        .catch(err => {
+            console.error("[RADAR] Erro ao carregar Radar Unificado de Resets:", err);
+            const currEn = Boolean(window.isEn);
+            strip.innerHTML = `
+                <div class="reset-radar-error">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>${currEn ? "Could not load the unified reset schedule." : "Não foi possível carregar o cronograma unificado de resets."}</span>
+                    <sakuga-button class="sk-xs" variant="secondary" onclick="window.loadHomeResetRadar && window.loadHomeResetRadar(true)">
+                        <i class="fa-solid fa-rotate"></i> ${currEn ? "Retry" : "Tentar Novamente"}
+                    </sakuga-button>
+                </div>
+            `;
+        })
+        .finally(() => {
+            _resetRadarInflight = null;
+        });
+
+    return _resetRadarInflight;
+}
+
+function _renderRadarStatusBadge(item, isEn) {
+    const hasStars = item.stars !== null && item.stars !== undefined && item.max_stars;
+    const progressText = hasStars
+        ? `${item.stars}/${item.max_stars}★`
+        : (item.metric_value && item.metric_value !== "?" && item.metric_value !== "None" ? _escapeEndgameHtml(item.metric_value) : "");
+
+    if (item.status === "completed") {
+        const lbl = isEn ? "Completed" : "Concluído";
+        return `
+            <span class="reset-radar-status status-completed">
+                <i class="fa-solid fa-circle-check"></i>
+                <span>${lbl}${progressText ? ` · ${progressText}` : ""}</span>
+            </span>
+        `;
+    }
+    if (item.status === "in_progress") {
+        const lbl = isEn ? "In Progress" : "Em Progresso";
+        return `
+            <span class="reset-radar-status status-in-progress ${item.is_urgent_pending ? "is-amber-alert" : ""}">
+                <i class="fa-solid ${item.is_urgent_pending ? "fa-triangle-exclamation" : "fa-hourglass-half"}"></i>
+                <span>${lbl}${progressText ? ` · ${progressText}` : ""}</span>
+            </span>
+        `;
+    }
+    const pendingLbl = item.is_urgent_pending
+        ? (isEn ? "Pending · Soon!" : "Pendente · Urgente")
+        : (isEn ? "Pending" : "Pendente");
+    return `
+        <span class="reset-radar-status status-pending ${item.is_urgent_pending ? "is-amber-alert" : ""}">
+            <i class="fa-solid ${item.is_urgent_pending ? "fa-triangle-exclamation" : "fa-circle-dot"}"></i>
+            <span>${pendingLbl}</span>
+        </span>
+    `;
+}
+
+function renderHomeResetRadar(data) {
+    const strip = document.getElementById("home-reset-radar-strip");
+    const summaryEl = document.getElementById("home-reset-radar-summary");
+    if (!strip || !data) return;
+
+    const isEn = Boolean(window.isEn);
+
+    // 1. Atualiza timers de ciclos do servidor (Diário 04:00 e Semanal Seg 04:00)
+    const srv = data.server_resets || {};
+    const tzInfo = srv.server_tz_label ? ` (${srv.server_tz_label})` : "";
+    const dailyEl = document.getElementById("radar-daily-countdown");
+    const dailyPill = document.getElementById("radar-daily-cycle-pill");
+    if (dailyEl && srv.daily_reset_at) {
+        const cdDaily = formatEndgameCountdown(srv.daily_reset_at, isEn);
+        dailyEl.setAttribute("data-reset-at", srv.daily_reset_at);
+        dailyEl.textContent = cdDaily.text;
+        if (dailyPill) {
+            dailyPill.title = `${formatResetDateTooltip(srv.daily_reset_at, isEn)}${tzInfo}`;
+        }
+    }
+    const weeklyEl = document.getElementById("radar-weekly-countdown");
+    const weeklyPill = document.getElementById("radar-weekly-cycle-pill");
+    if (weeklyEl && srv.weekly_reset_at) {
+        const cdWeekly = formatEndgameCountdown(srv.weekly_reset_at, isEn);
+        weeklyEl.setAttribute("data-reset-at", srv.weekly_reset_at);
+        weeklyEl.textContent = cdWeekly.text;
+        if (weeklyPill) {
+            weeklyPill.title = `${formatResetDateTooltip(srv.weekly_reset_at, isEn)}${tzInfo}`;
+        }
+    }
+
+    // 2. Pills de resumo no cabeçalho
+    const items = Array.isArray(data.items) ? data.items : [];
+    const summary = data.summary || {};
+    const total = summary.total_modes ?? items.length;
+    const completed = summary.completed_count ?? items.filter(i => i.status === "completed").length;
+    const pending = summary.pending_count ?? Math.max(0, total - completed);
+    const urgentPending = summary.urgent_pending_count ?? items.filter(i => i.is_urgent_pending).length;
+
+    if (summaryEl) {
+        summaryEl.innerHTML = `
+            <span class="reset-radar-meta-pill is-done">
+                <i class="fa-solid fa-check"></i> ${completed}/${total} ${isEn ? "Cleared" : "Concluídos"}
+            </span>
+            ${pending > 0 ? `
+                <span class="reset-radar-meta-pill ${urgentPending > 0 ? "is-amber" : "is-pending"}">
+                    <i class="fa-solid ${urgentPending > 0 ? "fa-bell" : "fa-clock"}"></i>
+                    ${urgentPending > 0
+                        ? (isEn ? `${urgentPending} Urgent` : `${urgentPending} Próximo(s)`)
+                        : `${pending} ${isEn ? "Pending" : "Pendente(s)"}`
+                    }
+                </span>
+            ` : ""}
+        `;
+    }
+
+    if (items.length === 0) {
+        strip.innerHTML = `
+            <div class="reset-radar-empty">
+                <i class="fa-regular fa-calendar-xmark"></i>
+                <span>${isEn ? "No endgame modes available yet." : "Nenhum modo endgame disponível no momento."}</span>
+            </div>
+        `;
+        return;
+    }
+
+    // 3. Renderiza os 7 modos ordenados por urgência
+    strip.innerHTML = items.map(item => {
+        const displayName = formatEndgameModeName(item.name);
+        const iconHtml = renderEndgameModeIcon(item.id, item.icon, "strip", displayName);
+        const cd = formatEndgameCountdown(item.reset_at, isEn);
+        const dateTip = formatResetDateTooltip(item.reset_at, isEn);
+        const estTag = item.source === "estimated"
+            ? `<span class="endgame-reset-source-tag" title="${isEn ? "Estimated from server cycle" : "Estimado pelo ciclo do servidor"}">~</span>`
+            : "";
+        const statusCls = item.status === "completed"
+            ? "is-completed"
+            : (item.is_urgent_pending ? "is-urgent-pending" : "is-pending");
+        const navHint = isEn
+            ? `Click to open ${displayName} (${item.game_label})`
+            : `Clique para abrir ${displayName} (${item.game_label})`;
+        const fullTitle = dateTip ? `${displayName} • ${dateTip} • ${navHint}` : `${displayName} • ${navHint}`;
+
+        return `
+            <button type="button"
+                class="reset-radar-item game-${_escapeEndgameHtml(item.game_id)} ${statusCls} countdown-${cd.state}"
+                data-game="${_escapeEndgameHtml(item.game_id)}"
+                data-mode-id="${_escapeEndgameHtml(item.id)}"
+                title="${_escapeEndgameHtml(fullTitle)}">
+                <div class="reset-radar-item-top">
+                    <div class="reset-radar-item-id">
+                        ${iconHtml}
+                        <div class="reset-radar-item-titles">
+                            <span class="reset-radar-mode-name">${_escapeEndgameHtml(displayName)}</span>
+                            <span class="reset-radar-game-tag game-${_escapeEndgameHtml(item.game_id)}">${_escapeEndgameHtml(item.game_label)} · ${_escapeEndgameHtml(item.badge || "")}</span>
+                        </div>
+                    </div>
+                    <span class="reset-radar-jump-icon" aria-hidden="true"><i class="fa-solid fa-arrow-right"></i></span>
+                </div>
+                <div class="reset-radar-item-timer">
+                    <span class="reset-radar-timer-label">${isEn ? "Resets in" : "Reseta em"}</span>
+                    <strong class="endgame-countdown-value" ${item.reset_at ? `data-reset-at="${_escapeEndgameHtml(item.reset_at)}"` : ""}>${estTag}${cd.text}</strong>
+                </div>
+                <div class="reset-radar-item-foot">
+                    ${_renderRadarStatusBadge(item, isEn)}
+                </div>
+            </button>
+        `;
+    }).join("");
+
+    strip.querySelectorAll(".reset-radar-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const gid = btn.getAttribute("data-game");
+            const mid = btn.getAttribute("data-mode-id");
+            if (gid) navigateToEndgameMode(gid, mid);
+        });
+    });
+
+    // 4. Renderiza a subseção de Virada de Banners Ativos na Home
+    renderHomeBannerResets(Array.isArray(data.banners) ? data.banners : [], isEn);
+
+    ensureEndgameCountdownTicker();
+}
+
+function _formatRadarBannerPhaseLabel(banner, isEn) {
+    const dt = String(banner?.duration_type || "").toLowerCase();
+    const bTime = banner?.banner_time || "";
+    if (dt === "full_patch") {
+        const lbl = isEn ? "Full Patch" : "Patch Inteiro";
+        return bTime ? `${lbl} · ${isEn ? "Att" : "Att"} ${bTime}` : lbl;
+    }
+    if (dt === "phase_2" || Number(banner?.phase) === 2) {
+        const lbl = isEn ? "Phase 2" : "2ª Fase";
+        return bTime ? `${lbl} · ${isEn ? "Att" : "Att"} ${bTime}` : lbl;
+    }
+    const lbl = isEn ? "Phase 1" : "1ª Fase";
+    return bTime ? `${lbl} · ${bTime}` : lbl;
+}
+
+function renderHomeBannerResets(banners, isEn) {
+    const section = document.getElementById("home-banner-reset-section");
+    const strip = document.getElementById("home-banner-reset-strip");
+    if (!section || !strip) return;
+
+    if (!Array.isArray(banners) || banners.length === 0) {
+        section.style.display = "none";
+        strip.innerHTML = "";
+        return;
+    }
+
+    section.style.display = "";
+    strip.innerHTML = banners.map(b => {
+        const gid = String(b.game_id || "genshin").toLowerCase();
+        const fallbackGameIcon = `/assets/${gid}_icon.png`;
+        const chars = Array.isArray(b.characters) ? b.characters.slice(0, 3) : [];
+        const avatarsHtml = chars.map(c => {
+            const cName = _escapeEndgameHtml(c.name || b.primary_character || "");
+            const cIcon = _formatTacticalIconUrl(c.icon, 64) || fallbackGameIcon;
+            return `<img class="banner-reset-avatar" src="${cIcon}" alt="${cName}" width="28" height="28" loading="lazy" decoding="async" onerror="this.onerror=null; this.src='${fallbackGameIcon}';" />`;
+        }).join("");
+
+        const cd = formatEndgameCountdown(b.end_at, isEn);
+        const dateTip = formatResetDateTooltip(b.end_at, isEn);
+        const phaseMeta = _formatRadarBannerPhaseLabel(b, isEn);
+        const endingSoonCls = b.is_ending_soon ? "is-ending-soon" : "";
+        const endingSoonBadge = b.is_ending_soon
+            ? `<span class="banner-reset-urgent-pill"><i class="fa-solid fa-fire"></i> ${isEn ? "< 48h" : "< 48h"}</span>`
+            : "";
+        const simHint = isEn ? "Simulate in Gacha" : "Simular no Gacha";
+        const fullTitle = `${b.title} (${b.game_label} · ${phaseMeta})${dateTip ? ` • ${dateTip}` : ""} • ${simHint}`;
+
+        return `
+            <button type="button"
+                class="banner-reset-item game-${_escapeEndgameHtml(gid)} ${endingSoonCls} countdown-${cd.state}"
+                data-game="${_escapeEndgameHtml(gid)}"
+                data-char="${_escapeEndgameHtml(b.primary_character || "")}"
+                title="${_escapeEndgameHtml(fullTitle)}">
+                <div class="banner-reset-top">
+                    <div class="banner-reset-avatars">${avatarsHtml}</div>
+                    <div class="banner-reset-titles">
+                        <span class="banner-reset-names">${_escapeEndgameHtml(b.title || b.primary_character || "")}</span>
+                        <span class="banner-reset-sub game-${_escapeEndgameHtml(gid)}">${_escapeEndgameHtml(b.game_label)} · ${_escapeEndgameHtml(phaseMeta)}</span>
+                    </div>
+                    <span class="banner-reset-jump" aria-hidden="true"><i class="fa-solid fa-wand-sparkles"></i></span>
+                </div>
+                <div class="banner-reset-bottom">
+                    <div class="banner-reset-cd-wrap">
+                        <span class="banner-reset-cd-label">${isEn ? "Ends in" : "Vira em"}</span>
+                        <strong class="endgame-countdown-value" ${b.end_at ? `data-reset-at="${_escapeEndgameHtml(b.end_at)}"` : ""}>${cd.text}</strong>
+                    </div>
+                    ${endingSoonBadge}
+                </div>
+            </button>
+        `;
+    }).join("");
+
+    strip.querySelectorAll(".banner-reset-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const gid = btn.getAttribute("data-game");
+            const charName = btn.getAttribute("data-char");
+            if (gid) navigateToBannerSimulator(gid, charName);
+        });
+    });
+}
+
+function navigateToBannerSimulator(gameId, characterName) {
+    const cleanGame = String(gameId || "genshin").toLowerCase().trim();
+    const targetChar = String(characterName || "").trim();
+
+    const gachaNavBtn = document.querySelector('.nav-btn[data-tab="gacha"]');
+    if (gachaNavBtn) {
+        gachaNavBtn.click();
+    }
+
+    const applyTarget = () => {
+        if (typeof window.prefillGachaBannerTarget === "function") {
+            window.prefillGachaBannerTarget(cleanGame, targetChar, "character");
+        }
+    };
+
+    if (typeof window.loadGachaModules === "function") {
+        window.loadGachaModules().then(applyTarget).catch(() => {});
+    } else {
+        setTimeout(applyTarget, 150);
+    }
+}
+
+function navigateToEndgameMode(gameId, modeId) {
+    const cleanGame = String(gameId || "").toLowerCase().trim();
+    if (!["hsr", "genshin", "zzz"].includes(cleanGame)) return;
+
+    // 1. Ativa a aba principal do jogo
+    const navBtn = document.querySelector(`.nav-btn[data-tab="${cleanGame}"]`);
+    if (navBtn) {
+        navBtn.click();
+    }
+
+    // 2. Seleciona a sub-aba Endgame no componente sakuga-tabs e ativa o subview
+    const section = document.getElementById(`tab-${cleanGame}`);
+    if (section) {
+        const tabsEl = section.querySelector(`sakuga-tabs.sk-game-subnav[data-game="${cleanGame}"]`);
+        if (tabsEl) {
+            const opts = Array.from(tabsEl.querySelectorAll("option"));
+            const endgameIdx = opts.findIndex(o => o.value === "endgame");
+            if (endgameIdx >= 0) {
+                tabsEl.selected = endgameIdx;
+            }
+        }
+        section.querySelectorAll(".game-subnav-btn").forEach(b => {
+            b.classList.toggle("active", b.getAttribute("data-view") === "endgame");
+        });
+    }
+    if (typeof window.activateGameSubview === "function") {
+        window.activateGameSubview(cleanGame, "endgame");
+    } else {
+        const subEl = document.getElementById(`view-endgame-${cleanGame}`);
+        if (section && subEl) {
+            section.querySelectorAll(".game-subview").forEach(v => v.classList.remove("active"));
+            subEl.classList.add("active");
+        }
+    }
+
+    // 3. Foca no modo específico (se já carregado) ou agenda foco assim que terminar o fetch
+    if (modeId) {
+        activeEndgameView[cleanGame] = "single";
+        const cached = cachedEndgameData[cleanGame];
+        if (cached && Array.isArray(cached.modes) && cached.modes.length > 0) {
+            const idx = cached.modes.findIndex(m => m && m.id === modeId);
+            if (idx >= 0) {
+                activeEndgameModeIdx[cleanGame] = idx;
+            }
+            _pendingEndgameModeId[cleanGame] = null;
+            renderEndgame(cleanGame, cached);
+        } else {
+            _pendingEndgameModeId[cleanGame] = modeId;
+            loadEndgame(cleanGame);
+        }
+    } else if (!cachedEndgameData[cleanGame]) {
+        loadEndgame(cleanGame);
+    }
+
+    // 4. Rola suavemente até o painel de endgame
+    const endgameView = document.getElementById(`view-endgame-${cleanGame}`);
+    if (endgameView) {
+        requestAnimationFrame(() => {
+            endgameView.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+    }
+}
+
 // Exposição explícita para compatibilidade com handlers inline HTML e outros módulos
 if (typeof _endgameInflight !== 'undefined') window._endgameInflight = _endgameInflight;
 if (typeof _loadEndgameImpl !== 'undefined') window._loadEndgameImpl = _loadEndgameImpl;
@@ -969,9 +1520,13 @@ if (typeof activeEndgameView !== 'undefined') window.activeEndgameView = activeE
 if (typeof cachedEndgameData !== 'undefined') window.cachedEndgameData = cachedEndgameData;
 if (typeof getEndgameModeIcon !== 'undefined') window.getEndgameModeIcon = getEndgameModeIcon;
 if (typeof loadEndgame !== 'undefined') window.loadEndgame = loadEndgame;
+if (typeof loadHomeResetRadar !== 'undefined') window.loadHomeResetRadar = loadHomeResetRadar;
+if (typeof navigateToBannerSimulator !== 'undefined') window.navigateToBannerSimulator = navigateToBannerSimulator;
+if (typeof navigateToEndgameMode !== 'undefined') window.navigateToEndgameMode = navigateToEndgameMode;
 if (typeof normalizeEndgameChar !== 'undefined') window.normalizeEndgameChar = normalizeEndgameChar;
 if (typeof renderEndgame !== 'undefined') window.renderEndgame = renderEndgame;
 if (typeof renderEndgameTeamCard !== 'undefined') window.renderEndgameTeamCard = renderEndgameTeamCard;
+if (typeof renderHomeResetRadar !== 'undefined') window.renderHomeResetRadar = renderHomeResetRadar;
 if (typeof renderTeamMatcher !== 'undefined') window.renderTeamMatcher = renderTeamMatcher;
 if (typeof teamMatcherFilterState !== 'undefined') window.teamMatcherFilterState = teamMatcherFilterState;
 
@@ -982,4 +1537,11 @@ window.addEventListener("app:languageChanged", () => {
             renderEndgame(gId, cachedEndgameData[gId]);
         }
     });
+    const homePane = document.getElementById("tab-home");
+    if (homePane && homePane.classList.contains("active")) {
+        loadHomeResetRadar(true);
+    } else if (_cachedResetRadar) {
+        window._dirtyLangTabs = window._dirtyLangTabs || {};
+        window._dirtyLangTabs.homeRadar = true;
+    }
 });
