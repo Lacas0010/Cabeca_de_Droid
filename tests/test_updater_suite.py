@@ -111,6 +111,60 @@ class TestUpdaterSuite(unittest.TestCase):
             self.assertEqual(data["current_version"], updater.get_current_version())
             self.assertTrue(data["error"])
 
+    def test_api_updater_check_falls_back_to_web_redirect_on_403_rate_limit(self) -> None:
+        client = TestClient(server.app)
+
+        rate_limit_resp = MagicMock()
+        rate_limit_resp.status_code = 403
+        rate_limit_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "403 rate limit exceeded",
+            request=httpx.Request("GET", updater.GITHUB_RELEASES_LATEST_URL),
+            response=httpx.Response(403),
+        )
+
+        web_resp = MagicMock()
+        web_resp.status_code = 200
+        web_resp.url = "https://github.com/Lacas0010/Cabeca_de_Droid/releases/tag/v9.8.7"
+        web_resp.raise_for_status.return_value = None
+
+        head_resp = MagicMock()
+        head_resp.status_code = 200
+        head_resp.headers = {"Content-Length": "42000000"}
+
+        async_client_instance = MagicMock()
+
+        async def _fake_get(url, *args, **kwargs):
+            if "api.github.com" in str(url):
+                return rate_limit_resp
+            return web_resp
+
+        async def _fake_head(url, *args, **kwargs):
+            return head_resp
+
+        async_client_instance.get = _fake_get
+        async_client_instance.head = _fake_head
+
+        async_cm = MagicMock()
+        async def _aenter(*args):
+            return async_client_instance
+        async def _aexit(*args):
+            return False
+        async_cm.__aenter__ = _aenter
+        async_cm.__aexit__ = _aexit
+
+        with patch("updater.httpx.AsyncClient", return_value=async_cm):
+            res = client.get("/api/updater/check")
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertIsNone(data["error"])
+            self.assertTrue(data["update_available"])
+            self.assertEqual(data["latest_version"], "9.8.7")
+            self.assertEqual(data["asset_size"], 42000000)
+            self.assertEqual(
+                data["download_url"],
+                "https://github.com/Lacas0010/Cabeca_de_Droid/releases/download/v9.8.7/Cabeca_de_Droid-Windows-x64.zip",
+            )
+
     def test_api_updater_start_dev_mode(self) -> None:
         client = TestClient(server.app)
         with patch("updater.is_app_frozen", return_value=False):

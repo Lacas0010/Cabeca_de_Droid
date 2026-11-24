@@ -36,6 +36,8 @@ except ImportError:  # Fallback seguro caso packaging não esteja disponível
 GITHUB_REPO = "Lacas0010/Cabeca_de_Droid"
 GITHUB_RELEASES_LATEST_URL = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
 GITHUB_RELEASES_PAGE_URL = f"https://github.com/{GITHUB_REPO}/releases"
+GITHUB_RELEASES_WEB_LATEST_URL = f"https://github.com/{GITHUB_REPO}/releases/latest"
+DEFAULT_WINDOWS_ZIP_NAME = "Cabeca_de_Droid-Windows-x64.zip"
 ALLOWED_DOWNLOAD_PREFIXES = (
     "https://github.com/",
     "https://objects.githubusercontent.com/",
@@ -104,20 +106,78 @@ def select_windows_zip_asset(assets: list[dict[str, Any]]) -> Tuple[Optional[str
     return str(first["browser_download_url"]), int(first.get("size") or 0)
 
 
-async def check_for_updates(timeout_sec: float = 5.0) -> Dict[str, Any]:
-    """Consulta de forma assíncrona a última release no GitHub (tolerante a modo offline)."""
-    current = get_current_version()
-    frozen = is_app_frozen()
-    headers = {
-        "Accept": "application/vnd.github+json",
-        "User-Agent": f"Cabeca-de-Droid/{current}",
+async def _check_release_via_web_redirect(
+    client: httpx.AsyncClient,
+    user_agent: str,
+) -> Optional[Dict[str, Any]]:
+    """
+    Fallback imune ao rate limit de 60 req/h da API REST do GitHub.
+    Resolve a última tag seguindo o redirect HTTP de /releases/latest.
+    """
+    web_headers = {"User-Agent": user_agent, "Accept": "text/html,application/xhtml+xml"}
+    resp = await client.get(GITHUB_RELEASES_WEB_LATEST_URL, headers=web_headers)
+    resp.raise_for_status()
+    final_url = str(getattr(resp, "url", "") or "")
+    m_tag = re.search(r"/releases/tag/([^/?#]+)", final_url)
+    if not m_tag:
+        return None
+
+    tag_name = m_tag.group(1).strip()
+    download_url = f"https://github.com/{GITHUB_REPO}/releases/download/{tag_name}/{DEFAULT_WINDOWS_ZIP_NAME}"
+    asset_size = 0
+    try:
+        head_fn = getattr(client, "head", None)
+        if callable(head_fn):
+            h_resp = await head_fn(download_url, headers={"User-Agent": user_agent})
+            if getattr(h_resp, "status_code", 0) == 200:
+                asset_size = int(h_resp.headers.get("Content-Length") or 0)
+            elif getattr(h_resp, "status_code", 0) == 404:
+                download_url = None
+    except Exception:
+        pass
+
+    return {
+        "tag_name": tag_name,
+        "body": f"Nova versão {tag_name} disponível no GitHub Releases.",
+        "html_url": final_url or f"https://github.com/{GITHUB_REPO}/releases/tag/{tag_name}",
+        "assets": (
+            [{"name": DEFAULT_WINDOWS_ZIP_NAME, "browser_download_url": download_url, "size": asset_size}]
+            if download_url
+            else []
+        ),
     }
 
+
+async def check_for_updates(timeout_sec: float = 5.0) -> Dict[str, Any]:
+    """Consulta de forma assíncrona a última release no GitHub (com fallback web para rate limit 403/429)."""
+    current = get_current_version()
+    frozen = is_app_frozen()
+    user_agent = f"Cabeca-de-Droid/{current}"
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": user_agent,
+    }
+    gh_token = os.environ.get("GITHUB_TOKEN", "").strip()
+    if gh_token:
+        headers["Authorization"] = f"Bearer {gh_token}"
+
+    payload: Optional[Dict[str, Any]] = None
     try:
         async with httpx.AsyncClient(timeout=timeout_sec, follow_redirects=True) as client:
-            resp = await client.get(GITHUB_RELEASES_LATEST_URL, headers=headers)
-            resp.raise_for_status()
-            payload = resp.json()
+            try:
+                resp = await client.get(GITHUB_RELEASES_LATEST_URL, headers=headers)
+                if getattr(resp, "status_code", 200) in (403, 429):
+                    payload = await _check_release_via_web_redirect(client, user_agent)
+                    if payload is None:
+                        resp.raise_for_status()
+                else:
+                    resp.raise_for_status()
+                    payload = resp.json()
+            except httpx.HTTPStatusError as http_exc:
+                if getattr(http_exc.response, "status_code", None) in (403, 429):
+                    payload = await _check_release_via_web_redirect(client, user_agent)
+                if payload is None:
+                    raise
     except Exception as exc:
         return {
             "update_available": False,
