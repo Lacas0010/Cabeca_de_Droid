@@ -885,6 +885,14 @@ class StaticDataManager:
         except Exception:
             pass
 
+        try:
+            from scrapers.equipment_effects_scraper import sync_equipment_effects
+
+            equip_res = sync_equipment_effects(target_games)
+            sync_results["equipment_effects"] = equip_res
+        except Exception:
+            pass
+
         return sync_results
 
     def _sync_hsr(self) -> Dict[str, Any]:

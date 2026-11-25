@@ -23,6 +23,12 @@ class TestDynamicDataAndFuzzySuite(unittest.TestCase):
         with (
             tempfile.TemporaryDirectory() as tmpdir,
             patch("static_data_manager.requests.get", side_effect=OSError("offline test")),
+            patch("scrapers.scraper_genshin.PrydwenGenshinScraper.get_character_list", return_value=[]),
+            patch("scrapers.scraper_zzz.PrydwenZZZScraper.get_agent_list", return_value=[]),
+            patch("scrapers.endgame_icons_scraper.sync_endgame_icons", return_value={}),
+            patch("scrapers.role_icons_scraper.sync_role_icons", return_value={}),
+            patch("scrapers.resource_icons_scraper.sync_resource_icons", return_value={}),
+            patch("scrapers.equipment_effects_scraper.sync_equipment_effects", return_value={}),
             patch.object(static_data_manager, "_get_file_path", side_effect=lambda k: os.path.join(tmpdir, f"{k}.json")),
         ):
             results = static_data_manager.sync_upstream_data()

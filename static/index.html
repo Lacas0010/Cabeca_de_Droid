@@ -17,7 +17,7 @@
 <link href="css/gacha.css?v=2.3" rel="stylesheet"/>
 <link href="css/endgame_strategy.css?v=2.5" rel="stylesheet"/>
 <link href="css/team_card.css?v=2.0" rel="stylesheet"/>
-<link href="style.css?v=39.0" rel="stylesheet"/>
+<link href="style.css?v=40.0" rel="stylesheet"/>
 <link href="/assets/logo.svg" rel="icon" type="image/svg+xml"/>
 </head>
 <body>
@@ -133,7 +133,7 @@
 <span class="status-text" data-i18n="status_checking" id="api-status-text">Buscando status...</span>
 </div>
 <div class="sidebar-version-row">
-<span class="version-badge" id="app-version-badge">v1.4.1</span>
+<span class="version-badge" id="app-version-badge">v1.5.0</span>
 <sakuga-button class="sk-xs" id="btn-check-updates" title="Verificar atualizações no GitHub" variant="secondary">
 <i class="fa-solid fa-cloud-arrow-down"></i>
 <span>Atualizar</span>
@@ -2978,12 +2978,13 @@
 <!-- Seção 1: Equipamento / Arma -->
 <div class="inspector-card">
 <h4><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="ins_card_weapon">Equipamento / Arma</span></h4>
-<div class="weapon-detail">
+<div class="weapon-detail" id="ins-weapon-detail">
 <img alt="Arma" class="weapon-icon" decoding="async" height="48" id="ins-weapon-icon" loading="lazy" src="" width="48"/>
-<div>
+<div class="weapon-detail-text">
 <strong data-i18n="ins_weapon_sample_name" id="ins-weapon-name">Nome do Equipamento</strong>
 <span data-i18n="ins_weapon_sample_meta" id="ins-weapon-meta">Nível 80 • Refinamento 1</span>
 </div>
+<i aria-hidden="true" class="fa-solid fa-circle-info equip-hover-hint" id="ins-weapon-hint" style="display: none;"></i>
 </div>
 </div>
 <!-- Seção 2: Status Finais de Combate (Combat Stats) -->
@@ -3770,6 +3771,6 @@
 <script src="/static/vendor/sakuga-vfx/toast.js"></script>
 <script src="/static/vendor/sakuga-vfx/tooltip.js"></script>
 <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-<script src="js/app.js?v=58.0" type="module"></script>
+<script src="js/app.js?v=59.0" type="module"></script>
 </body>
 </html>

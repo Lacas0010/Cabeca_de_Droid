@@ -42,7 +42,7 @@ def _resolve_static_file(filename: str) -> str:
 
 def invalidate_roster_cache(game_id: Optional[str] = None) -> None:
     """Invalida o cache em memória do roster, overview e manifestos para forçar atualização imediata."""
-    global _ROSTER_CACHE, _OVERVIEW_CACHE, _MANIFESTS_CACHE, _META_ENDGAME_HSR_PATH_CACHE
+    global _ROSTER_CACHE, _OVERVIEW_CACHE, _MANIFESTS_CACHE, _META_ENDGAME_HSR_PATH_CACHE, _EQUIPMENT_EFFECTS_CACHE
     _OVERVIEW_CACHE = None
     if game_id:
         clean_g = game_id.lower().strip()
@@ -50,11 +50,13 @@ def invalidate_roster_cache(game_id: Optional[str] = None) -> None:
         for k in keys_to_del:
             _ROSTER_CACHE.pop(k, None)
         _MANIFESTS_CACHE.pop(clean_g, None)
+        _EQUIPMENT_EFFECTS_CACHE.pop(clean_g, None)
         if clean_g == "hsr":
             _META_ENDGAME_HSR_PATH_CACHE = None
     else:
         _ROSTER_CACHE.clear()
         _MANIFESTS_CACHE.clear()
+        _EQUIPMENT_EFFECTS_CACHE.clear()
         _META_ENDGAME_HSR_PATH_CACHE = None
 
     try:
@@ -86,6 +88,225 @@ _MANIFESTS_CACHE: Dict[str, Any] = {}
 _HSR_SKILLS_CACHE = None
 _GENSHIN_SKILLS_CACHE = None
 _ZZZ_SKILLS_CACHE = None
+_EQUIPMENT_EFFECTS_CACHE: Dict[str, Dict[str, Any]] = {}
+
+
+def _get_equipment_effects_index(game_id: str) -> Dict[str, Dict[str, Dict[str, Any]]]:
+    """Carrega e indexa o catálogo dinâmico static_data/{game_id}_equipment_effects.json (armas e conjuntos)."""
+    g = (game_id or "").lower().strip()
+    if g in _EQUIPMENT_EFFECTS_CACHE:
+        return _EQUIPMENT_EFFECTS_CACHE[g]
+
+    from scrapers.equipment_effects_scraper import load_saved_equipment_effects, normalize_equipment_key
+
+    raw = load_saved_equipment_effects(g)
+    weapons_idx: Dict[str, Dict[str, Any]] = {}
+    sets_idx: Dict[str, Dict[str, Any]] = {}
+
+    for k, entry in (raw.get("weapons") or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        norm_k = normalize_equipment_key(k) or normalize_equipment_key(entry.get("name", ""))
+        if norm_k:
+            weapons_idx[norm_k] = entry
+        for al in entry.get("aliases") or []:
+            al_k = normalize_equipment_key(al)
+            if al_k and al_k not in weapons_idx:
+                weapons_idx[al_k] = entry
+
+    for k, entry in (raw.get("sets") or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        norm_k = normalize_equipment_key(k) or normalize_equipment_key(entry.get("name", ""))
+        if norm_k:
+            sets_idx[norm_k] = entry
+        for al in entry.get("aliases") or []:
+            al_k = normalize_equipment_key(al)
+            if al_k and al_k not in sets_idx:
+                sets_idx[al_k] = entry
+
+    indexed = {"weapons": weapons_idx, "sets": sets_idx}
+    _EQUIPMENT_EFFECTS_CACHE[g] = indexed
+    return indexed
+
+
+def _lookup_indexed_entry(index: Dict[str, Dict[str, Any]], query: str) -> Optional[Dict[str, Any]]:
+    from scrapers.equipment_effects_scraper import normalize_equipment_key
+
+    q_norm = normalize_equipment_key(query)
+    if not q_norm or not index:
+        return None
+    if q_norm in index:
+        return index[q_norm]
+    if len(q_norm) >= 5:
+        best = None
+        best_delta = float("inf")
+        for k, v in index.items():
+            if q_norm in k or k in q_norm:
+                delta = abs(len(k) - len(q_norm))
+                if delta < best_delta:
+                    best_delta = delta
+                    best = v
+        return best
+    return None
+
+
+def lookup_weapon_effect(game_id: str, weapon_name: str, rank: int = 1) -> Dict[str, Any]:
+    """Busca a passiva e descrição da arma/cone/motor-W no catálogo dinâmico para o refinamento informado."""
+    if not weapon_name:
+        return {}
+    idx = _get_equipment_effects_index(game_id).get("weapons", {})
+    entry = _lookup_indexed_entry(idx, weapon_name)
+    if not entry:
+        return {}
+
+    try:
+        r_int = max(1, min(5, int(rank or 1)))
+    except (TypeError, ValueError):
+        r_int = 1
+
+    ranks_map = entry.get("ranks") if isinstance(entry.get("ranks"), dict) else {}
+    desc = ranks_map.get(str(r_int)) or ranks_map.get("1") or entry.get("desc") or ""
+    return {
+        "passive_name": clean_hoyoverse_desc(entry.get("passive_name") or ""),
+        "desc": clean_hoyoverse_desc(desc),
+        "rarity": entry.get("rarity"),
+    }
+
+
+def lookup_set_effect(game_id: str, set_name: str) -> Dict[str, Any]:
+    """Busca os efeitos 2p/4p de um conjunto de artefatos/relíquias/discos no catálogo dinâmico."""
+    if not set_name:
+        return {}
+    idx = _get_equipment_effects_index(game_id).get("sets", {})
+    entry = _lookup_indexed_entry(idx, set_name)
+    if not entry:
+        return {}
+    return {
+        "name": entry.get("name") or set_name,
+        "two_pc": clean_hoyoverse_desc(entry.get("two_pc") or ""),
+        "four_pc": clean_hoyoverse_desc(entry.get("four_pc") or ""),
+        "is_planar": bool(entry.get("is_planar", False)),
+    }
+
+
+_EMPTY_EQUIP_PREFIXES = (
+    "nenhum",
+    "nenhuma",
+    "sem ",
+    "não informado",
+    "nao informado",
+    "not equipped",
+    "none",
+)
+
+
+def _is_empty_equip_label(text: str) -> bool:
+    low = str(text or "").strip().lower()
+    if not low:
+        return True
+    return any(low.startswith(p) for p in _EMPTY_EQUIP_PREFIXES)
+
+
+def enrich_weapon_info(game_id: str, weapon: Any, weapon_clean_fallback: str = "") -> Optional[Dict[str, Any]]:
+    """Enriquece o dicionário da arma com título da passiva e descrição completa do efeito."""
+    if isinstance(weapon, dict) and weapon.get("name") and not _is_empty_equip_label(weapon.get("name", "")):
+        w = dict(weapon)
+    elif weapon_clean_fallback and not _is_empty_equip_label(weapon_clean_fallback):
+        w = {"name": weapon_clean_fallback, "level": 1, "rank": 1, "icon": "", "rarity": 4}
+    else:
+        return None
+
+    w_name = str(w.get("name") or "").strip()
+    if not w_name:
+        return w
+
+    rank_val = w.get("rank") or 1
+    cat = lookup_weapon_effect(game_id, w_name, rank=rank_val)
+    if cat:
+        if cat.get("passive_name") and not w.get("passive_name"):
+            w["passive_name"] = cat["passive_name"]
+        elif game_id == "hsr" and cat.get("passive_name"):
+            w["passive_name"] = cat["passive_name"]
+
+        # Em HSR, equip.desc do HoYoLAB é texto de lore; prioriza sempre a habilidade de combate S1..S5 do catálogo
+        if game_id == "hsr" and cat.get("desc"):
+            w["desc"] = cat["desc"]
+        elif cat.get("desc") and not w.get("desc"):
+            w["desc"] = cat["desc"]
+
+        if not w.get("rarity") and cat.get("rarity"):
+            w["rarity"] = cat["rarity"]
+
+    if w.get("passive_name"):
+        w["passive_name"] = clean_hoyoverse_desc(w["passive_name"])
+    if w.get("desc"):
+        w["desc"] = clean_hoyoverse_desc(w["desc"])
+    return w
+
+
+def _parse_set_label(raw_label: str) -> Tuple[int, str]:
+    """Extrai (quantidade_de_pecas, nome_do_conjunto) de labels como '4p Ator Onírico' ou 'Ator Onírico (4 peças)'."""
+    txt = str(raw_label or "").strip()
+    m_prefix = re.match(r"^(\d+)\s*(?:p|pc|pcs|peças|pecas)\s+(.+)$", txt, re.IGNORECASE)
+    if m_prefix:
+        return int(m_prefix.group(1)), clean_relic_name(m_prefix.group(2).strip())
+    m_suffix = re.match(r"^(.+?)\s*\((\d+)\s*(?:p|pc|pcs|peças|pecas)\)\s*$", txt, re.IGNORECASE)
+    if m_suffix:
+        return int(m_suffix.group(2)), clean_relic_name(m_suffix.group(1).strip())
+    return 2, clean_relic_name(txt)
+
+
+def enrich_sets_detail(
+    game_id: str,
+    sets_labels: Optional[List[str]],
+    existing_detail: Optional[List[Dict[str, Any]]] = None,
+) -> List[Dict[str, Any]]:
+    """Retorna lista estruturada de conjuntos equipados com efeitos 2p e 4p (HoYoLAB + catálogo dinâmico)."""
+    from scrapers.equipment_effects_scraper import normalize_equipment_key
+
+    live_by_key: Dict[str, Dict[str, Any]] = {}
+    for item in existing_detail or []:
+        if not isinstance(item, dict):
+            continue
+        k = normalize_equipment_key(item.get("name") or "")
+        if k:
+            live_by_key[k] = item
+
+    labels = list(sets_labels or [])
+    if not labels and existing_detail:
+        labels = [
+            it.get("label") or f"{it.get('pieces', 2)}p {it.get('name', '')}".strip()
+            for it in existing_detail
+            if isinstance(it, dict) and (it.get("label") or it.get("name"))
+        ]
+
+    enriched: List[Dict[str, Any]] = []
+    for raw_lbl in labels:
+        if not raw_lbl or _is_empty_equip_label(str(raw_lbl)):
+            continue
+        pieces, set_name = _parse_set_label(str(raw_lbl))
+        if not set_name or _is_empty_equip_label(set_name):
+            continue
+        k = normalize_equipment_key(set_name)
+        live = live_by_key.get(k) or {}
+        cat = lookup_set_effect(game_id, set_name)
+
+        two_pc = clean_hoyoverse_desc(live.get("two_pc") or cat.get("two_pc") or "")
+        four_pc = clean_hoyoverse_desc(live.get("four_pc") or cat.get("four_pc") or "")
+        is_planar = bool(cat.get("is_planar", False) or (game_id == "hsr" and two_pc and not four_pc))
+
+        enriched.append(
+            {
+                "label": str(raw_lbl).strip(),
+                "name": set_name,
+                "pieces": pieces,
+                "two_pc": two_pc,
+                "four_pc": four_pc,
+                "is_planar": is_planar,
+            }
+        )
+    return enriched
 
 
 def _get_skills_cache(game_id: str) -> Dict[str, Any]:
@@ -1134,17 +1355,21 @@ async def get_roster(game_id: str) -> List[Dict[str, Any]]:
                                             char["path"] = cand_path
                                             break
 
-            # Garante que raridade da arma esteja definida
+            # Garante que raridade e passiva da arma estejam definidas
             if isinstance(char.get("weapon"), dict):
                 if not char["weapon"].get("rarity"):
                     char["weapon"]["rarity"] = database.get_weapon_rarity(game_id, char["weapon"].get("name", ""))
+                enriched_w = enrich_weapon_info(game_id, char["weapon"])
+                if enriched_w:
+                    char["weapon"] = enriched_w
 
-            # Garante que conjuntos com efeito ativo estejam definidos
+            # Garante que conjuntos com efeito ativo e detalhes 2p/4p estejam definidos
             if not char.get("sets"):
                 if char.get("raw_md"):
                     char["sets"] = database.parse_sets_from_raw_md(char["raw_md"])
                 else:
                     char["sets"] = []
+            char["sets_detail"] = enrich_sets_detail(game_id, char.get("sets"), char.get("sets_detail"))
 
             relic_scores = []
             relics = char.get("relics") or char.get("artifacts") or char.get("discs") or []
@@ -1614,6 +1839,12 @@ def parse_character_build_data(game_id: str, char_name: str) -> Dict[str, Any]:
         data["ranks"] = ranks
         data["constellations"] = ranks
         data["mindscapes"] = ranks
+
+    # Enriquece arma e conjuntos com descrições de passivas e efeitos 2p/4p para hover tooltip
+    raw_weapon_obj = char_db.get("weapon") if isinstance(char_db, dict) else None
+    raw_sets_detail = char_db.get("sets_detail") if isinstance(char_db, dict) else None
+    data["weapon_info"] = enrich_weapon_info(game_id, raw_weapon_obj, data.get("weapon_clean", ""))
+    data["sets_detail"] = enrich_sets_detail(game_id, data.get("sets", []), raw_sets_detail)
 
     return data
 

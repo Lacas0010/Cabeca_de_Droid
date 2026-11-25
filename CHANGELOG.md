@@ -6,13 +6,22 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
-## [Não lançado]
+## [5.9.0] / Release Standalone [v1.5.0] - 2026-11-25
+
+### ✨ Adicionado
+- **Hover Tooltips para Armas / Cones / Motores-W e Conjuntos (`scrapers/equipment_effects_scraper.py`, `database.py`, `extractor.py`, `services/roster_service.py`, `static/js/modules/roster.js`, `static/style.css`):**
+  - Coleta dinâmica em PT-BR (zero hardcoding) via **StarRailRes + HoYoWiki** (HSR), **Yatta API** (Genshin) e **HoYoWiki ZZZ** + extração direta do HoYoLAB em `extractor.py`, com persistência em `static_data/{game}_equipment_effects.json` e migração SQLite (`CURRENT_DB_VERSION = 2` com `weapon_info_json` e `sets_detail_json`).
+  - Passivas (R1–R5 / S1–S5 / W1–W5) e efeitos **2 Peças / 4 Peças** exibidos ao passar o mouse no `#build-inspector` usando o componente `.hoyo-hover-tooltip` (`341 testes aprovados`).
+- **Gráfico Radar "Minha Build vs. Benchmark Meta" (`calculators/benchmark_radar.py`, `meta_comparator.py`, `static/js/modules/build_comparator.js`, `static/style.css`):**
+  - Gráfico SVG puro normalizado por `%` do alvo (teto visual 120%), seleção dinâmica de 3–6 eixos válidos, tags para `Anything`/`Flex`, `VEL Base`, `Em combate`/`Fora de combate` e `Cap Ideal`/`Overcap`, além de compactação dos botões e abas segmentadas do `#build-inspector`.
+- **Guia "Como Usar" reformulado (`static/index.html`, `static/js/modules/i18n.js`):**
+  - Novo Quickstart em 4 passos (Configurações → Login HoYoLAB → Sincronização → Explorar) seguido por 18 cards atualizados com todas as funcionalidades do app.
 
 ### 🐛 Corrigido
-- **Fallback web no Auto-Updater contra `403/429 rate limit` (`updater.py`, `tests/test_updater_suite.py`):** quando `api.github.com` atingir o limite público de 60 req/h por IP, `check_for_updates()` recorre automaticamente ao redirect web de `https://github.com/Lacas0010/Cabeca_de_Droid/releases/latest` para resolver a tag e o asset `.zip` sem erro (`329 testes aprovados`).
+- **Fallback web no Auto-Updater contra `403/429 rate limit` (`updater.py`, `tests/test_updater_suite.py`):** quando `api.github.com` atingir o limite público de 60 req/h por IP, `check_for_updates()` recorre automaticamente ao redirect web de `https://github.com/Lacas0010/Cabeca_de_Droid/releases/latest` para resolver a tag e o asset `.zip` sem erro.
 
 ### 📝 Documentação
-- Atualização completa de `README.md`, `README.en.md`, `CONTRIBUTING.md`, `SECURITY.md` e `.gitignore` refletindo todas as entregas da `v1.4.0`/`v1.4.1` (329 testes, Radar de Resets, Daily Notes completo, Chefes/Buffs no Endgame, `Ctrl+K` e convenção correta dos horários de virada de banners).
+- Atualização completa de `README.md`, `README.en.md`, `CONTRIBUTING.md`, `SECURITY.md` e `.gitignore` refletindo todas as entregas da `v1.4.0`–`v1.5.0`.
 
 ---
 

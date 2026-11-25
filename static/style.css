@@ -2689,7 +2689,29 @@ sakuga-button.ins-tab-btn.active::part(button) {
 .weapon-detail {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
+    padding: 8px 10px;
+    margin: -4px -6px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.weapon-detail-text {
+    min-width: 0;
+    flex: 1;
+}
+
+.weapon-detail--interactive {
+    cursor: help;
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.weapon-detail--interactive:hover {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.42);
+    box-shadow: 0 4px 16px rgba(168, 85, 247, 0.14);
 }
 
 .weapon-icon {
@@ -2699,12 +2721,14 @@ sakuga-button.ins-tab-btn.active::part(button) {
     background-color: rgba(255, 255, 255, 0.03);
     border: 1px solid var(--border-color);
     object-fit: contain;
+    flex-shrink: 0;
 }
 
 .weapon-detail strong {
     display: block;
     font-size: 14px;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
 .weapon-detail span {
@@ -2712,17 +2736,83 @@ sakuga-button.ins-tab-btn.active::part(button) {
     color: var(--text-secondary);
 }
 
+.equip-hover-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    opacity: 0.65;
+    flex-shrink: 0;
+    transition: opacity 0.18s ease, color 0.18s ease;
+}
+
+.weapon-detail--interactive:hover .equip-hover-hint,
+.set-item--interactive:hover .equip-hover-hint {
+    opacity: 1;
+    color: var(--color-hsr);
+}
+
 /* Lista de Conjuntos */
 .relic-sets-list {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .set-item {
     font-size: 13px;
     color: var(--color-success);
     font-weight: 500;
+}
+
+.set-item--interactive {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    cursor: help;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+}
+
+.set-item--interactive:hover {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.42);
+    transform: translateY(-1px);
+}
+
+.set-item-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.set-item-spark {
+    font-size: 11px;
+    color: var(--color-hsr);
+    flex-shrink: 0;
+}
+
+.set-item-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .weapon-detail {
+        padding: 8px;
+        margin: 0;
+    }
+
+    .set-item--interactive {
+        padding: 8px 10px;
+    }
+
+    .hoyo-hover-tooltip {
+        max-width: calc(100vw - 24px);
+    }
 }
 
 /* ===== PAINEL DE STATUS FINAIS (COMBAT STATS) ===== */

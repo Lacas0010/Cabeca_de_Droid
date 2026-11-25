@@ -2221,39 +2221,154 @@ async function inspectCharacter(gameId, char) {
             }
         }
         
-        // 1. Renderiza Arma / Equipamento
+        // 1. Renderiza Arma / Equipamento (com Hover Tooltip de Passiva)
+        const weaponDetailEl = document.getElementById("ins-weapon-detail") || document.querySelector("#panel-build .weapon-detail");
+        const weaponHintEl = document.getElementById("ins-weapon-hint");
         const lblWeaponName = document.getElementById("ins-weapon-name");
         const lblWeaponMeta = document.getElementById("ins-weapon-meta");
         const imgWeaponIcon = document.getElementById("ins-weapon-icon");
-        
-        if (char.weapon) {
-            lblWeaponName.innerText = char.weapon.name || (isEn ? "Not equipped" : "Não equipado");
-            const refLabel = gameId === "hsr" ? (isEn ? "Superimposition: S" : "Sobreposição: S") : (gameId === "zzz" ? (isEn ? "W-Engine: W" : "Motor W: W") : (isEn ? "Refinement: R" : "Refinamento: R"));
-            const rVal = char.weapon.rarity || char.weapon_rarity || (build && build.weapon_rarity);
-            const rStar = rVal ? (gameId === "zzz" ? (Number(rVal) === 5 ? "Rank S" : "Rank A") : `${rVal}★`) : "";
-            const metaParts = [rStar, `${isEn ? "Level" : "Nível"} ${char.weapon.level || 1}`, `${refLabel}${char.weapon.rank || 1}`].filter(Boolean);
+
+        const weaponInfo = (build && build.weapon_info) ? build.weapon_info : (char.weapon || null);
+        const mergedWeapon = weaponInfo ? { ...(char.weapon || {}), ...weaponInfo } : null;
+
+        if (mergedWeapon && mergedWeapon.name) {
+            const wName = mergedWeapon.name;
+            const wLvl = mergedWeapon.level || 1;
+            const wRank = mergedWeapon.rank || 1;
+            const rVal = mergedWeapon.rarity || char.weapon_rarity || (build && build.weapon_rarity);
+            const rankPrefix = gameId === "hsr" ? "S" : (gameId === "zzz" ? "W" : "R");
+            const refLabel = gameId === "hsr"
+                ? (isEn ? "Superimposition: S" : "Sobreposição: S")
+                : (gameId === "zzz" ? (isEn ? "W-Engine: W" : "Motor-W: W") : (isEn ? "Refinement: R" : "Refinamento: R"));
+            const rStar = rVal ? (gameId === "zzz" ? (Number(rVal) === 5 ? "Rank S" : (Number(rVal) === 3 ? "Rank B" : "Rank A")) : `${rVal}★`) : "";
+            const metaParts = [rStar, `${isEn ? "Level" : "Nível"} ${wLvl}`, `${refLabel}${wRank}`].filter(Boolean);
+
+            lblWeaponName.innerText = wName;
             lblWeaponMeta.innerText = metaParts.join(" • ");
-            
-            const safeWFn = getSafeFileName(char.weapon.name || "");
+
+            const safeWFn = getSafeFileName(wName);
             imgWeaponIcon.src = `/assets/weapons/${gameId}/${safeWFn}`;
             imgWeaponIcon.onerror = function() {
-                this.src = char.weapon.icon || '/assets/chat_icon.png';
+                this.src = mergedWeapon.icon || '/assets/chat_icon.png';
             };
+
+            if (weaponDetailEl) {
+                const wTypeBase = gameId === "hsr"
+                    ? (isEn ? "Light Cone" : "Cone de Luz")
+                    : (gameId === "zzz" ? (isEn ? "W-Engine" : "Motor-W") : (isEn ? "Weapon" : "Arma"));
+                const wTypeLabel = rStar ? `${wTypeBase} • ${rStar}` : wTypeBase;
+                const wStatusBadge = `${isEn ? "Lv." : "Nv."} ${wLvl} • ${rankPrefix}${wRank}`;
+                const cleanPassiveName = cleanHoyoverseText(mergedWeapon.passive_name || "");
+                const cleanWeaponDesc = cleanHoyoverseText(mergedWeapon.desc || "");
+                const statParts = [mergedWeapon.main_stat, mergedWeapon.sub_stat].filter(Boolean);
+
+                const descChunks = [];
+                if (statParts.length > 0) {
+                    descChunks.push(statParts.join(" • "));
+                }
+                if (cleanPassiveName && cleanWeaponDesc) {
+                    descChunks.push(`✦ ${cleanPassiveName}\n${cleanWeaponDesc}`);
+                } else if (cleanWeaponDesc) {
+                    descChunks.push(cleanWeaponDesc);
+                } else if (Number(rVal) > 0 && Number(rVal) <= 2) {
+                    descChunks.push(isEn ? "Base weapon with no special passive effect." : "Arma básica sem efeito passivo especial.");
+                } else {
+                    descChunks.push(isEn ? "Passive details will appear after syncing the equipment catalog." : "Detalhes da passiva disponíveis após sincronizar o catálogo de equipamentos.");
+                }
+
+                const fullTooltipDesc = descChunks.join("\n\n");
+                weaponDetailEl.classList.add("weapon-detail--interactive");
+                weaponDetailEl.setAttribute("data-hoyo-tooltip", "true");
+                weaponDetailEl.setAttribute("data-tooltip-title", wName);
+                weaponDetailEl.setAttribute("data-tooltip-type", wTypeLabel);
+                weaponDetailEl.setAttribute("data-tooltip-status", wStatusBadge);
+                weaponDetailEl.setAttribute("data-tooltip-status-class", (Number(rVal) >= 5 || Number(wRank) >= 5) ? "boosted" : "active");
+                weaponDetailEl.setAttribute("data-tooltip-desc", fullTooltipDesc);
+                weaponDetailEl.title = `${wTypeLabel} • ${wName} (${wStatusBadge})\n\n${fullTooltipDesc}`;
+                if (weaponHintEl) weaponHintEl.style.display = "inline-flex";
+            }
         } else {
             lblWeaponName.innerText = build.weapon || (isEn ? "Not specified" : "Não informado");
             lblWeaponMeta.innerText = isEn ? "Secondary level / Incomplete sync" : "Nível secundário / Sem sincronização completa";
             imgWeaponIcon.src = "/assets/chat_icon.png";
+            if (weaponDetailEl) {
+                weaponDetailEl.classList.remove("weapon-detail--interactive");
+                weaponDetailEl.removeAttribute("data-hoyo-tooltip");
+                weaponDetailEl.removeAttribute("data-tooltip-title");
+                weaponDetailEl.removeAttribute("data-tooltip-type");
+                weaponDetailEl.removeAttribute("data-tooltip-status");
+                weaponDetailEl.removeAttribute("data-tooltip-status-class");
+                weaponDetailEl.removeAttribute("data-tooltip-desc");
+                weaponDetailEl.removeAttribute("title");
+            }
+            if (weaponHintEl) weaponHintEl.style.display = "none";
         }
         
-        // 2. Renderiza Conjuntos de Relíquias (Sets)
+        // 2. Renderiza Conjuntos de Relíquias / Artefatos / Discos (com Hover Tooltip 2p/4p)
         const setsList = document.getElementById("ins-relic-sets");
         setsList.innerHTML = "";
         
-        if (build.sets && build.sets.length > 0) {
-            build.sets.forEach(set => {
+        const setsDetail = (build && Array.isArray(build.sets_detail) && build.sets_detail.length > 0)
+            ? build.sets_detail
+            : ((Array.isArray(char.sets_detail) && char.sets_detail.length > 0)
+                ? char.sets_detail
+                : (build.sets || []).map(rawLabel => ({ label: rawLabel, name: rawLabel, pieces: 2, two_pc: "", four_pc: "", is_planar: false })));
+
+        if (setsDetail.length > 0) {
+            setsDetail.forEach(sd => {
+                const pieces = Number(sd.pieces) || 2;
+                const setName = sd.name || sd.label || "";
+                const displayLabel = sd.label || `${pieces}p ${setName}`;
+                const twoPc = cleanHoyoverseText(sd.two_pc || "");
+                const fourPc = cleanHoyoverseText(sd.four_pc || "");
+                const isPlanar = Boolean(sd.is_planar);
+
+                let setTypeLabel = isEn ? "Artifact Set" : "Conjunto de Artefatos";
+                if (gameId === "hsr") {
+                    setTypeLabel = isPlanar
+                        ? (isEn ? "Planar Ornament" : "Ornamento Planar")
+                        : (isEn ? "Relic Set" : "Conjunto de Relíquias");
+                } else if (gameId === "zzz") {
+                    setTypeLabel = isEn ? "Drive Disc Set" : "Conjunto de Discos";
+                }
+
+                const statusBadge = pieces < 2
+                    ? `${pieces}${isEn ? "pc (Inactive)" : "p (Inativo)"}`
+                    : `${pieces}${isEn ? "pc Active" : "p Ativo"}`;
+                const statusClass = pieces < 2 ? "locked" : ((pieces >= 4 || isPlanar) ? "boosted" : "active");
+
+                const activeTag = isEn ? "Active" : "Ativo";
+                const inactiveTag = isEn ? "Inactive" : "Inativo";
+                const descLines = [];
+                if (twoPc) {
+                    const st2 = pieces >= 2 ? activeTag : inactiveTag;
+                    descLines.push(`${isEn ? "2-Piece" : "2 Peças"} (${st2}):\n${twoPc}`);
+                }
+                if (fourPc) {
+                    const st4 = pieces >= 4 ? activeTag : inactiveTag;
+                    descLines.push(`${isEn ? "4-Piece" : "4 Peças"} (${st4}):\n${fourPc}`);
+                }
+                const setTooltipDesc = descLines.length > 0
+                    ? descLines.join("\n\n")
+                    : (isEn ? "Set bonus details will appear after syncing the equipment catalog." : "Detalhes do conjunto disponíveis após sincronizar o catálogo de equipamentos.");
+
                 const item = document.createElement("div");
-                item.className = "set-item";
-                item.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles" style="font-size: 11px; margin-right: 4px; color: var(--color-hsr);"></i> ${set}`;
+                item.className = "set-item set-item--interactive";
+                item.setAttribute("data-hoyo-tooltip", "true");
+                item.setAttribute("data-tooltip-title", setName || displayLabel);
+                item.setAttribute("data-tooltip-type", setTypeLabel);
+                item.setAttribute("data-tooltip-status", statusBadge);
+                item.setAttribute("data-tooltip-status-class", statusClass);
+                item.setAttribute("data-tooltip-desc", setTooltipDesc);
+                item.title = `${setTypeLabel} • ${setName || displayLabel} (${statusBadge})\n\n${setTooltipDesc}`;
+
+                item.innerHTML = `
+                    <span class="set-item-main">
+                        <i class="fa-solid fa-wand-magic-sparkles set-item-spark"></i>
+                        <span class="set-item-label">${escapeHtml(displayLabel)}</span>
+                    </span>
+                    <i class="fa-solid fa-circle-info equip-hover-hint" aria-hidden="true"></i>
+                `;
                 setsList.appendChild(item);
             });
         } else {

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 BASE_DIR = get_data_dir()
 DATABASE_NAME = os.path.join(BASE_DIR, "hoyo_app.db")
-CURRENT_DB_VERSION = 1
+CURRENT_DB_VERSION = 2
 
 _INIT_LOCK = threading.RLock()
 _INIT_STATE = threading.local()
@@ -428,6 +428,8 @@ def init_db() -> None:
                             ("weapon_rarity", "INTEGER"),
                             ("sets_json", "TEXT"),
                             ("ex_ranks_json", "TEXT"),
+                            ("weapon_info_json", "TEXT"),
+                            ("sets_detail_json", "TEXT"),
                         ],
                     )
 
@@ -1270,6 +1272,8 @@ def save_character(
     weapon_rarity: Optional[int] = None,
     sets_json: Optional[str] = None,
     ex_ranks_json: Optional[str] = None,
+    weapon_info_json: Optional[str] = None,
+    sets_detail_json: Optional[str] = None,
 ) -> None:
     """Salva ou atualiza as informações de um personagem no SQLite."""
     if weapon_rarity is None and weapon_name:
@@ -1286,8 +1290,8 @@ def save_character(
         INSERT OR REPLACE INTO characters (
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
             weapon_name, weapon_level, weapon_rank, weapon_icon, raw_md, char_id, skills_json, stats_json, ranks_json,
-            weapon_rarity, sets_json, ex_ranks_json
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            weapon_rarity, sets_json, ex_ranks_json, weapon_info_json, sets_detail_json
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 uid,
@@ -1311,6 +1315,8 @@ def save_character(
                 weapon_rarity,
                 sets_json,
                 ex_ranks_json,
+                weapon_info_json,
+                sets_detail_json,
             ),
         )
 
@@ -1414,7 +1420,8 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
         char_cols = """
             uid, game_id, name, level, rarity, rank_str, element, icon, gacha_art,
             weapon_name, weapon_level, weapon_rank, weapon_icon, char_id,
-            skills_json, stats_json, ranks_json, weapon_rarity, sets_json, ex_ranks_json, raw_md
+            skills_json, stats_json, ranks_json, weapon_rarity, sets_json, ex_ranks_json,
+            weapon_info_json, sets_detail_json, raw_md
         """
         if target_uid:
             cursor.execute(
@@ -1508,7 +1515,7 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                         }
                     )
 
-            # Arma com raridade calculada/preservada
+            # Arma com raridade calculada/preservada e metadados extras (passiva/stats)
             weapon_data = None
             if r["weapon_name"]:
                 calc_rarity = get_weapon_rarity(game_clean, r["weapon_name"])
@@ -1520,6 +1527,12 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                     "icon": r["weapon_icon"],
                     "rarity": w_rarity,
                 }
+                if "weapon_info_json" in r_keys and r["weapon_info_json"]:
+                    parsed_w_info = _safe_json_loads(r["weapon_info_json"], dict, "characters.weapon_info_json")
+                    if isinstance(parsed_w_info, dict):
+                        for extra_k in ("passive_name", "desc", "main_stat", "sub_stat", "type"):
+                            if parsed_w_info.get(extra_k):
+                                weapon_data[extra_k] = parsed_w_info[extra_k]
 
             # Conjuntos de relíquias com efeito ativo (>= 2 peças)
             sets_list = (
@@ -1531,6 +1544,12 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                 sets_list = []
             if not sets_list and "raw_md" in r_keys and r["raw_md"]:
                 sets_list = parse_sets_from_raw_md(r["raw_md"])
+
+            sets_detail_list = []
+            if "sets_detail_json" in r_keys and r["sets_detail_json"]:
+                parsed_sd = _safe_json_loads(r["sets_detail_json"], list, "characters.sets_detail_json")
+                if isinstance(parsed_sd, list):
+                    sets_detail_list = parsed_sd
 
             ex_ranks_list = []
             if "ex_ranks_json" in r_keys and r["ex_ranks_json"]:
@@ -1550,6 +1569,7 @@ def get_roster_data(game_id: str, uid: Optional[str] = None) -> List[Dict[str, A
                 "gacha_art": r["gacha_art"] if "gacha_art" in r_keys else None,
                 "weapon": weapon_data,
                 "sets": sets_list,
+                "sets_detail": sets_detail_list,
                 "relics": relics_list,
                 "skills": skills_list,
                 "ranks": ranks_list,

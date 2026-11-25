@@ -1,0 +1,1341 @@
+{
+  "game_id": "zzz",
+  "source": "HoYoWiki ZZZ (PT-BR)",
+  "updated_at": "2026-11-25T16:00:54.429972",
+  "weapons": {
+    "fogofatuo": {
+      "id": "936",
+      "name": "Fogo Fátuo",
+      "rarity": 4,
+      "passive_name": "Fogo Enjaulado",
+      "desc": "O portador causa mais 15% de Dano de Fogo. Quando os PV do portador diminuem, a Taxa CRIT aumenta 15% por 5s.",
+      "ranks": {
+        "1": "O portador causa mais 15% de Dano de Fogo. Quando os PV do portador diminuem, a Taxa CRIT aumenta 15% por 5s.",
+        "2": "O portador causa mais 17,25% de Dano de Fogo. Quando os PV do portador diminuem, a Taxa CRIT aumenta 17,25% por 5s.",
+        "3": "O portador causa mais 19,5% de Dano de Fogo. Quando os PV do portador diminuem, a Taxa CRIT aumenta 19,5% por 5s.",
+        "4": "O portador causa mais 21,75% de Dano de Fogo. Quando os PV do portador diminuem, a Taxa CRIT aumenta 21,75% por 5s.",
+        "5": "O portador causa mais 24% de Dano de Fogo. Quando os PV do portador diminuem, a Taxa CRIT aumenta 24% por 5s."
+      },
+      "aliases": [
+        "Grill O'Wisp"
+      ]
+    },
+    "forjadossonhos": {
+      "id": "935",
+      "name": "Forja dos Sonhos",
+      "rarity": 5,
+      "passive_name": "Ode à Lua",
+      "desc": "A Recuperação de Energia do portador aumenta 0,4 pontos por segundo. Quando o portador ativa o Véu de Éter, ou estende a duração do Véu de Éter, todos os personagens da equipe causam 25% mais dano e têm mais 15% de Máx. de PV por 45s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+      "ranks": {
+        "1": "A Recuperação de Energia do portador aumenta 0,4 pontos por segundo. Quando o portador ativa o Véu de Éter, ou estende a duração do Véu de Éter, todos os personagens da equipe causam 25% mais dano e têm mais 15% de Máx. de PV por 45s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "2": "A Recuperação de Energia do portador aumenta 0,46 pontos por segundo. Quando o portador ativa o Véu de Éter, ou estende a duração do Véu de Éter, todos os personagens da equipe causam 28,8% mais dano e têm mais 17,3% de Máx. de PV por 45s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "3": "A Recuperação de Energia do portador aumenta 0,52 pontos por segundo. Quando o portador ativa o Véu de Éter, ou estende a duração do Véu de Éter, todos os personagens da equipe causam 32,5% mais dano e têm mais 19,5% de Máx. de PV por 45s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "4": "A Recuperação de Energia do portador aumenta 0,58 pontos por segundo. Quando o portador ativa o Véu de Éter, ou estende a duração do Véu de Éter, todos os personagens da equipe causam 35,3% mais dano e têm mais 21,8% de Máx. de PV por 45s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "5": "A Recuperação de Energia do portador aumenta 0,64 pontos por segundo. Quando o portador ativa o Véu de Éter, ou estende a duração do Véu de Éter, todos os personagens da equipe causam 40% mais dano e têm mais 24% de Máx. de PV por 45s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe."
+      },
+      "aliases": [
+        "Dreamlit Hearth"
+      ]
+    },
+    "chamasestrondosas": {
+      "id": "929",
+      "name": "Chamas Estrondosas",
+      "rarity": 5,
+      "passive_name": "Coro Devorador de Chamas",
+      "desc": "A Taxa CRIT aumenta 20%. Quando o portador causa Dano de Fogo ao executar um Ataque Subsequente, os ataques do portador ignoram 15% da DEF do inimigo por 8s. Pode acumular 1 vez a cada 3s, até 2 acúmulos. Ativações repetidas reiniciam a duração.",
+      "ranks": {
+        "1": "A Taxa CRIT aumenta 20%. Quando o portador causa Dano de Fogo ao executar um Ataque Subsequente, os ataques do portador ignoram 15% da DEF do inimigo por 8s. Pode acumular 1 vez a cada 3s, até 2 acúmulos. Ativações repetidas reiniciam a duração.",
+        "2": "A Taxa CRIT aumenta 22%. Quando o portador causa Dano de Fogo ao executar um Ataque Subsequente, os ataques do portador ignoram 17,2% da DEF do inimigo por 8s. Pode acumular 1 vez a cada 3s, até 2 acúmulos. Ativações repetidas reiniciam a duração.",
+        "3": "A Taxa CRIT aumenta 26%. Quando o portador causa Dano de Fogo ao executar um Ataque Subsequente, os ataques do portador ignoram 19,5% da DEF do inimigo por 8s. Pode acumular 1 vez a cada 3s, até 2 acúmulos. Ativações repetidas reiniciam a duração.",
+        "4": "A Taxa CRIT aumenta 29%. Quando o portador causa Dano de Fogo ao executar um Ataque Subsequente, os ataques do portador ignoram 21,7% da DEF do inimigo por 8s. Pode acumular 1 vez a cada 3s, até 2 acúmulos. Ativações repetidas reiniciam a duração.",
+        "5": "A Taxa CRIT aumenta 32%. Quando o portador causa Dano de Fogo ao executar um Ataque Subsequente, os ataques do portador ignoram 24% da DEF do inimigo por 8s. Pode acumular 1 vez a cada 3s, até 2 acúmulos. Ativações repetidas reiniciam a duração."
+      },
+      "aliases": [
+        "Bellicose Blaze"
+      ]
+    },
+    "cordisgermina": {
+      "id": "910",
+      "name": "Cordis Germina",
+      "rarity": 5,
+      "passive_name": "Núcleo de Fundição Germinante",
+      "desc": "A Taxa CRIT aumenta 15%. Quando o portador causa dano com Ataque Básico ou Ataque Especial Reforçado, obtém 1 acúmulo de bônus. Cada acúmulo aumenta 12,5% do Dano Elétrico do portador, até o máximo de 2 acúmulos, por 40s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 2 acúmulos, o Ataque Básico e o Supremo do portador ignoram 20% da DEF do inimigo.",
+      "ranks": {
+        "1": "A Taxa CRIT aumenta 15%. Quando o portador causa dano com Ataque Básico ou Ataque Especial Reforçado, obtém 1 acúmulo de bônus. Cada acúmulo aumenta 12,5% do Dano Elétrico do portador, até o máximo de 2 acúmulos, por 40s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 2 acúmulos, o Ataque Básico e o Supremo do portador ignoram 20% da DEF do inimigo.",
+        "2": "A Taxa CRIT aumenta 17%. Quando o portador causa dano com Ataque Básico ou Ataque Especial Reforçado, obtém 1 acúmulo de bônus. Cada acúmulo aumenta 14,5% do Dano Elétrico do portador, até o máximo de 2 acúmulos, por 40s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 2 acúmulos, o Ataque Básico e o Supremo do portador ignoram 23% da DEF do inimigo.",
+        "3": "A Taxa CRIT aumenta 19%. Quando o portador causa dano com Ataque Básico ou Ataque Especial Reforçado, obtém 1 acúmulo de bônus. Cada acúmulo aumenta 16,5% do Dano Elétrico do portador, até o máximo de 2 acúmulos, por 40s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 2 acúmulos, o Ataque Básico e o Supremo do portador ignoram 26% da DEF do inimigo.",
+        "4": "A Taxa CRIT aumenta 21%. Quando o portador causa dano com Ataque Básico ou Ataque Especial Reforçado, obtém 1 acúmulo de bônus. Cada acúmulo aumenta 18,5% do Dano Elétrico do portador, até o máximo de 2 acúmulos, por 40s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 2 acúmulos, o Ataque Básico e o Supremo do portador ignoram 29% da DEF do inimigo.",
+        "5": "A Taxa CRIT aumenta 23%. Quando o portador causa dano com Ataque Básico ou Ataque Especial Reforçado, obtém 1 acúmulo de bônus. Cada acúmulo aumenta 20% do Dano Elétrico do portador, até o máximo de 2 acúmulos, por 40s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 2 acúmulos, o Ataque Básico e o Supremo do portador ignoram 32% da DEF do inimigo."
+      },
+      "aliases": []
+    },
+    "forjadasdezdirecoes": {
+      "id": "903",
+      "name": "Forja das Dez Direções",
+      "rarity": 5,
+      "passive_name": "Poeira Estelar de Presente",
+      "desc": "A Maestria de Anomalia do portador aumenta 60 ponto(s). Ao provocar Ofensiva, o Dano Físico do portador aumenta 20%% por 20s, acumulando até 2 vezes. Ativações repetidas reiniciam a duração. Ao entrar em combate, o portador obtém 2 acúmulos.",
+      "ranks": {
+        "1": "A Maestria de Anomalia do portador aumenta 60 ponto(s). Ao provocar Ofensiva, o Dano Físico do portador aumenta 20%% por 20s, acumulando até 2 vezes. Ativações repetidas reiniciam a duração. Ao entrar em combate, o portador obtém 2 acúmulos.",
+        "2": "A Maestria de Anomalia do portador aumenta 69 ponto(s). Ao provocar Ofensiva, o Dano Físico do portador aumenta 23%% por 20s, acumulando até 2 vezes. Ativações repetidas reiniciam a duração. Ao entrar em combate, o portador obtém 2 acúmulos.",
+        "3": "A Maestria de Anomalia do portador aumenta 78 ponto(s). Ao provocar Ofensiva, o Dano Físico do portador aumenta 26%% por 20s, acumulando até 2 vezes. Ativações repetidas reiniciam a duração. Ao entrar em combate, o portador obtém 2 acúmulos.",
+        "4": "A Maestria de Anomalia do portador aumenta 87 ponto(s). Ao provocar Ofensiva, o Dano Físico do portador aumenta 29%% por 20s, acumulando até 2 vezes. Ativações repetidas reiniciam a duração. Ao entrar em combate, o portador obtém 2 acúmulos.",
+        "5": "A Maestria de Anomalia do portador aumenta 96 ponto(s). Ao provocar Ofensiva, o Dano Físico do portador aumenta 32%% por 20s, acumulando até 2 vezes. Ativações repetidas reiniciam a duração. Ao entrar em combate, o portador obtém 2 acúmulos."
+      },
+      "aliases": [
+        "Practiced Perfection"
+      ]
+    },
+    "setemudancasdetanuki": {
+      "id": "877",
+      "name": "Sete Mudanças de Tanuki",
+      "rarity": 5,
+      "passive_name": "Engenhosidade Extraordinária",
+      "desc": "Quando o portador causa Dano Físico por meio do Ataque Especial Reforçado ou Supremo, a Maestria de Anomalia do portador aumenta 30 pontos durante 40s. Quando o Ataque Subsequente do portador acerta um inimigo, a Proficiência de Anomalia de todos os personagens da equipe aumenta 60 pontos durante 40s. Este efeito só pode ser ativado uma vez para toda a equipe.",
+      "ranks": {
+        "1": "Quando o portador causa Dano Físico por meio do Ataque Especial Reforçado ou Supremo, a Maestria de Anomalia do portador aumenta 30 pontos durante 40s. Quando o Ataque Subsequente do portador acerta um inimigo, a Proficiência de Anomalia de todos os personagens da equipe aumenta 60 pontos durante 40s. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "2": "Quando o portador causa Dano Físico por meio do Ataque Especial Reforçado ou Supremo, a Maestria de Anomalia do portador aumenta 34 pontos durante 40s. Quando o Ataque Subsequente do portador acerta um inimigo, a Proficiência de Anomalia de todos os personagens da equipe aumenta 69 pontos durante 40s. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "3": "Quando o portador causa Dano Físico por meio do Ataque Especial Reforçado ou Supremo, a Maestria de Anomalia do portador aumenta 39 pontos durante 40s. Quando o Ataque Subsequente do portador acerta um inimigo, a Proficiência de Anomalia de todos os personagens da equipe aumenta 78 pontos durante 40s. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "4": "Quando o portador causa Dano Físico por meio do Ataque Especial Reforçado ou Supremo, a Maestria de Anomalia do portador aumenta 43 pontos durante 40s. Quando o Ataque Subsequente do portador acerta um inimigo, a Proficiência de Anomalia de todos os personagens da equipe aumenta 87 pontos durante 40s. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "5": "Quando o portador causa Dano Físico por meio do Ataque Especial Reforçado ou Supremo, a Maestria de Anomalia do portador aumenta 48 pontos durante 40s. Quando o Ataque Subsequente do portador acerta um inimigo, a Proficiência de Anomalia de todos os personagens da equipe aumenta 96 pontos durante 40s. Este efeito só pode ser ativado uma vez para toda a equipe."
+      },
+      "aliases": [
+        "Metanukimorphosis"
+      ]
+    },
+    "fornalhafufuriosa": {
+      "id": "851",
+      "name": "Fornalha Fufuriosa",
+      "rarity": 5,
+      "passive_name": "Espírito do Tigre",
+      "desc": "O Atordoamento causado pelo Ataque Especial Reforçado, Ataque em Cadeia e Supremo do portador aumenta 28%.Ao realizar um Ataque em Cadeia ou Supremo e causar Dano de Fogo, o dano causado por toda a equipe aumenta 10%, acumulando até 2 vezes por 30s. A duração de cada acúmulo é calculada separadamente. Pode ser ativado uma vez por uso da habilidade. Este efeito só pode ser ativado uma vez para toda a equipe.",
+      "ranks": {
+        "1": "O Atordoamento causado pelo Ataque Especial Reforçado, Ataque em Cadeia e Supremo do portador aumenta 28%.Ao realizar um Ataque em Cadeia ou Supremo e causar Dano de Fogo, o dano causado por toda a equipe aumenta 10%, acumulando até 2 vezes por 30s. A duração de cada acúmulo é calculada separadamente. Pode ser ativado uma vez por uso da habilidade. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "2": "O Atordoamento causado pelo Ataque Especial Reforçado, Ataque em Cadeia e Supremo do portador aumenta 32.2%.Ao realizar um Ataque em Cadeia ou Supremo e causar Dano de Fogo, o dano causado por toda a equipe aumenta 11.5%, acumulando até 2 vezes por 30s. A duração de cada acúmulo é calculada separadamente. Pode ser ativado uma vez por uso da habilidade. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "3": "O Atordoamento causado pelo Ataque Especial Reforçado, Ataque em Cadeia e Supremo do portador aumenta 36.4%.Ao realizar um Ataque em Cadeia ou Supremo e causar Dano de Fogo, o dano causado por toda a equipe aumenta 13%, acumulando até 2 vezes por 30s. A duração de cada acúmulo é calculada separadamente. Pode ser ativado uma vez por uso da habilidade. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "4": "O Atordoamento causado pelo Ataque Especial Reforçado, Ataque em Cadeia e Supremo do portador aumenta 40.6%.Ao realizar um Ataque em Cadeia ou Supremo e causar Dano de Fogo, o dano causado por toda a equipe aumenta 14.5%, acumulando até 2 vezes por 30s. A duração de cada acúmulo é calculada separadamente. Pode ser ativado uma vez por uso da habilidade. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "5": "O Atordoamento causado pelo Ataque Especial Reforçado, Ataque em Cadeia e Supremo do portador aumenta 44.8%.Ao realizar um Ataque em Cadeia ou Supremo e causar Dano de Fogo, o dano causado por toda a equipe aumenta 16%, acumulando até 2 vezes por 30s. A duração de cada acúmulo é calculada separadamente. Pode ser ativado uma vez por uso da habilidade. Este efeito só pode ser ativado uma vez para toda a equipe."
+      },
+      "aliases": [
+        "Roaring Fur-nace"
+      ]
+    },
+    "cinzascobalto": {
+      "id": "787",
+      "name": "[Cinzas] Cobalto",
+      "rarity": 3,
+      "passive_name": "Fogo Sombrio",
+      "desc": "Ao se tornar o personagem ativo em combate, o ATQ do portador aumenta 7,2% por 10s. Esse efeito pode ser ativado uma vez a cada 20s.",
+      "ranks": {
+        "1": "Ao se tornar o personagem ativo em combate, o ATQ do portador aumenta 7,2% por 10s. Esse efeito pode ser ativado uma vez a cada 20s.",
+        "2": "Ao se tornar o personagem ativo em combate, o ATQ do portador aumenta 8,2% por 10s. Esse efeito pode ser ativado uma vez a cada 20s.",
+        "3": "Ao se tornar o personagem ativo em combate, o ATQ do portador aumenta 9,3% por 10s. Esse efeito pode ser ativado uma vez a cada 20s.",
+        "4": "Ao se tornar o personagem ativo em combate, o ATQ do portador aumenta 10,4% por 10s. Esse efeito pode ser ativado uma vez a cada 20s.",
+        "5": "Ao se tornar o personagem ativo em combate, o ATQ do portador aumenta 11,5% por 10s. Esse efeito pode ser ativado uma vez a cada 20s."
+      },
+      "aliases": [
+        "[Cinder] Cobalt"
+      ]
+    },
+    "passeioeletromagnetico": {
+      "id": "786",
+      "name": "Passeio Eletromagnético",
+      "rarity": 4,
+      "passive_name": "Ritmo Tranquilo",
+      "desc": "Ao realizar um Ataque em Cadeia ou Supremo, o portador obtém 1 acúmulo do efeito do bônus. Para cada acúmulo, o Dano Bruto do portador aumenta 80 acumulando até 3 vezes, por 12s. A duração de cada acúmulo é calculada separadamente.",
+      "ranks": {
+        "1": "Ao realizar um Ataque em Cadeia ou Supremo, o portador obtém 1 acúmulo do efeito do bônus. Para cada acúmulo, o Dano Bruto do portador aumenta 80 acumulando até 3 vezes, por 12s. A duração de cada acúmulo é calculada separadamente.",
+        "2": "Ao realizar um Ataque em Cadeia ou Supremo, o portador obtém 1 acúmulo do efeito do bônus. Para cada acúmulo, o Dano Bruto do portador aumenta 92 acumulando até 3 vezes, por 12s. A duração de cada acúmulo é calculada separadamente.",
+        "3": "Ao realizar um Ataque em Cadeia ou Supremo, o portador obtém 1 acúmulo do efeito do bônus. Para cada acúmulo, o Dano Bruto do portador aumenta 104 acumulando até 3 vezes, por 12s. A duração de cada acúmulo é calculada separadamente.",
+        "4": "Ao realizar um Ataque em Cadeia ou Supremo, o portador obtém 1 acúmulo do efeito do bônus. Para cada acúmulo, o Dano Bruto do portador aumenta 116 acumulando até 3 vezes, por 12s. A duração de cada acúmulo é calculada separadamente.",
+        "5": "Ao realizar um Ataque em Cadeia ou Supremo, o portador obtém 1 acúmulo do efeito do bônus. Para cada acúmulo, o Dano Bruto do portador aumenta 128 acumulando até 3 vezes, por 12s. A duração de cada acúmulo é calculada separadamente."
+      },
+      "aliases": [
+        "Radiowave Journey"
+      ]
+    },
+    "cubomagico": {
+      "id": "785",
+      "name": "Cubo Mágico",
+      "rarity": 4,
+      "passive_name": "Arte da Artimanha",
+      "desc": "Ao ativar um Ataque Especial Reforçado, o Dano CRIT do portador aumenta 16% por 12s. Além disso, quando o PV do alvo está abaixo de 50% do máx. de PV, o dano causado pelo Ataque Especial Reforçado aumenta 20%.",
+      "ranks": {
+        "1": "Ao ativar um Ataque Especial Reforçado, o Dano CRIT do portador aumenta 16% por 12s. Além disso, quando o PV do alvo está abaixo de 50% do máx. de PV, o dano causado pelo Ataque Especial Reforçado aumenta 20%.",
+        "2": "Ao ativar um Ataque Especial Reforçado, o Dano CRIT do portador aumenta 18.4% por 12s. Além disso, quando o PV do alvo está abaixo de 50% do máx. de PV, o dano causado pelo Ataque Especial Reforçado aumenta 23%.",
+        "3": "Ao ativar um Ataque Especial Reforçado, o Dano CRIT do portador aumenta 20.8% por 12s. Além disso, quando o PV do alvo está abaixo de 50% do máx. de PV, o dano causado pelo Ataque Especial Reforçado aumenta 26%.",
+        "4": "Ao ativar um Ataque Especial Reforçado, o Dano CRIT do portador aumenta 23.2% por 12s. Além disso, quando o PV do alvo está abaixo de 50% do máx. de PV, o dano causado pelo Ataque Especial Reforçado aumenta 29%.",
+        "5": "Ao ativar um Ataque Especial Reforçado, o Dano CRIT do portador aumenta 25.6% por 12s. Além disso, quando o PV do alvo está abaixo de 50% do máx. de PV, o dano causado pelo Ataque Especial Reforçado aumenta 32%."
+      },
+      "aliases": [
+        "Puzzle Sphere"
+      ]
+    },
+    "projetoranalogico": {
+      "id": "784",
+      "name": "Projetor Analógico",
+      "rarity": 4,
+      "passive_name": "Gravação Fugaz",
+      "desc": "Quando o PV dos personagens na equipe for maior ou igual a 50%, o dano sofrido diminui 7.5% e a Contaminação por Miasma diminui 10%. Este efeito só pode ser ativado uma vez para toda a equipe.",
+      "ranks": {
+        "1": "Quando o PV dos personagens na equipe for maior ou igual a 50%, o dano sofrido diminui 7.5% e a Contaminação por Miasma diminui 10%. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "2": "Quando o PV dos personagens na equipe for maior ou igual a 50%, o dano sofrido diminui 8.6% e a Contaminação por Miasma diminui 11.5%. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "3": "Quando o PV dos personagens na equipe for maior ou igual a 50%, o dano sofrido diminui 9.7% e a Contaminação por Miasma diminui 13%. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "4": "Quando o PV dos personagens na equipe for maior ou igual a 50%, o dano sofrido diminui 10.8% e a Contaminação por Miasma diminui 14.5%. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "5": "Quando o PV dos personagens na equipe for maior ou igual a 50%, o dano sofrido diminui 12% e a Contaminação por Miasma diminui 16%. Este efeito só pode ser ativado uma vez para toda a equipe."
+      },
+      "aliases": [
+        "Reel Projector"
+      ]
+    },
+    "nucleosismico": {
+      "id": "783",
+      "name": "Núcleo Sísmico",
+      "rarity": 4,
+      "passive_name": "Mapeamento de Meridianos",
+      "desc": "O dano causado pelo Ataque Especial Reforçado e Supremo do portador aumenta 25%. Quando qualquer personagem da equipe sofre dano ou recupera PV, o portador restaura 2 pontos de Energia. Esse efeito pode ser ativado uma vez a cada 5s.",
+      "ranks": {
+        "1": "O dano causado pelo Ataque Especial Reforçado e Supremo do portador aumenta 25%. Quando qualquer personagem da equipe sofre dano ou recupera PV, o portador restaura 2 pontos de Energia. Esse efeito pode ser ativado uma vez a cada 5s.",
+        "2": "O dano causado pelo Ataque Especial Reforçado e Supremo do portador aumenta 28.7%. Quando qualquer personagem da equipe sofre dano ou recupera PV, o portador restaura 2.3 pontos de Energia. Esse efeito pode ser ativado uma vez a cada 5s.",
+        "3": "O dano causado pelo Ataque Especial Reforçado e Supremo do portador aumenta 32.5%. Quando qualquer personagem da equipe sofre dano ou recupera PV, o portador restaura 2.6 pontos de Energia. Esse efeito pode ser ativado uma vez a cada 5s.",
+        "4": "O dano causado pelo Ataque Especial Reforçado e Supremo do portador aumenta 36.2%. Quando qualquer personagem da equipe sofre dano ou recupera PV, o portador restaura 2.9 pontos de Energia. Esse efeito pode ser ativado uma vez a cada 5s.",
+        "5": "O dano causado pelo Ataque Especial Reforçado e Supremo do portador aumenta 40%. Quando qualquer personagem da equipe sofre dano ou recupera PV, o portador restaura 3.2 pontos de Energia. Esse efeito pode ser ativado uma vez a cada 5s."
+      },
+      "aliases": [
+        "Tremor Trigram Vessel"
+      ]
+    },
+    "abrigodeqingming": {
+      "id": "782",
+      "name": "Abrigo de Qingming",
+      "rarity": 5,
+      "passive_name": "Curso das Nuvens",
+      "desc": "A Taxa CRIT aumenta 20%. Quando o portador executa um Ataque Especial Reforçado, obtém 1 acúmulo do efeito Junto de Qingming, acumulando até 2 vezes, por 15s. Ao entrar em combate, obtém 2 acúmulos imediatamente. Ativações repetidas reiniciam a duração. Para cada acúmulo do efeito Junto de Qingming, o Dano de Éter do portador aumenta 8% e o Dano Bruto de Éter do Supremo ou do Ataque Especial Reforçado aumenta 10%.",
+      "ranks": {
+        "1": "A Taxa CRIT aumenta 20%. Quando o portador executa um Ataque Especial Reforçado, obtém 1 acúmulo do efeito Junto de Qingming, acumulando até 2 vezes, por 15s. Ao entrar em combate, obtém 2 acúmulos imediatamente. Ativações repetidas reiniciam a duração. Para cada acúmulo do efeito Junto de Qingming, o Dano de Éter do portador aumenta 8% e o Dano Bruto de Éter do Supremo ou do Ataque Especial Reforçado aumenta 10%.",
+        "2": "A Taxa CRIT aumenta 23%. Quando o portador executa um Ataque Especial Reforçado, obtém 1 acúmulo do efeito Junto de Qingming, acumulando até 2 vezes, por 15s. Ao entrar em combate, obtém 2 acúmulos imediatamente. Ativações repetidas reiniciam a duração. Para cada acúmulo do efeito Junto de Qingming, o Dano de Éter do portador aumenta 9.2% e o Dano Bruto de Éter do Supremo ou do Ataque Especial Reforçado aumenta 11.5%.",
+        "3": "A Taxa CRIT aumenta 26%. Quando o portador executa um Ataque Especial Reforçado, obtém 1 acúmulo do efeito Junto de Qingming, acumulando até 2 vezes, por 15s. Ao entrar em combate, obtém 2 acúmulos imediatamente. Ativações repetidas reiniciam a duração. Para cada acúmulo do efeito Junto de Qingming, o Dano de Éter do portador aumenta 10.4% e o Dano Bruto de Éter do Supremo ou do Ataque Especial Reforçado aumenta 13%.",
+        "4": "A Taxa CRIT aumenta 29%. Quando o portador executa um Ataque Especial Reforçado, obtém 1 acúmulo do efeito Junto de Qingming, acumulando até 2 vezes, por 15s. Ao entrar em combate, obtém 2 acúmulos imediatamente. Ativações repetidas reiniciam a duração. Para cada acúmulo do efeito Junto de Qingming, o Dano de Éter do portador aumenta 11.6% e o Dano Bruto de Éter do Supremo ou do Ataque Especial Reforçado aumenta 14.5%.",
+        "5": "A Taxa CRIT aumenta 32%. Quando o portador executa um Ataque Especial Reforçado, obtém 1 acúmulo do efeito Junto de Qingming, acumulando até 2 vezes, por 15s. Ao entrar em combate, obtém 2 acúmulos imediatamente. Ativações repetidas reiniciam a duração. Para cada acúmulo do efeito Junto de Qingming, o Dano de Éter do portador aumenta 12.8% e o Dano Bruto de Éter do Supremo ou do Ataque Especial Reforçado aumenta 16%."
+      },
+      "aliases": [
+        "Qingming Birdcage"
+      ]
+    },
+    "eclipsedemilfaces": {
+      "id": "706",
+      "name": "Eclipse de Mil Faces",
+      "rarity": 5,
+      "passive_name": "Falsas Identidades",
+      "desc": "Aumenta o Dano CRIT em 45%. Ao usar um Ataque Especial Reforçado, Ataque em Cadeia ou Supremo para causar Dano de Gelo, o portador ganha o efeito de Sentença Mortal Zero Absoluto durante 3s. Enquanto Sentença Mortal Zero Absoluto estiver ativo, o personagem ignora 25% da DEF do inimigo ao atingir um golpe.",
+      "ranks": {
+        "1": "Aumenta o Dano CRIT em 45%. Ao usar um Ataque Especial Reforçado, Ataque em Cadeia ou Supremo para causar Dano de Gelo, o portador ganha o efeito de Sentença Mortal Zero Absoluto durante 3s. Enquanto Sentença Mortal Zero Absoluto estiver ativo, o personagem ignora 25% da DEF do inimigo ao atingir um golpe.",
+        "2": "Aumenta o Dano CRIT em 51.75%. Ao usar um Ataque Especial Reforçado, Ataque em Cadeia ou Supremo para causar Dano de Gelo, o portador ganha o efeito de Sentença Mortal Zero Absoluto durante 3s. Enquanto Sentença Mortal Zero Absoluto estiver ativo, o personagem ignora 28.75% da DEF do inimigo ao atingir um golpe.",
+        "3": "Aumenta o Dano CRIT em 58.5%. Ao usar um Ataque Especial Reforçado, Ataque em Cadeia ou Supremo para causar Dano de Gelo, o portador ganha o efeito de Sentença Mortal Zero Absoluto durante 3s. Enquanto Sentença Mortal Zero Absoluto estiver ativo, o personagem ignora 32.5% da DEF do inimigo ao atingir um golpe.",
+        "4": "Aumenta o Dano CRIT em 65.25%. Ao usar um Ataque Especial Reforçado, Ataque em Cadeia ou Supremo para causar Dano de Gelo, o portador ganha o efeito de Sentença Mortal Zero Absoluto durante 3s. Enquanto Sentença Mortal Zero Absoluto estiver ativo, o personagem ignora 36.25% da DEF do inimigo ao atingir um golpe.",
+        "5": "Aumenta o Dano CRIT em 72%. Ao usar um Ataque Especial Reforçado, Ataque em Cadeia ou Supremo para causar Dano de Gelo, o portador ganha o efeito de Sentença Mortal Zero Absoluto durante 3s. Enquanto Sentença Mortal Zero Absoluto estiver ativo, o personagem ignora 40% da DEF do inimigo ao atingir um golpe."
+      },
+      "aliases": [
+        "Myriad Eclipse"
+      ]
+    },
+    "sonhoestelardopassaro": {
+      "id": "705",
+      "name": "Sonho Estelar do Pássaro",
+      "rarity": 5,
+      "passive_name": "Efeito de Motor-W",
+      "desc": "A Taxa de Amplificação de Anomalia aumenta 40%. Quando o portador causa Dano de Éter, sua Proficiência de Anomalia aumenta 20 por 5s, acumulando até 6 vezes. Esse efeito pode ser ativado uma vez a cada 0,5s. Ativações repetidas reiniciam a duração.",
+      "ranks": {
+        "1": "A Taxa de Amplificação de Anomalia aumenta 40%. Quando o portador causa Dano de Éter, sua Proficiência de Anomalia aumenta 20 por 5s, acumulando até 6 vezes. Esse efeito pode ser ativado uma vez a cada 0,5s. Ativações repetidas reiniciam a duração.",
+        "2": "A Taxa de Amplificação de Anomalia aumenta 46%. Quando o portador causa Dano de Éter, sua Proficiência de Anomalia aumenta 23 por 5s, acumulando até 6 vezes. Esse efeito pode ser ativado uma vez a cada 0,5s. Ativações repetidas reiniciam a duração.",
+        "3": "A Taxa de Amplificação de Anomalia aumenta 52%. Quando o portador causa Dano de Éter, sua Proficiência de Anomalia aumenta 26 por 5s, acumulando até 6 vezes. Esse efeito pode ser ativado uma vez a cada 0,5s. Ativações repetidas reiniciam a duração.",
+        "4": "A Taxa de Amplificação de Anomalia aumenta 58%. Quando o portador causa Dano de Éter, sua Proficiência de Anomalia aumenta 29 por 5s, acumulando até 6 vezes. Esse efeito pode ser ativado uma vez a cada 0,5s. Ativações repetidas reiniciam a duração.",
+        "5": "A Taxa de Amplificação de Anomalia aumenta 64%. Quando o portador causa Dano de Éter, sua Proficiência de Anomalia aumenta 32 por 5s, acumulando até 6 vezes. Esse efeito pode ser ativado uma vez a cada 0,5s. Ativações repetidas reiniciam a duração."
+      },
+      "aliases": [
+        "Flight of Fancy"
+      ]
+    },
+    "olhosdaceifadora": {
+      "id": "701",
+      "name": "Olhos da Ceifadora",
+      "rarity": 5,
+      "passive_name": "Captura de Vento",
+      "desc": "Quando o portador atinge um inimigo com um Ataque Subsequente e causa Dano Elétrico, a DEF do alvo diminui 25% por 5s. Efeitos passivos de mesmo nome não podem ser acumulados. Se o efeito é acionado por um personagem fora de combate, o portador obtém 1 acúmulo de Prisão da Alma, até um máximo de 3 acúmulos. Este efeito só pode ser ativado uma vez por uso da habilidade. Cada acúmulo de Prisão da Alma aumenta o Impacto do portador em 4% por até 12s. A duração de cada acúmulo é calculada separadamente. Quando Prisão da Alma estiver no máximo, o Impacto do portador aumenta mais 8%.",
+      "ranks": {
+        "1": "Quando o portador atinge um inimigo com um Ataque Subsequente e causa Dano Elétrico, a DEF do alvo diminui 25% por 5s. Efeitos passivos de mesmo nome não podem ser acumulados. Se o efeito é acionado por um personagem fora de combate, o portador obtém 1 acúmulo de Prisão da Alma, até um máximo de 3 acúmulos. Este efeito só pode ser ativado uma vez por uso da habilidade. Cada acúmulo de Prisão da Alma aumenta o Impacto do portador em 4% por até 12s. A duração de cada acúmulo é calculada separadamente. Quando Prisão da Alma estiver no máximo, o Impacto do portador aumenta mais 8%.",
+        "2": "Quando o portador atinge um inimigo com um Ataque Subsequente e causa Dano Elétrico, a DEF do alvo diminui 28.75% por 5s. Efeitos passivos de mesmo nome não podem ser acumulados. Se o efeito é acionado por um personagem fora de combate, o portador obtém 1 acúmulo de Prisão da Alma, até um máximo de 3 acúmulos. Este efeito só pode ser ativado uma vez por uso da habilidade. Cada acúmulo de Prisão da Alma aumenta o Impacto do portador em 4.6% por até 12s. A duração de cada acúmulo é calculada separadamente. Quando Prisão da Alma estiver no máximo, o Impacto do portador aumenta mais 9.2%.",
+        "3": "Quando o portador atinge um inimigo com um Ataque Subsequente e causa Dano Elétrico, a DEF do alvo diminui 32.5% por 5s. Efeitos passivos de mesmo nome não podem ser acumulados. Se o efeito é acionado por um personagem fora de combate, o portador obtém 1 acúmulo de Prisão da Alma, até um máximo de 3 acúmulos. Este efeito só pode ser ativado uma vez por uso da habilidade. Cada acúmulo de Prisão da Alma aumenta o Impacto do portador em 5.2% por até 12s. A duração de cada acúmulo é calculada separadamente. Quando Prisão da Alma estiver no máximo, o Impacto do portador aumenta mais 10.4%.",
+        "4": "Quando o portador atinge um inimigo com um Ataque Subsequente e causa Dano Elétrico, a DEF do alvo diminui 36.25% por 5s. Efeitos passivos de mesmo nome não podem ser acumulados. Se o efeito é acionado por um personagem fora de combate, o portador obtém 1 acúmulo de Prisão da Alma, até um máximo de 3 acúmulos. Este efeito só pode ser ativado uma vez por uso da habilidade. Cada acúmulo de Prisão da Alma aumenta o Impacto do portador em 5.8% por até 12s. A duração de cada acúmulo é calculada separadamente. Quando Prisão da Alma estiver no máximo, o Impacto do portador aumenta mais 11.6%.",
+        "5": "Quando o portador atinge um inimigo com um Ataque Subsequente e causa Dano Elétrico, a DEF do alvo diminui 40% por 5s. Efeitos passivos de mesmo nome não podem ser acumulados. Se o efeito é acionado por um personagem fora de combate, o portador obtém 1 acúmulo de Prisão da Alma, até um máximo de 3 acúmulos. Este efeito só pode ser ativado uma vez por uso da habilidade. Cada acúmulo de Prisão da Alma aumenta o Impacto do portador em 6.4% por até 12s. A duração de cada acúmulo é calculada separadamente. Quando Prisão da Alma estiver no máximo, o Impacto do portador aumenta mais 12.8%."
+      },
+      "aliases": [
+        "Spectral Gaze"
+      ]
+    },
+    "estilete": {
+      "id": "622",
+      "name": "Estilete",
+      "rarity": 4,
+      "passive_name": "Versão lançada",
+      "desc": "1.6",
+      "ranks": {
+        "1": "1.6"
+      },
+      "aliases": [
+        "Box Cutter"
+      ]
+    },
+    "sacrificiodapureza": {
+      "id": "621",
+      "name": "Sacrifício da Pureza",
+      "rarity": 5,
+      "passive_name": "Florescer Sereno",
+      "desc": "Dano CRIT aumenta 30%. Ao atingir um inimigo com Ataque Básico, Ataque Especial, ou Ataque Subsequente, o portador obtém 1 acúmulo de efeito, que aumenta 10% de seu Dano CRIT, até o máximo de 3 acúmulos, por 30s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 3 acúmulos, o Dano Elétrico do portador aumenta 20%.",
+      "ranks": {
+        "1": "Dano CRIT aumenta 30%. Ao atingir um inimigo com Ataque Básico, Ataque Especial, ou Ataque Subsequente, o portador obtém 1 acúmulo de efeito, que aumenta 10% de seu Dano CRIT, até o máximo de 3 acúmulos, por 30s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 3 acúmulos, o Dano Elétrico do portador aumenta 20%.",
+        "2": "Dano CRIT aumenta 34.5%. Ao atingir um inimigo com Ataque Básico, Ataque Especial, ou Ataque Subsequente, o portador obtém 1 acúmulo de efeito, que aumenta 11.5% de seu Dano CRIT, até o máximo de 3 acúmulos, por 30s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 3 acúmulos, o Dano Elétrico do portador aumenta 23%.",
+        "3": "Dano CRIT aumenta 39%. Ao atingir um inimigo com Ataque Básico, Ataque Especial, ou Ataque Subsequente, o portador obtém 1 acúmulo de efeito, que aumenta 13% de seu Dano CRIT, até o máximo de 3 acúmulos, por 30s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 3 acúmulos, o Dano Elétrico do portador aumenta 26%.",
+        "4": "Dano CRIT aumenta 43.5%. Ao atingir um inimigo com Ataque Básico, Ataque Especial, ou Ataque Subsequente, o portador obtém 1 acúmulo de efeito, que aumenta 14.5% de seu Dano CRIT, até o máximo de 3 acúmulos, por 30s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 3 acúmulos, o Dano Elétrico do portador aumenta 29%.",
+        "5": "Dano CRIT aumenta 48%. Ao atingir um inimigo com Ataque Básico, Ataque Especial, ou Ataque Subsequente, o portador obtém 1 acúmulo de efeito, que aumenta 16% de seu Dano CRIT, até o máximo de 3 acúmulos, por 30s. A duração de cada acúmulo é calculada separadamente. Este efeito só pode ser ativado uma vez por uso. Com 3 acúmulos, o Dano Elétrico do portador aumenta 32%."
+      },
+      "aliases": [
+        "Severed Innocence"
+      ]
+    },
+    "soardocoracaonoturno": {
+      "id": "591",
+      "name": "Soar do Coração Noturno",
+      "rarity": 5,
+      "passive_name": "Vibração das Cordas",
+      "desc": "O Dano CRIT aumenta 50%. Quando o portador entra em estado de combate e ativa um Ataque em Cadeia, ou Supremo, o portador ganha 1 acúmulo de Fibra Cardíaca. A cada acúmulo de Fibra Cardíaca, o portador pode ignorar 12.5% da resistência ao Fogo do alvo, ao realizar Ataque em Cadeia e Supremo, podendo ter até 2 acúmulos, com duração de 30s. Ativações repetidas reiniciam a duração.",
+      "ranks": {
+        "1": "O Dano CRIT aumenta 50%. Quando o portador entra em estado de combate e ativa um Ataque em Cadeia, ou Supremo, o portador ganha 1 acúmulo de Fibra Cardíaca. A cada acúmulo de Fibra Cardíaca, o portador pode ignorar 12.5% da resistência ao Fogo do alvo, ao realizar Ataque em Cadeia e Supremo, podendo ter até 2 acúmulos, com duração de 30s. Ativações repetidas reiniciam a duração.",
+        "2": "O Dano CRIT aumenta 57.5%. Quando o portador entra em estado de combate e ativa um Ataque em Cadeia, ou Supremo, o portador ganha 1 acúmulo de Fibra Cardíaca. A cada acúmulo de Fibra Cardíaca, o portador pode ignorar 14.5% da resistência ao Fogo do alvo, ao realizar Ataque em Cadeia e Supremo, podendo ter até 2 acúmulos, com duração de 30s. Ativações repetidas reiniciam a duração.",
+        "3": "O Dano CRIT aumenta 65%. Quando o portador entra em estado de combate e ativa um Ataque em Cadeia, ou Supremo, o portador ganha 1 acúmulo de Fibra Cardíaca. A cada acúmulo de Fibra Cardíaca, o portador pode ignorar 16.5% da resistência ao Fogo do alvo, ao realizar Ataque em Cadeia e Supremo, podendo ter até 2 acúmulos, com duração de 30s. Ativações repetidas reiniciam a duração.",
+        "4": "O Dano CRIT aumenta 72.5%. Quando o portador entra em estado de combate e ativa um Ataque em Cadeia, ou Supremo, o portador ganha 1 acúmulo de Fibra Cardíaca. A cada acúmulo de Fibra Cardíaca, o portador pode ignorar 18.5% da resistência ao Fogo do alvo, ao realizar Ataque em Cadeia e Supremo, podendo ter até 2 acúmulos, com duração de 30s. Ativações repetidas reiniciam a duração.",
+        "5": "O Dano CRIT aumenta 80%. Quando o portador entra em estado de combate e ativa um Ataque em Cadeia, ou Supremo, o portador ganha 1 acúmulo de Fibra Cardíaca. A cada acúmulo de Fibra Cardíaca, o portador pode ignorar 20% da resistência ao Fogo do alvo, ao realizar Ataque em Cadeia e Supremo, podendo ter até 2 acúmulos, com duração de 30s. Ativações repetidas reiniciam a duração."
+      },
+      "aliases": [
+        "Heartstring Nocturne"
+      ]
+    },
+    "vaidadeelegante": {
+      "id": "590",
+      "name": "Vaidade Elegante",
+      "rarity": 5,
+      "passive_name": "Beleza Oculta",
+      "desc": "Quando qualquer membro da equipe entra em combate por meio de Assistência Reativa, Ataque em Cadeia, Assistência Defensiva ou Assistência Evasiva, o portador obtém 5 de Energia. Esse efeito pode ser ativado uma vez a cada 5s. Quando o portador consome 25 ou mais de Energia, o dano de todos os membros da equipe aumenta 10%, podendo acumular até 2 vezes e com duração de 20s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+      "ranks": {
+        "1": "Quando qualquer membro da equipe entra em combate por meio de Assistência Reativa, Ataque em Cadeia, Assistência Defensiva ou Assistência Evasiva, o portador obtém 5 de Energia. Esse efeito pode ser ativado uma vez a cada 5s. Quando o portador consome 25 ou mais de Energia, o dano de todos os membros da equipe aumenta 10%, podendo acumular até 2 vezes e com duração de 20s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "2": "Quando qualquer membro da equipe entra em combate por meio de Assistência Reativa, Ataque em Cadeia, Assistência Defensiva ou Assistência Evasiva, o portador obtém 5.5 de Energia. Esse efeito pode ser ativado uma vez a cada 5s. Quando o portador consome 25 ou mais de Energia, o dano de todos os membros da equipe aumenta 11.5%, podendo acumular até 2 vezes e com duração de 20s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "3": "Quando qualquer membro da equipe entra em combate por meio de Assistência Reativa, Ataque em Cadeia, Assistência Defensiva ou Assistência Evasiva, o portador obtém 6 de Energia. Esse efeito pode ser ativado uma vez a cada 5s. Quando o portador consome 25 ou mais de Energia, o dano de todos os membros da equipe aumenta 13%, podendo acumular até 2 vezes e com duração de 20s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "4": "Quando qualquer membro da equipe entra em combate por meio de Assistência Reativa, Ataque em Cadeia, Assistência Defensiva ou Assistência Evasiva, o portador obtém 6.5 de Energia. Esse efeito pode ser ativado uma vez a cada 5s. Quando o portador consome 25 ou mais de Energia, o dano de todos os membros da equipe aumenta 14.5%, podendo acumular até 2 vezes e com duração de 20s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe.",
+        "5": "Quando qualquer membro da equipe entra em combate por meio de Assistência Reativa, Ataque em Cadeia, Assistência Defensiva ou Assistência Evasiva, o portador obtém 7 de Energia. Esse efeito pode ser ativado uma vez a cada 5s. Quando o portador consome 25 ou mais de Energia, o dano de todos os membros da equipe aumenta 16%, podendo acumular até 2 vezes e com duração de 20s. Ativações repetidas reiniciam a duração. Este efeito só pode ser ativado uma vez para toda a equipe."
+      },
+      "aliases": [
+        "Elegant Vanity"
+      ]
+    },
+    "caixadeervaszanshin": {
+      "id": "541",
+      "name": "Caixa de Ervas Zanshin",
+      "rarity": 5,
+      "passive_name": "Versão Lançada",
+      "desc": "1.4",
+      "ranks": {
+        "1": "1.4"
+      },
+      "aliases": [
+        "Zanshin Herb Case"
+      ]
+    },
+    "santuariodatormenta": {
+      "id": "540",
+      "name": "Santuário da Tormenta",
+      "rarity": 5,
+      "passive_name": "Versão Lançada",
+      "desc": "1.4",
+      "ranks": {
+        "1": "1.4"
+      },
+      "aliases": [
+        "Hailstorm Shrine"
+      ]
+    },
+    "desejoirreprimivel": {
+      "id": "539",
+      "name": "Desejo Irreprimível",
+      "rarity": 4,
+      "passive_name": "Versão Lançada",
+      "desc": "1.4",
+      "ranks": {
+        "1": "1.4"
+      },
+      "aliases": [
+        "Marcato Desire"
+      ]
+    },
+    "coroaflamejante": {
+      "id": "534",
+      "name": "Coroa Flamejante",
+      "rarity": 5,
+      "passive_name": "Lançado na Versão",
+      "desc": "1.3",
+      "ranks": {
+        "1": "1.3"
+      },
+      "aliases": [
+        "Blazing Laurel"
+      ]
+    },
+    "sabiodotempo": {
+      "id": "531",
+      "name": "Sábio do Tempo",
+      "rarity": 5,
+      "passive_name": "Lançada na Versão",
+      "desc": "1.3",
+      "ranks": {
+        "1": "1.3"
+      },
+      "aliases": [
+        "Timeweaver"
+      ]
+    },
+    "coqueteleiraardente": {
+      "id": "525",
+      "name": "Coqueteleira Ardente",
+      "rarity": 5,
+      "passive_name": "Lançado na Versão",
+      "desc": "1.2",
+      "ranks": {
+        "1": "1.2"
+      },
+      "aliases": [
+        "Flamemaker Shaker"
+      ]
+    },
+    "presasdainvestida": {
+      "id": "389",
+      "name": "Presas da Investida",
+      "rarity": 5,
+      "passive_name": "Cavalaria Invencível",
+      "desc": "O portador fornece um Escudo 30% maior. Quando um membro da equipe realiza Interrupção ou Esquiva Perfeita, o dano de todos os membros aumenta 18% e o Atordoamento aumenta 12% por 20s. Efeitos passivos de mesmo nome não são acumulados.",
+      "ranks": {
+        "1": "O portador fornece um Escudo 30% maior. Quando um membro da equipe realiza Interrupção ou Esquiva Perfeita, o dano de todos os membros aumenta 18% e o Atordoamento aumenta 12% por 20s. Efeitos passivos de mesmo nome não são acumulados.",
+        "2": "O portador fornece um Escudo 38% maior. Quando um membro da equipe realiza Interrupção ou Esquiva Perfeita, o dano de todos os membros aumenta 22.5% e o Atordoamento aumenta 15% por 20s. Efeitos passivos de mesmo nome não são acumulados.",
+        "3": "O portador fornece um Escudo 46% maior. Quando um membro da equipe realiza Interrupção ou Esquiva Perfeita, o dano de todos os membros aumenta 27% e o Atordoamento aumenta 18% por 20s. Efeitos passivos de mesmo nome não são acumulados.",
+        "4": "O portador fornece um Escudo 52% maior. Quando um membro da equipe realiza Interrupção ou Esquiva Perfeita, o dano de todos os membros aumenta 31.5% e o Atordoamento aumenta 21% por 20s. Efeitos passivos de mesmo nome não são acumulados.",
+        "5": "O portador fornece um Escudo 60% maior. Quando um membro da equipe realiza Interrupção ou Esquiva Perfeita, o dano de todos os membros aumenta 36% e o Atordoamento aumenta 24% por 20s. Efeitos passivos de mesmo nome não são acumulados."
+      },
+      "aliases": [
+        "Tusks of Fury"
+      ]
+    },
+    "pacificadorespecializado": {
+      "id": "378",
+      "name": "Pacificador — Especializado",
+      "rarity": 4,
+      "passive_name": "Técnica de Bloqueio Padrão",
+      "desc": "Enquanto estiver protegido por um Escudo, a Recuperação de Energia do portador aumenta 0,4/s. A Amplificação de Anomalia de Atributo acumulada por Ataques Especiais Reforçados/Assistências Imediatas aumenta 36%] / [36%].",
+      "ranks": {
+        "1": "Enquanto estiver protegido por um Escudo, a Recuperação de Energia do portador aumenta 0,4/s. A Amplificação de Anomalia de Atributo acumulada por Ataques Especiais Reforçados/Assistências Imediatas aumenta 36%] / [36%].",
+        "2": "Enquanto estiver protegido por um Escudo, a Recuperação de Energia do portador aumenta 0,4/s. A Amplificação de Anomalia de Atributo acumulada por Ataques Especiais Reforçados/Assistências Imediatas aumenta 40%] / [40%].",
+        "3": "Enquanto estiver protegido por um Escudo, a Recuperação de Energia do portador aumenta 0,4/s. A Amplificação de Anomalia de Atributo acumulada por Ataques Especiais Reforçados/Assistências Imediatas aumenta 45%] / [45%].",
+        "4": "Enquanto estiver protegido por um Escudo, a Recuperação de Energia do portador aumenta 0,4/s. A Amplificação de Anomalia de Atributo acumulada por Ataques Especiais Reforçados/Assistências Imediatas aumenta 50%] / [50%].",
+        "5": "Enquanto estiver protegido por um Escudo, a Recuperação de Energia do portador aumenta 0,4/s. A Amplificação de Anomalia de Atributo acumulada por Ataques Especiais Reforçados/Assistências Imediatas aumenta 55%] / [55%]."
+      },
+      "aliases": [
+        "Peacekeeper - Specialized"
+      ]
+    },
+    "espinhacoafiado": {
+      "id": "377",
+      "name": "Espinhaço Afiado",
+      "rarity": 5,
+      "passive_name": "Saboreie a Caçada",
+      "desc": "Ao ativar um Ataque Rápido, você ganha 1 acúmulo de Instinto Predatório. Cada acúmulo de Instinto Predatório faz o Dano Físico do portador aumentar 12%, por 10s, acumulando até 3 vezes. Pode ser ativado uma vez a cada 0,5s e ativações repetidas reiniciam a duração. Ao entrar em combate ou ativar Esquiva Perfeita, gera 3 acúmulos de Instinto Predatório. Enquanto o Instinto Predatório estiver com o máximo de acúmulos, a Amplificação de Anomalia de Atributo do portador aumenta 40%%.",
+      "ranks": {
+        "1": "Ao ativar um Ataque Rápido, você ganha 1 acúmulo de Instinto Predatório. Cada acúmulo de Instinto Predatório faz o Dano Físico do portador aumentar 12%, por 10s, acumulando até 3 vezes. Pode ser ativado uma vez a cada 0,5s e ativações repetidas reiniciam a duração. Ao entrar em combate ou ativar Esquiva Perfeita, gera 3 acúmulos de Instinto Predatório. Enquanto o Instinto Predatório estiver com o máximo de acúmulos, a Amplificação de Anomalia de Atributo do portador aumenta 40%%.",
+        "2": "Ao ativar um Ataque Rápido, você ganha 1 acúmulo de Instinto Predatório. Cada acúmulo de Instinto Predatório faz o Dano Físico do portador aumentar 15%, por 10s, acumulando até 3 vezes. Pode ser ativado uma vez a cada 0,5s e ativações repetidas reiniciam a duração. Ao entrar em combate ou ativar Esquiva Perfeita, gera 3 acúmulos de Instinto Predatório. Enquanto o Instinto Predatório estiver com o máximo de acúmulos, a Amplificação de Anomalia de Atributo do portador aumenta 50%%.",
+        "3": "Ao ativar um Ataque Rápido, você ganha 1 acúmulo de Instinto Predatório. Cada acúmulo de Instinto Predatório faz o Dano Físico do portador aumentar 18%, por 10s, acumulando até 3 vezes. Pode ser ativado uma vez a cada 0,5s e ativações repetidas reiniciam a duração. Ao entrar em combate ou ativar Esquiva Perfeita, gera 3 acúmulos de Instinto Predatório. Enquanto o Instinto Predatório estiver com o máximo de acúmulos, a Amplificação de Anomalia de Atributo do portador aumenta 60%%.",
+        "4": "Ao ativar um Ataque Rápido, você ganha 1 acúmulo de Instinto Predatório. Cada acúmulo de Instinto Predatório faz o Dano Físico do portador aumentar 21%, por 10s, acumulando até 3 vezes. Pode ser ativado uma vez a cada 0,5s e ativações repetidas reiniciam a duração. Ao entrar em combate ou ativar Esquiva Perfeita, gera 3 acúmulos de Instinto Predatório. Enquanto o Instinto Predatório estiver com o máximo de acúmulos, a Amplificação de Anomalia de Atributo do portador aumenta 70%%.",
+        "5": "Ao ativar um Ataque Rápido, você ganha 1 acúmulo de Instinto Predatório. Cada acúmulo de Instinto Predatório faz o Dano Físico do portador aumentar 24%, por 10s, acumulando até 3 vezes. Pode ser ativado uma vez a cada 0,5s e ativações repetidas reiniciam a duração. Ao entrar em combate ou ativar Esquiva Perfeita, gera 3 acúmulos de Instinto Predatório. Enquanto o Instinto Predatório estiver com o máximo de acúmulos, a Amplificação de Anomalia de Atributo do portador aumenta 80%%."
+      },
+      "aliases": [
+        "Sharpened Stinger"
+      ]
+    },
+    "bulejadegelo": {
+      "id": "355",
+      "name": "Bule Jade-Gelo",
+      "rarity": 5,
+      "passive_name": "Melodia Ressonante",
+      "desc": "Quando um Ataque Básico atinge um inimigo, você ganha 1 acúmulo de Colher de Chá. Cada acúmulo de Colher de Chá faz o Impacto do portador aumentar 0.7%, acumulando até 30 vezes e durando 8s. A duração de cada acúmulo é calculada separadamente. Ao obter Colher de Chá, se o portador já possui 15 ou mais acúmulos de Colher de Chá, o dano causado por toda a equipe aumenta 20% por 10s. Efeitos passivos de mesmo nome não são acumulados.",
+      "ranks": {
+        "1": "Quando um Ataque Básico atinge um inimigo, você ganha 1 acúmulo de Colher de Chá. Cada acúmulo de Colher de Chá faz o Impacto do portador aumentar 0.7%, acumulando até 30 vezes e durando 8s. A duração de cada acúmulo é calculada separadamente. Ao obter Colher de Chá, se o portador já possui 15 ou mais acúmulos de Colher de Chá, o dano causado por toda a equipe aumenta 20% por 10s. Efeitos passivos de mesmo nome não são acumulados.",
+        "2": "Quando um Ataque Básico atinge um inimigo, você ganha 1 acúmulo de Colher de Chá. Cada acúmulo de Colher de Chá faz o Impacto do portador aumentar 0.88%, acumulando até 30 vezes e durando 8s. A duração de cada acúmulo é calculada separadamente. Ao obter Colher de Chá, se o portador já possui 15 ou mais acúmulos de Colher de Chá, o dano causado por toda a equipe aumenta 23% por 10s. Efeitos passivos de mesmo nome não são acumulados.",
+        "3": "Quando um Ataque Básico atinge um inimigo, você ganha 1 acúmulo de Colher de Chá. Cada acúmulo de Colher de Chá faz o Impacto do portador aumentar 1.05%, acumulando até 30 vezes e durando 8s. A duração de cada acúmulo é calculada separadamente. Ao obter Colher de Chá, se o portador já possui 15 ou mais acúmulos de Colher de Chá, o dano causado por toda a equipe aumenta 26% por 10s. Efeitos passivos de mesmo nome não são acumulados.",
+        "4": "Quando um Ataque Básico atinge um inimigo, você ganha 1 acúmulo de Colher de Chá. Cada acúmulo de Colher de Chá faz o Impacto do portador aumentar 1.22%, acumulando até 30 vezes e durando 8s. A duração de cada acúmulo é calculada separadamente. Ao obter Colher de Chá, se o portador já possui 15 ou mais acúmulos de Colher de Chá, o dano causado por toda a equipe aumenta 29% por 10s. Efeitos passivos de mesmo nome não são acumulados.",
+        "5": "Quando um Ataque Básico atinge um inimigo, você ganha 1 acúmulo de Colher de Chá. Cada acúmulo de Colher de Chá faz o Impacto do portador aumentar 1.4%, acumulando até 30 vezes e durando 8s. A duração de cada acúmulo é calculada separadamente. Ao obter Colher de Chá, se o portador já possui 15 ou mais acúmulos de Colher de Chá, o dano causado por toda a equipe aumenta 32% por 10s. Efeitos passivos de mesmo nome não são acumulados."
+      },
+      "aliases": [
+        "Ice-Jade Teapot"
+      ]
+    },
+    "florescerdourado": {
+      "id": "354",
+      "name": "Florescer Dourado",
+      "rarity": 4,
+      "passive_name": "Medidas Antifurto",
+      "desc": "ATQ aumenta 6%, e o dano causado por Ataques Especiais Reforçados aumenta y 15%%.",
+      "ranks": {
+        "1": "ATQ aumenta 6%, e o dano causado por Ataques Especiais Reforçados aumenta y 15%%.",
+        "2": "ATQ aumenta 6.9%, e o dano causado por Ataques Especiais Reforçados aumenta y 17.2%%.",
+        "3": "ATQ aumenta 7.8%, e o dano causado por Ataques Especiais Reforçados aumenta y 19.5%%.",
+        "4": "ATQ aumenta 8.7%, e o dano causado por Ataques Especiais Reforçados aumenta y 21.8%%.",
+        "5": "ATQ aumenta 9.6%, e o dano causado por Ataques Especiais Reforçados aumenta y 24%%."
+      },
+      "aliases": [
+        "Gilded Blossom"
+      ]
+    },
+    "rugidodaschamas": {
+      "id": "274",
+      "name": "Rugido das Chamas",
+      "rarity": 4,
+      "passive_name": "Potencial de Colisão",
+      "desc": "Quando um Ataque Especial Reforçado atinge um inimigo, um de três efeitos é ativado por 5s. Pode ser ativado uma vez a cada 0,3s. O mesmo tipo de efeito não pode se acumular, mas efeitos diferentes podem acontecer ao mesmo tempo: o ATQ do portador aumenta 8%; a Proficiência de Anomalia40pts e a Maestria de Anomalia 25%.",
+      "ranks": {
+        "1": "Quando um Ataque Especial Reforçado atinge um inimigo, um de três efeitos é ativado por 5s. Pode ser ativado uma vez a cada 0,3s. O mesmo tipo de efeito não pode se acumular, mas efeitos diferentes podem acontecer ao mesmo tempo: o ATQ do portador aumenta 8%; a Proficiência de Anomalia40pts e a Maestria de Anomalia 25%.",
+        "2": "Quando um Ataque Especial Reforçado atinge um inimigo, um de três efeitos é ativado por 5s. Pode ser ativado uma vez a cada 0,3s. O mesmo tipo de efeito não pode se acumular, mas efeitos diferentes podem acontecer ao mesmo tempo: o ATQ do portador aumenta 9.2%; a Proficiência de Anomalia46pts e a Maestria de Anomalia 28%.",
+        "3": "Quando um Ataque Especial Reforçado atinge um inimigo, um de três efeitos é ativado por 5s. Pode ser ativado uma vez a cada 0,3s. O mesmo tipo de efeito não pode se acumular, mas efeitos diferentes podem acontecer ao mesmo tempo: o ATQ do portador aumenta 10.4%; a Proficiência de Anomalia52pts e a Maestria de Anomalia 32%.",
+        "4": "Quando um Ataque Especial Reforçado atinge um inimigo, um de três efeitos é ativado por 5s. Pode ser ativado uma vez a cada 0,3s. O mesmo tipo de efeito não pode se acumular, mas efeitos diferentes podem acontecer ao mesmo tempo: o ATQ do portador aumenta 11.6%; a Proficiência de Anomalia58pts e a Maestria de Anomalia 36%.",
+        "5": "Quando um Ataque Especial Reforçado atinge um inimigo, um de três efeitos é ativado por 5s. Pode ser ativado uma vez a cada 0,3s. O mesmo tipo de efeito não pode se acumular, mas efeitos diferentes podem acontecer ao mesmo tempo: o ATQ do portador aumenta 12.8%; a Proficiência de Anomalia64pts e a Maestria de Anomalia 40%."
+      },
+      "aliases": [
+        "Roaring Ride"
+      ]
+    },
+    "canhaocabum": {
+      "id": "273",
+      "name": "Canhão Cabum",
+      "rarity": 4,
+      "passive_name": "Pisoteamento Acidental",
+      "desc": "Quando qualquer unidade aliada da equipe atinge um inimigo com um ataque, o ATQ de todos os membros da equipe aumenta [ ]% por [ ]s, acumulando até 4 vezes. A duração de cada acúmulo é calculada separadamente e cada aliado pode dar 1 acúmulo do bônus. Efeitos passivos de mesmo nome não são acumulados.",
+      "ranks": {
+        "1": "Quando qualquer unidade aliada da equipe atinge um inimigo com um ataque, o ATQ de todos os membros da equipe aumenta [ ]% por [ ]s, acumulando até 4 vezes. A duração de cada acúmulo é calculada separadamente e cada aliado pode dar 1 acúmulo do bônus. Efeitos passivos de mesmo nome não são acumulados."
+      },
+      "aliases": [
+        "Kaboom the Cannon"
+      ]
+    },
+    "supressorademotimtipovi": {
+      "id": "87",
+      "name": "Supressora de Motim - Tipo VI",
+      "rarity": 5,
+      "passive_name": "Patrulha de Segurança",
+      "desc": "Aumenta o Dano de Éter em 25%. Ao executar um Ataque Especial Reforçado o portador ganha 8 Cargas, que podem ser acumuladas até 8. Sempre que o Ataque Básico do portador causar Dano de Éter, uma Carga é consumida e o dano da habilidade aumenta em 45%.",
+      "ranks": {
+        "1": "Aumenta o Dano de Éter em 25%. Ao executar um Ataque Especial Reforçado o portador ganha 8 Cargas, que podem ser acumuladas até 8. Sempre que o Ataque Básico do portador causar Dano de Éter, uma Carga é consumida e o dano da habilidade aumenta em 45%."
+      },
+      "aliases": [
+        "Riot Suppressor Mark VI"
+      ]
+    },
+    "bercochoroso": {
+      "id": "86",
+      "name": "Berço Choroso",
+      "rarity": 5,
+      "passive_name": "Punição",
+      "desc": "Quando não está em campo, aumenta a Recuperação de Energia em 0,6s. Causar Dano Elétrico aumenta 15% e por 3s o dano que este alvo recebe de todos os membros da equipe. Durante este período, o efeito aumenta 2,5% a cada 0,5s, até um máximo de 15%. A reativação do efeito atualiza sua duração, mas não aumenta mais o efeito sobre o dano. Efeitos passivos com o mesmo nome não acumulam.",
+      "ranks": {
+        "1": "Quando não está em campo, aumenta a Recuperação de Energia em 0,6s. Causar Dano Elétrico aumenta 15% e por 3s o dano que este alvo recebe de todos os membros da equipe. Durante este período, o efeito aumenta 2,5% a cada 0,5s, até um máximo de 15%. A reativação do efeito atualiza sua duração, mas não aumenta mais o efeito sobre o dano. Efeitos passivos com o mesmo nome não acumulam."
+      },
+      "aliases": [
+        "Weeping Cradle"
+      ]
+    },
+    "visitantedasprofundezas": {
+      "id": "85",
+      "name": "Visitante das Profundezas",
+      "rarity": 5,
+      "passive_name": "Senhor dos Mares",
+      "desc": "O Dano de Gelo aumenta 25%. Ao atingir um inimigo com um Ataque Básico, a Taxa CRIT do portador aumenta 10% por 8s. Quando um Ataque Rápido causar o Dano de Gelo, a Taxa CRIT do portador aumenta mais 10% por 15s. A duração de cada efeito é calculada separadamente.",
+      "ranks": {
+        "1": "O Dano de Gelo aumenta 25%. Ao atingir um inimigo com um Ataque Básico, a Taxa CRIT do portador aumenta 10% por 8s. Quando um Ataque Rápido causar o Dano de Gelo, a Taxa CRIT do portador aumenta mais 10% por 15s. A duração de cada efeito é calculada separadamente."
+      },
+      "aliases": [
+        "Deep Sea Visitor"
+      ]
+    },
+    "compiladordefusao": {
+      "id": "84",
+      "name": "Compilador de Fusão",
+      "rarity": 5,
+      "passive_name": "Profusão de Dados",
+      "desc": "Aumenta o dano Elétrico em 12. Ao usar um Ataque Especial ou um Ataque Especial Reforçado, a Proficiência de Anomalia do portador aumenta 25pts durante 3s, e pode acumular até 3 vezes. A duração de cada acúmulo é calculada separadamente.",
+      "ranks": {
+        "1": "Aumenta o dano Elétrico em 12. Ao usar um Ataque Especial ou um Ataque Especial Reforçado, a Proficiência de Anomalia do portador aumenta 25pts durante 3s, e pode acumular até 3 vezes. A duração de cada acúmulo é calculada separadamente.",
+        "2": "Aumenta o dano Elétrico em 15. Ao usar um Ataque Especial ou um Ataque Especial Reforçado, a Proficiência de Anomalia do portador aumenta 31pts durante 3s, e pode acumular até 3 vezes. A duração de cada acúmulo é calculada separadamente.",
+        "3": "Aumenta o dano Elétrico em 18. Ao usar um Ataque Especial ou um Ataque Especial Reforçado, a Proficiência de Anomalia do portador aumenta 37pts durante 3s, e pode acumular até 3 vezes. A duração de cada acúmulo é calculada separadamente.",
+        "4": "Aumenta o dano Elétrico em 21. Ao usar um Ataque Especial ou um Ataque Especial Reforçado, a Proficiência de Anomalia do portador aumenta 43pts durante 3s, e pode acumular até 3 vezes. A duração de cada acúmulo é calculada separadamente.",
+        "5": "Aumenta o dano Elétrico em 24%. Ao usar um Ataque Especial ou um Ataque Especial Reforçado, a Proficiência de Anomalia do portador aumenta 50pts durante 3s, e pode acumular até 3 vezes. A duração de cada acúmulo é calculada separadamente."
+      },
+      "aliases": [
+        "Fusion Compiler"
+      ]
+    },
+    "orestrito": {
+      "id": "83",
+      "name": "O Restrito",
+      "rarity": 5,
+      "passive_name": "Algemas de Restrição",
+      "desc": "Aumenta o Dano de Gelo em 20%. Dano e Atordoamento de Ataques Básicos aumentam 20%.",
+      "ranks": {
+        "1": "Aumenta o Dano de Gelo em 20%. Dano e Atordoamento de Ataques Básicos aumentam 20%."
+      },
+      "aliases": [
+        "The Restrained"
+      ]
+    },
+    "engrenagensinfernais": {
+      "id": "82",
+      "name": "Engrenagens Infernais",
+      "rarity": 5,
+      "passive_name": "Construção Apaixonada",
+      "desc": "Aumenta o Dano de Fogo em 20%. Ao usar um Ataque Especial Reforçado, o impacto do portador aumenta em 10% durante 10s, e pode acumular até 2 vezes. A duração de cada acúmulo é calculada separadamente.",
+      "ranks": {
+        "1": "Aumenta o Dano de Fogo em 20%. Ao usar um Ataque Especial Reforçado, o impacto do portador aumenta em 10% durante 10s, e pode acumular até 2 vezes. A duração de cada acúmulo é calculada separadamente."
+      },
+      "aliases": [
+        "Hellfire Gears"
+      ]
+    },
+    "oenxofre": {
+      "id": "81",
+      "name": "O Enxofre",
+      "rarity": 5,
+      "passive_name": "Respiração Causticante",
+      "desc": "Aumenta o Dano de Fogo em 20%. Atingir um inimigo com Ataques Básicos, Ataques Rápidos ou Contraesquivas aumenta o ATQ do portador em 2% por 8s, e pode acumular até 8 vezes. Este efeito só pode ser ativado uma vez a cada 0,5s. A duração de cada acúmulo é calculada separadamente.",
+      "ranks": {
+        "1": "Aumenta o Dano de Fogo em 20%. Atingir um inimigo com Ataques Básicos, Ataques Rápidos ou Contraesquivas aumenta o ATQ do portador em 2% por 8s, e pode acumular até 8 vezes. Este efeito só pode ser ativado uma vez a cada 0,5s. A duração de cada acúmulo é calculada separadamente."
+      },
+      "aliases": [
+        "The Brimstone"
+      ]
+    },
+    "almofadadeaco": {
+      "id": "80",
+      "name": "Almofada de Aço",
+      "rarity": 5,
+      "passive_name": "Garras Felinas Metálicas",
+      "desc": "Aumenta o dano Físico em 20%. Ao atingir um inimigo pelas costas, o dano causado pelo portador aumenta 25%.",
+      "ranks": {
+        "1": "Aumenta o dano Físico em 20%. Ao atingir um inimigo pelas costas, o dano causado pelo portador aumenta 25%."
+      },
+      "aliases": [
+        "Steel Cushion"
+      ]
+    },
+    "revolvergiratorio": {
+      "id": "79",
+      "name": "Revólver Giratório",
+      "rarity": 4,
+      "passive_name": "Fogo!",
+      "desc": "O portador recebe uma carga a cada []s, acumulando até 6 vezes. Quando usar um Ataque Especial Reforçado, todas as cargas serão consumidas. Para cada carga consumida, o Atordoamento causado aumenta []%.",
+      "ranks": {
+        "1": "O portador recebe uma carga a cada []s, acumulando até 6 vezes. Quando usar um Ataque Especial Reforçado, todas as cargas serão consumidas. Para cada carga consumida, o Atordoamento causado aumenta []%."
+      },
+      "aliases": [
+        "Six Shooter"
+      ]
+    },
+    "jogadalivre": {
+      "id": "78",
+      "name": "Jogada Livre",
+      "rarity": 4,
+      "passive_name": "Início do Jogo!",
+      "desc": "Quando o ataque do portador desencadear um contra-ataque de atributo, aumenta a Taxa CRIT de todos os membros da equipe em []% por []s. Efeitos passivos com o mesmo nome não acumulam.",
+      "ranks": {
+        "1": "Quando o ataque do portador desencadear um contra-ataque de atributo, aumenta a Taxa CRIT de todos os membros da equipe em []% por []s. Efeitos passivos com o mesmo nome não acumulam."
+      },
+      "aliases": [
+        "Unfettered Game Ball"
+      ]
+    },
+    "rotordecanhao": {
+      "id": "77",
+      "name": "Rotor de Canhão",
+      "rarity": 4,
+      "passive_name": "Calibre Extra",
+      "desc": "Aumenta a Taxa CRIT em7.5 %. Ao atingir o inimigo com um acerto CRIT, causará Dano adicional de 275% de ATQ. Esse efeito pode ser ativado no máximo uma vez a cada 8 s.",
+      "ranks": {
+        "1": "Aumenta a Taxa CRIT em7.5 %. Ao atingir o inimigo com um acerto CRIT, causará Dano adicional de 275% de ATQ. Esse efeito pode ser ativado no máximo uma vez a cada 8 s.",
+        "2": "Aumenta a Taxa CRIT em8.6 %. Ao atingir o inimigo com um acerto CRIT, causará Dano adicional de 275% de ATQ. Esse efeito pode ser ativado no máximo uma vez a cada 7.5 s.",
+        "3": "Aumenta a Taxa CRIT em9.7 %. Ao atingir o inimigo com um acerto CRIT, causará Dano adicional de 275% de ATQ. Esse efeito pode ser ativado no máximo uma vez a cada 7 s.",
+        "4": "Aumenta a Taxa CRIT em10.8 %. Ao atingir o inimigo com um acerto CRIT, causará Dano adicional de 275% de ATQ. Esse efeito pode ser ativado no máximo uma vez a cada 6.5 s.",
+        "5": "Aumenta a Taxa CRIT em12 %. Ao atingir o inimigo com um acerto CRIT, causará Dano adicional de 275% de ATQ. Esse efeito pode ser ativado no máximo uma vez a cada 6 s."
+      },
+      "aliases": [
+        "Cannon Rotor"
+      ]
+    },
+    "demoniobisonho": {
+      "id": "76",
+      "name": "Demônio Bisonho",
+      "rarity": 4,
+      "passive_name": "Visual da Avareza",
+      "desc": "Aumenta o dano de Gelo em []%. Ao usar um Ataque Especial, o ATQ de toda a equipe aumenta em []% durante []s, acumulando até 4 vezes. Reativar atualiza a duração. Efeitos passivos com o mesmo nome não acumulam.",
+      "ranks": {
+        "1": "Aumenta o dano de Gelo em []%. Ao usar um Ataque Especial, o ATQ de toda a equipe aumenta em []% durante []s, acumulando até 4 vezes. Reativar atualiza a duração. Efeitos passivos com o mesmo nome não acumulam."
+      },
+      "aliases": [
+        "Bashful Demon"
+      ]
+    },
+    "cilindrogrande": {
+      "id": "75",
+      "name": "Cilindro Grande",
+      "rarity": 4,
+      "passive_name": "Macaco Superpoderoso",
+      "desc": "Reduz o dano sofrido em []%. Após sofrer um ataque, a próxima vez que você atingir um inimigo, causará dano CRIT equivalente a []% de sua DEF. Este efeito pode ser ativado no máximo uma vez a cada [] s.",
+      "ranks": {
+        "1": "Reduz o dano sofrido em []%. Após sofrer um ataque, a próxima vez que você atingir um inimigo, causará dano CRIT equivalente a []% de sua DEF. Este efeito pode ser ativado no máximo uma vez a cada [] s."
+      },
+      "aliases": [
+        "Big Cylinder"
+      ]
+    },
+    "perfuratrizeixovermelho": {
+      "id": "74",
+      "name": "Perfuratriz - Eixo Vermelho",
+      "rarity": 4,
+      "passive_name": "Gerador Infernal",
+      "desc": "Após executar um Ataque Especial Reforçado, o Dano Elétrico causado por Ataques Básicos e Ataques Rápidos será aumentado em []% durante []s. Esse efeito pode ser ativado no máximo uma vez a cada []s.",
+      "ranks": {
+        "1": "Após executar um Ataque Especial Reforçado, o Dano Elétrico causado por Ataques Básicos e Ataques Rápidos será aumentado em []% durante []s. Esse efeito pode ser ativado no máximo uma vez a cada []s."
+      },
+      "aliases": [
+        "Drill Rig - Red Axis"
+      ]
+    },
+    "replicademotordaconstelacao": {
+      "id": "73",
+      "name": "Réplica de Motor da Constelação",
+      "rarity": 4,
+      "passive_name": "Feixe do Cavaleiro: Mudança",
+      "desc": "Aumenta o dano Físico do portador em []% por []s ao atingir um inimigo a menos de 6m de distância com um Ataque Básico ou Ataque Rápido.",
+      "ranks": {
+        "1": "Aumenta o dano Físico do portador em []% por []s ao atingir um inimigo a menos de 6m de distância com um Ataque Básico ou Ataque Rápido."
+      },
+      "aliases": [
+        "Starlight Engine Replica"
+      ]
+    },
+    "assistentedomestico": {
+      "id": "72",
+      "name": "Assistente Doméstico",
+      "rarity": 4,
+      "passive_name": "Serra Doméstica",
+      "desc": "Enquanto estiver fora de campo, a Recuperação de Energia aumentará em []/s.\nQuando um Ataque Especial Reforçado atingir um inimigo, o dano Físico aumentará em []% por []s. Pode acumular até 15 vezes. Ativações repetidas reiniciam a duração.",
+      "ranks": {
+        "1": "Enquanto estiver fora de campo, a Recuperação de Energia aumentará em []/s.\nQuando um Ataque Especial Reforçado atingir um inimigo, o dano Físico aumentará em []% por []s. Pode acumular até 15 vezes. Ativações repetidas reiniciam a duração."
+      },
+      "aliases": [
+        "Housekeeper"
+      ]
+    },
+    "baudafortuna": {
+      "id": "71",
+      "name": "Baú da Fortuna",
+      "rarity": 4,
+      "passive_name": "Obsessão por Fortuna",
+      "desc": "Causar dano de Éter usando Ataques Especiais Reforçados, Ataques em Cadeia ou o Supremo com esta arma equipada permite que toda a equipe cause mais []% de Dano ao alvo, além de aumentar a Recuperação de Energia do portador em []/s por []s. Bônus ativados por efeitos passivos do mesmo tipo não acumulam.",
+      "ranks": {
+        "1": "Causar dano de Éter usando Ataques Especiais Reforçados, Ataques em Cadeia ou o Supremo com esta arma equipada permite que toda a equipe cause mais []% de Dano ao alvo, além de aumentar a Recuperação de Energia do portador em []/s por []s. Bônus ativados por efeitos passivos do mesmo tipo não acumulam."
+      },
+      "aliases": [
+        "The Vault"
+      ]
+    },
+    "abracodaprimavera": {
+      "id": "69",
+      "name": "Abraço da Primavera",
+      "rarity": 4,
+      "passive_name": "Sopa das Águas Termais",
+      "desc": "Ao sofrer um ataque, a DEF do portador é aumentada em []% por []s.",
+      "ranks": {
+        "1": "Ao sofrer um ataque, a DEF do portador é aumentada em []% por []s."
+      },
+      "aliases": [
+        "Spring Embrace"
+      ]
+    },
+    "banddecoelhinho": {
+      "id": "68",
+      "name": "Band de Coelhinho",
+      "rarity": 4,
+      "passive_name": "Coelhinho Fofo",
+      "desc": "Aumenta o PV máximo em []%. Aumenta o ATQ do portador em []% quando ele tiver um escudo.",
+      "ranks": {
+        "1": "Aumenta o PV máximo em []%. Aumenta o ATQ do portador em []% quando ele tiver um escudo."
+      },
+      "aliases": [
+        "Bunny Band"
+      ]
+    },
+    "batomeletrico": {
+      "id": "67",
+      "name": "Batom Elétrico",
+      "rarity": 4,
+      "passive_name": "Beijo Mortal",
+      "desc": "Quando há inimigos afetados por Anomalia de Atributo em campo, o ATQ do portador aumenta []% e ele causa []% mais dano ao alvo.",
+      "ranks": {
+        "1": "Quando há inimigos afetados por Anomalia de Atributo em campo, o ATQ do portador aumenta []% e ele causa []% mais dano ao alvo."
+      },
+      "aliases": [
+        "Electro-Lip Gloss"
+      ]
+    },
+    "lamentodasestrelas": {
+      "id": "66",
+      "name": "Lamento das Estrelas",
+      "rarity": 4,
+      "passive_name": "Lágrimas Persistentes",
+      "desc": "Quando um membro da equipe causa uma Anomalia de Atributo em um inimigo, o portador ganha uma carga de bônus que aumenta a Proficiência de Anomalia em [], acumulando até 4 vezes. O efeito expira quando o alvo se recupera do Atordoamento ou é derrotado. A duração de cada carga é calculada separadamente.",
+      "ranks": {
+        "1": "Quando um membro da equipe causa uma Anomalia de Atributo em um inimigo, o portador ganha uma carga de bônus que aumenta a Proficiência de Anomalia em [], acumulando até 4 vezes. O efeito expira quando o alvo se recupera do Atordoamento ou é derrotado. A duração de cada carga é calculada separadamente."
+      },
+      "aliases": [
+        "Weeping Gemini"
+      ]
+    },
+    "transmorfooriginal": {
+      "id": "65",
+      "name": "Transmorfo Original",
+      "rarity": 4,
+      "passive_name": "Voadora do Cavaleiro da Constelação",
+      "desc": "Aumenta o PV máximo em []%.\nAo sofrer ataques, o Impacto do portador aumenta []% por []s.",
+      "ranks": {
+        "1": "Aumenta o PV máximo em []%.\nAo sofrer ataques, o Impacto do portador aumenta []% por []s."
+      },
+      "aliases": [
+        "Original Transmorpher"
+      ]
+    },
+    "reliquiaossea": {
+      "id": "64",
+      "name": "Relíquia Óssea",
+      "rarity": 4,
+      "passive_name": "Caçador de Beemotes",
+      "desc": "Quando os PV do alvo estiverem acima de []%, o portador causa []% mais Atordoamento. Quando os PV do alvo estiverem acima de []%, o bônus aumenta mais []%.",
+      "ranks": {
+        "1": "Quando os PV do alvo estiverem acima de []%, o portador causa []% mais Atordoamento. Quando os PV do alvo estiverem acima de []%, o bônus aumenta mais []%."
+      },
+      "aliases": [
+        "Precious Fossilized Core"
+      ]
+    },
+    "cozidoavapor": {
+      "id": "63",
+      "name": "Cozido à Vapor",
+      "rarity": 4,
+      "passive_name": "Caldo Grosso",
+      "desc": "A cada 10 pontos de Energia que sua equipe tiver, o Impacto do portador aumenta []%. Pode ser acumulado até 8 vezes. Depois que a Energia for consumida, o bônus permanecerá por mais []s. A duração de cada acúmulo é calculada separadamente.",
+      "ranks": {
+        "1": "A cada 10 pontos de Energia que sua equipe tiver, o Impacto do portador aumenta []%. Pode ser acumulado até 8 vezes. Depois que a Energia for consumida, o bônus permanecerá por mais []s. A duração de cada acúmulo é calculada separadamente."
+      },
+      "aliases": [
+        "Steam Oven"
+      ]
+    },
+    "motordaconstelacao": {
+      "id": "62",
+      "name": "Motor da Constelação",
+      "rarity": 4,
+      "passive_name": "Surra do Cavaleiro",
+      "desc": "Usar um Ataque de Assistência aumenta o ATQ do portador em []% por []s.",
+      "ranks": {
+        "1": "Usar um Ataque de Assistência aumenta o ATQ do portador em []% por []s."
+      },
+      "aliases": [
+        "Starlight Engine"
+      ]
+    },
+    "gourmettropical": {
+      "id": "61",
+      "name": "Gourmet Tropical",
+      "rarity": 4,
+      "passive_name": "Jantar na Mesa!",
+      "desc": "Sempre que sua equipe consome 10 de Energia, o portador ganha um acúmulo de bônus que aumenta o ATQ em []% por 10s. Pode ser acumulado até 10 vezes. A duração de cada acúmulo é calculada separadamente.",
+      "ranks": {
+        "1": "Sempre que sua equipe consome 10 de Energia, o portador ganha um acúmulo de bônus que aumenta o ATQ em []% por 10s. Pode ser acumulado até 10 vezes. A duração de cada acúmulo é calculada separadamente."
+      },
+      "aliases": [
+        "Rainforest Gourmet"
+      ]
+    },
+    "fracaodetempo": {
+      "id": "60",
+      "name": "Fração de Tempo",
+      "rarity": 4,
+      "passive_name": "Diga X",
+      "desc": "Quando membro da equipe usa uma Contraesquiva, Ataque Especial Reforçado, Ataque de Assistência ou Ataque em Cadeia, gera, respectivamente, []/[]/[]/[] mais dB e restaura [] de Energia ao portador. Esse efeito pode ser ativado uma vez a cada 12s. O tempo de recarga de cada tipo de ataque é contado separadamente. Bônus ativados por efeitos passivos do mesmo tipo não acumulam.",
+      "ranks": {
+        "1": "Quando membro da equipe usa uma Contraesquiva, Ataque Especial Reforçado, Ataque de Assistência ou Ataque em Cadeia, gera, respectivamente, []/[]/[]/[] mais dB e restaura [] de Energia ao portador. Esse efeito pode ser ativado uma vez a cada 12s. O tempo de recarga de cada tipo de ataque é contado separadamente. Bônus ativados por efeitos passivos do mesmo tipo não acumulam."
+      },
+      "aliases": [
+        "Slice of Time"
+      ]
+    },
+    "superestreladasruas": {
+      "id": "59",
+      "name": "Superestrela das Ruas",
+      "rarity": 4,
+      "passive_name": "Barras Flamejantes",
+      "desc": "Sempre que um membro da equipe usar um Ataque em Cadeia, o portador receberá uma Carga, que pode acumular até 3 vezes. Ao usar seu próprio Supremo, o portador consome todas as Cargas e cada acúmulo aumenta o Dano da habilidade em []%.",
+      "ranks": {
+        "1": "Sempre que um membro da equipe usar um Ataque em Cadeia, o portador receberá uma Carga, que pode acumular até 3 vezes. Ao usar seu próprio Supremo, o portador consome todas as Cargas e cada acúmulo aumenta o Dano da habilidade em []%."
+      },
+      "aliases": [
+        "Street Superstar"
+      ]
+    },
+    "identidadeinflexao": {
+      "id": "58",
+      "name": "[Identidade] Inflexão",
+      "rarity": 4,
+      "passive_name": "Deslumbre",
+      "desc": "Ao sofrer um ataque, o Dano sofrido reduz []% por []s.",
+      "ranks": {
+        "1": "Ao sofrer um ataque, o Dano sofrido reduz []% por []s."
+      },
+      "aliases": [
+        "[Identity] Inflection"
+      ]
+    },
+    "identidadebase": {
+      "id": "57",
+      "name": "[Identidade] Base",
+      "rarity": 4,
+      "passive_name": "Golpe Profundo",
+      "desc": "Ao sofrer um ataque, a DEF do portador é aumentada em []% por []s.",
+      "ranks": {
+        "1": "Ao sofrer um ataque, a DEF do portador é aumentada em []% por []s."
+      },
+      "aliases": [
+        "[Identity] Base"
+      ]
+    },
+    "tempestademagneticacharlie": {
+      "id": "56",
+      "name": "[Tempestade Magnética] Charlie",
+      "rarity": 4,
+      "passive_name": "Sobrecarga Elétrica",
+      "desc": "Quando um membro da equipe utiliza Anomalia de Atributo em um inimigo, o portador recupera [] de Energia. Esse efeito pode ser ativado uma vez a cada []s.",
+      "ranks": {
+        "1": "Quando um membro da equipe utiliza Anomalia de Atributo em um inimigo, o portador recupera [] de Energia. Esse efeito pode ser ativado uma vez a cada []s."
+      },
+      "aliases": [
+        "[Magnetic Storm] Charlie"
+      ]
+    },
+    "tempestademagneticabravo": {
+      "id": "55",
+      "name": "[Tempestade Magnética] Bravo",
+      "rarity": 4,
+      "passive_name": "Surto de Alta Voltagem",
+      "desc": "Quando um membro da equipe utiliza Anomalia de Atributo em um inimigo, o portador recupera [] de Energia. Esse efeito pode ser ativado uma vez a cada []s.",
+      "ranks": {
+        "1": "Quando um membro da equipe utiliza Anomalia de Atributo em um inimigo, o portador recupera [] de Energia. Esse efeito pode ser ativado uma vez a cada []s."
+      },
+      "aliases": [
+        "[Magnetic Storm] Bravo"
+      ]
+    },
+    "tempestademagneticaalfa": {
+      "id": "54",
+      "name": "[Tempestade Magnética] Alfa",
+      "rarity": 4,
+      "passive_name": "Corrente Desordenada",
+      "desc": "Acumular Anomalia de Atributo aumenta a Maestria de Anomalia do portador em [] por []s. Esse efeito pode ser ativado uma vez a cada []s.",
+      "ranks": {
+        "1": "Acumular Anomalia de Atributo aumenta a Maestria de Anomalia do portador em [] por []s. Esse efeito pode ser ativado uma vez a cada []s."
+      },
+      "aliases": [
+        "[Magnetic Storm] Alpha"
+      ]
+    },
+    "vorticemachado": {
+      "id": "53",
+      "name": "[Vórtice] Machado",
+      "rarity": 4,
+      "passive_name": "Maré Rápida",
+      "desc": "Quando o personagem com este equipamento entrar ou substituir outro personagem em combate, seu Impacto aumenta []% por []s. Esse efeito pode ser ativado uma vez a cada []s.",
+      "ranks": {
+        "1": "Quando o personagem com este equipamento entrar ou substituir outro personagem em combate, seu Impacto aumenta []% por []s. Esse efeito pode ser ativado uma vez a cada []s."
+      },
+      "aliases": [
+        "[Vortex] Hatchet"
+      ]
+    },
+    "vorticeflecha": {
+      "id": "52",
+      "name": "[Vórtice] Flecha",
+      "rarity": 4,
+      "passive_name": "Tsunami",
+      "desc": "Os ataques do portador causam []% mais Atordoamento no alvo principal.",
+      "ranks": {
+        "1": "Os ataques do portador causam []% mais Atordoamento no alvo principal."
+      },
+      "aliases": [
+        "[Vortex] Arrow"
+      ]
+    },
+    "vorticerevolver": {
+      "id": "51",
+      "name": "[Vórtice] Revólver",
+      "rarity": 4,
+      "passive_name": "Subcorrente",
+      "desc": "Ataques Especiais Reforçados causam []% mais Atordoamento.",
+      "ranks": {
+        "1": "Ataques Especiais Reforçados causam []% mais Atordoamento."
+      },
+      "aliases": [
+        "[Vortex] Revolver"
+      ]
+    },
+    "reverberacaotipoiii": {
+      "id": "50",
+      "name": "[Reverberação] Tipo III",
+      "rarity": 4,
+      "passive_name": "Som Explosivo",
+      "desc": "Usar um Ataque em Cadeia ou Supremo aumenta em []% o ATQ de toda a equipe por []s. Este efeito pode ser ativado uma vez a cada []s. Esse efeito não acumula com outros do mesmo nome.",
+      "ranks": {
+        "1": "Usar um Ataque em Cadeia ou Supremo aumenta em []% o ATQ de toda a equipe por []s. Este efeito pode ser ativado uma vez a cada []s. Esse efeito não acumula com outros do mesmo nome."
+      },
+      "aliases": [
+        "[Reverb] Mark III"
+      ]
+    },
+    "reverberacaotipoii": {
+      "id": "49",
+      "name": "[Reverberação] Tipo II",
+      "rarity": 4,
+      "passive_name": "Ondas Sonoras",
+      "desc": "Usar um Ataque Especial Reforçado ou Ataque em Cadeia aumenta em [] a Maestria de Anomalia e a Proficiência de Anomalia de toda a equipe por []s. Este efeito pode ser ativado uma vez a cada []s. Esse efeito não acumula com outros do mesmo nome.",
+      "ranks": {
+        "1": "Usar um Ataque Especial Reforçado ou Ataque em Cadeia aumenta em [] a Maestria de Anomalia e a Proficiência de Anomalia de toda a equipe por []s. Este efeito pode ser ativado uma vez a cada []s. Esse efeito não acumula com outros do mesmo nome."
+      },
+      "aliases": [
+        "[Reverb] Mark II"
+      ]
+    },
+    "reverberacaotipoi": {
+      "id": "48",
+      "name": "[Reverberação] Tipo I",
+      "rarity": 4,
+      "passive_name": "Marés Cambiantes",
+      "desc": "Usar um Ataque Especial Reforçado aumenta em []% o Impacto de toda a equipe por []s. Este efeito pode ser ativado uma vez a cada []s. Esse efeito não acumula com outros do mesmo nome.",
+      "ranks": {
+        "1": "Usar um Ataque Especial Reforçado aumenta em []% o Impacto de toda a equipe por []s. Este efeito pode ser ativado uma vez a cada []s. Esse efeito não acumula com outros do mesmo nome."
+      },
+      "aliases": [
+        "[Reverb] Mark I"
+      ]
+    },
+    "lunarnovilunio": {
+      "id": "47",
+      "name": "[Lunar] Novilúnio",
+      "rarity": 4,
+      "passive_name": "Lua Nova",
+      "desc": "Usar um Ataque Especial Reforçado restaura [] de Energia ao portador. Este efeito pode ser ativado uma vez a cada []s.",
+      "ranks": {
+        "1": "Usar um Ataque Especial Reforçado restaura [] de Energia ao portador. Este efeito pode ser ativado uma vez a cada []s."
+      },
+      "aliases": [
+        "[Lunar] Noviluna"
+      ]
+    },
+    "lunardecrescente": {
+      "id": "46",
+      "name": "[Lunar] Decrescente",
+      "rarity": 4,
+      "passive_name": "Lua Minguante",
+      "desc": "Usar um Ataque em Cadeia ou Supremo permite ao portador causar % mais Dano por []s.",
+      "ranks": {
+        "1": "Usar um Ataque em Cadeia ou Supremo permite ao portador causar % mais Dano por []s."
+      },
+      "aliases": [
+        "[Lunar] Decrescent"
+      ]
+    },
+    "lunarplenilunio": {
+      "id": "45",
+      "name": "[Lunar] Plenilúnio",
+      "rarity": 4,
+      "passive_name": "Lua Cheia",
+      "desc": "Ataques Básicos, Ataques Rápidos e Contraesquivas causam % mais dano.",
+      "ranks": {
+        "1": "Ataques Básicos, Ataques Rápidos e Contraesquivas causam % mais dano."
+      },
+      "aliases": [
+        "[Lunar] Pleniluna"
+      ]
+    },
+    "radianciadasnuvens": {
+      "id": "982",
+      "name": "Radiância das Nuvens",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "2": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/12b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "3": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/21b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "4": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/98205622b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "5": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/567b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": []
+    },
+    "exuviasolar": {
+      "id": "1105",
+      "name": "Exúvia Solar",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1082,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/06/16/69723b34e8b9cf4f5b7b98e6dff8d202_2315549761560555071.png\",\"amount\":0,\"name\":\"Pyrois\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1082,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/06/16/69723b34e8b9cf4f5b7b98e6dff8d202_2315549761560555071.png\",\"amount\":0,\"name\":\"Pyrois\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": []
+    },
+    "bateriadademaratipoii": {
+      "id": "3",
+      "name": "Bateria da Demara - Tipo II",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":2,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/05/28/43aeb29d176e10c9713b3b9b6ac0dd3a_2384682618213467101.png\",\"amount\":0,\"name\":\"Anby Demara\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":2,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/05/28/43aeb29d176e10c9713b3b9b6ac0dd3a_2384682618213467101.png\",\"amount\":0,\"name\":\"Anby Demara\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": []
+    }
+  },
+  "sets": {
+    "rosaespinhosa": {
+      "id": "1177",
+      "name": "Rosa Espinhosa",
+      "two_pc": "DEF +16%",
+      "four_pc": "O dano do portador aumenta 15%. Quando a DEF inicial do portador for pelo menos 1000/1800, a Taxa CRIT aumenta 8/16%.",
+      "aliases": [
+        "Thorned Rose"
+      ]
+    },
+    "cancaodaespadaderamo": {
+      "id": "547",
+      "name": "Canção da Espada de Ramo",
+      "two_pc": "Dano CRIT +16%",
+      "four_pc": "Quando a Maestria de Anomalia tem 115 pontos ou mais, o Dano CRIT do portador aumenta 30%. Quando qualquer membro da equipe aplica Congelamento ou aciona o efeito de Estilhaço em um inimigo, a Taxa CRIT do portador aumenta 12% por 15s.",
+      "aliases": [
+        "Branch & Blade Song"
+      ]
+    },
+    "melodiadephaethon": {
+      "id": "624",
+      "name": "Melodia de Phaethon",
+      "two_pc": "Maestria de Anomalia +8%.",
+      "four_pc": "Quando qualquer membro da equipe usa um Ataque Especial Reforçado, a Proficiência de Anomalia do portador aumenta 45 durante 8s. Se o personagem que usa o Ataque Especial Reforçado não for o portador, o Dano de Éter do portador aumenta 25%.",
+      "aliases": [
+        "Phaethon's Melody"
+      ]
+    },
+    "fabulasdeyunkui": {
+      "id": "789",
+      "name": "Fábulas de Yunkui",
+      "two_pc": "PV +10%",
+      "four_pc": "Ao usar Ataque Especial Reforçado, Ataque em Cadeia ou Supremo, Taxa CRIT aumenta 4%, acumulando até 3 vezes e durando 15s. Ativações repetidas reiniciam a duração. Ao obter 3 acúmulos deste efeito, o Dano Bruto aumenta 10%.",
+      "aliases": [
+        "Yunkui Tales"
+      ]
+    },
+    "odeaocavaleirolunar": {
+      "id": "914",
+      "name": "Ode ao Cavaleiro Lunar",
+      "two_pc": "Recuperação de Energia +20%",
+      "four_pc": "Quando o portador é um personagem de Assistência, todos os membros da equipe causam 18% mais dano por 25, ao usar um Ataque Especial Reforçado ou Supremo. Ativações repetidas reiniciam a duração. Efeitos passivos de mesmo nome não são acumulados.",
+      "aliases": [
+        "Moonlight Lullaby"
+      ]
+    },
+    "jazzcaotico": {
+      "id": "392",
+      "name": "Jazz Caótico",
+      "two_pc": "Proficiência de Anomalia +30",
+      "four_pc": "Dano de Fogo e Dano Elétrico aumentam 15%. Quando fora de combate, o dano causado por Ataques Especiais Reforçados e Ataques de Assistência aumenta 20%. Quando o personagem volta a campo, o bônus dura mais 5s. Pode ser ativado uma vez a cada 7,5s.",
+      "aliases": [
+        "Chaos Jazz"
+      ]
+    },
+    "reidomonte": {
+      "id": "790",
+      "name": "Rei do Monte",
+      "two_pc": "O Atordoamento dos ataques aumenta 6%",
+      "four_pc": "Quando o portador é um Agente do tipo Atordoador e executa um Ataque Especial Reforçado ou um Ataque em Cadeia, o Dano CRIT de todos membros da equipe aumenta 15%, e quando a Taxa CRIT do portador é maior ou igual a 50%, o Dano CRIT aumenta mais 15%, com duração de 15s. Ativações repetidas reiniciam a duração. Efeitos passivos de mesmo nome não são acumulados.",
+      "aliases": [
+        "King of the Summit"
+      ]
+    },
+    "punkprimitivo": {
+      "id": "391",
+      "name": "Punk Primitivo",
+      "two_pc": "Escudo Gerado +15%",
+      "four_pc": "Quando qualquer membro da equipe usar uma Assistência Defensiva ou Assistência Evasiva, toda a equipe causa mais 15% de Dano por 10s. Efeitos passivos de mesmo nome não são acumulados.",
+      "aliases": [
+        "Proto Punk"
+      ]
+    },
+    "metaldepresas": {
+      "id": "137",
+      "name": "Metal de Presas",
+      "two_pc": "Aumenta o Dano Físico em 10%.",
+      "four_pc": "Sempre que um membro da equipe provocar Ofensiva em um inimigo, o portador causa [ ]% a mais de dano ao alvo durante [ ]s.",
+      "aliases": [
+        "Fanged Metal"
+      ]
+    },
+    "metalcaotico": {
+      "id": "134",
+      "name": "Metal Caótico",
+      "two_pc": "Aumenta o Dano de Éter em 10%.",
+      "four_pc": "O Dano CRIT do portador aumenta [ ]%. Quando um Agente da equipe ativar o dano adicional da Corrupção, o efeito aumenta mais [ ]% por [ ]s, podendo acumular até [ ] vez(es). Ativações repetidas reiniciam a duração.",
+      "aliases": [
+        "Chaotic Metal"
+      ]
+    },
+    "metaltrovoador": {
+      "id": "135",
+      "name": "Metal Trovoador",
+      "two_pc": "Aumenta o Dano Elétrico em 10%.",
+      "four_pc": "Enquanto um inimigo em combate estiver sob efeito de Choque, o ATQ do portador aumenta [ ]%.",
+      "aliases": [
+        "Thunder Metal"
+      ]
+    },
+    "rockespiritual": {
+      "id": "132",
+      "name": "Rock Espiritual",
+      "two_pc": "Aumenta a DEF em 16%.",
+      "four_pc": "Ao sofrer um ataque inimigo e perder PV, o portador sofre menos [ ]% de dano durante [ ]s. Esse efeito pode ser ativado uma vez a cada [ ]s.",
+      "aliases": [
+        "Soul Rock"
+      ]
+    },
+    "metalinfernal": {
+      "id": "133",
+      "name": "Metal Infernal",
+      "two_pc": "Aumenta o Dano de Fogo em 10%.",
+      "four_pc": "Ao acertar um inimigo afetado por Queimadura, a Taxa CRIT do portador aumenta [ ]% durante [ ]s.",
+      "aliases": [
+        "Inferno Metal"
+      ]
+    },
+    "punkhormonal": {
+      "id": "131",
+      "name": "Punk Hormonal",
+      "two_pc": "Aumenta o ATQ em 10%.",
+      "four_pc": "Quando o portador entrar ou substituir outro personagem em combate, seu Impacto aumenta [ ]% durante [ ]s. Pode ser ativado uma vez a cada [ ]s.",
+      "aliases": [
+        "Hormone Punk"
+      ]
+    },
+    "vozastral": {
+      "id": "546",
+      "name": "Voz Astral",
+      "two_pc": "ATQ +10%",
+      "four_pc": "Quando qualquer personagem da equipe entra no combate por meio de uma Assistência Reativa, todos os membros da equipe ganham 1 acúmulo de Astra, até um máximo de 3 acúmulos, com duração de 15s. Ativações repetidas reiniciam a duração. Cada acúmulo de Astra aumenta em 8% o dano causado pelo personagem que entra no combate por meio de uma Assistência Reativa. Efeitos passivos de mesmo nome não são acumulados.",
+      "aliases": [
+        "Astral Voice"
+      ]
+    },
+    "discoestrelante": {
+      "id": "129",
+      "name": "Disco Estrelante",
+      "two_pc": "Aumenta o Impacto em 6%.",
+      "four_pc": "Ataques Básicos, Ataques Rápidos e Contraesquivas causam [ ]% a mais de Atordoamento ao alvo principal.",
+      "aliases": [
+        "Shockstar Disco"
+      ]
+    },
+    "metalpolar": {
+      "id": "136",
+      "name": "Metal Polar",
+      "two_pc": "Aumenta o Dano de Gelo em 10%.",
+      "four_pc": "Aumenta o dano do Ataque Básico e Ataque Rápido em [ ]%. Sempre que um membro da equipe causar Congelamento ou Estilhaço a um inimigo, aumenta [ ]% do bônus de dano por [ ]s.",
+      "aliases": [
+        "Polar Metal"
+      ]
+    },
+    "harmoniadassombras": {
+      "id": "625",
+      "name": "Harmonia das Sombras",
+      "two_pc": "O Dano dos Ataques Subsequentes e Ataques Rápidos aumenta 15%.",
+      "four_pc": "Quando um Ataque Subsequente ou um Ataque Rápido atinge um inimigo, e se o dano causado é do mesmo tipo que o do portador, o atacante ganha 1 acúmulo de bônus. Esse efeito pode ser desencadeado uma vez por ataque. Para cada acúmulo do efeito, o ATQ do portador aumenta 4% e a Taxa CRIT aumenta 4%. Esse efeito pode ser acumulado até 3 vezes e dura 15s. Ativações repetidas reiniciam a duração.",
+      "aliases": [
+        "Shadow Harmony"
+      ]
+    },
+    "florescerdaalvorada": {
+      "id": "913",
+      "name": "Florescer da Alvorada",
+      "two_pc": "O dano do Ataque Básico aumenta 15%.",
+      "four_pc": "O dano do Ataque Básico aumenta %. Se o portador é um personagem Atacante, o dano do Ataque Básico aumenta mais % por s, ao usar um Ataque Especial Reforçado ou Supremo. Ativações repetidas reiniciam a duração.",
+      "aliases": [
+        "Dawn's Bloom"
+      ]
+    },
+    "technobaiacu": {
+      "id": "128",
+      "name": "Techno Baiacu",
+      "two_pc": "Aumenta 8% da Taxa de Perfuração.",
+      "four_pc": "O Supremo causa [ ]% a mais de dano. Executar um Supremo aumenta o ATQ do portador em [ ]% durante [ ]s.",
+      "aliases": [
+        "Puffer Electro"
+      ]
+    },
+    "blueslivre": {
+      "id": "130",
+      "name": "Blues Livre",
+      "two_pc": "Aumenta a Proficiência de Anomalia em 30.",
+      "four_pc": "Quando um Ataque Especial Reforçado acerta um inimigo, reduz em [ ]% a Resistência contra Anomalia de Atributo do portador durante [ ]s. Esse efeito não acumula com outros do mesmo atributo.",
+      "aliases": [
+        "Freedom Blues"
+      ]
+    },
+    "jazzcomswing": {
+      "id": "5",
+      "name": "Jazz Com Swing",
+      "two_pc": "Aumenta a Recuperação de Energia em 20%.",
+      "four_pc": "Ao usar um Ataque em Cadeia ou Supremo toda a equipe causa [ ]% a mais de dano durante [ ]s. Esse efeito não pode ser acumulado com outros efeitos do mesmo nome.",
+      "aliases": [
+        "Swing Jazz"
+      ]
+    },
+    "technopicapau": {
+      "id": "127",
+      "name": "Techno Pica-Pau",
+      "two_pc": "Aumenta a Taxa CRIT em 8%.",
+      "four_pc": "Causar dano crítico com um Ataque Básico, Contraesquiva ou Ataque Especial Reforçado aumenta o ATQ do portador em [ ]% durante [ ]s. A duração do bônus para diferentes habilidades é calculada separadamente.",
+      "aliases": [
+        "Woodpecker Electro"
+      ]
+    },
+    "cancaodasondas": {
+      "id": "992",
+      "name": "Canção das Ondas",
+      "two_pc": "Physical DMG by 10%.",
+      "four_pc": "When the equipper is within any Ether Veil, their CRIT Rate increases by 10%. After leaving the Ether Veil, this buff remains for 15s. If the equipper is an Attack character, activating an Ether Veil or extending an Ether Veil's duration increases their CRIT Rate by 10% and ATK by 30% for 10s. Repeated triggers reset the duration.",
+      "aliases": []
+    }
+  }
+}

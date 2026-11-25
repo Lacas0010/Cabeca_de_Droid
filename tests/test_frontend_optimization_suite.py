@@ -177,8 +177,8 @@ class TestFrontendOptimizationSuite(unittest.TestCase):
         self.assertIn("css/gacha.css?v=2.3", html)
         self.assertIn("css/endgame_strategy.css?v=2.5", html)
         self.assertIn("css/team_card.css?v=2.0", html)
-        self.assertIn("style.css?v=39.0", html)
-        self.assertIn("js/app.js?v=58.0", html)
+        self.assertIn("style.css?v=40.0", html)
+        self.assertIn("js/app.js?v=59.0", html)
 
         gacha_css = _read(CSS_DIR / "gacha.css")
         self.assertEqual(gacha_css.count("@keyframes wishCardPop"), 1)
@@ -198,7 +198,7 @@ class TestFrontendOptimizationSuite(unittest.TestCase):
             "navigation.js?v=27.0",
             "sync_manager.js?v=28.0",
             "endgame.js?v=31.0",
-            "roster.js?v=33.0",
+            "roster.js?v=34.0",
             "card_exporter.js?v=2.0",
             "build_comparator.js?v=31.0",
             "chat_rag.js?v=26.0",
