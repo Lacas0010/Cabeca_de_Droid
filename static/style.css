@@ -109,6 +109,16 @@
     --color-success: #22c55e;
     /* Verde Sucesso */
 
+    /* Tokens do Gráfico Radar Meta (#build-inspector) */
+    --radar-player-stroke: #38bdf8;
+    --radar-player-fill: #6366f1;
+    --radar-target-stroke: var(--color-zzz);
+    --radar-grid-stroke: rgba(148, 163, 184, 0.22);
+    --radar-status-ok: #10b981;
+    --radar-status-warn: #fbbf24;
+    --radar-status-low: #f87171;
+    --radar-status-flex: #38bdf8;
+
     /* Paleta Sakuga VFX adaptada ao tema escuro Cabeça de Droid */
     --sk-card: #131c31;
     --sk-ink: #f8fafc;
@@ -2479,20 +2489,34 @@ h6 {
 }
 
 .inspector-header {
-    padding: 18px 24px;
+    padding: 16px 24px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 20px 20px 0 0;
     background: rgba(255, 255, 255, 0.02);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     flex-shrink: 0;
+}
+
+.inspector-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.inspector-header-actions sakuga-button::part(button) {
+    min-height: 32px;
+    padding: 5px 10px;
 }
 
 .inspector-title {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
+    min-width: 0;
 }
 
 .ins-char-avatar {
@@ -2544,6 +2568,45 @@ h6 {
 
 .inspector-tabs {
     flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 8px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(0, 0, 0, 0.16);
+    overflow: visible;
+}
+
+.inspector-tabs-segmented {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px;
+    border-radius: 11px;
+    background: rgba(15, 23, 42, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    overflow: visible;
+}
+
+sakuga-button.ins-tab-btn::part(button) {
+    padding: 6px 14px;
+    min-height: 32px;
+    font-size: 12px;
+    border-radius: 8px;
+    border-color: transparent;
+    background: transparent;
+}
+
+sakuga-button.ins-tab-btn:hover::part(button) {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-primary);
+}
+
+sakuga-button.ins-tab-btn.active::part(button) {
+    background: rgba(139, 92, 246, 0.28);
+    border-color: rgba(168, 85, 247, 0.85);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.25);
 }
 
 .inspector-body {
@@ -3823,6 +3886,394 @@ h6 {
     color: var(--text-primary) !important;
 }
 
+/* ==========================================================================
+   GRÁFICO RADAR: MINHA BUILD VS. BENCHMARK META (#build-inspector)
+   ========================================================================== */
+.meta-radar-card {
+    margin-bottom: 12px;
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(155deg, rgba(15, 23, 42, 0.78), rgba(10, 16, 30, 0.86));
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+}
+
+.meta-radar-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.meta-radar-title-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.meta-radar-title-wrap h4 {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    font-size: 13px;
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.meta-radar-summary-pill {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.34);
+    color: #7dd3fc;
+}
+
+.meta-radar-legend {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.meta-radar-legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.radar-dot-player {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    background: rgba(56, 189, 248, 0.65);
+    border: 1.5px solid #38bdf8;
+}
+
+.radar-dot-target {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1.5px dashed #f59e0b;
+}
+
+.meta-radar-layout {
+    display: grid;
+    grid-template-columns: minmax(270px, 340px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: center;
+}
+
+.meta-radar-visual-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.meta-radar-svg-box {
+    width: 100%;
+    max-width: 340px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.meta-radar-svg {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+}
+
+.meta-radar-vertex {
+    cursor: pointer;
+    transition: r 0.16s ease, filter 0.16s ease;
+}
+
+.meta-radar-vertex.is-highlighted {
+    filter: drop-shadow(0 0 6px currentColor);
+}
+
+.meta-radar-axis-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 10.5px;
+    font-weight: 600;
+    fill: var(--text-secondary);
+    cursor: pointer;
+    transition: fill 0.16s ease;
+}
+
+.meta-radar-axis-label.is-highlighted {
+    fill: #ffffff;
+    font-weight: 700;
+}
+
+.meta-radar-axis-pct {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.meta-radar-readout {
+    width: 100%;
+    min-height: 28px;
+    padding: 5px 10px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 11px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    flex-wrap: wrap;
+}
+
+.meta-radar-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    min-width: 0;
+}
+
+.meta-radar-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: border-color 0.16s ease, background-color 0.16s ease, transform 0.16s ease;
+    cursor: pointer;
+}
+
+.meta-radar-row:hover,
+.meta-radar-row.is-highlighted {
+    background: rgba(56, 189, 248, 0.09);
+    border-color: rgba(56, 189, 248, 0.42);
+    transform: translateX(2px);
+}
+
+.meta-radar-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.meta-radar-row-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.meta-radar-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.meta-radar-status-dot.status-ok { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.6); }
+.meta-radar-status-dot.status-close { background: #fbbf24; box-shadow: 0 0 6px rgba(251, 191, 36, 0.55); }
+.meta-radar-status-dot.status-low { background: #f87171; box-shadow: 0 0 6px rgba(248, 113, 113, 0.55); }
+.meta-radar-status-dot.status-flex { background: #38bdf8; }
+.meta-radar-status-dot.status-missing { background: #64748b; }
+
+.meta-radar-row-values {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.meta-radar-val-actual {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.meta-radar-val-sep {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.meta-radar-val-target {
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+.meta-radar-row-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.meta-radar-mini-track {
+    position: relative;
+    flex: 1;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: visible;
+}
+
+.meta-radar-mini-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.35s ease;
+}
+
+.meta-radar-mini-tick {
+    position: absolute;
+    top: -2px;
+    bottom: -2px;
+    width: 1.5px;
+    background: #f59e0b;
+    border-radius: 1px;
+    opacity: 0.9;
+}
+
+.meta-radar-tags-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.meta-radar-tag {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+.meta-radar-tag.tag-in_combat {
+    background: rgba(245, 158, 11, 0.14);
+    border-color: rgba(245, 158, 11, 0.38);
+    color: #fcd34d;
+}
+
+.meta-radar-tag.tag-base_ok {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.38);
+    color: #6ee7b7;
+}
+
+.meta-radar-tag.tag-flex,
+.meta-radar-tag.tag-optional,
+.meta-radar-tag.tag-relative {
+    background: rgba(56, 189, 248, 0.14);
+    border-color: rgba(56, 189, 248, 0.35);
+    color: #7dd3fc;
+}
+
+.meta-radar-tag.tag-cap {
+    background: rgba(168, 85, 247, 0.16);
+    border-color: rgba(168, 85, 247, 0.42);
+    color: #d8b4fe;
+}
+
+.meta-radar-tag.tag-overcap {
+    background: rgba(245, 158, 11, 0.18);
+    border-color: rgba(245, 158, 11, 0.48);
+    color: #fde68a;
+}
+
+.meta-radar-gauge-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px 4px;
+}
+
+.meta-radar-gauge-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.meta-radar-gauge-head {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.meta-radar-gauge-bar {
+    position: relative;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.meta-radar-gauge-fill {
+    height: 100%;
+    border-radius: 999px;
+    transition: width 0.4s ease;
+}
+
+.meta-radar-gauge-marker {
+    position: absolute;
+    top: -3px;
+    bottom: -3px;
+    width: 2px;
+    background: #f59e0b;
+    box-shadow: 0 0 6px rgba(245, 158, 11, 0.7);
+}
+
+.meta-radar-flex-strip {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.09);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--text-secondary);
+}
+
+.meta-radar-flex-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.1);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    color: #bae6fd;
+    font-size: 10.5px;
+}
+
 /* Relic Scorer Badges */
 .badge-relic {
     display: inline-block;
@@ -4136,6 +4587,50 @@ h6 {
     .inspector-header {
         padding: 12px 14px;
         gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .inspector-header-actions {
+        width: 100%;
+        justify-content: flex-end;
+        gap: 6px;
+    }
+
+    .inspector-header-actions sakuga-button.inspector-action-btn::part(button) {
+        padding: 5px 8px;
+        font-size: 10.5px;
+    }
+
+    .inspector-tabs {
+        padding: 8px 12px;
+    }
+
+    .inspector-tabs-segmented {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    sakuga-button.ins-tab-btn {
+        width: 100%;
+    }
+
+    sakuga-button.ins-tab-btn::part(button) {
+        width: 100%;
+        justify-content: center;
+        padding: 6px 8px;
+        font-size: 11.5px;
+    }
+
+    .meta-radar-layout {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .meta-radar-svg-box {
+        max-width: 300px;
+        margin: 0 auto;
     }
 
     .inspector-title {
@@ -5968,6 +6463,37 @@ sakuga-button.ins-tab-btn.active::part(button) {
     border-color: #a855f7;
     color: #ffffff;
     box-shadow: 0 0 12px rgba(139, 92, 246, 0.28);
+}
+
+.inspector-tabs-segmented sakuga-button.ins-tab-btn::part(button) {
+    padding: 6px 14px;
+    min-height: 32px;
+    font-size: 12px;
+    border-radius: 8px;
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-secondary);
+}
+
+.inspector-tabs-segmented sakuga-button.ins-tab-btn:hover::part(button) {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-primary);
+}
+
+.inspector-tabs-segmented sakuga-button.ins-tab-btn.active::part(button) {
+    background: rgba(139, 92, 246, 0.28);
+    border-color: rgba(168, 85, 247, 0.85);
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(139, 92, 246, 0.26);
+}
+
+@media (max-width: 768px) {
+    .inspector-tabs-segmented sakuga-button.ins-tab-btn::part(button) {
+        width: 100%;
+        justify-content: center;
+        padding: 6px 10px;
+        font-size: 11.5px;
+    }
 }
 
 sakuga-button.close-inspector-btn::part(button),

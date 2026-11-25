@@ -10,6 +10,7 @@ from services.roster_service import (
     get_overview,
     parse_character_build_data,
     parse_meta_target,
+    compare_character_build,
     invalidate_roster_cache,
 )
 from services.endgame_service import invalidate_endgame_cache
@@ -133,40 +134,11 @@ async def get_build_detail_endpoint(game_id: str, char_name: str):
     return await asyncio.to_thread(parse_character_build_data, clean_game, char_name)
 
 
-def _compare_build_sync(game_id: str, char_name: str):
-    element = ""
-    try:
-        roster = database.get_roster_data(game_id)
-        c_norm = normalize_char_name(char_name)
-        for char in roster:
-            if normalize_char_name(char.get("name", "")) == c_norm or char.get("name", "").lower() == char_name.lower():
-                element = char.get("element", "").lower()
-                break
-    except Exception as e:
-        print(f"Erro ao buscar elemento do personagem no SQLite: {e}")
-
-    build_data = parse_character_build_data(game_id, char_name)
-    meta_target = parse_meta_target(game_id, char_name, element)
-
-    return {
-        "character": char_name,
-        "game_id": game_id,
-        "player_build": {
-            "weapon": build_data.get("weapon", "Não informado"),
-            "weapon_clean": build_data.get("weapon_clean", ""),
-            "sets": build_data.get("sets", []),
-            "stats": build_data.get("stats", {}),
-            "pieces": build_data.get("pieces", []),
-        },
-        "meta_target": meta_target,
-    }
-
-
 @router.get("/api/compare/{game_id}/{char_name}")
 async def compare_build_endpoint(game_id: str, char_name: str):
-    """Retorna os dados da build do jogador comparados aos dados ideais do metagame."""
+    """Retorna os dados da build do jogador comparados aos dados ideais do metagame e o payload do Gráfico Radar."""
     clean_game = validate_game_id(game_id)
-    return await asyncio.to_thread(_compare_build_sync, clean_game, char_name)
+    return await asyncio.to_thread(compare_character_build, clean_game, char_name)
 
 
 @router.get("/api/optimize/{game_id}/{char_name}")

@@ -1354,6 +1354,7 @@ STAT_NAME_MAP = {
     "eter": "ether_dmg",
     # HSR Específicos
     "effect hit rate": "ehr",
+    "effect hit rating": "ehr",
     "ehr": "ehr",
     "taxa de acerto de efeito": "ehr",
     "chance de acerto de efeito": "ehr",
@@ -1367,6 +1368,13 @@ STAT_NAME_MAP = {
     "res_efeito": "res",
     "res a efeito": "res",
     "res efeito": "res",
+    "energy regeneration": "err",
+    "energy regeneration rate": "err",
+    "regen. energia": "err",
+    "regen energia": "err",
+    "recup. energia": "err",
+    "recup energia": "err",
+    "quebra": "break_effect",
     "outgoing healing": "healing_bonus",
     "outgoing_healing": "healing_bonus",
     # ZZZ Específicos
@@ -1608,10 +1616,13 @@ def extract_weights_from_guide(game_id: str, char_id: str) -> Dict[str, float]:
 # MOTOR DINÂMICO DE SCORES COM MAIN STAT E SUBSTAT WEIGHTING
 # ==========================================
 def clean_value(val_str: str) -> Tuple[float, bool]:
-    """Extrai o valor numérico de uma string de status e indica se é percentual."""
-    has_pct = "%" in val_str
-    match = RE_NUM_FLOAT.search(val_str)
-    val = float(match.group(1)) if match else 0.0
+    """Extrai o valor numérico de uma string de status (respeitando milhar PT-BR como '3.000+') e indica se é percentual."""
+    from calculators.benchmark_radar import parse_stat_number
+
+    s = str(val_str or "")
+    has_pct = "%" in s
+    parsed = parse_stat_number(s)
+    val = float(parsed) if parsed is not None else 0.0
     return val, has_pct
 
 
@@ -2119,59 +2130,72 @@ def analyze_account_luck(game_id: str, roster_data: List[Dict[str, Any]]) -> Dic
 # ==========================================
 def evaluate_general_stats(game_id: str, char_id: str, final_stats: Dict[str, str]) -> List[Dict[str, str]]:
     """
-    Compara os status consolidados reais do personagem contra os benchmarks ideais do metagame.
-    Retorna uma lista estruturada de avaliações.
+    Compara os status consolidados reais do personagem contra os benchmarks ideais do metagame
+    usando o motor padronizado `calculators.benchmark_radar` (suporta milhar PT-BR, Base SPD,
+    In-Combat, ERR base 100%, ranges e flex/anything).
     """
+    from calculators.benchmark_radar import build_radar_benchmark_payload
+
     game_id = game_id.lower().strip()
     meta_db = get_meta_data(game_id)
 
-    char_meta = meta_db.get(str(char_id))
+    char_key = str(char_id)
+    char_meta = (
+        meta_db.get(char_key)
+        or meta_db.get(char_key.lower().strip())
+        or meta_db.get(normalize_char_name(char_key))
+    )
+    if not char_meta:
+        norm_q = normalize_char_name(char_key)
+        for v in meta_db.values():
+            if isinstance(v, dict) and normalize_char_name(v.get("name", "")) == norm_q:
+                char_meta = v
+                break
+
     if not char_meta or "general_benchmarks" not in char_meta:
         return []
 
     benchmarks = char_meta.get("general_benchmarks", {})
+    if not benchmarks:
+        return []
+
+    radar = build_radar_benchmark_payload(
+        game_id=game_id,
+        char_name=str(char_meta.get("name", char_id)),
+        player_stats=final_stats or {},
+        endgame_stats=benchmarks,
+    )
+
     results = []
-
-    normalized_player_stats = {}
-    for p_name, p_val in final_stats.items():
-        norm_key = normalize_stat_name(p_name)
-        normalized_player_stats[norm_key] = (p_name, p_val)
-
-    for bench_key, target_expr in benchmarks.items():
-        player_stat_info = normalized_player_stats.get(bench_key)
-        if not player_stat_info:
+    for axis in radar.get("axes", []):
+        if axis.get("status") == "missing":
             continue
+        p_name = axis["label_pt"]
+        p_val_str = axis["actual_display"]
+        target_expr = axis["raw_target"]
+        st = axis["status"]
+        tags = axis.get("tags", [])
 
-        p_name, p_val_str = player_stat_info
-
-        target_val = clean_value(target_expr)[0]
-        actual_val = clean_value(p_val_str)[0]
-
-        operator = ">="
-        if "<=" in target_expr:
-            operator = "<="
-        elif "<" in target_expr:
-            operator = "<"
-        elif ">" in target_expr:
-            operator = ">"
-
-        is_good = False
-        if operator == ">=":
-            is_good = actual_val >= target_val
-        elif operator == "<=":
-            is_good = actual_val <= target_val
-        elif operator == ">":
-            is_good = actual_val > target_val
-        elif operator == "<":
-            is_good = actual_val < target_val
-
+        is_good = st in ("ok", "flex")
         status = "GOOD" if is_good else "LOW"
-        if status == "GOOD":
+        if "base_ok" in tags and axis.get("diff_num") is not None and axis["diff_num"] < 0:
+            msg = f"Sua {p_name} ({p_val_str}) atende o ramo VEL Base! Próximo patamar rápido: {target_expr}."
+        elif "in_combat" in tags and not is_good:
+            msg = f"Sua {p_name} fora de combate é {p_val_str}; a meta é {target_expr} (considerando buffs em batalha)."
+        elif is_good:
             msg = f"Sua {p_name} ({p_val_str}) atingiu a meta recomendada ({target_expr})!"
         else:
             msg = f"Aumente sua {p_name} ({p_val_str}), a meta recomendada é {target_expr}."
 
-        results.append({"stat": p_name, "target": target_expr, "actual": p_val_str, "status": status, "message": msg})
+        results.append(
+            {
+                "stat": p_name,
+                "target": target_expr,
+                "actual": p_val_str,
+                "status": status,
+                "message": msg,
+            }
+        )
 
     return results
 
@@ -2280,8 +2304,12 @@ def generate_meta_json_from_markdown(game_id: str):
                 if not RE_HAS_DIGIT.search(s_raw):
                     continue
                 norm_k = normalize_stat_name(s_label)
-                if not norm_k:
+                from calculators.benchmark_radar import canonicalize_benchmark_key
+
+                canon_k = canonicalize_benchmark_key(s_label, game_id="hsr")
+                if not canon_k:
                     continue
+                norm_k = canon_k
                 m_plus = RE_BENCH_PLUS.fullmatch(s_raw)
                 m_paren = RE_BENCH_PAREN.fullmatch(s_raw)
                 if m_plus:
@@ -2324,6 +2352,28 @@ def generate_meta_json_from_markdown(game_id: str):
             sub_line = sub_match.group(1).strip()
             raw_tokens = [tok.strip() for tok in RE_SUB_TOKEN_SPLIT.split(sub_line) if tok.strip()]
             meta["substats_priority"] = sanitize_substats(raw_tokens, "zzz")
+
+        benchmarks = {}
+        endgame_sec = RE_ENDGAME_SEC.search(content)
+        if endgame_sec:
+            from calculators.benchmark_radar import canonicalize_benchmark_key
+
+            for line in endgame_sec.group(1).splitlines():
+                l_str = line.strip()
+                if not l_str or not (l_str.startswith("-") or l_str.startswith("*")) or ":" not in l_str:
+                    continue
+                s_label, s_raw = l_str.lstrip("-* \t").split(":", 1)
+                s_label = s_label.replace("**", "").replace("`", "").strip()
+                s_raw = s_raw.replace("**", "").replace("`", "").strip()
+                if not s_label or not s_raw or s_label.lower().startswith(("note", "nota", "justificativa", "other ")):
+                    continue
+                if not RE_HAS_DIGIT.search(s_raw):
+                    continue
+                canon_k = canonicalize_benchmark_key(s_label, game_id="zzz")
+                if not canon_k:
+                    continue
+                benchmarks[canon_k] = s_raw
+        meta["general_benchmarks"] = benchmarks
         return meta
 
     def parse_genshin(content):

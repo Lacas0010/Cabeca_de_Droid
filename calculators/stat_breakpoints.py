@@ -1,9 +1,6 @@
 """Cálculo determinístico de breakpoints de combate (CRIT 1:2, SPD/AV, Recarga, Anomalia)."""
 
-import re
-
-
-RE_DECIMAL = re.compile(r"([0-9]+(?:\.[0-9]+)?)")
+from calculators.benchmark_radar import parse_stat_number
 
 
 def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dict:
@@ -18,12 +15,9 @@ def calculate_stat_breakpoints(game_id: str, char_name: str, stats: dict) -> dic
     def _parse_val(k_list, default=0.0):
         for k in k_list:
             if k in stats and stats[k] is not None:
-                val = stats[k]
-                if isinstance(val, (int, float)):
-                    return float(val)
-                m = RE_DECIMAL.search(str(val))
-                if m:
-                    return float(m.group(1))
+                parsed = parse_stat_number(stats[k])
+                if parsed is not None:
+                    return float(parsed)
         return default
 
     speed = _parse_val(["speed", "spd", "velocidade"])

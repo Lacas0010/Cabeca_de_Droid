@@ -13,11 +13,11 @@
 <!-- html2canvas para renderização de cards e infográficos em alta resolução -->
 <script defer="" src="/static/vendor/html2canvas/html2canvas.min.js"></script>
 <!-- CSS Modularizado por Domínio + Core/Sakuga -->
-<link href="css/help_security.css?v=2.0" rel="stylesheet"/>
+<link href="css/help_security.css?v=3.0" rel="stylesheet"/>
 <link href="css/gacha.css?v=2.3" rel="stylesheet"/>
 <link href="css/endgame_strategy.css?v=2.5" rel="stylesheet"/>
 <link href="css/team_card.css?v=2.0" rel="stylesheet"/>
-<link href="style.css?v=37.0" rel="stylesheet"/>
+<link href="style.css?v=39.0" rel="stylesheet"/>
 <link href="/assets/logo.svg" rel="icon" type="image/svg+xml"/>
 </head>
 <body>
@@ -2437,530 +2437,503 @@
 </div>
 </div>
 </section>
-<!-- ABA COMO USAR (HELP HUB & KNOWLEDGE BASE V5.0) -->
+<!-- ABA COMO USAR (GUIA DE PRIMEIROS PASSOS + TODAS AS FUNCIONALIDADES) -->
 <section class="tab-pane" id="tab-help">
 <div class="help-hub-container">
-<!-- HERO BANNER -->
+<!-- BLOCO 1: PRIMEIROS PASSOS (COMO COMEÇAR) -->
+<div class="help-quickstart-panel">
+<div class="help-quickstart-header">
+<div class="help-title-group">
+<span class="help-quickstart-eyebrow"><i class="fa-solid fa-rocket"></i> <span data-i18n="help_qs_eyebrow">PRIMEIROS PASSOS</span></span>
+<h2><i class="fa-solid fa-compass" style="color: #38bdf8;"></i> <span data-i18n="help_qs_title">Como Usar o Cabeça de Droid</span></h2>
+<p data-i18n="help_qs_subtitle">Siga estes 4 passos simples para conectar sua conta HoYoLAB e liberar todos os painéis — tudo roda localmente no seu PC, com cookies criptografados e sem nunca salvar sua senha.</p>
+</div>
+<sakuga-button class="sk-sm sk-accent-cyan help-qs-cta" onclick="document.querySelector('[data-tab=config]').click()" variant="primary">
+<i class="fa-solid fa-gear"></i> <span data-i18n="help_qs_cta_config">Começar nas Configurações</span>
+</sakuga-button>
+</div>
+<div class="help-steps-grid">
+<!-- PASSO 1 -->
+<div class="help-step-card step-accent-indigo">
+<div class="help-step-top">
+<span class="help-step-num">1</span>
+<span class="help-step-icon"><i class="fa-solid fa-sliders"></i></span>
+</div>
+<h3 data-i18n="help_step_1_title">Vá nas Configurações</h3>
+<p data-i18n="help_step_1_desc">Abra a aba <strong>Configurações</strong> no menu lateral. É lá que você conecta sua conta HoYoLAB, escolhe o idioma e, se quiser, ativa alertas ou bloqueio por PIN.</p>
+<div class="help-step-action">
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=config]').click()" variant="secondary">
+<i class="fa-solid fa-gear"></i> <span data-i18n="help_step_1_btn">Abrir Configurações</span>
+</sakuga-button>
+</div>
+</div>
+<!-- PASSO 2 -->
+<div class="help-step-card step-accent-emerald">
+<div class="help-step-top">
+<span class="help-step-num">2</span>
+<span class="help-step-icon"><i class="fa-solid fa-right-to-bracket"></i></span>
+</div>
+<h3 data-i18n="help_step_2_title">Logue na sua conta HoYoLAB</h3>
+<p data-i18n="help_step_2_desc">Em <strong>Cookies de Sessão HoYoLAB</strong>, clique em <strong>Login Automático via Playwright</strong> e faça login normalmente no site oficial (ou cole os cookies manualmente e salve). O app nunca vê sua senha.</p>
+<div class="help-step-action">
+<sakuga-button class="help-action-btn sk-xs sk-accent-emerald" onclick="document.querySelector('[data-tab=config]').click(); setTimeout(() => document.getElementById('btn-auto-login')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 150);" variant="secondary">
+<i class="fa-solid fa-earth-americas"></i> <span data-i18n="help_step_2_btn">Ir para Login HoYo</span>
+</sakuga-button>
+</div>
+</div>
+<!-- PASSO 3 -->
+<div class="help-step-card step-accent-amber">
+<div class="help-step-top">
+<span class="help-step-num">3</span>
+<span class="help-step-icon"><i class="fa-solid fa-arrows-rotate"></i></span>
+</div>
+<h3 data-i18n="help_step_3_title">Sincronize seus Jogos</h3>
+<p data-i18n="help_step_3_desc">Volte para a aba <strong>Início</strong> (ou abra <strong>Genshin</strong>, <strong>HSR</strong> ou <strong>ZZZ</strong>) e clique em <strong>Sincronizar Tudo</strong>. Seus personagens, relíquias, energia e endgame são importados e cruzados com os guias oficiais.</p>
+<div class="help-step-action">
+<sakuga-button class="help-action-btn sk-xs sk-accent-amber" onclick="document.querySelector('[data-tab=home]').click()" variant="secondary">
+<i class="fa-solid fa-house"></i> <span data-i18n="help_step_3_btn">Ir para Início</span>
+</sakuga-button>
+</div>
+</div>
+<!-- PASSO 4 -->
+<div class="help-step-card step-accent-cyan">
+<div class="help-step-top">
+<span class="help-step-num">4</span>
+<span class="help-step-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+</div>
+<h3 data-i18n="help_step_4_title">Explore Builds, Radar &amp; Ctrl+K</h3>
+<p data-i18n="help_step_4_desc">Clique em qualquer personagem para ver notas RV, <strong>Gráfico Radar vs. Benchmark Meta</strong>, Sandbox e Card HD. Use <kbd class="help-kbd">Ctrl+K</kbd> em qualquer tela para buscar tudo instantaneamente.</p>
+<div class="help-step-action">
+<sakuga-button class="help-action-btn sk-xs sk-accent-cyan" onclick="window.openQuickSearch && window.openQuickSearch()" variant="secondary">
+<i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="help_step_4_btn">Testar Busca (Ctrl+K)</span>
+</sakuga-button>
+</div>
+</div>
+</div>
+<div class="help-quickstart-tip">
+<i class="fa-solid fa-lightbulb"></i>
+<span data-i18n="help_qs_tip"><strong>Dica:</strong> no portal do HoYoLAB, mantenha seu <strong>Registro de Batalha (Battle Chronicle)</strong> público para que relíquias, atributos e endgame sejam carregados corretamente. Você só precisa fazer login uma vez enquanto a sessão continuar ativa.</span>
+</div>
+</div>
+
+<!-- BLOCO 2: CATÁLOGO DE TODAS AS FUNCIONALIDADES -->
 <div class="help-hero-banner">
 <div class="help-hero-header">
 <div class="help-title-group">
-<h2><i class="fa-solid fa-graduation-cap" style="color: #6366f1;"></i> <span data-i18n="help_center_title">Central de Ajuda &amp; Guia de Recursos</span></h2>
-<p data-i18n="help_hub_lead_desc">Explore os 20 módulos inteligentes do Cabeça de Droid v5.0. Utilize os filtros por categoria ou a busca em tempo real para encontrar tutoriais, atalhos rápidos e regras do sistema.</p>
+<h2><i class="fa-solid fa-layer-group" style="color: #6366f1;"></i> <span data-i18n="help_center_title">Todas as Funcionalidades</span></h2>
+<p data-i18n="help_hub_lead_desc">Conheça cada módulo disponível no Cabeça de Droid. Use a busca ou filtre por categoria e clique em Detalhes para ver o passo a passo de cada ferramenta.</p>
 </div>
 <div class="help-search-box">
 <i class="fa-solid fa-magnifying-glass help-search-icon" style="z-index: 2;"></i>
-<sakuga-input class="help-search-input sk-search-pad" data-i18n-placeholder="help_search_ph" id="help-search-input" label="Buscar na Central de Ajuda" placeholder="Buscar recurso, comando ou guia..." type="search"></sakuga-input>
+<sakuga-input class="help-search-input sk-search-pad" data-i18n-placeholder="help_search_ph" id="help-search-input" label="Buscar na Central de Ajuda" placeholder="Buscar funcionalidade, aba ou atalho..." type="search"></sakuga-input>
 </div>
 </div>
 <!-- CATEGORY PILLS FILTER -->
 <div class="help-category-pills">
-<sakuga-button class="help-pill active sk-xs" data-category="all" variant="secondary"><i class="fa-solid fa-border-all"></i> <span data-i18n="help_pill_all">Todos os Recursos (20)</span></sakuga-button>
-<sakuga-button class="help-pill sk-xs" data-category="auth" variant="secondary"><i class="fa-solid fa-shield-halved" style="color: #10b981;"></i> <span data-i18n="help_pill_auth">Conta &amp; Segurança</span></sakuga-button>
-<sakuga-button class="help-pill sk-xs" data-category="builds" variant="secondary"><i class="fa-solid fa-wand-magic-sparkles" style="color: #6366f1;"></i> <span data-i18n="help_pill_builds">Roster, Builds &amp; RV</span></sakuga-button>
-<sakuga-button class="help-pill sk-xs" data-category="tools" variant="secondary"><i class="fa-solid fa-boxes-stacked" style="color: #f59e0b;"></i> <span data-i18n="help_pill_tools">Simuladores &amp; Farm</span></sakuga-button>
-<sakuga-button class="help-pill sk-xs" data-category="audit" variant="secondary"><i class="fa-solid fa-trophy" style="color: #a855f7;"></i> <span data-i18n="help_pill_audit">Auditoria &amp; Evolução</span></sakuga-button>
-<sakuga-button class="help-pill sk-xs" data-category="ia" variant="secondary"><i class="fa-solid fa-brain" style="color: #ec4899;"></i> <span data-i18n="help_pill_ia">IA &amp; Automação</span></sakuga-button>
-<sakuga-button class="help-pill sk-xs" data-category="export" variant="secondary"><i class="fa-solid fa-network-wired" style="color: #06b6d4;"></i> <span data-i18n="help_pill_export">Rede &amp; Exportações</span></sakuga-button>
+<sakuga-button class="help-pill active sk-xs" data-category="all" variant="secondary"><i class="fa-solid fa-border-all"></i> <span data-i18n="help_pill_all">Todas (18)</span></sakuga-button>
+<sakuga-button class="help-pill sk-xs" data-category="daily" variant="secondary"><i class="fa-solid fa-stopwatch" style="color: #f59e0b;"></i> <span data-i18n="help_pill_daily">Início &amp; Diário</span></sakuga-button>
+<sakuga-button class="help-pill sk-xs" data-category="builds" variant="secondary"><i class="fa-solid fa-shield-halved" style="color: #6366f1;"></i> <span data-i18n="help_pill_builds">Builds &amp; Inspetor</span></sakuga-button>
+<sakuga-button class="help-pill sk-xs" data-category="audit" variant="secondary"><i class="fa-solid fa-trophy" style="color: #a855f7;"></i> <span data-i18n="help_pill_audit">Endgame &amp; Auditoria</span></sakuga-button>
+<sakuga-button class="help-pill sk-xs" data-category="tools" variant="secondary"><i class="fa-solid fa-boxes-stacked" style="color: #10b981;"></i> <span data-i18n="help_pill_tools">Gacha &amp; Farm</span></sakuga-button>
+<sakuga-button class="help-pill sk-xs" data-category="system" variant="secondary"><i class="fa-solid fa-lock" style="color: #06b6d4;"></i> <span data-i18n="help_pill_system">Segurança &amp; Sistema</span></sakuga-button>
 </div>
 </div>
-<!-- CARDS GRID -->
+
+<!-- CARDS GRID (18 FUNCIONALIDADES ATUAIS) -->
 <div class="help-cards-grid" id="help-cards-grid">
-<!-- CARD 1: LOGIN AUTOMÁTICO PLAYWRIGHT -->
-<div class="help-card" data-category="auth">
-<span class="help-card-badge" data-i18n="help_card_badge_1" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">CONTA</span>
+<!-- 1. DAILY NOTES & CHECK-IN 6H -->
+<div class="help-card" data-category="daily">
+<span class="help-card-badge" data-i18n="help_card_badge_1" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">DIÁRIO</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-<i class="fa-solid fa-key"></i>
+<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;"><i class="fa-solid fa-battery-three-quarters"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_1">Daily Notes &amp; Check-in Automático</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_1">1. Autenticação &amp; Playwright</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_1">Login automático com Chromium headless para captura segura e direta de cookies de sessão (`ltuid_v2`, `ltoken_v2`).</div>
-<div class="help-card-tags">
-<span class="help-tag">Cookies v2</span>
-<span class="help-tag">Playwright</span>
-<span class="help-tag" data-i18n="help_tag_zero_creds">Zero Credenciais</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_1">
-                                    Acesse a aba <strong>Configurações</strong> e clique em <strong>Login Automático via Playwright</strong>. Uma janela segura do Chromium será aberta para você logar no portal oficial da HoYoLAB. Seus tokens de sessão são salvos localmente no cofre seguro. O sistema nunca tem acesso à sua senha.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=config]').click()" variant="secondary"><i class="fa-solid fa-gear"></i><span data-i18n="help_card_btn_1"> Abrir Configurações</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 2: COFRE DPAPI & PIN LOCK -->
-<div class="help-card" data-category="auth">
-<span class="help-card-badge" data-i18n="help_card_badge_2" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SEGURANÇA</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-<i class="fa-solid fa-vault"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_2">2. Cofre de Segurança DPAPI &amp; PIN Lock</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_2">Criptografia Windows DPAPI, derivação PBKDF2/AES-256 e PIN de Bloqueio numérico para blindar suas credenciais.</div>
-<div class="help-card-tags">
-<span class="help-tag">DPAPI Vault</span>
-<span class="help-tag" data-i18n="help_tag_pin_4digits">PIN 4 Dígitos</span>
-<span class="help-tag">AES-256-GCM</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_2">
-                                    Todas as credenciais (`cookies.enc`, `config.enc`) são criptografadas com a API DPAPI do Windows vinculada ao seu usuário do SO. Você também pode ativar um <strong>PIN de Acesso</strong> nas Configurações: com o cofre bloqueado, nenhuma ação ou consulta a dados sensíveis é liberada.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=config]').click()" variant="secondary"><i class="fa-solid fa-lock"></i><span data-i18n="help_card_btn_2"> Configurar PIN</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 3: DAILY NOTES & AUTO CHECKIN -->
-<div class="help-card" data-category="auth">
-<span class="help-card-badge" data-i18n="help_card_badge_3" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">ENERGIA</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-<i class="fa-solid fa-battery-three-quarters"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_3">3. Daily Notes &amp; Auto Check-in 6h</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_3">Monitor em tempo real de Resina, Poder de Desbravamento e Bateria com anéis SVG e check-in diário a cada 6h.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_1">Monitor em tempo real de Resina, Poder de Desbravamento e Bateria com horário exato de cap, expedições, comissões e check-in a cada 6h.</div>
 <div class="help-card-tags">
 <span class="help-tag">Daily Notes</span>
-<span class="help-tag" data-i18n="help_tag_svg_rings">Anéis SVG</span>
+<span class="help-tag" data-i18n="help_tag_svg_rings">Cap em Tempo Real</span>
 <span class="help-tag" data-i18n="help_tag_auto_checkin">Auto Check-in 6h</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_3">
-                                    No topo da aba <strong>Início</strong>, o monitor exibe a contagem regressiva e o tempo exato para o cap de energia nos 3 jogos (Genshin 200, HSR 300, ZZZ 240). O backend FastAPI executa o check-in oficial diário automaticamente a cada 6 horas no HoYoLAB, registrando o histórico no SQLite.
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_1">No topo da aba <strong>Início</strong>, veja energia atual, hora exata em que vai encher (Genshin 200, HSR 300, ZZZ 240), comissões, expedições e Loja de Vídeo. O check-in diário do HoYoLAB roda sozinho a cada 6 horas em segundo plano.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=home]').click()" variant="secondary"><i class="fa-solid fa-house"></i><span data-i18n="help_card_btn_3"> Ir para Dashboard</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=home]').click()" variant="secondary"><i class="fa-solid fa-house"></i> <span data-i18n="help_card_btn_1">Abrir Início</span></sakuga-button>
 </div>
 </div>
-<!-- CARD 4: SINCRONIZAÇÃO & AGENDAMENTO -->
-<div class="help-card" data-category="auth">
-<span class="help-card-badge" data-i18n="help_card_badge_4" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);">SINCRONIZAÇÃO</span>
+
+<!-- 2. RADAR UNIFICADO DE RESETS & VIRADA DE BANNERS -->
+<div class="help-card" data-category="daily">
+<span class="help-card-badge" data-i18n="help_card_badge_2" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">RADAR</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;">
-<i class="fa-solid fa-rotate"></i>
+<div class="help-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;"><i class="fa-solid fa-stopwatch"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_2">Radar de Resets &amp; Virada de Banners</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_4">4. Sincronização &amp; Agendamento Autônomo</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_4">Raspagem no Prydwen.gg com perfil anti-403 (`curl_cffi`) e sincronização diária programada às 04:00 AM.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_2">Os 7 modos de endgame ordenados por urgência com contagem regressiva ao vivo e cronograma de banners ativos nos 3 jogos.</div>
 <div class="help-card-tags">
-<span class="help-tag">Prydwen</span>
-<span class="help-tag">Bypass 403</span>
-<span class="help-tag">Cron 04:00</span>
+<span class="help-tag">7 Modos Endgame</span>
+<span class="help-tag" data-i18n="help_tag_live_timers">Contagem ao Vivo</span>
+<span class="help-tag">Banners Ativos</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_4">
-                                    Nas abas de cada jogo (<strong>ZZZ</strong>, <strong>Genshin</strong> ou <strong>HSR</strong>), você pode puxar dados ao vivo da API da HoYoverse e mesclar com as recomendações de builds e tiers do Prydwen. Um agendador interno atualiza automaticamente tudo no horário definido (padrão: 04:00 AM).
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_2">Na aba <strong>Início</strong>, o Radar destaca em alerta âmbar qualquer endgame pendente perto de fechar e exibe o tempo exato para o reset diário/semanal e virada de banners. Clique em qualquer modo para ir direto à aba dele, ou clique em um banner para abrir no Simulador de Gacha.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=hsr]').click()" variant="secondary"><i class="fa-solid fa-rotate"></i><span data-i18n="help_card_btn_4"> Ver Roster</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=home]').click()" variant="secondary"><i class="fa-solid fa-stopwatch"></i> <span data-i18n="help_card_btn_2">Ver Radar</span></sakuga-button>
 </div>
 </div>
-<!-- CARD 5: ROLL VALUE & INSPETOR DE RELÍQUIAS -->
-<div class="help-card" data-category="builds">
-<span class="help-card-badge" data-i18n="help_card_badge_5" style="color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">BUILDS</span>
+
+<!-- 3. BUSCA RÁPIDA GLOBAL CTRL+K -->
+<div class="help-card" data-category="daily">
+<span class="help-card-badge" data-i18n="help_card_badge_3" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">ATALHO</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
-<i class="fa-solid fa-shield-halved"></i>
+<div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fa-solid fa-magnifying-glass"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_3">Busca Rápida Global (Ctrl+K)</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_5">5. Roll Value (RV) &amp; Inspetor de Peças</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_5">Avaliação matemática de artefatos com Main Stat Forgiveness, Flat Fallback e classificação SSS a D.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_3">Paleta de comando acessível de qualquer tela para saltar instantaneamente para qualquer personagem, aba ou modo endgame.</div>
 <div class="help-card-tags">
-<span class="help-tag">Roll Value</span>
-<span class="help-tag" data-i18n="help_tag_grades_sssd">Notas SSS-D</span>
-<span class="help-tag">Substat Weight</span>
+<span class="help-tag">Ctrl + K</span>
+<span class="help-tag">Teclado ↑↓ Enter</span>
+<span class="help-tag">Multi-Jogo</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_5">
-                                    Clique em qualquer card de personagem para abrir a gaveta do Inspetor. O cálculo de Roll Value avalia substatus contra rolagens 5★ máximas. Main stats corretos recebem 40% de bônus base, e status Flat ganham 50% de crédito parcial. Grades: <strong>SSS</strong> (≥90%), <strong>SS</strong> (75-89%), <strong>S</strong> (60-74%), <strong>A</strong> (45-59%), <strong>B</strong> (30-44%), <strong>C/D</strong> (&lt;30%).
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_3">Pressione <strong>Ctrl+K</strong> (ou clique no botão <strong>Busca Rápida</strong> no menu lateral) e digite o nome de um personagem, recurso ou endgame. Use as setas e Enter para abrir direto o Inspetor de Builds do personagem escolhido.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=hsr]').click()" variant="secondary"><i class="fa-solid fa-user-ninja"></i><span data-i18n="help_card_btn_5"> Ver Personagens</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="window.openQuickSearch && window.openQuickSearch()" variant="secondary"><i class="fa-solid fa-magnifying-glass"></i> <span data-i18n="help_card_btn_3">Abrir Ctrl+K</span></sakuga-button>
 </div>
 </div>
-<!-- CARD 6: BREAKPOINTS & ASCENSÃO -->
-<div class="help-card" data-category="builds">
-<span class="help-card-badge" data-i18n="help_card_badge_6" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">METAS</span>
+
+<!-- 4. CÓDIGOS PROMOCIONAIS (3H) -->
+<div class="help-card" data-category="daily">
+<span class="help-card-badge" data-i18n="help_card_badge_4" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">CÓDIGOS</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;">
-<i class="fa-solid fa-gauge-high"></i>
+<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;"><i class="fa-solid fa-gift"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_4">Códigos Promocionais &amp; Auto-Redeem</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_6">6. Breakpoints &amp; Calculadora de Ascensão</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_6">Comparador de metas de combate (Vida, ATQ, Taxa/Dano Crítico, VEL) e cálculo de materiais para níveis 60/80/90.</div>
-<div class="help-card-tags">
-<span class="help-tag">Breakpoints</span>
-<span class="help-tag" data-i18n="help_tag_xp_calc">Calculadora XP</span>
-<span class="help-tag" data-i18n="help_tag_cap_real">Cap Real 60/80/90</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_6">
-                                    No Inspetor de Builds, a aba <strong>Comparador de Metas Gerais</strong> indica se o personagem atingiu os patamares recomendados no metagame (verde = meta atingida, vermelho = defasagem). A <strong>Calculadora de Ascensão</strong> estima com precisão Mora/Créditos, Livros de XP e Drops de Chefe respeitando os limites reais de cada jogo.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=genshin]').click()" variant="secondary"><i class="fa-solid fa-calculator"></i><span data-i18n="help_card_btn_6"> Inspetor de Builds</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 7: CARD IMAGEM HD & OTIMIZADOR IA -->
-<div class="help-card" data-category="builds">
-<span class="help-card-badge" data-i18n="help_card_badge_7" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">EXPORTAR</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-<i class="fa-solid fa-camera"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_7">7. Card Imagem HD &amp; Otimizador IA</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_7">Gerador de imagem PNG em alta resolução para Discord e consultor IA com 3 conselhos diretos e acionáveis.</div>
-<div class="help-card-tags">
-<span class="help-tag">Card PNG</span>
-<span class="help-tag">Discord Ready</span>
-<span class="help-tag">HD Export</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_7">Clique no botão <strong>Card Imagem</strong> no Inspetor para renderizar uma vitrine visual completa da build com equipamentos, atributos e notas de eficiência.</div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=hsr]').click()" variant="secondary"><i class="fa-solid fa-image"></i><span data-i18n="help_card_btn_7"> Gerar Card</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 8: SIMULADOR GACHA MONTE CARLO -->
-<div class="help-card" data-category="tools">
-<span class="help-card-badge" data-i18n="help_card_badge_8" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">SIMULADOR</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-<i class="fa-solid fa-wand-magic-sparkles"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_8">8. Simulador de Gacha</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_8">10 mil simulações com Soft Pity real (74+), cálculo de cópias faltantes e animações.</div>
-<div class="help-card-tags">
-<span class="help-tag">Soft Pity 74+</span>
-<span class="help-tag" data-i18n="help_tag_rounds_10k">10.000 Rodadas</span>
-<span class="help-tag" data-i18n="help_tag_roster_discount">Desconto Roster</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_8">
-                                    Acesse a aba <strong>Simulador de Tiros</strong> no menu lateral. Escolha o personagem desejado (5★ / Rank S ou 4★ / Rank A) — o sistema identifica suas cópias já obtidas no Roster e calcula os tiros necessários para as próximas. Inclui animações visuais imersivas de Meteoro (Genshin), Passagem Estelar (HSR) e Glitch CRT (ZZZ).
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=gacha]').click()" variant="secondary"><i class="fa-solid fa-wand-magic-sparkles"></i><span data-i18n="help_card_btn_8"> Testar Simulador</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 9: CENTRAL DE FARM & ORDEM DE SERVIÇO -->
-<div class="help-card" data-category="tools">
-<span class="help-card-badge" data-i18n="help_card_badge_9" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">FARM</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-<i class="fa-solid fa-wheat-awn"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_9">9. Central de Farm &amp; Ordem de Serviço Diária</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_9">Rotação diária de domínios, materiais de ascensão e planejamento de gasto de resina priorizado pelo Roster.</div>
-<div class="help-card-tags">
-<span class="help-tag" data-i18n="help_tag_daily_rotation">Rotação Diária</span>
-<span class="help-tag" data-i18n="help_tag_task_order">Ordem de Serviço</span>
-<span class="help-tag" data-i18n="help_tag_resin_alloc">Alocação de Resina</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_9">
-                                    A <strong>Central de Farm</strong> cruza os domínios abertos no dia da semana com os personagens prioritários da sua conta. Gera uma <strong>Ordem de Serviço Diária</strong> estruturada, calculando exatamente quanta resina investir em talentos, chefes ou artefatos.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=farm]').click()" variant="secondary"><i class="fa-solid fa-wheat-awn"></i><span data-i18n="help_card_btn_9"> Ver Farm Diário</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 10: TRASH FINDER -->
-<div class="help-card" data-category="tools">
-<span class="help-card-badge" data-i18n="help_card_badge_10" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">INVENTÁRIO</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
-<i class="fa-solid fa-trash-can"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_10">10. Filtro de Descarte de Equipamentos (Trash Finder)</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_10">Identificador automático de artefatos e relíquias do inventário com substatus incompatíveis com o metagame.</div>
-<div class="help-card-tags">
-<span class="help-tag">Trash Finder</span>
-<span class="help-tag" data-i18n="help_tag_inv_cleanup">Limpeza de Mochila</span>
-<span class="help-tag" data-i18n="help_tag_salvaging">Reciclagem</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_10">
-                                    A ferramenta <strong>Relíquias Lixo</strong> analisa todas as peças do inventário contra as diretrizes de todos os personagens existentes no jogo. Destaca com precisão as peças sem utilidade prática que podem ser destruídas por Mora ou recicladas no sintetizador.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=trash]').click()" variant="secondary"><i class="fa-solid fa-trash-can"></i><span data-i18n="help_card_btn_10"> Ver Peças para Descarte</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 11: RECOMENDADOR DE ARTESANATO (RELIC CRAFTING) -->
-<div class="help-card" data-category="tools">
-<span class="help-card-badge" data-i18n="help_card_badge_11" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SÍNTESE</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-<i class="fa-solid fa-hammer"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_11">11. Artesanato de Relíquias &amp; Síntese</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_11">Recomendação técnica de criação de peças com Resina Automodeladora focada nos espaços com menor pontuação do elenco.</div>
-<div class="help-card-tags">
-<span class="help-tag">Relic Crafting</span>
-<span class="help-tag" data-i18n="help_tag_self_mod_resin">Resina Automoduladora</span>
-<span class="help-tag" data-i18n="help_tag_priority_slot">Slot Prioritário</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_11">
-                                    Na aba <strong>Tier List &amp; Audit</strong>, o módulo de <strong>Artesanato de Relíquias</strong> identifica qual slot de equipamento dos seus personagens mais fortes possui o menor Roll Value (RV) e sugere qual peça, conjunto e atributo principal você deve sintetizar para obter o maior ganho de dano imediato.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=audit]').click()" variant="secondary"><i class="fa-solid fa-hammer"></i><span data-i18n="help_card_btn_11"> Ver Síntese</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 12: ÍNDICE DE SORTE DA CONTA -->
-<div class="help-card" data-category="tools">
-<span class="help-card-badge" data-i18n="help_card_badge_12" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SORTE RNG</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
-<i class="fa-solid fa-clover"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_12">12. Índice de Sorte &amp; Eficiência de Rolagens</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_12">Análise estatística do RNG de relíquias (Luck Score %, God Roll #1, Cursed Roll e substatus detalhados).</div>
-<div class="help-card-tags">
-<span class="help-tag">Luck Score %</span>
-<span class="help-tag">God Roll vs Cursed</span>
-<span class="help-tag" data-i18n="help_tag_official_icons">Ícones Oficiais</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_12">
-                                    Na aba <strong>Índice de Sorte</strong>, a aplicação calcula o valor de rolagem de todas as relíquias equipadas. Exibe o medidor de sorte da conta (ex: <i>SSS+ Deus do RNG</i>), compara a peça <strong>God Roll #1</strong> com a peça <strong>Cursed Roll</strong> e classifica cada rolagem (ex: <i>Perfeito +4</i>, <i>Ótimo +2</i>, <i>Desperdício</i>).
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=luck]').click()" variant="secondary"><i class="fa-solid fa-clover"></i><span data-i18n="help_card_btn_12"> Ver Índice de Sorte</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 13: TIER LIST & AUDITORIA DA CONTA -->
-<div class="help-card" data-category="audit">
-<span class="help-card-badge" data-i18n="help_card_badge_13" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">AUDITORIA</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;">
-<i class="fa-solid fa-trophy"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_13">13. Tier List &amp; Auditoria da Conta</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_13">Matriz visual de classificação por Tiers (S+ a C), nota global de maturidade da conta e exportação de Imagem HD.</div>
-<div class="help-card-tags">
-<span class="help-tag">Tier List S+</span>
-<span class="help-tag" data-i18n="help_tag_account_health">Saúde da Conta</span>
-<span class="help-tag">Export PNG HD</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_13">
-                                    Na aba <strong>Tier List &amp; Audit</strong>, a aplicação analisa seus personagens evoluídos e projeta uma matriz gráfica dividida por tiers de poder. Clique no botão <strong>Gerar Imagem HD da Tier List</strong> no topo para exportar o quadro completo em formato PNG de alta fidelidade.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=audit]').click()" variant="secondary"><i class="fa-solid fa-trophy"></i><span data-i18n="help_card_btn_13"> Abrir Tier List</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 14: DIAGNÓSTICO DE LACUNAS -->
-<div class="help-card" data-category="audit">
-<span class="help-card-badge" data-i18n="help_card_badge_14" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">DIAGNÓSTICO</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
-<i class="fa-solid fa-fire"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_14">14. Lacunas da Conta &amp; Modo Crítico</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_14">Mostra elementos e funções (DPS/Sustento/Buffer) que faltam no elenco.</div>
-<div class="help-card-tags">
-<span class="help-tag">Account Gaps</span>
-<span class="help-tag" data-i18n="help_tag_ai_roast_mode">Modo Roast IA</span>
-<span class="help-tag" data-i18n="help_tag_elem_coverage">Cobertura Elemental</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_14">
-                                    O motor de diagnóstico identifica elementos ausentes no seu elenco para o endgame (Abismo Espiral, MoC ou Shiyu Defense). O botão <strong>Roast da Minha Conta</strong> gera uma crítica bem-humorada, honesta e ácida sobre as escolhas de pulls e investimentos de recursos da sua conta.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=audit]').click()" variant="secondary"><i class="fa-solid fa-fire"></i><span data-i18n="help_card_btn_14"> Ver Roast &amp; Gaps</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 15: TIMELINE & SNAPSHOTS DE EVOLUÇÃO -->
-<div class="help-card" data-category="audit">
-<span class="help-card-badge" data-i18n="help_card_badge_15" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">EVOLUÇÃO</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
-<i class="fa-solid fa-chart-line"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_15">15. Linha do Tempo &amp; Snapshots de Evolução</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_15">Histórico gráfico de evolução com métricas acumuladas, novos 5★ e filtro para exibir apenas alterações.</div>
-<div class="help-card-tags">
-<span class="help-tag">Timeline Stepper</span>
-<span class="help-tag" data-i18n="help_tag_changes_filter">Filtro Alterações</span>
-<span class="help-tag" data-i18n="help_tag_diff_compare">Comparação Diffs</span>
-</div>
-<div class="help-card-details" data-i18n="help_card_details_15">
-                                    A aba <strong>Linha do Tempo</strong> registra snapshots periódicos da sua conta. Você pode criar um snapshot a qualquer momento ou usar o botão <strong>Apenas Personagens com Alterações</strong> para ocultar unidades estáticas e focar 100% nas evoluções de nível, novos 5★ e melhorias de relíquias.
-                                </div>
-</div>
-<div class="help-card-footer">
-<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=history]').click()" variant="secondary"><i class="fa-solid fa-chart-line"></i><span data-i18n="help_card_btn_15"> Ver Linha do Tempo</span></sakuga-button>
-</div>
-</div>
-<!-- CARD 16: CÓDIGOS PROMOCIONAIS & RESGATE 3H -->
-<div class="help-card" data-category="ia">
-<span class="help-card-badge" data-i18n="help_card_badge_16" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">CÓDIGOS</span>
-<div>
-<div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;">
-<i class="fa-solid fa-gift"></i>
-</div>
-<div class="help-card-title" data-i18n="help_card_title_16">16. Códigos Promocionais &amp; Auto-Redeem 3h</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_16">Busca contínua de códigos de Gemas Essenciais, Jades Estelares e Polychromes com resgate autônomo a cada 3h.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_4">Varredura contínua de códigos ativos de Gemas, Jades e Policromos com resgate automático a cada 3 horas.</div>
 <div class="help-card-tags">
 <span class="help-tag" data-i18n="help_tag_gems_jades">Gemas &amp; Jades</span>
 <span class="help-tag">Auto-Redeem 3h</span>
 <span class="help-tag">HoYoverse Direct</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_16">
-                                    Na aba <strong>Códigos Promocionais</strong>, o sistema pesquisa novos códigos ativos na web. O servidor executa uma rotina em segundo plano a cada 3 horas para resgatar automaticamente novos códigos na sua conta sem qualquer intervenção manual.
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_4">Na aba <strong>Códigos</strong>, você vê todos os códigos ativos dos 3 jogos e pode resgatar em lote com um clique. Em segundo plano, o sistema também checa e resgata novos códigos automaticamente a cada 3 horas.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=codes]').click()" variant="secondary"><i class="fa-solid fa-gift"></i><span data-i18n="help_card_btn_16"> Ver Códigos</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=codes]').click()" variant="secondary"><i class="fa-solid fa-gift"></i> <span data-i18n="help_card_btn_4">Ver Códigos</span></sakuga-button>
 </div>
 </div>
-<!-- CARD 17: NOTIFICAÇÕES PROATIVAS WEBHOOKS -->
-<div class="help-card" data-category="ia">
-<span class="help-card-badge" data-i18n="help_card_badge_17" style="color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">WEBHOOKS</span>
+
+<!-- 5. ROSTER MULTI-JOGO & FILTROS INTELIGENTES -->
+<div class="help-card" data-category="builds">
+<span class="help-card-badge" data-i18n="help_card_badge_5" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);">ELENCO</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;">
-<i class="fa-solid fa-bell"></i>
+<div class="help-card-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;"><i class="fa-solid fa-users"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_5">Roster Multi-Jogo &amp; Filtros Inteligentes</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_17">17. Notificações Proativas (Discord / Telegram)</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_17">Alertas instantâneos enviados diretamente para o seu Discord ou Telegram quando a resina encher ou códigos forem ativados.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_5">Visualize todos os seus personagens em Grade ou Lista com filtros por elemento, caminho/arma/especialidade, raridade e nota de build.</div>
 <div class="help-card-tags">
-<span class="help-tag" data-i18n="cfg_notif_discord_webhook">Discord Webhook</span>
-<span class="help-tag">Telegram Bot</span>
-<span class="help-tag" data-i18n="help_tag_full_resin_alert">Alerta Resina Cheia</span>
+<span class="help-tag">Grade &amp; Lista</span>
+<span class="help-tag" data-i18n="help_tag_official_icons">Ícones Oficiais</span>
+<span class="help-tag">Sync Diário 04:00</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_17">
-                                    Configure seu Webhook do Discord ou Token/Chat ID do Telegram na aba <strong>Configurações</strong>. O servidor enviará mensagens formatadas em embeds avisando sobre resina cheia iminente, sucesso no check-in diário e códigos promocionais ativados.
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_5">Nas abas <strong>ZZZ</strong>, <strong>Genshin</strong> e <strong>HSR</strong>, filtre rapidamente por Elemento, Caminho (HSR), Arma (Genshin), Especialidade (ZZZ), personagens sem peça ou por ordem alfabética/RV. A sincronização automática também atualiza tudo no horário programado.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=config]').click()" variant="secondary"><i class="fa-solid fa-bell"></i><span data-i18n="help_card_btn_17"> Configurar Webhook</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=hsr]').click()" variant="secondary"><i class="fa-solid fa-users"></i> <span data-i18n="help_card_btn_5">Ver Elenco</span></sakuga-button>
 </div>
 </div>
-<!-- CARD 18: CHAT IA & MONTADOR DE TIMES (OCULTO) -->
-<div class="help-card" data-category="ia" style="display: none;">
-<span class="help-card-badge" data-i18n="help_card_badge_18" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">CHAT IA</span>
+
+<!-- 6. ROLL VALUE (RV) & INSPETOR DE PEÇAS -->
+<div class="help-card" data-category="builds">
+<span class="help-card-badge" data-i18n="help_card_badge_6" style="color: #6366f1; border-color: rgba(99, 102, 241, 0.3);">BUILDS</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
-<i class="fa-solid fa-comments"></i>
+<div class="help-card-icon" style="background: rgba(99, 102, 241, 0.15); color: #6366f1;"><i class="fa-solid fa-shield-halved"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_6">Roll Value (RV) &amp; Inspetor de Builds</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_18">18. Chat IA Meta &amp; Montador de Times (SSE)</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_18">Assistente conversacional e analisador de sinergia de equipes em tempo real via Server-Sent Events.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_6">Avaliação matemática de relíquias, artefatos e discos contra rolagens 5★ máximas com notas de SSS a D, habilidades e Eidolons de Afinidade.</div>
 <div class="help-card-tags">
-<span class="help-tag">Local RAG</span>
-<span class="help-tag">Team Builder</span>
-<span class="help-tag">SSE Streaming</span>
+<span class="help-tag">Roll Value</span>
+<span class="help-tag" data-i18n="help_tag_grades_sssd">Notas SSS–D</span>
+<span class="help-tag">Substat Weight</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_18">
-                                    Na aba <strong>Chat IA Meta</strong>, converse com o assistente inteligente munido do contexto do seu Roster e guias do Prydwen. No painel <strong>Montador de Times</strong> à direita, selecione até 4 personagens para receber uma análise de rotação, ressonância elemental e sinergia de combate.
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_6">Clique em qualquer personagem para abrir o <strong>Inspetor de Builds</strong>. O Roll Value pontua substatus com base nos guias do Prydwen/KQM/Game8: atributo principal ideal soma 40% e atributos planos ganham 50% de crédito parcial. Notas: <strong>SSS</strong> (≥90%), <strong>SS</strong> (75–89%), <strong>S</strong> (60–74%), <strong>A</strong> (45–59%), <strong>B</strong> (30–44%), <strong>C/D</strong> (&lt;30%).</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=chat]').click()" variant="secondary"><i class="fa-solid fa-comments"></i><span data-i18n="help_card_btn_18"> Abrir Chat IA</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=hsr]').click()" variant="secondary"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="help_card_btn_6">Inspecionar Builds</span></sakuga-button>
 </div>
 </div>
-<!-- CARD 19: REDE LOCAL WI-FI & EXPORTAÇÃO ZIP -->
-<div class="help-card" data-category="export">
-<span class="help-card-badge" data-i18n="help_card_badge_19" style="color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">REDE &amp; EXPORT</span>
+
+<!-- 7. GRÁFICO RADAR META, BREAKPOINTS & ASCENSÃO -->
+<div class="help-card" data-category="builds">
+<span class="help-card-badge" data-i18n="help_card_badge_7" style="color: #38bdf8; border-color: rgba(56, 189, 248, 0.3);">RADAR META</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;">
-<i class="fa-solid fa-network-wired"></i>
+<div class="help-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;"><i class="fa-solid fa-bullseye"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_7">Gráfico Radar Meta, Breakpoints &amp; Ascensão</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_19">19. Acesso Wi-Fi LAN &amp; Exportação ZIP / NotebookLM</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_19">Binding `0.0.0.0:8000` para acesso via smartphone na rede local e download empacotado em `.zip` de todos os guias Markdown.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_7">Polígono SVG sobreposto comparando sua build aos alvos oficiais do meta (incluindo VEL Base, Em Combate, Cap/Overcap e slots Flex) + cálculo de ascensão.</div>
 <div class="help-card-tags">
-<span class="help-tag">LAN 0.0.0.0</span>
-<span class="help-tag">Mobile Responsive</span>
-<span class="help-tag">NotebookLM .ZIP</span>
+<span class="help-tag">Radar SVG 100%</span>
+<span class="help-tag">Breakpoints</span>
+<span class="help-tag" data-i18n="help_tag_xp_calc">Calculadora XP</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_19">
-                                    O servidor FastAPI escuta em todas as interfaces da sua rede local. Acesse `http://<ip_do_pc>:8000` pelo celular para usar todas as funcionalidades. Você também pode baixar o arquivo compactado de todos os guias em Markdown para alimentar cadernos no Google NotebookLM.
-                                </ip_do_pc></div>
+<div class="help-card-details" data-i18n="help_card_details_7">Dentro do Inspetor, abra a aba <strong>Comparador Meta</strong> para visualizar o <strong>Gráfico Radar</strong>: o contorno tracejado marca 100% da meta e qualquer afundamento aponta exatamente qual atributo falta farmar. Na aba <strong>Sua Build</strong>, veja ainda Breakpoints de Ação (ciclos MoC) e a Calculadora de Ascensão (60/80/90).</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<a class="help-action-btn" download="" href="/api/download/guides-zip" style="text-decoration: none;"><i class="fa-solid fa-file-zipper"></i><span data-i18n="help_card_btn_19"> Baixar ZIP</span></a>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=genshin]').click()" variant="secondary"><i class="fa-solid fa-bullseye"></i> <span data-i18n="help_card_btn_7">Abrir Comparador</span></sakuga-button>
 </div>
 </div>
-<!-- CARD 20: RESET & ZONA DE SEGURANÇA -->
-<div class="help-card" data-category="export">
-<span class="help-card-badge" data-i18n="help_card_badge_20" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">ZONA DE PERIGO</span>
+
+<!-- 8. SANDBOX ("E SE?") & CARDS HD -->
+<div class="help-card" data-category="builds">
+<span class="help-card-badge" data-i18n="help_card_badge_8" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">EXPORTAR</span>
 <div>
 <div class="help-card-header">
-<div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;">
-<i class="fa-solid fa-triangle-exclamation"></i>
+<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;"><i class="fa-solid fa-camera"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_8">Sandbox ("E se?") &amp; Cards HD (Build e Time)</div>
 </div>
-<div class="help-card-title" data-i18n="help_card_title_20">20. Reset, Criptografia &amp; Zona de Segurança</div>
-</div>
-<div class="help-card-desc" data-i18n="help_card_desc_20">Procedimento seguro para exclusão de caches de guias e redefinição limpa do banco de dados SQLite local.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_8">Simule trocas hipotéticas de peças no Sandbox e gere imagens PNG em alta resolução do personagem ou do time inteiro para o Discord.</div>
 <div class="help-card-tags">
-<span class="help-tag">Reset DB</span>
-<span class="help-tag" data-i18n="help_tag_purge_folders">Purge Pastas</span>
-<span class="help-tag">SQLite</span>
+<span class="help-tag">Sandbox</span>
+<span class="help-tag">Card PNG 2×</span>
+<span class="help-tag">Card de Time</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_20">
-                                    Na aba <strong>Configurações</strong>, a opção <strong>Apagar Pastas e Banco de Dados</strong> reseta permanentemente a aplicação, excluindo caches de guias locais e recriando uma estrutura de banco SQLite (`hoyo_app.db`) totalmente limpa e sem inconsistências.
-                                </div>
+<div class="help-card-details" data-i18n="help_card_details_8">No topo do Inspetor de Builds, clique em <strong>Sandbox ("E se?")</strong> para testar relíquias antes de trocar no jogo, ou em <strong>Card Imagem</strong> para copiar/baixar um card HD com splash art, atributos e notas. Na tela do jogo, use <strong>Montar Card de Time</strong> para exportar um esquadrão completo.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
-<sakuga-button class="help-action-btn sk-xs sk-accent-danger" onclick="document.querySelector('[data-tab=config]').click()" variant="secondary"><i class="fa-solid fa-trash-can"></i><span data-i18n="help_card_btn_20"> Ver Reset</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=hsr]').click()" variant="secondary"><i class="fa-solid fa-image"></i> <span data-i18n="help_card_btn_8">Gerar Card</span></sakuga-button>
+</div>
+</div>
+
+<!-- 9. ENDGAME TÁTICO & TEAM MATCHER -->
+<div class="help-card" data-category="audit">
+<span class="help-card-badge" data-i18n="help_card_badge_9" style="color: #c084fc; border-color: rgba(192, 132, 252, 0.3);">ENDGAME</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(192, 132, 252, 0.15); color: #c084fc;"><i class="fa-solid fa-swords"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_9">Endgame Tático &amp; Team Matcher</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_9">Acompanhe estrelas, chefes e buffs (com tooltips) em todos os 7 modos endgame e descubra quais times do meta você já consegue montar.</div>
+<div class="help-card-tags">
+<span class="help-tag">Abismo / MoC / Shiyu</span>
+<span class="help-tag">Tooltips Chefes</span>
+<span class="help-tag">Team Matcher</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_9">Dentro da sub-aba <strong>Endgame</strong> de cada jogo, confira seu desempenho nos ciclos atuais, passe o mouse nos ícones de chefes e buffs para ler efeitos táticos e abra o <strong>Team Matcher</strong> para filtrar equipes do meta compatíveis com o seu elenco real.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=hsr]').click()" variant="secondary"><i class="fa-solid fa-trophy"></i> <span data-i18n="help_card_btn_9">Ver Endgame</span></sakuga-button>
+</div>
+</div>
+
+<!-- 10. TIER LIST & AUDITORIA DA CONTA -->
+<div class="help-card" data-category="audit">
+<span class="help-card-badge" data-i18n="help_card_badge_10" style="color: #a855f7; border-color: rgba(168, 85, 247, 0.3);">AUDITORIA</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(168, 85, 247, 0.15); color: #a855f7;"><i class="fa-solid fa-trophy"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_10">Tier List &amp; Auditoria da Conta</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_10">Classificação visual dos seus personagens de S+ a C pela nota média de Roll Value, com exportação em PNG HD.</div>
+<div class="help-card-tags">
+<span class="help-tag">Tier List S+</span>
+<span class="help-tag" data-i18n="help_tag_account_health">Saúde da Conta</span>
+<span class="help-tag">Export PNG HD</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_10">Na aba <strong>Tier List &amp; Audit</strong>, veja de relance quais personagens já estão prontos para o endgame e quais precisam de atenção. Clique em <strong>Gerar Imagem HD da Tier List</strong> para baixar o quadro completo.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=audit]').click()" variant="secondary"><i class="fa-solid fa-trophy"></i> <span data-i18n="help_card_btn_10">Abrir Tier List</span></sakuga-button>
+</div>
+</div>
+
+<!-- 11. LACUNAS DA CONTA & MODO CRÍTICO -->
+<div class="help-card" data-category="audit">
+<span class="help-card-badge" data-i18n="help_card_badge_11" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">DIAGNÓSTICO</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;"><i class="fa-solid fa-fire"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_11">Lacunas da Conta &amp; Modo Crítico (Roast)</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_11">Detecta elementos e funções (DPS, Sustento, Suporte) que faltam no seu elenco e gera uma análise ácida das suas escolhas.</div>
+<div class="help-card-tags">
+<span class="help-tag">Account Gaps</span>
+<span class="help-tag" data-i18n="help_tag_ai_roast_mode">Modo Crítico</span>
+<span class="help-tag" data-i18n="help_tag_elem_coverage">Cobertura Elemental</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_11">Na aba <strong>Lacunas da Conta</strong>, descubra quais elementos ou papéis ainda estão descobertos antes de decidir seu próximo banner. Também inclui o botão <strong>Roast da Minha Conta</strong> para uma crítica bem-humorada das suas builds.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=gaps]').click()" variant="secondary"><i class="fa-solid fa-fire"></i> <span data-i18n="help_card_btn_11">Ver Lacunas</span></sakuga-button>
+</div>
+</div>
+
+<!-- 12. LINHA DO TEMPO & SNAPSHOTS -->
+<div class="help-card" data-category="audit">
+<span class="help-card-badge" data-i18n="help_card_badge_12" style="color: #ec4899; border-color: rgba(236, 72, 153, 0.3);">EVOLUÇÃO</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;"><i class="fa-solid fa-chart-line"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_12">Linha do Tempo &amp; Snapshots</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_12">Salve snapshots periódicos da conta para comparar progresso de níveis, novos 5★ e upgrades de relíquias com cards de diff.</div>
+<div class="help-card-tags">
+<span class="help-tag">Snapshots</span>
+<span class="help-tag" data-i18n="help_tag_changes_filter">Filtro Alterações</span>
+<span class="help-tag" data-i18n="help_tag_diff_compare">Comparação Diffs</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_12">Na aba <strong>Linha do Tempo</strong>, crie um snapshot manual a qualquer hora ou deixe o sync registrar seu avanço. Compare duas datas para ver exatamente o que evoluiu e exportar um Card de Evolução.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=history]').click()" variant="secondary"><i class="fa-solid fa-chart-line"></i> <span data-i18n="help_card_btn_12">Ver Linha do Tempo</span></sakuga-button>
+</div>
+</div>
+
+<!-- 13. SIMULADOR DE GACHA, FORECAST & METAS -->
+<div class="help-card" data-category="tools">
+<span class="help-card-badge" data-i18n="help_card_badge_13" style="color: #f59e0b; border-color: rgba(245, 158, 11, 0.3);">GACHA</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_13">Simulador de Gacha, Metas &amp; Rastreador</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_13">10 mil simulações com Soft Pity real (74+), previsão de gemas/jades até o banner desejado, metas com cronômetro e importação de histórico UIGF.</div>
+<div class="help-card-tags">
+<span class="help-tag">Soft Pity 74+</span>
+<span class="help-tag" data-i18n="help_tag_rounds_10k">10.000 Rodadas</span>
+<span class="help-tag">Metas de Banner</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_13">Na aba <strong>Simulador de Tiros</strong>, calcule suas chances reais de pegar cópias (C0/E0 até C6/E6) ou armas, projete quantos tiros vai juntar até a data do banner com F2P/Passe/Bênção, salve metas com contagem regressiva e acompanhe seu histórico de pulls.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=gacha]').click()" variant="secondary"><i class="fa-solid fa-wand-magic-sparkles"></i> <span data-i18n="help_card_btn_13">Abrir Gacha</span></sakuga-button>
+</div>
+</div>
+
+<!-- 14. CENTRAL DE FARM & ORDEM DE SERVIÇO -->
+<div class="help-card" data-category="tools">
+<span class="help-card-badge" data-i18n="help_card_badge_14" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">FARM</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fa-solid fa-wheat-awn"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_14">Central de Farm &amp; Ordem de Serviço Diária</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_14">Cruza os domínios abertos hoje com os personagens que você marcou para upar e organiza onde gastar sua energia primeiro.</div>
+<div class="help-card-tags">
+<span class="help-tag" data-i18n="help_tag_daily_rotation">Rotação Diária</span>
+<span class="help-tag" data-i18n="help_tag_task_order">Ordem de Serviço</span>
+<span class="help-tag" data-i18n="help_tag_resin_alloc">Alocação de Energia</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_14">Na <strong>Central de Farm</strong>, selecione os personagens que está evoluindo e veja os domínios disponíveis no dia, materiais faltantes para níveis 60/80/90 e uma ordem prática para gastar Resina, Poder de Desbravamento e Bateria.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=farm]').click()" variant="secondary"><i class="fa-solid fa-wheat-awn"></i> <span data-i18n="help_card_btn_14">Abrir Farm</span></sakuga-button>
+</div>
+</div>
+
+<!-- 15. TRASH FINDER & ARTESANATO DE RELÍQUIAS -->
+<div class="help-card" data-category="tools">
+<span class="help-card-badge" data-i18n="help_card_badge_15" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">INVENTÁRIO</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(239, 68, 68, 0.15); color: #ef4444;"><i class="fa-solid fa-trash-can"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_15">Trash Finder &amp; Artesanato de Relíquias</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_15">Identifica peças fracas para reciclar sem medo e aponta o slot com menor RV para usar Resina Automodeladora.</div>
+<div class="help-card-tags">
+<span class="help-tag">Trash Finder</span>
+<span class="help-tag" data-i18n="help_tag_self_mod_resin">Resina Automodeladora</span>
+<span class="help-tag" data-i18n="help_tag_priority_slot">Slot Prioritário</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_15">Use <strong>Relíquias Lixo</strong> para achar peças incompatíveis com seu elenco e o módulo de <strong>Artesanato</strong> (em Tier List &amp; Audit) para descobrir qual slot e main stat sintetizar primeiro para o maior ganho imediato.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=trash]').click()" variant="secondary"><i class="fa-solid fa-trash-can"></i> <span data-i18n="help_card_btn_15">Ver Descarte</span></sakuga-button>
+</div>
+</div>
+
+<!-- 16. ÍNDICE DE SORTE & EFICIÊNCIA DE ROLAGENS -->
+<div class="help-card" data-category="tools">
+<span class="help-card-badge" data-i18n="help_card_badge_16" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SORTE RNG</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fa-solid fa-clover"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_16">Índice de Sorte &amp; Eficiência de Rolagens</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_16">Análise estatística do RNG de relíquias da sua conta: Luck Score %, melhor God Roll #1 e peça mais amaldiçoada (Cursed Roll).</div>
+<div class="help-card-tags">
+<span class="help-tag">Luck Score %</span>
+<span class="help-tag">God Roll vs Cursed</span>
+<span class="help-tag">Procs 5★</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_16">Na aba <strong>Índice de Sorte</strong>, o app compara os substatus das peças equipadas contra os valores máximos 5★, calcula seu percentil de sorte e destaca suas melhores e piores rolagens.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=luck]').click()" variant="secondary"><i class="fa-solid fa-clover"></i> <span data-i18n="help_card_btn_16">Ver Índice de Sorte</span></sakuga-button>
+</div>
+</div>
+
+<!-- 17. COFRE DPAPI/AES-256, PIN & MULTI-UID -->
+<div class="help-card" data-category="system">
+<span class="help-card-badge" data-i18n="help_card_badge_17" style="color: #10b981; border-color: rgba(16, 185, 129, 0.3);">SEGURANÇA</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;"><i class="fa-solid fa-vault"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_17">Cofre Criptográfico, PIN &amp; Multi-UID</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_17">Seus cookies ficam protegidos em cofre criptografado local (DPAPI / AES-256), com bloqueio opcional por PIN e suporte a várias contas.</div>
+<div class="help-card-tags">
+<span class="help-tag">DPAPI / AES-256</span>
+<span class="help-tag" data-i18n="help_tag_pin_4digits">PIN 4–6 Dígitos</span>
+<span class="help-tag">Multi-UID</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_17">Arquivos sensíveis (<code>cookies.enc</code>, <code>config.enc</code>) são criptografados com chave do seu usuário e nunca vazam em logs. Nas <strong>Configurações</strong>, você também pode alternar entre múltiplos UIDs salvos e ativar bloqueio por PIN.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<sakuga-button class="help-action-btn sk-xs" onclick="document.querySelector('[data-tab=config]').click()" variant="secondary"><i class="fa-solid fa-lock"></i> <span data-i18n="help_card_btn_17">Segurança &amp; Contas</span></sakuga-button>
+</div>
+</div>
+
+<!-- 18. NOTIFICAÇÕES, LAN MOBILE, AUTO-UPDATER & RESET -->
+<div class="help-card" data-category="system">
+<span class="help-card-badge" data-i18n="help_card_badge_18" style="color: #06b6d4; border-color: rgba(6, 182, 212, 0.3);">SISTEMA</span>
+<div>
+<div class="help-card-header">
+<div class="help-card-icon" style="background: rgba(6, 182, 212, 0.15); color: #06b6d4;"><i class="fa-solid fa-network-wired"></i></div>
+<div class="help-card-title" data-i18n="help_card_title_18">Alertas, Acesso Celular (LAN), Updater &amp; Reset</div>
+</div>
+<div class="help-card-desc" data-i18n="help_card_desc_18">Webhooks Discord/Telegram, acesso pelo celular no Wi-Fi, download de guias em ZIP, atualização automática do .exe e zona de reset limpo.</div>
+<div class="help-card-tags">
+<span class="help-tag">Discord / Telegram</span>
+<span class="help-tag">LAN Mobile</span>
+<span class="help-tag">Auto-Updater</span>
+</div>
+<div class="help-card-details" data-i18n="help_card_details_18">Nas <strong>Configurações</strong>, configure alertas de energia/códigos no Discord ou Telegram, libere o acesso pelo celular na rede local, baixe o pacote ZIP de guias ou use a Zona de Perigo para limpar caches e recomeçar o banco SQLite do zero.</div>
+</div>
+<div class="help-card-footer">
+<sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
+<a class="help-action-btn" download="" href="/api/download/guides-zip" style="text-decoration: none;"><i class="fa-solid fa-file-zipper"></i> <span data-i18n="help_card_btn_18">Baixar ZIP</span></a>
 </div>
 </div>
 </div>
@@ -2979,20 +2952,22 @@
 <span data-i18n="ins_meta_sample" id="ins-meta">Rank • Elemento • Nv. 90</span>
 </div>
 </div>
-<div style="display: flex; align-items: center; gap: 8px;">
-<sakuga-button class="sk-xs sk-accent-cyan" data-i18n-title="relic_sandbox_title" id="btn-open-relic-sandbox" onclick="window.openRelicSandboxModal()" title="Simulador de Troca de Relíquias (Sandbox)" variant="secondary">
+<div class="inspector-header-actions">
+<sakuga-button class="sk-xs sk-accent-cyan inspector-action-btn" data-i18n-title="relic_sandbox_title" id="btn-open-relic-sandbox" onclick="window.openRelicSandboxModal()" title="Simulador de Troca de Relíquias (Sandbox)" variant="secondary">
 <i class="fa-solid fa-flask"></i> <span data-i18n="relic_sandbox_btn">Sandbox ("E se?")</span>
 </sakuga-button>
-<sakuga-button class="sk-xs sk-accent-amber" data-i18n-title="export_card_title" id="btn-export-card" title="Gerar Imagem da Build em alta resolução" variant="secondary">
+<sakuga-button class="sk-xs sk-accent-amber inspector-action-btn" data-i18n-title="export_card_title" id="btn-export-card" title="Gerar Imagem da Build em alta resolução" variant="secondary">
 <i class="fa-solid fa-camera"></i> <span data-i18n="export_card_btn">Card Imagem</span>
 </sakuga-button>
 <sakuga-button aria-label="Fechar Janela (Esc)" class="close-inspector-btn sk-xs" data-i18n-title="modal_close" id="btn-close-inspector" title="Fechar Janela (Esc)" variant="secondary">✕</sakuga-button>
 </div>
 </div>
 <!-- Abas do Inspetor de Build -->
-<div class="inspector-tabs" style="display: flex; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.15); padding: 0 16px;">
-<sakuga-button class="ins-tab-btn active sk-xs" id="ins-tab-build" style="flex: 1" variant="secondary"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="ins_tab_build">Sua Build</span></sakuga-button>
-<sakuga-button class="ins-tab-btn sk-xs" id="ins-tab-compare" style="flex: 1" variant="secondary"><i class="fa-solid fa-scale-balanced"></i> <span data-i18n="ins_tab_compare">Comparador Meta</span></sakuga-button>
+<div class="inspector-tabs">
+<div class="inspector-tabs-segmented" role="tablist">
+<sakuga-button class="ins-tab-btn active sk-xs" id="ins-tab-build" role="tab" variant="secondary"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="ins_tab_build">Sua Build</span></sakuga-button>
+<sakuga-button class="ins-tab-btn sk-xs" id="ins-tab-compare" role="tab" variant="secondary"><i class="fa-solid fa-scale-balanced"></i> <span data-i18n="ins_tab_compare">Comparador Meta</span></sakuga-button>
+</div>
 </div>
 <div class="inspector-body">
 <!-- PAINEL 1: DETALHES DA SUA BUILD -->
@@ -3128,6 +3103,27 @@
 <div id="ins-meta-feedback" style="font-size: 11px; color: var(--text-secondary); line-height: 1.5; display: flex; flex-direction: column; gap: 4px;">
 <!-- Dicas e destaques rápidos via JS -->
 </div>
+</div>
+<!-- GRÁFICO RADAR: MINHA BUILD VS. BENCHMARK META -->
+<div class="inspector-card meta-radar-card" id="ins-meta-radar-card" style="display: none;">
+<div class="meta-radar-header">
+<div class="meta-radar-title-wrap">
+<h4><i class="fa-solid fa-bullseye" style="color: #38bdf8;"></i> <span data-i18n="radar_meta_title">Radar: Minha Build vs. Benchmark Meta</span></h4>
+<span class="meta-radar-summary-pill" id="ins-radar-summary-pill"></span>
+</div>
+<div class="meta-radar-legend">
+<span class="meta-radar-legend-item"><i class="radar-dot-player"></i> <span data-i18n="radar_legend_build">Sua Build</span></span>
+<span class="meta-radar-legend-item"><i class="radar-dot-target"></i> <span data-i18n="radar_legend_target">Meta (100%)</span></span>
+</div>
+</div>
+<div class="meta-radar-layout">
+<div class="meta-radar-visual-col">
+<div class="meta-radar-svg-box" id="ins-radar-svg-wrap"></div>
+<div class="meta-radar-readout" id="ins-radar-readout"></div>
+</div>
+<div class="meta-radar-breakdown" id="ins-radar-breakdown"></div>
+</div>
+<div class="meta-radar-flex-strip" id="ins-radar-flex-notes" style="display: none;"></div>
 </div>
 <div class="inspector-card">
 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -3774,6 +3770,6 @@
 <script src="/static/vendor/sakuga-vfx/toast.js"></script>
 <script src="/static/vendor/sakuga-vfx/tooltip.js"></script>
 <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-<script src="js/app.js?v=54.0" type="module"></script>
+<script src="js/app.js?v=58.0" type="module"></script>
 </body>
 </html>

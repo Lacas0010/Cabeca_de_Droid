@@ -1635,6 +1635,47 @@ def parse_meta_target(game_id: str, char_name: str, element: str = "") -> Dict[s
     )
 
 
+def compare_character_build(game_id: str, char_name: str) -> Dict[str, Any]:
+    """Compara a build real do jogador contra as metas oficiais e monta o payload padronizado do Gráfico Radar."""
+    from calculators.benchmark_radar import build_radar_benchmark_payload
+
+    element = ""
+    try:
+        roster = database.get_roster_data(game_id)
+        c_norm = normalize_char_name(char_name)
+        for char in roster:
+            if normalize_char_name(char.get("name", "")) == c_norm or char.get("name", "").lower() == char_name.lower():
+                element = char.get("element", "").lower()
+                break
+    except Exception as e:
+        print(f"Erro ao buscar elemento do personagem no SQLite: {e}")
+
+    build_data = parse_character_build_data(game_id, char_name)
+    meta_target = parse_meta_target(game_id, char_name, element)
+    player_stats = build_data.get("stats", {}) or {}
+    meta_radar = build_radar_benchmark_payload(
+        game_id=game_id,
+        char_name=char_name,
+        player_stats=player_stats,
+        endgame_stats=meta_target.get("endgame_stats", {}) or {},
+        main_stats=meta_target.get("stats", {}) or {},
+    )
+
+    return {
+        "character": char_name,
+        "game_id": game_id,
+        "player_build": {
+            "weapon": build_data.get("weapon", "Não informado"),
+            "weapon_clean": build_data.get("weapon_clean", ""),
+            "sets": build_data.get("sets", []),
+            "stats": player_stats,
+            "pieces": build_data.get("pieces", []),
+        },
+        "meta_target": meta_target,
+        "meta_radar": meta_radar,
+    }
+
+
 def get_overview() -> Dict[str, Any]:
     """Resumo das contas dos 3 jogos (SQLite + cache local)."""
     global _OVERVIEW_CACHE

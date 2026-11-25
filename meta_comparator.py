@@ -573,6 +573,12 @@ def parse_meta_target(
                     stats_found[label] = stat_en_to_pt.get(str(val_list).lower().strip(), str(val_list))
 
     # 5. Resolução Inteligente de Benchmarks Específicos do Personagem
+    from calculators.benchmark_radar import (
+        deduplicate_endgame_stats,
+        is_generic_placeholder_benchmark,
+        standardize_main_stat_display,
+    )
+
     guide_slug = os.path.basename(guide_path).replace(".md", "").lower() if guide_path else ""
 
     char_bench = benchmarks_db.get(canonical_slug)
@@ -583,15 +589,24 @@ def parse_meta_target(
     if not char_bench:
         char_bench = benchmarks_db.get(char_name.lower().strip())
 
-    if char_bench:
-        endgame_stats = dict(char_bench)
-    elif not endgame_stats and char_entry and "general_benchmarks" in char_entry and char_entry["general_benchmarks"]:
-        endgame_stats = dict(char_entry["general_benchmarks"])
+    cleaned_guide_endgame = deduplicate_endgame_stats(endgame_stats, game_id=game_id)
+
+    if char_bench and not (is_generic_placeholder_benchmark(char_bench, game_id) and cleaned_guide_endgame):
+        endgame_stats = deduplicate_endgame_stats(dict(char_bench), game_id=game_id)
+    elif cleaned_guide_endgame:
+        endgame_stats = cleaned_guide_endgame
+    elif char_entry and "general_benchmarks" in char_entry and char_entry["general_benchmarks"]:
+        endgame_stats = deduplicate_endgame_stats(dict(char_entry["general_benchmarks"]), game_id=game_id)
+    else:
+        endgame_stats = {}
 
     # 6. Fallback Dinâmico por Arquétipo e Kit
     if not endgame_stats:
         substats_list = char_entry.get("substats_priority", []) if char_entry else []
-        endgame_stats = derive_dynamic_benchmarks(game_id, char_name, stats_found, substats_list)
+        endgame_stats = deduplicate_endgame_stats(
+            derive_dynamic_benchmarks(game_id, char_name, stats_found, substats_list),
+            game_id=game_id,
+        )
 
     if weapons_list:
         target["weapon"] = translate(weapons_list[0])
@@ -600,7 +615,13 @@ def parse_meta_target(
         target["sets"] = [translate(sets_list[0])]
         target["all_sets"] = [translate(s) for s in sets_list]
 
-    target["stats"] = {translate(k): translate(v) for k, v in stats_found.items()}
-    target["endgame_stats"] = {translate(k): translate(v) for k, v in endgame_stats.items()}
+    target["stats"] = {
+        translate(k): standardize_main_stat_display(translate(v), lang="pt")
+        for k, v in stats_found.items()
+    }
+    target["endgame_stats"] = deduplicate_endgame_stats(
+        {translate(k): translate(v) for k, v in endgame_stats.items()},
+        game_id=game_id,
+    )
 
     return target

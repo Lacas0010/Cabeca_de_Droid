@@ -16,9 +16,7 @@ function setupInspectorTabs() {
     
     btnBuild.addEventListener("click", () => {
         btnBuild.classList.add("active");
-        btnBuild.style.borderBottomColor = "var(--color-hsr)";
         btnCompare.classList.remove("active");
-        btnCompare.style.borderBottomColor = "transparent";
         
         panelBuild.style.display = "block";
         panelCompare.style.display = "none";
@@ -26,9 +24,7 @@ function setupInspectorTabs() {
     
     btnCompare.addEventListener("click", () => {
         btnCompare.classList.add("active");
-        btnCompare.style.borderBottomColor = "var(--color-hsr)";
         btnBuild.classList.remove("active");
-        btnBuild.style.borderBottomColor = "transparent";
         
         panelBuild.style.display = "none";
         panelCompare.style.display = "block";
@@ -36,6 +32,373 @@ function setupInspectorTabs() {
         loadBuildComparison();
     });
 }
+
+// ==========================================================================
+// GRÁFICO RADAR: MINHA BUILD VS. BENCHMARK META (SVG INTERATIVO)
+// ==========================================================================
+function _escapeRadarHtml(val) {
+    return String(val ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function _getRadarStatusColor(status) {
+    if (status === "ok") return "var(--radar-status-ok, #10b981)";
+    if (status === "close") return "var(--radar-status-warn, #fbbf24)";
+    if (status === "low") return "var(--radar-status-low, #f87171)";
+    if (status === "flex") return "var(--radar-status-flex, #38bdf8)";
+    return "var(--text-muted, #94a3b8)";
+}
+
+function _renderRadarTagChips(tags, t) {
+    if (!Array.isArray(tags) || tags.length === 0) return "";
+    const tagMap = {
+        in_combat: t("radar_tag_in_combat", "Em combate"),
+        pre_combat: t("radar_tag_pre_combat", "Fora de combate"),
+        base_ok: t("radar_tag_base_ok", "VEL Base OK"),
+        optional: t("radar_tag_optional", "Opcional"),
+        flex: t("radar_tag_flex", "Flexível"),
+        relative: t("radar_tag_relative", "Relativo"),
+        range: t("radar_tag_range", "Faixa"),
+        cap: t("radar_tag_cap", "Cap Ideal"),
+        overcap: t("radar_tag_overcap", "Overcap"),
+    };
+    const seen = new Set();
+    return tags
+        .filter(tag => tagMap[tag] && !seen.has(tag) && seen.add(tag))
+        .map(tag => `<span class="meta-radar-tag tag-${_escapeRadarHtml(tag)}">${_escapeRadarHtml(tagMap[tag])}</span>`)
+        .join("");
+}
+
+function renderMetaRadarChart(metaRadar, gameId) {
+    const card = document.getElementById("ins-meta-radar-card");
+    const svgWrap = document.getElementById("ins-radar-svg-wrap");
+    const readoutEl = document.getElementById("ins-radar-readout");
+    const breakdownEl = document.getElementById("ins-radar-breakdown");
+    const summaryPill = document.getElementById("ins-radar-summary-pill");
+    const flexNotesEl = document.getElementById("ins-radar-flex-notes");
+
+    if (!card || !svgWrap || !breakdownEl) return;
+
+    const axes = Array.isArray(metaRadar?.axes) ? metaRadar.axes : [];
+    const flexNotes = Array.isArray(metaRadar?.flex_notes) ? metaRadar.flex_notes : [];
+    const summary = metaRadar?.summary || {};
+
+    if (axes.length === 0 && flexNotes.length === 0) {
+        card.style.display = "none";
+        return;
+    }
+
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || window.currentLang === "en");
+    const t = (k, fb) => (window.t ? window.t(k) : fb);
+
+    card.style.display = "block";
+
+    // Pill de resumo no cabeçalho do Radar
+    if (summaryPill) {
+        const met = (summary.met_count || 0) + (summary.flex_count || 0);
+        const total = summary.total_scored || axes.length + flexNotes.length;
+        const avg = summary.avg_ratio_pct ? ` • ${isEn ? "Avg" : "Média"} ${Math.round(summary.avg_ratio_pct)}%` : "";
+        summaryPill.textContent = `${met}/${total} ${isEn ? "Targets OK" : "Metas OK"}${avg}`;
+    }
+
+    const plottedAxes = axes.filter(a => a.plot_on_radar);
+    const defaultHint = t("radar_hint_hover", isEn ? "Hover an axis or stat row for exact delta details." : "Passe o mouse em um eixo ou atributo para ver detalhes.");
+
+    const setReadout = (axis) => {
+        if (!readoutEl) return;
+        if (!axis) {
+            readoutEl.innerHTML = `<span><i class="fa-solid fa-crosshairs" style="color:#38bdf8; margin-right:5px;"></i>${_escapeRadarHtml(defaultHint)}</span>`;
+            return;
+        }
+        const lbl = isEn ? (axis.label_en || axis.label_pt) : (axis.label_pt || axis.label_en);
+        const targetDisp = isEn ? (axis.target_display_en || axis.target_display) : (axis.target_display_pt || axis.target_display);
+        const col = _getRadarStatusColor(axis.status);
+        const pctTxt = axis.actual_num !== null && axis.actual_num !== undefined ? `${Math.round(axis.ratio_pct || 0)}%` : "—";
+        const diffTxt = axis.diff_display ? ` (${axis.diff_display})` : "";
+        const noteHtml = axis.tooltip_note
+            ? `<span style="width:100%; font-size:10px; color:var(--text-muted); line-height:1.35;">${_escapeRadarHtml(axis.tooltip_note)}</span>`
+            : "";
+        readoutEl.innerHTML = `
+            <strong style="color:${col};">${_escapeRadarHtml(lbl)}</strong>
+            <span>${_escapeRadarHtml(axis.actual_display)} / ${_escapeRadarHtml(targetDisp)}</span>
+            <span style="color:${col}; font-weight:700;">${_escapeRadarHtml(pctTxt + diffTxt)}</span>
+            ${noteHtml}
+        `;
+    };
+    setReadout(null);
+
+    // 1. RENDERIZA VISUAL ESQUERDO: POLÍGONO RADAR SVG (>= 3 EIXOS) OU MEDIDORES DE ALVO (1–2 EIXOS)
+    if (plottedAxes.length >= 3) {
+        const W = 330;
+        const H = 276;
+        const cx = W / 2;
+        const cy = H / 2;
+        const maxScale = 1.20;
+        const maxR = 86;
+        const n = plottedAxes.length;
+
+        const ptFor = (idx, ratioVal) => {
+            const angle = -Math.PI / 2 + (idx * 2 * Math.PI) / n;
+            const r = (Math.min(maxScale, Math.max(0.05, ratioVal)) / maxScale) * maxR;
+            return {
+                x: cx + r * Math.cos(angle),
+                y: cy + r * Math.sin(angle),
+                angle,
+            };
+        };
+
+        const ringLevels = [0.40, 0.70, 1.00, 1.20];
+        const ringsSvg = ringLevels.map(lvl => {
+            const pts = Array.from({ length: n }, (_, i) => {
+                const p = ptFor(i, lvl);
+                return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+            }).join(" ");
+            const isMeta = lvl === 1.00;
+            return `<polygon points="${pts}" fill="${isMeta ? "rgba(245, 158, 11, 0.08)" : "none"}" stroke="${isMeta ? "var(--radar-target-stroke, #f59e0b)" : "var(--radar-grid-stroke, rgba(148, 163, 184, 0.22))"}" stroke-width="${isMeta ? "1.6" : "1"}" ${isMeta ? 'stroke-dasharray="5 3"' : ""}></polygon>`;
+        }).join("");
+
+        const spokesSvg = Array.from({ length: n }, (_, i) => {
+            const p = ptFor(i, maxScale);
+            return `<line x1="${cx}" y1="${cy}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="var(--radar-grid-stroke, rgba(148, 163, 184, 0.2))" stroke-width="1"></line>`;
+        }).join("");
+
+        const playerPts = plottedAxes.map((ax, i) => {
+            const p = ptFor(i, ax.radar_ratio || 0.1);
+            return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+        }).join(" ");
+
+        // Sempre usa ciano/tema em alto contraste contra o anel Meta âmbar (evita sobreposição laranja-no-laranja no ZZZ)
+        const gradColor = gameId === "genshin" ? "var(--color-genshin, #10b981)" : (gameId === "hsr" ? "var(--color-hsr, #6366f1)" : "var(--radar-player-stroke, #38bdf8)");
+        const strokeColor = "var(--radar-player-stroke, #38bdf8)";
+
+        const verticesSvg = plottedAxes.map((ax, i) => {
+            const p = ptFor(i, ax.radar_ratio || 0.1);
+            const col = _getRadarStatusColor(ax.status);
+            return `
+                <g class="meta-radar-vertex-group" data-radar-idx="${i}">
+                    <circle class="meta-radar-vertex" data-radar-idx="${i}" cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4.8" fill="${col}" stroke="var(--bg-main, #050507)" stroke-width="1.8" style="color:${col};"></circle>
+                    <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="15" fill="transparent" style="cursor:pointer;" data-radar-idx="${i}"></circle>
+                </g>
+            `;
+        }).join("");
+
+        const labelsSvg = plottedAxes.map((ax, i) => {
+            const angle = -Math.PI / 2 + (i * 2 * Math.PI) / n;
+            const labelR = maxR + 22;
+            const lx = cx + labelR * Math.cos(angle);
+            const ly = cy + labelR * Math.sin(angle);
+            const cosA = Math.cos(angle);
+            const sinA = Math.sin(angle);
+            const anchor = Math.abs(cosA) < 0.22 ? "middle" : (cosA > 0 ? "start" : "end");
+            const dyName = sinA < -0.5 ? -3 : (sinA > 0.5 ? 6 : 0);
+            const shortLbl = isEn ? (ax.short_en || ax.label_en) : (ax.short_pt || ax.label_pt);
+            const col = _getRadarStatusColor(ax.status);
+            const pctStr = `${Math.round(ax.ratio_pct || 0)}%`;
+            return `
+                <g class="meta-radar-label-group" data-radar-idx="${i}">
+                    <text class="meta-radar-axis-label" data-radar-idx="${i}" x="${lx.toFixed(1)}" y="${(ly + dyName).toFixed(1)}" text-anchor="${anchor}">${_escapeRadarHtml(shortLbl)}</text>
+                    <text class="meta-radar-axis-pct" data-radar-idx="${i}" x="${lx.toFixed(1)}" y="${(ly + dyName + 12).toFixed(1)}" text-anchor="${anchor}" fill="${col}">${_escapeRadarHtml(pctStr)}</text>
+                </g>
+            `;
+        }).join("");
+
+        // Rótulo discreto "100%" deslocado à direita do eixo superior para nunca colidir com o vértice do topo
+        const metaTagX = cx + 16;
+        const metaTagY = cy - (1.00 / maxScale) * maxR + 15;
+
+        svgWrap.innerHTML = `
+            <svg class="meta-radar-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${_escapeRadarHtml(t("radar_meta_title", "Radar Meta"))}">
+                <defs>
+                    <radialGradient id="insRadarPlayerGrad" cx="50%" cy="50%" r="60%">
+                        <stop offset="0%" style="stop-color:${gradColor}; stop-opacity:0.42;"></stop>
+                        <stop offset="100%" style="stop-color:var(--radar-player-stroke, #38bdf8); stop-opacity:0.16;"></stop>
+                    </radialGradient>
+                </defs>
+                ${ringsSvg}
+                ${spokesSvg}
+                <text x="${metaTagX.toFixed(1)}" y="${metaTagY.toFixed(1)}" font-size="8.5" font-weight="700" fill="var(--radar-target-stroke, #f59e0b)" opacity="0.9">100%</text>
+                <polygon points="${playerPts}" fill="url(#insRadarPlayerGrad)" stroke="${strokeColor}" stroke-width="2.2" stroke-linejoin="round"></polygon>
+                ${verticesSvg}
+                ${labelsSvg}
+            </svg>
+        `;
+    } else if (plottedAxes.length > 0) {
+        // Fallback elegante para personagens com 1 ou 2 benchmarks numéricos (ex.: Kazuha, Zhongli, Xilonen)
+        svgWrap.innerHTML = `
+            <div class="meta-radar-gauge-list">
+                ${plottedAxes.map((ax, i) => {
+                    const lbl = isEn ? (ax.label_en || ax.label_pt) : (ax.label_pt || ax.label_en);
+                    const col = _getRadarStatusColor(ax.status);
+                    const barPct = Math.min(100, Math.max(4, ((ax.radar_ratio || 0) / 1.20) * 100));
+                    const metaTickPct = (1.00 / 1.20) * 100;
+                    return `
+                        <div class="meta-radar-gauge-item" data-radar-idx="${i}">
+                            <div class="meta-radar-gauge-head">
+                                <span>${_escapeRadarHtml(lbl)}</span>
+                                <span style="color:${col};">${Math.round(ax.ratio_pct || 0)}% (${_escapeRadarHtml(ax.actual_display)})</span>
+                            </div>
+                            <div class="meta-radar-gauge-bar">
+                                <div class="meta-radar-gauge-fill" style="width:${barPct.toFixed(1)}%; background:${col};"></div>
+                                <div class="meta-radar-gauge-marker" style="left:${metaTickPct.toFixed(1)}%;" title="Meta 100%"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join("")}
+            </div>
+        `;
+    } else {
+        svgWrap.innerHTML = "";
+    }
+
+    // 2. RENDERIZA BREAKDOWN DETALHADO (COLUNA DIREITA)
+    let plotIdxCounter = 0;
+    const axisPlotIndexMap = new Map();
+    axes.forEach((ax, idx) => {
+        if (ax.plot_on_radar) {
+            axisPlotIndexMap.set(idx, plotIdxCounter++);
+        }
+    });
+
+    breakdownEl.innerHTML = axes.map((ax, idx) => {
+        const lbl = isEn ? (ax.label_en || ax.label_pt) : (ax.label_pt || ax.label_en);
+        const targetDisp = isEn ? (ax.target_display_en || ax.target_display) : (ax.target_display_pt || ax.target_display);
+        const col = _getRadarStatusColor(ax.status);
+        const barPct = Math.min(100, Math.max(0, ((ax.radar_ratio || 0) / 1.20) * 100));
+        const metaTickPct = (1.00 / 1.20) * 100;
+        const plotIdx = axisPlotIndexMap.has(idx) ? axisPlotIndexMap.get(idx) : -1;
+
+        let badgeClass = "neutral";
+        let badgeIcon = "fa-circle-info";
+        let badgeText = "";
+        const isBaseOkRow = ax.status === "ok" && (ax.tags || []).includes("base_ok") && (ax.diff_num || 0) < 0;
+        const isInCombatCloseRow = ax.status === "close" && (ax.tags || []).includes("in_combat");
+
+        if (ax.status === "ok") {
+            badgeClass = "match";
+            badgeIcon = "fa-check";
+            badgeText = isBaseOkRow
+                ? t("radar_tag_base_ok", "VEL Base OK")
+                : `${t("comp_badge_meta_ok", "Meta OK")}${ax.diff_display ? ` (${ax.diff_display})` : ""}`;
+        } else if (isInCombatCloseRow) {
+            badgeClass = "warning";
+            badgeIcon = "fa-bolt";
+            badgeText = isEn ? `Combat buffs apply (${ax.actual_display})` : `Conta buffs em batalha`;
+        } else if (ax.status === "close") {
+            badgeClass = "warning";
+            badgeIcon = "fa-triangle-exclamation";
+            badgeText = `${t("comp_badge_meta_close", "Próximo")}${ax.diff_display ? ` (${ax.diff_display})` : ""}`;
+        } else if (ax.status === "flex") {
+            badgeClass = "match";
+            badgeIcon = "fa-sparkles";
+            badgeText = t("radar_tag_flex", "Flexível");
+        } else if (ax.status === "missing") {
+            badgeClass = "neutral";
+            badgeIcon = "fa-circle-question";
+            badgeText = t("comp_badge_not_found", "Não encontrado");
+        } else {
+            badgeClass = "mismatch";
+            badgeIcon = "fa-arrow-down";
+            badgeText = ax.diff_display || `${Math.round(ax.ratio_pct || 0)}%`;
+        }
+
+        // Evita duplicar pill de tag quando o badge principal já exibe o mesmo rótulo (ex.: VEL Base OK)
+        const visibleTags = (ax.tags || []).filter(tg => {
+            if (tg === "range") return false;
+            if (tg === "base_ok" && isBaseOkRow) return false;
+            return true;
+        });
+        const tagsHtml = _renderRadarTagChips(visibleTags, t);
+        const titleAttr = ax.tooltip_note ? ` title="${_escapeRadarHtml(ax.tooltip_note)}"` : "";
+
+        return `
+            <div class="meta-radar-row" data-axis-idx="${idx}" data-radar-idx="${plotIdx}"${titleAttr}>
+                <div class="meta-radar-row-top">
+                    <span class="meta-radar-row-name">
+                        <span class="meta-radar-status-dot status-${_escapeRadarHtml(ax.status)}"></span>
+                        ${_escapeRadarHtml(lbl)}
+                    </span>
+                    <span class="meta-radar-row-values">
+                        <span class="meta-radar-val-actual" style="color:${col};">${_escapeRadarHtml(ax.actual_display)}</span>
+                        <span class="meta-radar-val-sep">/</span>
+                        <span class="meta-radar-val-target">${_escapeRadarHtml(targetDisp)}</span>
+                    </span>
+                </div>
+                <div class="meta-radar-row-bottom">
+                    <div class="meta-radar-mini-track">
+                        <div class="meta-radar-mini-fill" style="width:${barPct.toFixed(1)}%; background:${col};"></div>
+                        <div class="meta-radar-mini-tick" style="left:${metaTickPct.toFixed(1)}%;"></div>
+                    </div>
+                    <div class="meta-radar-tags-wrap">
+                        ${tagsHtml}
+                        <span class="comparison-badge ${badgeClass}"><i class="fa-solid ${badgeIcon}"></i> ${_escapeRadarHtml(badgeText)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }).join("");
+
+    // 3. CHIPS DE REGRAS FLEXÍVEIS / RELATIVAS (EX.: ANYTHING, BASE, 1-2 SPD SLOWER)
+    if (flexNotesEl) {
+        if (flexNotes.length > 0) {
+            flexNotesEl.style.display = "flex";
+            const hdr = t("radar_flex_header", isEn ? "Flexible / Contextual Rules:" : "Regras Flexíveis / Contextuais:");
+            flexNotesEl.innerHTML = `
+                <span style="font-weight:600; color:var(--text-muted);">${_escapeRadarHtml(hdr)}</span>
+                ${flexNotes.map(fn => {
+                    const lbl = isEn ? (fn.label_en || fn.label_pt) : (fn.label_pt || fn.label_en);
+                    const tgt = isEn ? (fn.target_display_en || fn.target_display) : (fn.target_display_pt || fn.target_display);
+                    const actualPart = fn.actual_display ? `${_escapeRadarHtml(fn.actual_display)} <span style="opacity:0.7;">•</span> ` : "";
+                    return `<span class="meta-radar-flex-chip"><i class="fa-solid fa-sliders"></i><strong>${_escapeRadarHtml(lbl)}:</strong> ${actualPart}${_escapeRadarHtml(tgt)}</span>`;
+                }).join("")}
+            `;
+        } else {
+            flexNotesEl.style.display = "none";
+            flexNotesEl.innerHTML = "";
+        }
+    }
+
+    // 4. SINCRONIZAÇÃO DE HOVER ENTRE VÉRTICES SVG E LINHAS DO BREAKDOWN
+    const highlightPlotIdx = (pIdx) => {
+        svgWrap.querySelectorAll(".is-highlighted").forEach(el => el.classList.remove("is-highlighted"));
+        breakdownEl.querySelectorAll(".is-highlighted").forEach(el => el.classList.remove("is-highlighted"));
+        if (pIdx === null || pIdx < 0 || !plottedAxes[pIdx]) {
+            setReadout(null);
+            return;
+        }
+        svgWrap.querySelectorAll(`[data-radar-idx="${pIdx}"]`).forEach(el => el.classList.add("is-highlighted"));
+        breakdownEl.querySelectorAll(`[data-radar-idx="${pIdx}"]`).forEach(el => el.classList.add("is-highlighted"));
+        setReadout(plottedAxes[pIdx]);
+    };
+
+    svgWrap.querySelectorAll("[data-radar-idx]").forEach(el => {
+        const pIdx = Number(el.getAttribute("data-radar-idx"));
+        if (Number.isNaN(pIdx) || pIdx < 0) return;
+        el.addEventListener("mouseenter", () => highlightPlotIdx(pIdx));
+        el.addEventListener("mouseleave", () => highlightPlotIdx(null));
+    });
+
+    breakdownEl.querySelectorAll(".meta-radar-row").forEach(row => {
+        const pIdx = Number(row.getAttribute("data-radar-idx"));
+        const aIdx = Number(row.getAttribute("data-axis-idx"));
+        row.addEventListener("mouseenter", () => {
+            if (pIdx >= 0) {
+                highlightPlotIdx(pIdx);
+            } else if (axes[aIdx]) {
+                row.classList.add("is-highlighted");
+                setReadout(axes[aIdx]);
+            }
+        });
+        row.addEventListener("mouseleave", () => {
+            row.classList.remove("is-highlighted");
+            highlightPlotIdx(null);
+        });
+    });
+}
+window.renderMetaRadarChart = renderMetaRadarChart;
 
 let _compareController = null;
 let _compareReqId = 0;
@@ -59,6 +422,7 @@ async function loadBuildComparison() {
     const { signal } = _compareController;
 
     const t = (k, fb) => (window.t ? window.t(k) : fb);
+    const isEn = Boolean(window.isEn || (window.getCurrentLanguage && window.getCurrentLanguage() === "en") || window.currentLang === "en");
     
     if (gameTag) {
         gameTag.textContent = `${activeInspectGame.toUpperCase()} • METAGAME BENCHMARK`;
@@ -83,6 +447,8 @@ async function loadBuildComparison() {
         </tr>
     `).join("");
     if (scoreCard) scoreCard.style.display = "none";
+    const radarCardEl = document.getElementById("ins-meta-radar-card");
+    if (radarCardEl) radarCardEl.style.display = "none";
     
     try {
         const res = await fetch(`/api/compare/${activeInspectGame}/${encodeURIComponent(activeInspectChar.name)}`, { signal });
@@ -91,6 +457,7 @@ async function loadBuildComparison() {
         
         const build = data.player_build || {};
         const target = data.meta_target || {};
+        const metaRadar = data.meta_radar || null;
 
         if ((!build.weapon || build.weapon === "Não informado") && (!build.sets || build.sets.length === 0) && (!target.weapon || target.weapon === "Não informado")) {
             rowsContainer.innerHTML = `
@@ -616,26 +983,33 @@ async function loadBuildComparison() {
                 
                 if (matchedPiece && matchedPiece.main) {
                     playerVal = matchedPiece.main;
-                    const targetValLower = target.stats[key].toLowerCase();
-                    const options = targetValLower.split(/[=/>|]|\bou\b/).map(s => s.trim());
+                    const rawTargetSlot = String(target.stats[key] || "");
+                    const targetValLower = rawTargetSlot.toLowerCase();
+                    const options = targetValLower.split(/[=/>|]|\bou\b/).map(s => s.trim()).filter(Boolean);
                     
                     const mainNorm = normalizeStatTerm(matchedPiece.main);
-                    const isWildcardTarget = options.some(opt => normalizeStatTerm(opt) === "anything");
+                    const hasFlexMarker = /\b(?:anything|any|qualquer|flex(?:ible|ivel)?)\b/i.test(
+                        rawTargetSlot.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                    );
+                    const isWildcardTarget = hasFlexMarker || options.some(opt => normalizeStatTerm(opt) === "anything");
 
-                    // Match exato com a primeira opção (Prioridade máxima) ou curinga (Anything/Qualquer)
+                    // Match exato com a primeira opção (Prioridade máxima) ou curinga (Qualquer/Flex/Anything)
                     const firstOptNorm = normalizeStatTerm(options[0] || "");
-                    const isFirstMatch = isWildcardTarget || mainNorm === firstOptNorm || mainNorm.includes(firstOptNorm) || firstOptNorm.includes(mainNorm);
+                    const isFirstMatch = isWildcardTarget || (firstOptNorm && (mainNorm === firstOptNorm || mainNorm.includes(firstOptNorm) || firstOptNorm.includes(mainNorm)));
                     
                     // Match com qualquer opção alternativa
                     const isAnyMatch = isFirstMatch || options.slice(1).some(opt => {
                         const optNorm = normalizeStatTerm(opt);
-                        return mainNorm === optNorm || mainNorm.includes(optNorm) || optNorm.includes(mainNorm);
+                        return optNorm && (mainNorm === optNorm || mainNorm.includes(optNorm) || optNorm.includes(mainNorm));
                     });
                     
                     if (isFirstMatch) {
                         scoreTotal += pointsPerSlot;
                         statClass = "comparison-match";
-                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_slot_ideal", "Ideal")}</span>`;
+                        const slotLabel = isWildcardTarget && (!firstOptNorm || firstOptNorm === "anything" || options.length === 1)
+                            ? t("comp_badge_slot_flex", "Flexível")
+                            : t("comp_badge_slot_ideal", "Ideal");
+                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${slotLabel}</span>`;
                     } else if (isAnyMatch) {
                         scoreTotal += pointsPerSlot * 0.75;
                         statClass = "comparison-warning";
@@ -643,13 +1017,16 @@ async function loadBuildComparison() {
                     } else {
                         statClass = "comparison-mismatch";
                         slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_slot_mismatch", "Incompatível")}</span>`;
-                        slotIssues.push(`${key} (${target.stats[key]})`);
+                        slotIssues.push(`${key} (${rawTargetSlot})`);
                     }
                 } else {
                     slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-circle-question"></i> ${t("comp_badge_slot_empty", "Vazio")}</span>`;
                     slotIssues.push(key);
                 }
                 
+                const displaySlotTarget = isEn
+                    ? String(target.stats[key] || "").replace(/Qualquer\s*\(Flex\)/gi, "Any (Flex)")
+                    : String(target.stats[key] || "");
                 html += `
                     <tr>
                         <td class="comparison-row-title">• ${key}</td>
@@ -659,7 +1036,7 @@ async function loadBuildComparison() {
                                 ${slotBadgeHtml}
                             </div>
                         </td>
-                        <td class="comparison-val-target">${target.stats[key]}</td>
+                        <td class="comparison-val-target">${displaySlotTarget}</td>
                     </tr>
                 `;
             });
@@ -672,107 +1049,38 @@ async function loadBuildComparison() {
         }
         
         // ==========================================
-        // 4. ATRIBUTOS FINAIS / ENDGAME BENCHMARKS (20 pts)
+        // 4. GRÁFICO RADAR DE BENCHMARKS META (20 pts — substitui linhas planas na tabela)
         // ==========================================
-        const endgameStats = target.endgame_stats || {};
-        const endgameKeys = Object.keys(endgameStats);
-        
-        if (endgameKeys.length > 0) {
-            html += `
-                <tr class="comparison-section-header"><td colspan="3"><i class="fa-solid fa-chart-line" style="margin-right: 6px; color: #38bdf8;"></i> ${t("comp_sec_endgame", "Status Finais de Combate (Endgame Benchmarks)")}</td></tr>
-            `;
-            
-            const pointsPerBenchmark = 20 / endgameKeys.length;
-            
-            endgameKeys.forEach(key => {
-                let playerVal = "Não encontrado";
-                let statClass = "comparison-neutral";
-                let diffBadgeHtml = "";
-                
-                const keyLower = key.toLowerCase();
-                const playerStatsKeys = Object.keys(build.stats || {});
-                
-                const termMappings = {
-                    "atk": ["ataque", "atk", "atq"],
-                    "atq": ["ataque", "atk", "atq"],
-                    "hp": ["vida", "hp", "pv", "vida máxima", "vida máx"],
-                    "pv": ["vida", "hp", "pv", "vida máxima", "vida máx"],
-                    "vida máxima": ["vida", "hp", "pv", "vida máxima", "vida máx"],
-                    "def": ["defesa", "def"],
-                    "defesa": ["defesa", "def"],
-                    "proficiência de anomalia": ["proficiência de anomalia", "anomaly proficiency", "profic", "ap"],
-                    "maestria de anomalia": ["maestria de anomalia", "anomaly mastery", "am"],
-                    "recuperação de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia", "taxa de regen. energia"],
-                    "taxa de regeneração de energia": ["recuperação de energia", "energy regen", "rec. de energia", "taxa de regeneração de energia", "taxa de regen. energia"],
-                    "taxa crítica": ["taxa crítica", "crit rate", "taxa crít", "chance de crit", "taxa crt", "chance de crítico"],
-                    "chance de crit": ["taxa crítica", "crit rate", "taxa crít", "chance de crit", "taxa crt", "chance de crítico"],
-                    "dano crítico": ["dano crítico", "crit dmg", "dano crít", "dano crit", "dano crt"],
-                    "dano crit": ["dano crítico", "crit dmg", "dano crít", "dano crit", "dano crt"],
-                    "recarga de energia": ["recarga de energia", "energy recharge", "recarga", "er"],
-                    "efeito de quebra": ["efeito de quebra", "break effect", "quebra"],
-                    "proficiência elemental": ["proficiência elemental", "elemental mastery", "proficiência", "em"],
-                    "vel": ["vel", "speed", "velocidade"],
-                    "velocidade": ["vel", "speed", "velocidade"]
-                };
-                
-                let searchTerms = [keyLower];
-                for (const kMap in termMappings) {
-                    if (keyLower.includes(kMap) || kMap.includes(keyLower)) {
-                        searchTerms = searchTerms.concat(termMappings[kMap]);
+        if (metaRadar && ((metaRadar.axes && metaRadar.axes.length > 0) || (metaRadar.flex_notes && metaRadar.flex_notes.length > 0))) {
+            renderMetaRadarChart(metaRadar, activeInspectGame);
+            const radarSummary = metaRadar.summary || {};
+            scoreTotal += Number(radarSummary.benchmark_score_20 || 0);
+
+            const lagging = (metaRadar.axes || []).filter(ax => ax.status === "low" || ax.status === "close");
+            if (lagging.length === 0) {
+                feedbackBullets.push(
+                    isEn
+                        ? `<strong>Meta Benchmarks:</strong> <span style="color: #10b981;">All target stats reached</span> on the Radar.`
+                        : `<strong>Benchmarks Meta:</strong> <span style="color: #10b981;">Todos os alvos de atributos atingidos</span> no Radar.`
+                );
+            } else {
+                const lagNames = lagging.slice(0, 3).map(ax => {
+                    const lbl = isEn ? (ax.label_en || ax.label_pt) : (ax.label_pt || ax.label_en);
+                    if ((ax.tags || []).includes("in_combat")) {
+                        return isEn
+                            ? `${lbl} (${ax.actual_display} out of combat / in-combat target)`
+                            : `${lbl} (${ax.actual_display} na tela — meta em combate)`;
                     }
-                }
-                
-                const matchedKey = playerStatsKeys.find(pK => {
-                    const pKLower = pK.toLowerCase();
-                    return searchTerms.some(term => pKLower.includes(term) || term.includes(pKLower));
+                    return ax.diff_display ? `${lbl} (${ax.diff_display})` : lbl;
                 });
-                
-                if (matchedKey) {
-                    playerVal = build.stats[matchedKey];
-                    const targetStr = String(endgameStats[key] || "");
-                    const targetClean = targetStr.replace(/\([^)]*\)/g, "").trim();
-                    const playerNum = parseFloat(String(playerVal).replace(/[^0-9.]/g, ""));
-                    const hasBaseSpdOption = /\bbase\s*(?:spd|speed)\b/i.test(targetClean);
-                    const firstNumMatch = targetClean.match(/(\d+(?:\.\d+)?)/);
-                    const targetMinNum = firstNumMatch ? parseFloat(firstNumMatch[1]) : NaN;
-
-                    if (hasBaseSpdOption && !isNaN(playerNum) && playerNum >= 90) {
-                        scoreTotal += pointsPerBenchmark;
-                        statClass = "comparison-match";
-                        diffBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_meta_ok", "Meta OK")}</span>`;
-                    } else if (!isNaN(playerNum) && !isNaN(targetMinNum) && targetMinNum > 0) {
-                        const diff = playerNum - targetMinNum;
-                        const isPercent = String(playerVal).includes("%") || targetStr.includes("%");
-                        const diffFormatted = (diff >= 0 ? `+` : ``) + (isPercent ? `${diff.toFixed(1)}%` : Math.round(diff));
-
-                        if (playerNum >= targetMinNum) {
-                            scoreTotal += pointsPerBenchmark;
-                            statClass = "comparison-match";
-                            diffBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_meta_ok", "Meta OK")} (${diffFormatted})</span>`;
-                        } else if (playerNum >= targetMinNum * 0.85) {
-                            scoreTotal += pointsPerBenchmark * 0.5;
-                            statClass = "comparison-warning";
-                            diffBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-triangle-exclamation"></i> ${t("comp_badge_meta_close", "Próximo")} (${diffFormatted})</span>`;
-                        } else {
-                            statClass = "comparison-mismatch";
-                            diffBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-arrow-down"></i> ${diffFormatted}</span>`;
-                        }
-                    }
-                }
-                
-                html += `
-                    <tr>
-                        <td class="comparison-row-title">• ${key}</td>
-                        <td class="${statClass}">
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <span>${playerVal}</span>
-                                ${diffBadgeHtml}
-                            </div>
-                        </td>
-                        <td class="comparison-val-target">${endgameStats[key]}</td>
-                    </tr>
-                `;
-            });
+                feedbackBullets.push(
+                    isEn
+                        ? `<strong>Meta Benchmarks:</strong> Focus on improving: <em>${lagNames.join(", ")}</em>.`
+                        : `<strong>Benchmarks Meta:</strong> Foque em melhorar: <em>${lagNames.join(", ")}</em>.`
+                );
+            }
+        } else {
+            renderMetaRadarChart(null, activeInspectGame);
         }
         
         rowsContainer.innerHTML = html;

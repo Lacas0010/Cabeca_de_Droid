@@ -173,12 +173,12 @@ class TestFrontendOptimizationSuite(unittest.TestCase):
         modal_content_m = re.search(r"(?:^|\n)\.modal-card-content\s*\{([^}]*)\}", style_no_comments)
         self.assertIsNotNone(modal_content_m)
         self.assertIn("overflow-y: auto", modal_content_m.group(1))
-        self.assertIn("css/help_security.css?v=2.0", html)
+        self.assertIn("css/help_security.css?v=3.0", html)
         self.assertIn("css/gacha.css?v=2.3", html)
         self.assertIn("css/endgame_strategy.css?v=2.5", html)
         self.assertIn("css/team_card.css?v=2.0", html)
-        self.assertIn("style.css?v=37.0", html)
-        self.assertIn("js/app.js?v=54.0", html)
+        self.assertIn("style.css?v=39.0", html)
+        self.assertIn("js/app.js?v=58.0", html)
 
         gacha_css = _read(CSS_DIR / "gacha.css")
         self.assertEqual(gacha_css.count("@keyframes wishCardPop"), 1)
@@ -193,14 +193,14 @@ class TestFrontendOptimizationSuite(unittest.TestCase):
 
         app_js = _read(JS_DIR / "app.js")
         for mod_ver in [
-            "i18n.js?v=32.0",
+            "i18n.js?v=35.0",
             "api_client.js?v=32.0",
             "navigation.js?v=27.0",
             "sync_manager.js?v=28.0",
             "endgame.js?v=31.0",
             "roster.js?v=33.0",
             "card_exporter.js?v=2.0",
-            "build_comparator.js?v=28.0",
+            "build_comparator.js?v=31.0",
             "chat_rag.js?v=26.0",
             "farming.js?v=27.0",
             "quick_search.js?v=1.0",
