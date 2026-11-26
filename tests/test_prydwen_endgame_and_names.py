@@ -429,6 +429,92 @@ class TestPrydwenEndgameAndNames(unittest.TestCase):
                 disk_path = expected_src.lstrip("/")
                 self.assertTrue(os.path.exists(disk_path), f"Missing asset file: {disk_path}")
 
+    @patch("scrapers.scraper_prydwen.requests.get")
+    def test_hsr_nextjs_layout_parsing_and_empty_overwrite_guard(self, mock_get):
+        nextjs_html = """
+        <html><body>
+          <div class="hsr-build-card">
+            <h3 class="hsr-build-card-title">Evanescia Light Cone Ranking</h3>
+            <table class="hsr-rank-table"><tbody>
+              <tr>
+                <td>1</td>
+                <td><a class="hsr-gear-name">Until the Flowers Bloom Again</a> <span class="hsr-gear-badge">S1</span></td>
+                <td>127.03%</td>
+                <td><div class="hsr-rank-note">Signature Light Cone.</div></td>
+              </tr>
+            </tbody></table>
+          </div>
+          <div class="hsr-build-card">
+            <h3 class="hsr-build-card-title">Best Relic Sets</h3>
+            <table class="hsr-rank-table"><tbody>
+              <tr><td>1</td><td><a class="hsr-gear-name">Ever-Glorious Magical Girl</a></td><td>100%</td><td><div class="hsr-rank-note">BiS 4pc.</div></td></tr>
+            </tbody></table>
+          </div>
+          <div class="hsr-build-card">
+            <h3 class="hsr-build-card-title">Best Planetary Sets</h3>
+            <table class="hsr-rank-table"><tbody>
+              <tr><td>1</td><td><a class="hsr-gear-name">Punklorde Stage Zero</a></td><td>100%</td><td><div class="hsr-rank-note">BiS 2pc.</div></td></tr>
+            </tbody></table>
+          </div>
+          <div class="hsr-main-stat-build">
+            <div class="hsr-main-stat-row"><div class="hsr-stat-tile"><span>Body</span></div><div>CRIT DMG</div></div>
+            <div class="hsr-main-stat-row"><div class="hsr-stat-tile"><span>Feet</span></div><div>Anything</div></div>
+            <div class="hsr-main-stat-row"><div class="hsr-stat-tile"><span>Planar Sphere</span></div><div>Anything</div></div>
+            <div class="hsr-main-stat-row"><div class="hsr-stat-tile"><span>Link Rope</span></div><div>Energy Regen Rate</div></div>
+          </div>
+          <div class="hsr-priority-panel">
+            <h4>Sub Stats</h4>
+            <div class="hsr-priority-strip">
+              <div class="hsr-priority-tile primary">CRIT Rate until 100% in combat</div>
+              <div class="hsr-priority-operator">&gt;</div>
+              <div class="hsr-priority-tile">CRIT DMG</div>
+            </div>
+          </div>
+          <div class="hsr-endgame-panel">
+            <div class="hsr-endgame-row">
+              <div>Speed</div>
+              <div class="hsr-endgame-value"><span>Base SPD or 134</span><div class="hsr-endgame-comment">Long note</div></div>
+            </div>
+            <div class="hsr-endgame-row"><div>Crit Rate</div><div class="hsr-endgame-value">100%</div></div>
+            <div class="hsr-endgame-row"><div>Crit DMG</div><div class="hsr-endgame-value">220%+</div></div>
+          </div>
+        </body></html>
+        """
+        resp = MagicMock()
+        resp.text = nextjs_html
+        mock_get.return_value = resp
+
+        scraper = PrydwenScraper()
+        data = scraper.scrape_character_guide("Evanescia", "https://www.prydwen.gg/star-rail/characters/evanescia")
+
+        self.assertEqual(
+            data["stats_main"],
+            [
+                "Body: CRIT DMG",
+                "Feet: Anything",
+                "Planar Sphere: Anything",
+                "Link Rope: Energy Regen Rate",
+            ],
+        )
+        self.assertEqual(data["stats_sub"], "crit_rate > crit_dmg")
+        self.assertEqual(data["endgame_stats"], ["Speed: Base SPD or 134", "Crit Rate: 100%", "Crit DMG: 220%+"])
+        self.assertEqual(data["light_cones"][0]["name"], "Until the Flowers Bloom Again")
+        self.assertEqual(data["relics"][0]["name"], "Ever-Glorious Magical Girl")
+        self.assertEqual(data["planar_ornaments"][0]["name"], "Punklorde Stage Zero")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            md_path = scraper.save_to_markdown("Evanescia", data, output_dir=tmpdir)
+            with open(md_path, "r", encoding="utf-8") as f:
+                saved_before = f.read()
+            self.assertIn("Planar Sphere: Anything", saved_before)
+
+            # Simula raspagem degradada sem stats_main -> NÃO pode sobrescrever guia válido
+            empty_data = {k: ([] if isinstance(v, list) else "") for k, v in data.items()}
+            scraper.save_to_markdown("Evanescia", empty_data, output_dir=tmpdir)
+            with open(md_path, "r", encoding="utf-8") as f:
+                saved_after = f.read()
+            self.assertEqual(saved_before, saved_after)
+
 
 if __name__ == "__main__":
     unittest.main()

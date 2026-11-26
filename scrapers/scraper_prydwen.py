@@ -118,6 +118,92 @@ def extract_prydwen_card_name(link, slug: str = "") -> str:
     return ""
 
 
+_HSR_SUBSTAT_MAP = {
+    "spd": "vel",
+    "speed": "vel",
+    "vel": "vel",
+    "velocidade": "vel",
+    "crit rate": "crit_rate",
+    "crit_rate": "crit_rate",
+    "chance de crit": "crit_rate",
+    "taxa crítica": "crit_rate",
+    "taxa de crit": "crit_rate",
+    "crit dmg": "crit_dmg",
+    "crit_dmg": "crit_dmg",
+    "dano crítico": "crit_dmg",
+    "dano de crit": "crit_dmg",
+    "break effect": "break_effect",
+    "break effect%": "break_effect",
+    "break_effect": "break_effect",
+    "efeito de quebra": "break_effect",
+    "quebra": "break_effect",
+    "ehr": "ehr",
+    "effect hit rate": "ehr",
+    "effect hit rate%": "ehr",
+    "taxa de acerto de efeito": "ehr",
+    "res": "res",
+    "effect res": "res",
+    "effect res%": "res",
+    "resistência a efeito": "res",
+    "atk%": "atk_pct",
+    "atk percent": "atk_pct",
+    "atk_pct": "atk_pct",
+    "atk": "atk_flat",
+    "hp%": "hp_pct",
+    "hp percent": "hp_pct",
+    "hp_pct": "hp_pct",
+    "hp": "hp_flat",
+    "def%": "def_pct",
+    "def percent": "def_pct",
+    "def_pct": "def_pct",
+    "def": "def_flat",
+}
+
+
+def _map_hsr_substat_token(raw_tok: str) -> str:
+    tok = raw_tok.lstrip("= ").strip()
+    tok = re.sub(
+        r"\s*\b(?:until|untill|to|up to|or more|or higher|in combat|pre[- ]combat|desired goal)\b.*$",
+        "",
+        tok,
+        flags=re.IGNORECASE,
+    ).strip()
+    return _HSR_SUBSTAT_MAP.get(tok.lower(), tok)
+
+
+def _format_hsr_substats_from_raw(raw_sub: str) -> str:
+    cleaned_sub = re.sub(r"\(.*?\)", "", raw_sub or "")
+    cleaned_sub = re.sub(r"[\[\]]", "", cleaned_sub)
+    cleaned_sub = re.sub(r"\s*([>/=])\s*([>/=])\s*", r" \2 ", cleaned_sub)
+    parts = [p.strip() for p in cleaned_sub.split(">") if p.strip()]
+    mapped_parts = []
+    for part in parts:
+        if "=" in part or "/" in part:
+            sub_segs = re.split(r"\s*([=/])\s*", part)
+            rebuilt = "".join(
+                f" {seg} " if seg in ("=", "/") else _map_hsr_substat_token(seg)
+                for seg in sub_segs
+                if seg != ""
+            ).strip()
+            if rebuilt:
+                mapped_parts.append(rebuilt)
+        else:
+            mapped_val = _map_hsr_substat_token(part)
+            if mapped_val:
+                mapped_parts.append(mapped_val)
+    return " > ".join(mapped_parts)
+
+
+def _format_hsr_main_stat_value(val: str) -> str:
+    options = [opt.strip() for opt in (val or "").split("/") if opt.strip()]
+    out = " / ".join(options)
+    for op in [">=", "<=", ">", "<", "="]:
+        if op in out:
+            out = f" {op} ".join([p.strip() for p in out.split(op)])
+            break
+    return out
+
+
 class PrydwenScraper:
     def __init__(self):
         """
@@ -302,7 +388,7 @@ class PrydwenScraper:
         }
 
         if not tabs:
-            return data
+            return self._scrape_hsr_nextjs_guide(soup, data)
 
         tab_kit = None
         tab_review = None
@@ -607,6 +693,192 @@ class PrydwenScraper:
 
         return data
 
+    def _scrape_hsr_nextjs_guide(self, soup: BeautifulSoup, data: dict) -> dict:
+        """Extrai guia completo do novo layout Next.js App Router do Prydwen HSR (.hsr-build-card, .hsr-main-stat-row, etc.)."""
+        # 1. Kit de Habilidades, Rastros e Eidolons
+        for card in soup.select(".hsr-kit-card"):
+            head = card.select_one(".hsr-kit-card-heading, h3, h4")
+            eff = card.select_one(".hsr-skill-effects")
+            if not head or not eff:
+                continue
+            h_txt = " ".join(head.get_text(" ", strip=True).split())
+            d_txt = " ".join(eff.get_text(" ", strip=True).split())
+            if h_txt and d_txt:
+                data["skills_active"].append({"name": h_txt, "description": d_txt})
+
+        for tr_card in soup.select(".hsr-trace-card"):
+            head = tr_card.select_one("h3, h4")
+            body = tr_card.select_one("p, .hsr-skill-effects, div:last-child")
+            if head and body:
+                h_txt = " ".join(head.get_text(" ", strip=True).split())
+                d_txt = " ".join(body.get_text(" ", strip=True).split())
+                if h_txt and d_txt and h_txt != d_txt:
+                    data["skills_traces"].append({"name": h_txt, "description": d_txt})
+
+        for eid_card in soup.select(".hsr-eidolon-card"):
+            head = eid_card.select_one("h3, h4")
+            body = eid_card.select_one("p, .hsr-skill-effects, div:last-child")
+            if head and body:
+                h_txt = " ".join(head.get_text(" ", strip=True).split())
+                d_txt = " ".join(body.get_text(" ", strip=True).split())
+                if h_txt and d_txt and h_txt != d_txt:
+                    data["skills_eidolons"].append({"name": h_txt, "description": d_txt})
+
+        # 2. Review (Prós, Contras e Análise)
+        pros_cons = soup.select_one(".hsr-review-pros-cons")
+        if pros_cons:
+            for h in pros_cons.find_all(["h3", "h4", "h5"]):
+                h_low = h.get_text(" ", strip=True).lower()
+                parent_box = h.parent
+                items = [li.get_text(" ", strip=True) for li in (parent_box.find_all("li") if parent_box else []) if li.get_text(strip=True)]
+                if "pros" in h_low and items:
+                    data["pros"] = items
+                elif "cons" in h_low and items:
+                    data["cons"] = items
+
+        ext_rev = soup.select_one(".hsr-extended-review")
+        if ext_rev:
+            data["review"] = [p.get_text(" ", strip=True) for p in ext_rev.find_all("p") if p.get_text(strip=True)]
+
+        # 3. Light Cones, Relíquias e Ornamentos Planares
+        for bc in soup.select(".hsr-build-card"):
+            title_el = bc.select_one(".hsr-build-card-title")
+            sec_title = title_el.get_text(" ", strip=True).lower() if title_el else ""
+            is_lc = "light cone" in sec_title
+            is_relic = "relic set" in sec_title or ("relic" in sec_title and "main stat" not in sec_title)
+            is_planar = "planar" in sec_title or "planetary" in sec_title
+            if not (is_lc or is_relic or is_planar):
+                continue
+
+            for tr in bc.select("tbody tr"):
+                name_el = tr.select_one(".hsr-gear-name")
+                if not name_el:
+                    continue
+                name = name_el.get_text(" ", strip=True)
+                if not name:
+                    continue
+                badge_el = tr.select_one(".hsr-gear-badge")
+                sup = badge_el.get_text(" ", strip=True) if badge_el else ""
+                if sup and not sup.startswith("("):
+                    sup = f"({sup})"
+                pct = ""
+                for td in tr.find_all("td"):
+                    td_txt = td.get_text(" ", strip=True)
+                    if "%" in td_txt and len(td_txt) <= 16:
+                        pct = td_txt
+                        break
+                note_el = tr.select_one(".hsr-rank-note")
+                justification = note_el.get_text(" ", strip=True) if note_el else ""
+
+                item_data = {"name": name, "percentage": pct, "justification": justification}
+                if is_lc:
+                    item_data["super"] = sup
+                    data["light_cones"].append(item_data)
+                elif is_relic:
+                    data["relics"].append(item_data)
+                elif is_planar:
+                    data["planar_ornaments"].append(item_data)
+
+        # 4. Main Stats (primeiro painel principal de Main Stats)
+        slot_aliases = [
+            ("planar sphere", "Planar Sphere"),
+            ("link rope", "Link Rope"),
+            ("body", "Body"),
+            ("feet", "Feet"),
+            ("sphere", "Planar Sphere"),
+            ("rope", "Link Rope"),
+        ]
+        main_card = soup.select_one(".hsr-main-stat-build, .hsr-main-stats-card, .hsr-main-stat-grid")
+        main_rows = main_card.select(".hsr-main-stat-row") if main_card else soup.select(".hsr-main-stat-row")
+        seen_slots = set()
+        for row in main_rows:
+            tile = row.select_one(".hsr-stat-tile")
+            slot_raw = tile.get_text(" ", strip=True) if tile else ""
+            if not slot_raw:
+                continue
+            matched_slot = None
+            for skey, sname in slot_aliases:
+                if slot_raw.lower().startswith(skey):
+                    matched_slot = sname
+                    break
+            if not matched_slot or matched_slot in seen_slots:
+                continue
+
+            # Extrai valores fora de .hsr-stat-tile
+            val_parts = []
+            for ch in row.find_all(recursive=False):
+                if tile and ch == tile:
+                    continue
+                t_val = ch.get_text(" / ", strip=True)
+                if t_val:
+                    val_parts.append(t_val)
+            raw_val = " / ".join(val_parts).strip()
+            if not raw_val:
+                full_txt = row.get_text(" ", strip=True)
+                raw_val = full_txt[len(slot_raw) :].strip(" :")
+            if raw_val:
+                seen_slots.add(matched_slot)
+                data["stats_main"].append(f"{matched_slot}: {_format_hsr_main_stat_value(raw_val)}")
+
+        # 5. Substats & Skills Priority
+        for pp in soup.select(".hsr-priority-panel"):
+            h4 = pp.find(["h3", "h4"])
+            heading = h4.get_text(" ", strip=True).lower() if h4 else ""
+            strip_tokens = [
+                el.get_text(" ", strip=True)
+                for el in pp.select(".hsr-priority-tile, .hsr-priority-operator")
+                if el.get_text(strip=True)
+            ]
+            raw_line = " ".join(strip_tokens).strip()
+            if not raw_line:
+                continue
+            if "sub" in heading and not data["stats_sub"]:
+                data["stats_sub"] = _format_hsr_substats_from_raw(raw_line)
+            elif "skill" in heading and not data["talent_priority"]:
+                data["talent_priority"] = raw_line
+
+        # 6. Recommended Endgame Stats
+        seen_eg = set()
+        for row in soup.select(".hsr-endgame-row"):
+            children = [c for c in row.find_all(recursive=False)]
+            if not children:
+                continue
+            s_label = children[0].get_text(" ", strip=True)
+            val_el = row.select_one(".hsr-endgame-value") or (children[1] if len(children) > 1 else None)
+            if not s_label or not val_el:
+                continue
+            # Remove comentário longo (.hsr-endgame-comment) se estiver aninhado dentro de val_el
+            val_parts = []
+            for v_child in val_el.find_all(recursive=False):
+                v_cls = v_child.get("class") or []
+                if "hsr-endgame-comment" in v_cls:
+                    continue
+                txt_part = " ".join(v_child.get_text(" ", strip=True).split())
+                if txt_part:
+                    val_parts.append(txt_part)
+            s_val = " ".join(val_parts).strip() if val_parts else " ".join(val_el.get_text(" ", strip=True).split())
+            if not s_val or s_val in ("—", "-", "N/A"):
+                continue
+            if not re.search(r"\d", s_val):
+                continue
+            formatted = f"{s_label}: {s_val}"
+            if formatted not in seen_eg:
+                seen_eg.add(formatted)
+                data["endgame_stats"].append(formatted)
+
+        # 7. Times Populares (Common Teams)
+        for row in soup.select(".hsr-common-teams tbody tr")[:5]:
+            alts = []
+            for img in row.find_all("img"):
+                alt = (img.get("alt") or "").strip()
+                if alt and alt not in alts:
+                    alts.append(alt)
+            stats_txt = " ".join(row.get_text(" ", strip=True).split())
+            if alts:
+                data["teams"].append({"members": " + ".join(alts), "stats": stats_txt})
+
+        return data
+
     def save_to_markdown(self, character_name: str, data: dict, output_dir: str = "hsr/guias") -> str:
         """
         Salva o guia do personagem com as análises descritivas formatadas em Markdown.
@@ -764,6 +1036,16 @@ class PrydwenScraper:
             + ".md"
         )
         filepath = os.path.join(output_dir, filename_clean)
+
+        # Proteção: nunca sobrescrever um guia válido existente com um raspado sem Main Stats
+        if not data.get("stats_main") and os.path.exists(filepath):
+            try:
+                with open(filepath, "r", encoding="utf-8") as existing_f:
+                    existing_txt = existing_f.read()
+                if "Atributos Principais (Main Stats)" in existing_txt:
+                    return filepath
+            except OSError:
+                pass
 
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(markdown_content)
