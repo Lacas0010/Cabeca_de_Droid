@@ -515,6 +515,39 @@ class TestPrydwenEndgameAndNames(unittest.TestCase):
                 saved_after = f.read()
             self.assertEqual(saved_before, saved_after)
 
+    def test_genshin_reactive_crit_dps_infers_em_substat(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            orig_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                os.makedirs("genshin/guias", exist_ok=True)
+                os.makedirs("static_data", exist_ok=True)
+                with open("static_data/hoyolab_mappings.json", "w", encoding="utf-8") as f:
+                    json.dump({"genshin": {"10000098": "clorinde"}}, f)
+                with open("static_data/character_aliases.json", "w", encoding="utf-8") as f:
+                    json.dump({"genshin": {}}, f)
+                with open("genshin/guias/clorinde.md", "w", encoding="utf-8") as f:
+                    f.write(
+                        "# Guia de Build - Clorinde\n"
+                        "## Atributos Recomendados (Stats)\n"
+                        "### Atributos Principais (Main Stats)\n"
+                        "- **Ampulheta (Sands):** ATK%\n"
+                        "- **Cálice (Goblet):** Bônus de Dano Electro / ATK%\n"
+                        "- **Tiara (Circlet):** Dano Crítico / Taxa Crítica\n"
+                    )
+                import build_calculator
+
+                build_calculator.META_DATA_CACHE.clear()
+                build_calculator.generate_meta_json_from_markdown("genshin")
+                meta = build_calculator.get_meta_data("genshin")
+                subs = meta.get("clorinde", {}).get("substats_priority", [])
+                self.assertEqual(subs, ["crit_rate", "crit_dmg", "atk_pct", "em", "er"])
+            finally:
+                os.chdir(orig_cwd)
+                import build_calculator as bc_cleanup
+
+                bc_cleanup.META_DATA_CACHE.clear()
+
 
 if __name__ == "__main__":
     unittest.main()

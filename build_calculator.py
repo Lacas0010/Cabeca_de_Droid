@@ -2258,6 +2258,11 @@ def generate_meta_json_from_markdown(game_id: str):
                 if st in ("atk_pct", "hp_pct", "def_pct", "em", "er"):
                     _add(st)
 
+        # DPS críticos Electro/Dendro/Pyro sem guia curado também aproveitam Proficiência Elemental (Aggravate/Spread/Vape/Melt)
+        reactive_goblets = {"electro_dmg", "dendro_dmg", "pyro_dmg"}
+        if is_crit_build and any(g in reactive_goblets for g in goblet):
+            _add("em")
+
         # Recarga de Energia é substatus relevante na maioria dos personagens sem guia curado do Prydwen
         _add("er")
 
