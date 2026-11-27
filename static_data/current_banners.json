@@ -1,88 +1,146 @@
 {
   "genshin": {
     "game_id": "genshin",
-    "patch_info": "Patch 7.2 Phase 1 Nov 4, 2026 – Nov 24, 2026",
+    "patch_info": "Patch 7.2 Phase 2 Nov 24, 2026 – Dec 15, 2026",
     "banners": [
       {
-        "character_name": "Mitya",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1794038807165-910f1eaa3bab31e64966c822dcc1af79.webp",
+        "character_name": "Linnea",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/characters/linnea_full.webp",
         "featured_4stars": [
-          "Valeriy",
-          "Charlotte",
-          "Rosaria"
+          "Ifa",
+          "Iansan",
+          "Ororon",
+          "Kachina"
         ],
         "is_primary": true,
-        "patch_label": "Patch 7.2 Phase 1",
-        "date_range": "Nov 4, 2026 – Nov 24, 2026",
-        "start_date": "2026-11-04",
-        "end_date": "2026-11-24",
-        "phase": 1,
-        "duration_type": "phase_1",
+        "patch_label": "Patch 7.2 Phase 2",
+        "date_range": "Nov 24, 2026 – Dec 15, 2026",
+        "start_date": "2026-11-24",
+        "end_date": "2026-12-15",
+        "phase": 2,
+        "duration_type": "phase_2",
         "is_full_patch": false
       },
       {
-        "character_name": "Furina",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/characters/furina_full.webp",
+        "character_name": "Zibai",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/characters/zibai_full.webp",
         "featured_4stars": [
-          "Valeriy",
-          "Charlotte",
-          "Rosaria"
+          "Ifa",
+          "Iansan",
+          "Ororon",
+          "Kachina"
         ],
         "is_primary": false,
-        "patch_label": "Patch 7.2 Phase 1",
-        "date_range": "Nov 4, 2026 – Nov 24, 2026",
-        "start_date": "2026-11-04",
-        "end_date": "2026-11-24",
-        "phase": 1,
-        "duration_type": "phase_1",
+        "patch_label": "Patch 7.2 Phase 2",
+        "date_range": "Nov 24, 2026 – Dec 15, 2026",
+        "start_date": "2026-11-24",
+        "end_date": "2026-12-15",
+        "phase": 2,
+        "duration_type": "phase_2",
+        "is_full_patch": false
+      },
+      {
+        "character_name": "Chronicled Wish - Character",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1795102208874-03250575d7783e64e323ee29a4ec2de4.webp",
+        "featured_4stars": [
+          "Ifa",
+          "Iansan",
+          "Ororon",
+          "Kachina"
+        ],
+        "is_primary": false,
+        "patch_label": "Patch 7.2 Phase 2",
+        "date_range": "Nov 24, 2026 – Dec 15, 2026",
+        "start_date": "2026-11-24",
+        "end_date": "2026-12-15",
+        "phase": 2,
+        "duration_type": "phase_2",
         "is_full_patch": false
       }
     ],
     "weapon_banners": [
       {
-        "character_name": "Starsealed Edict",
-        "banner_title": "Epitome Invocation: Starsealed Edict & Splendor of Tranquil Waters",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1793626452722-aea5e9759d1455b1d2fdc066454269ab.webp",
+        "character_name": "Golden Frostbound Oath",
+        "banner_title": "Epitome Invocation: Golden Frostbound Oath & Lightbearing Moonshard",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1795100756144-4283bbd79c5c25c402167acd0e968cea.webp",
         "featured_4stars": [
-          "The Dockhand's Assistant",
-          "Prospector's Drill",
-          "Dawning Frost",
-          "Rainslasher",
-          "Rust"
+          "Portable Power Saw",
+          "Range Gauge",
+          "Sacrificial Sword",
+          "Favonius Lance",
+          "Eye of Perception"
         ],
         "is_primary": true,
         "banner_type": "weapon",
-        "patch_label": "Patch 7.2 Phase 1",
-        "date_range": "Nov 4, 2026 – Nov 24, 2026",
-        "start_date": "2026-11-04",
-        "end_date": "2026-11-24",
-        "phase": 1,
-        "duration_type": "phase_1",
+        "patch_label": "Patch 7.2 Phase 2",
+        "date_range": "Nov 24, 2026 – Dec 15, 2026",
+        "start_date": "2026-11-24",
+        "end_date": "2026-12-15",
+        "phase": 2,
+        "duration_type": "phase_2",
         "is_full_patch": false
       },
       {
-        "character_name": "Splendor of Tranquil Waters",
-        "banner_title": "Epitome Invocation: Starsealed Edict & Splendor of Tranquil Waters",
-        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1793626452722-aea5e9759d1455b1d2fdc066454269ab.webp",
+        "character_name": "Lightbearing Moonshard",
+        "banner_title": "Epitome Invocation: Golden Frostbound Oath & Lightbearing Moonshard",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1795100756144-4283bbd79c5c25c402167acd0e968cea.webp",
         "featured_4stars": [
-          "The Dockhand's Assistant",
-          "Prospector's Drill",
-          "Dawning Frost",
-          "Rainslasher",
-          "Rust"
+          "Portable Power Saw",
+          "Range Gauge",
+          "Sacrificial Sword",
+          "Favonius Lance",
+          "Eye of Perception"
         ],
         "is_primary": false,
         "banner_type": "weapon",
-        "patch_label": "Patch 7.2 Phase 1",
-        "date_range": "Nov 4, 2026 – Nov 24, 2026",
-        "start_date": "2026-11-04",
-        "end_date": "2026-11-24",
-        "phase": 1,
-        "duration_type": "phase_1",
+        "patch_label": "Patch 7.2 Phase 2",
+        "date_range": "Nov 24, 2026 – Dec 15, 2026",
+        "start_date": "2026-11-24",
+        "end_date": "2026-12-15",
+        "phase": 2,
+        "duration_type": "phase_2",
+        "is_full_patch": false
+      },
+      {
+        "character_name": "Chronicled Wish - Weapon",
+        "banner_title": "Chronicled Wish - Weapon",
+        "banner_image": "https://cdn.prydwen.gg/images/genshin-impact/banners/1795102208874-03250575d7783e64e323ee29a4ec2de4.webp",
+        "featured_4stars": [
+          "Flower-Wreathed Feathers",
+          "Waveriding Whirl",
+          "Mountain-Bracing Bolt",
+          "Fruitful Hook",
+          "Sturdy Bone",
+          "Sacrificial Bow",
+          "The Stringless",
+          "Favonius Warbow",
+          "Eye of Perception",
+          "Sacrificial Fragments",
+          "The Widsith",
+          "Favonius Codex",
+          "Favonius Lance",
+          "Dragon's Bane",
+          "Rainslasher",
+          "Sacrificial Greatsword",
+          "The Bell",
+          "Favonius Greatsword",
+          "Lion's Roar",
+          "Sacrificial Sword",
+          "The Flute",
+          "Favonius Sword"
+        ],
+        "is_primary": false,
+        "banner_type": "weapon",
+        "patch_label": "Patch 7.2 Phase 2",
+        "date_range": "Nov 24, 2026 – Dec 15, 2026",
+        "start_date": "2026-11-24",
+        "end_date": "2026-12-15",
+        "phase": 2,
+        "duration_type": "phase_2",
         "is_full_patch": false
       }
     ],
-    "last_updated": "2026-11-24T09:43:25.856502"
+    "last_updated": "2026-11-27T09:27:49.343649"
   },
   "hsr": {
     "game_id": "hsr",
@@ -248,7 +306,7 @@
         "phase": null,
         "duration_type": "full_patch",
         "is_full_patch": true,
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/upon-the-first-echo-of-aha.webp?v=1794757485426"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/upon-the-first-echo-of-aha.webp?v=1794870176337"
       },
       {
         "character_name": "Dazzled By A Flowery World",
@@ -274,7 +332,7 @@
       {
         "character_name": "Welcome to the Cosmic City",
         "banner_title": "Welcome to the Cosmic City",
-        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/welcome-to-the-cosmic-city_full.webp?v=1778524336072",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/welcome-to-the-cosmic-city_full.webp?v=1794965863844",
         "featured_4stars": [
           "Trend of the Universal Market",
           "Geniuses' Repose",
@@ -290,12 +348,12 @@
         "phase": 1,
         "duration_type": "phase_1",
         "is_full_patch": false,
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/welcome-to-the-cosmic-city.webp?v=1778524336072"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/welcome-to-the-cosmic-city.webp?v=1794965863844"
       },
       {
         "character_name": "When She Decided to See",
         "banner_title": "When She Decided to See",
-        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/when-she-decided-to-see_full.webp?v=1778524336072",
+        "banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/when-she-decided-to-see_full.webp?v=1795704816884",
         "featured_4stars": [
           "Trend of the Universal Market",
           "Geniuses' Repose",
@@ -310,7 +368,7 @@
         "phase": 1,
         "duration_type": "phase_1",
         "is_full_patch": false,
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/when-she-decided-to-see.webp?v=1778524336072"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/when-she-decided-to-see.webp?v=1795704816884"
       },
       {
         "character_name": "Flickering Stars",
@@ -332,7 +390,7 @@
         "phase": null,
         "duration_type": "collab",
         "is_full_patch": false,
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/flickering-stars.webp?v=1787563505145"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/flickering-stars.webp?v=1794965846292"
       },
       {
         "character_name": "I Am As You Behold",
@@ -354,7 +412,7 @@
         "phase": null,
         "duration_type": "collab",
         "is_full_patch": false,
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/i-am-as-you-behold.webp?v=1787563501701"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/i-am-as-you-behold.webp?v=1794870176293"
       },
       {
         "character_name": "A Thankless Coronation",
@@ -376,7 +434,7 @@
         "phase": null,
         "duration_type": "collab",
         "is_full_patch": false,
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/a-thankless-coronation.webp?v=1778524336072"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/a-thankless-coronation.webp?v=1795704816977"
       },
       {
         "character_name": "The Hell Where Ideals Burn",
@@ -398,10 +456,10 @@
         "phase": null,
         "duration_type": "collab",
         "is_full_patch": false,
-        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1778524336072"
+        "remote_banner_image": "https://cdn.prydwen.gg/images/honkai-star-rail/light-cones/the-hell-where-ideals-burn.webp?v=1794874290438"
       }
     ],
-    "last_updated": "2026-11-24T09:43:26.239867"
+    "last_updated": "2026-11-27T09:27:39.842201"
   },
   "zzz": {
     "game_id": "zzz",
@@ -468,6 +526,6 @@
         "remote_banner_image": "https://cdn.prydwen.gg/images/zenless-zone-zero/w-engines/chief-sidekick_image.webp?v=1781636481144"
       }
     ],
-    "last_updated": "2026-11-24T09:43:26.544837"
+    "last_updated": "2026-11-27T09:27:19.608211"
   }
 }

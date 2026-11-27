@@ -6,6 +6,31 @@ O formato é baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.
 
 ---
 
+## [5.10.0] / Release Standalone [v1.6.0] - 2026-11-27
+
+### Adicionado
+- **Comparador Meta canônico por ID (`calculators/equipment_comparator.py`, `meta_comparator.py`, `static/js/modules/build_comparator.js`):**
+  - Pareamento PT-BR ↔ EN de armas, cones, motores-W e conjuntos (incluindo 4p Relíquia + 2p Planar no HSR) via ID oficial em `static_data/{game}_equipment_effects.json`, eliminando o `translationDict` hardcoded do frontend.
+  - Validação estrita de main stats impedindo colisões de `Taxa`/`Rate` (Energia, EHR e Perfuração não viram mais Taxa Crítica).
+- **Radar Meta com todos os atributos e valores reais (`calculators/benchmark_radar.py`, `services/roster_service.py`, `static/js/modules/build_comparator.js`):**
+  - Médias dinâmicas de referência (`compute_dynamic_game_baselines`) preenchem os 6–9 atributos base de combate em todos os personagens (hexágono completo sem penalizar nota nos atributos não-escalantes).
+  - UI do Radar e barras de comparação exibem valores reais (ex.: `2.450 / 2.200+`, `65,4% / 100%`) em vez de porcentagens de aderência.
+- **Refatoração Clean Architecture & Zero Hardcoding (`services/config_service.py`, `services/farming_service.py`, `services/image_proxy_service.py`, `services/static_data_service.py`, `schemas/static_data.py`, `calculators/account_strategy.py`, `calculators/stat_breakpoints.py`):**
+  - Delegação completa de `routers/{config,farming,system,static_data,roster}.py` para a camada `services/` e contrato Pydantic v2 `EvaluateStatsRequest` em `POST /api/evaluate-stats/{game_id}/{char_id}`.
+  - Arquétipos de conta, alvos de síntese e breakpoints (ER, EHR, AP, SPD, Impacto, Favonius) derivados dinamicamente de `static_data/` e guias consolidados, sem listas estáticas de personagens no código Python.
+
+### Corrigido
+- **Zero-Exposure e integridade do cofre (`core/security.py`, `security_vault.py`, `services/config_service.py`):**
+  - `GET /api/config` mascara sempre `discord_webhook_url` (inclusive no loopback) via `mask_token`.
+  - `save_secure_cookies()` usa escrita atômica (`_atomic_write_bytes`) para evitar corrupção parcial de `cookies.enc`.
+- **Blindagem dos scrapers (`scrapers/scraper_prydwen.py`, `scrapers/scraper_zzz.py`, `scrapers/scraper_genshin.py`, `scrapers/scraper_meta.py`, `scrapers/equipment_effects_scraper.py`, `services/sync_service.py`):**
+  - Guarda contra sobrescrita de guias/relatórios `.md` válidos por payloads vazios ou incompletos em todos os scrapers, deduplicação de slots mobile/desktop no ZZZ, backfill ZZZ 2.x de Motores-W/Discos e conexão de `sync_equipment_effects` no fluxo de sync por jogo.
+  - Correção de benchmarks inconsistentes no Genshin (`character_benchmarks.json`) via validador `_is_benchmark_consistent_with_guide` e preservação de `in-combat` no HSR.
+- **Limpeza textual e testes (`tests/test_comparator_hardening_suite.py`, `tests/test_dynamic_data_and_fuzzy_suite.py`):**
+  - Remoção de texto prolixo e emojis decorativos nos diagnósticos, tooltips, guias Day-1 e interface PT-BR/EN; isolamento de escrita de testes em `tempfile.TemporaryDirectory()` (`354 testes aprovados`).
+
+---
+
 ## [5.9.0] / Release Standalone [v1.5.0] - 2026-11-25
 
 ### ✨ Adicionado

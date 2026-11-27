@@ -6,6 +6,8 @@ from fastapi.responses import JSONResponse
 import security_vault
 import database
 
+mask_token = security_vault.mask_secret_string
+
 # Gestão de Sessões Ativas para PIN e Autenticação
 active_sessions: Dict[str, float] = {}
 _SESSIONS_LOCK = threading.Lock()

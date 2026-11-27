@@ -144,19 +144,7 @@ async def compare_build_endpoint(game_id: str, char_name: str):
 @router.get("/api/optimize/{game_id}/{char_name}")
 async def optimize_character_build(game_id: str, char_name: str):
     """Sugestões de melhoria de build comparando o personagem com o guia recomendado."""
-    clean_game = validate_game_id(game_id)
-    build_data = await asyncio.to_thread(parse_character_build_data, clean_game, char_name)
-    if not build_data.get("raw") and not build_data.get("sets") and not build_data.get("pieces"):
-        return {
-            "suggestions": [
-                "Nenhum dado de Roster/Build encontrado para este personagem. Faça a sincronização primeiro na aba do jogo."
-            ]
-        }
+    from services.roster_service import get_character_optimization_suggestions
 
-    return {
-        "suggestions": [
-            "1. Priorizar os atributos principais recomendados nas peças de Relíquias/Artefatos.",
-            "2. Tentar alcançar os bônus máximos de conjunto equipando 4 peças ideais.",
-            "3. Fortalecer o nível das relíquias equipadas para maximizar os atributos base.",
-        ]
-    }
+    clean_game = validate_game_id(game_id)
+    return await asyncio.to_thread(get_character_optimization_suggestions, clean_game, char_name)

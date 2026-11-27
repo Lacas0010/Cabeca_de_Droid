@@ -242,19 +242,23 @@ class PrydwenScraper:
         characters = []
         seen_urls = set()
 
-        # Encontra todos os links de personagens
+        # Encontra todos os links de personagens (ignora chips de filtro /rarity/, /path/, /element/)
         for link in soup.find_all("a"):
             href = link.get("href", "")
             if "/star-rail/characters/" in href:
                 clean_href = href.strip()
+                link_classes = " ".join(link.get("class") or []).lower()
+                if "browse-chip" in link_classes:
+                    continue
+                rel = clean_href.split("/star-rail/characters/")[-1].strip("/")
+                if not rel or "/" in rel or rel in ("characters", "rarity", "path", "element"):
+                    continue
+                if rel.endswith("-calculations") or rel.endswith("-synergy"):
+                    continue
+
                 if clean_href not in seen_urls:
                     seen_urls.add(clean_href)
-
-                    # Nome do personagem (sem badges/tags como 'New', 'ZZZ', 'HSR', etc.)
-                    slug = clean_href.rstrip("/").split("/")[-1]
-                    if clean_href == "/star-rail/characters" or clean_href.endswith("/characters/"):
-                        continue
-
+                    slug = rel
                     name = extract_prydwen_card_name(link, slug)
 
                     full_url = self.base_url + clean_href if clean_href.startswith("/") else clean_href
@@ -271,46 +275,38 @@ class PrydwenScraper:
             return text
         return _HSR_TRANSLATE_RE.sub(_hsr_replacer, text)
 
+    def _load_dynamic_support_names(self) -> list:
+        """Carrega dinamicamente nomes de suportes/sustains/debuffers do manifesto HSR em static_data/."""
+        names = []
+        try:
+            manifest_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static_data", "hsr_manifest.json"
+            )
+            if os.path.exists(manifest_path):
+                with open(manifest_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                support_paths = {"harmony", "nihility", "preservation", "abundance", "remembrance"}
+                for info in (data.get("characters") or {}).values():
+                    if not isinstance(info, dict):
+                        continue
+                    path_val = str(info.get("path") or "").lower()
+                    c_name = str(info.get("name") or "").strip()
+                    if c_name and path_val in support_paths and c_name not in names:
+                        names.append(c_name)
+        except Exception:
+            pass
+        return names
+
     def extract_synergies(self, character_name: str, review_paragraphs: list) -> list:
         """
         Extrai de forma dinâmica as justificativas mecânicas de aliados
-        baseando-se nos parágrafos do review e traduzindo termos comuns.
+        baseando-se nos parágrafos do review e nos personagens cadastrados em static_data/hsr_manifest.json.
         """
-        # Se for Acheron, retorna o texto estático refinado solicitado pelo usuário
-        if character_name.lower() == "acheron":
-            return [
-                '- **Aliados de Inexistência (Nihility) Gerais:** São obrigatórios para ativar o multiplicador separado de dano da passiva A4 (115% com 1 aliado, 160% com 2 aliados). Além disso, a Acheron depende puramente de aliados que aplicam debuffs para gerar seus pontos de "Slashed Dream" e stacks de "Crimson Knot" rapidamente para carregar sua Habilidade Suprema.',
-                "- **Jiaoqiu:** É o amplificador e gerador de pontos principal para ela. Consegue aplicar debuffs de Vulnerabilidade de forma contínua durante as ações dos próprios inimigos (fazendo-os receber até 50% a mais de dano de Supremas), acelerando drasticamente a rotação da Acheron.",
-                "- **Cipher:** Aumenta permanentemente o Dano Recebido pelos inimigos em 40% em campo. Seus ataques extras aplicam debuffs extras (se equipada com cones como Resolution ou Holiday Thermae), e ela grava parte do dano da Acheron para descarregar como Dano Verdadeiro massivo.",
-                "- **Suportes de Harmonia (Sparkle, Sunday, Tribbie):** Em builds normais (E0), causam perda de dano por não ativarem totalmente a passiva A4, exigindo suportes extremamente bem buildados para compensar. Porém, caso a Acheron seja **E2**, a restrição cai para apenas 1 Nihility, tornando Sparkle, Sunday ou Tribbie (focada em AoE) as melhores opções de suportes para avançar turnos e dar buffs massivos de Crítico.",
-                "- **Sustains de Preservação (com Trend of the Universal Market):** Personagens de Preservação usando este Cone de Luz conseguem aplicar debuffs de Queimadura sempre que são atacados, gerando pontos grátis para a Suprema da Acheron. É otimizado ao extremo em personagens como o Desbravador da Preservação devido à sua mecânica de Provocação (Taunt).",
-            ]
-
-        # Caso contrário, faz a busca dinâmica nos parágrafos de review
         synergies = []
         matched_paras = set()
+        char_lower = (character_name or "").lower().strip()
 
-        # Mapeamento de termos para encontrar sinergias de outros personagens comuns
-        support_names = [
-            "Robin",
-            "Ruan Mei",
-            "Bronya",
-            "Tingyun",
-            "Pela",
-            "Guinaifen",
-            "Silver Wolf",
-            "Jiaoqiu",
-            "Cipher",
-            "Sparkle",
-            "Sunday",
-            "Tribbie",
-            "Gallagher",
-            "Lingsha",
-            "Aventurine",
-            "Gepard",
-            "Fu Xuan",
-            "Huohuo",
-        ]
+        support_names = [n for n in self._load_dynamic_support_names() if n.lower() != char_lower]
 
         # 1. Busca por personagens citados especificamente
         for name in support_names:
@@ -347,9 +343,7 @@ class PrydwenScraper:
 
         if not synergies:
             # Fallback genérico se nada for detectado
-            synergies.append(
-                "Detalhes de sinergia de aliados e suportes recomendados estão descritos na análise detalhada da seção Review."
-            )
+            synergies.append("Sinergias e suportes detalhados na seção Review acima.")
 
         return synergies
 
@@ -740,7 +734,8 @@ class PrydwenScraper:
         if ext_rev:
             data["review"] = [p.get_text(" ", strip=True) for p in ext_rev.find_all("p") if p.get_text(strip=True)]
 
-        # 3. Light Cones, Relíquias e Ornamentos Planares
+        # 3. Light Cones, Relíquias e Ornamentos Planares (sem duplicatas entre abas)
+        seen_lc, seen_rel, seen_pl = set(), set(), set()
         for bc in soup.select(".hsr-build-card"):
             title_el = bc.select_one(".hsr-build-card-title")
             sec_title = title_el.get_text(" ", strip=True).lower() if title_el else ""
@@ -771,12 +766,16 @@ class PrydwenScraper:
                 justification = note_el.get_text(" ", strip=True) if note_el else ""
 
                 item_data = {"name": name, "percentage": pct, "justification": justification}
-                if is_lc:
+                name_key = name.lower()
+                if is_lc and name_key not in seen_lc:
+                    seen_lc.add(name_key)
                     item_data["super"] = sup
                     data["light_cones"].append(item_data)
-                elif is_relic:
+                elif is_relic and name_key not in seen_rel:
+                    seen_rel.add(name_key)
                     data["relics"].append(item_data)
-                elif is_planar:
+                elif is_planar and name_key not in seen_pl:
+                    seen_pl.add(name_key)
                     data["planar_ornaments"].append(item_data)
 
         # 4. Main Stats (primeiro painel principal de Main Stats)
@@ -837,8 +836,12 @@ class PrydwenScraper:
             elif "skill" in heading and not data["talent_priority"]:
                 data["talent_priority"] = raw_line
 
-        # 6. Recommended Endgame Stats
+        # 6. Recommended Endgame Stats (preservando qualificadores curtos como '(in-combat)' / '(pre-combat)')
         seen_eg = set()
+        _qualifier_re = re.compile(
+            r"\(?\s*(?:in[- ]?combat|in[- ]?battle|pre[- ]?combat|out(?:side)?\s+of\s+combat|before\s+combat|not\s+more|optional|recommended|with\s+sig(?:nature)?)\s*\)?",
+            re.IGNORECASE,
+        )
         for row in soup.select(".hsr-endgame-row"):
             children = [c for c in row.find_all(recursive=False)]
             if not children:
@@ -847,16 +850,20 @@ class PrydwenScraper:
             val_el = row.select_one(".hsr-endgame-value") or (children[1] if len(children) > 1 else None)
             if not s_label or not val_el:
                 continue
-            # Remove comentário longo (.hsr-endgame-comment) se estiver aninhado dentro de val_el
             val_parts = []
+            short_qual = ""
             for v_child in val_el.find_all(recursive=False):
                 v_cls = v_child.get("class") or []
-                if "hsr-endgame-comment" in v_cls:
-                    continue
                 txt_part = " ".join(v_child.get_text(" ", strip=True).split())
+                if "hsr-endgame-comment" in v_cls:
+                    if txt_part and len(txt_part) <= 32 and _qualifier_re.search(txt_part):
+                        short_qual = txt_part if txt_part.startswith("(") else f"({txt_part})"
+                    continue
                 if txt_part:
                     val_parts.append(txt_part)
             s_val = " ".join(val_parts).strip() if val_parts else " ".join(val_el.get_text(" ", strip=True).split())
+            if short_qual and short_qual.lower() not in s_val.lower():
+                s_val = f"{s_val} {short_qual}".strip()
             if not s_val or s_val in ("—", "-", "N/A"):
                 continue
             if not re.search(r"\d", s_val):
@@ -1037,7 +1044,17 @@ class PrydwenScraper:
         )
         filepath = os.path.join(output_dir, filename_clean)
 
-        # Proteção: nunca sobrescrever um guia válido existente com um raspado sem Main Stats
+        # Proteção 1: nunca criar guia vazio de página teaser/inválida sem build alguma
+        has_any_build = bool(
+            data.get("stats_main")
+            or data.get("light_cones")
+            or data.get("relics")
+            or data.get("planar_ornaments")
+        )
+        if not has_any_build:
+            return filepath
+
+        # Proteção 2: nunca sobrescrever um guia válido existente com um raspado sem Main Stats
         if not data.get("stats_main") and os.path.exists(filepath):
             try:
                 with open(filepath, "r", encoding="utf-8") as existing_f:

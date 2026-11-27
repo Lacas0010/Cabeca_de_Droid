@@ -1859,7 +1859,7 @@ def calculate_relic_luck_index(
             "rv_pct": 0.0,
             "total_rv": 0.0,
             "luck_grade": "D",
-            "luck_badge": "💀 Amaldiçoado",
+            "luck_badge": "Amaldiçoado",
             "luck_title": "Amaldiçoado pelo RNG",
             "procs": {},
             "substats_analyzed": [],
@@ -1892,23 +1892,23 @@ def calculate_relic_luck_index(
             if w >= 0.70:
                 if est_p >= 3:
                     status = "god"
-                    badge = f"🔥 Perfeito (+{est_p})"
+                    badge = f"Perfeito (+{est_p})"
                     color = "#34d399"
                 else:
                     status = "good"
-                    badge = f"✅ Ótimo (+{est_p})"
+                    badge = f"Ótimo (+{est_p})"
                     color = "#10b981"
                 useful_procs += est_p
                 useful_weight_sum += rv_val * w
             elif w >= 0.40:
                 status = "useful"
-                badge = f"👍 Útil (+{est_p})"
+                badge = f"Útil (+{est_p})"
                 color = "#fbbf24"
                 useful_procs += est_p
                 useful_weight_sum += rv_val * w
             else:
                 status = "bad"
-                badge = "💀 Desperdício" if est_p <= 1 else f"💀 Lixo (+{est_p})"
+                badge = "Desperdício" if est_p <= 1 else f"Lixo (+{est_p})"
                 color = "#f87171"
                 wasted_procs += est_p
 
@@ -1939,19 +1939,19 @@ def calculate_relic_luck_index(
     luck_score = min(100.0, max(0.0, luck_score))
 
     if luck_score >= 93.0:
-        grade, badge, title = "SSS+", "🦄 Deus do RNG", "Top 0.1% God-tier"
+        grade, badge, title = "SSS+", "Deus do RNG", "Top 0.1% God-tier"
     elif luck_score >= 85.0:
-        grade, badge, title = "SS", "⚡ Abençoado", "Top 1% Excepcional"
+        grade, badge, title = "SS", "Abençoado", "Top 1%"
     elif luck_score >= 74.0:
-        grade, badge, title = "S", "🔥 Sortudo", "Top 5% Excelente"
+        grade, badge, title = "S", "Sortudo", "Top 5%"
     elif luck_score >= 60.0:
-        grade, badge, title = "A", "👍 Boa Peça", "Sorte Acima da Média"
+        grade, badge, title = "A", "Boa Peça", "Acima da Média"
     elif luck_score >= 45.0:
-        grade, badge, title = "B", "⚖️ Mediana", "Sorte Mediana"
+        grade, badge, title = "B", "Mediana", "Na Média"
     elif luck_score >= 30.0:
-        grade, badge, title = "C", "🌧️ Azarado", "Rolagens Ruins"
+        grade, badge, title = "C", "Azarado", "Rolls Fracos"
     else:
-        grade, badge, title = "D", "💀 Amaldiçoado", "Lixo de RNG"
+        grade, badge, title = "D", "Amaldiçoado", "RNG Ruim"
 
     return {
         "luck_score": luck_score,
@@ -4083,8 +4083,8 @@ def generate_daily_farm_order(
             elif g == "zzz":
                 location = f"Skill Training ({profile.get('specialty', 'Agent') if profile else 'Attack'})"
             t_label = "Talent Books"
-            p_badge = "⭐ Open Today"
-            desc_text = f"Run {runs}x {location} to obtain {talent_mat_name} and advance priority talents for {c_name} (Grade {c_grade})."
+            p_badge = "Open Today"
+            desc_text = f"Run {runs}x {location} for {talent_mat_name} — {c_name} ({c_grade})."
         else:
             location = "Domínio de Livros de Talento"
             if profile and profile.get("region"):
@@ -4094,8 +4094,8 @@ def generate_daily_farm_order(
             elif g == "zzz":
                 location = f"Treinamento de Habilidades ({profile.get('specialty', 'Agente') if profile else 'Ataque'})"
             t_label = "Livros de Talento"
-            p_badge = "⭐ Aberto Hoje"
-            desc_text = f"Faça {runs}x {location} para obter {talent_mat_name} e avançar os talentos prioritários de {c_name} (Nota {c_grade})."
+            p_badge = "Aberto Hoje"
+            desc_text = f"{runs}x {location} ({talent_mat_name}) — {c_name} (Nota {c_grade})."
 
         task_item = {
             "id": sig,
@@ -4168,15 +4168,15 @@ def generate_daily_farm_order(
             if profile and profile.get("region"):
                 location = f"{profile['region']} Boss ({boss_name})"
             t_label = "Ascension Boss"
-            p_badge = "🔥 Pending Ascension"
-            desc_text = f"Defeat {location} to advance {c_name} from Lv. {c_lvl} towards Lv. {c_max}."
+            p_badge = "Pending Ascension"
+            desc_text = f"{location} — {c_name} Lv. {c_lvl} -> {c_max}."
         else:
             location = f"Chefe de Ascensão ({boss_name})"
             if profile and profile.get("region"):
                 location = f"Chefe de {profile['region']} ({boss_name})"
             t_label = "Chefe de Ascensão"
-            p_badge = "🔥 Ascensão Pendente"
-            desc_text = f"Derrote {location} para avançar {c_name} do Nv. {c_lvl} rumo ao Nv. {c_max}."
+            p_badge = "Ascensão Pendente"
+            desc_text = f"{location} — {c_name} Nv. {c_lvl} -> {c_max}."
 
         task_item = {
             "id": sig,
@@ -4235,22 +4235,20 @@ def generate_daily_farm_order(
             domain_label = (
                 "Artifact Domain" if g == "genshin" else ("Cavern of Corrosion" if g == "hsr" else "Routine Cleanup")
             )
-            p_badge = "💎 Build Optimization"
+            p_badge = "Build Farm"
             mat_name = f"Recommended Sets for {c_name}"
             loc_name = f"Recommended {domain_label}"
-            desc_text = f"Run {runs}x {domain_label} seeking optimal main and sub-stats to maximize {c_name}'s rating."
+            desc_text = f"Run {runs}x {domain_label} for better pieces on {c_name}."
         else:
             domain_label = (
                 "Domínio de Artefatos"
                 if g == "genshin"
                 else ("Caverna da Corrosão" if g == "hsr" else "Limpeza de Rotina")
             )
-            p_badge = "💎 Otimização de Build"
+            p_badge = "Farm de Peças"
             mat_name = f"Sets Recomendados para {c_name}"
             loc_name = f"{domain_label} Recomendado"
-            desc_text = (
-                f"Realize {runs}x {domain_label} buscando peças com Atributos Ideais para maximizar a nota de {c_name}."
-            )
+            desc_text = f"{runs}x {domain_label} — farmar peças melhores para {c_name}."
 
         task_item = {
             "id": sig,
@@ -4311,9 +4309,9 @@ def generate_daily_farm_order(
                 "runs": 2,
                 "cost_energy": cost,
                 "energy_name": cfg["energy_name"],
-                "priority_badge": "🪙 Reserva Econômica",
+                "priority_badge": "Reserva de Moeda",
                 "badge_color": "#eab308",
-                "description": f"Todos os seus personagens principais estão no nível máximo! Farme {cfg['currency_name']} para futuras versões.",
+                "description": f"Personagens prioritários já no cap. Farme {cfg['currency_name']} para os próximos banners.",
                 "completed": sig in completed_task_ids,
                 "cumulative_energy": cost,
                 "available_now": True,
@@ -4329,11 +4327,10 @@ def generate_daily_farm_order(
     # Geração do texto formatado para cópia / webhook
     game_names = {"genshin": "Genshin Impact", "hsr": "Honkai: Star Rail", "zzz": "Zenless Zone Zero"}
     summary_lines = [
-        f"📋 **ORDEM DE SERVIÇO DO DIA - {game_names.get(g, g.upper())}**",
-        f"⚡ **Energia Atual:** {current_energy} / {max_energy} {cfg['energy_name']}",
-        f"📅 **Dia:** {weekday_name} ({today_str})",
+        f"**ORDEM DE FARM — {game_names.get(g, g.upper())}**",
+        f"**Energia:** {current_energy} / {max_energy} {cfg['energy_name']} | **Dia:** {weekday_name} ({today_str})",
         "",
-        "🎯 **Roteiro de Farm Prioritário:**",
+        "**Prioridades:**",
     ]
     for t in tasks:
         check_box = "[x]" if t["completed"] else "[ ]"
@@ -4344,7 +4341,7 @@ def generate_daily_farm_order(
 
     summary_lines.append("")
     summary_lines.append(
-        f"💡 *Total Planejado: {accumulated_energy} {cfg['energy_name']} | Progresso Hoje: {completed_count}/{len(tasks)} ({completion_pct}%)*"
+        f"*Total: {accumulated_energy} {cfg['energy_name']} | Progresso: {completed_count}/{len(tasks)} ({completion_pct}%)*"
     )
     quick_summary_text = "\n".join(summary_lines)
 

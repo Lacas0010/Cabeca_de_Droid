@@ -251,8 +251,14 @@ class PrydwenMetaScraper:
 
     def save_meta_markdown(self, data: dict, filepath: str = "hsr/meta_e_tierlists_atual.md") -> str:
         """
-        Formata o changelog e a tier list de cada modo de jogo em Markdown em linguagem natural.
+        Formata o changelog e a tier list de cada modo de jogo em Markdown.
+        Preserva arquivo existente válido caso o payload raspado venha vazio/incompleto.
         """
+        if not data or (not data.get("characters") and not data.get("changelog")):
+            if os.path.exists(filepath) and os.path.getsize(filepath) > 200:
+                print(f"[SCRAPER_META] Payload vazio para {filepath}; preservando arquivo existente.")
+                return filepath
+
         lines = []
         lines.append("# Análise de Meta e Tier Lists - Honkai: Star Rail")
         lines.append("Relatório gerado automaticamente extraindo dados analíticos e changelogs do site Prydwen.gg.")
@@ -329,14 +335,17 @@ class PrydwenMetaScraper:
 
     def save_endgame_markdown(self, reports: dict, filepath: str = "hsr/meta_endgame_report.md") -> str:
         """
-        Salva o relatório consolidado de dados de endgame para cada um dos 4 modos em Markdown
-        estruturado em linguagem natural para consumo por LLM.
+        Salva o relatório consolidado de dados de endgame para cada um dos 4 modos em Markdown.
+        Preserva arquivo existente válido caso o payload raspado venha vazio.
         """
+        if not reports or not any(k in reports for k in ("moc", "pure", "apo", "aa")):
+            if os.path.exists(filepath) and os.path.getsize(filepath) > 200:
+                print(f"[SCRAPER_META] Relatório de endgame vazio para {filepath}; preservando arquivo existente.")
+                return filepath
+
         lines = []
         lines.append("# Relatório de Meta de Endgame - Honkai: Star Rail")
-        lines.append(
-            "Análise detalhada extraída do Prydwen.gg contendo estatísticas de performance, taxas de uso e equipes populares."
-        )
+        lines.append("Estatísticas de uso, ciclos e composições extraídas do Prydwen.gg.")
         lines.append("")
 
         for key in ["moc", "pure", "apo", "aa"]:
@@ -371,26 +380,22 @@ class PrydwenMetaScraper:
             lines.append("## Visão Geral e Buff do Patch")
             lines.append("")
             lines.append(
-                f"- **Fase Atual:** {self.translate_to_portuguese(phase.get('displayName', ''))} (versão {phase.get('displayVersion')})"
+                f"- **Fase Atual:** {phase.get('displayName', '')} (versão {phase.get('displayVersion')})"
             )
-            lines.append(f"- **Total de Jogadores na Amostra:** {phase.get('totalUsers')} jogadores")
+            lines.append(f"- **Amostra:** {phase.get('totalUsers')} jogadores")
             if phase.get("bossNames"):
-                bosses = [self.translate_to_portuguese(b) for b in phase.get("bossNames")]
-                lines.append(f"- **Inimigos/Chefes Principais:** {', '.join(bosses)}")
+                bosses = [str(b).strip() for b in phase.get("bossNames") if b]
+                lines.append(f"- **Chefes:** {', '.join(bosses)}")
             lines.append("")
 
-            lines.append("### Análise de Diretrizes do Patch")
-            lines.append(
-                f"O ciclo atual de {self.translate_to_portuguese(mode_title)} favorece arquétipos específicos com base no posicionamento dos chefes e nos bônus mecânicos sazonais da versão {phase.get('displayVersion')}. Veja os detalhes de performance a seguir:"
-            )
+            lines.append("### Dados do Ciclo")
+            lines.append(f"Ciclo {phase.get('displayVersion')} — {mode_title}.")
             lines.append("")
 
             # Character Stats
             lines.append("## Métricas Globais de Personagens")
             lines.append("")
-            lines.append(
-                f"A tabela abaixo mostra a taxa de uso (Usage/Appearance Rate) e a {metric_name} na conclusão do estágio mais desafiador deste modo:"
-            )
+            lines.append(f"Taxa de uso (Appearance Rate) e {metric_name}:")
             lines.append("")
 
             char_stats = analytics.get("charStats", [])
@@ -417,9 +422,7 @@ class PrydwenMetaScraper:
             # Teams
             lines.append("## Top Composições (Teams)")
             lines.append("")
-            lines.append(
-                "Equipes mais populares e eficientes utilizadas pelos jogadores para vencer os desafios deste patch:"
-            )
+            lines.append("Equipes mais usadas neste ciclo:")
             lines.append("")
 
             teams = analytics.get("teams", {})

@@ -244,7 +244,7 @@ def simulate_gacha_probabilities(
             final_r = (curr_r if curr_r >= 0 else -1) + k
             final_str = f"{prefix}{final_r + rank_display_offset}"
             if final_r >= tgt_r:
-                lbl = f"+{k} cópia(s) (Alcança {final_str} - Meta Batida! 🎉)"
+                lbl = f"+{k} cópia(s) (Alcança {final_str} — Meta Batida)"
             else:
                 lbl = f"+{k} cópia(s) (Alcança {final_str})"
         dist_pct[lbl] = pct

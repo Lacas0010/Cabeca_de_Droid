@@ -83,7 +83,7 @@ class TestRelicSimulationSuite(unittest.TestCase):
         self.assertGreater(res.score_diff, 0)
         self.assertEqual(res.new_piece_grade, "SS")
         self.assertEqual(res.old_piece_grade, "C")
-        self.assertIn("Recomendado", res.verdict_summary)
+        self.assertIn("Upgrade", res.verdict_summary)
 
     @patch("services.simulation_service.score_relic")
     def test_simulate_relic_swap_downgrade(self, mock_score_relic):
@@ -112,7 +112,7 @@ class TestRelicSimulationSuite(unittest.TestCase):
         res = simulate_relic_swap(req)
         self.assertFalse(res.is_upgrade)
         self.assertLess(res.score_diff, 0)
-        self.assertIn("Não recomendado", res.verdict_summary)
+        self.assertIn("Downgrade", res.verdict_summary)
 
     @patch("services.simulation_service.score_relic")
     def test_simulate_stat_deltas_and_speed_tuning_breakpoint(self, mock_score_relic):

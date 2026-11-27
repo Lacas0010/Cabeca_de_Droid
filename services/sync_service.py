@@ -112,7 +112,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                 asyncio.set_event_loop(loop)
                 filename = loop.run_until_complete(extractor.extrair_jogo(game_id))
                 loop.close()
-                log_game(game_id, f"Roster extraído e salvo com sucesso em {filename}!", "SUCCESS", progresso=0.25)
+                log_game(game_id, f"Roster salvo em {filename}.", "SUCCESS", progresso=0.25)
 
                 roster_data = database.get_roster_data(game_id)
                 if roster_data:
@@ -149,7 +149,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                             scraper.save_to_markdown(c["name"], data)
                         except Exception as child_err:
                             log_game(game_id, f"Aviso no guia de {c['name']}: {child_err}", "WARN", progresso=p_val)
-                    log_game(game_id, "Guias de HSR baixados com sucesso!", "SUCCESS", progresso=0.82)
+                    log_game(game_id, "Guias de HSR baixados.", "SUCCESS", progresso=0.82)
                     log_game(game_id, "Consolidando biblioteca de guias de HSR...", "INFO", progresso=0.84)
                     bundle_guides("hsr/guias", "hsr/todos_os_guias_hsr.md", "Honkai: Star Rail")
                 except Exception as scraper_err:
@@ -173,7 +173,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                             scraper_zzz.save_to_markdown(a["name"], data)
                         except Exception as child_err:
                             log_game(game_id, f"Aviso no guia de {a['name']}: {child_err}", "WARN", progresso=p_val)
-                    log_game(game_id, "Guias de ZZZ baixados com sucesso!", "SUCCESS", progresso=0.82)
+                    log_game(game_id, "Guias de ZZZ baixados.", "SUCCESS", progresso=0.82)
                     log_game(game_id, "Consolidando biblioteca de guias de ZZZ...", "INFO", progresso=0.84)
                     bundle_guides("zzz/guias", "zzz/todos_os_guias_zzz.md", "Zenless Zone Zero")
                 except Exception as scraper_err:
@@ -199,7 +199,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                             scraper_genshin.save_to_markdown(c["name"], data)
                         except Exception as child_err:
                             log_game(game_id, f"Aviso no guia de {c['name']}: {child_err}", "WARN", progresso=p_val)
-                    log_game(game_id, "Guias de Genshin baixados com sucesso!", "SUCCESS", progresso=0.82)
+                    log_game(game_id, "Guias de Genshin baixados.", "SUCCESS", progresso=0.82)
                     log_game(game_id, "Consolidando biblioteca de guias de Genshin...", "INFO", progresso=0.84)
                     bundle_guides("genshin/guias", "genshin/todos_os_guias_genshin.md", "Genshin Impact")
                 except Exception as scraper_err:
@@ -244,7 +244,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                         if os.path.exists(filepath_endgame):
                             with open(filepath_endgame, "r", encoding="utf-8") as f2:
                                 out_f.write(f2.read())
-                    log_game(game_id, "Meta de HSR consolidado com sucesso!", "SUCCESS", progresso=0.98)
+                    log_game(game_id, "Meta de HSR consolidado.", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
                     log_game(game_id, f"Falha ao obter meta HSR: {meta_err}", "ERROR")
@@ -255,7 +255,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                     )
                     scraper_zzz_meta = PrydwenZZZScraper()
                     scraper_zzz_meta.save_meta_to_markdown()
-                    log_game(game_id, "Meta de ZZZ salvo com sucesso!", "SUCCESS", progresso=0.98)
+                    log_game(game_id, "Meta de ZZZ salvo.", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
                     log_game(game_id, f"Falha ao obter meta ZZZ: {meta_err}", "ERROR")
@@ -264,7 +264,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
                     log_game(game_id, "Coletando meta e Tier List de Genshin do Prydwen...", "INFO", progresso=0.90)
                     scraper_genshin_meta = PrydwenGenshinScraper()
                     scraper_genshin_meta.save_meta_to_markdown()
-                    log_game(game_id, "Meta de Genshin do Prydwen salvo com sucesso!", "SUCCESS", progresso=0.98)
+                    log_game(game_id, "Meta de Genshin salvo.", "SUCCESS", progresso=0.98)
                 except Exception as meta_err:
                     traceback.print_exc()
                     log_game(game_id, f"Falha ao obter meta Genshin: {meta_err}", "ERROR")
@@ -276,7 +276,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
             generate_meta_json_from_markdown(game_id)
             log_game(
                 game_id,
-                f"Banco de metadados meta_data_{game_id}.json de {game_id.upper()} reconstruído com sucesso!",
+                f"Metadados meta_data_{game_id}.json atualizados.",
                 "INFO",
                 progresso=0.99,
             )
@@ -290,7 +290,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
             load_team_archetypes(game_id, force_reload=True)
             log_game(
                 game_id,
-                f"Catálogo de arquétipos de endgame de {game_id.upper()} sincronizado com sucesso!",
+                f"Arquétipos de endgame ({game_id.upper()}) sincronizados.",
                 "INFO",
                 progresso=0.99,
             )
@@ -302,12 +302,26 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
             PrydwenScraper().get_current_banners(game_id)
             log_game(
                 game_id,
-                f"Banners atuais e artes oficiais de {game_id.upper()} sincronizados com sucesso!",
+                f"Banners atuais ({game_id.upper()}) sincronizados.",
                 "INFO",
                 progresso=0.99,
             )
         except Exception as banner_err:
             log_game(game_id, f"Aviso ao sincronizar banners atuais: {banner_err}", "WARN")
+
+        # Atualiza incrementalmente os efeitos de armas e conjuntos em static_data/
+        try:
+            from scrapers.equipment_effects_scraper import sync_equipment_effects
+
+            sync_equipment_effects([game_id], force=False)
+            log_game(
+                game_id,
+                f"Catálogo de armas e conjuntos ({game_id.upper()}) sincronizado.",
+                "INFO",
+                progresso=0.99,
+            )
+        except Exception as eq_err:
+            log_game(game_id, f"Aviso ao sincronizar efeitos de equipamentos: {eq_err}", "WARN")
 
         # Invalida os caches em memória de Roster e Endgame para refletir a sincronização imediatamente
         try:
@@ -319,7 +333,7 @@ def _bg_sync_thread(game_id: str, run_roster: bool, run_guides: bool, run_meta: 
         except Exception as cache_err:
             log_game(game_id, f"Aviso ao invalidar cache em memória: {cache_err}", "WARN")
 
-        log_game(game_id, "Sincronização concluída com sucesso!", "SUCCESS", progresso=1.0)
+        log_game(game_id, "Sincronização concluída.", "SUCCESS", progresso=1.0)
     except Exception as general_err:
         log_game(game_id, f"Erro crítico na sincronização: {general_err}", "ERROR", progresso=0.0)
     finally:

@@ -504,13 +504,13 @@ def calculate_gacha_tracker_stats(game_id: str, uid: Optional[str] = None) -> Ga
     # Avaliação global de sorte
     if char_stats.five_stars_count >= 2:
         if char_stats.avg_five_star_pity <= 62:
-            luck_rating = "Sortudo dos Aeons! 🍀"
+            luck_rating = "Sortudo dos Aeons"
         elif char_stats.avg_five_star_pity <= 72:
-            luck_rating = "Acima da Média ✨"
+            luck_rating = "Acima da Média"
         elif char_stats.avg_five_star_pity <= 77:
-            luck_rating = "Dentro da Média ⚖️"
+            luck_rating = "Dentro da Média"
         else:
-            luck_rating = "Hard Pity Warrior 💀"
+            luck_rating = "Hard Pity Warrior"
     else:
         luck_rating = "Dados Iniciais"
 

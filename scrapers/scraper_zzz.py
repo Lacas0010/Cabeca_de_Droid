@@ -115,19 +115,19 @@ class PrydwenZZZScraper:
         agents = []
         seen_urls = set()
 
-        # Encontra todos os links de personagens
+        # Encontra todos os links de personagens (apenas rotas diretas /zenless/characters/<slug>)
         for link in soup.find_all("a"):
             href = link.get("href", "")
             if "/zenless/characters/" in href:
                 clean_href = href.strip()
+                rel = clean_href.split("/zenless/characters/")[-1].strip("/")
+                if not rel or "/" in rel or rel in ("characters", "rarity", "element", "style"):
+                    continue
+                if rel.endswith("-calculations") or rel.endswith("-synergy"):
+                    continue
                 if clean_href not in seen_urls:
-                    slug = clean_href.split("/")[-1]
-                    # Ignora links genéricos de filtro ou sub-rotas
-                    if not slug or slug == "characters" or slug.endswith("-calculations") or slug.endswith("-synergy"):
-                        continue
-
                     seen_urls.add(clean_href)
-                    name = extract_prydwen_card_name(link, slug)
+                    name = extract_prydwen_card_name(link, rel)
 
                     full_url = self.domain + clean_href if clean_href.startswith("/") else clean_href
                     entry = {"name": name, "url": full_url}
@@ -316,27 +316,50 @@ class PrydwenZZZScraper:
                 elif "Disk Drives Sets" in current_section:
                     data["disk_sets"].append(item_data)
 
-        # Stats recomendados (Disk 4, 5, 6 e Substats)
+        # Stats recomendados (Disk 4, 5, 6 e Substats — preserva apenas a primeira ocorrência de cada slot, evitando duplicação desktop/mobile)
+        seen_zzz_slots = set()
         inner_tips = tab_build.find_all("div", class_="build-tips")
         for tip in inner_tips:
             main_stats_div = tip.find("div", class_="main-stats")
             if main_stats_div:
                 for box in main_stats_div.find_all("div", class_="box"):
-                    data["stats_main"].append(box.get_text(separator=" ").strip())
+                    box_txt = re.sub(r"\s+", " ", box.get_text(separator=" ").strip())
+                    if not box_txt:
+                        continue
+                    m_slot = re.match(r"^(?:disk|disco)\s*(\d)", box_txt, re.IGNORECASE)
+                    slot_key = f"disk{m_slot.group(1)}" if m_slot else box_txt.lower()
+                    if slot_key not in seen_zzz_slots:
+                        seen_zzz_slots.add(slot_key)
+                        data["stats_main"].append(box_txt)
 
             sub_div = tip.find("div", class_="flex-wrap") or tip.find(class_=re.compile("flex.*wrap"))
-            if sub_div and "Substats:" in sub_div.text:
-                data["stats_sub"] = sub_div.text.replace("Substats:", "").strip()
+            if sub_div and "Substats:" in sub_div.text and not data["stats_sub"]:
+                data["stats_sub"] = re.sub(r"\s+", " ", sub_div.text.replace("Substats:", "").strip())
 
-        # Stats de Endgame
+        # Stats de Endgame (limpa parágrafos longos de prosa mantendo qualificadores úteis de cap/combate)
         endgame_div = tab_build.find("div", class_="endgame-stats")
         if endgame_div:
             ul = endgame_div.find("ul")
             if ul:
+                seen_eg = set()
                 for li in ul.find_all("li"):
                     txt = li.get_text(separator=" ").strip()
                     txt = re.sub(r"\s+", " ", txt)
-                    data["stats_endgame"].append(txt)
+                    if not txt or ":" not in txt:
+                        continue
+                    s_lbl, s_val = [p.strip() for p in txt.split(":", 1)]
+                    if len(s_val) > 95 and not re.search(r"overcap|at\s+least\s+\d+", s_val, re.IGNORECASE):
+                        m_short = re.match(
+                            r"^([0-9][0-9\.\,\-\+\s%or\/]*(?:\([^)]{1,45}\))?)",
+                            s_val,
+                            re.IGNORECASE,
+                        )
+                        if m_short and m_short.group(1).strip():
+                            s_val = m_short.group(1).strip()
+                    cleaned_eg = f"{s_lbl}: {s_val}"
+                    if cleaned_eg not in seen_eg:
+                        seen_eg.add(cleaned_eg)
+                        data["stats_endgame"].append(cleaned_eg)
 
         # --- 4. ABA 3: TIMES ---
         tab_teams = divs[3]
@@ -391,21 +414,21 @@ class PrydwenZZZScraper:
         if data["skills_active"]:
             lines.append("### Habilidades Ativas")
             for skill in data["skills_active"]:
-                lines.append(f"- **{self.translate_to_portuguese(skill['name'])}**")
+                lines.append(f"- **{skill['name']}**")
                 lines.append(f"  {self.translate_to_portuguese(skill['description'])}")
                 lines.append("")
 
         if data["skills_passives"]:
             lines.append("### Habilidades Passivas")
             for passive in data["skills_passives"]:
-                lines.append(f"- **{self.translate_to_portuguese(passive['name'])}**")
+                lines.append(f"- **{passive['name']}**")
                 lines.append(f"  {self.translate_to_portuguese(passive['description'])}")
                 lines.append("")
 
         if data["skills_mindscapes"]:
             lines.append("### Cinemas de Mente (Mindscapes)")
             for ms in data["skills_mindscapes"]:
-                lines.append(f"- **{self.translate_to_portuguese(ms['name'])}**")
+                lines.append(f"- **{ms['name']}**")
                 lines.append(f"  {self.translate_to_portuguese(ms['description'])}")
                 lines.append("")
 
@@ -465,6 +488,21 @@ class PrydwenZZZScraper:
         else:
             lines.append("Nenhuma composição recomendada disponível.")
             lines.append("")
+
+        # Proteção 1: nunca criar guia vazio de página teaser/cross-game sem build alguma
+        has_any_build = bool(data.get("stats_main") or data.get("w_engines") or data.get("disk_sets"))
+        if not has_any_build:
+            return filename
+
+        # Proteção 2: nunca sobrescrever um guia válido existente com um raspado sem Main Stats
+        if not data.get("stats_main") and os.path.exists(filename):
+            try:
+                with open(filename, "r", encoding="utf-8") as existing_f:
+                    existing_txt = existing_f.read()
+                if "### Atributos Recomendados (Stats)" in existing_txt and ("Disk 4" in existing_txt or "Disco 4" in existing_txt):
+                    return filename
+            except OSError:
+                pass
 
         markdown_content = "\n".join(lines)
         with open(filename, "w", encoding="utf-8") as f:

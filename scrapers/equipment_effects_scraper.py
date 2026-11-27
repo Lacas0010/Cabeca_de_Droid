@@ -754,74 +754,152 @@ def _backfill_zzz_missing_from_roster(
     weapons: Dict[str, Dict[str, Any]],
     sets_map: Dict[str, Dict[str, Any]],
 ) -> None:
-    """Complementa dinamicamente via HoYoWiki Search itens do roster local de ZZZ que não vieram na listagem paginada."""
+    """Complementa dinamicamente via HoYoWiki Search itens do roster local e dos guias de ZZZ (PT-BR + EN aliases)."""
+    # Constrói índice rápido de chaves e aliases já conhecidos para evitar buscas repetidas
+    known_w_keys = set(weapons.keys())
+    for wobj in weapons.values():
+        if isinstance(wobj, dict):
+            for al in wobj.get("aliases") or []:
+                ak = normalize_equipment_key(al)
+                if ak:
+                    known_w_keys.add(ak)
+    known_s_keys = set(sets_map.keys())
+    for sobj in sets_map.values():
+        if isinstance(sobj, dict):
+            for al in sobj.get("aliases") or []:
+                ak = normalize_equipment_key(al)
+                if ak:
+                    known_s_keys.add(ak)
+
+    missing_weapons: Dict[str, Tuple[str, str]] = {}  # norm_key -> (query_name, search_lang)
+    missing_sets: Dict[str, Tuple[str, str]] = {}
+
+    # 1. Itens equipados no roster local (PT-BR)
     try:
         import database
 
         roster = database.get_roster_data("zzz") or []
     except Exception:
-        return
+        roster = []
 
-    missing_weapons: Dict[str, str] = {}
-    missing_sets: Dict[str, str] = {}
     for c in roster:
         w = c.get("weapon") or {}
         wn = str(w.get("name") or "").strip()
         if wn:
             wk = normalize_equipment_key(wn)
-            if wk and not (weapons.get(wk) or {}).get("desc"):
-                missing_weapons[wk] = wn
+            existing_w = weapons.get(wk) or {}
+            if wk and (not existing_w.get("desc") or not existing_w.get("aliases")):
+                missing_weapons[wk] = (wn, "pt-pt")
         for s_lbl in c.get("sets") or []:
             s_clean = re.sub(r"^\d+\s*p\s+", "", str(s_lbl or "").strip(), flags=re.IGNORECASE).strip()
             s_clean = re.sub(r"\s*\(\d+\s*peças?\)\s*$", "", s_clean, flags=re.IGNORECASE).strip()
             if not s_clean or s_clean.lower().startswith(("nenhum", "sem ")):
                 continue
             sk = normalize_equipment_key(s_clean)
-            if sk and not ((sets_map.get(sk) or {}).get("two_pc") or (sets_map.get(sk) or {}).get("four_pc")):
-                missing_sets[sk] = s_clean
+            existing_s = sets_map.get(sk) or {}
+            if sk and (not (existing_s.get("two_pc") or existing_s.get("four_pc")) or not existing_s.get("aliases")):
+                missing_sets[sk] = (s_clean, "pt-pt")
 
-    for wk, wn in missing_weapons.items():
-        found = _search_hoyowiki_entry_id("zzz", wn)
+    # 2. Itens recomendados nos guias oficiais de ZZZ (EN) ainda sem mapeamento no catálogo
+    try:
+        guides_dir = get_data_path(os.path.join("zzz", "guias"))
+        if os.path.isdir(guides_dir):
+            for fname in os.listdir(guides_dir):
+                if not fname.endswith(".md"):
+                    continue
+                with open(os.path.join(guides_dir, fname), "r", encoding="utf-8", errors="ignore") as gf:
+                    txt = gf.read()
+                sec = ""
+                for line in txt.splitlines():
+                    ls = line.strip()
+                    if ls.startswith("##"):
+                        low = ls.lower()
+                        if "w-engine" in low or "motor" in low:
+                            sec = "w"
+                        elif "disco" in low or "disc" in low:
+                            sec = "s"
+                        else:
+                            sec = ""
+                        continue
+                    if sec and ls.startswith("- **"):
+                        m = re.search(r"-\s*\*\*([^*]+)\*\*", ls)
+                        if not m:
+                            continue
+                        nm = re.sub(r"\s*\([^)]*\)", "", m.group(1)).strip()
+                        if not nm or len(nm) < 4 or "+" in nm:
+                            continue
+                        nk = normalize_equipment_key(nm)
+                        if sec == "w" and nk and nk not in known_w_keys and nk not in missing_weapons:
+                            missing_weapons[nk] = (nm, "en-us")
+                        elif sec == "s" and nk and nk not in known_s_keys and nk not in missing_sets:
+                            missing_sets[nk] = (nm, "en-us")
+    except Exception:
+        pass
+
+    for wk, (wn, q_lang) in missing_weapons.items():
+        found = _search_hoyowiki_entry_id("zzz", wn, lang=q_lang)
+        if not found and q_lang != "en-us":
+            found = _search_hoyowiki_entry_id("zzz", wn, lang="en-us")
         if not found:
             continue
-        eid, official_name = found
-        p_name, p_desc, p_ranks = "", "", {}
-        for lang_try in ("pt-pt", "en-us"):
-            _, page = _fetch_zzz_entry_page(eid, lang=lang_try)
-            if isinstance(page, dict):
-                p_name, p_desc, p_ranks = _extract_zzz_wengine_effect_from_page(page)
+        eid, found_name = found
+        _, page_pt = _fetch_zzz_entry_page(eid, lang="pt-pt")
+        _, page_en = _fetch_zzz_entry_page(eid, lang="en-us")
+        pt_name = clean_hoyoverse_desc((page_pt or {}).get("name") or "") or (found_name if q_lang == "pt-pt" else wn)
+        en_name = clean_hoyoverse_desc((page_en or {}).get("name") or "") or (found_name if q_lang == "en-us" else "")
+        p_name, p_desc, p_ranks = ("", "", {})
+        for pg in (page_pt, page_en):
+            if isinstance(pg, dict):
+                p_name, p_desc, p_ranks = _extract_zzz_wengine_effect_from_page(pg)
                 if p_desc:
                     break
-        if p_desc:
-            weapons[wk] = {
+        target_key = normalize_equipment_key(pt_name) or wk
+        existing_w = weapons.get(target_key) or weapons.get(wk) or {}
+        aliases = list(existing_w.get("aliases") or [])
+        for cand_al in (en_name, wn):
+            if cand_al and cand_al.lower() != pt_name.lower() and cand_al not in aliases:
+                aliases.append(cand_al)
+        if p_desc or aliases:
+            weapons[target_key] = {
                 "id": eid,
-                "name": official_name or wn,
-                "rarity": weapons.get(wk, {}).get("rarity", 4),
-                "passive_name": p_name,
-                "desc": p_desc,
-                "ranks": p_ranks,
-                "aliases": weapons.get(wk, {}).get("aliases", []),
+                "name": pt_name,
+                "rarity": existing_w.get("rarity", 4),
+                "passive_name": p_name or existing_w.get("passive_name", ""),
+                "desc": p_desc or existing_w.get("desc", ""),
+                "ranks": p_ranks or existing_w.get("ranks", {}),
+                "aliases": aliases,
             }
 
-    for sk, sn in missing_sets.items():
-        found = _search_hoyowiki_entry_id("zzz", sn)
+    for sk, (sn, q_lang) in missing_sets.items():
+        found = _search_hoyowiki_entry_id("zzz", sn, lang=q_lang)
+        if not found and q_lang != "en-us":
+            found = _search_hoyowiki_entry_id("zzz", sn, lang="en-us")
         if not found:
             continue
-        eid, official_name = found
+        eid, found_name = found
+        _, page_pt = _fetch_zzz_entry_page(eid, lang="pt-pt")
+        _, page_en = _fetch_zzz_entry_page(eid, lang="en-us")
+        pt_name = clean_hoyoverse_desc((page_pt or {}).get("name") or "") or (found_name if q_lang == "pt-pt" else sn)
+        en_name = clean_hoyoverse_desc((page_en or {}).get("name") or "") or (found_name if q_lang == "en-us" else "")
         two_pc, four_pc = "", ""
-        for lang_try in ("pt-pt", "en-us"):
-            _, page = _fetch_zzz_entry_page(eid, lang=lang_try)
-            if isinstance(page, dict):
-                two_pc, four_pc = _extract_zzz_disc_effects_from_page(page)
+        for pg in (page_pt, page_en):
+            if isinstance(pg, dict):
+                two_pc, four_pc = _extract_zzz_disc_effects_from_page(pg)
                 if two_pc or four_pc:
                     break
-        if two_pc or four_pc:
-            sets_map[sk] = {
+        target_key = normalize_equipment_key(pt_name) or sk
+        existing_s = sets_map.get(target_key) or sets_map.get(sk) or {}
+        aliases = list(existing_s.get("aliases") or [])
+        for cand_al in (en_name, sn):
+            if cand_al and cand_al.lower() != pt_name.lower() and cand_al not in aliases:
+                aliases.append(cand_al)
+        if two_pc or four_pc or aliases:
+            sets_map[target_key] = {
                 "id": eid,
-                "name": official_name or sn,
-                "two_pc": two_pc,
-                "four_pc": four_pc,
-                "aliases": sets_map.get(sk, {}).get("aliases", []),
+                "name": pt_name,
+                "two_pc": two_pc or existing_s.get("two_pc", ""),
+                "four_pc": four_pc or existing_s.get("four_pc", ""),
+                "aliases": aliases,
             }
 
 

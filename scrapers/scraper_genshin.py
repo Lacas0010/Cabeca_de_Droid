@@ -375,8 +375,12 @@ class PrydwenGenshinScraper:
         lines.append("### Armas Recomendadas")
         if data["weapons"]:
             for w in data["weapons"]:
-                w_trans = self.translate_to_portuguese(w)
-                lines.append(f"- {w_trans}")
+                # Preserva o nome oficial da arma em negrito sem traduzir palavras internas (ex.: 'Sands' -> 'Ampulheta')
+                if " - " in w:
+                    head_w, note_w = w.split(" - ", 1)
+                    lines.append(f"- {head_w} - {self.translate_to_portuguese(note_w)}")
+                else:
+                    lines.append(f"- {w}")
             lines.append("")
         else:
             lines.append("Nenhuma arma listada.")
@@ -385,8 +389,12 @@ class PrydwenGenshinScraper:
         lines.append("### Conjuntos de Artefatos Recomendados")
         if data["artifacts"]:
             for a in data["artifacts"]:
-                a_trans = self.translate_to_portuguese(a)
-                lines.append(f"- {a_trans}")
+                # Preserva o nome oficial do conjunto sem corromper palavras internas
+                if " - " in a:
+                    head_a, note_a = a.split(" - ", 1)
+                    lines.append(f"- {head_a} - {self.translate_to_portuguese(note_a)}")
+                else:
+                    lines.append(f"- {a}")
             lines.append("")
         else:
             lines.append("Nenhum conjunto de artefatos listado.")
@@ -462,6 +470,21 @@ class PrydwenGenshinScraper:
             + ".md"
         )
         filepath = os.path.join(output_dir, filename_clean)
+
+        # Proteção 1: nunca criar guia vazio de página teaser/inválida sem build alguma
+        has_any_build = bool(data.get("stats_main") or data.get("weapons") or data.get("artifacts"))
+        if not has_any_build:
+            return filepath
+
+        # Proteção 2: nunca sobrescrever um guia válido existente com um raspado sem Main Stats
+        if not data.get("stats_main") and os.path.exists(filepath):
+            try:
+                with open(filepath, "r", encoding="utf-8") as existing_f:
+                    existing_txt = existing_f.read()
+                if "Atributos Principais (Main Stats)" in existing_txt:
+                    return filepath
+            except OSError:
+                pass
 
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(markdown_content)

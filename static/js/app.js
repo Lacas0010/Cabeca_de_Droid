@@ -3,19 +3,19 @@
 // ==========================================================================
 
 // Importação ordenada dos módulos desacoplados
-import "./modules/i18n.js?v=35.0";
+import "./modules/i18n.js?v=37.0";
 import "./modules/api_client.js?v=32.0";
 import "./modules/modal.js?v=25.0";
 import "./modules/navigation.js?v=27.0";
-import "./modules/config_manager.js?v=27.0";
+import "./modules/config_manager.js?v=28.0";
 import "./modules/sync_manager.js?v=28.0";
 import "./modules/endgame.js?v=31.0";
 import "./modules/roster.js?v=34.0";
 import "./modules/roster_charts.js?v=1.0";
 import "./modules/card_exporter.js?v=2.0";
-import "./modules/build_comparator.js?v=31.0";
-import "./modules/chat_rag.js?v=26.0";
-import "./modules/farming.js?v=27.0";
+import "./modules/build_comparator.js?v=35.0";
+import "./modules/chat_rag.js?v=27.0";
+import "./modules/farming.js?v=29.0";
 import "./modules/updater_ui.js?v=3.0";
 import "./modules/quick_search.js?v=1.0";
 
@@ -26,7 +26,7 @@ window.loadGachaModules = function() {
     if (!_gachaModulesPromise) {
         _gachaModulesPromise = Promise.all([
             import("./modules/gacha_sim.js?v=32.0"),
-            import("./modules/gacha_tracker.js?v=26.0")
+            import("./modules/gacha_tracker.js?v=27.0")
         ]).then(() => {
             console.log("[PERF] Módulos de Gacha carregados dinamicamente sob demanda.");
         }).catch(err => {

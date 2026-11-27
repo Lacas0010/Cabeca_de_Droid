@@ -66,44 +66,45 @@ class TestDynamicDataAndFuzzySuite(unittest.TestCase):
         self.assertIn(blade_slug, ["blade", "1205"])
 
     def test_04_day1_ai_build_generator(self):
-        """Testa a geração automática de guias Day-1 quando um personagem não possui guia pré-existente."""
+        """Testa a geração automática de guias Day-1 isolada em tempfile.TemporaryDirectory()."""
+        import tempfile
+
         test_slug = "personagem_unit_test_day1"
         test_game = "genshin"
-        guides_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), test_game, "guias")
-        target_file = os.path.join(guides_dir, f"{test_slug}.md")
 
-        if os.path.exists(target_file):
-            os.remove(target_file)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with (
+                patch("services.ai_build_generator.BASE_DIR", tmpdir),
+                patch("build_calculator.generate_meta_json_from_markdown"),
+            ):
+                generated_path = AIBuildGenerator.get_or_generate_guide(test_game, test_slug, "Pyro")
+                self.assertIsNotNone(generated_path)
+                self.assertTrue(os.path.exists(generated_path))
+                self.assertTrue(os.path.abspath(generated_path).startswith(os.path.abspath(tmpdir)))
 
-        generated_path = AIBuildGenerator.get_or_generate_guide(test_game, test_slug, "Pyro")
-        self.assertIsNotNone(generated_path)
-        self.assertTrue(os.path.exists(generated_path))
+                with open(generated_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+                    self.assertIn("Guia de Build", content)
+                    self.assertIn("Atributos Recomendados", content)
+                    self.assertIn("ai_preliminary", content)
 
-        with open(generated_path, "r", encoding="utf-8") as f:
-            content = f.read()
-            self.assertIn("Guia de Build", content)
-            self.assertIn("Atributos Recomendados", content)
-            self.assertIn("ai_preliminary", content)
-
-        self.assertTrue(AIBuildGenerator.is_ai_preliminary_guide(generated_path))
-
-        # Limpeza pós-teste
-        if os.path.exists(target_file):
-            os.remove(target_file)
+                self.assertTrue(AIBuildGenerator.is_ai_preliminary_guide(generated_path))
 
     def test_05_meta_comparator_day1_integration(self):
-        """Testa se o comparador de meta invoca o gerador Day-1 caso o guia esteja ausente."""
-        test_char = "novo_agente_misterioso_day1"
-        target = parse_meta_target("zzz", test_char, "Electric")
-        self.assertIsNotNone(target)
-        self.assertIn("weapons", target)
-        self.assertIn("sets", target)
+        """Testa se o comparador de meta invoca o gerador Day-1 isolado em diretório temporário."""
+        import tempfile
 
-        # Limpeza do guia de teste gerado
-        guides_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "zzz", "guias")
-        target_file = os.path.join(guides_dir, f"{test_char}.md")
-        if os.path.exists(target_file):
-            os.remove(target_file)
+        test_char = "novo_agente_misterioso_day1"
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with (
+                patch("services.ai_build_generator.BASE_DIR", tmpdir),
+                patch("build_calculator.generate_meta_json_from_markdown"),
+            ):
+                target = parse_meta_target("zzz", test_char, "Electric")
+                self.assertIsNotNone(target)
+                self.assertIn("weapons", target)
+                self.assertIn("sets", target)
+                self.assertTrue(os.path.exists(os.path.join(tmpdir, "zzz", "guias", f"{test_char}.md")))
 
     def test_06_short_name_collision_guard(self):
         """Garante que nomes curtos (<= 4 letras) não sofram falsos positivos por Levenshtein."""
@@ -138,7 +139,12 @@ class TestDynamicDataAndFuzzySuite(unittest.TestCase):
         self.assertEqual(
             resolve_character_canonical_slug("hsr", "Trailblazer", element="Preservation"), "trailblazer_•_preservation"
         )
-        self.assertEqual(resolve_character_canonical_slug("hsr", "Desbravador", element="Ice"), "trailblazer_•_ice")
+        self.assertEqual(
+            resolve_character_canonical_slug("hsr", "Desbravador", element="Ice"), "trailblazer_•_remembrance"
+        )
+        self.assertEqual(
+            resolve_character_canonical_slug("hsr", "Desbravador", element="Lightning"), "trailblazer_•_elation"
+        )
 
 
 if __name__ == "__main__":

@@ -326,7 +326,7 @@ def simulate_relic_swap(req: SimulateSwapRequest) -> SimulateSwapResponse:
     if simulated_final_stats:
         bp_res = calculate_stat_breakpoints(game_clean, char_name, simulated_final_stats)
         if "cycles_summary" in bp_res and bp_res["cycles_summary"]:
-            breakpoint_feedback.append(f"⚡ {bp_res['cycles_summary']}")
+            breakpoint_feedback.append(f"✓ {bp_res['cycles_summary']}")
 
         for bp in bp_res.get("breakpoints", []):
             reached = bp.get("is_reached") or bp.get("achieved")
@@ -339,19 +339,25 @@ def simulate_relic_swap(req: SimulateSwapRequest) -> SimulateSwapResponse:
                 next_goal = f" ({bp.get('next_goal')})" if bp.get("next_goal") else ""
                 breakpoint_feedback.append(f"✗ {stat_label}: {desc}{next_goal}")
 
-    # 8. Veredito Executivo do Simulador
+    # 8. Veredito do Simulador
     if score_diff > 2.0:
         verdict = (
-            f"Recomendado! A troca eleva o score da build em +{score_diff}% ({old_build_grade} ➔ {new_build_grade})."
+            f"Upgrade (+{score_diff}%): {old_build_grade} -> {new_build_grade}."
+            if old_build_grade != new_build_grade
+            else f"Upgrade (+{score_diff}%)."
         )
     elif score_diff > 0:
-        verdict = f"Upgrade sutil (+{score_diff}%). Melhora pontual sem alteração drástica de tier."
+        verdict = f"Upgrade leve (+{score_diff}%), sem mudança de tier."
     elif score_diff == 0:
-        verdict = "Efeito neutro. As duas peças oferecem equilíbrio de atributos similar para o personagem."
+        verdict = "Neutro: mesmo RV. Escolha pelo substat que falta (CRIT, SPD ou ER)."
     elif score_diff > -3.0:
-        verdict = f"Leve redução de score ({score_diff}%). Verifique se o ganho de atributos secundários compensa."
+        verdict = f"Downgrade leve ({score_diff}%): só compensa se fechar breakpoint (SPD/ER/EHR)."
     else:
-        verdict = f"Não recomendado! A peça candidata reduz o score da build em {score_diff}% ({old_build_grade} ➔ {new_build_grade})."
+        verdict = (
+            f"Downgrade ({score_diff}%): {old_build_grade} -> {new_build_grade}."
+            if old_build_grade != new_build_grade
+            else f"Downgrade ({score_diff}%)."
+        )
 
     return SimulateSwapResponse(
         character_name=char_name,

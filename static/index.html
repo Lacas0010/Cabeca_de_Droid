@@ -133,7 +133,7 @@
 <span class="status-text" data-i18n="status_checking" id="api-status-text">Buscando status...</span>
 </div>
 <div class="sidebar-version-row">
-<span class="version-badge" id="app-version-badge">v1.5.0</span>
+<span class="version-badge" id="app-version-badge">v1.6.0</span>
 <sakuga-button class="sk-xs" id="btn-check-updates" title="Verificar atualizações no GitHub" variant="secondary">
 <i class="fa-solid fa-cloud-arrow-down"></i>
 <span>Atualizar</span>
@@ -2629,21 +2629,21 @@
 </div>
 </div>
 
-<!-- 5. ROSTER MULTI-JOGO & FILTROS INTELIGENTES -->
+<!-- 5. ROSTER MULTI-JOGO & FILTROS -->
 <div class="help-card" data-category="builds">
 <span class="help-card-badge" data-i18n="help_card_badge_5" style="color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);">ELENCO</span>
 <div>
 <div class="help-card-header">
 <div class="help-card-icon" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6;"><i class="fa-solid fa-users"></i></div>
-<div class="help-card-title" data-i18n="help_card_title_5">Roster Multi-Jogo &amp; Filtros Inteligentes</div>
+<div class="help-card-title" data-i18n="help_card_title_5">Roster Multi-Jogo &amp; Filtros</div>
 </div>
-<div class="help-card-desc" data-i18n="help_card_desc_5">Visualize todos os seus personagens em Grade ou Lista com filtros por elemento, caminho/arma/especialidade, raridade e nota de build.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_5">Grade ou Lista com filtros por elemento, caminho/arma/especialidade, raridade e nota RV.</div>
 <div class="help-card-tags">
 <span class="help-tag">Grade &amp; Lista</span>
 <span class="help-tag" data-i18n="help_tag_official_icons">Ícones Oficiais</span>
 <span class="help-tag">Sync Diário 04:00</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_5">Nas abas <strong>ZZZ</strong>, <strong>Genshin</strong> e <strong>HSR</strong>, filtre rapidamente por Elemento, Caminho (HSR), Arma (Genshin), Especialidade (ZZZ), personagens sem peça ou por ordem alfabética/RV. A sincronização automática também atualiza tudo no horário programado.</div>
+<div class="help-card-details" data-i18n="help_card_details_5">Nas abas <strong>ZZZ</strong>, <strong>Genshin</strong> e <strong>HSR</strong>, filtre por elemento, função, peças faltando ou ordene por RV.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
@@ -2679,15 +2679,15 @@
 <div>
 <div class="help-card-header">
 <div class="help-card-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8;"><i class="fa-solid fa-bullseye"></i></div>
-<div class="help-card-title" data-i18n="help_card_title_7">Gráfico Radar Meta, Breakpoints &amp; Ascensão</div>
+<div class="help-card-title" data-i18n="help_card_title_7">Radar Meta, Breakpoints &amp; Ascensão</div>
 </div>
-<div class="help-card-desc" data-i18n="help_card_desc_7">Polígono SVG sobreposto comparando sua build aos alvos oficiais do meta (incluindo VEL Base, Em Combate, Cap/Overcap e slots Flex) + cálculo de ascensão.</div>
+<div class="help-card-desc" data-i18n="help_card_desc_7">Polígono SVG comparando seus stats reais às metas do guia (VEL Base, Em Combate, Cap/Overcap e Flex) + calculadora de ascensão.</div>
 <div class="help-card-tags">
-<span class="help-tag">Radar SVG 100%</span>
+<span class="help-tag">Radar SVG</span>
 <span class="help-tag">Breakpoints</span>
 <span class="help-tag" data-i18n="help_tag_xp_calc">Calculadora XP</span>
 </div>
-<div class="help-card-details" data-i18n="help_card_details_7">Dentro do Inspetor, abra a aba <strong>Comparador Meta</strong> para visualizar o <strong>Gráfico Radar</strong>: o contorno tracejado marca 100% da meta e qualquer afundamento aponta exatamente qual atributo falta farmar. Na aba <strong>Sua Build</strong>, veja ainda Breakpoints de Ação (ciclos MoC) e a Calculadora de Ascensão (60/80/90).</div>
+<div class="help-card-details" data-i18n="help_card_details_7">No <strong>Comparador Meta</strong>, o anel tracejado marca a meta do guia e os valores reais mostram onde falta substat. Em <strong>Sua Build</strong>, veja Breakpoints (AV/ciclos MoC) e materiais para Nv. 60/80/90.</div>
 </div>
 <div class="help-card-footer">
 <sakuga-button class="help-toggle-details-btn sk-xs" variant="secondary"><i class="fa-solid fa-chevron-down"></i> <span data-i18n="help_btn_details">Detalhes</span></sakuga-button>
@@ -3114,7 +3114,7 @@
 </div>
 <div class="meta-radar-legend">
 <span class="meta-radar-legend-item"><i class="radar-dot-player"></i> <span data-i18n="radar_legend_build">Sua Build</span></span>
-<span class="meta-radar-legend-item"><i class="radar-dot-target"></i> <span data-i18n="radar_legend_target">Meta (100%)</span></span>
+<span class="meta-radar-legend-item"><i class="radar-dot-target"></i> <span data-i18n="radar_legend_target">Meta</span></span>
 </div>
 </div>
 <div class="meta-radar-layout">
@@ -3771,6 +3771,6 @@
 <script src="/static/vendor/sakuga-vfx/toast.js"></script>
 <script src="/static/vendor/sakuga-vfx/tooltip.js"></script>
 <!-- JavaScript Lógica do Frontend Modularizado (ES6 Native Modules) -->
-<script src="js/app.js?v=59.0" type="module"></script>
+<script src="js/app.js?v=64.0" type="module"></script>
 </body>
 </html>

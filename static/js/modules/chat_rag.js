@@ -253,7 +253,7 @@ function setupChatSystem() {
                     chatHistory = [];
                     messagesArea.innerHTML = getDefaultWelcomeHTML();
 
-    showToast(isEn ? "Conversation history cleared successfully!" : "Histórico de conversa apagado com sucesso!", "success");
+                    showToast(isEn ? "Conversation history cleared." : "Histórico de conversa apagado.", "success");
                 } else {
                     showToast("Falha ao apagar histórico.", "error");
                 }
@@ -510,7 +510,7 @@ window.clearTeam = function(gameId) {
     team.members = [];
     if (typeof showToast === "function") {
         const isEnToast = _isChatEn();
-        showToast(isEnToast ? "Team cleared successfully." : "Time esvaziado com sucesso.", "info");
+        showToast(isEnToast ? "Team cleared." : "Time limpo.", "info");
     }
     updateTeamUI(gameId);
 };
@@ -1493,7 +1493,7 @@ window.exportTeamCardPNG = async function(gameId) {
         link.click();
         if (typeof showToast === "function") {
 
-    showToast(isEn ? "Team card successfully exported in high definition (PNG 2x)!" : "Card de time exportado com sucesso em alta definição (PNG 2x)!", "success");
+            showToast(isEn ? "Team card exported (PNG 2x)." : "Card de time exportado (PNG 2x).", "success");
         }
     } catch (err) {
         console.error("Erro na exportação do card de time:", err);

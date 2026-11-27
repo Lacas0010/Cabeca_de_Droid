@@ -363,6 +363,7 @@ STAT_SHORT_NAMES = {
     "Anomaly Mastery": "Maest. Anomalia",
     "PEN Ratio": "Perfuração",
     "Energy Regen": "Regen. Energia",
+    "Impacto": "Impacto",
     "Impact": "Impacto",
     # Genshin English
     "Elemental Mastery": "Prof. Element.",
@@ -389,8 +390,10 @@ def sanitize_stat_name(stat_text: str) -> str:
     if s in STAT_SHORT_NAMES:
         return STAT_SHORT_NAMES[s]
     for k, v in STAT_SHORT_NAMES.items():
+        if k == v:
+            continue
         if k in s:
-            s = s.replace(k, v)
+            s = re.sub(rf"(?<![A-Za-zÀ-ÿ]){re.escape(k)}(?![A-Za-zÀ-ÿ])", v, s)
     s = _RE_DMG_BONUS_PT.sub(r"Dano \1", s)
     return s
 

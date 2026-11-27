@@ -11,6 +11,319 @@ from core.paths import get_data_path, get_resource_path
 _RE_NON_ALNUM = re.compile(r"[^a-z0-9]")
 _RE_NUM_VAL = re.compile(r"-?[0-9]+(?:\.[0-9]+)?")
 _ELEMENTS_JSON_CACHE: Dict[str, Dict[str, str]] | None = None
+_STATIC_JSON_CACHE: Dict[str, Any] = {}
+
+
+def _load_static_json(filename: str) -> Any:
+    """Carrega e faz cache de um manifesto JSON de static_data/."""
+    if filename in _STATIC_JSON_CACHE:
+        return _STATIC_JSON_CACHE[filename]
+    rel = os.path.join("static_data", filename)
+    loaded: Any = {}
+    for p in (get_data_path(rel), get_resource_path(rel)):
+        if os.path.exists(p):
+            try:
+                with open(p, "r", encoding="utf-8") as f:
+                    loaded = json.load(f)
+                break
+            except Exception:
+                continue
+    _STATIC_JSON_CACHE[filename] = loaded
+    return loaded
+
+
+def _load_meta_tier_ranks(game_id: str) -> Dict[str, int]:
+    """Lê ranks de tier (0 = T0, 1 = T0.5, 2 = T1...) dos relatórios raspados em disco."""
+    g = (game_id or "").lower().strip()
+    candidates = {
+        "hsr": ["hsr/meta_e_tierlists_atual.md", "hsr/meta_endgame_hsr.md"],
+        "zzz": ["zzz/meta_endgame_zzz.md"],
+        "genshin": ["genshin/meta_endgame_genshin.md"],
+    }.get(g, [])
+
+    ranks: Dict[str, int] = {}
+    for rel in candidates:
+        path = None
+        for cand_p in (get_data_path(rel), get_resource_path(rel)):
+            if os.path.exists(cand_p):
+                path = cand_p
+                break
+        if not path:
+            continue
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                lines = f.readlines()
+        except OSError:
+            continue
+
+        tier_rank = 5
+        genshin_tier_idx = 0
+        for raw_line in lines:
+            line = raw_line.strip()
+            if g == "genshin" and line.startswith("### Tier"):
+                tier_rank = genshin_tier_idx
+                genshin_tier_idx += 1
+                continue
+            m_tier = re.search(r"\bT(0\.5|0|1\.5|1|2|3|4|5)\b", line)
+            if line.startswith("#") and m_tier:
+                tier_map = {"0": 0, "0.5": 1, "1": 2, "1.5": 3, "2": 4, "3": 5, "4": 6, "5": 7}
+                tier_rank = tier_map.get(m_tier.group(1), 5)
+                continue
+            if line.startswith("- ") and "(" in line:
+                name_part = line[2:].split("(", 1)[0].strip()
+                nk = _norm_str(name_part)
+                if nk:
+                    ranks[nk] = min(ranks.get(nk, 99), tier_rank)
+            elif g == "genshin" and line.startswith("**Personagens:**"):
+                raw_chars = line.split(":**", 1)[-1]
+                for tok in raw_chars.split(","):
+                    cleaned = re.sub(r"^[Cc]\d+\s*", "", tok.strip())
+                    cleaned = re.sub(r"(expert|comfort|flexible|partner|high app|driver|reaction|NEW|CC).*$", "", cleaned, flags=re.I).strip()
+                    nk = _norm_str(cleaned)
+                    if nk:
+                        ranks[nk] = min(ranks.get(nk, 99), tier_rank)
+        if ranks:
+            break
+    return ranks
+
+
+def _load_dynamic_archetype_catalog(game_id: str) -> Dict[str, List[str]]:
+    """
+    Constrói grupos de arquétipos dinamicamente a partir de static_data/
+    ({game}_manifest.json, character_benchmarks.json, team_archetypes.json e meta_*.md),
+    sem listas hardcoded de personagens.
+    """
+    g = (game_id or "").lower().strip()
+    manifest = _load_static_json(f"{g}_manifest.json")
+    manifest_chars = manifest.get("characters") if isinstance(manifest, dict) else {}
+    if not isinstance(manifest_chars, dict):
+        manifest_chars = {}
+
+    benchmarks_all = _load_static_json("character_benchmarks.json")
+    bm_game = benchmarks_all.get(g) if isinstance(benchmarks_all, dict) else {}
+    if not isinstance(bm_game, dict):
+        bm_game = {}
+    bm_norm: Dict[str, Dict[str, str]] = {_norm_str(k): v for k, v in bm_game.items() if isinstance(v, dict)}
+
+    teams_all = _load_static_json("team_archetypes.json")
+    teams_game = teams_all.get(g) if isinstance(teams_all, dict) else []
+    if not isinstance(teams_game, list):
+        teams_game = []
+
+    tier_ranks = _load_meta_tier_ranks(g)
+
+    # Indexa papéis provenientes de team_archetypes.json
+    team_roles: Dict[str, List[str]] = {}
+    team_names_display: Dict[str, str] = {}
+    team_member_order: Dict[str, int] = {}
+    order_seq = 0
+    for team in teams_game:
+        if not isinstance(team, dict):
+            continue
+        team_title = str(team.get("team_name") or "").lower()
+        for mem in team.get("members") or []:
+            if not isinstance(mem, dict):
+                continue
+            m_name = str(mem.get("name") or "").strip()
+            m_role = str(mem.get("role") or "").lower()
+            nk = _norm_str(m_name)
+            if not nk:
+                continue
+            team_roles.setdefault(nk, []).append(f"{m_role} {team_title}")
+            team_names_display.setdefault(nk, m_name)
+            if nk not in team_member_order:
+                team_member_order[nk] = order_seq
+                order_seq += 1
+
+    # Consolida metadados de cada personagem conhecido em static_data/
+    entries: Dict[str, Dict[str, Any]] = {}
+    for slug, info in manifest_chars.items():
+        if not isinstance(info, dict):
+            continue
+        disp_name = str(info.get("name") or slug).strip()
+        nk = _norm_str(disp_name) or _norm_str(slug)
+        if not nk:
+            continue
+        entries[nk] = {
+            "name": disp_name,
+            "rarity": _safe_int(info.get("rarity"), 4),
+            "element": str(info.get("element") or "").lower(),
+            "path": str(info.get("path") or "").lower(),
+            "specialty": str(info.get("specialty") or "").lower(),
+            "benchmarks": bm_norm.get(nk) or bm_norm.get(_norm_str(slug)) or {},
+            "roles": " ".join(team_roles.get(nk, [])),
+            "in_team": nk in team_roles,
+            "tier": tier_ranks.get(nk, 99),
+            "team_order": team_member_order.get(nk, 999),
+        }
+
+    # Inclui personagens presentes em benchmarks ou team_archetypes mesmo se ausentes no manifest
+    for nk, bm in bm_norm.items():
+        if nk not in entries:
+            entries[nk] = {
+                "name": team_names_display.get(nk, nk.title()),
+                "rarity": 5 if nk in team_roles else 4,
+                "element": "",
+                "path": "",
+                "specialty": "",
+                "benchmarks": bm,
+                "roles": " ".join(team_roles.get(nk, [])),
+                "in_team": nk in team_roles,
+                "tier": tier_ranks.get(nk, 99),
+                "team_order": team_member_order.get(nk, 999),
+            }
+
+    def _sort_names(nk_list: List[str]) -> List[str]:
+        unique = list(dict.fromkeys(nk_list))
+        unique.sort(
+            key=lambda k: (
+                0 if entries[k]["in_team"] else 1,
+                entries[k]["tier"],
+                -entries[k]["rarity"],
+                entries[k]["team_order"],
+                entries[k]["name"],
+            )
+        )
+        return [entries[k]["name"] for k in unique]
+
+    def _bm_has(bm: Dict[str, str], frags: tuple[str, ...]) -> bool:
+        return any(any(f in _norm_str(bk) for f in frags) for bk in bm.keys())
+
+    def _bm_num(bm: Dict[str, str], frags: tuple[str, ...]) -> float:
+        for bk, bv in bm.items():
+            if any(f in _norm_str(bk) for f in frags):
+                val = _safe_float(str(bv).replace(".", "").replace(",", "."), 0.0)
+                if val > 0:
+                    return val
+        return 0.0
+
+    groups: Dict[str, List[str]] = {}
+
+    if g == "genshin":
+        sustain_t0, sustain_all = [], []
+        buffers_t0, buffers_all = [], []
+        vv_shredders, offfield_hydro, main_dps = [], [], []
+
+        for nk, e in entries.items():
+            bm = e["benchmarks"]
+            roles = e["roles"]
+            el = e["element"]
+            has_heal_bm = _bm_has(bm, ("bonusdecura", "cura", "heal"))
+            has_shield_role = any(w in roles for w in ("sustent", "cura", "escud", "heal", "shield"))
+            has_hp_only = _bm_has(bm, ("vida", "hp")) and not _bm_has(bm, ("taxacrit", "danocrit", "crit"))
+            has_crit_bm = _bm_has(bm, ("taxacrit", "critrate")) and _bm_has(bm, ("danocrit", "critdmg"))
+            em_val = _bm_num(bm, ("proficiencia", "elementalmastery", "em"))
+            er_val = _bm_num(bm, ("recarga", "energyrecharge"))
+
+            is_sustain = has_heal_bm or has_shield_role or (has_hp_only and _bm_num(bm, ("vida", "hp")) >= 35000)
+            if is_sustain:
+                sustain_all.append(nk)
+                if e["in_team"] or e["rarity"] == 5 or e["tier"] <= 3:
+                    sustain_t0.append(nk)
+
+            is_vv = el == "anemo" and (em_val >= 600 or "buffer" in roles or "controle" in roles)
+            if is_vv:
+                vv_shredders.append(nk)
+
+            is_buffer = (
+                is_vv
+                or any(w in roles for w in ("buffer", "suporte"))
+                or (er_val >= 180 and not has_crit_bm and not is_sustain)
+            )
+            if is_buffer:
+                buffers_all.append(nk)
+                if e["in_team"] or e["rarity"] == 5 or e["tier"] <= 3 or is_vv:
+                    buffers_t0.append(nk)
+
+            is_off_hydro = el == "hydro" and (
+                any(w in roles for w in ("sub-dps", "aplicacao", "aplicação", "buffer"))
+                or (er_val >= 170 and has_crit_bm)
+            )
+            if is_off_hydro:
+                offfield_hydro.append(nk)
+
+            is_dps = ("dps principal" in roles) or (has_crit_bm and not is_sustain and not is_off_hydro and not is_vv)
+            if is_dps:
+                main_dps.append(nk)
+
+        groups = {
+            "sustain_t0": _sort_names(sustain_t0),
+            "sustain_all": _sort_names(sustain_all),
+            "buffers_t0": _sort_names(buffers_t0),
+            "buffers_all": _sort_names(buffers_all),
+            "vv_shredders": _sort_names(vv_shredders),
+            "offfield_hydro": _sort_names(offfield_hydro),
+            "main_dps": _sort_names(main_dps),
+        }
+
+    elif g == "hsr":
+        harmony_t0, sustain_5star, sustain_all = [], [], []
+        break_group, pf_erudition, crit_dps = [], [], []
+
+        for nk, e in entries.items():
+            bm = e["benchmarks"]
+            roles = e["roles"]
+            path = e["path"]
+
+            if path == "harmony" and (e["rarity"] == 5 or e["in_team"] or e["tier"] <= 2):
+                harmony_t0.append(nk)
+            if path in ("preservation", "abundance"):
+                sustain_all.append(nk)
+                if e["rarity"] == 5:
+                    sustain_5star.append(nk)
+            if _bm_has(bm, ("efeitodequebra", "quebra", "break")) or "break" in roles:
+                break_group.append(nk)
+            if path == "erudition" or ("pure fiction" in roles):
+                pf_erudition.append(nk)
+            if (
+                path in ("destruction", "hunt", "erudition", "nihility", "remembrance")
+                and e["rarity"] == 5
+                and (_bm_has(bm, ("taxacrit", "danocrit", "crit")) or "dps principal" in roles)
+            ):
+                crit_dps.append(nk)
+
+        groups = {
+            "harmony_t0": _sort_names(harmony_t0),
+            "sustain_5star": _sort_names(sustain_5star),
+            "sustain_all": _sort_names(sustain_all),
+            "break": _sort_names(break_group),
+            "pf_erudition": _sort_names(pf_erudition),
+            "crit_dps": _sort_names(crit_dps),
+        }
+
+    elif g == "zzz":
+        stunners_s, stunners_all = [], []
+        supports_s, supports_all = [], []
+        attack_dps, anomaly_dps = [], []
+
+        for nk, e in entries.items():
+            bm = e["benchmarks"]
+            spec = e["specialty"]
+
+            has_imp_bm = _bm_has(bm, ("impacto", "impact"))
+            if spec == "stun" or (spec == "defense" and has_imp_bm):
+                stunners_all.append(nk)
+                if e["rarity"] == 5:
+                    stunners_s.append(nk)
+            if spec in ("support", "defense"):
+                supports_all.append(nk)
+                if e["rarity"] == 5:
+                    supports_s.append(nk)
+            if spec in ("attack", "rupture"):
+                attack_dps.append(nk)
+            if spec == "anomaly":
+                anomaly_dps.append(nk)
+
+        groups = {
+            "stunners_s": _sort_names(stunners_s),
+            "stunners_all": _sort_names(stunners_all),
+            "supports_s": _sort_names(supports_s),
+            "supports_all": _sort_names(supports_all),
+            "attack_dps": _sort_names(attack_dps),
+            "anomaly_dps": _sort_names(anomaly_dps),
+        }
+
+    return groups
 
 _ELEMENT_META = {
     "genshin": [
@@ -221,66 +534,35 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
 
     total_chars = len(owned_chars_map)
     built_chars = sum(1 for c in owned_chars_map.values() if c["is_built"])
+    dyn_groups = _load_dynamic_archetype_catalog(g)
+
+    def _top_unowned(group_key: str, limit: int = 4) -> List[str]:
+        candidates = dyn_groups.get(group_key) or []
+        unowned = [c for c in candidates if not has_any([c])[0]]
+        picked = unowned[:limit] if unowned else candidates[:limit]
+        return picked
 
     # ==========================================
     # 1. GENSHIN IMPACT
     # ==========================================
     if g == "genshin":
-        # Arquétipos
-        sustain_t0 = ["zhongli", "kokomi", "baizhu", "xianyun", "bennett", "kuki shinobu", "sigewinne"]
-        sustain_others = [
-            "diona",
-            "layla",
-            "kirara",
-            "jean",
-            "charlotte",
-            "yaoyao",
-            "barbara",
-            "noelle",
-            "sayu",
-            "chevreuse",
-            "mika",
-            "thoma",
-            "qiqi",
-        ]
+        sustain_t0 = dyn_groups.get("sustain_t0") or []
+        sustain_all = dyn_groups.get("sustain_all") or []
         owned_sustain_t0 = count_in_group(sustain_t0)
-        owned_sustain_all = count_in_group(sustain_t0 + sustain_others)
+        owned_sustain_all = count_in_group(sustain_all)
 
-        buffers_t0 = ["furina", "kazuha", "nahida", "xilonen", "shenhe", "sucrose", "faruzan", "emilie"]
-        buffers_others = ["lynette", "gorou", "yun jin", "kujou sara", "candace", "traveler"]
+        buffers_t0 = dyn_groups.get("buffers_t0") or []
+        buffers_all = dyn_groups.get("buffers_all") or []
         owned_buffers_t0 = count_in_group(buffers_t0)
-        owned_buffers_all = count_in_group(buffers_t0 + buffers_others)
+        owned_buffers_all = count_in_group(buffers_all)
 
-        offfield_hydro = ["xingqiu", "yelan", "furina", "kokomi", "sigewinne"]
+        offfield_hydro = dyn_groups.get("offfield_hydro") or []
         owned_offfield_hydro = count_in_group(offfield_hydro)
 
-        main_dps_list = [
-            "neuvillette",
-            "arlecchino",
-            "alhaitham",
-            "raiden shogun",
-            "hu tao",
-            "navia",
-            "mualani",
-            "kinich",
-            "clorinde",
-            "lyney",
-            "wriothesley",
-            "xiao",
-            "wanderer",
-            "kamisato ayaka",
-            "ganyu",
-            "arataki itto",
-            "tartaglia",
-            "cyno",
-            "tighnari",
-            "diluc",
-            "keqing",
-            "gaming",
-            "yanfei",
-            "sethos",
-        ]
+        main_dps_list = dyn_groups.get("main_dps") or []
         owned_main_dps = count_in_group(main_dps_list)
+
+        vv_shredders = dyn_groups.get("vv_shredders") or []
 
         # Status dos Arquétipos
         def get_status_data(count, t0_count, ideal_min=2):
@@ -304,7 +586,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 "owned_count": len(owned_sustain_all),
                 "target_count": 2,
                 "owned_characters": owned_sustain_all,
-                "description": "Essencial para sobrevivência nos 2 lados do Abismo 12.",
+                "description": "Sustain pros 2 lados do Abismo 12.",
             }
         )
 
@@ -312,14 +594,14 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         archetypes_summary.append(
             {
                 "key": "buffers",
-                "title": "Buffers & Redução de RES (VV / Suportes)",
+                "title": "Buffers & RES Shred (VV / Suportes)",
                 "icon": "fa-wand-magic-sparkles",
                 "status": st_buff,
                 "status_color": col_buff,
                 "owned_count": len(owned_buffers_all),
                 "target_count": 2,
                 "owned_characters": owned_buffers_all,
-                "description": "Multiplicadores de dano e reações elementais da equipe.",
+                "description": "Buffs globais, 4p VV e amplificação de reação.",
             }
         )
 
@@ -334,7 +616,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 "owned_count": len(owned_offfield_hydro),
                 "target_count": 2,
                 "owned_characters": owned_offfield_hydro,
-                "description": "Coluna vertebral para Vaporize, Hyperbloom, Taser e Freeze.",
+                "description": "Base para Vaporize, Hyperbloom, Taser e Freeze.",
             }
         )
 
@@ -342,14 +624,14 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         archetypes_summary.append(
             {
                 "key": "main_dps",
-                "title": "DPS Principal (Hypercarries / Reaction)",
+                "title": "DPS Principal (Hypercarry / Driver)",
                 "icon": "fa-khanda",
                 "status": st_dps,
                 "status_color": col_dps,
                 "owned_count": len(owned_main_dps),
                 "target_count": 2,
                 "owned_characters": owned_main_dps,
-                "description": "Pilares de dano para as duas metades das câmaras de combate.",
+                "description": "Carries para fechar os dois lados do Abismo.",
             }
         )
 
@@ -358,67 +640,71 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
 
         # Lacunas Críticas
         if len(owned_sustain_t0) == 0:
+            rec_sust = _top_unowned("sustain_t0", 4)
             overall_score -= 22
             critical_gaps.append(
                 {
                     "id": "genshin_no_t0_sustain",
                     "severity": "CRÍTICA",
                     "severity_color": "#ef4444",
-                    "badge": "🛡️ Sobrevivência em Risco",
-                    "title": "Falta de Sustentador Premium Tier 0",
-                    "description": "Você não possui nenhum curandeiro/escudo de elite (Zhongli, Kokomi, Baizhu, Xianyun ou Bennett).",
-                    "endgame_impact": "Alta dificuldade para manter a rotação viva e evitar interrupções no Abismo 12.",
-                    "suggested_archetype": "Shielder Indestrutível ou Healer Global com utilidade de Buff",
-                    "recommended_characters": ["Zhongli", "Kokomi", "Baizhu", "Xianyun"],
+                    "badge": "Sustain em Falta",
+                    "title": "Sem Sustain T0",
+                    "description": f"Nenhum healer/shielder T0 no roster ({', '.join(rec_sust[:4])}).",
+                    "endgame_impact": "Interrupções e perda de rotação no Abismo 12.",
+                    "suggested_archetype": "Shielder ou Healer com buff",
+                    "recommended_characters": rec_sust,
                 }
             )
 
         if len(owned_offfield_hydro) < 2:
+            rec_hydro = _top_unowned("offfield_hydro", 3)
             overall_score -= 18
             critical_gaps.append(
                 {
                     "id": "genshin_lack_hydro",
                     "severity": "ALTA",
                     "severity_color": "#f97316",
-                    "badge": "💧 Carência de Aplicação Hydro",
-                    "title": "Falta de Aplicador Hydro Off-Field para 2 Times",
-                    "description": "Possui menos de 2 aplicadores Hydro (Xingqiu, Yelan, Furina).",
-                    "endgame_impact": "Limita severamente a formação de times simultâneos de Vaporize, Hyperbloom ou Freeze.",
+                    "badge": "Falta Hydro Off-Field",
+                    "title": "Menos de 2 Aplicadores Hydro Off-Field",
+                    "description": f"Menos de 2 aplicadores Hydro off-field ({', '.join(rec_hydro[:3])}).",
+                    "endgame_impact": "Trava times simultâneos de Vaporize, Hyperbloom ou Freeze.",
                     "suggested_archetype": "Sub-DPS / Buffer Hydro Off-Field",
-                    "recommended_characters": ["Yelan", "Furina", "Xingqiu"],
+                    "recommended_characters": rec_hydro,
                 }
             )
 
-        has_vv, _ = has_any(["kazuha", "sucrose"])
+        has_vv, _ = has_any(vv_shredders)
         if not has_vv:
+            rec_vv = _top_unowned("vv_shredders", 3)
             overall_score -= 15
             critical_gaps.append(
                 {
                     "id": "genshin_no_vv_shred",
                     "severity": "ALTA",
                     "severity_color": "#f97316",
-                    "badge": "🌪️ Sem Redução Elemental VV",
-                    "title": "Ausência de Buffer Anemo Sombra Verde (VV)",
-                    "description": "Você não tem Kazuha ou Sacarose para aplicar o debuff de 40% de RES Shred.",
-                    "endgame_impact": "Perda direta de ~25% a 30% do DPS final em composições de reação elemental.",
+                    "badge": "Sem 4p VV",
+                    "title": "Sem Anemo de Sombra Verde (VV)",
+                    "description": "Sem buffer Anemo para aplicar 40% RES shred de 4p VV.",
+                    "endgame_impact": "Perda de ~25–30% de DPS em times de reação.",
                     "suggested_archetype": "Buffer / Agrupador Anemo",
-                    "recommended_characters": ["Kaedehara Kazuha", "Sucrose"],
+                    "recommended_characters": rec_vv,
                 }
             )
 
         if len(owned_main_dps) < 2:
+            rec_dps = _top_unowned("main_dps", 4)
             overall_score -= 20
             critical_gaps.append(
                 {
                     "id": "genshin_lack_main_dps",
                     "severity": "CRÍTICA",
                     "severity_color": "#ef4444",
-                    "badge": "⚔️ Carência de Dano Principal",
-                    "title": "Menos de 2 Hypercarries/Drivers Construídos",
-                    "description": "Faltam carregadores de dano principais para cobrir as duas câmaras do Abismo 12.",
-                    "endgame_impact": "Incapacidade de atingir as metas de DPS para fechar com 36 estrelas.",
-                    "suggested_archetype": "DPS Principal Top-Tier",
-                    "recommended_characters": ["Neuvillette", "Arlecchino", "Alhaitham", "Navia"],
+                    "badge": "Falta Carry",
+                    "title": "Menos de 2 Hypercarries/Drivers",
+                    "description": "Falta DPS principal buildado pros dois lados do Abismo 12.",
+                    "endgame_impact": "Falta teto de DPS para fechar 36★.",
+                    "suggested_archetype": "Main DPS T0",
+                    "recommended_characters": rec_dps,
                 }
             )
 
@@ -428,26 +714,26 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             pull_recommendations.append(
                 {
                     "priority_rank": rank_idx,
-                    "archetype": "Sustentador / Shielder Tier 0",
+                    "archetype": "Sustentador / Shielder T0",
                     "badge": "Prioridade Máxima",
-                    "tag": "Sobrevivência & Conforto",
-                    "characters": ["Zhongli", "Xilonen", "Kokomi"],
-                    "reason": "Garante estabilidade absoluta de rotação no Abismo 12 sem interrupções de golpes inimigos.",
-                    "impact_score": "+35% Conforto & Consistência de Clear",
+                    "tag": "Sustain",
+                    "characters": _top_unowned("sustain_t0", 3),
+                    "reason": "Fecha sobrevivência e resistência a interrupção no Abismo 12.",
+                    "impact_score": "Estabiliza os 2 lados do Abismo",
                 }
             )
             rank_idx += 1
 
-        if not has_any(["furina", "kazuha"])[0]:
+        if len(owned_buffers_t0) < 2:
             pull_recommendations.append(
                 {
                     "priority_rank": rank_idx,
-                    "archetype": "Universal Damage Buffer",
+                    "archetype": "Buffer Universal (DMG% / RES Shred)",
                     "badge": "Alta Prioridade",
-                    "tag": "Salto de DPS Global",
-                    "characters": ["Furina", "Kaedehara Kazuha"],
-                    "reason": "Aumenta drasticamente o dano de quase todas as equipes do jogo através de buffs globais e RES shred.",
-                    "impact_score": "+30% a 40% Dano Global da Equipe",
+                    "tag": "Buff Global",
+                    "characters": _top_unowned("buffers_t0", 3),
+                    "reason": "Entra em quase todo time com DMG% alto e 40% RES shred.",
+                    "impact_score": "+30–40% DPS no time",
                 }
             )
             rank_idx += 1
@@ -458,10 +744,10 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                     "priority_rank": rank_idx,
                     "archetype": "Hypercarry On-Field",
                     "badge": "Alta Prioridade",
-                    "tag": "DPS de Fechamento",
-                    "characters": ["Neuvillette", "Arlecchino"],
-                    "reason": "Unidades independentes e com multiplicadores colossais para carregar um lado inteiro do Abismo.",
-                    "impact_score": "Garante 1 lado completo do Abismo 12",
+                    "tag": "Main DPS",
+                    "characters": _top_unowned("main_dps", 3),
+                    "reason": "Carries flexíveis com scaling alto que fecham um lado sem depender de suportes travados.",
+                    "impact_score": "Fecha 1 lado do Abismo 12",
                 }
             )
             rank_idx += 1
@@ -470,58 +756,21 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
     # 2. HONKAI: STAR RAIL
     # ==========================================
     elif g == "hsr":
-        # Arquétipos
-        harmony_t0 = ["ruan mei", "robin", "sparkle", "sunday", "bronya", "tingyun"]
+        harmony_t0 = dyn_groups.get("harmony_t0") or []
         owned_harmony_t0 = count_in_group(harmony_t0)
 
-        sustain_5star = ["aventurine", "huohuo", "fu xuan", "lingsha", "luocha"]
-        sustain_all = sustain_5star + ["gallagher", "lynx", "natasha", "bailu", "gepard", "march 7th"]
+        sustain_5star = dyn_groups.get("sustain_5star") or []
+        sustain_all = dyn_groups.get("sustain_all") or []
         owned_sustain_5star = count_in_group(sustain_5star)
         owned_sustain_all = count_in_group(sustain_all)
 
-        break_archetype = [
-            "firefly",
-            "boothill",
-            "rappa",
-            "trailblazer",
-            "xueyi",
-            "fugue",
-            "ruan mei",
-            "gallagher",
-            "lingsha",
-        ]
+        break_archetype = dyn_groups.get("break") or []
         owned_break = count_in_group(break_archetype)
 
-        fua_archetype = [
-            "feixiao",
-            "aventurine",
-            "robin",
-            "topaz",
-            "dr. ratio",
-            "yunli",
-            "clara",
-            "moze",
-            "march 7th",
-            "jade",
-        ]
-        owned_fua = count_in_group(fua_archetype)
-
-        pf_erudition = ["herta", "himeko", "jade", "argenti", "acheron"]
+        pf_erudition = dyn_groups.get("pf_erudition") or []
         owned_pf = count_in_group(pf_erudition)
 
-        crit_hypercarries = [
-            "acheron",
-            "feixiao",
-            "dan heng il",
-            "jingliu",
-            "dr. ratio",
-            "yunli",
-            "argenti",
-            "blade",
-            "jing yuan",
-            "clara",
-            "seele",
-        ]
+        crit_hypercarries = dyn_groups.get("crit_dps") or []
         owned_crit_dps = count_in_group(crit_hypercarries)
 
         # Status dos Arquétipos
@@ -546,7 +795,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 "owned_count": len(owned_harmony_t0),
                 "target_count": 2,
                 "owned_characters": owned_harmony_t0,
-                "description": "Peças fundamentais para turnos extras, penetração de resistência e buffs de crítico.",
+                "description": "Avanço de ação, RES PEN e buffs de CRIT.",
             }
         )
 
@@ -554,14 +803,14 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         archetypes_summary.append(
             {
                 "key": "sustain",
-                "title": "Sustentadores de Elite (Preservação / Abundância)",
+                "title": "Sustain Limitado (Preservação / Abundância)",
                 "icon": "fa-shield-halved",
                 "status": st_sust,
                 "status_color": col_sust,
                 "owned_count": len(owned_sustain_all),
                 "target_count": 2,
                 "owned_characters": owned_sustain_5star if owned_sustain_5star else owned_sustain_all,
-                "description": "Imunidade a controle (CC), escudos inquebráveis e cura reativa para MoC 12 e AS 4.",
+                "description": "Cleanse/RES a CC, escudos e cura reativa para MoC 12 e AS 4.",
             }
         )
 
@@ -580,7 +829,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 "owned_count": len(owned_break),
                 "target_count": 3,
                 "owned_characters": owned_break,
-                "description": "Dominância contra fraquezas e velocidade de limpeza em Sombra Apocalíptica.",
+                "description": "Quebra de tenacidade rápida para Sombra Apocalíptica e MoC.",
             }
         )
 
@@ -592,14 +841,14 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         archetypes_summary.append(
             {
                 "key": "pure_fiction",
-                "title": "Especialistas em AoE / Pura Ficção",
+                "title": "AoE / Pura Ficção",
                 "icon": "fa-meteor",
                 "status": st_pf,
                 "status_color": col_pf,
                 "owned_count": len(owned_pf),
                 "target_count": 2,
                 "owned_characters": owned_pf,
-                "description": "Erudição e dano em área contínuo para bater 60.000+ pontos na Pura Ficção.",
+                "description": "Erudição e AoE contínuo para bater 60.000+ pts na Pura Ficção.",
             }
         )
 
@@ -608,67 +857,69 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
 
         # Lacunas Críticas
         if len(owned_harmony_t0) < 2:
+            rec_harm = _top_unowned("harmony_t0", 4)
             overall_score -= 22
             critical_gaps.append(
                 {
                     "id": "hsr_lack_tier0_harmony",
                     "severity": "CRÍTICA",
                     "severity_color": "#ef4444",
-                    "badge": "🎵 Déficit de Harmonia Tier 0",
-                    "title": "Menos de 2 Suportes Harmonia Premium",
-                    "description": "Você possui menos de 2 buffers de alta geração de turnos (Ruan Mei, Robin, Sparkle, Sunday).",
-                    "endgame_impact": "Queda drástica de ciclos no MoC e dificuldade de alcançar os 40.000 pts na Pura Ficção.",
-                    "suggested_archetype": "Harmonia Limitada (Avanço de Ação / Penetração de RES / DMG%)",
-                    "recommended_characters": ["Robin", "Ruan Mei", "Sunday", "Sparkle"],
+                    "badge": "Déficit de Harmonia T0",
+                    "title": "Menos de 2 Suportes Harmonia T0",
+                    "description": f"Menos de 2 buffers Harmonia T0 no roster ({', '.join(rec_harm[:4])}).",
+                    "endgame_impact": "Mais ciclos gastos no MoC e teto baixo na Pura Ficção.",
+                    "suggested_archetype": "Harmonia Limitada (Action Advance / RES PEN / DMG%)",
+                    "recommended_characters": rec_harm,
                 }
             )
 
         if len(owned_sustain_5star) < 2:
+            rec_sust = _top_unowned("sustain_5star", 4)
             overall_score -= 20
             critical_gaps.append(
                 {
                     "id": "hsr_lack_5star_sustain",
                     "severity": "ALTA",
                     "severity_color": "#f97316",
-                    "badge": "🛡️ Sustentação de Alto Nível",
-                    "title": "Falta de 2 Sustentadores Limitados 5★",
-                    "description": "Você não possui 2 sustentadores premium (Aventurine, Huohuo, Fu Xuan, Lingsha).",
-                    "endgame_impact": "Vulnerabilidade a debuffs de controle (Crowd Control) e one-shots nos andares 11 e 12.",
-                    "suggested_archetype": "Preservação / Abundância Limitada",
-                    "recommended_characters": ["Aventurine", "Huohuo", "Lingsha", "Fu Xuan"],
+                    "badge": "Falta Sustain 5★",
+                    "title": "Menos de 2 Sustains Limitados 5★",
+                    "description": f"Faltam 2 sustains 5★ ({', '.join(rec_sust[:4])}).",
+                    "endgame_impact": "Risco de CC e one-shot nos andares 11 e 12.",
+                    "suggested_archetype": "Preservação / Abundância 5★",
+                    "recommended_characters": rec_sust,
                 }
             )
 
-        owned_pf_lower = {x.lower() for x in owned_pf}
-        has_herta_himeko = any(k in owned_pf_lower for k in ("herta", "himeko", "jade"))
-        if not has_herta_himeko:
+        if len(owned_pf) == 0:
+            rec_pf = _top_unowned("pf_erudition", 3)
             overall_score -= 15
             critical_gaps.append(
                 {
                     "id": "hsr_no_pure_fiction_core",
                     "severity": "ALTA",
                     "severity_color": "#f97316",
-                    "badge": "📖 Fraqueza em Pura Ficção",
-                    "title": "Falta de Núcleo Especialista em AoE",
-                    "description": "Herta ou Himeko não estão construídas na conta.",
-                    "endgame_impact": "Dificuldade constante para obter a pontuação máxima (60.000 / 80.000) na Pura Ficção.",
-                    "suggested_archetype": "Erudição / AoE Follow-Up",
-                    "recommended_characters": ["Herta (Construir)", "Himeko", "Jade"],
+                    "badge": "Falta Núcleo de PF",
+                    "title": "Sem Especialista em AoE para PF",
+                    "description": "Nenhum personagem de Erudição / AoE buildado.",
+                    "endgame_impact": "Dificuldade para bater 60.000 pts na Pura Ficção.",
+                    "suggested_archetype": "Erudição / FuA em AoE",
+                    "recommended_characters": rec_pf,
                 }
             )
 
         # Recomendações de Puxadas
         rank_idx = 1
         if len(owned_harmony_t0) < 2:
+            rec_harm_pull = _top_unowned("harmony_t0", 4)
             pull_recommendations.append(
                 {
                     "priority_rank": rank_idx,
-                    "archetype": "Suporte Harmonia Universal (Robin / Sunday / Ruan Mei)",
+                    "archetype": "Harmonia Universal (Action Advance / RES PEN)",
                     "badge": "Prioridade Máxima",
-                    "tag": "Multiplicador de Conta",
-                    "characters": ["Robin", "Sunday", "Ruan Mei"],
-                    "reason": "O maior upgrade de poder possível em Honkai: Star Rail. Transforma qualquer DPS em uma máquina de ciclos zero.",
-                    "impact_score": "-2 a 4 Ciclos no Caos da Memória (MoC)",
+                    "tag": "Buffer de Conta",
+                    "characters": rec_harm_pull,
+                    "reason": "Maior ganho de dano por pull no HSR — corta ciclos em praticamente qualquer time.",
+                    "impact_score": "-2 a 4 ciclos no MoC",
                 }
             )
             rank_idx += 1
@@ -677,12 +928,12 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             pull_recommendations.append(
                 {
                     "priority_rank": rank_idx,
-                    "archetype": "Sustentador 5★ de Elite (Aventurine / Huohuo)",
+                    "archetype": "Sustain 5★ (Preservação / Abundância)",
                     "badge": "Alta Prioridade",
-                    "tag": "Segurança & Utilidade",
-                    "characters": ["Aventurine", "Huohuo", "Lingsha"],
-                    "reason": "Aventurine traz sinergia colossal com FuA/Acheron e escudos infinitos. Huohuo recarrega energia globalmente.",
-                    "impact_score": "100% de Taxa de Sobrevivência no MoC 12",
+                    "tag": "Sustain & Utilidade",
+                    "characters": _top_unowned("sustain_5star", 3),
+                    "reason": "Fecha sobrevivência, cleanse e utilidade ofensiva para o MoC 12.",
+                    "impact_score": "Sustain seguro no MoC 12",
                 }
             )
             rank_idx += 1
@@ -691,12 +942,12 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             pull_recommendations.append(
                 {
                     "priority_rank": rank_idx,
-                    "archetype": "DPS de Elite (Acheron / Firefly / Feixiao)",
+                    "archetype": "Main DPS T0 (Endgame Carry)",
                     "badge": "Alta Prioridade",
-                    "tag": "Finalizador de Endgame",
-                    "characters": ["Acheron", "Firefly", "Feixiao"],
-                    "reason": "Mecanismos de quebra que ignoram fraquezas ou rajadas de dano absurdas com escalonamento moderno.",
-                    "impact_score": "Garante 36★ no MoC e 12★ na Sombra Apocalíptica",
+                    "tag": "Carry de Endgame",
+                    "characters": _top_unowned("crit_dps", 3),
+                    "reason": "Carries de alto teto com ignore de fraqueza ou burst consistente.",
+                    "impact_score": "Fecha 36★ MoC / 12★ AS",
                 }
             )
             rank_idx += 1
@@ -705,21 +956,18 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
     # 3. ZENLESS ZONE ZERO
     # ==========================================
     elif g == "zzz":
-        # Arquétipos
-        stunners_s = ["qingyi", "lycaon", "caesar", "koleda"]
-        stunners_all = stunners_s + ["anby"]
+        stunners_s = dyn_groups.get("stunners_s") or []
+        stunners_all = dyn_groups.get("stunners_all") or []
         owned_stunners_s = count_in_group(stunners_s)
         owned_stunners_all = count_in_group(stunners_all)
 
-        supports_s = ["caesar", "astra yao", "rina"]
-        supports_all = supports_s + ["soukaku", "lucy", "nicole", "seth"]
-        owned_supports_s = count_in_group(supports_s)
+        supports_all = dyn_groups.get("supports_all") or []
         owned_supports_all = count_in_group(supports_all)
 
-        attack_dps = ["ellen", "zhu yuan", "soldier 11", "nekomata", "harumasa", "miyabi", "corin", "anton", "billy"]
+        attack_dps = dyn_groups.get("attack_dps") or []
         owned_attack_dps = count_in_group(attack_dps)
 
-        anomaly_dps = ["jane doe", "burnice", "yanagi", "grace", "piper"]
+        anomaly_dps = dyn_groups.get("anomaly_dps") or []
         owned_anomaly_dps = count_in_group(anomaly_dps)
 
         # Status
@@ -737,7 +985,7 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
                 "owned_count": len(owned_stunners_all),
                 "target_count": 2,
                 "owned_characters": owned_stunners_all,
-                "description": "Multiplica o dano em 150%+ durante a janela de Atordoamento (Stun Window).",
+                "description": "Multiplicador de 150%+ na janela de Stun.",
             }
         )
 
@@ -750,14 +998,14 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         archetypes_summary.append(
             {
                 "key": "supports",
-                "title": "Suportes & Defesa (Buff de ATK / DEF Shred)",
+                "title": "Suporte & Defesa (ATK / DEF Shred)",
                 "icon": "fa-shield-halved",
                 "status": st_supp,
                 "status_color": col_supp,
                 "owned_count": len(owned_supports_all),
                 "target_count": 2,
                 "owned_characters": owned_supports_all,
-                "description": "Gera pontos de assistência, buffs de ATK puro e debuffs defensivos no inimigo.",
+                "description": "Quick Assist, buff de ATK flat e DEF shred.",
             }
         )
 
@@ -768,14 +1016,14 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         archetypes_summary.append(
             {
                 "key": "attack_dps",
-                "title": "Agentes de Ataque (Burst / Dano Direto)",
+                "title": "Ataque (Burst / Dano Direto)",
                 "icon": "fa-crosshairs",
                 "status": st_atk,
                 "status_color": col_atk,
                 "owned_count": len(owned_attack_dps),
                 "target_count": 2,
                 "owned_characters": owned_attack_dps,
-                "description": "Descarregam dano massivo durante as janelas de Chain Attack e Stun.",
+                "description": "Burst concentrado em janela de Stun e Chain Attack.",
             }
         )
 
@@ -786,14 +1034,14 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
         archetypes_summary.append(
             {
                 "key": "anomaly_dps",
-                "title": "Agentes de Anomalia (DoT / Desordem)",
+                "title": "Anomalia (DoT / Desordem)",
                 "icon": "fa-flask-vial",
                 "status": st_anom,
                 "status_color": col_anom,
                 "owned_count": len(owned_anomaly_dps),
                 "target_count": 2,
                 "owned_characters": owned_anomaly_dps,
-                "description": "Acumulam anomalia e causam Desordem contínua sem depender do atordoamento.",
+                "description": "Procs de Anomalia e Desordem sem depender de janela de Stun.",
             }
         )
 
@@ -802,34 +1050,36 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
 
         # Lacunas Críticas
         if len(owned_stunners_s) == 0:
+            rec_stun = _top_unowned("stunners_s", 4)
             overall_score -= 22
             critical_gaps.append(
                 {
                     "id": "zzz_no_s_stunner",
                     "severity": "CRÍTICA",
                     "severity_color": "#ef4444",
-                    "badge": "⚡ Lentidão no Atordoamento",
-                    "title": "Falta de Atordoador S-Rank (Qingyi / Lycaon / Caesar)",
-                    "description": "Você depende exclusivamente da Anby como atordoadora nos 2 lados do Shiyu Defense.",
-                    "endgame_impact": "Demora excessiva para atingir o estado de Stun nos Chefes da Shiyu Crítica (Nível 5-7).",
-                    "suggested_archetype": "Atordoador S-Rank de Alto Impacto",
-                    "recommended_characters": ["Qingyi", "Caesar", "Von Lycaon"],
+                    "badge": "Stun Lento",
+                    "title": "Sem Stunner Rank S",
+                    "description": "Sem atordoador Rank S para os dois lados da Shiyu.",
+                    "endgame_impact": "Barra de Daze lenta nos chefes da Shiyu Crítica 5–7.",
+                    "suggested_archetype": "Stunner Rank S de alto Impacto",
+                    "recommended_characters": rec_stun,
                 }
             )
 
         if len(owned_attack_dps) + len(owned_anomaly_dps) < 2:
+            rec_dps_z = (_top_unowned("attack_dps", 2) + _top_unowned("anomaly_dps", 2))[:4]
             overall_score -= 25
             critical_gaps.append(
                 {
                     "id": "zzz_lack_dps",
                     "severity": "CRÍTICA",
                     "severity_color": "#ef4444",
-                    "badge": "⚔️ Carência de Finalizadores",
-                    "title": "Falta de DPSs Principais para 2 Equipes",
-                    "description": "Menos de 2 agentes de Ataque ou Anomalia de alto investimento.",
-                    "endgame_impact": "Inviabiliza a obtenção de Rank S na Shiyu Defense dos dois lados.",
-                    "suggested_archetype": "DPS S-Rank de Ataque ou Anomalia",
-                    "recommended_characters": ["Ellen Joe", "Jane Doe", "Zhu Yuan", "Miyabi", "Burnice"],
+                    "badge": "Falta DPS",
+                    "title": "Menos de 2 Main DPS",
+                    "description": "Menos de 2 agentes de Ataque ou Anomalia buildados.",
+                    "endgame_impact": "Falta DPS para Rank S nos dois lados da Shiyu.",
+                    "suggested_archetype": "DPS Rank S (Ataque ou Anomalia)",
+                    "recommended_characters": rec_dps_z,
                 }
             )
 
@@ -839,12 +1089,12 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             pull_recommendations.append(
                 {
                     "priority_rank": rank_idx,
-                    "archetype": "Atordoador S-Rank (Qingyi / Caesar)",
+                    "archetype": "Stunner Rank S",
                     "badge": "Prioridade Máxima",
-                    "tag": "Velocidade de Stun",
-                    "characters": ["Qingyi", "Caesar"],
-                    "reason": "Qingyi eleva o multiplicador de atordoamento para 200%+ e atordoa chefes na metade do tempo da Anby.",
-                    "impact_score": "-40s no Tempo de Clear do Shiyu 7",
+                    "tag": "Stun",
+                    "characters": _top_unowned("stunners_s", 4),
+                    "reason": "Acelera a barra de Daze e sobe o multiplicador de Stun nos chefes da Shiyu 7.",
+                    "impact_score": "-40s no clear da Shiyu 7",
                 }
             )
             rank_idx += 1
@@ -853,12 +1103,12 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
             pull_recommendations.append(
                 {
                     "priority_rank": rank_idx,
-                    "archetype": "Especialista em Anomalia / Desordem",
+                    "archetype": "Anomalia / Desordem",
                     "badge": "Alta Prioridade",
-                    "tag": "Novo Arquétipo Meta",
-                    "characters": ["Jane Doe", "Burnice", "Yanagi"],
-                    "reason": "Permite ignorar mecânicas de atordoamento e derreter inimigos com Desordem de alto escalonamento.",
-                    "impact_score": "+30% Flexibilidade contra Chefes com Alta Resistência a Stun",
+                    "tag": "Anomalia",
+                    "characters": _top_unowned("anomaly_dps", 3),
+                    "reason": "Ignora janela de Stun e fecha DPS alto via Desordem em chefes de Daze resistente.",
+                    "impact_score": "Alternativa contra chefes anti-Stun",
                 }
             )
             rank_idx += 1
@@ -867,54 +1117,54 @@ def analyze_account_gaps(game_id: str, roster: list, endgame_data: dict = None) 
     overall_score = max(20, min(100, overall_score))
     if overall_score >= 85:
         score_grade = "S"
-        score_label = "Excelente Cobertura & Alta Prontidão"
+        score_label = "Cobertura fechada para endgame"
         score_color = "#10b981"
     elif overall_score >= 70:
         score_grade = "A"
-        score_label = "Conta Equilibrada com Boas Sinergias"
+        score_label = "Conta equilibrada, poucos ajustes"
         score_color = "#3b82f6"
     elif overall_score >= 50:
         score_grade = "B"
-        score_label = "Lacunas Moderadas em Arquétipos Chave"
+        score_label = "Faltam peças em arquétipos-base"
         score_color = "#f59e0b"
     else:
         score_grade = "C"
-        score_label = "Atenção: Carência Crítica de Suportes/Sustentação"
+        score_label = "Faltam suportes e sustain de base"
         score_color = "#ef4444"
 
     # Avaliação de Prontidão de Endgame
     endgame_teams_ready = 2 if len(critical_gaps) <= 1 and built_chars >= 6 else (1 if built_chars >= 3 else 0)
     endgame_readiness = {
-        "status": f"{endgame_teams_ready}/2 Equipes Prontas para Endgame",
+        "status": f"{endgame_teams_ready}/2 Times Prontos",
         "teams_ready": endgame_teams_ready,
         "summary": (
-            "Sua conta possui fundações completas para fechar o conteúdo mais difícil do jogo com nota máxima."
+            "Os 2 times fecham endgame com folga."
             if endgame_teams_ready == 2
-            else "Você tem 1 time competitivo consolidado, mas a segunda equipe precisa de reforços nos arquétipos sinalizados."
+            else "1 time fechado; falta reforçar o segundo nos arquétipos abaixo."
             if endgame_teams_ready == 1
-            else "Concentre seus recursos e energia em elevar o nível e fechar as builds da sua equipe principal primeiro."
+            else "Foque resina em fechar o primeiro time completo antes de abrir novos bonecos."
         ),
         "details": [gap["title"] for gap in critical_gaps],
     }
 
     # Resumo formatado em Markdown consolidado
     rag_lines = [
-        f"### DIAGNÓSTICO DE LACUNAS DA CONTA ({game_names.get(g, g.upper())}):",
-        f"- **Pontuação de Saúde da Conta:** {overall_score}/100 (Classificação: {score_grade} - {score_label})",
-        f"- **Personagens Construídos (Prontos p/ Batalha):** {built_chars} de {total_chars}",
-        f"- **Equipes Prontas p/ Endgame:** {endgame_teams_ready}/2 times",
+        f"### DIAGNÓSTICO DA CONTA ({game_names.get(g, g.upper())}):",
+        f"- **Nota da Conta:** {overall_score}/100 ({score_grade} — {score_label})",
+        f"- **Buildados:** {built_chars} de {total_chars}",
+        f"- **Endgame:** {endgame_teams_ready}/2 times",
     ]
     if critical_gaps:
-        rag_lines.append("- **Lacunas Estratégicas Críticas Detectadas:**")
+        rag_lines.append("- **Gargalos:**")
         for cg in critical_gaps:
             rag_lines.append(
-                f"  * [{cg['severity']}] {cg['title']}: {cg['description']} -> *Recomendado buscar:* {', '.join(cg['recommended_characters'])}"
+                f"  * [{cg['severity']}] {cg['title']}: {cg['description']} -> *Alvos:* {', '.join(cg['recommended_characters'])}"
             )
     else:
-        rag_lines.append("- **Lacunas:** Nenhuma carência grave detectada! Conta muito bem balanceada.")
+        rag_lines.append("- **Gargalos:** Nenhum gargalo crítico.")
 
     if pull_recommendations:
-        rag_lines.append("- **Prioridades de Puxada no Gacha / Banners Futuros:**")
+        rag_lines.append("- **Prioridade de Pulls:**")
         for pr in pull_recommendations:
             rag_lines.append(
                 f"  {pr['priority_rank']}. **{pr['archetype']}** ({', '.join(pr['characters'])}): {pr['reason']}"
@@ -984,263 +1234,117 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
     # Prioriza quem tem score baixo ou nota B/C/D mas é personagem forte
     top_candidates.sort(key=lambda x: (x["rarity"], -x["score"]), reverse=True)
 
-    def _find_craft_cfg(cand_name: str, game_key: str, meta_craft_map: dict, default_cfg: dict) -> dict:
-        """Resolve o alvo de crafting normalizando espaços/pontuação e consultando slug canônico."""
-        c_norm = _norm_str(cand_name)
-        canon_norm = ""
+    def _derive_dynamic_craft_cfg(cand_name: str, game_key: str) -> dict:
+        """Deriva alvo de síntese dinamicamente via guia consolidado e static_data/ (sem tabelas hardcoded)."""
+        default_by_game = {
+            "genshin": {
+                "set": "Set BiS do Guia",
+                "slot": "Cálice Elemental (Slot 4) ou Tiara Crítica (Slot 5)",
+                "main": "Bônus Elemental ou Taxa/Dano Crítico",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%/HP%", "Recarga"],
+                "gain": "Fecha main stat raro do set BiS",
+                "icon": "fa-wand-magic-sparkles",
+            },
+            "hsr": {
+                "set": "Ornamento Planar / Relíquia BiS",
+                "slot": "Corda de Ligação (Slot 6) ou Pés de VEL (Slot 4)",
+                "main": "Taxa de Regeneração de Energia (ERR) ou Velocidade (SPD)",
+                "substats": ["Velocidade", "Taxa Crítica", "Dano Crítico", "ATK%/HP%"],
+                "gain": "Fecha main stat raro de ERR/VEL ou CRIT",
+                "icon": "fa-cube",
+            },
+            "zzz": {
+                "set": "Disco de Drive BiS",
+                "slot": "Disco 6 (Impacto / ERR) ou Disco 5 (Elemental)",
+                "main": "Impacto% / Regeneração de Energia / Dano Elemental",
+                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
+                "gain": "Fecha main stat raro no Disco 5/6",
+                "icon": "fa-compact-disc",
+            },
+        }
+        cfg = dict(default_by_game.get(game_key, default_by_game["hsr"]))
+
         try:
-            from meta_comparator import resolve_character_canonical_slug
+            from meta_comparator import find_best_guide_file, parse_meta_target
 
-            canon_norm = _norm_str(resolve_character_canonical_slug(game_key, cand_name))
+            if find_best_guide_file(game_key, cand_name):
+                parsed = parse_meta_target(game_key, cand_name) or {}
+            else:
+                parsed = {}
         except Exception:
-            pass
+            parsed = {}
 
-        for mk, cfg_val in meta_craft_map.items():
-            mk_norm = _norm_str(mk)
-            if (
-                mk_norm in c_norm
-                or c_norm in mk_norm
-                or (canon_norm and (mk_norm in canon_norm or canon_norm in mk_norm))
-            ):
-                return cfg_val
-        return default_cfg
+        sets_list = [s for s in (parsed.get("sets") or []) if s and "não informado" not in str(s).lower()]
+        if sets_list:
+            cfg["set"] = str(sets_list[0])
+
+        stats_map = parsed.get("stats") or {}
+        if isinstance(stats_map, dict) and stats_map:
+            # Escolhe o slot de menor taxa natural de drop (Corda ERR > Cálice/Esfera/Disco 5 Elemental > Disco 6 > Corpo/Tiara CRIT > Pés/Areia)
+            slot_items = [(str(k), str(v)) for k, v in stats_map.items() if v and "qualquer" not in str(v).lower()]
+
+            def _slot_craft_priority(item_pair: tuple[str, str]) -> int:
+                sk, sv = _norm_str(item_pair[0]), _norm_str(item_pair[1])
+                if ("corda" in sk or "rope" in sk) and any(t in sv for t in ("energia", "err", "recarga", "energy")):
+                    return 0
+                if any(s in sk for s in ("calice", "copo", "goblet", "esfera", "sphere", "disco5", "slot5")):
+                    return 1
+                if any(s in sk for s in ("disco6", "slot6")) and any(t in sv for t in ("impact", "energia", "err", "mastery", "anomalia")):
+                    return 2
+                if any(s in sk for s in ("corpo", "body", "tiara", "circlet", "disco4", "slot4")):
+                    return 3
+                if any(s in sk for s in ("areia", "sands", "bota", "pes", "feet")) and any(t in sv for t in ("vel", "spd", "recarga", "energia", "em", "proficiencia")):
+                    return 4
+                return 5
+
+            if slot_items:
+                slot_items.sort(key=_slot_craft_priority)
+                best_slot, best_main = slot_items[0]
+                cfg["slot"] = best_slot
+                cfg["main"] = best_main
+                cfg["gain"] = f"Fecha {best_main} no slot {best_slot}"
+
+        subs_raw = parsed.get("substats") or []
+        if isinstance(subs_raw, str):
+            subs_list = [x.strip() for x in re.split(r"[>/=,]", subs_raw) if x.strip()]
+        elif isinstance(subs_raw, list):
+            subs_list = [str(x).strip() for x in subs_raw if str(x).strip()]
+        else:
+            subs_list = []
+        if subs_list:
+            cfg["substats"] = subs_list[:4]
+
+        return cfg
 
     recommendations = []
     rank_counter = 1
 
-    # ==========================================
-    # REGRAS DE CRAFTING POR JOGO
-    # ==========================================
-    if g == "genshin":
-        # Meta targets no Genshin
-        meta_craft_genshin = {
-            "neuvillette": {
-                "set": "Caçador das Sombras",
-                "slot": "Cálice de Eonothem (Slot 4)",
-                "main": "Bônus de Dano Hydro (ou HP%)",
-                "substats": ["Dano Crítico", "Taxa Crítica", "HP%", "Recarga de Energia"],
-                "gain": "+25% Dano no Ataque Carregado Notável",
-            },
-            "furina": {
-                "set": "Trompete do Éter / Companhia Dourada",
-                "slot": "Ampulheta / Cálice (Slot 3 ou 4)",
-                "main": "Recarga de Energia ou HP%",
-                "substats": ["Taxa Crítica", "Dano Crítico", "HP%", "Recarga de Energia"],
-                "gain": "Garante 100% de Uptime no Supremo Fanfarra",
-            },
-            "arlecchino": {
-                "set": "Fragmento da Harmonia Caprichosa",
-                "slot": "Cálice de Bônus Pyro (Slot 4)",
-                "main": "Bônus de Dano Pyro",
-                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Proficiência Elemental"],
-                "gain": "+30% Eficiência em Golpes de Vaporize",
-            },
-            "kaedehara kazuha": {
-                "set": "Sombra Verde (VV)",
-                "slot": "Cálice / Tiara (Slot 4 ou 5)",
-                "main": "Proficiência Elemental (EM)",
-                "substats": ["Recarga de Energia", "Proficiência Elemental", "ATK%"],
-                "gain": "Atinge a meta de 1.000 EM para buffer máximo de 40% DMG",
-            },
-            "nahida": {
-                "set": "Memórias da Floresta (Deepwood)",
-                "slot": "Tiara / Cálice (Slot 4 ou 5)",
-                "main": "Proficiência Elemental (ou Taxa Crítica)",
-                "substats": ["Proficiência Elemental", "Taxa Crítica", "Dano Crítico", "Recarga de Energia"],
-                "gain": "Maximiza dano de Tri-Karma e bônus da cúpula",
-            },
-            "yelan": {
-                "set": "Selo da Insulação (Emblem)",
-                "slot": "Cálice de Dano Hydro ou Tiara Crítica",
-                "main": "Bônus de Dano Hydro (ou Taxa/Dano Crítico)",
-                "substats": ["Taxa Crítica", "Dano Crítico", "Recarga de Energia", "HP%"],
-                "gain": "+20% Dano Coordenado do Supremo",
-            },
-        }
-        default_genshin_cfg = {
-            "set": "Set Bis Recomendado",
-            "slot": "Cálice Elemental (Slot 4) ou Tiara Crítica (Slot 5)",
-            "main": "Bônus Elemental ou Taxa/Dano Crítico",
-            "substats": ["Taxa Crítica", "Dano Crítico", "ATK%/HP%", "Recarga"],
-            "gain": "+15% a +25% Dano Total do Personagem",
-        }
+    for cand in top_candidates:
+        cfg = _derive_dynamic_craft_cfg(cand["name"], g)
 
-        for cand in top_candidates:
-            cfg = _find_craft_cfg(cand["name"], "genshin", meta_craft_genshin, default_genshin_cfg)
+        if cand["relics"]:
+            lowest_piece = f"Build Atual: Nota {cand['grade']} ({cand['score']}%)" if g == "hsr" else f"Build Atual: Nota {cand['grade']}"
+        else:
+            lowest_piece = "Sem peças equipadas"
 
-            lowest_piece = "Nenhuma relíquia equipada"
-            if cand["relics"]:
-                lowest_piece = f"Peça atual subótima (Build: {cand['grade']})"
-
-            recommendations.append(
-                {
-                    "priority_rank": rank_counter,
-                    "character_name": cand["name"],
-                    "character_icon": cand["icon"],
-                    "target_set_name": cfg["set"],
-                    "slot_name": cfg["slot"],
-                    "slot_icon": "fa-wand-magic-sparkles",
-                    "recommended_main_stat": cfg["main"],
-                    "recommended_substats": cfg["substats"],
-                    "current_piece_status": lowest_piece,
-                    "expected_gain": cfg["gain"],
-                    "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA",
-                }
-            )
-            rank_counter += 1
-            if rank_counter > 5:
-                break
-
-    elif g == "hsr":
-        # Meta targets no HSR
-        meta_craft_hsr = {
-            "robin": {
-                "set": "Lushaka das Águas Afundadas / Vonwacq",
-                "slot": "Corda de Ligação (Slot 6)",
-                "main": "Taxa de Recuperação de Energia (ERR)",
-                "substats": ["Velocidade (SPD)", "ATK%", "HP%", "RES a Efeito"],
-                "gain": "Recarrega o Concerto do Supremo em 1 rotação",
-            },
-            "sunday": {
-                "set": "Lushaka das Águas Afundadas",
-                "slot": "Corda de ERR (Slot 6) ou Pés de SPD (Slot 4)",
-                "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade",
-                "substats": ["Dano Crítico", "Velocidade", "RES a Efeito", "HP%"],
-                "gain": "Sincroniza avanço de ação imediato no turno do Hypercarry",
-            },
-            "ruan mei": {
-                "set": "Talia: Reino dos Bandidos / Vonwacq",
-                "slot": "Corda de ERR (Slot 6) ou Pés de SPD (Slot 4)",
-                "main": "Taxa de Recuperação de Energia ou Velocidade",
-                "substats": ["Efeito de Quebra (Break Effect)", "Velocidade", "HP%"],
-                "gain": "Alcança 160% de Efeito de Quebra para buff de 68% DMG global",
-            },
-            "acheron": {
-                "set": "Pioneiro Mergulhador no Mar Morto / Izumo Gensei",
-                "slot": "Esfera de ATK% / Raio (Slot 5) ou Corpo de Dano Crítico",
-                "main": "Dano Crítico (Corpo) ou ATK% (Esfera)",
-                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Velocidade"],
-                "gain": "+35% Dano Bruto no Supremo dos Nove Cortes",
-            },
-            "firefly": {
-                "set": "Cavalaria de Ferro dos Flagelos / Kalpagni",
-                "slot": "Pés de SPD (Slot 4) ou Esfera de ATK% (Slot 5)",
-                "main": "Velocidade (150+ SPD) e ATK%",
-                "substats": ["Efeito de Quebra (Break Effect)", "Velocidade", "ATK%"],
-                "gain": "Garante 4 ações completas no estado Combustão Completa",
-            },
-            "feixiao": {
-                "set": "Corajoso ao Vento / Duran: Dinastia dos Lobos",
-                "slot": "Corpo de Taxa Crítica (Slot 3) ou Esfera de Dano Físico",
-                "main": "Taxa Crítica (Corpo) ou Dano Físico (Esfera)",
-                "substats": ["Dano Crítico", "Taxa Crítica", "Velocidade", "ATK%"],
-                "gain": "Consistência de 95%+ Crítico nos Ataques Extras e Supremo",
-            },
-            "aventurine": {
-                "set": "Palácio dos Cavaleiros da Pureza / Salsotto",
-                "slot": "Corpo de DEF% ou Dano Crítico (Slot 3)",
-                "main": "DEF% (para 4.000 DEF) ou Dano Crítico",
-                "substats": ["DEF%", "Velocidade", "Dano Crítico", "Taxa Crítica"],
-                "gain": "Escudo perpétuo de 100% e ativação do buff de 48% Crítico",
-            },
-        }
-        default_hsr_cfg = {
-            "set": "Set de Ornamentos Planares Meta",
-            "slot": "Corda de Recuperação de Energia (Slot 6) ou Pés de SPD (Slot 4)",
-            "main": "Taxa de Recuperação de Energia (ERR) ou Velocidade (SPD)",
-            "substats": ["Velocidade", "Taxa Crítica", "Dano Crítico", "HP%/ATK%"],
-            "gain": "+20% Eficiência de Ciclos no Caos da Memória (MoC)",
-        }
-
-        for cand in top_candidates:
-            cfg = _find_craft_cfg(cand["name"], "hsr", meta_craft_hsr, default_hsr_cfg)
-
-            lowest_piece = "Peça atual subótima"
-            if cand["relics"]:
-                lowest_piece = f"Build Atual: Nota {cand['grade']} ({cand['score']}%)"
-
-            recommendations.append(
-                {
-                    "priority_rank": rank_counter,
-                    "character_name": cand["name"],
-                    "character_icon": cand["icon"],
-                    "target_set_name": cfg["set"],
-                    "slot_name": cfg["slot"],
-                    "slot_icon": "fa-cube",
-                    "recommended_main_stat": cfg["main"],
-                    "recommended_substats": cfg["substats"],
-                    "current_piece_status": lowest_piece,
-                    "expected_gain": cfg["gain"],
-                    "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA",
-                }
-            )
-            rank_counter += 1
-            if rank_counter > 5:
-                break
-
-    elif g == "zzz":
-        # Meta targets no ZZZ
-        meta_craft_zzz = {
-            "qingyi": {
-                "set": "Jazz Eletrizante / Choque Trovejante",
-                "slot": "Disco 6 (Impacto %)",
-                "main": "Impacto %",
-                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "Proficiência de Anomalia"],
-                "gain": "Atordoa chefes de Shiyu em menos de 15 segundos",
-            },
-            "ellen": {
-                "set": "Pica-Pau Polar / Metal Polar",
-                "slot": "Disco 4 (Taxa/Dano Crítico) ou Disco 5 (Bônus Gelo)",
-                "main": "Dano Crítico ou Bônus de Dano de Gelo",
-                "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
-                "gain": "+30% Dano Crítico nas Tesouradas de Gelo",
-            },
-            "jane doe": {
-                "set": "Presa Furiosa / Jazz da Liberdade",
-                "slot": "Disco 4 (Proficiência de Anomalia) ou Disco 5 (Dano Físico)",
-                "main": "Proficiência de Anomalia ou Bônus Físico",
-                "substats": ["Proficiência de Anomalia", "Taxa de Anomalia", "ATK%"],
-                "gain": "Desencadeia Assalto Crítico contínuo de 500k+ dano",
-            },
-            "caesar": {
-                "set": "Protetor da Proto-Faixa / Jazz",
-                "slot": "Disco 6 (Impacto %) ou Disco 4 (DEF%)",
-                "main": "Impacto % (ou DEF%)",
-                "substats": ["DEF%", "HP%", "Impacto", "ATK%"],
-                "gain": "Concede +1.000 de ATK instantâneo para todo o time com escudo",
-            },
-        }
-        default_zzz_cfg = {
-            "set": "Discos de Música Recomendados",
-            "slot": "Disco 6 (Impacto ou Regeneração de Energia)",
-            "main": "Impacto % ou Regeneração de Energia",
-            "substats": ["Taxa Crítica", "Dano Crítico", "ATK%", "PEN"],
-            "gain": "+20% Velocidade de Stun ou Dano de Burst",
-        }
-
-        for cand in top_candidates:
-            cfg = _find_craft_cfg(cand["name"], "zzz", meta_craft_zzz, default_zzz_cfg)
-
-            lowest_piece = f"Build Atual: Nota {cand['grade']}"
-
-            recommendations.append(
-                {
-                    "priority_rank": rank_counter,
-                    "character_name": cand["name"],
-                    "character_icon": cand["icon"],
-                    "target_set_name": cfg["set"],
-                    "slot_name": cfg["slot"],
-                    "slot_icon": "fa-compact-disc",
-                    "recommended_main_stat": cfg["main"],
-                    "recommended_substats": cfg["substats"],
-                    "current_piece_status": lowest_piece,
-                    "expected_gain": cfg["gain"],
-                    "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA",
-                }
-            )
-            rank_counter += 1
-            if rank_counter > 5:
-                break
+        recommendations.append(
+            {
+                "priority_rank": rank_counter,
+                "character_name": cand["name"],
+                "character_icon": cand["icon"],
+                "target_set_name": cfg["set"],
+                "slot_name": cfg["slot"],
+                "slot_icon": cfg["icon"],
+                "recommended_main_stat": cfg["main"],
+                "recommended_substats": cfg["substats"],
+                "current_piece_status": lowest_piece,
+                "expected_gain": cfg["gain"],
+                "urgency": "MÁXIMA" if rank_counter <= 2 else "ALTA",
+            }
+        )
+        rank_counter += 1
+        if rank_counter > 5:
+            break
 
     # Fallback se roster estiver vazio
     if not recommendations:
@@ -1261,8 +1365,8 @@ def recommend_relic_crafting(game_id: str, roster: list) -> dict:
         )
 
     summary_tip = (
-        f"💡 **Dica de Ouro:** Guarde sua {item_names.get(g, 'Resina')} para peças de **Recuperação de Energia (ERR)** "
-        "ou **Cálices de Bônus Elemental / Discos de Impacto**, pois elas possuem a menor probabilidade matemática de drop natural (~3% a 5%)."
+        f"Guarde {item_names.get(g, 'Resina')} para **Corda ERR**, **Cálice Elemental** ou **Disco 6 de Impacto** "
+        "(drop natural de ~3–5%)."
     )
 
     return {

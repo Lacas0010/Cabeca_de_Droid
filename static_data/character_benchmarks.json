@@ -480,19 +480,19 @@
             "Dano Crítico": "140%+"
         },
         "odette": {
-            "Vida": "32.000+",
-            "Taxa Crítica": "65%+",
-            "Dano Crítico": "150%+"
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+"
         },
         "escoffier": {
-            "Vida": "30.000+",
-            "Recarga de Energia": "160%+",
-            "Bônus de Cura": "35%+"
+            "ATQ": "2.000+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "150%+",
+            "Recarga de Energia": "160%+"
         },
         "vodyanitsa": {
             "Vida": "42.000+",
-            "Recarga de Energia": "140%+",
-            "Bônus de Cura": "35%+"
+            "Recarga de Energia": "140%+"
         },
         "durin": {
             "ATQ": "2.200+",
@@ -505,9 +505,9 @@
             "Dano Crítico": "160%+"
         },
         "nefer": {
-            "Vida": "36.000+",
-            "Taxa Crítica": "65%+",
-            "Dano Crítico": "150%+"
+            "Proficiência Elemental": "650+",
+            "Taxa Crítica": "70%+",
+            "Dano Crítico": "160%+"
         },
         "lauma": {
             "Proficiência Elemental": "800+",
@@ -551,9 +551,8 @@
             "Recarga de Energia": "170%+"
         },
         "illuga": {
-            "ATQ": "2.100+",
-            "Taxa Crítica": "65%+",
-            "Dano Crítico": "140%+"
+            "Proficiência Elemental": "750+",
+            "Recarga de Energia": "170%+"
         },
         "ineffa": {
             "ATQ": "2.000+",
@@ -566,9 +565,10 @@
             "Dano Crítico": "140%+"
         },
         "linnea": {
-            "Vida": "32.000+",
+            "DEF": "2.400+",
             "Taxa Crítica": "65%+",
-            "Dano Crítico": "150%+"
+            "Dano Crítico": "140%+",
+            "Recarga de Energia": "160%+"
         },
         "lohen": {
             "ATQ": "2.200+",
@@ -576,11 +576,11 @@
             "Dano Crítico": "160%+"
         },
         "nicole": {
-            "Proficiência Elemental": "750+",
-            "Recarga de Energia": "170%+"
+            "ATQ": "2.600+",
+            "Recarga de Energia": "160%+"
         },
         "prune": {
-            "Vida": "30.000+",
+            "ATQ": "2.200+",
             "Recarga de Energia": "180%+"
         },
         "sandrone": {
@@ -589,8 +589,8 @@
             "Dano Crítico": "150%+"
         },
         "vesna": {
-            "Vida": "34.000+",
-            "Taxa Crítica": "65%+",
+            "ATQ": "2.200+",
+            "Taxa Crítica": "70%+",
             "Dano Crítico": "150%+"
         },
         "yumemizuki_mizuki": {

@@ -54,7 +54,7 @@ async def set_security_pin_endpoint(req: PinSetRequest):
     if not success:
         raise HTTPException(status_code=500, detail="Falha ao gravar PIN de segurança.")
     token = create_session()
-    resp = JSONResponse({"status": "ok", "message": "PIN de segurança ativado com sucesso!", "token": token})
+    resp = JSONResponse({"status": "ok", "message": "PIN ativado.", "token": token})
     resp.set_cookie(key="hoyo_session", value=token, httponly=True, samesite="strict", max_age=86400)
     return resp
 
@@ -66,7 +66,7 @@ async def verify_security_pin_endpoint(req: PinVerifyRequest):
     if not valid:
         raise HTTPException(status_code=401, detail="PIN incorreto. Tente novamente.")
     token = create_session()
-    resp = JSONResponse({"status": "ok", "message": "Autenticado com sucesso!", "token": token})
+    resp = JSONResponse({"status": "ok", "message": "Desbloqueado.", "token": token})
     resp.set_cookie(key="hoyo_session", value=token, httponly=True, samesite="strict", max_age=86400)
     return resp
 
@@ -77,7 +77,7 @@ async def disable_security_pin_endpoint(req: PinDisableRequest):
     success = database.disable_security_pin(req.current_pin)
     if not success:
         raise HTTPException(status_code=401, detail="PIN atual incorreto. Não foi possível desativar.")
-    return {"status": "ok", "message": "Bloqueio por PIN desativado com sucesso."}
+    return {"status": "ok", "message": "Bloqueio por PIN desativado."}
 
 
 @router.post("/api/security/lan/toggle")
@@ -98,7 +98,7 @@ async def clear_credentials_endpoint():
     security_vault.save_secure_cookies({})
     config = get_config()
     security_vault.save_secure_config(config)
-    return {"status": "success", "message": "Credenciais e cookies locais removidos com sucesso!"}
+    return {"status": "success", "message": "Credenciais removidas do cofre."}
 
 
 @router.post("/api/auth/manual_cookies")
@@ -117,7 +117,7 @@ async def save_manual_cookies(req: ManualCookieRequest):
         preview = security_vault.get_masked_cookies_preview(parsed)
         return {
             "status": "success",
-            "message": "Cookies criptografados e salvos com sucesso no cofre seguro!",
+            "message": "Cookies criptografados e salvos no cofre.",
             "keys": list(parsed.keys()),
             "preview": preview["preview"],
         }

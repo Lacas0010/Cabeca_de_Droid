@@ -7,6 +7,7 @@ Módulo puro e determinístico (sem I/O ou rede) para uso compartilhado entre
 """
 
 import re
+import statistics
 import unicodedata
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -113,7 +114,11 @@ _BENCHMARK_KEY_ALIASES: Dict[str, str] = {
     "elemental mastery": "em",
     "elemental_mastery": "em",
     "proficiencia elemental": "em",
+    "proficiencia elementar": "em",
     "proficiencia": "em",
+    "prof element": "em",
+    "prof elementar": "em",
+    "prof elem": "em",
     "maestria elemental": "em",
     # Recarga de Energia (Genshin)
     "er": "er",
@@ -142,6 +147,7 @@ _BENCHMARK_KEY_ALIASES: Dict[str, str] = {
     "outgoing_healing": "healing_bonus",
     "bonus de cura": "healing_bonus",
     "bonus de cura realizada": "healing_bonus",
+    "cura bonus": "healing_bonus",
     "cura realizada": "healing_bonus",
     "cura": "healing_bonus",
     # ZZZ Específicos
@@ -684,8 +690,8 @@ def _localize_target_display(raw_target: str, lang: str = "pt", spec: Optional[D
     if not s:
         return s
 
-    # Compacta explicações longas vindas de guias Prydwen (ex.: Sigrid, Astra Yao, Vivian, Trigger, Evelyn)
-    if len(s) > 48:
+    # Compacta explicações longas vindas de guias Prydwen (ex.: Sigrid, Astra Yao, Vivian, Trigger, Evelyn, Cissia, Yixuan)
+    if len(s) > 36:
         m_lead = _RE_LEAD_VALUE_CHUNK.match(s)
         if m_lead:
             core = m_lead.group(1).strip()
@@ -696,7 +702,9 @@ def _localize_target_display(raw_target: str, lang: str = "pt", spec: Optional[D
                 is_pct = bool(spec.get("is_percent"))
                 t_str = _format_num_display(float(spec["target_min"]), is_pct)
                 s = f"{t_str} (fora de combate)" if not str(lang).lower().startswith("en") else f"{t_str} (out of combat)"
-            elif short_paren and len(short_paren) <= 28:
+            elif spec and spec.get("is_in_combat"):
+                s = f"{core} (em combate)" if not str(lang).lower().startswith("en") else f"{core} (in-combat)"
+            elif short_paren and len(short_paren) <= 22:
                 s = f"{core} {short_paren}"
             else:
                 s = core
@@ -720,6 +728,10 @@ def _localize_target_display(raw_target: str, lang: str = "pt", spec: Optional[D
     s = re.sub(r"\bin[- ]?(?:combat|battle)\b", "em combate", s, flags=re.IGNORECASE)
     s = re.sub(r"\(\s*(?:pre[- ]?combat|before\s+combat)\s*\)", "(pré-combate)", s, flags=re.IGNORECASE)
     s = re.sub(r"\(\s*outside\s+of\s+combat\s*\)", "(fora de combate)", s, flags=re.IGNORECASE)
+    s = re.sub(r"\(\s*with\s+signature\s+w-engine,?\s*pre[- ]?combat\s*\)", "(pré-combate, c/ Assinatura)", s, flags=re.IGNORECASE)
+    s = re.sub(r"\(\s*including\s+disc\s+drive\s+bonus\s*\)", "(em combate)", s, flags=re.IGNORECASE)
+    s = re.sub(r"\(\s*including\s+(?:core\s+passive|passiva\s+de\s+n[uú]cleo)\s*\)", "(em combate)", s, flags=re.IGNORECASE)
+    s = re.sub(r"\(\s*needed\s+for\s+([^)]+)\)", r"(p/ \1)", s, flags=re.IGNORECASE)
     s = re.sub(r"\(\s*not\s+more\s*\)", "(Cap máx.)", s, flags=re.IGNORECASE)
     s = re.sub(r"\(\s*recommended\s*\)", "(Recomendado)", s, flags=re.IGNORECASE)
     s = re.sub(r"\(\s*optional\s*\)", "(Opcional)", s, flags=re.IGNORECASE)
@@ -776,12 +788,165 @@ def match_player_stat(
     return None, None, None
 
 
+# Conjunto completo de atributos base de combate por jogo (usado para completar o Radar
+# com médias de referência realistas quando o guia só especifica 2-3 metas principais)
+_GAME_CORE_RADAR_STATS: Dict[str, Tuple[str, ...]] = {
+    "genshin": ("hp_flat", "atk_flat", "def_flat", "crit_rate", "crit_dmg", "er", "em"),
+    "hsr": ("hp_flat", "atk_flat", "def_flat", "spd", "crit_rate", "crit_dmg"),
+    "zzz": ("hp_flat", "atk_flat", "def_flat", "crit_rate", "crit_dmg", "err"),
+}
+
+# Faixas de fallback calibradas por jogo para atributos NÃO-escalantes (usadas quando não há roster suficiente)
+# Ex.: em Genshin, para uma Zibai que escala com DEF, ATQ fica em 1.000 - 1.500 e Vida em 15.000 - 19.000.
+_DEFAULT_NON_SCALING_BASELINES: Dict[str, Dict[str, Tuple[float, float]]] = {
+    "genshin": {
+        "hp_flat": (15000.0, 19000.0),
+        "atk_flat": (1000.0, 1500.0),
+        "def_flat": (700.0, 900.0),
+        "crit_rate": (15.0, 35.0),
+        "crit_dmg": (60.0, 95.0),
+        "er": (100.0, 125.0),
+        "em": (40.0, 110.0),
+    },
+    "hsr": {
+        "hp_flat": (2800.0, 3400.0),
+        "atk_flat": (1600.0, 2200.0),
+        "def_flat": (900.0, 1150.0),
+        "spd": (100.0, 134.0),
+        "crit_rate": (15.0, 35.0),
+        "crit_dmg": (60.0, 95.0),
+    },
+    "zzz": {
+        "hp_flat": (9500.0, 11500.0),
+        "atk_flat": (1700.0, 2200.0),
+        "def_flat": (750.0, 950.0),
+        "crit_rate": (15.0, 35.0),
+        "crit_dmg": (60.0, 90.0),
+        "err": (1.20, 1.56),
+    },
+}
+
+# Teto superior para filtrar outliers escalantes ao calcular a média dinâmica do roster
+# (ex.: remove personagens HP-scaler de 38k+ ao calcular a média de Vida para não-escalantes)
+_NON_SCALING_OUTLIER_CAPS: Dict[str, Dict[str, float]] = {
+    "genshin": {
+        "hp_flat": 24000.0,
+        "atk_flat": 1750.0,
+        "def_flat": 1150.0,
+        "crit_rate": 45.0,
+        "crit_dmg": 115.0,
+        "er": 145.0,
+        "em": 180.0,
+    },
+    "hsr": {
+        "hp_flat": 4500.0,
+        "atk_flat": 2500.0,
+        "def_flat": 1400.0,
+        "spd": 138.0,
+        "crit_rate": 45.0,
+        "crit_dmg": 110.0,
+    },
+    "zzz": {
+        "hp_flat": 13500.0,
+        "atk_flat": 2400.0,
+        "def_flat": 1150.0,
+        "crit_rate": 45.0,
+        "crit_dmg": 110.0,
+        "err": 1.80,
+    },
+}
+
+
+def _round_nice_baseline(stat_key: str, val: float) -> float:
+    if stat_key == "err" and val < 10.0:
+        return round(val * 10.0) / 10.0
+    meta = _STAT_DISPLAY_META.get(stat_key, {})
+    if meta.get("pct"):
+        return float(round(val / 5.0) * 5.0)
+    if val >= 5000:
+        return float(round(val / 500.0) * 500.0)
+    if val >= 500:
+        return float(round(val / 100.0) * 100.0)
+    if val >= 80:
+        return float(round(val / 10.0) * 10.0)
+    return float(round(val / 5.0) * 5.0)
+
+
+def _format_baseline_range(stat_key: str, low_v: float, high_v: float) -> str:
+    if stat_key == "err" and high_v < 10.0:
+        return f"{low_v:.2f} - {high_v:.2f}"
+    meta = _STAT_DISPLAY_META.get(stat_key, {})
+    is_pct = bool(meta.get("pct"))
+    if is_pct:
+        return f"{int(round(low_v))}% - {int(round(high_v))}%"
+    def _fmt_int(n: float) -> str:
+        iv = int(round(n))
+        return f"{iv:,}".replace(",", ".") if iv >= 1000 else str(iv)
+    return f"{_fmt_int(low_v)} - {_fmt_int(high_v)}"
+
+
+def compute_dynamic_game_baselines(
+    game_id: str,
+    roster_records: Optional[List[Dict[str, Any]]] = None,
+) -> Dict[str, Tuple[float, float, str]]:
+    """
+    Calcula dinamicamente médias realistas [min, ideal] para atributos não-escalantes
+    a partir dos personagens buildados do jogo (filtrando outliers escalantes) com fallback calibrado.
+    """
+    g = (game_id or "").lower().strip()
+    defaults = _DEFAULT_NON_SCALING_BASELINES.get(g, {})
+    caps = _NON_SCALING_OUTLIER_CAPS.get(g, {})
+    min_lv = 80 if g in ("genshin", "hsr") else 55
+
+    samples: Dict[str, List[float]] = {}
+    if roster_records:
+        for ch in roster_records:
+            if not isinstance(ch, dict):
+                continue
+            lvl = int(ch.get("level") or 0)
+            pieces = ch.get("relics") or ch.get("artifacts") or ch.get("discs") or []
+            if lvl < min_lv or len(pieces) < 4:
+                continue
+            for rk, rv in (ch.get("stats") or {}).items():
+                ck = canonicalize_benchmark_key(str(rk), game_id=g)
+                if ck not in defaults:
+                    continue
+                num = parse_stat_number(rv)
+                if num is None or num <= 0:
+                    continue
+                cap_hi = caps.get(ck)
+                if cap_hi is not None and num > cap_hi:
+                    continue
+                samples.setdefault(ck, []).append(num)
+
+    result: Dict[str, Tuple[float, float, str]] = {}
+    for sk, (def_lo, def_hi) in defaults.items():
+        vals = sorted(samples.get(sk) or [])
+        if len(vals) >= 6:
+            p25 = vals[len(vals) // 4]
+            med = statistics.median(vals)
+            p75 = vals[(3 * len(vals)) // 4]
+            # Combina p25..p75 real com limites seguros para manter faixas sempre limpas e intuitivas
+            lo_raw = max(def_lo * 0.85, min(def_lo * 1.15, p25))
+            hi_raw = max(lo_raw + (def_hi - def_lo) * 0.5, min(def_hi * 1.15, max(med, p75)))
+            lo = _round_nice_baseline(sk, lo_raw)
+            hi = _round_nice_baseline(sk, hi_raw)
+            if hi <= lo:
+                lo, hi = def_lo, def_hi
+        else:
+            lo, hi = def_lo, def_hi
+        result[sk] = (lo, hi, _format_baseline_range(sk, lo, hi))
+    return result
+
+
 def build_radar_benchmark_payload(
     game_id: str,
     char_name: str,
     player_stats: Optional[Dict[str, Any]],
     endgame_stats: Optional[Dict[str, Any]],
     main_stats: Optional[Dict[str, Any]] = None,
+    include_baseline_stats: bool = False,
+    roster_records: Optional[List[Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """
     Constrói o payload estruturado completo para o Gráfico Radar 'Minha Build vs. Benchmark Meta'
@@ -850,10 +1015,19 @@ def build_radar_benchmark_payload(
             target_display_pt = f"{_format_num_display(eff_min, True)}+ (Base 100% + {raw_target})"
             target_display_en = f"{_format_num_display(eff_min, True)}+ (Base 100% + {raw_target})"
         elif g == "zzz" and stat_key in ("er", "err") and eff_min is not None and spec["target_min"] is not None and eff_min != spec["target_min"]:
-            target_display_pt = f"{_format_num_display(eff_min, False)}+ ({raw_target})"
-            target_display_en = f"{_format_num_display(eff_min, False)}+ ({raw_target})"
+            short_raw_pt = target_display_pt if len(target_display_pt) <= 22 else f"{_format_num_display(spec['target_min'], True)}+"
+            short_raw_en = target_display_en if len(target_display_en) <= 22 else f"{_format_num_display(spec['target_min'], True)}+"
+            target_display_pt = f"{_format_num_display(eff_min, False)}+ ({short_raw_pt})"
+            target_display_en = f"{_format_num_display(eff_min, False)}+ ({short_raw_en})"
         target_clean_display = target_display_pt
         tooltip_note = raw_target if len(raw_target) > len(target_display_pt) + 6 else ""
+
+        # HoYoLAB/extractor omite atributos secundários quando valem 0% (ex.: Bônus de Cura, Quebra, Taxa de Perfuração).
+        # Se o personagem já possui os atributos sincronizados (>= 4 stats), trata esses secundários ausentes como 0.0%!
+        _ZERO_OMITTED_STATS = frozenset({"break_effect", "healing_bonus", "pen_pct", "ehr", "res"})
+        if actual_num is None and len(p_stats) >= 4 and stat_key in _ZERO_OMITTED_STATS:
+            actual_num = 0.0
+            actual_str = "0.0%"
 
         if actual_num is None or eff_min is None or eff_min <= 0:
             low_count += 1
@@ -976,9 +1150,73 @@ def build_radar_benchmark_payload(
                 "status": status,
                 "score_weight_ratio": weight_ratio,
                 "tags": axis_tags,
+                "is_baseline": False,
                 "plot_on_radar": True,
             }
         )
+
+    # Completa TODOS os atributos base de combate do jogo com médias dinâmicas de referência
+    # para que nenhum personagem fique com apenas 2-3 status no Radar (ex.: ATQ 1.000 - 1.500 em Zibai DEF-scaler).
+    # Stats de referência NÃO penalizam benchmark_score_20 nem met_count das metas principais do guia!
+    if include_baseline_stats and p_stats:
+        existing_keys = {ax["stat_key"] for ax in axes} | {fn["stat_key"] for fn in flex_notes}
+        core_order = _GAME_CORE_RADAR_STATS.get(g, ())
+        dyn_baselines = compute_dynamic_game_baselines(g, roster_records=roster_records)
+
+        for sk in core_order:
+            if sk in existing_keys or sk not in dyn_baselines:
+                continue
+            matched_k, actual_str, actual_num = match_player_stat(p_stats, sk, game_id=g)
+            if actual_num is None:
+                continue
+
+            lo_val, hi_val, disp_range = dyn_baselines[sk]
+            is_pct = bool(_STAT_DISPLAY_META.get(sk, {}).get("pct", False))
+            if g == "zzz" and sk == "err" and hi_val < 10.0:
+                is_pct = False
+
+            label_pt = format_benchmark_label(sk, game_id=g, lang="pt")
+            label_en = format_benchmark_label(sk, game_id=g, lang="en")
+            short_pt = format_benchmark_label(sk, game_id=g, lang="pt", short=True)
+            short_en = format_benchmark_label(sk, game_id=g, lang="en", short=True)
+
+            # Compara contra o piso médio (lo_val) para indicar aderência à média do jogo sem punir não-escalantes
+            ref_target = lo_val if lo_val > 0 else hi_val
+            ratio_pct = (actual_num / ref_target) * 100.0 if ref_target > 0 else 100.0
+            diff_num = actual_num - ref_target
+            diff_display = _format_diff_display(diff_num, is_pct, ref_target)
+            # Status amigável: verde ('ok') se na média ou acima, ciano ('flex') se abaixo (nunca vermelho punitivo!)
+            b_status = "ok" if actual_num >= ref_target else "flex"
+            radar_ratio = round(min(1.20, max(0.18, ratio_pct / 100.0)), 3)
+
+            axes.append(
+                {
+                    "stat_key": sk,
+                    "label_pt": label_pt,
+                    "label_en": label_en,
+                    "short_pt": short_pt,
+                    "short_en": short_en,
+                    "actual_display": actual_str or _format_num_display(actual_num, is_pct),
+                    "actual_num": round(actual_num, 2),
+                    "target_display": disp_range,
+                    "target_display_pt": disp_range,
+                    "target_display_en": disp_range,
+                    "raw_target": disp_range,
+                    "tooltip_note": "Média de referência (não entra na nota).",
+                    "target_min": ref_target,
+                    "target_ideal": hi_val,
+                    "is_percent": is_pct,
+                    "ratio_pct": round(ratio_pct, 1),
+                    "radar_ratio": radar_ratio,
+                    "diff_num": round(diff_num, 2),
+                    "diff_display": diff_display,
+                    "status": b_status,
+                    "score_weight_ratio": 1.0,
+                    "tags": ["baseline"],
+                    "is_baseline": True,
+                    "plot_on_radar": True,
+                }
+            )
 
     # Inclui slots de Main Stats marcados como "Qualquer (Flex)" / "Anything" como tags Flex abaixo do Radar
     if main_stats and isinstance(main_stats, dict):
@@ -1015,13 +1253,18 @@ def build_radar_benchmark_payload(
                     }
                 )
 
-    # Garante no máximo MAX_RADAR_POLYGON_AXES (6) vértices no polígono SVG, priorizando atributos
-    # definidores da build (mantendo todos visíveis na lista de breakdown!)
+    # Garante no máximo MAX_RADAR_POLYGON_AXES (6) vértices no polígono SVG, priorizando SEMPRE
+    # as metas principais do guia (is_baseline=False) sobre as médias complementares de referência
+    # (mantendo TODOS os atributos visíveis na lista de breakdown!)
     plotted_indices = [idx for idx, ax in enumerate(axes) if ax.get("plot_on_radar")]
     if len(plotted_indices) > MAX_RADAR_POLYGON_AXES:
         ranked = sorted(
             plotted_indices,
-            key=lambda idx: (-_AXIS_PLOT_PRIORITY.get(axes[idx]["stat_key"], 50), idx),
+            key=lambda idx: (
+                0 if not axes[idx].get("is_baseline") else 1,
+                -_AXIS_PLOT_PRIORITY.get(axes[idx]["stat_key"], 50),
+                idx,
+            ),
         )
         keep_set = set(ranked[:MAX_RADAR_POLYGON_AXES])
         for idx in plotted_indices:

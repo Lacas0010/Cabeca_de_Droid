@@ -23,7 +23,7 @@ class TestActionBreakpointsSuite(unittest.TestCase):
         self.assertIsNotNone(res["speed_action_value"])
         self.assertAlmostEqual(res["speed_action_value"], 74.0, delta=0.5)
         self.assertIn("Ciclo 0", res["cycles_summary"])
-        self.assertIn("2 Ação", res["cycles_summary"])
+        self.assertIn("2 ação", res["cycles_summary"])
 
         spd_bp = next(b for b in res["breakpoints"] if "SPD" in b["stat"])
         self.assertTrue(spd_bp["is_reached"])
@@ -40,7 +40,7 @@ class TestActionBreakpointsSuite(unittest.TestCase):
         # 2. Sparkle (160.1+ Hyper Speed)
         sparkle_res = calculate_stat_breakpoints("hsr", "Sparkle", {"speed": 161.4})
         sparkle_spd = next(b for b in sparkle_res["breakpoints"] if "SPD" in b["stat"])
-        self.assertIn("Hyper-Speed", sparkle_spd["speed_tuning_tip"])
+        self.assertIn("Hyperspeed", sparkle_spd["speed_tuning_tip"])
         self.assertIn("160.1 SPD", sparkle_spd["status"])
 
         # 3. Robin (Vonwacq Tuning)
@@ -55,7 +55,7 @@ class TestActionBreakpointsSuite(unittest.TestCase):
         res_bad = calculate_stat_breakpoints("genshin", "Xiangling", stats_bad)
         er_bad = next(b for b in res_bad["breakpoints"] if "ER" in b["stat"])
         self.assertFalse(er_bad["is_reached"])
-        self.assertIn("Faltam 30.0% de ER", er_bad["next_goal"])
+        self.assertIn("+30.0% ER", er_bad["next_goal"])
 
         # Bennett com Taxa Crítica muito baixa para Favonius Proc (< 40%)
         stats_bennett = {"er": 210.0, "crit_rate": 22.0, "crit_dmg": 80.0}
@@ -63,7 +63,7 @@ class TestActionBreakpointsSuite(unittest.TestCase):
         fav_bp = next((b for b in res_bennett["breakpoints"] if "Favonius" in b["stat"]), None)
         self.assertIsNotNone(fav_bp)
         self.assertFalse(fav_bp["is_reached"])
-        self.assertIn("40% - 50%", fav_bp["status"])
+        self.assertIn("40–50%", fav_bp["status"])
 
     def test_zzz_anomaly_and_impact_breakpoints(self):
         """Valida limiares de Proficiência em Anomalia (Jane Doe) e Impacto (Stunner) no ZZZ."""
@@ -71,7 +71,7 @@ class TestActionBreakpointsSuite(unittest.TestCase):
         jane_res = calculate_stat_breakpoints("zzz", "Jane Doe", {"ap": 425.0})
         ap_bp = next(b for b in jane_res["breakpoints"] if "Anomalia" in b["stat"])
         self.assertTrue(ap_bp["is_reached"])
-        self.assertIn("100% Taxa CRIT", ap_bp["status"])
+        self.assertIn("420 AP", ap_bp["status"])
 
         # Qingyi com 142 Impacto
         qingyi_res = calculate_stat_breakpoints("zzz", "Qingyi", {"impact": 142.0})
@@ -79,12 +79,12 @@ class TestActionBreakpointsSuite(unittest.TestCase):
         self.assertTrue(imp_bp["is_reached"])
 
     def test_crit_ratio_1_2_balance(self):
-        """Valida cálculo da proporção áurea de dano crítico 1:2."""
+        """Valida cálculo da proporção de dano crítico 1:2."""
         # Equilibrado (1:2)
         res_ok = calculate_stat_breakpoints("hsr", "Seele", {"crit_rate": 70.0, "crit_dmg": 140.0})
         crit_bp = next(b for b in res_ok["breakpoints"] if "1:2" in b["stat"])
         self.assertTrue(crit_bp["is_reached"])
-        self.assertIn("Proporção Áurea", crit_bp["status"])
+        self.assertIn("dentro da faixa 1:2", crit_bp["status"])
 
         # Desequilibrado (1:5.5)
         res_skewed = calculate_stat_breakpoints("hsr", "Seele", {"crit_rate": 35.0, "crit_dmg": 195.0})
@@ -102,7 +102,7 @@ class TestActionBreakpointsSuite(unittest.TestCase):
         self.assertEqual(data["char_name"], "Sparkle")
         self.assertEqual(data["game_id"], "hsr")
         self.assertGreater(len(data["breakpoints"]), 0)
-        self.assertIn("Sparkle", data["breakpoints"][0]["speed_tuning_tip"])
+        self.assertIn("160.1+ SPD", data["breakpoints"][0]["speed_tuning_tip"])
 
 
 if __name__ == "__main__":

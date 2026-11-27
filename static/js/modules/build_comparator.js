@@ -65,12 +65,26 @@ function _renderRadarTagChips(tags, t) {
         range: t("radar_tag_range", "Faixa"),
         cap: t("radar_tag_cap", "Cap Ideal"),
         overcap: t("radar_tag_overcap", "Overcap"),
+        baseline: t("radar_tag_baseline", "Média Ref."),
     };
     const seen = new Set();
     return tags
         .filter(tag => tagMap[tag] && !seen.has(tag) && seen.add(tag))
         .map(tag => `<span class="meta-radar-tag tag-${_escapeRadarHtml(tag)}">${_escapeRadarHtml(tagMap[tag])}</span>`)
         .join("");
+}
+
+function _formatRadarActualValue(axis, isEn) {
+    const raw = String(axis?.actual_display || "").trim();
+    if (!raw || raw === "—") return "—";
+    if (axis?.is_percent || raw.includes("%")) return raw;
+    if (axis?.actual_num !== null && axis?.actual_num !== undefined && !Number.isNaN(Number(axis.actual_num))) {
+        const num = Number(axis.actual_num);
+        if (Math.abs(num) >= 1000) {
+            return Math.round(num).toLocaleString(isEn ? "en-US" : "pt-BR");
+        }
+    }
+    return raw;
 }
 
 function renderMetaRadarChart(metaRadar, gameId) {
@@ -97,12 +111,11 @@ function renderMetaRadarChart(metaRadar, gameId) {
 
     card.style.display = "block";
 
-    // Pill de resumo no cabeçalho do Radar
+    // Pill de resumo no cabeçalho do Radar (apenas contagem real de metas atingidas, sem %)
     if (summaryPill) {
         const met = (summary.met_count || 0) + (summary.flex_count || 0);
-        const total = summary.total_scored || axes.length + flexNotes.length;
-        const avg = summary.avg_ratio_pct ? ` • ${isEn ? "Avg" : "Média"} ${Math.round(summary.avg_ratio_pct)}%` : "";
-        summaryPill.textContent = `${met}/${total} ${isEn ? "Targets OK" : "Metas OK"}${avg}`;
+        const total = summary.total_scored || axes.filter(a => !a.is_baseline).length + flexNotes.length;
+        summaryPill.textContent = `${met}/${total} ${isEn ? "Targets OK" : "Metas OK"}`;
     }
 
     const plottedAxes = axes.filter(a => a.plot_on_radar);
@@ -115,17 +128,17 @@ function renderMetaRadarChart(metaRadar, gameId) {
             return;
         }
         const lbl = isEn ? (axis.label_en || axis.label_pt) : (axis.label_pt || axis.label_en);
+        const actualDisp = _formatRadarActualValue(axis, isEn);
         const targetDisp = isEn ? (axis.target_display_en || axis.target_display) : (axis.target_display_pt || axis.target_display);
         const col = _getRadarStatusColor(axis.status);
-        const pctTxt = axis.actual_num !== null && axis.actual_num !== undefined ? `${Math.round(axis.ratio_pct || 0)}%` : "—";
-        const diffTxt = axis.diff_display ? ` (${axis.diff_display})` : "";
+        const diffTxt = axis.diff_display ? axis.diff_display : "";
         const noteHtml = axis.tooltip_note
             ? `<span style="width:100%; font-size:10px; color:var(--text-muted); line-height:1.35;">${_escapeRadarHtml(axis.tooltip_note)}</span>`
             : "";
         readoutEl.innerHTML = `
             <strong style="color:${col};">${_escapeRadarHtml(lbl)}</strong>
-            <span>${_escapeRadarHtml(axis.actual_display)} / ${_escapeRadarHtml(targetDisp)}</span>
-            <span style="color:${col}; font-weight:700;">${_escapeRadarHtml(pctTxt + diffTxt)}</span>
+            <span>${_escapeRadarHtml(actualDisp)} / ${_escapeRadarHtml(targetDisp)}</span>
+            ${diffTxt ? `<span style="color:${col}; font-weight:700;">${_escapeRadarHtml(diffTxt)}</span>` : ""}
             ${noteHtml}
         `;
     };
@@ -197,16 +210,16 @@ function renderMetaRadarChart(metaRadar, gameId) {
             const dyName = sinA < -0.5 ? -3 : (sinA > 0.5 ? 6 : 0);
             const shortLbl = isEn ? (ax.short_en || ax.label_en) : (ax.short_pt || ax.label_pt);
             const col = _getRadarStatusColor(ax.status);
-            const pctStr = `${Math.round(ax.ratio_pct || 0)}%`;
+            const valStr = _formatRadarActualValue(ax, isEn);
             return `
                 <g class="meta-radar-label-group" data-radar-idx="${i}">
                     <text class="meta-radar-axis-label" data-radar-idx="${i}" x="${lx.toFixed(1)}" y="${(ly + dyName).toFixed(1)}" text-anchor="${anchor}">${_escapeRadarHtml(shortLbl)}</text>
-                    <text class="meta-radar-axis-pct" data-radar-idx="${i}" x="${lx.toFixed(1)}" y="${(ly + dyName + 12).toFixed(1)}" text-anchor="${anchor}" fill="${col}">${_escapeRadarHtml(pctStr)}</text>
+                    <text class="meta-radar-axis-pct" data-radar-idx="${i}" x="${lx.toFixed(1)}" y="${(ly + dyName + 12).toFixed(1)}" text-anchor="${anchor}" fill="${col}">${_escapeRadarHtml(valStr)}</text>
                 </g>
             `;
         }).join("");
 
-        // Rótulo discreto "100%" deslocado à direita do eixo superior para nunca colidir com o vértice do topo
+        // Rótulo discreto "Meta" deslocado à direita do eixo superior para nunca colidir com o vértice do topo
         const metaTagX = cx + 16;
         const metaTagY = cy - (1.00 / maxScale) * maxR + 15;
 
@@ -220,18 +233,20 @@ function renderMetaRadarChart(metaRadar, gameId) {
                 </defs>
                 ${ringsSvg}
                 ${spokesSvg}
-                <text x="${metaTagX.toFixed(1)}" y="${metaTagY.toFixed(1)}" font-size="8.5" font-weight="700" fill="var(--radar-target-stroke, #f59e0b)" opacity="0.9">100%</text>
+                <text x="${metaTagX.toFixed(1)}" y="${metaTagY.toFixed(1)}" font-size="8.5" font-weight="700" fill="var(--radar-target-stroke, #f59e0b)" opacity="0.9">Meta</text>
                 <polygon points="${playerPts}" fill="url(#insRadarPlayerGrad)" stroke="${strokeColor}" stroke-width="2.2" stroke-linejoin="round"></polygon>
                 ${verticesSvg}
                 ${labelsSvg}
             </svg>
         `;
     } else if (plottedAxes.length > 0) {
-        // Fallback elegante para personagens com 1 ou 2 benchmarks numéricos (ex.: Kazuha, Zhongli, Xilonen)
+        // Fallback elegante para personagens com 1 ou 2 benchmarks numéricos (valores reais)
         svgWrap.innerHTML = `
             <div class="meta-radar-gauge-list">
                 ${plottedAxes.map((ax, i) => {
                     const lbl = isEn ? (ax.label_en || ax.label_pt) : (ax.label_pt || ax.label_en);
+                    const actualDisp = _formatRadarActualValue(ax, isEn);
+                    const targetDisp = isEn ? (ax.target_display_en || ax.target_display) : (ax.target_display_pt || ax.target_display);
                     const col = _getRadarStatusColor(ax.status);
                     const barPct = Math.min(100, Math.max(4, ((ax.radar_ratio || 0) / 1.20) * 100));
                     const metaTickPct = (1.00 / 1.20) * 100;
@@ -239,11 +254,11 @@ function renderMetaRadarChart(metaRadar, gameId) {
                         <div class="meta-radar-gauge-item" data-radar-idx="${i}">
                             <div class="meta-radar-gauge-head">
                                 <span>${_escapeRadarHtml(lbl)}</span>
-                                <span style="color:${col};">${Math.round(ax.ratio_pct || 0)}% (${_escapeRadarHtml(ax.actual_display)})</span>
+                                <span style="color:${col};">${_escapeRadarHtml(actualDisp)} / ${_escapeRadarHtml(targetDisp)}</span>
                             </div>
                             <div class="meta-radar-gauge-bar">
                                 <div class="meta-radar-gauge-fill" style="width:${barPct.toFixed(1)}%; background:${col};"></div>
-                                <div class="meta-radar-gauge-marker" style="left:${metaTickPct.toFixed(1)}%;" title="Meta 100%"></div>
+                                <div class="meta-radar-gauge-marker" style="left:${metaTickPct.toFixed(1)}%;" title="Meta"></div>
                             </div>
                         </div>
                     `;
@@ -265,6 +280,7 @@ function renderMetaRadarChart(metaRadar, gameId) {
 
     breakdownEl.innerHTML = axes.map((ax, idx) => {
         const lbl = isEn ? (ax.label_en || ax.label_pt) : (ax.label_pt || ax.label_en);
+        const actualDisp = _formatRadarActualValue(ax, isEn);
         const targetDisp = isEn ? (ax.target_display_en || ax.target_display) : (ax.target_display_pt || ax.target_display);
         const col = _getRadarStatusColor(ax.status);
         const barPct = Math.min(100, Math.max(0, ((ax.radar_ratio || 0) / 1.20) * 100));
@@ -276,8 +292,19 @@ function renderMetaRadarChart(metaRadar, gameId) {
         let badgeText = "";
         const isBaseOkRow = ax.status === "ok" && (ax.tags || []).includes("base_ok") && (ax.diff_num || 0) < 0;
         const isInCombatCloseRow = ax.status === "close" && (ax.tags || []).includes("in_combat");
+        const isBaselineRow = Boolean(ax.is_baseline || (ax.tags || []).includes("baseline"));
 
-        if (ax.status === "ok") {
+        if (isBaselineRow) {
+            if (ax.status === "ok") {
+                badgeClass = "match";
+                badgeIcon = "fa-check";
+                badgeText = isEn ? "Avg OK" : "Na média";
+            } else {
+                badgeClass = "neutral";
+                badgeIcon = "fa-chart-simple";
+                badgeText = isEn ? "Avg Ref." : "Ref. Base";
+            }
+        } else if (ax.status === "ok") {
             badgeClass = "match";
             badgeIcon = "fa-check";
             badgeText = isBaseOkRow
@@ -286,7 +313,7 @@ function renderMetaRadarChart(metaRadar, gameId) {
         } else if (isInCombatCloseRow) {
             badgeClass = "warning";
             badgeIcon = "fa-bolt";
-            badgeText = isEn ? `Combat buffs apply (${ax.actual_display})` : `Conta buffs em batalha`;
+            badgeText = isEn ? `Combat buffs apply (${actualDisp})` : `Conta buffs em batalha`;
         } else if (ax.status === "close") {
             badgeClass = "warning";
             badgeIcon = "fa-triangle-exclamation";
@@ -302,27 +329,28 @@ function renderMetaRadarChart(metaRadar, gameId) {
         } else {
             badgeClass = "mismatch";
             badgeIcon = "fa-arrow-down";
-            badgeText = ax.diff_display || `${Math.round(ax.ratio_pct || 0)}%`;
+            badgeText = ax.diff_display || actualDisp;
         }
 
-        // Evita duplicar pill de tag quando o badge principal já exibe o mesmo rótulo (ex.: VEL Base OK)
+        // Evita duplicar pill de tag quando o badge principal já exibe o mesmo rótulo (ex.: VEL Base OK / Média Ref.)
         const visibleTags = (ax.tags || []).filter(tg => {
             if (tg === "range") return false;
             if (tg === "base_ok" && isBaseOkRow) return false;
+            if (tg === "baseline" && isBaselineRow && ax.status !== "ok") return false;
             return true;
         });
         const tagsHtml = _renderRadarTagChips(visibleTags, t);
         const titleAttr = ax.tooltip_note ? ` title="${_escapeRadarHtml(ax.tooltip_note)}"` : "";
 
         return `
-            <div class="meta-radar-row" data-axis-idx="${idx}" data-radar-idx="${plotIdx}"${titleAttr}>
+            <div class="meta-radar-row${isBaselineRow ? " is-baseline-row" : ""}" data-axis-idx="${idx}" data-radar-idx="${plotIdx}"${titleAttr}>
                 <div class="meta-radar-row-top">
                     <span class="meta-radar-row-name">
                         <span class="meta-radar-status-dot status-${_escapeRadarHtml(ax.status)}"></span>
                         ${_escapeRadarHtml(lbl)}
                     </span>
                     <span class="meta-radar-row-values">
-                        <span class="meta-radar-val-actual" style="color:${col};">${_escapeRadarHtml(ax.actual_display)}</span>
+                        <span class="meta-radar-val-actual" style="color:${col};">${_escapeRadarHtml(actualDisp)}</span>
                         <span class="meta-radar-val-sep">/</span>
                         <span class="meta-radar-val-target">${_escapeRadarHtml(targetDisp)}</span>
                     </span>
@@ -480,239 +508,13 @@ async function loadBuildComparison() {
             return;
         }
         
-        // Dicionário de tradução bidirecional Português <-> Inglês estendido para itens/sets comuns
-        const translationDict = {
-            // Genshin Weapons
-            "luz lazuli": "azurelight",
-            "luz lazúli": "azurelight",
-            "azurelight": "luz lazúli",
-            "galerias da sombra da onda": "finale of the deep galleries",
-            "finale of the deep galleries": "galerias da sombra da onda",
-            "calamidade de eshu": "calamity of eshu",
-            "calamity of eshu": "calamidade de eshu",
-            "alvorecer da tecela da lua": "moonweaver's dawn",
-            "alvorecer da tecelã da lua": "moonweaver's dawn",
-            "moonweaver's dawn": "alvorecer da tecelã da lua",
-            "sinfonista dos aromas": "symphonist of scents",
-            "symphonist of scents": "sinfonista dos aromas",
-            "hino do turbilhao": "hymn of the maelstrom",
-            "hino do turbilhão": "hymn of the maelstrom",
-            "hymn of the maelstrom": "hino do turbilhão",
-            "historias de tamayuratei": "tamayuratei no ohanashi",
-            "histórias de tamayuratei": "tamayuratei no ohanashi",
-            "tamayuratei no ohanashi": "histórias de tamayuratei",
-            "mil sois ardentes": "a thousand blazing suns",
-            "mil sóis ardentes": "a thousand blazing suns",
-            "a thousand blazing suns": "mil sóis ardentes",
-            "cancao da patrulha do pico": "peak patrol song",
-            "canção da patrulha do pico": "peak patrol song",
-            "peak patrol song": "canção da patrulha do pico",
-            "plumagem escarlate do abutre astral": "astral vulture's crimson plumage",
-            "astral vulture's crimson plumage": "plumagem escarlate do abutre astral",
-            "presa do rei da montanha": "fang of the mountain king",
-            "fang of the mountain king": "presa do rei da montanha",
-            "prancha pronta": "surf's up",
-            "surf's up": "prancha pronta",
-            "observador do chamador das estrelas": "starcaller's watch",
-            "starcaller's watch": "observador do chamador das estrelas",
-            "harmonia das chuvas prateadas": "silvershower heartstrings",
-            "silvershower heartstrings": "harmonia das chuvas prateadas",
-            "absolvicao": "absolution",
-            "absolvição": "absolution",
-            "absolution": "absolvição",
-            "semblante da lua carmesim": "crimson moon's semblance",
-            "crimson moon's semblance": "semblante da lua carmesim",
-            "elegia de lumidouce": "lumidouce elegy",
-            "lumidouce elegy": "elegia de lumidouce",
-            "uraku misugiri": "uraku misugiri",
-            "veredito": "verdict",
-            "verdict": "veredito",
-            "rito do fluxo eterno": "tome of the eternal flow",
-            "tome of the eternal flow": "rito do fluxo eterno",
-            "supervisao do fluxo de caixa": "cashflow supervision",
-            "supervisão do fluxo de caixa": "cashflow supervision",
-            "cashflow supervision": "supervisão do fluxo de caixa",
-            "sinal dos mares de juncos": "beacon of the reed sea",
-            "beacon of the reed sea": "sinal dos mares de juncos",
-            "luz das folhas cortadas": "light of foliar incision",
-            "light of foliar incision": "luz das folhas cortadas",
-            "sonhos flutuantes das mil noites": "a thousand floating dreams",
-            "a thousand floating dreams": "sonhos flutuantes das mil noites",
-            "caminho do cacador": "hunter's path",
-            "caminho do caçador": "hunter's path",
-            "hunter's path": "caminho do caçador",
-            "mingua de haran geppaku": "haran geppaku futsu",
-            "míngua de haran geppaku": "haran geppaku futsu",
-            "haran geppaku futsu": "míngua de haran geppaku",
-            "prova de kagura": "kagura's verity",
-            "kagura's verity": "prova de kagura",
-            "chifres vermelhos destruidores de pedras": "redhorn stonethresher",
-            "redhorn stonethresher": "chifres vermelhos destruidores de pedras",
-            "luz do cortador de grama": "engulfing lightning",
-            "engulfing lightning": "luz do cortador de grama",
-            "agitacao trovejante": "thundering pulse",
-            "agitação trovejante": "thundering pulse",
-            "thundering pulse": "agitação trovejante",
-            "juramento pela liberdade": "freedom-sworn",
-            "freedom-sworn": "juramento pela liberdade",
-            "cancao dos pinhos": "song of broken pines",
-            "canção dos pinhos": "song of broken pines",
-            "song of broken pines": "canção dos pinhos",
-            "lanca de jade primitiva": "primordial jade winged-spear",
-            "lança de jade primitiva": "primordial jade winged-spear",
-            "primordial jade winged-spear": "lança de jade primitiva",
-            "arco de amos": "amos' bow",
-            "amos' bow": "arco de amos",
-            "memoria da poeira": "memory of dust",
-            "memória da poeira": "memory of dust",
-            "memory of dust": "memória da poeira",
-            "perfuradora prismatica": "vortex vanquisher",
-            "perfuradora prismática": "vortex vanquisher",
-            "vortex vanquisher": "perfuradora prismática",
-            "espadao cornigero": "the unforged",
-            "espadão cornígero": "the unforged",
-            "the unforged": "espadão cornígero",
-            "abalador da terra": "earth shaker",
-            "earth shaker": "abalador da terra",
-            "os sete éditos da poeira e luz": "angelos' heptades",
-            "angelos' heptades": "os sete éditos da poeira e luz",
-            "cortadora da neblina reforjada": "mistsplitter reforged",
-            "mistsplitter reforged": "cortadora da neblina reforjada",
-            "asa gelada do lago branco": "whitelake frostfeather",
-            "whitelake frostfeather": "asa gelada do lago branco",
-            "espada primordial de jade": "primordial jade cutter",
-            "primordial jade cutter": "espada primordial de jade",
-            "luz lunar de xiphos": "xiphos' moonlight",
-            "espinha dorsal da serpente": "serpent spine",
-            "esplendor das águas silenciosas": "splendor of silent waters",
-            "splendor of silent waters": "esplendor das águas silenciosas",
-            "splendor of tranquil waters": "esplendor das águas silenciosas",
-            "memórias de sacrifício": "sacrificial fragments",
-            "chave de hierofania": "key of khaj-nisut",
-            "subjugadora de calamidades": "calamity queller",
-            "aqua simulacra": "aqua simulacra",
-            "oração perdida aos ventos sagrados": "lost prayer to the sacred winds",
-            "histórias extraordinárias de caçadores de dragões": "thrilling tales of dragon slayers",
-            "a fisgada": "the catch",
-            "arcana original": "the first great magic",
-            "espada de favonius": "favonius sword",
-            "lâmina amenoma kageuchi": "amenoma kageuchi",
-            "amenoma kageuchi": "lâmina amenoma kageuchi",
-            "prenúncio do alvorecer": "harbinger of dawn",
-            "falcão": "aquila favonia",
-            "elegia do suspiro final": "elegy for the end",
-            "báculo de homa": "staff of homa",
-            "báculo das areias escarlates": "staff of the scarlet sands",
-            "túmulo do lobo": "wolf's gravestone",
-            "sombra da maré": "tidal shadow",
+        const compEval = data.comparison_eval || null;
 
-            // Genshin Sets
-            "coração forjado": "heart of the furnace",
-            "heart of the furnace": "coração forjado",
-            "desencantamento nas sombras profundas": "disenchantment in deep shadow",
-            "disenchantment in deep shadow": "desencantamento nas sombras profundas",
-            "dádiva celestial": "song of days past",
-            "song of days past": "dádiva celestial",
-            "pergaminho do herói da cidade incandescente": "scroll of the hero of the cinder city",
-            "scroll of the hero of the cinder city": "pergaminho do herói da cidade incandescente",
-            "códice de obsidiana": "obsidian codex",
-            "obsidian codex": "códice de obsidiana",
-            "sombra verde": "viridescent venerer",
-            "viridescent venerer": "sombra verde",
-            "millelith firmes": "tenacity of the millelith",
-            "tenacity of the millelith": "millelith firmes",
-            "selo da insulação": "emblem of severed fate",
-            "emblem of severed fate": "selo da insulação",
-            "herói invernal": "blizzard strayer",
-            "caçador das sombras": "marechaussee hunter",
-            "trupe dourada": "golden troupe",
-            "memórias da floresta": "deepwood memories",
-            "sonhos dourados": "gilded dreams",
-            "antigo ritual real": "noblesse oblige",
-            "noblesse oblige": "antigo ritual real",
-            "serenata das estrelas e da lua": "serenade of stars and moon",
-            "noite da revelação do céu": "night of the sky's unveiling",
-            "juramento da noite eterna": "oath of the eternal night",
-            "pedra arcaica": "archaic petra",
-            "último juramento do gladiador": "gladiator's finale",
-
-            // HSR Sets & Weapons
-            "rumo ao amanhã cor-de-rosa": "fly into a pink tomorrow",
-            "fly into a pink tomorrow": "rumo ao amanhã cor-de-rosa",
-            "instante de eterno amor": "this love, forever",
-            "this love, forever": "instante de eterno amor",
-            "as cortinas da memória nunca caem": "memory's curtain never falls",
-            "a cortina da memória nunca cai": "memory's curtain never falls",
-            "memory's curtain never falls": "as cortinas da memória nunca caem",
-            "que os arco-íris adornem o céu": "long may rainbows adorn the sky",
-            "long may rainbows adorn the sky": "que os arco-íris adornem o céu",
-            "a próxima página da história": "the story's next page",
-            "vitória em um piscar de olhos": "victory in a blink",
-            "herói da melodia triunfante": "world-remaking deliverer",
-            "portador da reconstrução do mundo": "world-remaking deliverer",
-            "world-remaking deliverer": "herói da melodia triunfante",
-            "lushaka, os mares afundados": "lushaka, the sunken seas",
-            "lushaka, the sunken seas": "lushaka, os mares afundados",
-            "amphoreus, a terra eterna": "amphoreus, the eternal land",
-            "amphoreus, the eternal land": "amphoreus, a terra eterna",
-            "mergulhador pioneiro das águas mortas": "pioneer diver of dead waters",
-            "pioneer diver of dead waters": "mergulhador pioneiro das águas mortas",
-            "profeta de alcance distante": "scholar lost in erudition",
-            "scholar lost in erudition": "profeta de alcance distante",
-            "provação renascida de sacerdos": "sacerdos' relived ordeal",
-            "sacerdos' relived ordeal": "provação renascida de sacerdos",
-            "arauto que racha o espaço": "herald of space fracturing",
-            "ao véu inalcançável": "along the passing shore",
-            "along the passing shore": "ao véu inalcançável",
-            "antes do amanhecer": "before dawn",
-            "noite sobre a via láctea": "night on the milky way",
-            "repouso dos gênios": "geniuses' repose",
-            "cálculo eterno": "eternal calculus",
-            "hoje também é um dia pacífico": "today is another peaceful day",
-            "salsotto inerte": "inert salsotto",
-            "izumo gensei e reino divino de takama": "izumo gensei and takama divine realm",
-            "fronteira do firmamento: glamoth": "firmament frontline: glamoth",
-            "estação de vedação de espaço": "space sealing station",
-
-            // ZZZ Sets & Weapons
-            "motor da constelação": "starlight engine",
-            "starlight engine": "motor da constelação",
-            "lamento das estrelas": "weeping gemini",
-            "weeping gemini": "lamento das estrelas",
-            "eco rítmico": "rhythm echo",
-            "ode ao cavaleiro lunar": "knight's extolment",
-            "knight's extolment": "ode ao cavaleiro lunar",
-            "o enxofre": "the brimstone",
-            "the brimstone": "o enxofre",
-            "inocência cortada": "severed innocence",
-            "perfeição praticada": "practiced perfection",
-            "practiced perfection": "perfeição praticada",
-            "ferrão afiado": "sharpened stinger",
-            "compilador de fusão": "fusion compiler",
-            "brilho labial elétrico": "electro-lip gloss",
-            "punk hormonal": "hormone punk",
-            "hormone punk": "punk hormonal",
-            "techno baiacu": "puffer electro",
-            "puffer electro": "techno baiacu",
-            "blues livre": "freedom blues",
-            "freedom blues": "blues livre",
-            "metal presa": "fanged metal",
-            "fanged metal": "metal presa",
-            "destino emplumado": "feathered fate",
-            "feathered fate": "destino emplumado",
-            "salão sibilante": "wuthering salon",
-            "voz astral": "astral voice",
-            "jazz do caos": "chaos jazz",
-            "jazz com swing": "swing jazz",
-            "metal infernal": "infernal metal",
-            "metal polar": "polar metal"
-        };
-        
         function normalizeStrForMatch(str) {
             if (!str) return "";
             return str.toLowerCase()
-                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove acentos
-                .replace(/\([^)]*\)/g, "") // Remove parênteses e níveis
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                .replace(/\([^)]*\)/g, "")
                 .replace(/•/g, "")
                 .replace(/[^a-z0-9\s]/g, " ")
                 .replace(/\s+/g, " ")
@@ -723,30 +525,14 @@ async function loadBuildComparison() {
             if (!name1 || !name2) return false;
             const norm1 = normalizeStrForMatch(name1);
             const norm2 = normalizeStrForMatch(name2);
-            
-            if (norm1 === norm2 || norm1.includes(norm2) || norm2.includes(norm1)) {
+            if (!norm1 || !norm2) return false;
+            if (norm1 === norm2 || (norm1.length >= 5 && norm2.length >= 5 && (norm1.includes(norm2) || norm2.includes(norm1)))) {
                 return true;
             }
-            
-            // Checa correspondência via dicionário de tradução
-            const trans1 = translationDict[norm1] || translationDict[name1.toLowerCase().trim()] || "";
-            const trans2 = translationDict[norm2] || translationDict[name2.toLowerCase().trim()] || "";
-            
-            if (trans1 && (normalizeStrForMatch(trans1) === norm2 || normalizeStrForMatch(trans1).includes(norm2) || norm2.includes(normalizeStrForMatch(trans1)))) {
-                return true;
-            }
-            if (trans2 && (normalizeStrForMatch(trans2) === norm1 || normalizeStrForMatch(trans2).includes(norm1) || norm1.includes(normalizeStrForMatch(trans2)))) {
-                return true;
-            }
-            
-            // Checa intersecção de palavras-chave significativas
             const words1 = norm1.split(" ").filter(w => w.length > 3);
             const words2 = norm2.split(" ").filter(w => w.length > 3);
             const overlap = words1.filter(w => words2.includes(w));
-            if (overlap.length >= 2 || (words1.length === 1 && words2.length === 1 && overlap.length === 1)) {
-                return true;
-            }
-            return false;
+            return overlap.length >= 2 || (words1.length === 1 && words2.length === 1 && overlap.length === 1);
         }
 
         function getUnifiedSlotKey(slotStr, gameId) {
@@ -795,23 +581,30 @@ async function loadBuildComparison() {
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                 .replace(/\([^)]*\)/g, "") // Remove números entre parênteses ex: (46.6%)
                 .replace(/[0-9.,%+]/g, "")
+                .replace(/[\.\-_/]+/g, " ")
+                .replace(/\s+/g, " ")
                 .trim();
-                
+
             if (s === "anything" || s === "any" || s.includes("qualquer") || s === "flex" || s === "flexible") return "anything";
-            if (s.includes("quebra") || s.includes("break")) return "break";
-            if (s.includes("taxa") || s.includes("rate") || s.includes("chance")) return "crit_rate";
-            if (s.includes("dano crit") || s.includes("crit dmg") || s.includes("dano crt")) return "crit_dmg";
+            // Ordem estrita: Energia / EHR / RES / Perfuração ANTES de 'taxa'/'rate' (evita colisão com crit_rate!)
+            if (s.includes("recarga") || s.includes("recharge") || s.includes("regen") || s.includes("recup") || s.includes("energia") || s.includes("energy") || s === "er" || s === "err") return "er";
+            if (s.includes("acerto de efeito") || s.includes("acerto efeito") || s.includes("effect hit") || s === "ehr") return "ehr";
+            if (s.includes("resistencia") || s.includes("res efeito") || s.includes("res a efeito") || s.includes("effect res") || s === "res") return "res";
+            if (s.includes("perfura") || s.includes("pen ratio") || s.includes("pen rate") || /\bpen\b/.test(s)) return "pen";
+            if (s.includes("quebra") || s.includes("break") || s === "be") return "break";
+            if (s.includes("proficiencia de anomalia") || s.includes("prof anomalia") || s.includes("anomaly prof") || s === "ap") return "anomaly_prof";
+            if (s.includes("maestria de anomalia") || s.includes("maest anomalia") || s.includes("controle de anomalia") || s.includes("anomaly mastery") || s === "am") return "anomaly_mastery";
+            if (s.includes("prof") || s.includes("elemental mastery") || s.includes("maestria elemental") || s === "em") return "em";
+            if (s.includes("taxa crit") || s.includes("crit rate") || s.includes("chance de crit") || s.includes("chance crit") || s === "cr") return "crit_rate";
+            if (s.includes("dano crit") || s.includes("crit dmg") || s.includes("crit damage") || s.includes("dano crt") || s === "cd" || s === "cdmg") return "crit_dmg";
             if (s.includes("crit")) return "crit";
-            if (s.includes("recarga") || s.includes("recharge") || s.includes("regen") || s.includes("recup") || s.includes("er") || s.includes("err")) return "er";
-            if (s.includes("prof") || s.includes("mastery") || s.includes("em") || s.includes("anomalia")) return "em";
+            if (s.includes("cura") || s.includes("healing")) return "healing";
+            if (s.includes("impact") || s.includes("impacto")) return "impact";
+            if (s.includes("vel") || s.includes("spd") || s.includes("speed")) return "speed";
+            if (s.includes("dano") || s.includes("bonus") || s.includes("dmg")) return "elemental_dmg";
             if (s.includes("atq") || s.includes("atk") || s.includes("ataque")) return "atk";
             if (s.includes("pv") || s.includes("hp") || s.includes("vida")) return "hp";
             if (s.includes("def") || s.includes("defesa")) return "def";
-            if (s.includes("vel") || s.includes("spd") || s.includes("velocidade")) return "speed";
-            if (s.includes("cura") || s.includes("healing")) return "healing";
-            if (s.includes("perfura") || s.includes("pen")) return "pen";
-            if (s.includes("impact") || s.includes("impacto")) return "impact";
-            if (s.includes("dano") || s.includes("bonus") || s.includes("dmg")) return "elemental_dmg";
 
             return s;
         }
@@ -827,49 +620,56 @@ async function loadBuildComparison() {
         // ==========================================
         const rawPlayerWeapon = build.weapon || "Não informado";
         const cleanPlayerWeapon = (build.weapon_clean || rawPlayerWeapon).replace(/\(Nv\..*?\)/gi, "").replace(/\(R[1-5]\)/gi, "").replace(/\(Sobreposição \d\)/gi, "").trim();
-        const recommendedWeapons = target.weapons && target.weapons.length > 0 ? target.weapons : (target.weapon !== "Não informado" ? [target.weapon] : []);
+        const weaponEval = compEval?.weapon || null;
+        const recommendedWeapons = weaponEval
+            ? (isEn ? (weaponEval.weapons_en || []) : (weaponEval.weapons_pt || []))
+            : (target.weapons && target.weapons.length > 0 ? target.weapons : (target.weapon !== "Não informado" ? [target.weapon] : []));
         
         let weaponMatchTier = 0; // 0: None, 1: Bis (1st), 2: Alternate, 3: Viable
-        if (recommendedWeapons.length > 0 && cleanPlayerWeapon && cleanPlayerWeapon !== "Não informado") {
+        let weaponScore = 0;
+        if (weaponEval) {
+            weaponMatchTier = Number(weaponEval.tier || 0);
+            weaponScore = Number(weaponEval.score || 0);
+        } else if (recommendedWeapons.length > 0 && cleanPlayerWeapon && cleanPlayerWeapon !== "Não informado") {
             if (checkFuzzyMatch(cleanPlayerWeapon, recommendedWeapons[0])) {
-                weaponMatchTier = 1; // Best in Slot
+                weaponMatchTier = 1;
+                weaponScore = 25;
             } else if (recommendedWeapons.slice(1).some(w => checkFuzzyMatch(cleanPlayerWeapon, w))) {
-                weaponMatchTier = 2; // Recomendada na lista
+                weaponMatchTier = 2;
+                weaponScore = 20;
             } else if (cleanPlayerWeapon.length > 3) {
-                weaponMatchTier = 3; // Alternativa equipada
+                weaponMatchTier = 3;
+                weaponScore = 12;
             }
         }
         
+        const displayTargetWeapon = weaponEval
+            ? (isEn ? weaponEval.bis_name_en : weaponEval.bis_name_pt)
+            : (target.weapon || (isEn ? "Not available" : "Não informado"));
+
         let weaponBadgeHtml = "";
-        let weaponScore = 0;
         if (weaponMatchTier === 1) {
-            weaponScore = 25;
             weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-crown"></i> ${t("comp_badge_bis", "Ideal (BIS)")}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Weapon:</strong> <span style="color: #10b981;">Ideal (Best in Slot)</span> successfully equipped.`
-                : (isEn ? `<strong>Weapon:</strong> <span style="color: #10b981;">Best in Slot equipped</span> successfully.` : `<strong>Arma:</strong> <span style="color: #10b981;">Ideal (Best in Slot) equipada</span> com sucesso.`));
+                ? `<strong>Weapon:</strong> <span style="color: #10b981;">BiS</span> equipped.`
+                : `<strong>Arma:</strong> <span style="color: #10b981;">BiS</span> equipada.`);
         } else if (weaponMatchTier === 2) {
-            weaponScore = 20;
             weaponBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> ${t("comp_badge_rec", "Recomendada")}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Weapon:</strong> <span style="color: #38bdf8;">Recommended option</span> equipped.`
-                : (isEn ? `<strong>Weapon:</strong> <span style="color: #38bdf8;">Recommended option</span> equipped.` : `<strong>Arma:</strong> <span style="color: #38bdf8;">Opção recomendada</span> pelo metagame equipada.`));
+                ? `<strong>Weapon:</strong> <span style="color: #38bdf8;">Meta option</span> equipped.`
+                : `<strong>Arma:</strong> <span style="color: #38bdf8;">Opção recomendada</span> equipada.`);
         } else if (weaponMatchTier === 3) {
-            weaponScore = 12;
             weaponBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> ${t("comp_badge_alt", "Alternativa")}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Weapon:</strong> Using a viable alternative. The ideal pick is <em>${recommendedWeapons[0] || 'BIS weapon'}</em>.`
-                : (isEn ? `<strong>Weapon:</strong> Using viable alternative. Optimal for peak damage/support is <em>${recommendedWeapons[0] || 'BIS weapon'}</em>.` : `<strong>Arma:</strong> Usando alternativa viável. O ideal para pico de dano/suporte é <em>${recommendedWeapons[0] || 'arma BIS'}</em>.`));
+                ? `<strong>Weapon:</strong> Viable alternative. BiS: <em>${displayTargetWeapon || 'BiS weapon'}</em>.`
+                : `<strong>Arma:</strong> Alternativa viável. BiS: <em>${displayTargetWeapon || 'arma BiS'}</em>.`);
         } else {
-            weaponScore = 0;
             weaponBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_sub", "Subótimo")}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Weapon:</strong> No meta weapon identified. Recommended to acquire <em>${recommendedWeapons[0] || 'recommended weapon'}</em>.`
-                : (isEn ? `<strong>Weapon:</strong> No meta weapon identified. Recommended to obtain <em>${recommendedWeapons[0] || 'recommended weapon'}</em>.` : `<strong>Arma:</strong> Nenhuma arma meta identificada. Recomendado buscar <em>${recommendedWeapons[0] || 'arma recomendada'}</em>.`));
+                ? `<strong>Weapon:</strong> Off-meta. Target: <em>${displayTargetWeapon || 'recommended weapon'}</em>.`
+                : `<strong>Arma:</strong> Fora do meta. Alvo: <em>${displayTargetWeapon || 'arma recomendada'}</em>.`);
         }
         scoreTotal += weaponScore;
-        
-        const displayTargetWeapon = translationDict[String(target.weapon || '').toLowerCase().trim()] || target.weapon;
         
         html += `
             <tr class="comparison-section-header"><td colspan="3"><i class="fa-solid fa-shield-halved" style="margin-right: 6px; color: var(--color-hsr);"></i> ${t("comp_sec_equip", "Equipamentos e Conjuntos")}</td></tr>
@@ -892,51 +692,69 @@ async function loadBuildComparison() {
         // 2. AVALIAÇÃO DE CONJUNTOS / SETS (25 pts)
         // ==========================================
         const playerSets = build.sets || [];
+        const setEval = compEval?.sets || null;
 
         const currentSetsStr = playerSets.join(" + ") || (isEn ? "No active set bonus" : "Nenhum conjunto ativo");
-        const recommendedSets = target.all_sets && target.all_sets.length > 0 ? target.all_sets : (target.sets && target.sets[0] !== "Não informado" ? target.sets : []);
-        const targetSetsStr = target.sets && target.sets[0] !== "Não informado" ? target.sets.join(" / ") : "Não informado";
+        const recommendedSets = setEval
+            ? (isEn ? (setEval.sets_en || []) : (setEval.sets_pt || []))
+            : (target.all_sets && target.all_sets.length > 0 ? target.all_sets : (target.sets && target.sets[0] !== "Não informado" ? target.sets : []));
+        const bisSetDisplay = setEval
+            ? (isEn ? setEval.bis_set_en : setEval.bis_set_pt)
+            : (target.sets && target.sets[0] !== "Não informado" ? target.sets.join(" / ") : "Não informado");
+        const bisPlanarDisplay = setEval
+            ? (isEn ? setEval.bis_planar_en : setEval.bis_planar_pt)
+            : "";
+        const targetSetsStr = bisPlanarDisplay && bisPlanarDisplay !== bisSetDisplay
+            ? `${bisSetDisplay} <span style="opacity:0.6;">+</span> ${bisPlanarDisplay}`
+            : bisSetDisplay;
         
         let setMatchTier = 0; // 0: None, 1: 4p Bis, 2: 2p+2p / Sub, 3: Active
-        if (playerSets.length > 0 && recommendedSets.length > 0) {
+        let setScore = 0;
+        if (setEval) {
+            setMatchTier = Number(setEval.tier || 0);
+            setScore = Number(setEval.score || 0);
+        } else if (playerSets.length > 0 && recommendedSets.length > 0) {
             const hasBisMatch = playerSets.some(pS => checkFuzzyMatch(pS, recommendedSets[0]));
             const hasAnyRecMatch = playerSets.some(pS => recommendedSets.some(rS => checkFuzzyMatch(pS, rS)));
+            const has4p = playerSets.some(pS => /4\s*(?:peças|pecas|p\b|-pc)/i.test(pS));
+            const has2p = playerSets.some(pS => /2\s*(?:peças|pecas|p\b|-pc)/i.test(pS));
             
-            if (hasBisMatch && playerSets.some(pS => pS.includes("4 peças") || pS.includes("4p"))) {
-                setMatchTier = 1; // 4p BIS
+            if (hasBisMatch && has4p) {
+                setMatchTier = 1;
+                setScore = 25;
             } else if (hasAnyRecMatch) {
-                setMatchTier = 2; // 2p recomendado
-            } else if (playerSets.some(pS => pS.includes("4 peças") || pS.includes("2 peças"))) {
-                setMatchTier = 3; // Conjunto ativo genérico
+                setMatchTier = 2;
+                setScore = 20;
+            } else if (has4p || has2p) {
+                setMatchTier = 3;
+                setScore = 12;
             }
         }
         
         let setBadgeHtml = "";
-        let setScore = 0;
         if (setMatchTier === 1) {
-            setScore = 25;
-            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-circle-check"></i> ${t("comp_badge_set_bis", "4p BIS Ideal")}</span>`;
+            const bisBadgeLbl = (setEval && setEval.has_bis_planar && bisPlanarDisplay)
+                ? (isEn ? "4p + Planar BIS" : "4p + Planar BIS")
+                : t("comp_badge_set_bis", "4p BIS Ideal");
+            setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-circle-check"></i> ${bisBadgeLbl}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Set:</strong> <span style="color: #10b981;">Ideal 4-piece bonus</span> active.`
-                : `<strong>Conjunto:</strong> <span style="color: #10b981;">Bônus de 4 peças ideal</span> ativo.`);
+                ? `<strong>Set:</strong> <span style="color: #10b981;">BiS 4p</span> active.`
+                : `<strong>Conjunto:</strong> <span style="color: #10b981;">Set BiS</span> ativo.`);
         } else if (setMatchTier === 2) {
-            setScore = 20;
             setBadgeHtml = `<span class="comparison-badge match"><i class="fa-solid fa-check"></i> ${t("comp_badge_set_meta", "Conjunto Meta")}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Set:</strong> <span style="color: #38bdf8;">Recommended set</span> equipped.`
-                : (isEn ? `<strong>Set:</strong> <span style="color: #38bdf8;">Recommended set</span> equipped.` : `<strong>Conjunto:</strong> <span style="color: #38bdf8;">Conjunto recomendado</span> equipado.`));
+                ? `<strong>Set:</strong> <span style="color: #38bdf8;">Meta set</span> active.`
+                : `<strong>Conjunto:</strong> <span style="color: #38bdf8;">Set meta</span> ativo.`);
         } else if (setMatchTier === 3) {
-            setScore = 12;
             setBadgeHtml = `<span class="comparison-badge warning"><i class="fa-solid fa-triangle-exclamation"></i> ${t("comp_badge_set_alt", "Alternativo")}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Set:</strong> Bonus active, but recommended set is <em>${recommendedSets[0] || 'meta 4pc set'}</em>.`
-                : (isEn ? `<strong>Set:</strong> Active bonus, but ideal recommended set is <em>${recommendedSets[0] || 'meta 4-PC set'}</em>.` : `<strong>Conjunto:</strong> Bônus ativo, mas conjunto ideal recomendado é <em>${recommendedSets[0] || 'o set 4p do meta'}</em>.`));
+                ? `<strong>Set:</strong> Alternative active. BiS: <em>${bisSetDisplay || 'meta 4p'}</em>.`
+                : `<strong>Conjunto:</strong> Alternativo ativo. BiS: <em>${bisSetDisplay || 'set 4p BiS'}</em>.`);
         } else {
-            setScore = 0;
             setBadgeHtml = `<span class="comparison-badge mismatch"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_set_inc", "Incompleto")}</span>`;
             feedbackBullets.push(isEn 
-                ? `<strong>Set:</strong> No recommended set bonus active.`
-                : `<strong>Conjunto:</strong> Sem bônus de conjunto ideal ativo.`);
+                ? `<strong>Set:</strong> No meta set bonus active.`
+                : `<strong>Conjunto:</strong> Sem bônus de set meta ativo.`);
         }
         scoreTotal += setScore;
         
@@ -951,7 +769,7 @@ async function loadBuildComparison() {
                 </td>
                 <td class="comparison-val-target">
                     <strong style="color: var(--text-primary);">${targetSetsStr}</strong>
-                    ${recommendedSets.length > 1 ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">+ combinações 2p/planares</div>` : ''}
+                    ${recommendedSets.length > 1 ? `<div style="font-size: 10px; color: var(--text-muted); margin-top: 2px;">+ ${isEn ? "viable 2p/planar options" : "combinações 2p/planares"}</div>` : ''}
                 </td>
             </tr>
         `;
@@ -959,7 +777,8 @@ async function loadBuildComparison() {
         // ==========================================
         // 3. ATRIBUTOS PRINCIPAIS POR SLOT (30 pts)
         // ==========================================
-        const targetStatsKeys = Object.keys(target.stats || {});
+        const backendSlots = Array.isArray(compEval?.slots) && compEval.slots.length > 0 ? compEval.slots : null;
+        const targetStatsKeys = backendSlots ? backendSlots.map(s => s.slot) : Object.keys(target.stats || {});
         
         if (targetStatsKeys.length > 0) {
             html += `
@@ -969,82 +788,115 @@ async function loadBuildComparison() {
             const pointsPerSlot = 30 / targetStatsKeys.length;
             let slotIssues = [];
             
-            targetStatsKeys.forEach(key => {
-                let playerVal = isEn ? "Not equipped" : "Não equipado";
-                let statClass = "comparison-mismatch";
-                let slotBadgeHtml = "";
-                
-                // Mapeia peça correspondente ao slot
-                const matchedPiece = (build.pieces || []).find(p => {
-                    const pKey = getUnifiedSlotKey(p.slot, activeInspectGame);
-                    const tKey = getUnifiedSlotKey(key, activeInspectGame);
-                    return (pKey && tKey && pKey === tKey) || p.slot.toLowerCase().trim().includes(key.toLowerCase().trim()) || key.toLowerCase().trim().includes(p.slot.toLowerCase().trim());
-                });
-                
-                if (matchedPiece && matchedPiece.main) {
-                    playerVal = matchedPiece.main;
-                    const rawTargetSlot = String(target.stats[key] || "");
-                    const targetValLower = rawTargetSlot.toLowerCase();
-                    const options = targetValLower.split(/[=/>|]|\bou\b/).map(s => s.trim()).filter(Boolean);
-                    
-                    const mainNorm = normalizeStatTerm(matchedPiece.main);
-                    const hasFlexMarker = /\b(?:anything|any|qualquer|flex(?:ible|ivel)?)\b/i.test(
-                        rawTargetSlot.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-                    );
-                    const isWildcardTarget = hasFlexMarker || options.some(opt => normalizeStatTerm(opt) === "anything");
-
-                    // Match exato com a primeira opção (Prioridade máxima) ou curinga (Qualquer/Flex/Anything)
-                    const firstOptNorm = normalizeStatTerm(options[0] || "");
-                    const isFirstMatch = isWildcardTarget || (firstOptNorm && (mainNorm === firstOptNorm || mainNorm.includes(firstOptNorm) || firstOptNorm.includes(mainNorm)));
-                    
-                    // Match com qualquer opção alternativa
-                    const isAnyMatch = isFirstMatch || options.slice(1).some(opt => {
-                        const optNorm = normalizeStatTerm(opt);
-                        return optNorm && (mainNorm === optNorm || mainNorm.includes(optNorm) || optNorm.includes(mainNorm));
-                    });
-                    
-                    if (isFirstMatch) {
-                        scoreTotal += pointsPerSlot;
+            if (backendSlots) {
+                scoreTotal += Number(compEval.slots_score || 0);
+                slotIssues = Array.isArray(compEval.slot_issues) ? [...compEval.slot_issues] : [];
+                backendSlots.forEach(sl => {
+                    const playerVal = sl.player_main || (isEn ? "Not equipped" : "Não equipado");
+                    const displaySlotTarget = isEn ? (sl.target_en || sl.target_pt) : (sl.target_pt || sl.target_en);
+                    let statClass = "comparison-mismatch";
+                    let slotBadgeHtml = "";
+                    if (sl.status === "flex") {
                         statClass = "comparison-match";
-                        const slotLabel = isWildcardTarget && (!firstOptNorm || firstOptNorm === "anything" || options.length === 1)
-                            ? t("comp_badge_slot_flex", "Flexível")
-                            : t("comp_badge_slot_ideal", "Ideal");
-                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${slotLabel}</span>`;
-                    } else if (isAnyMatch) {
-                        scoreTotal += pointsPerSlot * 0.75;
+                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_slot_flex", "Flexível")}</span>`;
+                    } else if (sl.status === "ideal") {
+                        statClass = "comparison-match";
+                        slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${t("comp_badge_slot_ideal", "Ideal")}</span>`;
+                    } else if (sl.status === "valid") {
                         statClass = "comparison-warning";
                         slotBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-check-double"></i> ${t("comp_badge_slot_valid", "Válido")}</span>`;
+                    } else if (sl.status === "empty") {
+                        slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-circle-question"></i> ${t("comp_badge_slot_empty", "Vazio")}</span>`;
                     } else {
-                        statClass = "comparison-mismatch";
                         slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_slot_mismatch", "Incompatível")}</span>`;
-                        slotIssues.push(`${key} (${rawTargetSlot})`);
                     }
-                } else {
-                    slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-circle-question"></i> ${t("comp_badge_slot_empty", "Vazio")}</span>`;
-                    slotIssues.push(key);
-                }
-                
-                const displaySlotTarget = isEn
-                    ? String(target.stats[key] || "").replace(/Qualquer\s*\(Flex\)/gi, "Any (Flex)")
-                    : String(target.stats[key] || "");
-                html += `
-                    <tr>
-                        <td class="comparison-row-title">• ${key}</td>
-                        <td class="${statClass}">
-                            <div style="display: flex; align-items: center; justify-content: space-between;">
-                                <span>${playerVal}</span>
-                                ${slotBadgeHtml}
-                            </div>
-                        </td>
-                        <td class="comparison-val-target">${displaySlotTarget}</td>
-                    </tr>
-                `;
-            });
+                    html += `
+                        <tr>
+                            <td class="comparison-row-title">• ${sl.slot}</td>
+                            <td class="${statClass}">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span>${playerVal}</span>
+                                    ${slotBadgeHtml}
+                                </div>
+                            </td>
+                            <td class="comparison-val-target">${displaySlotTarget}</td>
+                        </tr>
+                    `;
+                });
+            } else {
+                targetStatsKeys.forEach(key => {
+                    let playerVal = isEn ? "Not equipped" : "Não equipado";
+                    let statClass = "comparison-mismatch";
+                    let slotBadgeHtml = "";
+                    
+                    const matchedPiece = (build.pieces || []).find(p => {
+                        const pKey = getUnifiedSlotKey(p.slot, activeInspectGame);
+                        const tKey = getUnifiedSlotKey(key, activeInspectGame);
+                        return (pKey && tKey && pKey === tKey) || p.slot.toLowerCase().trim().includes(key.toLowerCase().trim()) || key.toLowerCase().trim().includes(p.slot.toLowerCase().trim());
+                    });
+                    
+                    if (matchedPiece && matchedPiece.main) {
+                        playerVal = matchedPiece.main;
+                        const rawTargetSlot = String(target.stats[key] || "");
+                        const targetValLower = rawTargetSlot.toLowerCase();
+                        const options = targetValLower.split(/[=/>|]|\bou\b/).map(s => s.trim()).filter(Boolean);
+                        
+                        const mainNorm = normalizeStatTerm(matchedPiece.main);
+                        const hasFlexMarker = /\b(?:anything|any|qualquer|flex(?:ible|ivel)?)\b/i.test(
+                            rawTargetSlot.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+                        );
+                        const isWildcardTarget = hasFlexMarker || options.some(opt => normalizeStatTerm(opt) === "anything");
+
+                        const firstOptNorm = normalizeStatTerm(options[0] || "");
+                        const isFirstMatch = isWildcardTarget || (firstOptNorm && (mainNorm === firstOptNorm || (firstOptNorm === "crit" && mainNorm.startsWith("crit"))));
+                        const isAnyMatch = isFirstMatch || options.slice(1).some(opt => {
+                            const optNorm = normalizeStatTerm(opt);
+                            return optNorm && (mainNorm === optNorm || (optNorm === "crit" && mainNorm.startsWith("crit")));
+                        });
+                        
+                        if (isFirstMatch) {
+                            scoreTotal += pointsPerSlot;
+                            statClass = "comparison-match";
+                            const slotLabel = isWildcardTarget && (!firstOptNorm || firstOptNorm === "anything" || options.length === 1)
+                                ? t("comp_badge_slot_flex", "Flexível")
+                                : t("comp_badge_slot_ideal", "Ideal");
+                            slotBadgeHtml = `<span class="comparison-badge match" style="margin-left: 6px;"><i class="fa-solid fa-check"></i> ${slotLabel}</span>`;
+                        } else if (isAnyMatch) {
+                            scoreTotal += pointsPerSlot * 0.75;
+                            statClass = "comparison-warning";
+                            slotBadgeHtml = `<span class="comparison-badge warning" style="margin-left: 6px;"><i class="fa-solid fa-check-double"></i> ${t("comp_badge_slot_valid", "Válido")}</span>`;
+                        } else {
+                            statClass = "comparison-mismatch";
+                            slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-xmark"></i> ${t("comp_badge_slot_mismatch", "Incompatível")}</span>`;
+                            slotIssues.push(`${key} (${rawTargetSlot})`);
+                        }
+                    } else {
+                        slotBadgeHtml = `<span class="comparison-badge mismatch" style="margin-left: 6px;"><i class="fa-solid fa-circle-question"></i> ${t("comp_badge_slot_empty", "Vazio")}</span>`;
+                        slotIssues.push(key);
+                    }
+                    
+                    const displaySlotTarget = isEn
+                        ? String(target.stats[key] || "").replace(/Qualquer\s*\(Flex\)/gi, "Any (Flex)")
+                        : String(target.stats[key] || "");
+                    html += `
+                        <tr>
+                            <td class="comparison-row-title">• ${key}</td>
+                            <td class="${statClass}">
+                                <div style="display: flex; align-items: center; justify-content: space-between;">
+                                    <span>${playerVal}</span>
+                                    ${slotBadgeHtml}
+                                </div>
+                            </td>
+                            <td class="comparison-val-target">${displaySlotTarget}</td>
+                        </tr>
+                    `;
+                });
+            }
             
             if (slotIssues.length === 0) {
-                feedbackBullets.push(isEn ? `<strong>Main Stats:</strong> <span style="color: #10b981;">All key slots</span> have ideal main stats.` : `<strong>Main Stats:</strong> <span style="color: #10b981;">Todos os slots chave</span> possuem os atributos principais ideais.`);
+                feedbackBullets.push(isEn ? `<strong>Main Stats:</strong> <span style="color: #10b981;">All slots</span> match.` : `<strong>Main Stats:</strong> <span style="color: #10b981;">Todos os slots</span> certos.`);
             } else {
-                feedbackBullets.push(isEn ? `<strong>Main Stats:</strong> Prioritize replacing pieces with incorrect main stats on: <em>${slotIssues.join(", ")}</em>.` : `<strong>Main Stats:</strong> Priorize trocar peças com main stats incorretos em: <em>${slotIssues.join(", ")}</em>.`);
+                feedbackBullets.push(isEn ? `<strong>Main Stats:</strong> Replace: <em>${slotIssues.join(", ")}</em>.` : `<strong>Main Stats:</strong> Trocar: <em>${slotIssues.join(", ")}</em>.`);
             }
         }
         
@@ -1060,23 +912,23 @@ async function loadBuildComparison() {
             if (lagging.length === 0) {
                 feedbackBullets.push(
                     isEn
-                        ? `<strong>Meta Benchmarks:</strong> <span style="color: #10b981;">All target stats reached</span> on the Radar.`
-                        : `<strong>Benchmarks Meta:</strong> <span style="color: #10b981;">Todos os alvos de atributos atingidos</span> no Radar.`
+                        ? `<strong>Radar:</strong> <span style="color: #10b981;">All target stats met</span>.`
+                        : `<strong>Radar:</strong> <span style="color: #10b981;">Metas principais fechadas</span>.`
                 );
             } else {
                 const lagNames = lagging.slice(0, 3).map(ax => {
                     const lbl = isEn ? (ax.label_en || ax.label_pt) : (ax.label_pt || ax.label_en);
                     if ((ax.tags || []).includes("in_combat")) {
                         return isEn
-                            ? `${lbl} (${ax.actual_display} out of combat / in-combat target)`
+                            ? `${lbl} (${ax.actual_display} OOC / in-combat target)`
                             : `${lbl} (${ax.actual_display} na tela — meta em combate)`;
                     }
                     return ax.diff_display ? `${lbl} (${ax.diff_display})` : lbl;
                 });
                 feedbackBullets.push(
                     isEn
-                        ? `<strong>Meta Benchmarks:</strong> Focus on improving: <em>${lagNames.join(", ")}</em>.`
-                        : `<strong>Benchmarks Meta:</strong> Foque em melhorar: <em>${lagNames.join(", ")}</em>.`
+                        ? `<strong>Radar:</strong> Needs more: <em>${lagNames.join(", ")}</em>.`
+                        : `<strong>Radar:</strong> Subir: <em>${lagNames.join(", ")}</em>.`
                 );
             }
         } else {
@@ -1141,7 +993,7 @@ async function loadBuildComparison() {
                         <p style="font-size: 12px; color: var(--text-muted); line-height: 1.4; margin-bottom: 14px;">
                             ${isEn ? "Could not retrieve meta targets or player build. Please check your connection." : "Não foi possível consultar os alvos do meta ou os dados do personagem. Verifique sua conexão e tente novamente."}
                         </p>
-                        <sakuga-button class="sk-sm sk-accent-danger" onclick="window.loadComparison && window.loadComparison('${safeCharName}', '${activeInspectGame}')">
+                        <sakuga-button class="sk-sm sk-accent-danger" onclick="loadBuildComparison()">
                             <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
                         </sakuga-button>
                     </div>
@@ -2721,7 +2573,7 @@ window.executeRelicSwapSimulation = async function() {
     bpContainer.innerHTML = `<span style="color: var(--text-muted);">${isEn ? "No breakpoints affected." : "Nenhum breakpoint afetado."}</span>`;
             } else {
                 bpContainer.innerHTML = data.breakpoint_feedback.map(fb => {
-                    const isSuccess = fb.startsWith("✓") || fb.startsWith("⚡");
+                    const isSuccess = fb.startsWith("✓") || fb.includes("AV/turno");
                     const iconColor = isSuccess ? "#34d399" : "#fbbf24";
                     return `<div style="display: flex; align-items: flex-start; gap: 6px; line-height: 1.3;"><i class="fa-solid fa-circle-check" style="color: ${iconColor}; font-size: 10px; margin-top: 3px;"></i><span>${fb}</span></div>`;
                 }).join("");
@@ -2731,15 +2583,14 @@ window.executeRelicSwapSimulation = async function() {
         // 5. Veredito Executivo
         const verdictText = document.getElementById("sandbox-verdict-text");
         if (verdictText) {
-
-    verdictText.textContent = data.verdict_summary || (isEn ? "Simulation completed successfully." : "Simulação concluída com sucesso.");
+            verdictText.textContent = data.verdict_summary || (isEn ? "Simulation done." : "Simulação concluída.");
         }
 
         if (btnSim && typeof btnSim.done === "function") {
             btnSim.done();
         }
         if (typeof showToast === "function") {
-            showToast(isEn ? "Swap simulation calculated successfully!" : "Simulação de troca calculada com sucesso!", "success");
+            showToast(isEn ? "Swap simulation updated." : "Simulação calculada.", "success");
         }
     } catch (err) {
         console.error("Erro na simulação do Sandbox:", err);

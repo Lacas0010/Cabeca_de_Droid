@@ -85,38 +85,95 @@ def resolve_character_canonical_slug(
     hoyolab_map = get_hoyolab_mappings().get(g, {})
 
     # 1. Se for ID numérico direto do HoYoLAB
+    aliases = get_character_aliases().get(g, {})
+
+    def _resolve_alias_slug(raw_slug: str) -> str:
+        if not raw_slug:
+            return ""
+        s_low = raw_slug.lower().strip()
+        s_norm = normalize_slug_text(raw_slug)
+        if s_low in aliases:
+            return aliases[s_low]
+        if s_norm in aliases:
+            return aliases[s_norm]
+        return raw_slug
+
     if char_str.isdigit():
         if char_str in hoyolab_map:
-            return hoyolab_map[char_str]
+            return _resolve_alias_slug(hoyolab_map[char_str])
         try:
             from static_data_manager import static_data_manager
 
             char_info = static_data_manager.get_character_by_hoyolab_id(g, char_str)
             if char_info and "id" in char_info:
-                return char_info["id"]
+                return _resolve_alias_slug(char_info["id"])
         except Exception:
             pass
 
-    # 2. Consultar o Roster (se fornecido) para obter char_id ou matching exato
+    # 2. Consultar o Roster (se fornecido) para obter id/char_id oficial (resolve PT-BR automaticamente!)
+    matched_roster_char = None
     if roster_data:
+        char_str_low = char_str.lower()
+        char_str_norm = normalize_slug_text(char_str)
         for c in roster_data:
             c_name = str(c.get("name", "")).strip()
-            c_id = str(c.get("char_id", "")).strip()
-            if (c_name.lower() == char_str.lower() or c_id == char_str) and c_id in hoyolab_map:
-                return hoyolab_map[c_id]
+            c_id = str(c.get("id") or c.get("char_id") or "").strip()
+            if (
+                c_name.lower() == char_str_low
+                or normalize_slug_text(c_name) == char_str_norm
+                or (c_id and c_id == char_str)
+            ):
+                matched_roster_char = c
+                if c_id and c_id in hoyolab_map:
+                    mapped_from_id = _resolve_alias_slug(hoyolab_map[c_id])
+                    # Se o mapeamento salvo ainda for genérico ('desbravadora'/'viajante'), delega para o Passo 3 (elemento->caminho)
+                    m_norm = normalize_slug_text(mapped_from_id)
+                    if m_norm not in ("desbravador", "desbravadora", "viajante", "trailblazer", "traveler", "nickname"):
+                        return mapped_from_id
+                break
 
-    # 3. Tratamento especial para Viajante / Desbravador com elemento
+    # 3. Tratamento especial para Viajante (Genshin) / Desbravador (HSR — elemento -> caminho!)
     norm = normalize_slug_text(char_str)
     if ("viajante" in norm or "traveler" in norm) and element:
         el_norm = normalize_slug_text(element)
         return f"traveler_{el_norm}"
-    if ("desbravador" in norm or "trailblazer" in norm) and element:
-        el_norm = normalize_slug_text(element)
-        return f"trailblazer_•_{el_norm}"
+    if "desbravador" in norm or "trailblazer" in norm:
+        tb_elem_to_path = {
+            "physical": "destruction",
+            "fisico": "destruction",
+            "destruction": "destruction",
+            "destruicao": "destruction",
+            "fire": "preservation",
+            "fogo": "preservation",
+            "preservation": "preservation",
+            "preservacao": "preservation",
+            "imaginary": "harmony",
+            "imaginario": "harmony",
+            "harmony": "harmony",
+            "harmonia": "harmony",
+            "ice": "remembrance",
+            "gelo": "remembrance",
+            "remembrance": "remembrance",
+            "recordacao": "remembrance",
+            "lightning": "elation",
+            "raio": "elation",
+            "elation": "elation",
+            "euforia": "elation",
+            "jubilo": "elation",
+        }
+        raw_hint = ""
+        if matched_roster_char:
+            raw_hint = str(matched_roster_char.get("path") or matched_roster_char.get("element") or "")
+        if not raw_hint:
+            raw_hint = element or ""
+        hint_norm = normalize_slug_text(raw_hint)
+        if hint_norm in tb_elem_to_path:
+            return f"trailblazer_•_{tb_elem_to_path[hint_norm]}"
+        for tok in norm.split():
+            if tok in tb_elem_to_path:
+                return f"trailblazer_•_{tb_elem_to_path[tok]}"
 
     # 4. Consultar dicionário de Aliases multilíngues (PT-BR, ES, EN)
-    aliases = get_character_aliases().get(g, {})
-
     if norm in aliases:
         return aliases[norm]
     if char_str.lower() in aliases:
@@ -125,6 +182,20 @@ def resolve_character_canonical_slug(
     for alias_k, canonical in aliases.items():
         if normalize_slug_text(alias_k) == norm:
             return canonical
+
+    # 4b. Fallback dinâmico via tabela oficial de traduções de personagens (REVERSE_TRANSLATIONS)
+    try:
+        from services.translation_service import REVERSE_TRANSLATIONS
+
+        rev_en = REVERSE_TRANSLATIONS.get(char_str.lower()) or REVERSE_TRANSLATIONS.get(norm)
+        if rev_en:
+            rev_norm = normalize_slug_text(rev_en)
+            if rev_norm in aliases:
+                return aliases[rev_norm]
+            if rev_en.lower() in aliases:
+                return aliases[rev_en.lower()]
+    except Exception:
+        pass
 
     # 5. Busca Inteligente Dinâmica no Catálogo do static_data_manager (Zero-Maintenance)
     try:
@@ -323,31 +394,94 @@ def get_section_lines_from_md(content: str, header_keywords: List[str]) -> List[
     return section_lines
 
 
+def _is_benchmark_consistent_with_guide(
+    game_id: str,
+    bench: Dict[str, Any],
+    stats_found: Dict[str, str],
+    guide_substats: str = "",
+) -> bool:
+    """
+    Valida se um preset estático de character_benchmarks.json é consistente com o escalonamento real
+    do guia oficial (Main Stats + Substats). Evita que personagens DEF/ATK/EM (ex.: Linnea, Escoffier,
+    Odette, Nefer, Nicole) peçam metas de 'Vida: 32.000+' ou 'EM: 750+' incompatíveis com o kit.
+    """
+    if not bench or not stats_found:
+        return True
+
+    from calculators.benchmark_radar import canonicalize_benchmark_key, parse_stat_number
+
+    ctx = " ".join(str(v) for v in stats_found.values()).lower()
+    if guide_substats:
+        ctx = f"{ctx} {guide_substats.lower()}"
+
+    has_hp = bool(re.search(r"\b(?:hp%?|vida|pv%?)\b", ctx))
+    has_def = bool(re.search(r"\b(?:def%?|defesa)\b", ctx))
+    has_atk = bool(re.search(r"\b(?:atk%?|atq%?|ataque)\b", ctx))
+    has_em = bool(re.search(r"\b(?:em|maestria|profici[eê]ncia)\b", ctx))
+
+    g = (game_id or "").lower().strip()
+    for raw_k, raw_v in bench.items():
+        ck = canonicalize_benchmark_key(str(raw_k), game_id=g)
+        num = parse_stat_number(raw_v) or 0.0
+        if g == "genshin":
+            if ck == "hp_flat" and num >= 22000 and not has_hp:
+                return False
+            if ck == "def_flat" and num >= 1500 and not has_def:
+                return False
+            if ck == "em" and num >= 400 and not has_em:
+                return False
+            if ck == "atk_flat" and num >= 1800 and not has_atk and (has_hp or has_def or has_em):
+                return False
+        elif g == "hsr":
+            if ck == "hp_flat" and num >= 5500 and not has_hp:
+                return False
+            if ck == "def_flat" and num >= 2500 and not has_def:
+                return False
+    return True
+
+
 def derive_dynamic_benchmarks(
     game_id: str, char_name: str, stats_found: Dict[str, str], substats_list: List[str]
 ) -> Dict[str, str]:
-    """Derivação de fallback inteligente baseada em arquétipo real do kit."""
+    """Derivação de fallback baseada no escalonamento real dos Main Stats e Substats do guia."""
     sub_lower = [str(x).lower() for x in substats_list]
     main_lower = [str(v).lower() for v in stats_found.values()]
     all_context = " ".join(sub_lower + main_lower)
+    has_crit = bool(re.search(r"\b(?:crit|cr[ií]tic[oa])\b", all_context))
+    has_er = bool(re.search(r"\b(?:recarga|energy|er)\b", all_context))
 
     if game_id == "genshin":
-        if any(k in all_context for k in ["def", "defesa"]):
-            if any(k in all_context for k in ["recarga", "energy", "er"]):
-                return {"DEF": "2.400+", "Recarga de Energia": "170%+", "Taxa Crítica": "50%+"}
-            return {"DEF": "2.400+", "Taxa Crítica": "65%+", "Dano Crítico": "140%+"}
-        elif any(k in all_context for k in ["cura", "healing"]):
-            return {"Vida": "38.000+", "Bônus de Cura": "35%+", "Recarga de Energia": "160%+"}
-        elif any(k in all_context for k in ["vida", "pv", "hp"]):
-            return {"Vida": "34.000+", "Taxa Crítica": "65%+", "Dano Crítico": "150%+"}
-        elif any(k in all_context for k in ["proficiência", "proficiencia", "mastery", "em"]):
-            if any(k in all_context for k in ["crit", "crítica", "critica"]):
-                return {"Proficiência Elemental": "350+", "Taxa Crítica": "70%+", "Dano Crítico": "150%+"}
+        if re.search(r"\b(?:def%?|defesa)\b", all_context):
+            res: Dict[str, str] = {"DEF": "2.400+"}
+            if has_crit:
+                res["Taxa Crítica"] = "65%+"
+                res["Dano Crítico"] = "140%+"
+            if has_er:
+                res["Recarga de Energia"] = "160%+"
+            return res
+        elif re.search(r"\b(?:hp%?|vida|pv%?)\b", all_context):
+            if re.search(r"\b(?:cura|healing)\b", all_context) and not has_crit:
+                return {"Vida": "38.000+", "Bônus de Cura": "35%+", "Recarga de Energia": "160%+"}
+            res = {"Vida": "34.000+"}
+            if has_crit:
+                res["Taxa Crítica"] = "65%+"
+                res["Dano Crítico"] = "150%+"
+            if has_er:
+                res["Recarga de Energia"] = "160%+"
+            return res
+        elif re.search(r"\b(?:profici[eê]ncia|maestria|mastery|em)\b", " ".join(main_lower)):
+            if has_crit:
+                return {"Proficiência Elemental": "650+", "Taxa Crítica": "70%+", "Dano Crítico": "150%+"}
             return {"Proficiência Elemental": "800+", "Recarga de Energia": "160%+"}
-        elif any(k in all_context for k in ["recarga", "energy", "er"]):
-            return {"Recarga de Energia": "200%+", "Taxa Crítica": "55%+", "ATQ": "1.700+"}
+        elif re.search(r"\b(?:cura|healing)\b", all_context) and not has_crit:
+            return {"ATQ": "2.200+", "Bônus de Cura": "35%+", "Recarga de Energia": "180%+"}
+        elif has_er and not has_crit:
+            return {"ATQ": "2.200+", "Recarga de Energia": "180%+"}
         else:
-            return {"ATQ": "2.100+", "Taxa Crítica": "70%+", "Dano Crítico": "150%+"}
+            res = {"ATQ": "2.100+", "Taxa Crítica": "70%+", "Dano Crítico": "150%+"}
+            if has_er and re.search(r"\b(?:recarga|energy|er)\b", " ".join(main_lower)):
+                res["Recarga de Energia"] = "160%+"
+            return res
 
     elif game_id == "hsr":
         if any(k in all_context for k in ["quebra", "break", "be"]):
@@ -426,8 +560,13 @@ def parse_meta_target(
 
     weapons_list: List[str] = []
     sets_list: List[str] = []
+    relic_sets_list: List[str] = []
+    planar_sets_list: List[str] = []
     stats_found: Dict[str, str] = {}
     endgame_stats: Dict[str, str] = {}
+    is_ai_preliminary = bool(guide_content and ("ai_preliminary" in guide_content[:500] or "Guia Preliminar" in guide_content[:500]))
+
+    from calculators.equipment_comparator import is_junk_set_name, localize_equipment_name
 
     if guide_content:
         # 1. Armas / W-Engines / Cones
@@ -459,34 +598,59 @@ def parse_meta_target(
                 ):
                     weapons_list.append(w_name)
 
-        # 2. Sets de Relíquias / Artefatos / Discos
-        s_lines = get_section_lines_from_md(
+        # 2. Sets de Relíquias / Artefatos / Discos (separando Caverna vs Planares no HSR!)
+        relic_lines = get_section_lines_from_md(
             guide_content,
             [
                 "melhores conjuntos",
                 "conjuntos de artefatos",
                 "melhores relíquias",
                 "melhores discos",
-                "melhores ornamentos",
                 "best relics",
                 "best artifacts",
                 "best discs",
-                "best planar",
             ],
         )
-        for l in s_lines:
+        for l in relic_lines:
             m = _RE_BOLD_ITEM.search(l)
             if m:
                 s_name = clean_meta_item_name(m.group(1))
                 if (
                     s_name
-                    and s_name not in sets_list
+                    and s_name not in relic_sets_list
                     and len(s_name) > 2
+                    and not is_junk_set_name(s_name)
                     and not s_name.lower().startswith(("justificativa", "review", "rationale", "nota", "disk", "disco"))
                 ):
-                    sets_list.append(s_name)
+                    relic_sets_list.append(s_name)
+                    if s_name not in sets_list:
+                        sets_list.append(s_name)
 
-        # 3. Atributos Recomendados por Slot
+        planar_lines = get_section_lines_from_md(
+            guide_content,
+            [
+                "melhores ornamentos",
+                "ornamentos planares",
+                "best planar",
+                "planar ornaments",
+            ],
+        )
+        for l in planar_lines:
+            m = _RE_BOLD_ITEM.search(l)
+            if m:
+                p_name = clean_meta_item_name(m.group(1))
+                if (
+                    p_name
+                    and p_name not in planar_sets_list
+                    and len(p_name) > 2
+                    and not is_junk_set_name(p_name)
+                    and not p_name.lower().startswith(("justificativa", "review", "rationale", "nota"))
+                ):
+                    planar_sets_list.append(p_name)
+                    if p_name not in sets_list:
+                        sets_list.append(p_name)
+
+        # 3. Atributos Recomendados por Slot (NUNCA sobrescreve a primeira build principal!)
         stat_lines = get_section_lines_from_md(
             guide_content, ["atributos principais", "atributos recomendados", "main stats"]
         )
@@ -525,13 +689,13 @@ def parse_meta_target(
                         ):
                             slot_label = f"Disco {d_i}"
                             break
-                if slot_label and raw_val:
+                if slot_label and raw_val and slot_label not in stats_found:
                     stats_found[slot_label] = raw_val
             elif "disk" in l_str.lower() or "disco" in l_str.lower():
                 for d_i in range(4, 7):
                     if f"disk {d_i}" in l_str.lower() or f"disco {d_i}" in l_str.lower():
                         raw_val = re.sub(rf"-\s*(?:disk|disco)\s*{d_i}\s*", "", l_str, flags=re.I).strip()
-                        if raw_val:
+                        if raw_val and f"Disco {d_i}" not in stats_found:
                             stats_found[f"Disco {d_i}"] = raw_val
 
         # 4. Atributos Finais / Endgame Stats
@@ -543,18 +707,26 @@ def parse_meta_target(
                 s_name = parts[0].replace("**", "").replace("`", "").strip()
                 s_val = parts[1].replace("**", "").replace("`", "").strip()
                 if s_name and s_val and len(s_name) < 40 and not s_name.lower().startswith(("justificativa", "nota")):
-                    endgame_stats[s_name] = s_val
+                    if s_name not in endgame_stats:
+                        endgame_stats[s_name] = s_val
 
-    # Fallback / Complemento com meta_data JSON estruturado
+    # Fallback / Complemento com meta_data JSON estruturado (incluindo busca por canonical_slug / guide_slug)
     char_entry = None
     c_norm = normalize_slug_text(char_name)
+    guide_slug = os.path.basename(guide_path).replace(".md", "").lower() if guide_path else ""
     if meta_json:
-        char_entry = meta_json.get(c_norm) or meta_json.get(char_name.lower()) or meta_json.get(char_name)
+        for cand_k in (canonical_slug, guide_slug, c_norm, char_name.lower(), char_name):
+            if cand_k and cand_k in meta_json:
+                char_entry = meta_json[cand_k]
+                break
         if not char_entry:
+            canon_norm = normalize_slug_text(canonical_slug)
             for k_m, v_m in meta_json.items():
-                if isinstance(v_m, dict) and normalize_slug_text(v_m.get("name", "")) == c_norm:
-                    char_entry = v_m
-                    break
+                if isinstance(v_m, dict):
+                    vn = normalize_slug_text(v_m.get("name", ""))
+                    if vn and (vn == c_norm or vn == canon_norm):
+                        char_entry = v_m
+                        break
 
     if char_entry and "main_stats" in char_entry:
         slot_map_gen = {"sands": "Areia", "goblet": "Copo", "circlet": "Tiara"}
@@ -579,8 +751,6 @@ def parse_meta_target(
         standardize_main_stat_display,
     )
 
-    guide_slug = os.path.basename(guide_path).replace(".md", "").lower() if guide_path else ""
-
     char_bench = benchmarks_db.get(canonical_slug)
     if not char_bench and guide_slug:
         char_bench = benchmarks_db.get(guide_slug)
@@ -590,8 +760,18 @@ def parse_meta_target(
         char_bench = benchmarks_db.get(char_name.lower().strip())
 
     cleaned_guide_endgame = deduplicate_endgame_stats(endgame_stats, game_id=game_id)
+    guide_sub_lines = get_section_lines_from_md(guide_content, ["subatributos", "substatus", "sub-stats"]) if guide_content else []
+    guide_sub_text = " ".join(l.strip() for l in guide_sub_lines if l.strip())[:200]
 
-    if char_bench and not (is_generic_placeholder_benchmark(char_bench, game_id) and cleaned_guide_endgame):
+    # Valida se o preset estático contradiz o escalonamento real do guia (ex.: pedir Vida 32k em personagem DEF/ATQ)
+    if char_bench and stats_found and not is_ai_preliminary:
+        if not _is_benchmark_consistent_with_guide(game_id, char_bench, stats_found, guide_sub_text):
+            char_bench = None
+
+    # Prioriza benchmarks REAIS raspados do guia oficial (não preliminares de IA) sobre presets estáticos antigos!
+    if cleaned_guide_endgame and not is_ai_preliminary and len(cleaned_guide_endgame) >= 2:
+        endgame_stats = cleaned_guide_endgame
+    elif char_bench and not (is_generic_placeholder_benchmark(char_bench, game_id) and cleaned_guide_endgame):
         endgame_stats = deduplicate_endgame_stats(dict(char_bench), game_id=game_id)
     elif cleaned_guide_endgame:
         endgame_stats = cleaned_guide_endgame
@@ -602,18 +782,33 @@ def parse_meta_target(
 
     # 6. Fallback Dinâmico por Arquétipo e Kit
     if not endgame_stats:
-        substats_list = char_entry.get("substats_priority", []) if char_entry else []
+        substats_list = list(char_entry.get("substats_priority", [])) if char_entry else []
+        if guide_sub_text:
+            substats_list.append(guide_sub_text)
         endgame_stats = deduplicate_endgame_stats(
             derive_dynamic_benchmarks(game_id, char_name, stats_found, substats_list),
             game_id=game_id,
         )
 
+    # Localiza nomes de armas/sets exclusivamente via catálogo oficial HoYoVerse (sem traduzir palavra por palavra!)
     if weapons_list:
-        target["weapon"] = translate(weapons_list[0])
-        target["weapons"] = [translate(w) for w in weapons_list]
+        weapons_pt = [localize_equipment_name(game_id, "weapons", w, lang="pt") for w in weapons_list]
+        target["weapon"] = weapons_pt[0]
+        target["weapons"] = weapons_pt
+        target["weapons_raw"] = list(weapons_list)
     if sets_list:
-        target["sets"] = [translate(sets_list[0])]
-        target["all_sets"] = [translate(s) for s in sets_list]
+        relic_pt = [localize_equipment_name(game_id, "sets", s, lang="pt") for s in relic_sets_list]
+        planar_pt = [localize_equipment_name(game_id, "sets", s, lang="pt") for s in planar_sets_list]
+        all_sets_pt = [localize_equipment_name(game_id, "sets", s, lang="pt") for s in sets_list]
+        target["sets"] = [relic_pt[0]] if relic_pt else [all_sets_pt[0]]
+        target["all_sets"] = all_sets_pt
+        target["all_sets_raw"] = list(sets_list)
+        if relic_pt:
+            target["relic_sets"] = relic_pt
+            target["relic_sets_raw"] = list(relic_sets_list)
+        if planar_pt:
+            target["planar_sets"] = planar_pt
+            target["planar_sets_raw"] = list(planar_sets_list)
 
     target["stats"] = {
         translate(k): standardize_main_stat_display(translate(v), lang="pt")

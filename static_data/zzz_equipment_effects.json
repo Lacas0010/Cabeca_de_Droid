@@ -1,7 +1,7 @@
 {
   "game_id": "zzz",
   "source": "HoYoWiki ZZZ (PT-BR)",
-  "updated_at": "2026-11-25T16:00:54.429972",
+  "updated_at": "2026-11-27T11:34:35.774367",
   "weapons": {
     "fogofatuo": {
       "id": "936",
@@ -1097,7 +1097,9 @@
         "4": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/98205622b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
         "5": "$[{\"ep_id\":961,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/567b6d9975cec0cb335c09ead8e7720a_2419621509819474216.png\",\"amount\":0,\"name\":\"Ye Shunguang\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
       },
-      "aliases": []
+      "aliases": [
+        "Cloudcleave Radiance"
+      ]
     },
     "exuviasolar": {
       "id": "1105",
@@ -1108,7 +1110,9 @@
       "ranks": {
         "1": "$[{\"ep_id\":1082,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/06/16/69723b34e8b9cf4f5b7b98e6dff8d202_2315549761560555071.png\",\"amount\":0,\"name\":\"Pyrois\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
       },
-      "aliases": []
+      "aliases": [
+        "Sol Exuvia"
+      ]
     },
     "bateriadademaratipoii": {
       "id": "3",
@@ -1119,7 +1123,312 @@
       "ranks": {
         "1": "$[{\"ep_id\":2,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2024/05/28/43aeb29d176e10c9713b3b9b6ac0dd3a_2384682618213467101.png\",\"amount\":0,\"name\":\"Anby Demara\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
       },
-      "aliases": []
+      "aliases": [
+        "Demara Battery Mark II"
+      ]
+    },
+    "ecoritmico": {
+      "id": "1106",
+      "name": "Eco Rítmico",
+      "rarity": 4,
+      "passive_name": "",
+      "desc": "",
+      "ranks": {},
+      "aliases": [
+        "Boisterous Echoes"
+      ]
+    },
+    "caldeiraodalucidez": {
+      "id": "984",
+      "name": "Caldeirão da Lucidez",
+      "rarity": 4,
+      "passive_name": "",
+      "desc": "",
+      "ranks": {},
+      "aliases": [
+        "Cauldron of Clarity"
+      ]
+    },
+    "anjonaconcha": {
+      "id": "1047",
+      "name": "Anjo na Concha",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":998,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026cbe8be1e94acd93a0acd7e17ccaa463_741850845848203820.png\",\"amount\":0,\"name\":\"Aria\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":998,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026cbe8be1e94acd93a0acd7e17ccaa463_741850845848203820.png\",\"amount\":0,\"name\":\"Aria\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "2": "$[{\"ep_id\":998,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/01cbe8be1e94acd93a0acd7e17ccaa463_741850845848203820.png\",\"amount\":0,\"name\":\"Aria\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "3": "$[{\"ep_id\":998,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/13cbe8be1e94acd93a0acd7e17ccaa463_741850845848203820.png\",\"amount\":0,\"name\":\"Aria\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "4": "$[{\"ep_id\":998,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/98205622cbe8be1e94acd93a0acd7e17ccaa463_741850845848203820.png\",\"amount\":0,\"name\":\"Aria\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "5": "$[{\"ep_id\":998,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/0cbe8be1e94acd93a0acd7e17ccaa463_741850845848203820.png\",\"amount\":0,\"name\":\"Aria\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Angel in the Shell"
+      ]
+    },
+    "vajraenfurecido": {
+      "id": "965",
+      "name": "Vajra Enfurecido",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":934,\"icon\":\"\",\"amount\":0,\"name\":\"Banyue\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":934,\"icon\":\"\",\"amount\":0,\"name\":\"Banyue\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Wrathful Vajra"
+      ]
+    },
+    "mascaradocavaleiroradiante": {
+      "id": "1088",
+      "name": "Máscara do Cavaleiro Radiante",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1073,\"icon\":\"\",\"amount\":0,\"name\":\"Starlight - Billy\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1073,\"icon\":\"\",\"amount\":0,\"name\":\"Starlight - Billy\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Starlight Rider Faceplate"
+      ]
+    },
+    "rastroserpentino": {
+      "id": "1078",
+      "name": "Rastro Serpentino",
+      "rarity": 4,
+      "passive_name": "Version Released",
+      "desc": "Version 2.7 \"Champions Never Fall to the Past\"",
+      "ranks": {
+        "1": "Version 2.7 \"Champions Never Fall to the Past\""
+      },
+      "aliases": [
+        "Serpentine Seeker"
+      ]
+    },
+    "sedeescarlate": {
+      "id": "1189",
+      "name": "Sede Escarlate",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1185,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026d8313d88c5b118e20c869127b0_9088682284252791620.png\",\"amount\":0,\"name\":\"Claret Flint\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1185,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026d8313d88c5b118e20c869127b0_9088682284252791620.png\",\"amount\":0,\"name\":\"Claret Flint\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "2": "$[{\"ep_id\":1185,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/11d8313d88c5b118e20c869127b0_9088682284252791620.png\",\"amount\":0,\"name\":\"Claret Flint\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "3": "$[{\"ep_id\":1185,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/12d8313d88c5b118e20c869127b0_9088682284252791620.png\",\"amount\":0,\"name\":\"Claret Flint\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "4": "$[{\"ep_id\":1185,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/327628065d8313d88c5b118e20c869127b0_9088682284252791620.png\",\"amount\":0,\"name\":\"Claret Flint\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "5": "$[{\"ep_id\":1185,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/721022d8313d88c5b118e20c869127b0_9088682284252791620.png\",\"amount\":0,\"name\":\"Claret Flint\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Crimson Thirst"
+      ]
+    },
+    "arcademedulasangrenta": {
+      "id": "1190",
+      "name": "Arca de Medula Sangrenta",
+      "rarity": 4,
+      "passive_name": "",
+      "desc": "",
+      "ranks": {},
+      "aliases": [
+        "Bloodmarrow Coffer"
+      ]
+    },
+    "sortefelina": {
+      "id": "1191",
+      "name": "Sorte Felina",
+      "rarity": 4,
+      "passive_name": "",
+      "desc": "",
+      "ranks": {},
+      "aliases": [
+        "Catty Luck"
+      ]
+    },
+    "chamadasdopassado": {
+      "id": "964",
+      "name": "Chamadas do Passado",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":932,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/11/26/bfac7b346475236eef258761a8a72146_7374920168874883292.png\",\"amount\":1,\"name\":\"Dialyn\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":932,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2025/11/26/bfac7b346475236eef258761a8a72146_7374920168874883292.png\",\"amount\":1,\"name\":\"Dialyn\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Yesterday Calls"
+      ]
+    },
+    "assistentechefe": {
+      "id": "1134",
+      "name": "Assistente-Chefe",
+      "rarity": 4,
+      "passive_name": "",
+      "desc": "",
+      "ranks": {},
+      "aliases": [
+        "Chief Sidekick"
+      ]
+    },
+    "fantasiasdeneon": {
+      "id": "1067",
+      "name": "Fantasias de Neon",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1038,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026/02/13/98205622/d56138a233f0ef0d82fd32131b690560_839676230122995037.png\",\"amount\":0,\"name\":\"Nangong Yu\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1038,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026/02/13/98205622/d56138a233f0ef0d82fd32131b690560_839676230122995037.png\",\"amount\":0,\"name\":\"Nangong Yu\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Neon Fantasies"
+      ]
+    },
+    "caldeiraofervente": {
+      "id": "1068",
+      "name": "Caldeirão Fervente",
+      "rarity": 4,
+      "passive_name": "",
+      "desc": "",
+      "ranks": {},
+      "aliases": [
+        "The Simmering Pot"
+      ]
+    },
+    "plumarenascente": {
+      "id": "1224",
+      "name": "Pluma Renascente",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1201,\"icon\":\"\",\"amount\":0,\"name\":\"Phoenix Reffaella\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1201,\"icon\":\"\",\"amount\":0,\"name\":\"Phoenix Reffaella\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Plume of Rebirth"
+      ]
+    },
+    "luagelida": {
+      "id": "1087",
+      "name": "Lua Gélida",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1072,\"icon\":\"\",\"amount\":0,\"name\":\"Promeia\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1072,\"icon\":\"\",\"amount\":0,\"name\":\"Promeia\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Frostfall Sickle"
+      ]
+    },
+    "odearessurreicaodasasas": {
+      "id": "1174",
+      "name": "Ode à Ressurreição das Asas",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1112,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/07/28/0d0cd5b5fc60173dc78d2e4002e3d2b5_1703442180172243134.png\",\"amount\":0,\"name\":\"Remielle Dan\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1112,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/07/28/0d0cd5b5fc60173dc78d2e4002e3d2b5_1703442180172243134.png\",\"amount\":0,\"name\":\"Remielle Dan\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Ode of Resurrected Wings"
+      ]
+    },
+    "caixaodaluacarmesim": {
+      "id": "1209",
+      "name": "Caixão da Lua Carmesim",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1186,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/09/29/69d82d41bf57407c1d18d181d5c8842f_5489981853866788342.png\",\"amount\":0,\"name\":\"Roxy Ifrita Pryce\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1186,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/09/29/69d82d41bf57407c1d18d181d5c8842f_5489981853866788342.png\",\"amount\":0,\"name\":\"Roxy Ifrita Pryce\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Crimson Moon Casket"
+      ]
+    },
+    "garraaprisionadora": {
+      "id": "1226",
+      "name": "Garra Aprisionadora",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1202,\"icon\":\"\",\"amount\":0,\"name\":\"Severian Lowell\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1202,\"icon\":\"\",\"amount\":0,\"name\":\"Severian Lowell\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Incarcerating Grip"
+      ]
+    },
+    "exaltacaodocavaleiro": {
+      "id": "1188",
+      "name": "Exaltação do Cavaleiro",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1113,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/07/28/eebf970fae3bbfe7e1700609300f80c5_6738457060287477693.png\n\",\"amount\":0,\"name\":\"Sigrid de L'Azur\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1113,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/07/28/eebf970fae3bbfe7e1700609300f80c5_6738457060287477693.png\n\",\"amount\":0,\"name\":\"Sigrid de L'Azur\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Knight's Extolment"
+      ]
+    },
+    "pensamentosemcancao": {
+      "id": "1015",
+      "name": "Pensamentos em Canção",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":995,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026/01/13/98205622/fca35fd54bd8fe6704d24f46edb11f4c_3507776238507449727.png\",\"amount\":0,\"name\":\"Sunna\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":995,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2026/01/13/98205622/fca35fd54bd8fe6704d24f46edb11f4c_3507776238507449727.png\",\"amount\":0,\"name\":\"Sunna\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Thoughtbop"
+      ]
+    },
+    "coracaodejade": {
+      "id": "1104",
+      "name": "Coração de Jade",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":1084,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/06/16/d1c0912271a744a242ba3836e3ad7515_6009918991675379943.png\",\"amount\":0,\"name\":\"Velina Airgid\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":1084,\"icon\":\"https://act-webstatic.hoyoverse.com/event-static-hoyowiki-admin/2026/06/16/d1c0912271a744a242ba3836e3ad7515_6009918991675379943.png\",\"amount\":0,\"name\":\"Velina Airgid\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Joyau Dore"
+      ]
+    },
+    "ninhodokraken": {
+      "id": "937",
+      "name": "Ninho do Kraken",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":909,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025e12b5f5f69717b69173aaeb3991cc27_9086004094844506373.png\",\"amount\":1,\"name\":\"Yidhari\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":909,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025e12b5f5f69717b69173aaeb3991cc27_9086004094844506373.png\",\"amount\":1,\"name\":\"Yidhari\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "2": "$[{\"ep_id\":909,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/09e12b5f5f69717b69173aaeb3991cc27_9086004094844506373.png\",\"amount\":1,\"name\":\"Yidhari\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "3": "$[{\"ep_id\":909,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/30e12b5f5f69717b69173aaeb3991cc27_9086004094844506373.png\",\"amount\":1,\"name\":\"Yidhari\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "4": "$[{\"ep_id\":909,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/167256510e12b5f5f69717b69173aaeb3991cc27_9086004094844506373.png\",\"amount\":1,\"name\":\"Yidhari\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "5": "$[{\"ep_id\":909,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/6e12b5f5f69717b69173aaeb3991cc27_9086004094844506373.png\",\"amount\":1,\"name\":\"Yidhari\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Kraken's Cradle"
+      ]
+    },
+    "coelhinhameioacucarada": {
+      "id": "983",
+      "name": "Coelhinha Meio Açucarada",
+      "rarity": 4,
+      "passive_name": "W-Engine Holder",
+      "desc": "$[{\"ep_id\":960,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025c86a14e14274ebded5cf4ba3b_8816198011613527824.png\",\"amount\":0,\"name\":\"Zhao\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+      "ranks": {
+        "1": "$[{\"ep_id\":960,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/2025c86a14e14274ebded5cf4ba3b_8816198011613527824.png\",\"amount\":0,\"name\":\"Zhao\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "2": "$[{\"ep_id\":960,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/12c86a14e14274ebded5cf4ba3b_8816198011613527824.png\",\"amount\":0,\"name\":\"Zhao\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "3": "$[{\"ep_id\":960,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/21c86a14e14274ebded5cf4ba3b_8816198011613527824.png\",\"amount\":0,\"name\":\"Zhao\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "4": "$[{\"ep_id\":960,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/98205622c86a14e14274ebded5cf4ba3b_8816198011613527824.png\",\"amount\":0,\"name\":\"Zhao\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$",
+        "5": "$[{\"ep_id\":960,\"icon\":\"https://act-upload.hoyoverse.com/event-ugc-hoyowiki/1340550c86a14e14274ebded5cf4ba3b_8816198011613527824.png\",\"amount\":0,\"name\":\"Zhao\",\"menuId\":\"agent\",\"_menuId\":\"8\"}]$"
+      },
+      "aliases": [
+        "Half-Sugar Bunny"
+      ]
     }
   },
   "sets": {
@@ -1335,7 +1644,63 @@
       "name": "Canção das Ondas",
       "two_pc": "Physical DMG by 10%.",
       "four_pc": "When the equipper is within any Ether Veil, their CRIT Rate increases by 10%. After leaving the Ether Veil, this buff remains for 15s. If the equipper is an Attack character, activating an Ether Veil or extending an Ether Veil's duration increases their CRIT Rate by 10% and ATK by 30% for 10s. Repeated triggers reset the duration.",
-      "aliases": []
+      "aliases": [
+        "White Water Ballad"
+      ]
+    },
+    "destinoemplumado": {
+      "id": "1176",
+      "name": "Destino Emplumado",
+      "two_pc": "",
+      "four_pc": "",
+      "aliases": [
+        "Feathered Fate"
+      ]
+    },
+    "salaosibilante": {
+      "id": "1108",
+      "name": "Salão Sibilante",
+      "two_pc": "",
+      "four_pc": "",
+      "aliases": [
+        "Wuthering Salon"
+      ]
+    },
+    "ariareluzente": {
+      "id": "993",
+      "name": "Ária Reluzente",
+      "two_pc": "Ether DMG +10%",
+      "four_pc": "When the equipper's Basic Attack hits an enemy, their Anomaly Proficiency increases by 36, lasting 8s. Repeated triggers reset the duration. When any enemy on the field is Stunned, the equipper's DMG increases by 25% for 18s. Repeated triggers reset the duration.",
+      "aliases": [
+        "Shining Aria"
+      ]
+    },
+    "diariodeumdetento": {
+      "id": "1070",
+      "name": "Diário de um Detento",
+      "two_pc": "Ice DMG +10%.",
+      "four_pc": "When the equipper triggers Abloom, their Anomaly Proficiency increases by 48 for 30s; repeated triggers reset the duration. When the equipper triggers a Freeze effect, their All-Attribute Anomaly DMG and Disorder DMG increase by 16% for 30s; repeated triggers reset the duration.",
+      "aliases": [
+        "Notes From the Chained"
+      ]
+    },
+    "cronicasdaalvorada": {
+      "id": "1109",
+      "name": "Crônicas da Alvorada",
+      "two_pc": "",
+      "four_pc": "",
+      "aliases": [
+        "The Sky Ablaze"
+      ]
+    },
+    "coelhinhonopaisdasmaravilhas": {
+      "id": "1069",
+      "name": "Coelhinho no País das Maravilhas",
+      "two_pc": "HP +10%",
+      "four_pc": "When the equipper is a Defense character: When the equipper launches an EX Special Attack or any squad member triggers a Defensive Assist or Evasive Assist, all squad members' DMG increases by 6%, stacking up to 3 times, lasting 25s. Stacks decay one at a time, and duration refreshes when gained or decayed. Passive effects of the same name do not stack.",
+      "aliases": [
+        "Bunny in Wonderland"
+      ]
     }
   }
 }

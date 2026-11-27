@@ -1114,48 +1114,6 @@ function formatFarmingNote(noteStr) {
                 let curDesc = t.description;
                 let curEnergyName = (window.isEn && ENERGY_DICT[t.energy_name]) ? ENERGY_DICT[t.energy_name] : t.energy_name;
 
-                if (window.isEn) {
-                    if (curPBadge && curPBadge.includes("Aberto Hoje")) curPBadge = "⭐ Open Today";
-                    if (curPBadge && curPBadge.includes("Ascensão Pendente")) curPBadge = "🔥 Pending Ascension";
-                    if (curPBadge && curPBadge.includes("Otimização de Build")) curPBadge = "💎 Build Optimization";
-                    if (curEstimate && curEstimate.includes("Disponível Agora")) curEstimate = "Available Now";
-                    if (curEstimate && curEstimate.includes("Disponível às")) curEstimate = curEstimate.replace("Disponível às", "Available at");
-                    if (curEstimate && curEstimate.includes("Aguardando Energia")) curEstimate = "Waiting for Energy";
-                    if (curLoc) {
-                        curLoc = curLoc
-                            .replace("Chefe de Ascensão", "Ascension Boss")
-                            .replace("Domínio de Livros de Talento", "Talent Book Domain")
-                            .replace("Domínio de Artefatos Recomendado", "Recommended Artifact Domain")
-                            .replace("Domínio de Artefatos", "Artifact Domain")
-                            .replace("Cálice Rubro", "Crimson Calyx")
-                            .replace("Treinamento de Habilidades", "Skill Training");
-                    }
-                    if (curDesc) {
-                        if (curDesc.startsWith("Derrote")) {
-                            curDesc = curDesc
-                                .replace("Derrote", "Defeat")
-                                .replace("Chefe de Ascensão", "Ascension Boss")
-                                .replace("para avançar", "to advance")
-                                .replace("do Nv.", "from Lv.")
-                                .replace("rumo ao Nv.", "towards Lv.");
-                        } else if (curDesc.startsWith("Faça")) {
-                            curDesc = curDesc
-                                .replace("Faça", "Run")
-                                .replace("Domínio de Livros de Talento", "Talent Book Domain")
-                                .replace("Domínio de Artefatos Recomendado", "Recommended Artifact Domain")
-                                .replace("para obter", "to obtain")
-                                .replace("e avançar os talentos prioritários de", "and advance priority talents for")
-                                .replace("para farmar o conjunto ideal para", "to farm recommended set for")
-                                .replace("Nota", "Grade");
-                        } else if (curDesc.startsWith("Realize")) {
-                            curDesc = curDesc
-                                .replace("Realize", "Run")
-                                .replace("Domínio de Artefatos", "Artifact Domain")
-                                .replace("buscando peças com Atributos Ideais para maximizar a nota de", "seeking optimal main and sub-stats to maximize the rating of");
-                        }
-                    }
-                }
-
                 html += `
                     <div class="farm-order-step-item" id="order-step-item-${t.id}" style="display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; background: ${isDone ? 'rgba(16, 185, 129, 0.08)' : 'rgba(15, 23, 42, 0.7)'}; border: 1px solid ${isDone ? 'rgba(16, 185, 129, 0.4)' : 'rgba(255, 255, 255, 0.06)'}; border-radius: 12px; transition: all 0.25s ease; ${isDone ? 'opacity: 0.75;' : ''}">
                         <!-- Checkbox de Conclusão -->
@@ -2258,8 +2216,8 @@ window.loadAccountGapsAnalysis = async function(gameId) {
         bodyEl.innerHTML = `
             <div style="padding: 30px 20px; text-align: center; background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 12px; max-width: 480px; margin: 20px auto;">
                 <i class="fa-solid fa-triangle-exclamation fa-2x" style="color: #ef4444; margin-bottom: 10px;"></i>
-                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Strategic Diagnosis Failed" : "Falha na Auditoria Estratégica"}</h4>
-                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not audit account coverage and archetypes." : "Não foi possível auditar a cobertura e arquétipos da conta."}</p>
+                <h4 style="color: #f87171; margin: 0 0 6px 0; font-size: 15px;">${isEn ? "Account Audit Failed" : "Falha na Auditoria da Conta"}</h4>
+                <p style="color: var(--text-muted); font-size: 12px; margin: 0 0 14px 0;">${isEn ? "Could not check account coverage and archetypes." : "Não foi possível carregar a cobertura da conta."}</p>
                 <sakuga-button onclick="window.loadAccountGapsAnalysis('${gameId}')" class="sk-sm sk-accent-danger">
                     <i class="fa-solid fa-arrow-rotate-right"></i> ${isEn ? "Try Again" : "Tentar de novo"}
                 </sakuga-button>
@@ -2278,7 +2236,7 @@ window.renderAccountGapsResult = function(data) {
                 <i class="fa-solid fa-chess-knight fa-3x" style="color: #38bdf8; margin-bottom: 14px;"></i>
                 <h3 style="color: var(--text-primary); font-size: 17px; margin-bottom: 8px;">${isEn ? "No Characters Synced" : "Nenhum Personagem Sincronizado"}</h3>
                 <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5; margin-bottom: 18px;">
-                    ${isEn ? "The Strategic Planner checks elemental coverage, archetypes, and endgame readiness for your roster. Sync characters to generate this diagnosis." : "O Diagnóstico Estratégico analisa a cobertura elemental, arquétipos e prontidão para o endgame da sua conta. Sincronize seus personagens com o HoYoLAB para gerar o diagnóstico."}
+                    ${isEn ? "Checks elemental coverage, archetypes, and endgame readiness for your roster. Sync your characters first." : "Mostra cobertura elemental, arquétipos e prontidão de endgame do seu roster. Sincronize o jogo primeiro."}
                 </p>
                 <sakuga-button class="sk-sm" onclick="document.querySelector('.sync-game-btn[data-game=\\'${data?.game_id || 'hsr'}\\']')?.click() || (window.syncRoster && window.syncRoster('${data?.game_id || 'hsr'}'))">
                     <i class="fa-solid fa-arrows-rotate"></i> ${isEn ? "Sync Characters Now" : "Sincronizar Personagens Agora"}
@@ -2334,7 +2292,7 @@ window.renderAccountGapsResult = function(data) {
     html += `
         <div style="margin-bottom: 24px;">
             <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-shield-cat" style="color: #a855f7;"></i> Cobertura de Arquétipos Essenciais
+                <i class="fa-solid fa-shield-cat" style="color: #a855f7;"></i> Cobertura de Arquétipos
             </h4>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px;">
     `;
@@ -2396,7 +2354,7 @@ window.renderAccountGapsResult = function(data) {
     html += `
         <div style="margin-bottom: 24px;">
             <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
-                <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Gargalos & Lacunas Estratégicas Detectadas
+                <i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Gargalos da Conta
             </h4>
     `;
 
@@ -2404,8 +2362,8 @@ window.renderAccountGapsResult = function(data) {
         html += `
             <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 18px; text-align: center; color: #34d399;">
                 <i class="fa-solid fa-circle-check fa-2x" style="margin-bottom: 8px;"></i>
-                <h4 style="margin: 0 0 4px 0;">Nenhuma Lacuna Crítica Detectada!</h4>
-                <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Sua conta possui excelente equilíbrio em todas as funções essenciais para o Endgame.</p>
+                <h4 style="margin: 0 0 4px 0;">Sem Gargalos Críticos</h4>
+                <p style="margin: 0; font-size: 12px; color: var(--text-secondary);">Funções principais cobertas para endgame.</p>
             </div>
         `;
     } else {
@@ -2436,7 +2394,7 @@ window.renderAccountGapsResult = function(data) {
         html += `
             <div style="margin-bottom: 24px;">
                 <h4 style="margin: 0 0 12px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
-                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Prioridades Estratégicas no Gacha & Banners Futuros
+                    <i class="fa-solid fa-wand-magic-sparkles" style="color: #f59e0b;"></i> Prioridades de Pull
                 </h4>
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px;">
         `;

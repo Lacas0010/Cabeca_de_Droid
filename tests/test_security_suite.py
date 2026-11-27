@@ -67,6 +67,8 @@ class TestSecurityVault(unittest.TestCase):
                 os.remove(enc_file)
 
     def test_token_masking(self):
+        from core.security import mask_token
+
         cookies = {
             "ltuid_v2": "123456789",
             "ltoken_v2": "v2_CAESECd0zSAMPLETOKENxyz987654321",
@@ -79,7 +81,7 @@ class TestSecurityVault(unittest.TestCase):
         self.assertIn("v2_CA***4321", preview_str)
 
         secret_str = "sec_1234567890abcdef1234567890abcdef"
-        masked_secret = security_vault.mask_secret_string(secret_str, show_prefix=4, show_suffix=4)
+        masked_secret = mask_token(secret_str, show_prefix=4, show_suffix=4)
         self.assertNotIn("abcdef1234567890", masked_secret)
         self.assertTrue(masked_secret.startswith("sec_"))
 

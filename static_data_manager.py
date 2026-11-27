@@ -1378,13 +1378,50 @@ class StaticDataManager:
             except Exception:
                 pass
 
+        import unicodedata
+
         def _slugify(name: str) -> str:
-            s = re.sub(r"[^a-z0-9]+", "_", name.lower().strip()).strip("_")
+            ascii_s = unicodedata.normalize("NFKD", str(name or "")).encode("ASCII", "ignore").decode("utf-8")
+            s = re.sub(r"[^a-z0-9]+", "_", ascii_s.lower().strip()).strip("_")
             return s
+
+        aliases_all = {}
+        aliases_path = os.path.join(target_dir, "character_aliases.json")
+        if os.path.exists(aliases_path):
+            try:
+                with open(aliases_path, "r", encoding="utf-8") as af:
+                    aliases_all = json.load(af)
+            except Exception:
+                aliases_all = {}
+
+        hsr_tb_elem_to_path = {
+            "physical": "trailblazer_•_destruction",
+            "fire": "trailblazer_•_preservation",
+            "imaginary": "trailblazer_•_harmony",
+            "ice": "trailblazer_•_remembrance",
+            "lightning": "trailblazer_•_elation",
+        }
 
         counts = {}
         for g in games:
             rebuilt: Dict[str, str] = {}
+            g_aliases = aliases_all.get(g, {}) if isinstance(aliases_all, dict) else {}
+            g_aliases_norm = {_slugify(k): v for k, v in g_aliases.items() if _slugify(k)}
+
+            def _canonical_slug(raw_name: str, fallback_elem: str = "") -> str:
+                raw_low = str(raw_name or "").lower().strip()
+                if g == "hsr" and ("desbravador" in raw_low or "trailblazer" in raw_low):
+                    el_key = _slugify(fallback_elem)
+                    if el_key in hsr_tb_elem_to_path:
+                        return hsr_tb_elem_to_path[el_key]
+                if raw_low in g_aliases:
+                    return g_aliases[raw_low]
+                sl = _slugify(raw_name)
+                if sl in g_aliases:
+                    return g_aliases[sl]
+                if sl in g_aliases_norm:
+                    return g_aliases_norm[sl]
+                return sl
 
             # 1. Manifestos estáticos (StarRailRes / Enka / Prydwen)
             m_chars = self._cache.get(g, {}).get("characters", {})
@@ -1394,7 +1431,7 @@ class StaticDataManager:
                 hid = str(mv.get("hoyolab_id") or mv.get("enka_id") or "").strip()
                 if not hid.isdigit() or hid == "9999" or (g == "genshin" and int(hid) >= 10000900):
                     continue
-                slug = _slugify(str(mk or mv.get("name") or ""))
+                slug = _canonical_slug(str(mk or mv.get("name") or ""), str(mv.get("element") or ""))
                 if slug:
                     rebuilt[hid] = slug
 
@@ -1407,23 +1444,29 @@ class StaticDataManager:
                         cid_s = str(cid_num).strip()
                         n_en = str(getattr(db_ch, "name", "") or "").strip()
                         if cid_s.isdigit() and n_en and "traveler" not in n_en.lower():
-                            rebuilt[cid_s] = _slugify(n_en)
+                            rebuilt[cid_s] = _canonical_slug(n_en)
                 except Exception:
                     pass
 
-            # 3. Roster real do jogador (SQLite / JSON) garante cobertura de personagens novos
+            # 3. Roster real do jogador (SQLite / JSON) garante cobertura de personagens novos sem quebrar slugs canônicos
             try:
                 import database
 
                 for rc in database.get_roster_data(g) or []:
                     r_id = str(rc.get("id") or rc.get("character_id") or "").strip()
                     r_name = str(rc.get("name") or "").strip()
+                    r_elem = str(rc.get("element") or "").strip()
                     if r_id.isdigit() and r_name and r_id not in rebuilt:
-                        slug = _slugify(r_name)
+                        slug = _canonical_slug(r_name, r_elem)
                         if slug:
                             rebuilt[r_id] = slug
             except Exception:
                 pass
+
+            # 4. Preserva entradas canônicas já conhecidas ausentes no rebuilt
+            for old_id, old_slug in (existing.get(g) or {}).items():
+                if old_id not in rebuilt and old_slug:
+                    rebuilt[old_id] = _canonical_slug(old_slug)
 
             if rebuilt:
                 existing[g] = dict(sorted(rebuilt.items(), key=lambda kv: int(kv[0]) if kv[0].isdigit() else 999999999))

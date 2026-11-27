@@ -220,14 +220,14 @@ class AIBuildGenerator:
             weapon_title = "Melhores Motores-W (W-Engines)"
             sets_title = "Melhores Discos de Drive (4 Peças)"
 
-        pros_md = "\n".join([f"- {pr}" for pr in (p.pros or [f"Alta sinergia com composições {element}."])])
-        cons_md = "\n".join([f"- {cn}" for cn in (p.cons or ["Exige balanceamento de status para rendimento ótimo."])])
+        pros_md = "\n".join([f"- {pr}" for pr in (p.pros or [f"Kit voltado para comps de {element}."])])
+        cons_md = "\n".join([f"- {cn}" for cn in (p.cons or ["Guia preliminar — confirmar breakpoints após testes finais."])])
 
         return (
             f'<!-- METADATA: {{"source": "ai_preliminary", "game_id": "{game_id}", "generated_at": "{now_iso}"}} -->\n'
             f"# Guia de Build - {p.character_name}\n"
             f"> [!NOTE]\n"
-            f"> **Guia Preliminar Automático (Day-1)**: Gerado automaticamente com base nas mecânicas de {element} / {role}.\n\n"
+            f"> **Guia Preliminar (Day-1)**: Baseado no arquétipo {element} / {role}.\n\n"
             f"## Review\n"
             f"### Prós (Pontos Fortes)\n"
             f"{pros_md}\n\n"
@@ -245,7 +245,7 @@ class AIBuildGenerator:
             f"#### Subatributos Prioritários (Sub-stats)\n"
             f"{sanitized_sub}\n\n"
             f"#### Análise de Atributos e Otimização\n"
-            f"{p.optimization_summary or 'Priorize atingir os breakpoints de Crítico e atributos de suporte do personagem.'}\n"
+            f"{p.optimization_summary or 'Feche os main stats primeiro e ajuste CRIT/ER/SPD nos substats.'}\n"
         )
 
     @staticmethod
@@ -297,13 +297,13 @@ class AIBuildGenerator:
             f'<!-- METADATA: {{"source": "ai_preliminary", "game_id": "{game_id}", "generated_at": "{now_iso}"}} -->\n'
             f"# Guia de Build - {name}\n"
             f"> [!NOTE]\n"
-            f"> **Guia Preliminar Automático (Day-1)**: Recomendações calibradas pelo arquétipo oficial de {element} / {role}.\n\n"
+            f"> **Guia Preliminar (Day-1)**: Baseado no arquétipo {element} / {role}.\n\n"
             f"## Review\n"
             f"### Prós (Pontos Fortes)\n"
-            f"- Alta sinergia com composições do elemento {element}.\n"
-            f"- Excelente escalamento e utilidade como {role}.\n\n"
+            f"- Encaixe direto em comps de {element}.\n"
+            f"- Scaling base de {role}.\n\n"
             f"### Contras (Pontos Fracos)\n"
-            f"- Exige balanceamento cuidadoso de status para atingir o potencial máximo.\n\n"
+            f"- Guia preliminar Day-1: confirmar BiS e breakpoints após testes finais.\n\n"
             f"## Recomendações de Equipamentos\n"
             f"{weapon_sec}\n\n"
             f"{set_sec}\n\n"
@@ -314,5 +314,5 @@ class AIBuildGenerator:
             f"#### Subatributos Prioritários (Sub-stats)\n"
             f"{sub_stats}\n\n"
             f"#### Análise de Atributos e Otimização\n"
-            f"Equilibre atributos ofensivos ou de suporte conforme o papel principal na equipe.\n"
+            f"Feche os main stats primeiro e ajuste CRIT, ER e SPD conforme o time.\n"
         )

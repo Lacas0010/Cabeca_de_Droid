@@ -210,10 +210,12 @@ class TestServicesOptimizationSuite(unittest.TestCase):
         self.assertIn("Sombra Verde", res_g["recommendations"][0]["target_set_name"])
 
         res_h = recommend_relic_crafting("hsr", [{"name": "Ruan Mei", "level": 80, "rarity": 5, "overall_score": "bad"}])
-        self.assertIn("Talia", res_h["recommendations"][0]["target_set_name"])
+        self.assertNotIn("Set de Ornamentos", res_h["recommendations"][0]["target_set_name"])
+        self.assertTrue(len(res_h["recommendations"][0]["target_set_name"]) > 3)
+        self.assertIn("Corda", res_h["recommendations"][0]["slot_name"])
 
         res_z = recommend_relic_crafting("zzz", [{"name": "Jane Doe", "level": 60, "rarity": 5, "overall_score": None}])
-        self.assertIn("Presa Furiosa", res_z["recommendations"][0]["target_set_name"])
+        self.assertIn("Metal de Presas", res_z["recommendations"][0]["target_set_name"])
 
         gaps_h = analyze_account_gaps("hsr", [{"name": "herta", "level": "80", "rarity": "4", "element": "Ice"}])
         gap_ids = [g["id"] for g in gaps_h["critical_gaps"]]

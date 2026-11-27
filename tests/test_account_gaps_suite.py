@@ -137,7 +137,7 @@ class TestAccountGapsSuite(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         data = res.json()
         self.assertFalse(data.get("has_ai"))
-        self.assertIn("DIAGNÓSTICO DE LACUNAS DA CONTA", data.get("ai_response"))
+        self.assertIn("DIAGNÓSTICO DA CONTA", data.get("ai_response"))
         self.assertIn("analysis", data)
 
 

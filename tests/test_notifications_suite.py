@@ -108,11 +108,13 @@ class TestNotificationSuite(unittest.TestCase):
         self.assertEqual(save_res.status_code, 200)
         self.assertEqual(save_res.json()["status"], "success")
 
-        # 3. Verify GET returns updated configuration with masked Telegram token
+        # 3. Verify GET returns updated configuration with masked secrets (Zero-Exposure)
         get_res2 = self.client.get("/api/config")
         data2 = get_res2.json()
         self.assertTrue(data2["notifications_enabled"])
-        self.assertEqual(data2["discord_webhook_url"], "https://discord.com/api/webhooks/test/mock")
+        self.assertTrue(data2["discord_webhook_url_configured"])
+        self.assertIn("***", data2["discord_webhook_url"])
+        self.assertNotIn("/webhooks/test/mock", data2["discord_webhook_url"])
         self.assertEqual(data2["telegram_chat_id"], "999888777")
         self.assertEqual(data2["energy_cap_threshold_pct"], 95)
         self.assertTrue(data2["telegram_bot_token"].startswith("1234***") or "***" in data2["telegram_bot_token"])

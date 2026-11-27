@@ -1,7 +1,7 @@
 {
   "game_id": "genshin",
   "source": "Yatta API (PT-BR)",
-  "updated_at": "2026-11-25T16:00:41.768209",
+  "updated_at": "2026-11-27T11:34:25.536369",
   "weapons": {
     "laminasemfio": {
       "id": "11101",
@@ -1005,7 +1005,7 @@
       ]
     },
     "sabredapontaestelar": {
-      "id": "390002",
+      "id": "390003",
       "name": "Sabre da Ponta Estelar",
       "rarity": 4,
       "passive_name": "",

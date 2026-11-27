@@ -231,9 +231,7 @@ def save_secure_cookies(cookies: Dict[str, str], filepath: Optional[str] = None)
 
     json_str = json.dumps(cookies, ensure_ascii=False)
     enc_data = encrypt_payload(json_str)
-
-    with open(target, "wb") as f:
-        f.write(enc_data)
+    _atomic_write_bytes(target, enc_data)
 
     # Limpeza defensiva do arquivo legado em texto puro
     if not filepath and os.path.exists(COOKIES_LEGACY_FILE):

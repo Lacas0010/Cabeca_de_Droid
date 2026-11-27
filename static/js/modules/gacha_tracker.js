@@ -612,7 +612,7 @@ window.handleGachaLogFileImport = async function(inputEl) {
 
         if (typeof showToast === "function") {
 
-        showToast(data.message || (isEn ? `${data.total_imported} pulls imported successfully!` : `${data.total_imported} tiros importados com sucesso!`), "success");
+        showToast(data.message || (isEn ? `${data.total_imported} pulls imported.` : `${data.total_imported} tiros importados.`), "success");
         }
 
         window.loadGachaTracker(gid);
@@ -649,7 +649,7 @@ window.exportGachaLogUIGF = async function() {
 
         if (typeof showToast === "function") {
 
-        showToast(isEn ? "UIGF backup downloaded successfully!" : "Backup UIGF baixado com sucesso!", "success");
+        showToast(isEn ? "UIGF backup downloaded." : "Backup UIGF baixado.", "success");
         }
     } catch (err) {
         console.error("Erro ao exportar UIGF:", err);
@@ -676,7 +676,7 @@ window.clearGachaLogHistory = async function() {
 
         if (typeof showToast === "function") {
 
-        showToast(data.message || (isEn ? "Pull history cleared successfully." : "Histórico de tiros limpo com sucesso."), "success");
+        showToast(data.message || (isEn ? "Pull history cleared." : "Histórico de tiros limpo."), "success");
         }
         window.loadGachaTracker(gid);
     } catch (err) {

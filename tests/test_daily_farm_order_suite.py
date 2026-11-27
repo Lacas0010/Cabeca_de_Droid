@@ -89,7 +89,7 @@ class TestDailyFarmOrderSuite(unittest.TestCase):
         self.assertEqual(first_task["time_estimate"], "Disponível Agora")
 
         # Verifica se o texto sumarizado está gerado
-        self.assertIn("ORDEM DE SERVIÇO DO DIA", order["quick_summary_text"].upper())
+        self.assertIn("ORDEM DE FARM", order["quick_summary_text"].upper())
         self.assertIn("Furina", order["quick_summary_text"])
 
     def test_generate_daily_farm_order_energy_deficit_estimates(self):

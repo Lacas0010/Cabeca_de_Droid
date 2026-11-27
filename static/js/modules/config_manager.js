@@ -155,7 +155,7 @@ async function setupConfigForm() {
                     if (typeof saveBtn.done === "function") saveBtn.done();
                     if (statusMsg) {
                         statusMsg.className = "status-msg success";
-                        statusMsg.innerText = isEn ? "Settings saved to vault successfully!" : "Configurações salvas no cofre com sucesso!";
+                        statusMsg.innerText = isEn ? "Settings saved to vault." : "Configurações salvas no cofre.";
                     }
                     showToast(isEn ? "Settings updated and encrypted!" : "Configurações atualizadas e criptografadas!", "success");
                     fetchConfig();
@@ -200,7 +200,7 @@ async function setupConfigForm() {
                                 clearInterval(interval);
                                 autoLoginBtn.disabled = false;
                                 autoLoginBtn.innerHTML = defaultLabel;
-                                showToast(isEn ? "Cookies captured and encrypted successfully!" : "Cookies capturados e criptografados com sucesso!", "success");
+                                showToast(isEn ? "Cookies captured and encrypted." : "Cookies capturados e salvos no cofre.", "success");
                                 fetchConfig();
                             } else if (loginState.status === "error" || attempts > 90) {
                                 clearInterval(interval);
@@ -235,7 +235,7 @@ async function setupConfigForm() {
                 const res = await fetch("/api/security/clear_credentials", { method: "POST" });
                 if (res.ok) {
 
-        showToast(isEn ? "Credentials and tokens removed successfully." : "Credenciais e tokens removidos com sucesso.", "info");
+        showToast(isEn ? "Credentials removed." : "Credenciais removidas.", "info");
                     fetchConfig();
                 } else {
                     showToast("Erro ao limpar credenciais.", "error");
@@ -283,7 +283,7 @@ async function setupConfigForm() {
                 const data = await res.json();
                 if (res.ok) {
                     if (typeof savePinBtn.done === "function") savePinBtn.done();
-            showToast(isEn ? "Security PIN configured successfully!" : "PIN de segurança configurado com sucesso!", "success");
+            showToast(isEn ? "Security PIN saved." : "PIN configurado.", "success");
                     fetchConfig();
                 } else {
                     showToast(`Erro ao gravar PIN: ${data.detail || "Erro"}`, "error");
@@ -477,7 +477,7 @@ window.loadAccountsManagement = async function(showFeedback = false, preloadedDa
 
         if (showFeedback && typeof showToast === "function") {
 
-        showToast(isEn ? "Accounts and profiles list refreshed successfully!" : "Lista de contas e perfis atualizada com sucesso!", "success");
+        showToast(isEn ? "Profiles refreshed." : "Lista de perfis atualizada.", "success");
         }
     } catch (err) {
         console.error("Erro ao carregar perfis de contas:", err);
@@ -518,7 +518,7 @@ window.switchActiveAccount = async function(gameId, uid) {
 
         if (typeof showToast === "function") {
 
-            showToast(isEn ? `Profile ${uid} (${gameId.toUpperCase()}) activated successfully!` : `Perfil ${uid} (${gameId.toUpperCase()}) ativado com sucesso!`, "success");
+            showToast(isEn ? `Profile ${uid} (${gameId.toUpperCase()}) active.` : `Perfil ${uid} (${gameId.toUpperCase()}) ativado.`, "success");
         }
     } catch (err) {
         console.error("Erro ao alternar perfil ativo:", err);
@@ -548,7 +548,7 @@ window.deleteAccountProfile = async function(uid) {
 
         if (typeof showToast === "function") {
 
-            showToast(isEn ? `Profile UID ${uid} removed successfully.` : `Perfil UID ${uid} removido com sucesso.`, "success");
+            showToast(isEn ? `Profile UID ${uid} removed.` : `Perfil UID ${uid} removido.`, "success");
         }
     } catch (err) {
         console.error("Erro ao excluir perfil:", err);

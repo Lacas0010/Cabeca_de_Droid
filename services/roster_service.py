@@ -1869,10 +1869,12 @@ def parse_meta_target(game_id: str, char_name: str, element: str = "") -> Dict[s
 def compare_character_build(game_id: str, char_name: str) -> Dict[str, Any]:
     """Compara a build real do jogador contra as metas oficiais e monta o payload padronizado do Gráfico Radar."""
     from calculators.benchmark_radar import build_radar_benchmark_payload
+    from calculators.equipment_comparator import evaluate_build_comparison
 
     element = ""
+    roster: List[Dict[str, Any]] = []
     try:
-        roster = database.get_roster_data(game_id)
+        roster = database.get_roster_data(game_id) or []
         c_norm = normalize_char_name(char_name)
         for char in roster:
             if normalize_char_name(char.get("name", "")) == c_norm or char.get("name", "").lower() == char_name.lower():
@@ -1884,26 +1886,35 @@ def compare_character_build(game_id: str, char_name: str) -> Dict[str, Any]:
     build_data = parse_character_build_data(game_id, char_name)
     meta_target = parse_meta_target(game_id, char_name, element)
     player_stats = build_data.get("stats", {}) or {}
+    player_build_payload = {
+        "weapon": build_data.get("weapon", "Não informado"),
+        "weapon_clean": build_data.get("weapon_clean", ""),
+        "sets": build_data.get("sets", []),
+        "stats": player_stats,
+        "pieces": build_data.get("pieces", []),
+    }
     meta_radar = build_radar_benchmark_payload(
         game_id=game_id,
         char_name=char_name,
         player_stats=player_stats,
         endgame_stats=meta_target.get("endgame_stats", {}) or {},
         main_stats=meta_target.get("stats", {}) or {},
+        include_baseline_stats=True,
+        roster_records=roster,
+    )
+    comparison_eval = evaluate_build_comparison(
+        game_id=game_id,
+        player_build=player_build_payload,
+        meta_target=meta_target,
     )
 
     return {
         "character": char_name,
         "game_id": game_id,
-        "player_build": {
-            "weapon": build_data.get("weapon", "Não informado"),
-            "weapon_clean": build_data.get("weapon_clean", ""),
-            "sets": build_data.get("sets", []),
-            "stats": player_stats,
-            "pieces": build_data.get("pieces", []),
-        },
+        "player_build": player_build_payload,
         "meta_target": meta_target,
         "meta_radar": meta_radar,
+        "comparison_eval": comparison_eval,
     }
 
 
@@ -2065,4 +2076,22 @@ async def get_account_audit(game_id: str) -> Dict[str, Any]:
         "tier_list": tier_list,
         "sss_count": sum(1 for s in scores if s >= 90.0),
         "s_count": sum(1 for s in scores if s >= 60.0),
+    }
+
+
+def get_character_optimization_suggestions(game_id: str, char_name: str) -> Dict[str, Any]:
+    """Gera sugestões objetivas de otimização com base nos dados salvos da build do personagem."""
+    build_data = parse_character_build_data(game_id, char_name)
+    if not build_data.get("raw") and not build_data.get("sets") and not build_data.get("pieces"):
+        return {
+            "suggestions": [
+                "Sem dados de build salvos para este personagem. Sincronize o roster primeiro."
+            ]
+        }
+    return {
+        "suggestions": [
+            "1. Fechar os main stats recomendados nos slots principais.",
+            "2. Ativar o bônus 4p (e 2p planar no HSR) do set BiS.",
+            "3. Upar as peças equipadas ao +15/+20.",
+        ]
     }
